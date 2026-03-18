@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,12 +12,18 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, Pencil, ChevronRight } from "lucide-react";
+import { GraduationCap, Pencil, ChevronRight, FileText, ArrowUpRight, CalendarRange, Banknote } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
 const STATUSES = ["pending", "confirmed", "in_progress", "completed", "cancelled"];
+
+const CONTRACT_STATUS_COLORS: Record<string, string> = {
+  draft: "bg-gray-100 text-gray-700", active: "bg-green-100 text-green-800",
+  signed: "bg-blue-100 text-blue-800", completed: "bg-purple-100 text-purple-800",
+  cancelled: "bg-red-100 text-red-800", suspended: "bg-yellow-100 text-yellow-800",
+};
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "pending").toLowerCase();
@@ -28,16 +35,81 @@ function StatusBadge({ status }: { status?: string | null }) {
 }
 
 interface Rec {
-  id: string; contractId?: string | null; studentName?: string | null;
+  id: string; contractId?: string | null; studentName?: string | null; clientEmail?: string | null;
+  contractNumber?: string | null; contractStatus?: string | null;
+  contractStartDate?: string | null; contractEndDate?: string | null;
+  totalAmount?: string | null; currency?: string | null;
   programDetails?: string | null; startDate?: string | null; endDate?: string | null;
   totalHours?: number | null; englishLevelStart?: string | null; englishLevelEnd?: string | null;
   teacherComments?: string | null; status?: string | null; progressNotes?: string | null;
+}
+
+function ContractCard({ rec, onViewContract }: { rec: Rec; onViewContract: () => void }) {
+  if (!rec.contractId) return null;
+  const cs = (rec.contractStatus ?? "draft").toLowerCase();
+  const ccls = CONTRACT_STATUS_COLORS[cs] ?? "bg-gray-100 text-gray-700";
+  const amt = rec.totalAmount ? Number(rec.totalAmount) : null;
+  const sym = rec.currency === "AUD" ? "A$" : (rec.currency ?? "A$");
+  return (
+    <div className="rounded-lg border border-[#F08301]/30 bg-[#F08301]/5 p-3 space-y-2.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileText className="w-3.5 h-3.5 text-[#F08301]" />
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Contract</span>
+          {rec.contractNumber && (
+            <span className="font-mono text-xs font-bold text-[#F08301]">{rec.contractNumber}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${ccls}`}>{cs}</span>
+          <button
+            onClick={onViewContract}
+            className="flex items-center gap-0.5 text-[11px] text-[#F08301] hover:underline font-medium"
+          >
+            View <ArrowUpRight className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <span className="text-muted-foreground">Student</span>
+          <p className="font-medium text-foreground truncate">{rec.studentName ?? "—"}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Client Email</span>
+          <p className="font-medium text-foreground truncate">{rec.clientEmail ?? "—"}</p>
+        </div>
+        {(rec.contractStartDate || rec.contractEndDate) && (
+          <div className="flex items-start gap-1 col-span-2">
+            <CalendarRange className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
+            <span className="text-muted-foreground">
+              {rec.contractStartDate ? format(new Date(rec.contractStartDate), "MMM d, yyyy") : "—"}
+              {" · "}
+              {rec.contractEndDate ? format(new Date(rec.contractEndDate), "MMM d, yyyy") : "—"}
+            </span>
+          </div>
+        )}
+        {amt != null && (
+          <div className="flex items-center gap-1 col-span-2">
+            <Banknote className="w-3 h-3 text-muted-foreground shrink-0" />
+            <span className="font-semibold text-foreground">
+              {sym}{amt.toLocaleString("en-AU", { minimumFractionDigits: 2 })}
+            </span>
+            {rec.currency && rec.currency !== "AUD" && (
+              <span className="text-muted-foreground ml-1">{rec.currency}</span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function InstituteManagement() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
@@ -79,7 +151,7 @@ export default function InstituteManagement() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Contract", "Student", "Program", "Start", "End", "Hours", "Level", "Status", ""].map(h => (
+              {["Contract #", "Student", "Program", "Start", "End", "Hours", "Level", "Status", ""].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
               ))}
             </tr>
@@ -95,7 +167,7 @@ export default function InstituteManagement() {
               </td></tr>
             ) : rows.map(r => (
               <tr key={r.id} className="hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => { setSelected(r); setForm({ ...r }); setEditing(false); }}>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.contractId?.slice(0, 8) ?? "—"}</td>
+                <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F08301]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>
                 <td className="px-4 py-3 max-w-[160px] truncate text-muted-foreground">{r.programDetails ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground text-xs">{r.startDate ? format(new Date(r.startDate), "MMM d, yyyy") : "—"}</td>
@@ -116,10 +188,11 @@ export default function InstituteManagement() {
         <SheetContent className="w-[520px] sm:max-w-[520px] overflow-y-auto bg-background">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2"><GraduationCap className="w-4 h-4 text-[#F08301]" /> Institute Record</SheetTitle>
-            <SheetDescription className="text-xs">{selected?.studentName ?? "—"} · Contract: {selected?.contractId?.slice(0, 8)}</SheetDescription>
+            <SheetDescription className="text-xs">{selected?.programDetails?.slice(0, 50) ?? "Institute service detail"}</SheetDescription>
           </SheetHeader>
           {selected && (
             <div className="mt-4 space-y-4">
+              <ContractCard rec={selected} onViewContract={() => { setSelected(null); navigate(`${BASE}/admin/contracts`); }} />
               <div className="flex items-center justify-between">
                 <StatusBadge status={selected.status} />
                 {!editing && isAdmin && (
@@ -131,7 +204,7 @@ export default function InstituteManagement() {
               {!editing ? (
                 <dl className="space-y-3">
                   {[
-                    ["Student", selected.studentName], ["Program Details", selected.programDetails],
+                    ["Program Details", selected.programDetails],
                     ["Start Date", selected.startDate ? format(new Date(selected.startDate), "MMM d, yyyy") : null],
                     ["End Date", selected.endDate ? format(new Date(selected.endDate), "MMM d, yyyy") : null],
                     ["Total Hours", selected.totalHours ? `${selected.totalHours}h` : null],
@@ -140,7 +213,7 @@ export default function InstituteManagement() {
                   ].map(([label, val]) => val && (
                     <div key={String(label)}>
                       <dt className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">{label}</dt>
-                      <dd className="text-sm text-foreground">{String(val)}</dd>
+                      <dd className="text-sm text-foreground whitespace-pre-wrap">{String(val)}</dd>
                     </div>
                   ))}
                 </dl>

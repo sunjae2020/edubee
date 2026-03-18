@@ -14,26 +14,43 @@ function isAdminOrCC(role: UserRole) {
   return ["super_admin", "admin", "camp_coordinator"].includes(role);
 }
 
-/** Batch enrich rows with studentName via contractId → contract → application → client user */
-async function enrichWithStudentName(rows: any[]): Promise<any[]> {
+/** Batch enrich rows with full contract info via contractId → contract → application → client user */
+async function enrichWithContractInfo(rows: any[]): Promise<any[]> {
   const contractIds = [...new Set(rows.map(r => r.contractId).filter(Boolean))];
   if (contractIds.length === 0) return rows;
 
-  // contracts → applications → users (client)
   const contractRows = await db
     .select({
       contractId: contracts.id,
-      applicationId: contracts.applicationId,
-      clientId: applications.clientId,
+      contractNumber: contracts.contractNumber,
+      contractStatus: contracts.status,
+      contractStartDate: contracts.startDate,
+      contractEndDate: contracts.endDate,
+      totalAmount: contracts.totalAmount,
+      currency: contracts.currency,
       studentName: users.fullName,
+      clientEmail: users.email,
     })
     .from(contracts)
     .leftJoin(applications, eq(contracts.applicationId, applications.id))
     .leftJoin(users, eq(applications.clientId, users.id))
     .where(inArray(contracts.id, contractIds));
 
-  const contractMap = new Map(contractRows.map(c => [c.contractId, c.studentName ?? null]));
-  return rows.map(r => ({ ...r, studentName: contractMap.get(r.contractId) ?? null }));
+  const contractMap = new Map(contractRows.map(c => [c.contractId, {
+    studentName: c.studentName ?? null,
+    clientEmail: c.clientEmail ?? null,
+    contractNumber: c.contractNumber ?? null,
+    contractStatus: c.contractStatus ?? null,
+    contractStartDate: c.contractStartDate ?? null,
+    contractEndDate: c.contractEndDate ?? null,
+    totalAmount: c.totalAmount ?? null,
+    currency: c.currency ?? null,
+  }]));
+
+  return rows.map(r => {
+    const info = contractMap.get(r.contractId) ?? {};
+    return { ...r, ...info };
+  });
 }
 
 // ── Institute Management ─────────────────────────────────────────────
@@ -46,7 +63,7 @@ router.get("/services/institute", authenticate, async (req, res) => {
     const data = role === "partner_institute"
       ? await query.where(eq(instituteMgt.instituteId, uid))
       : await query;
-    return res.json({ data: await enrichWithStudentName(data) });
+    return res.json({ data: await enrichWithContractInfo(data) });
   } catch (err) {
     console.error("Institute list error:", err);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -110,7 +127,7 @@ router.get("/services/hotel", authenticate, async (req, res) => {
     const data = role === "partner_hotel"
       ? await query.where(eq(hotelMgt.hotelId, uid))
       : await query;
-    return res.json({ data: await enrichWithStudentName(data) });
+    return res.json({ data: await enrichWithContractInfo(data) });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
@@ -171,7 +188,7 @@ router.get("/services/pickup", authenticate, async (req, res) => {
     const data = role === "partner_pickup"
       ? await query.where(eq(pickupMgt.driverId, uid))
       : await query;
-    return res.json({ data: await enrichWithStudentName(data) });
+    return res.json({ data: await enrichWithContractInfo(data) });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
@@ -229,7 +246,7 @@ router.get("/services/tour", authenticate, async (req, res) => {
     const data = role === "partner_tour"
       ? await query.where(eq(tourMgt.tourCompanyId, uid))
       : await query;
-    return res.json({ data: await enrichWithStudentName(data) });
+    return res.json({ data: await enrichWithContractInfo(data) });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
@@ -302,7 +319,7 @@ router.get("/services/settlement", authenticate, async (req, res) => {
       if (contractIds.length === 0) return res.json({ data: [] });
       const rawData = await db.select().from(settlementMgt);
       const data = rawData.filter(s => s.contractId && contractIds.includes(s.contractId));
-      return res.json({ data: await enrichWithStudentName(data) });
+      return res.json({ data: await enrichWithContractInfo(data) });
     } else if (role === "education_agent") {
       conditions.push(eq(settlementMgt.providerUserId, uid));
     }
@@ -311,7 +328,7 @@ router.get("/services/settlement", authenticate, async (req, res) => {
       ? await db.select().from(settlementMgt).where(conditions.length === 1 ? conditions[0] : and(...conditions))
       : await db.select().from(settlementMgt);
 
-    return res.json({ data: await enrichWithStudentName(data) });
+    return res.json({ data: await enrichWithContractInfo(data) });
   } catch (err) {
     console.error("Settlement list error:", err);
     return res.status(500).json({ error: "Internal Server Error" });

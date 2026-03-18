@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, Pencil, TrendingDown, Plus } from "lucide-react";
+import { DollarSign, Pencil, TrendingDown, Plus, FileText, ArrowUpRight, CalendarRange } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -52,18 +54,72 @@ const ROLE_LABELS: Record<string, string> = {
   partner_tour: "Tour", camp_coordinator: "Camp Coordinator", education_agent: "Education Agent",
 };
 
+const CONTRACT_STATUS_COLORS: Record<string, string> = {
+  draft: "bg-gray-100 text-gray-700", active: "bg-green-100 text-green-800",
+  signed: "bg-blue-100 text-blue-800", completed: "bg-purple-100 text-purple-800",
+  cancelled: "bg-red-100 text-red-800", suspended: "bg-yellow-100 text-yellow-800",
+};
+
 interface Rec {
   id: string; contractId?: string | null; providerUserId?: string | null; providerRole?: string | null;
   serviceDescription?: string | null; grossAmount?: string | null; commissionRate?: string | null;
   commissionAmount?: string | null; netAmount?: string | null; currency?: string | null;
   originalCurrency?: string | null; originalNetAmount?: string | null; audEquivalent?: string | null;
   status?: string | null; settlementDate?: string | null; notes?: string | null;
+  studentName?: string | null; clientEmail?: string | null;
+  contractNumber?: string | null; contractStatus?: string | null;
+  contractStartDate?: string | null; contractEndDate?: string | null;
+  totalAmount?: string | null;
+}
+
+function ContractCard({ rec, onViewContract }: { rec: Rec; onViewContract: () => void }) {
+  if (!rec.contractId) return null;
+  const cs = (rec.contractStatus ?? "draft").toLowerCase();
+  const ccls = CONTRACT_STATUS_COLORS[cs] ?? "bg-gray-100 text-gray-700";
+  return (
+    <div className="rounded-lg border border-[#F08301]/30 bg-[#F08301]/5 p-3 space-y-2.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileText className="w-3.5 h-3.5 text-[#F08301]" />
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Contract</span>
+          {rec.contractNumber && <span className="font-mono text-xs font-bold text-[#F08301]">{rec.contractNumber}</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${ccls}`}>{cs}</span>
+          <button onClick={onViewContract} className="flex items-center gap-0.5 text-[11px] text-[#F08301] hover:underline font-medium">
+            View <ArrowUpRight className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <span className="text-muted-foreground">Student</span>
+          <p className="font-medium text-foreground truncate">{rec.studentName ?? "—"}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Client Email</span>
+          <p className="font-medium text-foreground truncate">{rec.clientEmail ?? "—"}</p>
+        </div>
+        {(rec.contractStartDate || rec.contractEndDate) && (
+          <div className="flex items-start gap-1 col-span-2">
+            <CalendarRange className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
+            <span className="text-muted-foreground">
+              {rec.contractStartDate ? format(new Date(rec.contractStartDate), "MMM d, yyyy") : "—"}
+              {" · "}
+              {rec.contractEndDate ? format(new Date(rec.contractEndDate), "MMM d, yyyy") : "—"}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function Settlement() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [selected, setSelected] = useState<Rec | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<Rec>>({});
@@ -168,7 +224,7 @@ export default function Settlement() {
             <tbody>
               {rows.map(r => (
                 <tr key={r.id} className="border-b last:border-0 hover:bg-muted/20 cursor-pointer transition-colors" onClick={() => openSheet(r)}>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.contractId?.slice(0, 8) ?? "—"}</td>
+                  <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F08301]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
                   <td className="px-4 py-3"><span className="px-1.5 py-0.5 bg-muted rounded text-xs">{ROLE_LABELS[r.providerRole ?? ""] ?? r.providerRole ?? "—"}</span></td>
                   <td className="px-4 py-3 text-xs max-w-[160px] truncate">{r.serviceDescription ?? "—"}</td>
                   <td className="px-4 py-3 text-right"><DualAmount amount={r.grossAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
@@ -188,10 +244,11 @@ export default function Settlement() {
         <SheetContent className="w-[560px] sm:max-w-[560px] overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-[#F08301]" /> Settlement Detail</SheetTitle>
-            <SheetDescription className="text-xs">Contract: {selected?.contractId?.slice(0, 8)}</SheetDescription>
+            <SheetDescription className="text-xs">{selected?.serviceDescription ?? "Provider payout record"}</SheetDescription>
           </SheetHeader>
           {selected && (
             <div className="mt-4 space-y-4">
+              <ContractCard rec={selected} onViewContract={() => { setSelected(null); navigate(`${BASE}/admin/contracts`); }} />
               <div className="flex items-center justify-between">
                 <StatusBadge status={selected.status} />
                 <div className="flex gap-2">

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +11,18 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Pencil, ChevronRight } from "lucide-react";
+import { Building2, Pencil, ChevronRight, FileText, ArrowUpRight, CalendarRange, Banknote } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
 const STATUSES = ["pending", "confirmed", "checked_in", "checked_out", "cancelled"];
+
+const CONTRACT_STATUS_COLORS: Record<string, string> = {
+  draft: "bg-gray-100 text-gray-700", active: "bg-green-100 text-green-800",
+  signed: "bg-blue-100 text-blue-800", completed: "bg-purple-100 text-purple-800",
+  cancelled: "bg-red-100 text-red-800", suspended: "bg-yellow-100 text-yellow-800",
+};
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "pending").toLowerCase();
@@ -27,17 +34,73 @@ function StatusBadge({ status }: { status?: string | null }) {
 }
 
 interface Rec {
-  id: string; contractId?: string | null; studentName?: string | null;
+  id: string; contractId?: string | null; studentName?: string | null; clientEmail?: string | null;
+  contractNumber?: string | null; contractStatus?: string | null;
+  contractStartDate?: string | null; contractEndDate?: string | null;
+  totalAmount?: string | null; currency?: string | null;
   roomType?: string | null; confirmationNo?: string | null;
   checkinDate?: string | null; checkoutDate?: string | null;
   specialRequests?: string | null; actualCheckin?: string | null;
   actualCheckout?: string | null; status?: string | null;
 }
 
+function ContractCard({ rec, onViewContract }: { rec: Rec; onViewContract: () => void }) {
+  if (!rec.contractId) return null;
+  const cs = (rec.contractStatus ?? "draft").toLowerCase();
+  const ccls = CONTRACT_STATUS_COLORS[cs] ?? "bg-gray-100 text-gray-700";
+  const amt = rec.totalAmount ? Number(rec.totalAmount) : null;
+  const sym = rec.currency === "AUD" ? "A$" : (rec.currency ?? "A$");
+  return (
+    <div className="rounded-lg border border-[#F08301]/30 bg-[#F08301]/5 p-3 space-y-2.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileText className="w-3.5 h-3.5 text-[#F08301]" />
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Contract</span>
+          {rec.contractNumber && <span className="font-mono text-xs font-bold text-[#F08301]">{rec.contractNumber}</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${ccls}`}>{cs}</span>
+          <button onClick={onViewContract} className="flex items-center gap-0.5 text-[11px] text-[#F08301] hover:underline font-medium">
+            View <ArrowUpRight className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <span className="text-muted-foreground">Student</span>
+          <p className="font-medium text-foreground truncate">{rec.studentName ?? "—"}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Client Email</span>
+          <p className="font-medium text-foreground truncate">{rec.clientEmail ?? "—"}</p>
+        </div>
+        {(rec.contractStartDate || rec.contractEndDate) && (
+          <div className="flex items-start gap-1 col-span-2">
+            <CalendarRange className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
+            <span className="text-muted-foreground">
+              {rec.contractStartDate ? format(new Date(rec.contractStartDate), "MMM d, yyyy") : "—"}
+              {" · "}
+              {rec.contractEndDate ? format(new Date(rec.contractEndDate), "MMM d, yyyy") : "—"}
+            </span>
+          </div>
+        )}
+        {amt != null && (
+          <div className="flex items-center gap-1 col-span-2">
+            <Banknote className="w-3 h-3 text-muted-foreground shrink-0" />
+            <span className="font-semibold text-foreground">{sym}{amt.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</span>
+            {rec.currency && rec.currency !== "AUD" && <span className="text-muted-foreground ml-1">{rec.currency}</span>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function HotelManagement() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
@@ -79,7 +142,7 @@ export default function HotelManagement() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Contract", "Student", "Room Type", "Confirmation", "Check-in", "Check-out", "Status", ""].map(h => (
+              {["Contract #", "Student", "Room Type", "Confirmation", "Check-in", "Check-out", "Status", ""].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
               ))}
             </tr>
@@ -95,7 +158,7 @@ export default function HotelManagement() {
               </td></tr>
             ) : rows.map(r => (
               <tr key={r.id} className="hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => { setSelected(r); setForm({ ...r }); setEditing(false); }}>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.contractId?.slice(0, 8) ?? "—"}</td>
+                <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F08301]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.roomType ?? "—"}</td>
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.confirmationNo ?? "—"}</td>
@@ -115,10 +178,11 @@ export default function HotelManagement() {
         <SheetContent className="w-[520px] sm:max-w-[520px] overflow-y-auto bg-background">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2"><Building2 className="w-4 h-4 text-[#F08301]" /> Hotel Record</SheetTitle>
-            <SheetDescription className="text-xs">{selected?.studentName ?? "—"} · Contract: {selected?.contractId?.slice(0, 8)}</SheetDescription>
+            <SheetDescription className="text-xs">{selected?.roomType ? `${selected.roomType} room` : "Hotel service detail"}</SheetDescription>
           </SheetHeader>
           {selected && (
             <div className="mt-4 space-y-4">
+              <ContractCard rec={selected} onViewContract={() => { setSelected(null); navigate(`${BASE}/admin/contracts`); }} />
               <div className="flex items-center justify-between">
                 <StatusBadge status={selected.status} />
                 {!editing && isAdmin && (
@@ -130,8 +194,7 @@ export default function HotelManagement() {
               {!editing ? (
                 <dl className="space-y-3">
                   {[
-                    ["Student", selected.studentName], ["Room Type", selected.roomType],
-                    ["Confirmation No.", selected.confirmationNo],
+                    ["Room Type", selected.roomType], ["Confirmation No.", selected.confirmationNo],
                     ["Check-in", selected.checkinDate ? format(new Date(selected.checkinDate), "MMM d, yyyy") : null],
                     ["Check-out", selected.checkoutDate ? format(new Date(selected.checkoutDate), "MMM d, yyyy") : null],
                     ["Actual Check-in", selected.actualCheckin ? format(new Date(selected.actualCheckin), "MMM d, yyyy HH:mm") : null],
@@ -152,6 +215,7 @@ export default function HotelManagement() {
                     <div><Label className="text-xs">Check-in</Label><Input type="date" value={form.checkinDate ?? ""} onChange={e => fld("checkinDate")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
                     <div><Label className="text-xs">Check-out</Label><Input type="date" value={form.checkoutDate ?? ""} onChange={e => fld("checkoutDate")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
                   </div>
+                  <div><Label className="text-xs">Special Requests</Label><Input value={form.specialRequests ?? ""} onChange={e => fld("specialRequests")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
                   <div><Label className="text-xs">Status</Label>
                     <Select value={form.status ?? "pending"} onValueChange={v => fld("status")(v)}>
                       <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
