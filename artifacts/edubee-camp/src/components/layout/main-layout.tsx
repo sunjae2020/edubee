@@ -1,17 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppSidebar } from "./app-sidebar";
 import { Header } from "./header";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs } from "@/hooks/use-view-as";
+import { useTheme } from "@/hooks/use-theme";
 import { Redirect } from "wouter";
 
 export function MainLayout({ children, title }: { children: React.ReactNode; title?: string }) {
   const { isAuthenticated, isLoading } = useAuth();
   const { isImpersonating } = useViewAs();
+  const { setTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem("edubee_sidebar_collapsed") === "1"; }
     catch { return false; }
   });
+
+  // Sync CSS theme with view mode:
+  // Light View (My Account) → always light
+  // Dark View (impersonating) → always dark
+  useEffect(() => {
+    if (isImpersonating) {
+      setTheme("dark");
+    } else {
+      setTheme("light");
+    }
+  }, [isImpersonating]);
 
   const toggleCollapsed = () => {
     setCollapsed(c => {
@@ -35,17 +48,11 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
   if (!isAuthenticated) return <Redirect to="/login" />;
 
   return (
-    <div
-      className="flex h-screen w-full overflow-hidden"
-      style={{ background: isImpersonating ? "#0f172a" : undefined }}
-    >
+    <div className="flex h-screen w-full overflow-hidden bg-muted/30">
       <AppSidebar collapsed={collapsed} onToggle={toggleCollapsed} />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header collapsed={collapsed} onToggle={toggleCollapsed} title={title} />
-        <main
-          className="flex-1 overflow-y-auto p-5 md:p-6"
-          style={{ background: isImpersonating ? "#1e293b" : undefined }}
-        >
+        <main className="flex-1 overflow-y-auto p-5 md:p-6">
           <div className="mx-auto max-w-7xl">
             {children}
           </div>

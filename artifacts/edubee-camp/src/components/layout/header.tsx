@@ -120,41 +120,28 @@ export function Header({ collapsed, onToggle, title }: Props) {
   return (
     <div>
       {/* Main header */}
-      <header
-        className="h-14 flex items-center justify-between px-4 shrink-0 z-20"
-        style={{
-          background: isImpersonating ? "#1e293b" : undefined,
-          borderBottom: isImpersonating ? "1px solid rgba(255,255,255,0.08)" : "1px solid hsl(var(--border))",
-        }}
-      >
+      <header className="h-14 border-b border-border bg-background flex items-center justify-between px-4 shrink-0 z-20">
         <div className="flex items-center gap-3">
           <button
             onClick={onToggle}
-            className="w-8 h-8 rounded-md flex items-center justify-center transition-colors"
-            style={{ color: isImpersonating ? "#94a3b8" : undefined }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = isImpersonating ? "rgba(255,255,255,0.08)" : ""; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = ""; }}
+            className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
           >
             <Menu className="w-4 h-4" />
           </button>
-          <h1
-            className="font-semibold text-sm"
-            style={{ color: isImpersonating ? "#f1f5f9" : undefined }}
-          >{pageTitle}</h1>
+          <h1 className="font-semibold text-sm text-foreground">{pageTitle}</h1>
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Light / Dark toggle */}
-          <button
-            onClick={toggleTheme}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-            style={{ color: isImpersonating ? "#94a3b8" : undefined }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = isImpersonating ? "rgba(255,255,255,0.08)" : ""; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = ""; }}
-          >
-            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+          {/* Light / Dark toggle — hidden during impersonation (view mode controls theme) */}
+          {!isImpersonating && (
+            <button
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+          )}
 
           {/* Role view switcher */}
           {canSwitch && (
@@ -233,12 +220,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
           {/* Notifications Bell */}
           <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
             <DropdownMenuTrigger asChild>
-              <button
-                className="w-8 h-8 rounded-md flex items-center justify-center transition-colors relative"
-                style={{ color: isImpersonating ? "#94a3b8" : undefined }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = isImpersonating ? "rgba(255,255,255,0.08)" : ""; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = ""; }}
-              >
+              <button className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors relative">
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-[#F08301] text-white text-[9px] font-bold flex items-center justify-center px-0.5">
