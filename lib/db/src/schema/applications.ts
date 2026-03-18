@@ -1,0 +1,128 @@
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  integer,
+  timestamp,
+  boolean,
+  date,
+} from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod/v4";
+import { users } from "./users";
+import { packageGroups, packages, enrollmentSpots } from "./packages";
+
+export const leads = pgTable("leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentId: uuid("agent_id").references(() => users.id),
+  fullName: varchar("full_name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  nationality: varchar("nationality", { length: 100 }),
+  source: varchar("source", { length: 100 }),
+  interestedIn: uuid("interested_in").references(() => packageGroups.id),
+  status: varchar("status", { length: 50 }).default("new"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const applications = pgTable("applications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  applicationNumber: varchar("application_number", { length: 50 }).unique(),
+  agentId: uuid("agent_id").references(() => users.id),
+  clientId: uuid("client_id").references(() => users.id),
+  packageGroupId: uuid("package_group_id").references(() => packageGroups.id),
+  packageId: uuid("package_id").references(() => packages.id),
+  preferredStartDate: date("preferred_start_date"),
+  status: varchar("status", { length: 50 }).default("pending"),
+  totalChildren: integer("total_children").default(1),
+  totalAdults: integer("total_adults").default(0),
+  primaryLanguage: varchar("primary_language", { length: 10 }).default("en"),
+  referralSource: varchar("referral_source", { length: 100 }),
+  referralAgentCode: varchar("referral_agent_code", { length: 50 }),
+  specialRequests: text("special_requests"),
+  termsAccepted: boolean("terms_accepted").default(false),
+  termsAcceptedAt: timestamp("terms_accepted_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const applicationParticipants = pgTable("application_participants", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  applicationId: uuid("application_id").references(() => applications.id),
+  participantType: varchar("participant_type", { length: 50 }).notNull(),
+  sequenceOrder: integer("sequence_order").default(1),
+  fullName: varchar("full_name", { length: 255 }).notNull(),
+  fullNameNative: varchar("full_name_native", { length: 255 }),
+  dateOfBirth: date("date_of_birth"),
+  gender: varchar("gender", { length: 20 }),
+  nationality: varchar("nationality", { length: 100 }),
+  passportNumber: varchar("passport_number", { length: 100 }),
+  passportExpiry: date("passport_expiry"),
+  grade: varchar("grade", { length: 100 }),
+  schoolName: varchar("school_name", { length: 255 }),
+  englishLevel: varchar("english_level", { length: 50 }),
+  medicalConditions: text("medical_conditions"),
+  dietaryRequirements: varchar("dietary_requirements", { length: 100 }),
+  specialNeeds: text("special_needs"),
+  relationshipToStudent: varchar("relationship_to_student", { length: 100 }),
+  isEmergencyContact: boolean("is_emergency_contact").default(false),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  whatsapp: varchar("whatsapp", { length: 50 }),
+  lineId: varchar("line_id", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const applicationGrade = pgTable("application_grade", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  applicationId: uuid("application_id").references(() => applications.id),
+  participantId: uuid("participant_id").references(
+    () => applicationParticipants.id
+  ),
+  enrollmentSpotId: uuid("enrollment_spot_id").references(
+    () => enrollmentSpots.id
+  ),
+  gradeLabel: varchar("grade_label", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const interviewSchedules = pgTable("interview_schedules", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  applicationId: uuid("application_id").references(() => applications.id),
+  packageGroupId: uuid("package_group_id").references(() => packageGroups.id),
+  interviewerId: uuid("interviewer_id").references(() => users.id),
+  scheduledDatetime: timestamp("scheduled_datetime").notNull(),
+  timezone: varchar("timezone", { length: 100 }).default("Asia/Seoul"),
+  format: varchar("format", { length: 50 }),
+  meetingLink: varchar("meeting_link", { length: 500 }),
+  location: varchar("location", { length: 255 }),
+  status: varchar("status", { length: 50 }).default("pending"),
+  result: varchar("result", { length: 20 }),
+  interviewerNotes: text("interviewer_notes"),
+  candidateNotes: text("candidate_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertLeadSchema = createInsertSchema(leads).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const insertApplicationSchema = createInsertSchema(applications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertLead = z.infer<typeof insertLeadSchema>;
+export type Lead = typeof leads.$inferSelect;
+export type InsertApplication = z.infer<typeof insertApplicationSchema>;
+export type Application = typeof applications.$inferSelect;
+export type ApplicationParticipant =
+  typeof applicationParticipants.$inferSelect;

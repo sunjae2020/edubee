@@ -1,22 +1,36 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Edubee Camp API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User management
+  - name: packages
+    description: Package groups and packages
+  - name: applications
+    description: Application management
+  - name: contracts
+    description: Contract and service management
+  - name: documents
+    description: Document management
+  - name: finance
+    description: Finance and invoicing
+  - name: reports
+    description: Reports and notifications
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,7 +38,1177 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/refresh:
+    post:
+      operationId: refreshToken
+      tags: [auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user profile
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a new user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /package-groups:
+    get:
+      operationId: listPackageGroups
+      tags: [packages]
+      summary: List all package groups
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: countryCode
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of package groups
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackageGroupListResponse"
+    post:
+      operationId: createPackageGroup
+      tags: [packages]
+      summary: Create a new package group
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePackageGroupRequest"
+      responses:
+        "201":
+          description: Package group created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackageGroup"
+
+  /package-groups/{id}:
+    get:
+      operationId: getPackageGroup
+      tags: [packages]
+      summary: Get package group by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Package group found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackageGroup"
+    put:
+      operationId: updatePackageGroup
+      tags: [packages]
+      summary: Update package group
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePackageGroupRequest"
+      responses:
+        "200":
+          description: Package group updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackageGroup"
+    delete:
+      operationId: deletePackageGroup
+      tags: [packages]
+      summary: Delete package group
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Package group deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /packages:
+    get:
+      operationId: listPackages
+      tags: [packages]
+      summary: List all packages
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: packageGroupId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of packages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackageListResponse"
+    post:
+      operationId: createPackage
+      tags: [packages]
+      summary: Create a new package
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePackageRequest"
+      responses:
+        "201":
+          description: Package created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+
+  /packages/{id}:
+    get:
+      operationId: getPackage
+      tags: [packages]
+      summary: Get package by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Package found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+    put:
+      operationId: updatePackage
+      tags: [packages]
+      summary: Update package
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePackageRequest"
+      responses:
+        "200":
+          description: Package updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+    delete:
+      operationId: deletePackage
+      tags: [packages]
+      summary: Delete package
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Package deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [packages]
+      summary: List all products
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: productType
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductListResponse"
+    post:
+      operationId: createProduct
+      tags: [packages]
+      summary: Create a new product
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [packages]
+      summary: Get product by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    put:
+      operationId: updateProduct
+      tags: [packages]
+      summary: Update product
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    delete:
+      operationId: deleteProduct
+      tags: [packages]
+      summary: Delete product
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [applications]
+      summary: List all leads
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: agentId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of leads
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadListResponse"
+    post:
+      operationId: createLead
+      tags: [applications]
+      summary: Create a new lead
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLeadRequest"
+      responses:
+        "201":
+          description: Lead created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/{id}:
+    get:
+      operationId: getLead
+      tags: [applications]
+      summary: Get lead by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lead found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+    put:
+      operationId: updateLead
+      tags: [applications]
+      summary: Update lead
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLeadRequest"
+      responses:
+        "200":
+          description: Lead updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+    delete:
+      operationId: deleteLead
+      tags: [applications]
+      summary: Delete lead
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lead deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /applications:
+    get:
+      operationId: listApplications
+      tags: [applications]
+      summary: List all applications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: agentId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: packageGroupId
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationListResponse"
+    post:
+      operationId: createApplication
+      tags: [applications]
+      summary: Create a new application
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApplicationRequest"
+      responses:
+        "201":
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+
+  /applications/{id}:
+    get:
+      operationId: getApplication
+      tags: [applications]
+      summary: Get application by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Application found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationDetail"
+    put:
+      operationId: updateApplication
+      tags: [applications]
+      summary: Update application
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateApplicationRequest"
+      responses:
+        "200":
+          description: Application updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+
+  /applications/{id}/status:
+    put:
+      operationId: updateApplicationStatus
+      tags: [applications]
+      summary: Update application status
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStatusRequest"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+
+  /contracts:
+    get:
+      operationId: listContracts
+      tags: [contracts]
+      summary: List all contracts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: campProviderId
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of contracts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractListResponse"
+    post:
+      operationId: createContract
+      tags: [contracts]
+      summary: Create a new contract
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContractRequest"
+      responses:
+        "201":
+          description: Contract created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /contracts/{id}:
+    get:
+      operationId: getContract
+      tags: [contracts]
+      summary: Get contract by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contract found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractDetail"
+    put:
+      operationId: updateContract
+      tags: [contracts]
+      summary: Update contract
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContractRequest"
+      responses:
+        "200":
+          description: Contract updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [finance]
+      summary: List all invoices
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: contractId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: invoiceType
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceListResponse"
+    post:
+      operationId: createInvoice
+      tags: [finance]
+      summary: Create a new invoice
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvoiceRequest"
+      responses:
+        "201":
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [finance]
+      summary: Get invoice by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invoice found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+    put:
+      operationId: updateInvoice
+      tags: [finance]
+      summary: Update invoice
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvoiceRequest"
+      responses:
+        "200":
+          description: Invoice updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /transactions:
+    get:
+      operationId: listTransactions
+      tags: [finance]
+      summary: List all transactions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: contractId
+          in: query
+          schema:
+            type: string
+        - name: invoiceId
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionListResponse"
+    post:
+      operationId: createTransaction
+      tags: [finance]
+      summary: Create a new transaction
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransactionRequest"
+      responses:
+        "201":
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [reports]
+      summary: List notifications for current user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: isRead
+          in: query
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationListResponse"
+
+  /notifications/{id}/read:
+    put:
+      operationId: markNotificationRead
+      tags: [reports]
+      summary: Mark notification as read
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [reports]
+      summary: Get dashboard statistics
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /exchange-rates:
+    get:
+      operationId: listExchangeRates
+      tags: [finance]
+      summary: List exchange rates
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of exchange rates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRateListResponse"
+    post:
+      operationId: createExchangeRate
+      tags: [finance]
+      summary: Create or update exchange rate
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExchangeRateRequest"
+      responses:
+        "201":
+          description: Exchange rate created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRate"
+
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +1218,1338 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - total
+        - page
+        - limit
+        - totalPages
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+      required:
+        - email
+        - password
+
+    RefreshTokenRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+      required:
+        - refreshToken
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - accessToken
+        - refreshToken
+        - user
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+            - super_admin
+            - admin
+            - camp_coordinator
+            - education_agent
+            - partner_institute
+            - partner_hotel
+            - partner_pickup
+            - partner_tour
+            - parent_client
+        fullName:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        whatsapp:
+          type: string
+          nullable: true
+        lineId:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+          nullable: true
+        preferredLang:
+          type: string
+          nullable: true
+        companyName:
+          type: string
+          nullable: true
+        businessRegNo:
+          type: string
+          nullable: true
+        countryOfOps:
+          type: string
+          nullable: true
+        platformCommRate:
+          type: string
+          nullable: true
+        status:
+          type: string
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - role
+        - fullName
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+        fullName:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        whatsapp:
+          type: string
+          nullable: true
+        lineId:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+          nullable: true
+        preferredLang:
+          type: string
+          nullable: true
+        companyName:
+          type: string
+          nullable: true
+        businessRegNo:
+          type: string
+          nullable: true
+        countryOfOps:
+          type: string
+          nullable: true
+        platformCommRate:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+      required:
+        - email
+        - password
+        - role
+        - fullName
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+        fullName:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        whatsapp:
+          type: string
+          nullable: true
+        lineId:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+          nullable: true
+        preferredLang:
+          type: string
+          nullable: true
+        companyName:
+          type: string
+          nullable: true
+        businessRegNo:
+          type: string
+          nullable: true
+        countryOfOps:
+          type: string
+          nullable: true
+        platformCommRate:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+
+    UserListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - data
+        - meta
+
+    PackageGroup:
+      type: object
+      properties:
+        id:
+          type: string
+        campProviderId:
+          type: string
+          nullable: true
+        nameEn:
+          type: string
+        nameKo:
+          type: string
+          nullable: true
+        nameJa:
+          type: string
+          nullable: true
+        nameTh:
+          type: string
+          nullable: true
+        descriptionEn:
+          type: string
+          nullable: true
+        descriptionKo:
+          type: string
+          nullable: true
+        descriptionJa:
+          type: string
+          nullable: true
+        descriptionTh:
+          type: string
+          nullable: true
+        thumbnailUrl:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        countryCode:
+          type: string
+          nullable: true
+        status:
+          type: string
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - nameEn
+        - status
+        - sortOrder
+        - createdAt
+        - updatedAt
+
+    CreatePackageGroupRequest:
+      type: object
+      properties:
+        campProviderId:
+          type: string
+          nullable: true
+        nameEn:
+          type: string
+        nameKo:
+          type: string
+          nullable: true
+        nameJa:
+          type: string
+          nullable: true
+        nameTh:
+          type: string
+          nullable: true
+        descriptionEn:
+          type: string
+          nullable: true
+        descriptionKo:
+          type: string
+          nullable: true
+        descriptionJa:
+          type: string
+          nullable: true
+        descriptionTh:
+          type: string
+          nullable: true
+        thumbnailUrl:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        countryCode:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+          nullable: true
+      required:
+        - nameEn
+
+    PackageGroupListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PackageGroup"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - data
+        - meta
+
+    Package:
+      type: object
+      properties:
+        id:
+          type: string
+        packageGroupId:
+          type: string
+          nullable: true
+        name:
+          type: string
+        durationDays:
+          type: integer
+        maxParticipants:
+          type: integer
+          nullable: true
+        priceAud:
+          type: string
+          nullable: true
+        priceUsd:
+          type: string
+          nullable: true
+        priceKrw:
+          type: string
+          nullable: true
+        priceJpy:
+          type: string
+          nullable: true
+        priceThb:
+          type: string
+          nullable: true
+        pricePhp:
+          type: string
+          nullable: true
+        priceSgd:
+          type: string
+          nullable: true
+        priceGbp:
+          type: string
+          nullable: true
+        features:
+          type: object
+          nullable: true
+          additionalProperties: true
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - durationDays
+        - status
+        - createdAt
+        - updatedAt
+
+    CreatePackageRequest:
+      type: object
+      properties:
+        packageGroupId:
+          type: string
+          nullable: true
+        name:
+          type: string
+        durationDays:
+          type: integer
+        maxParticipants:
+          type: integer
+          nullable: true
+        priceAud:
+          type: string
+          nullable: true
+        priceUsd:
+          type: string
+          nullable: true
+        priceKrw:
+          type: string
+          nullable: true
+        priceJpy:
+          type: string
+          nullable: true
+        priceThb:
+          type: string
+          nullable: true
+        pricePhp:
+          type: string
+          nullable: true
+        priceSgd:
+          type: string
+          nullable: true
+        priceGbp:
+          type: string
+          nullable: true
+        features:
+          type: object
+          nullable: true
+          additionalProperties: true
+        status:
+          type: string
+          nullable: true
+      required:
+        - name
+        - durationDays
+
+    PackageListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Package"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - data
+        - meta
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        providerAccountId:
+          type: string
+          nullable: true
+        productName:
+          type: string
+        productType:
+          type: string
+          enum:
+            - institute
+            - hotel
+            - pickup
+            - tour
+            - settlement
+        description:
+          type: string
+          nullable: true
+        cost:
+          type: string
+          nullable: true
+        currency:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - productName
+        - productType
+        - currency
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateProductRequest:
+      type: object
+      properties:
+        providerAccountId:
+          type: string
+          nullable: true
+        productName:
+          type: string
+        productType:
+          type: string
+        description:
+          type: string
+          nullable: true
+        cost:
+          type: string
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+      required:
+        - productName
+        - productType
+
+    ProductListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - data
+        - meta
+
+    Lead:
+      type: object
+      properties:
+        id:
+          type: string
+        agentId:
+          type: string
+          nullable: true
+        fullName:
+          type: string
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        nationality:
+          type: string
+          nullable: true
+        source:
+          type: string
+          nullable: true
+        interestedIn:
+          type: string
+          nullable: true
+        status:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - fullName
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateLeadRequest:
+      type: object
+      properties:
+        agentId:
+          type: string
+          nullable: true
+        fullName:
+          type: string
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        nationality:
+          type: string
+          nullable: true
+        source:
+          type: string
+          nullable: true
+        interestedIn:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - fullName
+
+    LeadListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lead"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - data
+        - meta
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+        applicationNumber:
+          type: string
+          nullable: true
+        agentId:
+          type: string
+          nullable: true
+        clientId:
+          type: string
+          nullable: true
+        packageGroupId:
+          type: string
+          nullable: true
+        packageId:
+          type: string
+          nullable: true
+        preferredStartDate:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+        totalChildren:
+          type: integer
+        totalAdults:
+          type: integer
+        primaryLanguage:
+          type: string
+        referralSource:
+          type: string
+          nullable: true
+        specialRequests:
+          type: string
+          nullable: true
+        termsAccepted:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - status
+        - totalChildren
+        - totalAdults
+        - primaryLanguage
+        - termsAccepted
+        - createdAt
+        - updatedAt
+
+    ApplicationParticipant:
+      type: object
+      properties:
+        id:
+          type: string
+        applicationId:
+          type: string
+          nullable: true
+        participantType:
+          type: string
+        sequenceOrder:
+          type: integer
+        fullName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+        gender:
+          type: string
+          nullable: true
+        nationality:
+          type: string
+          nullable: true
+        passportNumber:
+          type: string
+          nullable: true
+        passportExpiry:
+          type: string
+          format: date
+          nullable: true
+        grade:
+          type: string
+          nullable: true
+        schoolName:
+          type: string
+          nullable: true
+        englishLevel:
+          type: string
+          nullable: true
+        medicalConditions:
+          type: string
+          nullable: true
+        dietaryRequirements:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - participantType
+        - sequenceOrder
+        - fullName
+        - createdAt
+
+    ApplicationDetail:
+      allOf:
+        - $ref: "#/components/schemas/Application"
+        - type: object
+          properties:
+            participants:
+              type: array
+              items:
+                $ref: "#/components/schemas/ApplicationParticipant"
+
+    CreateApplicationRequest:
+      type: object
+      properties:
+        agentId:
+          type: string
+          nullable: true
+        clientId:
+          type: string
+          nullable: true
+        packageGroupId:
+          type: string
+          nullable: true
+        packageId:
+          type: string
+          nullable: true
+        preferredStartDate:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        totalChildren:
+          type: integer
+          nullable: true
+        totalAdults:
+          type: integer
+          nullable: true
+        primaryLanguage:
+          type: string
+          nullable: true
+        referralSource:
+          type: string
+          nullable: true
+        specialRequests:
+          type: string
+          nullable: true
+        termsAccepted:
+          type: boolean
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    UpdateApplicationRequest:
+      type: object
+      properties:
+        agentId:
+          type: string
+          nullable: true
+        clientId:
+          type: string
+          nullable: true
+        packageGroupId:
+          type: string
+          nullable: true
+        packageId:
+          type: string
+          nullable: true
+        preferredStartDate:
+          type: string
+          format: date
+          nullable: true
+        totalChildren:
+          type: integer
+          nullable: true
+        totalAdults:
+          type: integer
+          nullable: true
+        primaryLanguage:
+          type: string
+          nullable: true
+        referralSource:
+          type: string
+          nullable: true
+        specialRequests:
+          type: string
+          nullable: true
+        termsAccepted:
+          type: boolean
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    UpdateStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+        notes:
+          type: string
+          nullable: true
+      required:
+        - status
+
+    ApplicationListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Application"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - data
+        - meta
+
+    Contract:
+      type: object
+      properties:
+        id:
+          type: string
+        contractNumber:
+          type: string
+          nullable: true
+        applicationId:
+          type: string
+          nullable: true
+        campProviderId:
+          type: string
+          nullable: true
+        totalAmount:
+          type: string
+          nullable: true
+        currency:
+          type: string
+        status:
+          type: string
+        startDate:
+          type: string
+          format: date
+          nullable: true
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - currency
+        - status
+        - createdAt
+        - updatedAt
+
+    ContractDetail:
+      allOf:
+        - $ref: "#/components/schemas/Contract"
+        - type: object
+          properties:
+            application:
+              $ref: "#/components/schemas/Application"
+              nullable: true
+
+    CreateContractRequest:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          nullable: true
+        campProviderId:
+          type: string
+          nullable: true
+        totalAmount:
+          type: string
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          format: date
+          nullable: true
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    ContractListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Contract"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - data
+        - meta
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+        invoiceNumber:
+          type: string
+          nullable: true
+        contractId:
+          type: string
+          nullable: true
+        invoiceType:
+          type: string
+          enum:
+            - client
+            - agent
+            - partner
+        recipientId:
+          type: string
+          nullable: true
+        subtotal:
+          type: string
+          nullable: true
+        taxAmount:
+          type: string
+          nullable: true
+        totalAmount:
+          type: string
+          nullable: true
+        currency:
+          type: string
+        status:
+          type: string
+        issuedAt:
+          type: string
+          format: date-time
+          nullable: true
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - invoiceType
+        - currency
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateInvoiceRequest:
+      type: object
+      properties:
+        contractId:
+          type: string
+          nullable: true
+        invoiceType:
+          type: string
+        recipientId:
+          type: string
+          nullable: true
+        lineItems:
+          type: object
+          nullable: true
+          additionalProperties: true
+        subtotal:
+          type: string
+          nullable: true
+        taxAmount:
+          type: string
+          nullable: true
+        totalAmount:
+          type: string
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - invoiceType
+
+    InvoiceListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - data
+        - meta
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        contractId:
+          type: string
+          nullable: true
+        invoiceId:
+          type: string
+          nullable: true
+        transactionType:
+          type: string
+        amount:
+          type: string
+          nullable: true
+        currency:
+          type: string
+        description:
+          type: string
+          nullable: true
+        bankReference:
+          type: string
+          nullable: true
+        transactionDate:
+          type: string
+          format: date
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - transactionType
+        - currency
+        - createdAt
+
+    CreateTransactionRequest:
+      type: object
+      properties:
+        contractId:
+          type: string
+          nullable: true
+        invoiceId:
+          type: string
+          nullable: true
+        transactionType:
+          type: string
+        amount:
+          type: string
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        bankReference:
+          type: string
+          nullable: true
+        transactionDate:
+          type: string
+          format: date
+          nullable: true
+      required:
+        - transactionType
+
+    TransactionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - data
+        - meta
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+          nullable: true
+        type:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        message:
+          type: string
+          nullable: true
+        referenceType:
+          type: string
+          nullable: true
+        referenceId:
+          type: string
+          nullable: true
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - isRead
+        - createdAt
+
+    NotificationListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - data
+        - meta
+
+    DashboardStats:
+      type: object
+      properties:
+        totalApplications:
+          type: integer
+        pendingApplications:
+          type: integer
+        activeContracts:
+          type: integer
+        totalRevenue:
+          type: string
+        totalLeads:
+          type: integer
+        newLeadsThisMonth:
+          type: integer
+        recentApplications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Application"
+        applicationsByStatus:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                type: string
+              count:
+                type: integer
+            required:
+              - status
+              - count
+      required:
+        - totalApplications
+        - pendingApplications
+        - activeContracts
+        - totalRevenue
+        - totalLeads
+        - newLeadsThisMonth
+        - recentApplications
+        - applicationsByStatus
+
+    ExchangeRate:
+      type: object
+      properties:
+        id:
+          type: string
+        fromCurrency:
+          type: string
+        toCurrency:
+          type: string
+        rate:
+          type: string
+        source:
+          type: string
+          nullable: true
+        effectiveDate:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - fromCurrency
+        - toCurrency
+        - rate
+        - effectiveDate
+        - createdAt
+
+    CreateExchangeRateRequest:
+      type: object
+      properties:
+        fromCurrency:
+          type: string
+        toCurrency:
+          type: string
+          nullable: true
+        rate:
+          type: string
+        source:
+          type: string
+          nullable: true
+        effectiveDate:
+          type: string
+          format: date
+      required:
+        - fromCurrency
+        - rate
+        - effectiveDate
+
+    ExchangeRateListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExchangeRate"
+      required:
+        - data

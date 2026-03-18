@@ -1,0 +1,21 @@
+packages:
+  "recharts": "Dashboard charts and data visualization"
+  "react-i18next": "React bindings for internationalization"
+  "i18next": "Internationalization core"
+  "date-fns": "Date formatting and manipulation"
+  "framer-motion": "UI animations and page transitions"
+  "react-hook-form": "Form state management"
+  "@hookform/resolvers": "Zod schema validation integration"
+  "zod": "Type-safe schema validation for forms"
+
+images:
+  - path: "artifacts/edubee-camp/public/images/hero-bg.png"
+    description: "Elegant abstract background with warm amber and soft honey gradients, clean professional enterprise SaaS style, subtle mesh pattern, light background"
+    aspect_ratio: "16:9"
+  - path: "artifacts/edubee-camp/public/images/logo.png"
+    description: "Minimalist modern logo mark for an educational platform, abstract geometric shape in warm amber and dark gray colors, transparent background"
+    aspect_ratio: "1:1"
+
+notes:
+  - Using generated Orval hooks from @workspace/api-client-react for API calls
+  - Storing auth token in localStorage and using a global fetch interceptor/wrapper if needed, though Orval customFetch handles base config.
