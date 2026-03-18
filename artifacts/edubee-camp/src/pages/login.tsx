@@ -3,12 +3,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/hooks/use-theme";
 import { Redirect } from "wouter";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2, Sun, Moon } from "lucide-react";
 import { LanguageSwitcher } from "@/components/public/language-switcher";
 import logoImg from "@assets/edubee_logo_800x310b_1773799222527.png";
 
@@ -33,6 +34,7 @@ const DEMO_ACCOUNTS = [
 export default function Login() {
   const { login, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
@@ -65,16 +67,25 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#f8f9fb]">
+    <div className="min-h-screen w-full flex items-center justify-center bg-background relative">
+      {/* Theme toggle top-right */}
+      <button
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent transition-colors"
+        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
+
       <div className="w-full max-w-sm px-4 py-10 space-y-6">
         {/* Logo */}
         <div className="flex flex-col items-center gap-3 mb-2">
-          <img src={logoImg} alt="Edubee Camp" className="h-9 w-auto object-contain" />
+          <img src={logoImg} alt="Edubee Camp" className="h-9 w-auto object-contain dark:brightness-0 dark:invert dark:opacity-90" />
           <p className="text-sm text-muted-foreground">Admin Portal</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-xl border border-border shadow-sm p-6 space-y-5">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-5">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -128,7 +139,7 @@ export default function Login() {
             <div className="relative mb-3">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
               <div className="relative flex justify-center">
-                <span className="bg-white px-2 text-xs text-muted-foreground">Demo accounts — click to fill</span>
+                <span className="bg-card px-2 text-xs text-muted-foreground">Demo accounts — click to fill</span>
               </div>
             </div>
 

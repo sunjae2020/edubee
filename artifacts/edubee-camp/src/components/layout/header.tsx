@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs, ROLE_HIERARCHY, ROLE_LABELS, ROLE_EMOJIS } from "@/hooks/use-view-as";
+import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Check, Clock } from "lucide-react";
+import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Clock, Sun, Moon, ClipboardList, RefreshCw, CalendarCheck, FileText, AlertTriangle, BarChart3, Receipt, LucideIcon } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import axios from "axios";
@@ -54,16 +55,16 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin/my-programs": "My Programs",
 };
 
-const NOTIF_ICONS: Record<string, string> = {
-  application_submitted: "📋",
-  status_changed: "🔄",
-  interview_scheduled: "📅",
-  contract_created: "📄",
-  document_expiring: "⚠️",
-  report_published: "📊",
-  invoice_sent: "💰",
-  invoice_overdue: "🔴",
-  default: "🔔",
+const NOTIF_ICONS: Record<string, LucideIcon> = {
+  application_submitted: ClipboardList,
+  status_changed: RefreshCw,
+  interview_scheduled: CalendarCheck,
+  contract_created: FileText,
+  document_expiring: AlertTriangle,
+  report_published: BarChart3,
+  invoice_sent: Receipt,
+  invoice_overdue: AlertTriangle,
+  default: Bell,
 };
 
 type Props = { collapsed: boolean; onToggle: () => void; title?: string };
@@ -71,6 +72,7 @@ type Props = { collapsed: boolean; onToggle: () => void; title?: string };
 export function Header({ collapsed, onToggle, title }: Props) {
   const { user, logout } = useAuth();
   const { viewAsUser, setViewAs, clearViewAs, isImpersonating } = useViewAs();
+  const { theme, toggleTheme } = useTheme();
   const [location] = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
   const qc = useQueryClient();
@@ -118,7 +120,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
   return (
     <div>
       {/* Main header */}
-      <header className="h-14 border-b border-border bg-white flex items-center justify-between px-4 shrink-0 z-20">
+      <header className="h-14 border-b border-border bg-background flex items-center justify-between px-4 shrink-0 z-20">
         <div className="flex items-center gap-3">
           <button
             onClick={onToggle}
@@ -129,7 +131,16 @@ export function Header({ collapsed, onToggle, title }: Props) {
           <h1 className="font-semibold text-sm text-foreground">{pageTitle}</h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {/* Light / Dark toggle */}
+          <button
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
           {/* Role view switcher */}
           {canSwitch && (
             <DropdownMenu>
@@ -215,20 +226,23 @@ export function Header({ collapsed, onToggle, title }: Props) {
                     <Bell className="w-6 h-6 mx-auto mb-2 opacity-30" />
                     No notifications
                   </div>
-                ) : notifList.map(n => (
-                  <div key={n.id} className={`px-3 py-2.5 border-b last:border-0 flex items-start gap-2.5 hover:bg-muted/30 transition-colors ${!n.isRead ? "bg-[#F08301]/5" : ""}`}>
-                    <span className="text-base mt-0.5 shrink-0">{NOTIF_ICONS[n.type ?? ""] ?? NOTIF_ICONS.default}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium leading-snug">{n.title}</div>
-                      {n.message && <div className="text-[10px] text-muted-foreground mt-0.5 leading-snug line-clamp-2">{n.message}</div>}
-                      <div className="text-[9px] text-muted-foreground mt-1 flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5" />
-                        {n.createdAt ? new Date(n.createdAt).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                ) : notifList.map(n => {
+                  const NIcon = NOTIF_ICONS[n.type ?? ""] ?? NOTIF_ICONS.default;
+                  return (
+                    <div key={n.id} className={`px-3 py-2.5 border-b last:border-0 flex items-start gap-2.5 hover:bg-muted/30 transition-colors ${!n.isRead ? "bg-primary/5" : ""}`}>
+                      <span className="mt-0.5 shrink-0 text-muted-foreground"><NIcon className="w-4 h-4" /></span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium leading-snug">{n.title}</div>
+                        {n.message && <div className="text-[10px] text-muted-foreground mt-0.5 leading-snug line-clamp-2">{n.message}</div>}
+                        <div className="text-[9px] text-muted-foreground mt-1 flex items-center gap-1">
+                          <Clock className="w-2.5 h-2.5" />
+                          {n.createdAt ? new Date(n.createdAt).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                        </div>
                       </div>
+                      {!n.isRead && <div className="w-2 h-2 rounded-full bg-primary mt-1 shrink-0" />}
                     </div>
-                    {!n.isRead && <div className="w-2 h-2 rounded-full bg-[#F08301] mt-1 shrink-0" />}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </DropdownMenuContent>
           </DropdownMenu>

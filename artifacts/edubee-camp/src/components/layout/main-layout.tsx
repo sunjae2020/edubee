@@ -21,10 +21,10 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0F172A]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#F08301] border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-400 text-sm">Loading workspace…</p>
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-muted-foreground text-sm">Loading workspace…</p>
         </div>
       </div>
     );
@@ -33,7 +33,7 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
   if (!isAuthenticated) return <Redirect to="/login" />;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#f8f9fb]">
+    <div className="flex h-screen w-full overflow-hidden bg-muted/30">
       <AppSidebar collapsed={collapsed} onToggle={toggleCollapsed} />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header collapsed={collapsed} onToggle={toggleCollapsed} title={title} />
