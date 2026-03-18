@@ -147,8 +147,8 @@ export default function InstituteManagement() {
         total={total} addLabel="Add Record" onAdd={() => toast({ title: "Coming soon" })}
       />
 
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-card rounded-xl border border-border overflow-x-auto">
+        <table className="w-full min-w-[920px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
               {["Contract #", "Student", "Program", "Start", "End", "Hours", "Level", "Status", ""].map(h => (

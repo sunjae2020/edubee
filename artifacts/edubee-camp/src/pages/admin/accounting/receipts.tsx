@@ -61,8 +61,8 @@ export default function Receipts() {
         total={total}
       />
 
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-card rounded-xl border border-border overflow-x-auto">
+        <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
               {["Receipt #", "Student", "Payer", "Amount", "Method", "Date", "Status", ""].map(h => (

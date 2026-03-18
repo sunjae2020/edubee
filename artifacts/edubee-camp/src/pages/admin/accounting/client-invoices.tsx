@@ -82,8 +82,8 @@ export default function ClientInvoices() {
         total={total} addLabel="New Invoice" onAdd={() => toast({ title: "Coming soon", description: "Invoice creation will open contract picker" })}
       />
 
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-card rounded-xl border border-border overflow-x-auto">
+        <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
               {["Invoice #", "Student", "Amount", "Issued", "Due", "Status", ""].map(h => (

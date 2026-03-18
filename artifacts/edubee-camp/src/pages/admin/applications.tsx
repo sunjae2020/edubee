@@ -166,8 +166,8 @@ export default function Applications() {
         onAdd={() => setCreateDialog(true)}
       />
 
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-card rounded-xl border border-border overflow-x-auto">
+        <table className="w-full min-w-[860px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
               {["Application #", "Student", "Nationality", "Program", "Start Date", "Status", ""].map(h => (

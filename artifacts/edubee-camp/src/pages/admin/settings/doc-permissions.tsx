@@ -67,7 +67,7 @@ export default function DocPermissions() {
           <div className="px-4 py-2 bg-muted/30 border-b">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{group.group}</span>
           </div>
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b">
                 <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[180px]">Category</th>

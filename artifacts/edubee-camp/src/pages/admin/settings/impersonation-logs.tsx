@@ -68,7 +68,7 @@ export default function ImpersonationLogs() {
       </div>
 
       <div className="rounded-xl border overflow-x-auto bg-white">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead><tr className="border-b bg-muted/30">
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Actor (Who)</th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Target (Viewed As)</th>

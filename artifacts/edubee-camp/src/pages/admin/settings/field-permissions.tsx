@@ -61,7 +61,7 @@ export default function FieldPermissions() {
       </div>
 
       <div className="rounded-xl border bg-white overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b bg-muted/30">
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[160px]">Field</th>

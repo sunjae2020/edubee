@@ -165,8 +165,8 @@ export default function Users() {
       />
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-card rounded-xl border border-border overflow-x-auto">
+        <table className="w-full min-w-[820px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
               {["User", "Role", "Status", "Last Login", "Created", ""].map(h => (

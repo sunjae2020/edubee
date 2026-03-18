@@ -210,7 +210,7 @@ export default function Settlement() {
         <div className="text-center py-16 text-muted-foreground"><DollarSign className="w-10 h-10 mx-auto mb-3 opacity-30" /><p className="text-sm">No settlement records found</p></div>
       ) : (
         <div className="rounded-lg border overflow-x-auto bg-white">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[860px] text-sm">
             <thead><tr className="border-b bg-muted/30">
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contract</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provider Role</th>
