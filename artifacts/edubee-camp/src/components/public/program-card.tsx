@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { MapPin, ClipboardList, ChevronRight } from "lucide-react";
+import { MapPin, ChevronRight } from "lucide-react";
 import { getLocalizedName, getLocalizedDesc, getLowestPackagePrice, type PublicProgram } from "@/lib/program-utils";
 import { Button } from "@/components/ui/button";
 
@@ -23,21 +23,21 @@ function SpotBadge({ status, count }: { status: string; count: number }) {
   const { t } = useTranslation();
   if (status === "full") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-        🔴 {t("programs.full")}
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-600 border border-red-100">
+        {t("programs.full")}
       </span>
     );
   }
   if (status === "limited") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
-        🟡 {t("programs.spotsLeft", { count })}
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-[#F08301]/8 text-[#F08301] border border-[#F08301]/20">
+        {t("programs.spotsLeft", { count })}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-      🟢 {t("programs.available")}
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+      {t("programs.available")}
     </span>
   );
 }
@@ -60,35 +60,37 @@ export function ProgramCard({ program, onViewDetails }: Props) {
   const totalAvailable = program.spotSummary?.grades.reduce((s, g) => s + g.available, 0) ?? 0;
 
   return (
-    <div className="group bg-card rounded-2xl border border-border/60 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
-      <div className="relative aspect-[16/9] overflow-hidden">
+    <div className="group bg-white rounded-xl border border-border hover:border-[#F08301]/40 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col">
+      {/* Image */}
+      <div className="relative aspect-[16/9] overflow-hidden bg-muted">
         <img
           src={img}
           alt={name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-400"
           onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGES.DEFAULT; }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
-          <MapPin className="w-3 h-3" />
+        {/* Location badge */}
+        <div className="absolute top-3 left-3 flex items-center gap-1 bg-white/90 text-foreground text-xs font-medium px-2 py-1 rounded-md">
+          <MapPin className="w-3 h-3 text-[#F08301]" />
           {program.location}
         </div>
         {program.countryFlag && (
-          <span className="absolute top-3 right-3 text-2xl">{program.countryFlag}</span>
+          <span className="absolute top-3 right-3 text-xl">{program.countryFlag}</span>
         )}
       </div>
 
+      {/* Body */}
       <div className="p-5 flex flex-col flex-1 gap-3">
         <div>
-          <h3 className="font-display font-bold text-foreground text-lg leading-snug line-clamp-2">{name}</h3>
-          {desc && <p className="text-muted-foreground text-sm mt-1 line-clamp-2">{desc}</p>}
+          <h3 className="font-bold text-foreground text-base leading-snug line-clamp-2">{name}</h3>
+          {desc && <p className="text-muted-foreground text-xs mt-1.5 line-clamp-2 leading-relaxed">{desc}</p>}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        {/* Badges */}
+        <div className="flex flex-wrap gap-1.5">
           {program.interviewRequired && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border border-blue-200 text-blue-700 bg-blue-50">
-              <ClipboardList className="w-3 h-3" />
-              {t("programs.interviewRequired")}
+            <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground border border-border">
+              Interview Required
             </span>
           )}
           {program.spotSummary && overallSpotStatus && (
@@ -96,17 +98,13 @@ export function ProgramCard({ program, onViewDetails }: Props) {
           )}
         </div>
 
-        <div className="mt-auto pt-3 border-t border-border/50 flex items-center justify-between">
+        {/* Price + CTA */}
+        <div className="mt-auto pt-3 border-t border-border flex items-center justify-between">
           <div>
             {lowestPkg?.displayFormatted ? (
               <div>
-                <span className="text-xs text-muted-foreground">{t("programs.startingFrom")}</span>
-                <div className="font-bold text-xl text-foreground">
-                  {lowestPkg.displayFormatted}
-                  <span className="text-sm font-normal text-muted-foreground ml-1">
-                    {program.countryFlag}
-                  </span>
-                </div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t("programs.startingFrom")}</div>
+                <div className="font-extrabold text-lg text-[#F08301] leading-tight">{lowestPkg.displayFormatted}</div>
               </div>
             ) : (
               <span className="text-sm text-muted-foreground">—</span>
@@ -114,8 +112,8 @@ export function ProgramCard({ program, onViewDetails }: Props) {
           </div>
           <Button
             size="sm"
-            variant="outline"
-            className="rounded-full gap-1"
+            variant="ghost"
+            className="rounded-md gap-1 h-8 px-3 text-xs font-semibold text-[#F08301] hover:bg-[#F08301]/8 hover:text-[#F08301]"
             onClick={() => onViewDetails(program)}
           >
             {t("programs.viewDetails")} <ChevronRight className="w-3.5 h-3.5" />
