@@ -39,11 +39,22 @@ interface ViewAsContextType {
 
 const ViewAsContext = createContext<ViewAsContextType | undefined>(undefined);
 
+function applyTheme(impersonating: boolean) {
+  if (impersonating) {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+}
+
 export function ViewAsProvider({ children }: { children: React.ReactNode }) {
   const [viewAsUser, setViewAsUser] = useState<ViewAsUser | null>(() => {
     try {
       const stored = sessionStorage.getItem(SESSION_KEY);
-      return stored ? JSON.parse(stored) : null;
+      const user = stored ? JSON.parse(stored) : null;
+      // Apply theme immediately during initialization (synchronous, no flash)
+      applyTheme(!!user);
+      return user;
     } catch {
       return null;
     }
@@ -51,8 +62,12 @@ export function ViewAsProvider({ children }: { children: React.ReactNode }) {
 
   const setViewAs = useCallback((user: ViewAsUser | null) => {
     setViewAsUser(user);
-    if (user) sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
-    else sessionStorage.removeItem(SESSION_KEY);
+    if (user) {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    } else {
+      sessionStorage.removeItem(SESSION_KEY);
+    }
+    applyTheme(!!user);
   }, []);
 
   const clearViewAs = useCallback(() => setViewAs(null), [setViewAs]);

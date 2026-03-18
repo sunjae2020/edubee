@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext } from "react";
 
 type Theme = "light" | "dark";
 
@@ -8,30 +8,25 @@ interface ThemeContext {
   setTheme: (t: Theme) => void;
 }
 
-const Ctx = createContext<ThemeContext>({ theme: "light", toggleTheme: () => {}, setTheme: () => {} });
+// Theme is now controlled entirely by ViewAsProvider via direct DOM manipulation.
+// This context provides a no-op implementation so existing consumers don't break.
+const Ctx = createContext<ThemeContext>({
+  theme: "light",
+  toggleTheme: () => {},
+  setTheme: () => {},
+});
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    try {
-      const saved = localStorage.getItem("edubee_theme");
-      if (saved === "dark" || saved === "light") return saved;
-      if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) return "dark";
-    } catch {}
-    return "light";
-  });
+  const theme: Theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    try { localStorage.setItem("edubee_theme", theme); } catch {}
-  }, [theme]);
+  const setTheme = (t: Theme) => {
+    if (t === "dark") document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+  };
 
-  const setTheme = (t: Theme) => setThemeState(t);
-  const toggleTheme = () => setThemeState(t => (t === "dark" ? "light" : "dark"));
+  const toggleTheme = () => {
+    setTheme(document.documentElement.classList.contains("dark") ? "light" : "dark");
+  };
 
   return <Ctx.Provider value={{ theme, toggleTheme, setTheme }}>{children}</Ctx.Provider>;
 }
