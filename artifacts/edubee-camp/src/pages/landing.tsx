@@ -8,6 +8,7 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/public/language-switcher";
 import { ProgramCard } from "@/components/public/program-card";
+import heroBg from "@assets/1_2_1773827220210.jpg";
 import { ProgramDetailDrawer } from "@/components/public/program-detail-drawer";
 import { ApplicationModal } from "@/components/public/application-modal";
 import type { PublicProgram } from "@/lib/program-utils";
@@ -176,8 +177,12 @@ export default function Landing() {
       </AnimatePresence>
 
       {/* ── HERO ── */}
-      <section className="pt-14">
-        <div className="max-w-6xl mx-auto px-5 pt-20 pb-16">
+      <section
+        className="pt-14 relative"
+        style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center 40%" }}
+      >
+        <div className="absolute inset-0 bg-white/72 backdrop-blur-[1px]" />
+        <div className="max-w-6xl mx-auto px-5 pt-20 pb-16 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left copy */}
             <motion.div
@@ -283,7 +288,7 @@ export default function Landing() {
         </div>
 
         {/* Thin orange bottom strip */}
-        <div className="border-t border-border bg-muted/30">
+        <div className="border-t border-border bg-white/60 relative z-10">
           <div className="max-w-6xl mx-auto px-5 py-3 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-muted-foreground">
             {["🇦🇺 Australia", "🇯🇵 Japan", "🇬🇧 United Kingdom", "🇸🇬 Singapore", "🇵🇭 Philippines", "🇹🇭 Thailand"].map((c) => (
               <span key={c} className="flex items-center gap-1">{c}</span>
