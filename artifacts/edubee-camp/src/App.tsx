@@ -51,6 +51,9 @@ import ImpersonationLogs from "@/pages/admin/settings/impersonation-logs";
 // My Programs
 import MyPrograms from "@/pages/admin/my-programs";
 
+// Enrollment Spots
+import EnrollmentSpots from "@/pages/admin/enrollment-spots";
+
 // Notifications
 import Notifications from "@/pages/admin/notifications";
 
@@ -81,6 +84,9 @@ function Router() {
       </Route>
       <Route path="/admin/products">
         <AdminRoute title="Products"><AdminStub title="Products" icon="📦" /></AdminRoute>
+      </Route>
+      <Route path="/admin/enrollment-spots">
+        <AdminRoute title="Enrollment Spots"><EnrollmentSpots /></AdminRoute>
       </Route>
       <Route path="/admin/leads">
         <AdminRoute title="Leads"><Leads /></AdminRoute>

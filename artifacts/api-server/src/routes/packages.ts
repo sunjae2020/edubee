@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { packageGroups, packages, products } from "@workspace/db/schema";
-import { eq, and, count, SQL, ilike } from "drizzle-orm";
+import { packageGroups, packages, products, enrollmentSpots } from "@workspace/db/schema";
+import { eq, and, count, asc, SQL, ilike } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -213,6 +213,52 @@ router.delete("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async 
       .where(eq(products.id, req.params.id));
     return res.json({ success: true, message: "Product archived" });
   } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Enrollment Spots
+router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const conditions: SQL[] = [];
+
+    // Camp coordinators can only see spots for their own package groups
+    if (req.user!.role === "camp_coordinator") {
+      conditions.push(eq(packageGroups.campProviderId, req.user!.id));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const rows = await db
+      .select({
+        id: enrollmentSpots.id,
+        packageGroupId: enrollmentSpots.packageGroupId,
+        packageGroupName: packageGroups.nameEn,
+        gradeLabel: enrollmentSpots.gradeLabel,
+        gradeOrder: enrollmentSpots.gradeOrder,
+        totalSpots: enrollmentSpots.totalSpots,
+        reservedSpots: enrollmentSpots.reservedSpots,
+        manualReserved: enrollmentSpots.manualReserved,
+        status: enrollmentSpots.status,
+        startDate: enrollmentSpots.startDate,
+        endDate: enrollmentSpots.endDate,
+        dobRangeStart: enrollmentSpots.dobRangeStart,
+        dobRangeEnd: enrollmentSpots.dobRangeEnd,
+        updatedAt: enrollmentSpots.updatedAt,
+      })
+      .from(enrollmentSpots)
+      .leftJoin(packageGroups, eq(enrollmentSpots.packageGroupId, packageGroups.id))
+      .where(whereClause)
+      .orderBy(asc(packageGroups.nameEn), asc(enrollmentSpots.gradeOrder));
+
+    const data = rows.map(r => ({
+      ...r,
+      available: (r.totalSpots ?? 0) - (r.reservedSpots ?? 0) - (r.manualReserved ?? 0),
+    }));
+
+    return res.json({ data });
+  } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

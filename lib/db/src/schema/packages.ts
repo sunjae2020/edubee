@@ -94,6 +94,10 @@ export const enrollmentSpots = pgTable("enrollment_spots", {
   reservedSpots: integer("reserved_spots").default(0),
   manualReserved: integer("manual_reserved").default(0),
   status: varchar("status", { length: 20 }).default("available"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  dobRangeStart: timestamp("dob_range_start"),
+  dobRangeEnd: timestamp("dob_range_end"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

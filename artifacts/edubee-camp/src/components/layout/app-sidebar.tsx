@@ -4,7 +4,7 @@ import { useViewAs, ROLE_HIERARCHY } from "@/hooks/use-view-as";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
 import {
   ChevronLeft, ChevronRight,
-  LayoutDashboard, Layers, Package, ShoppingBag,
+  LayoutDashboard, Layers, Package, ShoppingBag, ListChecks,
   Target, ClipboardList, FileText,
   GraduationCap, Building2, Car, Map, CalendarCheck, Banknote,
   Receipt, Building, Handshake, FileCheck, ArrowLeftRight, RefreshCw,
@@ -37,6 +37,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
         { icon: Layers, label: "Package Groups", href: "/admin/package-groups" },
         { icon: Package, label: "Packages", href: "/admin/packages" },
         { icon: ShoppingBag, label: "Products", href: "/admin/products" },
+        { icon: ListChecks, label: "Enrollment Spots", href: "/admin/enrollment-spots" },
       ],
     });
   }
