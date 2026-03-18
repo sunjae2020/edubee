@@ -5,7 +5,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Clock, Sun, Moon, ClipboardList, RefreshCw, CalendarCheck, FileText, AlertTriangle, BarChart3, Receipt, LucideIcon } from "lucide-react";
+import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Clock, Sun, Moon, ClipboardList, RefreshCw, CalendarCheck, FileText, AlertTriangle, BarChart3, Receipt, LucideIcon, Layers } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import axios from "axios";
@@ -158,39 +158,58 @@ export function Header({ collapsed, onToggle, title }: Props) {
                   <ChevronDown className="w-3 h-3 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                {isImpersonating && (
+              <DropdownMenuContent align="end" className="w-56">
+                {/* My own view — always at the top */}
+                <DropdownMenuLabel className="text-xs text-muted-foreground py-1 px-2">My View</DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={clearViewAs}
+                  className={!isImpersonating ? "bg-accent font-medium" : ""}
+                >
+                  <div className="w-5 h-5 rounded-full bg-[#F08301]/10 flex items-center justify-center text-[10px] font-bold mr-2 text-[#F08301]">
+                    {user.fullName.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium truncate">{user.fullName}</div>
+                    <div className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
+                      <Layers className="w-2.5 h-2.5" />
+                      {ROLE_LABELS[myRole]} · Light View
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+
+                {switchableUsers.length > 0 && (
                   <>
-                    <DropdownMenuItem onClick={clearViewAs} className="text-amber-600 font-medium">
-                      <RotateCcw className="w-3.5 h-3.5 mr-2" /> Return to My Account
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground py-1 px-2">View as another user</DropdownMenuLabel>
+                    {Object.entries(grouped).map(([role, users]) => (
+                      <div key={role}>
+                        <DropdownMenuLabel className="text-[10px] text-muted-foreground/70 py-0.5 px-3 font-normal">
+                          {ROLE_EMOJIS[role]} {ROLE_LABELS[role]}
+                        </DropdownMenuLabel>
+                        {users.map(u => (
+                          <DropdownMenuItem
+                            key={u.id}
+                            onClick={() => setViewAs(u)}
+                            className={viewAsUser?.id === u.id ? "bg-accent" : ""}
+                          >
+                            <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold mr-2">
+                              {u.fullName.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-medium truncate">{u.fullName}</div>
+                              <div className="text-[10px] text-muted-foreground truncate">{u.email}</div>
+                            </div>
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                    ))}
                   </>
                 )}
-                {Object.entries(grouped).map(([role, users]) => (
-                  <div key={role}>
-                    <DropdownMenuLabel className="text-xs text-muted-foreground py-1">
-                      {ROLE_EMOJIS[role]} {ROLE_LABELS[role]}
-                    </DropdownMenuLabel>
-                    {users.map(u => (
-                      <DropdownMenuItem
-                        key={u.id}
-                        onClick={() => setViewAs(u)}
-                        className={viewAsUser?.id === u.id ? "bg-accent" : ""}
-                      >
-                        <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold mr-2">
-                          {u.fullName.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-medium truncate">{u.fullName}</div>
-                          <div className="text-[10px] text-muted-foreground truncate">{u.email}</div>
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
-                  </div>
-                ))}
                 {switchableUsers.length === 0 && (
-                  <DropdownMenuItem disabled className="text-xs text-muted-foreground">No users to switch to</DropdownMenuItem>
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem disabled className="text-xs text-muted-foreground">No other users to switch to</DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
