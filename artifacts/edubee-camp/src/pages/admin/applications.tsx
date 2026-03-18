@@ -42,13 +42,13 @@ interface Interview {
 
 function AppStatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-700", submitted: "bg-orange-100 text-orange-700",
-    under_review: "bg-amber-100 text-amber-700", approved: "bg-green-100 text-green-700",
-    rejected: "bg-red-100 text-red-700", contracted: "bg-teal-100 text-teal-700",
-    cancelled: "bg-slate-100 text-slate-600",
+    draft: "bg-[#F4F3F1] text-[#57534E]", submitted: "bg-[#FEF0E3] text-[#F5821F]",
+    under_review: "bg-[#FEF9C3] text-[#CA8A04]", approved: "bg-[#DCFCE7] text-[#16A34A]",
+    rejected: "bg-[#FEF2F2] text-[#DC2626]", contracted: "bg-[#DCFCE7] text-[#16A34A]",
+    cancelled: "bg-[#FEF2F2] text-[#DC2626]",
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${map[status] ?? "bg-gray-100 text-gray-700"}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${map[status] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
       {status.replace(/_/g, " ")}
     </span>
   );
@@ -57,11 +57,11 @@ function AppStatusBadge({ status }: { status: string }) {
 function InterviewResultBadge({ result }: { result?: string }) {
   if (!result) return null;
   const map: Record<string, { cls: string; icon: React.ElementType }> = {
-    pass: { cls: "bg-green-100 text-green-700", icon: CheckCircle2 },
-    fail: { cls: "bg-red-100 text-red-700", icon: XCircle },
-    waitlist: { cls: "bg-yellow-100 text-yellow-700", icon: AlertCircle },
+    pass: { cls: "bg-[#DCFCE7] text-[#16A34A]", icon: CheckCircle2 },
+    fail: { cls: "bg-[#FEF2F2] text-[#DC2626]", icon: XCircle },
+    waitlist: { cls: "bg-[#FEF9C3] text-[#CA8A04]", icon: AlertCircle },
   };
-  const conf = map[result] ?? { cls: "bg-gray-100 text-gray-700", icon: Clock };
+  const conf = map[result] ?? { cls: "bg-[#F4F3F1] text-[#57534E]", icon: Clock };
   const Icon = conf.icon;
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${conf.cls}`}>
@@ -225,7 +225,7 @@ export default function Applications() {
                   </div>
                   {selectedApp.status === "approved" && (
                     <Button size="sm" onClick={() => setConvertDialog(true)}
-                      className="gap-1.5 text-xs h-8 bg-[#F08301] hover:bg-[#d97706] text-white">
+                      className="gap-1.5 text-xs h-8 bg-[#F5821F] hover:bg-[#d97706] text-white">
                       <GitMerge className="w-3.5 h-3.5" /> Convert to Contract
                     </Button>
                   )}
@@ -273,14 +273,14 @@ export default function Applications() {
                     ) : participants.map(p => (
                       <div key={p.id} className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-[#F08301]/20 flex items-center justify-center">
-                            <User className="w-4 h-4 text-[#F08301]" />
+                          <div className="w-8 h-8 rounded-full bg-[#F5821F]/20 flex items-center justify-center">
+                            <User className="w-4 h-4 text-[#F5821F]" />
                           </div>
                           <div>
                             <div className="font-semibold text-sm text-foreground">{p.fullName}</div>
                             {p.fullNameNative && <div className="text-xs text-muted-foreground">{p.fullNameNative}</div>}
                           </div>
-                          <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-medium ${p.participantType === "student" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+                          <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-medium ${p.participantType === "student" ? "bg-[#FEF0E3] text-[#F5821F]" : "bg-[#F4F3F1] text-[#57534E]"}`}>
                             {p.participantType}
                           </span>
                         </div>
@@ -308,11 +308,11 @@ export default function Applications() {
                       <div key={iv.id} className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <div className="flex items-center gap-2">
-                            {iv.format === "video" ? <Video className="w-4 h-4 text-blue-500" /> : <MapPin className="w-4 h-4 text-green-500" />}
+                            {iv.format === "video" ? <Video className="w-4 h-4 text-[#F5821F]" /> : <MapPin className="w-4 h-4 text-[#22C55E]" />}
                             <span className="font-semibold text-sm text-foreground capitalize">{iv.format} Interview</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${iv.status === "completed" ? "bg-slate-100 text-slate-700" : "bg-blue-100 text-blue-700"}`}>{iv.status}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${iv.status === "completed" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#FEF0E3] text-[#F5821F]"}`}>{iv.status}</span>
                             <InterviewResultBadge result={iv.result} />
                           </div>
                         </div>
@@ -322,7 +322,7 @@ export default function Applications() {
                           {iv.meetingLink && (
                             <div className="col-span-2 flex flex-col gap-0.5">
                               <dt className="text-[11px] text-muted-foreground uppercase tracking-wide">Meeting Link</dt>
-                              <dd><a href={iv.meetingLink} target="_blank" rel="noopener noreferrer" className="text-sm text-[#F08301] hover:underline break-all">{iv.meetingLink}</a></dd>
+                              <dd><a href={iv.meetingLink} target="_blank" rel="noopener noreferrer" className="text-sm text-[#F5821F] hover:underline break-all">{iv.meetingLink}</a></dd>
                             </div>
                           )}
                         </dl>
@@ -367,7 +367,7 @@ export default function Applications() {
             <Button variant="outline" onClick={() => setConvertDialog(false)}>Cancel</Button>
             <Button onClick={() => selectedApp && convertContract.mutate(selectedApp.id)}
               disabled={convertContract.isPending}
-              className="gap-2 bg-[#F08301] hover:bg-[#d97706] text-white">
+              className="gap-2 bg-[#F5821F] hover:bg-[#d97706] text-white">
               {convertContract.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <GitMerge className="w-4 h-4" />}
               Confirm
             </Button>
@@ -415,7 +415,7 @@ export default function Applications() {
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <Button type="button" variant="outline" onClick={() => setCreateDialog(false)}>Cancel</Button>
-              <Button type="submit" disabled={createApp.isPending} className="gap-2 bg-[#F08301] hover:bg-[#d97706] text-white">
+              <Button type="submit" disabled={createApp.isPending} className="gap-2 bg-[#F5821F] hover:bg-[#d97706] text-white">
                 {createApp.isPending && <Loader2 className="w-4 h-4 animate-spin" />} Create
               </Button>
             </div>

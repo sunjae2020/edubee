@@ -31,18 +31,6 @@ const ALL_ROLES = [
   "partner_institute", "partner_hotel", "partner_pickup", "partner_tour", "parent_client",
 ];
 
-const ROLE_COLORS: Record<string, string> = {
-  super_admin: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
-  admin: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-  camp_coordinator: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
-  education_agent: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-  partner_institute: "bg-orange-100 text-orange-700",
-  partner_hotel: "bg-orange-100 text-orange-700",
-  partner_pickup: "bg-orange-100 text-orange-700",
-  partner_tour: "bg-orange-100 text-orange-700",
-  parent_client: "bg-gray-100 text-gray-700",
-};
-
 const emptyForm = { fullName: "", email: "", password: "", role: "education_agent", status: "active" };
 
 export default function Users() {
@@ -114,19 +102,32 @@ export default function Users() {
     createUser.mutate(form);
   };
 
+  const statusBadge = (status: string) => {
+    if (status === "active") return "bg-[#DCFCE7] text-[#16A34A]";
+    if (status === "inactive") return "bg-[#F4F3F1] text-[#57534E]";
+    return "bg-[#FEF2F2] text-[#DC2626]";
+  };
+
   return (
     <div className="space-y-5">
       {/* Active impersonation banner */}
       {isImpersonating && viewAsUser && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-4 py-3 flex items-center justify-between gap-3">
+        <div
+          className="rounded-xl border px-4 py-3 flex items-center justify-between gap-3"
+          style={{ background: "#FEF3C7", borderColor: "#F59E0B" }}
+        >
           <div className="flex items-center gap-2 text-sm">
-            <Eye className="w-4 h-4 text-amber-600" />
-            <span className="text-amber-800 dark:text-amber-300 font-medium">
+            <Eye className="w-4 h-4" style={{ color: "#D97706" }} />
+            <span className="font-medium" style={{ color: "#92400E" }}>
               Currently viewing as <strong>{viewAsUser.fullName}</strong>
-              <span className="ml-1.5 text-amber-600">({ROLE_LABELS[viewAsUser.role] ?? viewAsUser.role})</span>
+              <span className="ml-1.5" style={{ color: "#D97706" }}>({ROLE_LABELS[viewAsUser.role] ?? viewAsUser.role})</span>
             </span>
           </div>
-          <button onClick={clearViewAs} className="text-xs text-amber-700 hover:text-amber-900 dark:text-amber-400 flex items-center gap-1 font-medium">
+          <button
+            onClick={clearViewAs}
+            className="text-xs flex items-center gap-1 font-medium"
+            style={{ color: "#92400E" }}
+          >
             <ShieldOff className="w-3.5 h-3.5" /> Exit View As
           </button>
         </div>
@@ -138,19 +139,26 @@ export default function Users() {
           <button
             key={role}
             onClick={() => setRoleFilter(f => f === role ? "all" : role)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
-              roleFilter === role
-                ? "ring-2 ring-offset-1 ring-[#F08301] " + (ROLE_COLORS[role] ?? "bg-gray-100 text-gray-700")
-                : (ROLE_COLORS[role] ?? "bg-gray-100 text-gray-700")
-            }`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+            style={{
+              background: roleFilter === role ? "#FEF0E3" : "#F4F3F1",
+              color: roleFilter === role ? "#F5821F" : "#57534E",
+              border: `1px solid ${roleFilter === role ? "rgba(245,130,31,0.4)" : "#E8E6E2"}`,
+              outline: roleFilter === role ? "2px solid rgba(245,130,31,0.3)" : "none",
+              outlineOffset: "1px",
+            }}
           >
             <span>{ROLE_EMOJIS[role]}</span>
             <span>{ROLE_LABELS[role]}</span>
-            <span className="opacity-60">({count})</span>
+            <span style={{ opacity: 0.6 }}>({count})</span>
           </button>
         ))}
         {roleFilter !== "all" && (
-          <button onClick={() => setRoleFilter("all")} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5">
+          <button
+            onClick={() => setRoleFilter("all")}
+            className="text-xs px-2 py-1.5"
+            style={{ color: "#A8A29E" }}
+          >
             Clear ×
           </button>
         )}
@@ -165,69 +173,82 @@ export default function Users() {
       />
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border overflow-x-auto">
+      <div
+        className="bg-white rounded-xl overflow-x-auto"
+        style={{ border: "1px solid #E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
+      >
         <table className="w-full min-w-[820px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/30">
+            <tr style={{ borderBottom: "1px solid #E8E6E2", background: "#FAFAF9" }}>
               {["User", "Role", "Status", "Last Login", "Created", ""].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-medium uppercase tracking-[0.05em]" style={{ color: "#57534E" }}>{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody>
             {isLoading ? (
               [...Array(PAGE_SIZE)].map((_, i) => (
-                <tr key={i}>
+                <tr key={i} style={{ borderBottom: "1px solid #F4F3F1" }}>
                   {[...Array(6)].map((_, j) => (
-                    <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
+                    <td key={j} className="px-4 py-3">
+                      <div className="h-4 rounded animate-pulse" style={{ background: "#F4F3F1" }} />
+                    </td>
                   ))}
                 </tr>
               ))
             ) : pagedUsers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">No users found</td>
+                <td colSpan={6} className="px-4 py-16 text-center text-sm" style={{ color: "#A8A29E" }}>No users found</td>
               </tr>
             ) : (
               pagedUsers.map(user => (
-                <tr key={user.id} className="hover:bg-muted/20 transition-colors group">
-                  <td className="px-4 py-3">
+                <tr
+                  key={user.id}
+                  className="group transition-colors"
+                  style={{ borderBottom: "1px solid #F4F3F1" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#FAFAF9")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "")}
+                >
+                  <td className="px-4 py-3" style={{ height: 48 }}>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-[#F08301]/10 text-[#F08301] text-xs font-bold">
+                        <AvatarFallback className="text-xs font-bold" style={{ background: "#FEF0E3", color: "#F5821F" }}>
                           {user.fullName.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium text-sm text-foreground flex items-center gap-1.5">
+                        <div className="font-medium text-sm flex items-center gap-1.5" style={{ color: "#1C1917" }}>
                           {user.fullName}
                           {viewAsUser?.id === user.id && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                            <span
+                              className="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[10px]"
+                              style={{ background: "#FEF0E3", color: "#F5821F" }}
+                            >
                               <Eye className="w-2.5 h-2.5" /> viewing
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground">{user.email}</div>
+                        <div className="text-xs" style={{ color: "#A8A29E" }}>{user.email}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[user.role] ?? "bg-gray-100 text-gray-700"}`}>
+                    <span
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      style={{ background: "#F4F3F1", color: "#57534E" }}
+                    >
                       {ROLE_EMOJIS[user.role]} {ROLE_LABELS[user.role] ?? user.role}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      user.status === "active" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" :
-                      user.status === "inactive" ? "bg-gray-100 text-gray-600" :
-                      "bg-red-100 text-red-700"
-                    }`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge(user.status)}`}>
                       {user.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">
+                  <td className="px-4 py-3 text-xs" style={{ color: "#A8A29E" }}>
                     {user.lastLoginAt ? format(new Date(user.lastLoginAt), "MMM d, yyyy") : "Never"}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">
+                  <td className="px-4 py-3 text-xs" style={{ color: "#A8A29E" }}>
                     {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "—"}
                   </td>
                   <td className="px-4 py-3">
@@ -236,14 +257,28 @@ export default function Users() {
                         <button
                           onClick={() => handleImpersonate(user)}
                           title={`View as ${user.fullName}`}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-[#F08301] hover:bg-[#F08301]/10"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded flex items-center justify-center"
+                          style={{ color: "#A8A29E" }}
+                          onMouseEnter={e => {
+                            (e.currentTarget as HTMLButtonElement).style.color = "#F5821F";
+                            (e.currentTarget as HTMLButtonElement).style.background = "#FEF0E3";
+                          }}
+                          onMouseLeave={e => {
+                            (e.currentTarget as HTMLButtonElement).style.color = "#A8A29E";
+                            (e.currentTarget as HTMLButtonElement).style.background = "";
+                          }}
                         >
                           <UserCheck className="w-4 h-4" />
                         </button>
                       )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors">
+                          <button
+                            className="w-7 h-7 rounded flex items-center justify-center transition-colors"
+                            style={{ color: "#A8A29E" }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "#F4F3F1")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "")}
+                          >
                             <MoreVertical className="w-4 h-4" />
                           </button>
                         </DropdownMenuTrigger>
@@ -251,7 +286,7 @@ export default function Users() {
                           {canImpersonate(user) && (
                             <>
                               <DropdownMenuItem className="gap-2 text-xs" onClick={() => handleImpersonate(user)}>
-                                <Eye className="w-3.5 h-3.5 text-[#F08301]" /> View As This User
+                                <Eye className="w-3.5 h-3.5" style={{ color: "#F5821F" }} /> View As This User
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                             </>
@@ -319,7 +354,7 @@ export default function Users() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
-              <Button type="submit" disabled={createUser.isPending} className="gap-2 bg-[#F08301] hover:bg-[#d97706] text-white">
+              <Button type="submit" disabled={createUser.isPending} className="gap-2">
                 {createUser.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Create User
               </Button>

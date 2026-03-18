@@ -23,20 +23,20 @@ function SpotBadge({ status, count }: { status: string; count: number }) {
   const { t } = useTranslation();
   if (status === "full") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-600 border border-red-100">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-[#FEF2F2] text-[#DC2626] border border-[#DC2626]/20">
         {t("programs.full")}
       </span>
     );
   }
   if (status === "limited") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-[#F08301]/8 text-[#F08301] border border-[#F08301]/20">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-[#F5821F]/8 text-[#F5821F] border border-[#F5821F]/20">
         {t("programs.spotsLeft", { count })}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-[#DCFCE7] text-[#16A34A] border border-[#16A34A]/20">
       {t("programs.available")}
     </span>
   );
@@ -60,7 +60,7 @@ export function ProgramCard({ program, onViewDetails }: Props) {
   const totalAvailable = program.spotSummary?.grades.reduce((s, g) => s + g.available, 0) ?? 0;
 
   return (
-    <div className="group bg-white rounded-xl border border-border hover:border-[#F08301]/40 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col">
+    <div className="group bg-white rounded-xl border border-border hover:border-[#F5821F]/40 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col">
       {/* Image */}
       <div className="relative aspect-[16/9] overflow-hidden bg-muted">
         <img
@@ -71,7 +71,7 @@ export function ProgramCard({ program, onViewDetails }: Props) {
         />
         {/* Location badge */}
         <div className="absolute top-3 left-3 flex items-center gap-1 bg-white/90 text-foreground text-xs font-medium px-2 py-1 rounded-md">
-          <MapPin className="w-3 h-3 text-[#F08301]" />
+          <MapPin className="w-3 h-3 text-[#F5821F]" />
           {program.location}
         </div>
         {program.countryFlag && (
@@ -104,7 +104,7 @@ export function ProgramCard({ program, onViewDetails }: Props) {
             {lowestPkg?.displayFormatted ? (
               <div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t("programs.startingFrom")}</div>
-                <div className="font-extrabold text-lg text-[#F08301] leading-tight">{lowestPkg.displayFormatted}</div>
+                <div className="font-extrabold text-lg text-[#F5821F] leading-tight">{lowestPkg.displayFormatted}</div>
               </div>
             ) : (
               <span className="text-sm text-muted-foreground">—</span>
@@ -113,7 +113,7 @@ export function ProgramCard({ program, onViewDetails }: Props) {
           <Button
             size="sm"
             variant="ghost"
-            className="rounded-md gap-1 h-8 px-3 text-xs font-semibold text-[#F08301] hover:bg-[#F08301]/8 hover:text-[#F08301]"
+            className="rounded-md gap-1 h-8 px-3 text-xs font-semibold text-[#F5821F] hover:bg-[#F5821F]/8 hover:text-[#F5821F]"
             onClick={() => onViewDetails(program)}
           >
             {t("programs.viewDetails")} <ChevronRight className="w-3.5 h-3.5" />

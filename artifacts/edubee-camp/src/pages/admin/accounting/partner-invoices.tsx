@@ -27,16 +27,16 @@ function DualAmount({ amount, currency, audEquivalent }: { amount?: string | num
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700 border-gray-200",
-  sent: "bg-blue-100 text-blue-800 border-blue-200",
-  paid: "bg-green-100 text-green-800 border-green-200",
-  overdue: "bg-red-100 text-red-800 border-red-200",
-  cancelled: "bg-gray-100 text-gray-500 border-gray-200",
+  draft: "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]",
+  sent: "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F]/20",
+  paid: "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20",
+  overdue: "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
+  cancelled: "bg-[#F4F3F1] text-[#A8A29E] border-[#E8E6E2]",
 };
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "draft").toLowerCase();
-  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[s] ?? "bg-gray-100 text-gray-700 border-gray-200"}`}>{s}</span>;
+  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[s] ?? "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]"}`}>{s}</span>;
 }
 
 const STATUSES = ["draft", "sent", "paid", "overdue", "cancelled"];
@@ -117,7 +117,7 @@ export default function PartnerInvoices() {
                 <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                 <td className="px-4 py-3">
                   {r.status === "sent" ? (
-                    <Button size="sm" className="h-6 text-[10px] px-2 bg-green-600 hover:bg-green-700 text-white" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "paid", paidAt: new Date().toISOString() } }); }}>Mark Paid</Button>
+                    <Button size="sm" className="h-6 text-[10px] px-2 bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "paid", paidAt: new Date().toISOString() } }); }}>Mark Paid</Button>
                   ) : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                 </td>
               </tr>
@@ -141,8 +141,8 @@ export default function PartnerInvoices() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Due</span><span>{selected.dueDate ?? "—"}</span></div>
               </div>
               <div className="flex gap-2 pt-2">
-                {selected.status === "draft" && <Button size="sm" className="bg-[#F08301] hover:bg-[#d97706] text-white gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}><Send className="w-3.5 h-3.5" /> Send</Button>}
-                {selected.status === "sent" && <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "paid", paidAt: new Date().toISOString() } })}>Mark Paid</Button>}
+                {selected.status === "draft" && <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}><Send className="w-3.5 h-3.5" /> Send</Button>}
+                {selected.status === "sent" && <Button size="sm" className="bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "paid", paidAt: new Date().toISOString() } })}>Mark Paid</Button>}
                 <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>
               </div>
             </div>

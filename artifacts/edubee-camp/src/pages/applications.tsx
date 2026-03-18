@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useListApplications, useCreateApplication, CreateApplicationRequest } from "@workspace/api-client-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -81,13 +80,13 @@ export default function Applications() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Applications</h1>
-          <p className="text-muted-foreground mt-1">Manage and track student enrollments.</p>
+          <h1 className="text-3xl font-bold" style={{ color: "#1C1917" }}>Applications</h1>
+          <p className="mt-1 text-sm" style={{ color: "#57534E" }}>Manage and track student enrollments.</p>
         </div>
-        
+
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="hover-elevate active-elevate-2 font-semibold shadow-md shadow-primary/20">
+            <Button className="font-semibold">
               <Plus className="mr-2 h-4 w-4" /> New Application
             </Button>
           </DialogTrigger>
@@ -141,21 +140,27 @@ export default function Applications() {
         </Dialog>
       </div>
 
-      <Card className="border-border/60 shadow-sm">
-        <div className="p-4 border-b border-border/50 flex flex-col sm:flex-row gap-4 justify-between bg-muted/10">
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{ border: "1px solid #E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
+      >
+        <div
+          className="p-4 flex flex-col sm:flex-row gap-4 justify-between"
+          style={{ borderBottom: "1px solid #E8E6E2", background: "#FAFAF9" }}
+        >
           <div className="relative w-full sm:max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search ID or applicant..." 
-              className="pl-9 h-10 bg-background"
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#A8A29E" }} />
+            <Input
+              placeholder="Search ID or applicant..."
+              className="pl-9 h-10 bg-white"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="flex items-center gap-2">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[160px] h-10 bg-background">
-                <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+              <SelectTrigger className="w-[160px] h-10 bg-white">
+                <Filter className="mr-2 h-4 w-4" style={{ color: "#A8A29E" }} />
                 <SelectValue placeholder="Filter Status" />
               </SelectTrigger>
               <SelectContent>
@@ -168,69 +173,78 @@ export default function Applications() {
             </Select>
           </div>
         </div>
-        
-        <CardContent className="p-0">
+
+        <div style={{ background: "#FFFFFF" }}>
           {isLoading ? (
             <div className="p-8 space-y-4">
               {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-16 w-full" />)}
             </div>
           ) : appsData?.data.length === 0 ? (
             <div className="p-16 flex flex-col items-center justify-center text-center">
-              <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                <FileText className="h-8 w-8 text-muted-foreground/50" />
+              <div
+                className="h-16 w-16 rounded-full flex items-center justify-center mb-4"
+                style={{ background: "#F4F3F1" }}
+              >
+                <FileText className="h-8 w-8" style={{ color: "#A8A29E" }} />
               </div>
-              <h3 className="text-lg font-semibold">No applications found</h3>
-              <p className="text-muted-foreground max-w-sm mt-1">We couldn't find any applications matching your current filters.</p>
+              <h3 className="text-lg font-semibold" style={{ color: "#1C1917" }}>No applications found</h3>
+              <p className="max-w-sm mt-1 text-sm" style={{ color: "#57534E" }}>We couldn't find any applications matching your current filters.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-b border-border/60">
+                <thead style={{ background: "#FAFAF9", borderBottom: "1px solid #E8E6E2" }}>
                   <tr>
-                    <th className="px-6 py-4 font-semibold">App ID</th>
-                    <th className="px-6 py-4 font-semibold">Date</th>
-                    <th className="px-6 py-4 font-semibold">Participants</th>
-                    <th className="px-6 py-4 font-semibold">Language</th>
-                    <th className="px-6 py-4 font-semibold">Status</th>
-                    <th className="px-6 py-4 text-right font-semibold">Actions</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-[0.05em]" style={{ color: "#57534E" }}>App ID</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-[0.05em]" style={{ color: "#57534E" }}>Date</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-[0.05em]" style={{ color: "#57534E" }}>Participants</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-[0.05em]" style={{ color: "#57534E" }}>Language</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-[0.05em]" style={{ color: "#57534E" }}>Status</th>
+                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-[0.05em] text-right" style={{ color: "#57534E" }}>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/40">
+                <tbody>
                   {appsData?.data.map((app) => (
-                    <tr key={app.id} className="bg-card hover:bg-muted/20 transition-colors group">
-                      <td className="px-6 py-4 font-medium text-foreground">
+                    <tr
+                      key={app.id}
+                      className="transition-colors group"
+                      style={{ borderBottom: "1px solid #F4F3F1", height: 48 }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "#FAFAF9")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "")}
+                    >
+                      <td className="px-6 py-3 font-medium" style={{ color: "#1C1917" }}>
                         {app.applicationNumber || `#APP-${app.id.substring(0,6).toUpperCase()}`}
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground">
+                      <td className="px-6 py-3" style={{ color: "#57534E" }}>
                         {format(new Date(app.createdAt), 'MMM dd, yyyy')}
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="font-medium">{app.totalChildren + app.totalAdults} Total</span>
-                        <span className="text-xs text-muted-foreground block">
+                      <td className="px-6 py-3">
+                        <span className="font-medium" style={{ color: "#1C1917" }}>{app.totalChildren + app.totalAdults} Total</span>
+                        <span className="text-xs block" style={{ color: "#A8A29E" }}>
                           ({app.totalChildren}C, {app.totalAdults}A)
                         </span>
                       </td>
-                      <td className="px-6 py-4 uppercase font-medium text-muted-foreground">
+                      <td className="px-6 py-3 uppercase font-medium" style={{ color: "#57534E" }}>
                         {app.primaryLanguage}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         <StatusBadge status={app.status} />
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-3 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 hover-elevate">
+                            <Button variant="ghost" className="h-8 w-8 p-0">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-[160px]">
                             <DropdownMenuItem asChild>
                               <Link href={`/applications/${app.id}`} className="cursor-pointer flex items-center">
-                                View Details <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                                View Details <ChevronRight className="ml-auto h-4 w-4" style={{ color: "#A8A29E" }} />
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem className="cursor-pointer">Edit Info</DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">Archive</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer text-[#DC2626] focus:text-[#DC2626]">Archive</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -240,17 +254,20 @@ export default function Applications() {
               </table>
             </div>
           )}
-          
-          {/* Pagination Mock UI */}
-          <div className="p-4 border-t border-border/50 flex items-center justify-between text-sm text-muted-foreground bg-muted/5">
-            <div>Showing <span className="font-medium text-foreground">{appsData?.data.length || 0}</span> results</div>
+
+          {/* Pagination */}
+          <div
+            className="p-4 flex items-center justify-between text-sm"
+            style={{ borderTop: "1px solid #E8E6E2", background: "#FAFAF9", color: "#A8A29E" }}
+          >
+            <div>Showing <span className="font-medium" style={{ color: "#1C1917" }}>{appsData?.data.length || 0}</span> results</div>
             <div className="flex gap-1">
               <Button variant="outline" size="sm" disabled className="h-8">Previous</Button>
               <Button variant="outline" size="sm" disabled className="h-8">Next</Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

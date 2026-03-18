@@ -16,23 +16,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
-  completed: "bg-green-100 text-green-800 border-green-200",
-  cancelled: "bg-red-100 text-red-800 border-red-200",
-  rescheduled: "bg-purple-100 text-purple-800 border-purple-200",
+  pending: "bg-[#FEF9C3] text-[#CA8A04] border-[#CA8A04]/20",
+  scheduled: "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F]/20",
+  completed: "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20",
+  cancelled: "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
+  rescheduled: "bg-[#FEF9C3] text-[#CA8A04] border-[#CA8A04]/20",
 };
 
 const RESULT_COLORS: Record<string, string> = {
-  pass: "bg-green-100 text-green-800",
-  fail: "bg-red-100 text-red-800",
-  waitlist: "bg-yellow-100 text-yellow-800",
-  pending: "bg-gray-100 text-gray-700",
+  pass: "bg-[#DCFCE7] text-[#16A34A]",
+  fail: "bg-[#FEF2F2] text-[#DC2626]",
+  waitlist: "bg-[#FEF9C3] text-[#CA8A04]",
+  pending: "bg-[#FEF9C3] text-[#CA8A04]",
 };
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "pending").toLowerCase();
-  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[s] ?? "bg-gray-100 text-gray-700 border-gray-200"}`}>{s}</span>;
+  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[s] ?? "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]"}`}>{s}</span>;
 }
 
 interface Interview {
@@ -75,10 +75,10 @@ export default function Interviews() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F08301]/10 flex items-center justify-center"><CalendarCheck className="w-5 h-5 text-[#F08301]" /></div>
+          <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><CalendarCheck className="w-5 h-5 text-[#F5821F]" /></div>
           <div><h1 className="text-lg font-bold">Interviews</h1><p className="text-xs text-muted-foreground">Application interview scheduling & results</p></div>
         </div>
-        <Button size="sm" className="bg-[#F08301] hover:bg-[#d97706] text-white gap-1.5" onClick={() => { setForm({}); setShowCreate(true); }}>
+        <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => { setForm({}); setShowCreate(true); }}>
           <Plus className="w-3.5 h-3.5" /> Schedule Interview
         </Button>
       </div>
@@ -111,7 +111,7 @@ export default function Interviews() {
                   </td>
                   <td className="px-4 py-3 text-xs max-w-[160px] truncate">{r.meetingLink ?? r.location ?? "—"}</td>
                   <td className="px-4 py-3">
-                    {r.result ? <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize ${RESULT_COLORS[r.result] ?? "bg-gray-100 text-gray-700"}`}>{r.result}</span> : <span className="text-muted-foreground text-xs">—</span>}
+                    {r.result ? <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize ${RESULT_COLORS[r.result] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>{r.result}</span> : <span className="text-muted-foreground text-xs">—</span>}
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                 </tr>
@@ -124,7 +124,7 @@ export default function Interviews() {
       {/* Detail Sheet */}
       <Sheet open={!!selected} onOpenChange={o => { if (!o) setSelected(null); }}>
         <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto">
-          <SheetHeader><SheetTitle className="flex items-center gap-2"><CalendarCheck className="w-4 h-4 text-[#F08301]" /> Interview Detail</SheetTitle></SheetHeader>
+          <SheetHeader><SheetTitle className="flex items-center gap-2"><CalendarCheck className="w-4 h-4 text-[#F5821F]" /> Interview Detail</SheetTitle></SheetHeader>
           {selected && form && (
             <div className="mt-4 space-y-3">
               <div><Label className="text-xs">Format</Label>
@@ -149,7 +149,7 @@ export default function Interviews() {
               </div>
               <div><Label className="text-xs">Interviewer Notes</Label><Textarea value={form.interviewerNotes ?? ""} onChange={e => fld("interviewerNotes")(e.target.value)} className="mt-1 text-sm" rows={3} /></div>
               <div className="flex gap-2 pt-2">
-                <Button size="sm" className="flex-1 bg-[#F08301] hover:bg-[#d97706] text-white" onClick={() => updateMutation.mutate(form)} disabled={updateMutation.isPending}>
+                <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => updateMutation.mutate(form)} disabled={updateMutation.isPending}>
                   {updateMutation.isPending ? "Saving…" : "Save Changes"}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>
@@ -174,7 +174,7 @@ export default function Interviews() {
             <div><Label className="text-xs">Scheduled Datetime</Label><Input type="datetime-local" value={form.scheduledDatetime?.slice(0, 16) ?? ""} onChange={e => fld("scheduledDatetime")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
             <div><Label className="text-xs">Meeting Link / Location</Label><Input value={form.meetingLink ?? ""} onChange={e => fld("meetingLink")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
             <div className="flex gap-2 pt-2">
-              <Button size="sm" className="flex-1 bg-[#F08301] hover:bg-[#d97706] text-white" onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending}>
+              <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending}>
                 {createMutation.isPending ? "Scheduling…" : "Schedule"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>

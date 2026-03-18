@@ -46,7 +46,7 @@ export default function ImpersonationLogs() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-9 h-9 rounded-lg bg-[#F08301]/10 flex items-center justify-center"><Eye className="w-5 h-5 text-[#F08301]" /></div>
+        <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><Eye className="w-5 h-5 text-[#F5821F]" /></div>
         <div><h1 className="text-lg font-bold">Impersonation Logs</h1><p className="text-xs text-muted-foreground">Audit trail of all "View As" sessions — who viewed as whom, when, from where</p></div>
       </div>
 

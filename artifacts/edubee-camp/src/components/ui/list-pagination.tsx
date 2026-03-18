@@ -47,7 +47,7 @@ export function ListPagination({ page, pageSize, total, onChange }: ListPaginati
               onClick={() => onChange(p as number)}
               className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium transition-colors border ${
                 p === page
-                  ? "bg-[#F08301] text-white border-[#F08301]"
+                  ? "bg-[#F5821F] text-white border-[#F5821F]"
                   : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >

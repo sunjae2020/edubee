@@ -12,9 +12,9 @@ type Props = {
 
 function SpotStatusBadge({ status }: { status: SpotGrade["status"] }) {
   const map: Record<string, string> = {
-    available: "bg-green-50 text-green-700 border-green-100",
-    limited:   "bg-[#F08301]/8 text-[#F08301] border-[#F08301]/20",
-    full:      "bg-red-50 text-red-600 border-red-100",
+    available: "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20",
+    limited:   "bg-[#F5821F]/8 text-[#F5821F] border-[#F5821F]/20",
+    full:      "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
   };
   const label: Record<string, string> = { available: "Open", limited: "Limited", full: "Full" };
   return (
@@ -53,7 +53,7 @@ export function ProgramDetailDrawer({ program, onClose, onApply }: Props) {
               <div className="flex items-center gap-2.5">
                 {program.countryFlag && <span className="text-2xl">{program.countryFlag}</span>}
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <MapPin className="w-3.5 h-3.5 text-[#F08301]" />
+                  <MapPin className="w-3.5 h-3.5 text-[#F5821F]" />
                   {program.location}
                 </div>
               </div>
@@ -79,8 +79,8 @@ export function ProgramDetailDrawer({ program, onClose, onApply }: Props) {
 
               {/* Interview notice */}
               {program.interviewRequired && (
-                <div className="flex gap-2.5 p-4 bg-[#F08301]/6 border border-[#F08301]/20 rounded-xl">
-                  <Info className="w-4 h-4 text-[#F08301] shrink-0 mt-0.5" />
+                <div className="flex gap-2.5 p-4 bg-[#F5821F]/6 border border-[#F5821F]/20 rounded-xl">
+                  <Info className="w-4 h-4 text-[#F5821F] shrink-0 mt-0.5" />
                   <div>
                     <div className="font-semibold text-sm text-foreground">{t("programs.interviewRequired")}</div>
                     <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
@@ -112,7 +112,7 @@ export function ProgramDetailDrawer({ program, onClose, onApply }: Props) {
                             </td>
                             <td className="px-4 py-3 text-right">
                               {pkg.displayFormatted ? (
-                                <span className="font-bold text-[#F08301]">{pkg.displayFormatted}</span>
+                                <span className="font-bold text-[#F5821F]">{pkg.displayFormatted}</span>
                               ) : (
                                 <span className="text-muted-foreground">—</span>
                               )}
@@ -163,7 +163,7 @@ export function ProgramDetailDrawer({ program, onClose, onApply }: Props) {
             {/* Sticky footer */}
             <div className="px-5 py-4 border-t border-border shrink-0 bg-white">
               <Button
-                className="w-full h-10 rounded-md font-semibold bg-[#F08301] hover:bg-[#d97600] text-white"
+                className="w-full h-10 rounded-md font-semibold bg-[#F5821F] hover:bg-[#d97600] text-white"
                 onClick={() => onApply(program)}
               >
                 {t("programs.applyProgram")}

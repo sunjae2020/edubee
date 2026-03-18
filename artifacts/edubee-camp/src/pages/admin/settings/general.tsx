@@ -47,13 +47,13 @@ export default function GeneralSettings() {
   return (
     <div className="p-6 space-y-6 max-w-2xl">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-9 h-9 rounded-lg bg-[#F08301]/10 flex items-center justify-center"><Settings className="w-5 h-5 text-[#F08301]" /></div>
+        <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><Settings className="w-5 h-5 text-[#F5821F]" /></div>
         <div><h1 className="text-lg font-bold">General Settings</h1><p className="text-xs text-muted-foreground">Platform-wide configuration — accessible to Super Admin only</p></div>
       </div>
 
       {/* Platform */}
       <section className="bg-white rounded-xl border p-5 space-y-4">
-        <h2 className="text-sm font-semibold flex items-center gap-2"><Globe className="w-4 h-4 text-[#F08301]" /> Platform</h2>
+        <h2 className="text-sm font-semibold flex items-center gap-2"><Globe className="w-4 h-4 text-[#F5821F]" /> Platform</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-xs">Platform Name</Label>
@@ -71,7 +71,7 @@ export default function GeneralSettings() {
 
       {/* Support Contacts */}
       <section className="bg-white rounded-xl border p-5 space-y-4">
-        <h2 className="text-sm font-semibold flex items-center gap-2"><Phone className="w-4 h-4 text-[#F08301]" /> Support Contacts</h2>
+        <h2 className="text-sm font-semibold flex items-center gap-2"><Phone className="w-4 h-4 text-[#F5821F]" /> Support Contacts</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-xs">Support Email</Label>
@@ -86,7 +86,7 @@ export default function GeneralSettings() {
 
       {/* SMTP */}
       <section className="bg-white rounded-xl border p-5 space-y-4">
-        <h2 className="text-sm font-semibold flex items-center gap-2"><Mail className="w-4 h-4 text-[#F08301]" /> Email (SMTP)</h2>
+        <h2 className="text-sm font-semibold flex items-center gap-2"><Mail className="w-4 h-4 text-[#F5821F]" /> Email (SMTP)</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-xs">SMTP Host</Label>
@@ -112,11 +112,11 @@ export default function GeneralSettings() {
 
       {/* Languages */}
       <section className="bg-white rounded-xl border p-5 space-y-4">
-        <h2 className="text-sm font-semibold flex items-center gap-2"><Globe className="w-4 h-4 text-[#F08301]" /> Active Languages</h2>
+        <h2 className="text-sm font-semibold flex items-center gap-2"><Globe className="w-4 h-4 text-[#F5821F]" /> Active Languages</h2>
         <div className="flex flex-wrap gap-2">
           {LANGUAGES.map(lang => (
             <button key={lang.code} onClick={() => toggleLang(lang.code)}
-              className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${settings.activeLanguages.includes(lang.code) ? "bg-[#F08301] text-white border-[#F08301]" : "border-muted-foreground/30 text-muted-foreground hover:border-[#F08301]/50"}`}>
+              className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${settings.activeLanguages.includes(lang.code) ? "bg-[#F5821F] text-white border-[#F5821F]" : "border-muted-foreground/30 text-muted-foreground hover:border-[#F5821F]/50"}`}>
               {lang.label}
             </button>
           ))}
@@ -124,7 +124,7 @@ export default function GeneralSettings() {
         <p className="text-xs text-muted-foreground">🇦🇺 English is always shown with the Australian flag on Edubee Camp.</p>
       </section>
 
-      <Button className="bg-[#F08301] hover:bg-[#d97706] text-white" onClick={handleSave}>
+      <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={handleSave}>
         {saved ? "Saved ✓" : "Save Settings"}
       </Button>
     </div>

@@ -99,18 +99,18 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
         const active = step === current;
         return (
           <div key={idx} className="flex items-center gap-2">
-            <div className={`flex items-center gap-1.5 ${active ? "text-primary" : done ? "text-green-600" : "text-muted-foreground"}`}>
+            <div className={`flex items-center gap-1.5 ${active ? "text-primary" : done ? "text-[#16A34A]" : "text-muted-foreground"}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                done ? "bg-green-600 text-white" : active ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                done ? "bg-[#16A34A] text-white" : active ? "bg-primary text-white" : "bg-muted text-muted-foreground"
               }`}>
                 {done ? "✓" : step}
               </div>
-              <span className={`text-xs font-medium hidden sm:block ${active ? "text-primary" : done ? "text-green-600" : "text-muted-foreground"}`}>
+              <span className={`text-xs font-medium hidden sm:block ${active ? "text-primary" : done ? "text-[#16A34A]" : "text-muted-foreground"}`}>
                 {label}
               </span>
             </div>
             {idx < total - 1 && (
-              <div className={`h-px w-6 ${done ? "bg-green-400" : "bg-border"}`} />
+              <div className={`h-px w-6 ${done ? "bg-[#22C55E]" : "bg-border"}`} />
             )}
           </div>
         );
@@ -123,10 +123,10 @@ function Field({ label, required, error, children }: { label: string; required?:
   return (
     <div className="space-y-1">
       <label className="text-sm font-medium text-foreground">
-        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+        {label}{required && <span className="text-[#DC2626] ml-0.5">*</span>}
       </label>
       {children}
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-[#DC2626]">{error}</p>}
     </div>
   );
 }
@@ -346,7 +346,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -378,8 +378,8 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
             {/* Success */}
             {submitted ? (
               <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckCircle2 className="w-10 h-10 text-green-600" />
+                <div className="w-20 h-20 rounded-full bg-[#DCFCE7] flex items-center justify-center">
+                  <CheckCircle2 className="w-10 h-10 text-[#16A34A]" />
                 </div>
                 <h3 className="font-display font-bold text-2xl text-foreground">✅ {submitted}</h3>
                 <p className="text-muted-foreground max-w-sm">
@@ -558,7 +558,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                         <div key={idx} className="border border-border rounded-xl p-4 space-y-3">
                           <div className="flex items-center justify-between">
                             <span className="font-medium text-sm">Adult {idx + 1}</span>
-                            <button onClick={() => setAdults(adults.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600 transition-colors">
+                            <button onClick={() => setAdults(adults.filter((_, i) => i !== idx))} className="text-[#F87171] hover:text-[#DC2626] transition-colors">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -609,7 +609,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                         <div key={idx} className="border border-border rounded-xl p-4 space-y-3">
                           <div className="flex items-center justify-between">
                             <span className="font-medium text-sm">Child {idx + 1}</span>
-                            <button onClick={() => setChildren(children.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600 transition-colors">
+                            <button onClick={() => setChildren(children.filter((_, i) => i !== idx))} className="text-[#F87171] hover:text-[#DC2626] transition-colors">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -719,7 +719,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                         />
                         <span className="text-sm text-foreground">{t("apply.termsAccept")}</span>
                       </label>
-                      {errors.terms && <p className="text-xs text-red-500 ml-7">{errors.terms}</p>}
+                      {errors.terms && <p className="text-xs text-[#DC2626] ml-7">{errors.terms}</p>}
 
                       <label className="flex items-start gap-3 cursor-pointer">
                         <input
@@ -730,11 +730,11 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                         />
                         <span className="text-sm text-foreground">{t("apply.privacyAccept")}</span>
                       </label>
-                      {errors.privacy && <p className="text-xs text-red-500 ml-7">{errors.privacy}</p>}
+                      {errors.privacy && <p className="text-xs text-[#DC2626] ml-7">{errors.privacy}</p>}
                     </div>
 
                     {errors.submit && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{errors.submit}</div>
+                      <div className="p-3 bg-[#FEF2F2] border border-[#DC2626]/20 rounded-lg text-[#DC2626] text-sm">{errors.submit}</div>
                     )}
                   </div>
                 )}

@@ -17,12 +17,12 @@ import { useLocation } from "wouter";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const LEAD_STATUSES = [
-  { key: "new",       label: "New",       color: "bg-blue-50   border-blue-200   text-blue-700",   dot: "bg-blue-500"   },
-  { key: "contacted", label: "Contacted", color: "bg-yellow-50 border-yellow-200 text-yellow-700", dot: "bg-yellow-500" },
-  { key: "qualified", label: "Qualified", color: "bg-indigo-50 border-indigo-200 text-indigo-700", dot: "bg-indigo-500" },
-  { key: "proposal",  label: "Proposal",  color: "bg-purple-50 border-purple-200 text-purple-700", dot: "bg-purple-500" },
-  { key: "converted", label: "Converted", color: "bg-teal-50   border-teal-200   text-teal-700",   dot: "bg-teal-500"   },
-  { key: "lost",      label: "Lost",      color: "bg-red-50    border-red-200    text-red-700",     dot: "bg-red-500"    },
+  { key: "new",       label: "New",       color: "bg-[#F4F3F1] border-[#E8E6E2] text-[#57534E]",   dot: "bg-[#A8A29E]"   },
+  { key: "contacted", label: "Contacted", color: "bg-[#FEF9C3] border-[#CA8A04]/20 text-[#CA8A04]", dot: "bg-[#CA8A04]" },
+  { key: "qualified", label: "Qualified", color: "bg-[#FEF0E3] border-[#F5821F]/20 text-[#F5821F]", dot: "bg-[#F5821F]" },
+  { key: "proposal",  label: "Proposal",  color: "bg-[#FEF9C3] border-[#CA8A04]/20 text-[#CA8A04]", dot: "bg-[#CA8A04]" },
+  { key: "converted", label: "Converted", color: "bg-[#DCFCE7] border-[#16A34A]/20 text-[#16A34A]", dot: "bg-[#16A34A]" },
+  { key: "lost",      label: "Lost",      color: "bg-[#FEF2F2] border-[#DC2626]/20 text-[#DC2626]", dot: "bg-[#DC2626]" },
 ];
 
 interface Lead {
@@ -32,9 +32,12 @@ interface Lead {
   createdAt: string; updatedAt: string;
 }
 
+const DOT_SIZE_MAP: Record<number, string> = { 1: "w-1 h-1", 2: "w-2 h-2", 3: "w-3 h-3", 4: "w-4 h-4" };
+
 function StatusDot({ status, size = 2 }: { status: string; size?: number }) {
   const s = LEAD_STATUSES.find(x => x.key === status);
-  return <span className={`inline-block w-${size} h-${size} rounded-full ${s?.dot ?? "bg-gray-400"}`} />;
+  const sizeClass = DOT_SIZE_MAP[size] ?? "w-2 h-2";
+  return <span className={`inline-block ${sizeClass} rounded-full ${s?.dot ?? "bg-[#A8A29E]"}`} />;
 }
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string | null }) {
@@ -156,7 +159,7 @@ export default function Leads() {
                     onDragStart={() => setDragging(`lead:${lead.id}`)}
                     onDragEnd={() => setDragging(null)}
                     onClick={() => setSelectedLead(lead)}
-                    className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm hover:border-[#F08301]/40 transition-all select-none group"
+                    className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm hover:border-[#F5821F]/40 transition-all select-none group"
                   >
                     <div className="flex items-start justify-between gap-1">
                       <div className="font-medium text-sm leading-tight text-foreground">{lead.studentName}</div>
@@ -235,7 +238,7 @@ export default function Leads() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button type="submit" className="bg-[#F08301] hover:bg-[#d97706] text-white" disabled={createLead.isPending}>
+              <Button type="submit" className="bg-[#F5821F] hover:bg-[#d97706] text-white" disabled={createLead.isPending}>
                 {createLead.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 {createLead.isPending ? "Creating…" : "Create Lead"}
               </Button>
@@ -321,7 +324,7 @@ export default function Leads() {
                       Ready to move forward? Convert this lead into a formal application.
                     </p>
                     <Button
-                      className="w-full bg-[#F08301] hover:bg-[#d97706] text-white gap-2"
+                      className="w-full bg-[#F5821F] hover:bg-[#d97706] text-white gap-2"
                       onClick={handleConvertToApplication}
                       disabled={converting}
                     >

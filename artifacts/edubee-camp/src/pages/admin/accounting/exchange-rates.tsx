@@ -48,17 +48,17 @@ export default function ExchangeRates() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F08301]/10 flex items-center justify-center"><RefreshCw className="w-5 h-5 text-[#F08301]" /></div>
+          <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><RefreshCw className="w-5 h-5 text-[#F5821F]" /></div>
           <div><h1 className="text-lg font-bold">Exchange Rates</h1><p className="text-xs text-muted-foreground">Currency conversion rates — all values displayed in AUD equivalent</p></div>
         </div>
-        <Button size="sm" className="bg-[#F08301] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setShowCreate(true)}>
+        <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setShowCreate(true)}>
           <Plus className="w-3.5 h-3.5" /> Add Rate
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
         {isLoading ? [...Array(6)].map((_, i) => <Skeleton key={i} className="h-24" />) : latestRates.map(r => (
-          <div key={r.id} className="bg-white rounded-lg border p-4 flex items-center gap-3 hover:border-[#F08301]/50 transition-colors">
+          <div key={r.id} className="bg-white rounded-lg border p-4 flex items-center gap-3 hover:border-[#F5821F]/50 transition-colors">
             <div className="text-2xl">{FLAG[r.fromCurrency] ?? "🏳️"}</div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm">{r.fromCurrency} → {r.toCurrency}</div>
@@ -126,7 +126,7 @@ export default function ExchangeRates() {
             <div><Label className="text-xs">Rate (1 {form.fromCurrency} = ? {form.toCurrency})</Label><Input type="number" step="0.000001" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} className="mt-1 h-8 text-sm font-mono" placeholder="e.g. 0.00108" /></div>
             <div><Label className="text-xs">Effective Date</Label><Input type="date" value={form.effectiveDate} onChange={e => setForm(f => ({ ...f, effectiveDate: e.target.value }))} className="mt-1 h-8 text-sm" /></div>
             <div className="flex gap-2 pt-1">
-              <Button size="sm" className="flex-1 bg-[#F08301] hover:bg-[#d97706] text-white" onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending || !form.rate}>
+              <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending || !form.rate}>
                 {createMutation.isPending ? "Adding…" : "Add Rate"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>

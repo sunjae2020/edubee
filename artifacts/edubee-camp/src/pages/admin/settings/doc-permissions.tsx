@@ -49,17 +49,17 @@ export default function DocPermissions() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F08301]/10 flex items-center justify-center"><FileText className="w-5 h-5 text-[#F08301]" /></div>
+          <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><FileText className="w-5 h-5 text-[#F5821F]" /></div>
           <div><h1 className="text-lg font-bold">Document Permissions</h1><p className="text-xs text-muted-foreground">Set View & Download access per document category per role</p></div>
         </div>
-        <Button size="sm" className="bg-[#F08301] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSave}>
+        <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSave}>
           <Save className="w-3.5 h-3.5" /> Save All
         </Button>
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800 flex items-center gap-2 mb-4">
+      <div className="bg-[#FEF9C3] border border-[#CA8A04]/20 rounded-lg px-3 py-2 text-xs text-[#CA8A04] flex items-center gap-2 mb-4">
         <span className="font-semibold">Note:</span> Changes apply to new uploads. Check "Apply to Existing" during save to retroactively apply.
-        <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 ml-auto border-amber-400 text-amber-700 hover:bg-amber-100" onClick={() => toast({ title: "Permissions applied to all existing documents" })}>Apply to Existing</Button>
+        <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 ml-auto border-[#CA8A04] text-[#CA8A04] hover:bg-[#FEF9C3]" onClick={() => toast({ title: "Permissions applied to all existing documents" })}>Apply to Existing</Button>
       </div>
 
       {DOC_CATEGORIES.map(group => (
@@ -93,11 +93,11 @@ export default function DocPermissions() {
                       <td key={r} className="px-2 py-1.5 text-center">
                         <div className="flex justify-center gap-1">
                           <button title="View" onClick={() => toggle(cat, r, "view")} disabled={isLocked}
-                            className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${isLocked ? "bg-green-500 border-green-500" : perm.view ? "bg-green-500 border-green-500 hover:bg-green-600" : "border-muted-foreground/30 hover:border-green-400"}`}>
+                            className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${isLocked ? "bg-[#16A34A] border-[#16A34A]" : perm.view ? "bg-[#16A34A] border-[#16A34A] hover:bg-[#15803D]" : "border-[#E8E6E2] hover:border-[#16A34A]"}`}>
                             {(isLocked || perm.view) && <Eye className="w-2.5 h-2.5 text-white" />}
                           </button>
                           <button title="Download" onClick={() => toggle(cat, r, "download")} disabled={isLocked}
-                            className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${isLocked ? "bg-blue-500 border-blue-500" : perm.download ? "bg-blue-500 border-blue-500 hover:bg-blue-600" : "border-muted-foreground/30 hover:border-blue-400"}`}>
+                            className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${isLocked ? "bg-[#F5821F] border-[#F5821F]" : perm.download ? "bg-[#F5821F] border-[#F5821F] hover:bg-[#D96A0A]" : "border-[#E8E6E2] hover:border-[#F5821F]"}`}>
                             {(isLocked || perm.download) && <Download className="w-2.5 h-2.5 text-white" />}
                           </button>
                         </div>

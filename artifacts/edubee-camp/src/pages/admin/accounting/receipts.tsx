@@ -16,9 +16,9 @@ const CURRENCY_SYMBOLS: Record<string, string> = { AUD: "A$", USD: "$", SGD: "S$
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "pending").toLowerCase();
   const map: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-800", verified: "bg-green-100 text-green-800", rejected: "bg-red-100 text-red-800",
+    pending: "bg-[#FEF9C3] text-[#CA8A04]", verified: "bg-[#DCFCE7] text-[#16A34A]", rejected: "bg-[#FEF2F2] text-[#DC2626]",
   };
-  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${map[s] ?? "bg-gray-100 text-gray-700"}`}>{s}</span>;
+  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${map[s] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>{s}</span>;
 }
 
 interface Receipt {

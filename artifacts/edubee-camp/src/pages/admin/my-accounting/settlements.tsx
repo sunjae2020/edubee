@@ -25,15 +25,15 @@ function DualAmount({ amount, currency, audEquivalent }: { amount?: string | num
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  processing: "bg-blue-100 text-blue-800 border-blue-200",
-  settled: "bg-green-100 text-green-800 border-green-200",
-  disputed: "bg-red-100 text-red-800 border-red-200",
+  pending: "bg-[#FEF9C3] text-[#CA8A04] border-[#CA8A04]/20",
+  processing: "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F]/20",
+  settled: "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20",
+  disputed: "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
 };
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "pending").toLowerCase();
-  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[s] ?? "bg-gray-100 text-gray-700 border-gray-200"}`}>{s}</span>;
+  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[s] ?? "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]"}`}>{s}</span>;
 }
 
 interface Rec { id: string; contractId?: string | null; serviceDescription?: string | null; grossAmount?: string | null; commissionRate?: string | null; commissionAmount?: string | null; netAmount?: string | null; currency?: string | null; originalCurrency?: string | null; originalNetAmount?: string | null; audEquivalent?: string | null; status?: string | null; settlementDate?: string | null; createdAt?: string | null; }
@@ -60,15 +60,15 @@ export default function MySettlements() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-9 h-9 rounded-lg bg-[#F08301]/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-[#F08301]" /></div>
+        <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-[#F5821F]" /></div>
         <div><h1 className="text-lg font-bold">My Settlements</h1><p className="text-xs text-muted-foreground">Your earnings and payout history</p></div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
         {[
-          { label: "Total Earned (Net)", value: summary?.totalEarned != null ? `A$${Number(summary.totalEarned).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—", color: "text-green-700" },
-          { label: "Pending Payout", value: summary?.pending != null ? `A$${Number(summary.pending).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—", color: "text-yellow-700" },
+          { label: "Total Earned (Net)", value: summary?.totalEarned != null ? `A$${Number(summary.totalEarned).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—", color: "text-[#16A34A]" },
+          { label: "Pending Payout", value: summary?.pending != null ? `A$${Number(summary.pending).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—", color: "text-[#CA8A04]" },
           { label: "Paid Out", value: summary?.paid != null ? `A$${Number(summary.paid).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—" },
         ].map(k => (
           <div key={k.label} className="bg-white rounded-lg border p-4">
@@ -79,9 +79,9 @@ export default function MySettlements() {
       </div>
 
       {isCC && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2 text-sm">
-          <TrendingDown className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-          <div><span className="font-medium text-amber-800">Platform commission deducted:</span><span className="text-amber-700"> Net amounts shown are after platform commission (typically 10%) has been deducted from your gross revenue.</span></div>
+        <div className="bg-[#FEF9C3] border border-[#CA8A04]/20 rounded-lg p-3 flex items-start gap-2 text-sm">
+          <TrendingDown className="w-4 h-4 text-[#CA8A04] mt-0.5 shrink-0" />
+          <div><span className="font-medium text-[#CA8A04]">Platform commission deducted:</span><span className="text-[#CA8A04]"> Net amounts shown are after platform commission (typically 10%) has been deducted from your gross revenue.</span></div>
         </div>
       )}
 
@@ -89,7 +89,7 @@ export default function MySettlements() {
       <div className="flex items-center gap-2">
         {["all","pending","processing","settled","disputed"].map(s => (
           <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${statusFilter === s ? "bg-[#F08301] text-white border-[#F08301]" : "border-muted-foreground/30 text-muted-foreground hover:border-[#F08301]/50"}`}>
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${statusFilter === s ? "bg-[#F5821F] text-white border-[#F5821F]" : "border-muted-foreground/30 text-muted-foreground hover:border-[#F5821F]/50"}`}>
             {s}
           </button>
         ))}
@@ -117,10 +117,10 @@ export default function MySettlements() {
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.contractId?.slice(0, 8) ?? "—"}</td>
                   <td className="px-4 py-3 text-xs max-w-[180px] truncate">{r.serviceDescription ?? "—"}</td>
                   <td className="px-4 py-3 text-right text-sm"><DualAmount amount={r.grossAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
-                  <td className="px-4 py-3 text-right text-sm text-red-500">
+                  <td className="px-4 py-3 text-right text-sm text-[#DC2626]">
                     {r.commissionAmount ? `− A$${Number(r.commissionAmount).toFixed(2)} (${r.commissionRate}%)` : "—"}
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold text-green-700"><DualAmount amount={r.netAmount} currency={r.currency} /></td>
+                  <td className="px-4 py-3 text-right font-semibold text-[#16A34A]"><DualAmount amount={r.netAmount} currency={r.currency} /></td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.settlementDate ?? "—"}</td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                 </tr>

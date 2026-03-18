@@ -22,10 +22,10 @@ function DualAmount({ amount, currency, audEquivalent }: { amount?: string | num
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700 border-gray-200",
-  sent: "bg-blue-100 text-blue-800 border-blue-200",
-  paid: "bg-green-100 text-green-800 border-green-200",
-  overdue: "bg-red-100 text-red-800 border-red-200",
+  draft: "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]",
+  sent: "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F]/20",
+  paid: "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20",
+  overdue: "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
 };
 
 interface Invoice { id: string; invoiceNumber?: string | null; contractId?: string | null; totalAmount?: string | null; currency?: string | null; originalCurrency?: string | null; originalAmount?: string | null; audEquivalent?: string | null; status?: string | null; issuedAt?: string | null; dueDate?: string | null; paidAt?: string | null; }
@@ -44,15 +44,15 @@ export default function MyInvoices() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-9 h-9 rounded-lg bg-[#F08301]/10 flex items-center justify-center"><FileText className="w-5 h-5 text-[#F08301]" /></div>
+        <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><FileText className="w-5 h-5 text-[#F5821F]" /></div>
         <div><h1 className="text-lg font-bold">My Invoices</h1><p className="text-xs text-muted-foreground">Invoices issued to you — view, track and download</p></div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-4">
         {[
           { label: "Total Invoiced", value: `A$${total.toLocaleString("en-AU", { minimumFractionDigits: 2 })}` },
-          { label: "Paid", value: `A$${paid.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, color: "text-green-700" },
-          { label: "Outstanding", value: `A$${outstanding.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, color: outstanding > 0 ? "text-red-600" : "" },
+          { label: "Paid", value: `A$${paid.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, color: "text-[#16A34A]" },
+          { label: "Outstanding", value: `A$${outstanding.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, color: outstanding > 0 ? "text-[#DC2626]" : "" },
         ].map(k => (
           <div key={k.label} className="bg-white rounded-lg border p-3">
             <div className="text-xs text-muted-foreground font-medium mb-1">{k.label}</div>
@@ -84,8 +84,8 @@ export default function MyInvoices() {
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.contractId?.slice(0, 8) ?? "—"}</td>
                   <td className="px-4 py-3 text-right"><DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.issuedAt ? new Date(r.issuedAt).toLocaleDateString("en-AU") : "—"}</td>
-                  <td className={`px-4 py-3 text-xs ${r.status === "overdue" ? "text-red-600 font-medium" : "text-muted-foreground"}`}>{r.dueDate ?? "—"}</td>
-                  <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[r.status ?? "draft"] ?? "bg-gray-100 text-gray-700 border-gray-200"}`}>{r.status ?? "draft"}</span></td>
+                  <td className={`px-4 py-3 text-xs ${r.status === "overdue" ? "text-[#DC2626] font-medium" : "text-muted-foreground"}`}>{r.dueDate ?? "—"}</td>
+                  <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[r.status ?? "draft"] ?? "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]"}`}>{r.status ?? "draft"}</span></td>
                   <td className="px-4 py-3"><Button size="sm" variant="ghost" className="h-6 px-2 gap-1 text-[10px]"><Download className="w-3 h-3" /> PDF</Button></td>
                 </tr>
               ))}

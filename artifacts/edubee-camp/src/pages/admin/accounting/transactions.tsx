@@ -78,9 +78,9 @@ export default function Transactions() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">
                     {r.transactionType === "credit"
-                      ? <ArrowDownLeft className="w-3.5 h-3.5 text-green-500 shrink-0" />
-                      : <ArrowUpRight className="w-3.5 h-3.5 text-red-500 shrink-0" />}
-                    <span className={`text-xs font-medium capitalize ${r.transactionType === "credit" ? "text-green-600" : "text-red-600"}`}>
+                      ? <ArrowDownLeft className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
+                      : <ArrowUpRight className="w-3.5 h-3.5 text-[#DC2626] shrink-0" />}
+                    <span className={`text-xs font-medium capitalize ${r.transactionType === "credit" ? "text-[#16A34A]" : "text-[#DC2626]"}`}>
                       {r.transactionType ?? "—"}
                     </span>
                   </div>
@@ -88,7 +88,7 @@ export default function Transactions() {
                 <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground max-w-[180px] truncate">{r.description ?? "—"}</td>
                 <td className="px-4 py-3">
-                  <span className={`font-medium ${r.transactionType === "credit" ? "text-green-600" : "text-red-600"}`}>
+                  <span className={`font-medium ${r.transactionType === "credit" ? "text-[#16A34A]" : "text-[#DC2626]"}`}>
                     {r.transactionType === "credit" ? "+" : "−"}{fmtAmount(r.amount, r.currency)}
                   </span>
                 </td>
@@ -109,14 +109,14 @@ export default function Transactions() {
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               {selected?.transactionType === "credit"
-                ? <ArrowDownLeft className="w-4 h-4 text-green-500" />
-                : <ArrowUpRight className="w-4 h-4 text-red-500" />}
+                ? <ArrowDownLeft className="w-4 h-4 text-[#22C55E]" />
+                : <ArrowUpRight className="w-4 h-4 text-[#DC2626]" />}
               Transaction Detail
             </SheetTitle>
           </SheetHeader>
           {selected && (
             <div className="mt-4 space-y-4">
-              <div className={`text-2xl font-bold ${selected.transactionType === "credit" ? "text-green-600" : "text-red-600"}`}>
+              <div className={`text-2xl font-bold ${selected.transactionType === "credit" ? "text-[#16A34A]" : "text-[#DC2626]"}`}>
                 {selected.transactionType === "credit" ? "+" : "−"}{fmtAmount(selected.amount, selected.currency)}
               </div>
               <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-sm">

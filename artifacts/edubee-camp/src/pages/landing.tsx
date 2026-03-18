@@ -11,7 +11,7 @@ import { ProgramCard } from "@/components/public/program-card";
 import { ProgramDetailDrawer } from "@/components/public/program-detail-drawer";
 import { ApplicationModal } from "@/components/public/application-modal";
 import type { PublicProgram } from "@/lib/program-utils";
-import logoImg from "@assets/edubee_logo_800x310b_1773799222527.png";
+import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -187,13 +187,13 @@ export default function Landing() {
               className="space-y-8"
             >
               <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F08301]/10 rounded-full text-xs font-semibold text-[#F08301] tracking-wide uppercase">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F5821F]/10 rounded-full text-xs font-semibold text-[#F5821F] tracking-wide uppercase">
                   🌏 Global Educational Platform
                 </div>
                 <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1] text-foreground">
                   Connecting Students<br />
                   to{" "}
-                  <span className="text-[#F08301]">World-Class</span><br />
+                  <span className="text-[#F5821F]">World-Class</span><br />
                   Camps
                 </h1>
                 <p className="text-base text-muted-foreground max-w-lg leading-relaxed">
@@ -221,7 +221,7 @@ export default function Landing() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
                 {STATS.map((s, i) => (
                   <div key={i} className="space-y-0.5">
-                    <div className="text-2xl font-extrabold text-[#F08301]">{s.value}</div>
+                    <div className="text-2xl font-extrabold text-[#F5821F]">{s.value}</div>
                     <div className="text-xs text-muted-foreground font-medium">{s.label}</div>
                   </div>
                 ))}
@@ -239,7 +239,7 @@ export default function Landing() {
                 {/* Main card */}
                 <div className="bg-white rounded-2xl border border-border p-6 shadow-lg space-y-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#F08301]/10 flex items-center justify-center text-xl">🇦🇺</div>
+                    <div className="w-10 h-10 rounded-xl bg-[#F5821F]/10 flex items-center justify-center text-xl">🇦🇺</div>
                     <div>
                       <div className="font-semibold text-sm text-foreground">Sydney Summer English Camp</div>
                       <div className="text-xs text-muted-foreground">Sydney, Australia</div>
@@ -247,8 +247,8 @@ export default function Landing() {
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     {["2 Weeks", "4 Weeks", "8 Weeks"].map((d, i) => (
-                      <div key={i} className={`rounded-lg p-3 text-center border ${i === 1 ? "border-[#F08301] bg-[#F08301]/5" : "border-border"}`}>
-                        <div className={`font-bold text-sm ${i === 1 ? "text-[#F08301]" : "text-foreground"}`}>
+                      <div key={i} className={`rounded-lg p-3 text-center border ${i === 1 ? "border-[#F5821F] bg-[#F5821F]/5" : "border-border"}`}>
+                        <div className={`font-bold text-sm ${i === 1 ? "text-[#F5821F]" : "text-foreground"}`}>
                           {["A$2,850", "A$5,200", "A$9,800"][i]}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">{d}</div>
@@ -259,13 +259,13 @@ export default function Landing() {
                     <div className="flex items-center gap-2">
                       <div className="flex -space-x-1.5">
                         {["KJ", "PH", "TH"].map((i) => (
-                          <div key={i} className="w-6 h-6 rounded-full bg-[#F08301]/20 text-[#F08301] text-xs font-bold flex items-center justify-center ring-2 ring-white">{i[0]}</div>
+                          <div key={i} className="w-6 h-6 rounded-full bg-[#F5821F]/20 text-[#F5821F] text-xs font-bold flex items-center justify-center ring-2 ring-white">{i[0]}</div>
                         ))}
                       </div>
                       <span className="text-xs text-muted-foreground">12 enrolled</span>
                     </div>
-                    <div className="text-xs font-semibold text-[#F08301] flex items-center gap-1">
-                      8 spots left <span className="w-1.5 h-1.5 rounded-full bg-[#F08301] animate-pulse inline-block" />
+                    <div className="text-xs font-semibold text-[#F5821F] flex items-center gap-1">
+                      8 spots left <span className="w-1.5 h-1.5 rounded-full bg-[#F5821F] animate-pulse inline-block" />
                     </div>
                   </div>
                 </div>
@@ -274,7 +274,7 @@ export default function Landing() {
                 <div className="absolute -top-4 -right-4 bg-white border border-border rounded-xl px-3 py-2 shadow-md text-xs font-semibold text-foreground flex items-center gap-1.5">
                   🌏 <span>10+ Countries</span>
                 </div>
-                <div className="absolute -bottom-4 -left-4 bg-[#F08301] rounded-xl px-3 py-2 shadow-md text-xs font-semibold text-white flex items-center gap-1.5">
+                <div className="absolute -bottom-4 -left-4 bg-[#F5821F] rounded-xl px-3 py-2 shadow-md text-xs font-semibold text-white flex items-center gap-1.5">
                   ✓ Verified Programs
                 </div>
               </div>
@@ -297,7 +297,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <div className="text-xs font-semibold text-[#F08301] uppercase tracking-widest mb-2">Programs</div>
+              <div className="text-xs font-semibold text-[#F5821F] uppercase tracking-widest mb-2">Programs</div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">{t("programs.title")}</h2>
             </div>
           </div>
@@ -330,7 +330,7 @@ export default function Landing() {
       <section ref={howItWorksRef} className="py-20 px-5 bg-muted/30 border-y border-border">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <div className="text-xs font-semibold text-[#F08301] uppercase tracking-widest mb-2">Process</div>
+            <div className="text-xs font-semibold text-[#F5821F] uppercase tracking-widest mb-2">Process</div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">{t("howItWorks.title")}</h2>
           </div>
 
@@ -352,10 +352,10 @@ export default function Landing() {
                 className="flex flex-col items-center text-center"
               >
                 <div className="relative mb-5">
-                  <div className="w-12 h-12 rounded-full border-2 border-[#F08301] bg-white flex items-center justify-center text-2xl">
+                  <div className="w-12 h-12 rounded-full border-2 border-[#F5821F] bg-white flex items-center justify-center text-2xl">
                     {item.emoji}
                   </div>
-                  <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#F08301] text-white text-[10px] font-extrabold flex items-center justify-center">
+                  <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#F5821F] text-white text-[10px] font-extrabold flex items-center justify-center">
                     {item.step}
                   </div>
                 </div>
@@ -377,7 +377,7 @@ export default function Landing() {
       <section className="py-20 px-5">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <div className="text-xs font-semibold text-[#F08301] uppercase tracking-widest mb-2">Reviews</div>
+            <div className="text-xs font-semibold text-[#F5821F] uppercase tracking-widest mb-2">Reviews</div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">What Parents Say</h2>
           </div>
 
@@ -394,12 +394,12 @@ export default function Landing() {
                 {/* Stars */}
                 <div className="flex gap-0.5">
                   {Array(5).fill(0).map((_, j) => (
-                    <span key={j} className="text-[#F08301] text-sm">★</span>
+                    <span key={j} className="text-[#F5821F] text-sm">★</span>
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">"{item.quote}"</p>
                 <div className="flex items-center gap-3 pt-2 border-t border-border">
-                  <div className="w-8 h-8 rounded-full bg-[#F08301]/10 text-[#F08301] font-bold text-xs flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#F5821F]/10 text-[#F5821F] font-bold text-xs flex items-center justify-center shrink-0">
                     {item.initials}
                   </div>
                   <div>
@@ -414,14 +414,14 @@ export default function Landing() {
       </section>
 
       {/* ── CTA BAND ── */}
-      <section className="bg-[#F08301] py-16 px-5">
+      <section className="bg-[#F5821F] py-16 px-5">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Ready to start your journey?</h2>
             <p className="text-white/80 mt-1 text-sm">Apply today and we'll reach out within 2 business days.</p>
           </div>
           <Button
-            className="bg-white text-[#F08301] hover:bg-white/90 font-bold rounded-md h-11 px-7 shrink-0 shadow-none"
+            className="bg-white text-[#F5821F] hover:bg-white/90 font-bold rounded-md h-11 px-7 shrink-0 shadow-none"
             onClick={() => openApply()}
           >
             {t("nav.applyNow")} <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -477,7 +477,7 @@ export default function Landing() {
             </div>
             <Button
               size="sm"
-              className="mt-6 w-full rounded-md font-semibold bg-[#F08301] hover:bg-[#d97600] text-white"
+              className="mt-6 w-full rounded-md font-semibold bg-[#F5821F] hover:bg-[#d97600] text-white"
               onClick={() => openApply()}
             >
               {t("nav.applyNow")}

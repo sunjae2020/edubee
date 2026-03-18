@@ -1,30 +1,56 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppSidebar } from "./app-sidebar";
 import { Header } from "./header";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(query).matches : false
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [query]);
+  return matches;
+}
+
 export function MainLayout({ children, title }: { children: React.ReactNode; title?: string }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const isMobile = useMediaQuery("(max-width: 767px)");
+  const isTablet = useMediaQuery("(max-width: 1023px)");
+
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem("edubee_sidebar_collapsed") === "1"; }
     catch { return false; }
   });
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (isMobile) setMobileOpen(false);
+    else if (isTablet) setCollapsed(true);
+  }, [isMobile, isTablet]);
 
   const toggleCollapsed = () => {
-    setCollapsed(c => {
-      const next = !c;
-      try { localStorage.setItem("edubee_sidebar_collapsed", next ? "1" : "0"); } catch {}
-      return next;
-    });
+    if (isMobile) {
+      setMobileOpen(o => !o);
+    } else {
+      setCollapsed(c => {
+        const next = !c;
+        try { localStorage.setItem("edubee_sidebar_collapsed", next ? "1" : "0"); } catch {}
+        return next;
+      });
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAF9]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground text-sm">Loading workspace…</p>
+          <div className="w-8 h-8 border-2 border-[#F5821F] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[#57534E] text-sm">Loading workspace…</p>
         </div>
       </div>
     );
@@ -32,12 +58,26 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
 
   if (!isAuthenticated) return <Redirect to="/login" />;
 
+  const sidebarCollapsed = isMobile ? false : collapsed;
+
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
-      <AppSidebar collapsed={collapsed} onToggle={toggleCollapsed} />
+    <div className="flex h-screen w-full overflow-hidden" style={{ background: "#FAFAF9" }}>
+      {/* Mobile overlay */}
+      {isMobile && mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={isMobile ? `fixed inset-y-0 left-0 z-40 transition-transform duration-200 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}` : ""}>
+        <AppSidebar collapsed={sidebarCollapsed} onToggle={toggleCollapsed} />
+      </div>
+
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <Header collapsed={collapsed} onToggle={toggleCollapsed} title={title} />
-        <main className="flex-1 overflow-y-auto p-5 md:p-6 bg-muted/30">
+        <Header collapsed={sidebarCollapsed} onToggle={toggleCollapsed} title={title} />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8" style={{ background: "#FAFAF9" }}>
           <div className="mx-auto max-w-7xl">
             {children}
           </div>

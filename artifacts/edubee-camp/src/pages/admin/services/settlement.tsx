@@ -37,16 +37,16 @@ function DualAmount({ amount, currency, audEquivalent }: { amount?: string | num
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  processing: "bg-blue-100 text-blue-800 border-blue-200",
-  settled: "bg-green-100 text-green-800 border-green-200",
-  disputed: "bg-red-100 text-red-800 border-red-200",
-  cancelled: "bg-gray-100 text-gray-700 border-gray-200",
+  pending: "bg-[#FEF9C3] text-[#CA8A04] border-[#CA8A04]/20",
+  processing: "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F]/20",
+  settled: "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20",
+  disputed: "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
+  cancelled: "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
 };
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "pending").toLowerCase();
-  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[s] ?? "bg-gray-100 text-gray-700 border-gray-200"}`}>{s}</span>;
+  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[s] ?? "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]"}`}>{s}</span>;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -55,9 +55,9 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const CONTRACT_STATUS_COLORS: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700", active: "bg-green-100 text-green-800",
-  signed: "bg-blue-100 text-blue-800", completed: "bg-purple-100 text-purple-800",
-  cancelled: "bg-red-100 text-red-800", suspended: "bg-yellow-100 text-yellow-800",
+  draft: "bg-[#F4F3F1] text-[#57534E]", active: "bg-[#DCFCE7] text-[#16A34A]",
+  signed: "bg-[#FEF0E3] text-[#F5821F]", completed: "bg-[#DCFCE7] text-[#16A34A]",
+  cancelled: "bg-[#FEF2F2] text-[#DC2626]", suspended: "bg-[#FEF9C3] text-[#CA8A04]",
 };
 
 interface Rec {
@@ -75,18 +75,18 @@ interface Rec {
 function ContractCard({ rec, onViewContract }: { rec: Rec; onViewContract: () => void }) {
   if (!rec.contractId) return null;
   const cs = (rec.contractStatus ?? "draft").toLowerCase();
-  const ccls = CONTRACT_STATUS_COLORS[cs] ?? "bg-gray-100 text-gray-700";
+  const ccls = CONTRACT_STATUS_COLORS[cs] ?? "bg-[#F4F3F1] text-[#57534E]";
   return (
-    <div className="rounded-lg border border-[#F08301]/30 bg-[#F08301]/5 p-3 space-y-2.5">
+    <div className="rounded-lg border border-[#F5821F]/30 bg-[#F5821F]/5 p-3 space-y-2.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FileText className="w-3.5 h-3.5 text-[#F08301]" />
+          <FileText className="w-3.5 h-3.5 text-[#F5821F]" />
           <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Contract</span>
-          {rec.contractNumber && <span className="font-mono text-xs font-bold text-[#F08301]">{rec.contractNumber}</span>}
+          {rec.contractNumber && <span className="font-mono text-xs font-bold text-[#F5821F]">{rec.contractNumber}</span>}
         </div>
         <div className="flex items-center gap-2">
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${ccls}`}>{cs}</span>
-          <button onClick={onViewContract} className="flex items-center gap-0.5 text-[11px] text-[#F08301] hover:underline font-medium">
+          <button onClick={onViewContract} className="flex items-center gap-0.5 text-[11px] text-[#F5821F] hover:underline font-medium">
             View <ArrowUpRight className="w-3 h-3" />
           </button>
         </div>
@@ -168,11 +168,11 @@ export default function Settlement() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F08301]/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-[#F08301]" /></div>
+          <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-[#F5821F]" /></div>
           <div><h1 className="text-lg font-bold">Settlement</h1><p className="text-xs text-muted-foreground">Provider payouts & commission management</p></div>
         </div>
         {canCreate && (
-          <Button size="sm" className="bg-[#F08301] hover:bg-[#d97706] text-white gap-1.5" onClick={() => { setForm({}); setShowCreate(true); }}>
+          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => { setForm({}); setShowCreate(true); }}>
             <Plus className="w-3.5 h-3.5" /> New Settlement
           </Button>
         )}
@@ -182,9 +182,9 @@ export default function Settlement() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Total Gross", value: `A$${totalGross.toLocaleString("en-AU", { minimumFractionDigits: 2 })}` },
-          { label: "Platform Commission", value: `A$${totalCommission.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, sub: isCC ? "Deducted from revenue" : undefined, color: "text-red-600" },
-          { label: "Net to Providers", value: `A$${totalNet.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, color: "text-green-700" },
-          { label: "Pending", value: `${pending} record${pending !== 1 ? "s" : ""}`, color: pending > 0 ? "text-yellow-700" : "" },
+          { label: "Platform Commission", value: `A$${totalCommission.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, sub: isCC ? "Deducted from revenue" : undefined, color: "text-[#DC2626]" },
+          { label: "Net to Providers", value: `A$${totalNet.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, color: "text-[#16A34A]" },
+          { label: "Pending", value: `${pending} record${pending !== 1 ? "s" : ""}`, color: pending > 0 ? "text-[#CA8A04]" : "" },
         ].map(k => (
           <div key={k.label} className="bg-white rounded-lg border p-3">
             <div className="text-xs text-muted-foreground font-medium mb-1">{k.label}</div>
@@ -198,7 +198,7 @@ export default function Settlement() {
       <div className="flex items-center gap-2">
         {["all","pending","processing","settled","disputed"].map(s => (
           <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${statusFilter === s ? "bg-[#F08301] text-white border-[#F08301]" : "border-muted-foreground/30 text-muted-foreground hover:border-[#F08301]/50"}`}>
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${statusFilter === s ? "bg-[#F5821F] text-white border-[#F5821F]" : "border-muted-foreground/30 text-muted-foreground hover:border-[#F5821F]/50"}`}>
             {s}
           </button>
         ))}
@@ -224,12 +224,12 @@ export default function Settlement() {
             <tbody>
               {rows.map(r => (
                 <tr key={r.id} className="border-b last:border-0 hover:bg-muted/20 cursor-pointer transition-colors" onClick={() => openSheet(r)}>
-                  <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F08301]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
+                  <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F5821F]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
                   <td className="px-4 py-3"><span className="px-1.5 py-0.5 bg-muted rounded text-xs">{ROLE_LABELS[r.providerRole ?? ""] ?? r.providerRole ?? "—"}</span></td>
                   <td className="px-4 py-3 text-xs max-w-[160px] truncate">{r.serviceDescription ?? "—"}</td>
                   <td className="px-4 py-3 text-right"><DualAmount amount={r.grossAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
                   <td className="px-4 py-3 text-right text-sm">{r.commissionRate ? `${r.commissionRate}%` : "—"}</td>
-                  <td className="px-4 py-3 text-right font-medium text-green-700"><DualAmount amount={r.netAmount} currency={r.currency} /></td>
+                  <td className="px-4 py-3 text-right font-medium text-[#16A34A]"><DualAmount amount={r.netAmount} currency={r.currency} /></td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.settlementDate ?? "—"}</td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                 </tr>
@@ -243,7 +243,7 @@ export default function Settlement() {
       <Sheet open={!!selected} onOpenChange={o => { if (!o) { setSelected(null); setEditing(false); } }}>
         <SheetContent className="w-[560px] sm:max-w-[560px] overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-[#F08301]" /> Settlement Detail</SheetTitle>
+            <SheetTitle className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-[#F5821F]" /> Settlement Detail</SheetTitle>
             <SheetDescription className="text-xs">{selected?.serviceDescription ?? "Provider payout record"}</SheetDescription>
           </SheetHeader>
           {selected && (
@@ -253,10 +253,10 @@ export default function Settlement() {
                 <StatusBadge status={selected.status} />
                 <div className="flex gap-2">
                   {isAdmin && selected.status === "pending" && (
-                    <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => approveMutation.mutate({ id: selected.id, status: "processing" })}>Mark Processing</Button>
+                    <Button size="sm" className="h-7 text-xs bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={() => approveMutation.mutate({ id: selected.id, status: "processing" })}>Mark Processing</Button>
                   )}
                   {isAdmin && selected.status === "processing" && (
-                    <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => approveMutation.mutate({ id: selected.id, status: "settled" })}>Mark Settled</Button>
+                    <Button size="sm" className="h-7 text-xs bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={() => approveMutation.mutate({ id: selected.id, status: "settled" })}>Mark Settled</Button>
                   )}
                   {!editing && isAdmin && (
                     <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => { setForm({ ...selected }); setEditing(true); }}>
@@ -269,8 +269,8 @@ export default function Settlement() {
               {/* Amount breakdown */}
               <div className="bg-muted/30 rounded-lg p-3 space-y-2">
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Gross Amount</span><DualAmount amount={selected.grossAmount} currency={selected.originalCurrency ?? selected.currency} audEquivalent={selected.audEquivalent} /></div>
-                <div className="flex justify-between text-sm text-red-600"><span>Commission ({selected.commissionRate}%)</span><span>- A${Number(selected.commissionAmount ?? 0).toFixed(2)}</span></div>
-                <div className="border-t pt-2 flex justify-between font-bold"><span>Net Amount</span><span className="text-green-700">A${Number(selected.netAmount ?? 0).toFixed(2)}</span></div>
+                <div className="flex justify-between text-sm text-[#DC2626]"><span>Commission ({selected.commissionRate}%)</span><span>- A${Number(selected.commissionAmount ?? 0).toFixed(2)}</span></div>
+                <div className="border-t pt-2 flex justify-between font-bold"><span>Net Amount</span><span className="text-[#16A34A]">A${Number(selected.netAmount ?? 0).toFixed(2)}</span></div>
               </div>
 
               {!editing ? (
@@ -301,7 +301,7 @@ export default function Settlement() {
                     </Select>
                   </div>
                   <div className="flex gap-2 pt-2">
-                    <Button size="sm" className="flex-1 bg-[#F08301] hover:bg-[#d97706] text-white" onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending}>
+                    <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending}>
                       {saveMutation.isPending ? "Saving…" : "Save Changes"}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
@@ -337,7 +337,7 @@ export default function Settlement() {
               </div>
             </div>
             <div className="flex gap-2 pt-2">
-              <Button size="sm" className="flex-1 bg-[#F08301] hover:bg-[#d97706] text-white" onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending}>
+              <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending}>
                 {createMutation.isPending ? "Creating…" : "Create"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>

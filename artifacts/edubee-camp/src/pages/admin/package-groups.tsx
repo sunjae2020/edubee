@@ -141,19 +141,19 @@ export default function PackageGroups() {
           <div className="text-4xl mb-3">📦</div>
           <h3 className="font-semibold mb-1">No Package Groups</h3>
           <p className="text-sm text-muted-foreground mb-4">Create your first package group to get started.</p>
-          <Button size="sm" onClick={openCreate} className="gap-1.5 bg-[#F08301] hover:bg-[#d97706] text-white"><Plus className="w-4 h-4" /> New Package Group</Button>
+          <Button size="sm" onClick={openCreate} className="gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white"><Plus className="w-4 h-4" /> New Package Group</Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {paged.map(g => {
             const countryInfo = COUNTRIES.find(c => c.code === g.country);
             return (
-              <div key={g.id} className="bg-white rounded-xl border border-border p-5 hover:shadow-sm hover:border-[#F08301]/30 transition-all group">
+              <div key={g.id} className="bg-white rounded-xl border border-border p-5 hover:shadow-sm hover:border-[#F5821F]/30 transition-all group">
                 <div className="flex items-start justify-between mb-3">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-sm leading-tight truncate">{g.name}</h3>
                     {g.type && (
-                      <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] bg-orange-50 text-orange-700 border border-orange-100">
+                      <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F]/20">
                         {g.type.replace(/_/g, " ")}
                       </span>
                     )}

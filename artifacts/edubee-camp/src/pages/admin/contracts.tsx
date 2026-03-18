@@ -32,20 +32,20 @@ interface Contract {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-700", active: "bg-green-100 text-green-700",
-    completed: "bg-slate-100 text-slate-600", cancelled: "bg-red-100 text-red-700",
-    disputed: "bg-yellow-100 text-yellow-700",
+    draft: "bg-[#F4F3F1] text-[#57534E]", active: "bg-[#DCFCE7] text-[#16A34A]",
+    completed: "bg-[#F4F3F1] text-[#57534E]", cancelled: "bg-[#FEF2F2] text-[#DC2626]",
+    disputed: "bg-[#FEF9C3] text-[#CA8A04]",
   };
-  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${map[status] ?? "bg-gray-100 text-gray-700"}`}>{status}</span>;
+  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${map[status] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>{status}</span>;
 }
 
 function InvoiceBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-700", sent: "bg-orange-100 text-orange-700",
-    paid: "bg-green-100 text-green-700", overdue: "bg-red-100 text-red-700",
-    cancelled: "bg-slate-100 text-slate-600",
+    draft: "bg-[#F4F3F1] text-[#57534E]", sent: "bg-[#FEF0E3] text-[#F5821F]",
+    paid: "bg-[#DCFCE7] text-[#16A34A]", overdue: "bg-[#FEF2F2] text-[#DC2626]",
+    cancelled: "bg-[#F4F3F1] text-[#57534E]",
   };
-  return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${map[status] ?? "bg-gray-100 text-gray-700"}`}>{status}</span>;
+  return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${map[status] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>{status}</span>;
 }
 
 function DetailRow({ label, value }: { label: string; value?: string | number | null }) {
@@ -59,10 +59,10 @@ function DetailRow({ label, value }: { label: string; value?: string | number | 
 
 function ServiceStatusDot({ status }: { status?: string }) {
   const colors: Record<string, string> = {
-    completed: "bg-green-500", confirmed: "bg-blue-500", in_progress: "bg-amber-500",
-    pending: "bg-gray-400", cancelled: "bg-red-500", settled: "bg-teal-500",
+    completed: "bg-[#16A34A]", confirmed: "bg-[#F5821F]", in_progress: "bg-[#CA8A04]",
+    pending: "bg-[#A8A29E]", cancelled: "bg-[#DC2626]", settled: "bg-[#16A34A]",
   };
-  return <span className={`inline-block w-2 h-2 rounded-full ${colors[status ?? "pending"] ?? "bg-gray-400"}`} />;
+  return <span className={`inline-block w-2 h-2 rounded-full ${colors[status ?? "pending"] ?? "bg-[#A8A29E]"}`} />;
 }
 
 function ServiceCard({ icon: Icon, title, record, fields }: {
@@ -72,7 +72,7 @@ function ServiceCard({ icon: Icon, title, record, fields }: {
   return (
     <div className="rounded-xl border border-border bg-muted/20 p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Icon className={`w-4 h-4 ${record ? "text-[#F08301]" : "text-muted-foreground"}`} />
+        <Icon className={`w-4 h-4 ${record ? "text-[#F5821F]" : "text-muted-foreground"}`} />
         <span className="font-semibold text-sm text-foreground">{title}</span>
         {record ? (
           <div className="ml-auto flex items-center gap-1.5">
@@ -299,7 +299,7 @@ export default function Contracts() {
                         {(services?.settlements ?? []).length > 0 && (
                           <div className="rounded-xl border border-border bg-muted/20 p-4">
                             <div className="flex items-center gap-2 mb-3">
-                              <Banknote className="w-4 h-4 text-teal-600" />
+                              <Banknote className="w-4 h-4 text-[#16A34A]" />
                               <span className="font-semibold text-sm text-foreground">Settlements</span>
                             </div>
                             <div className="space-y-2">
@@ -337,9 +337,9 @@ export default function Contracts() {
                         {accounting && (
                           <div className="grid grid-cols-3 gap-3">
                             {[
-                              { label: "Paid", value: accounting.summary.totalPaid, color: "text-green-600" },
-                              { label: "Sent", value: accounting.summary.totalSent, color: "text-orange-600" },
-                              { label: "Received", value: accounting.summary.totalReceived, color: "text-teal-600" },
+                              { label: "Paid", value: accounting.summary.totalPaid, color: "text-[#16A34A]" },
+                              { label: "Sent", value: accounting.summary.totalSent, color: "text-[#F5821F]" },
+                              { label: "Received", value: accounting.summary.totalReceived, color: "text-[#16A34A]" },
                             ].map(s => (
                               <div key={s.label} className="rounded-lg border border-border bg-muted/20 p-3 text-center">
                                 <div className={`text-lg font-bold ${s.color}`}>A${s.value.toLocaleString()}</div>
@@ -379,14 +379,14 @@ export default function Contracts() {
                                 <div key={tx.id} className="px-4 py-3 border-b border-border last:border-0 flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                     {tx.transactionType === "credit"
-                                      ? <ArrowDownLeft className="w-4 h-4 text-green-500 shrink-0" />
-                                      : <ArrowUpRight className="w-4 h-4 text-red-500 shrink-0" />}
+                                      ? <ArrowDownLeft className="w-4 h-4 text-[#22C55E] shrink-0" />
+                                      : <ArrowUpRight className="w-4 h-4 text-[#DC2626] shrink-0" />}
                                     <div>
                                       <div className="text-sm font-medium">{tx.description}</div>
                                       <div className="text-xs text-muted-foreground">{tx.transactionDate ? format(new Date(tx.transactionDate), "MMM d, yyyy") : "—"}</div>
                                     </div>
                                   </div>
-                                  <span className={`text-sm font-semibold ${tx.transactionType === "credit" ? "text-green-600" : "text-red-600"}`}>
+                                  <span className={`text-sm font-semibold ${tx.transactionType === "credit" ? "text-[#16A34A]" : "text-[#DC2626]"}`}>
                                     {tx.transactionType === "credit" ? "+" : "−"}{fmtCcy(tx.amount, tx.currency)}
                                   </span>
                                 </div>

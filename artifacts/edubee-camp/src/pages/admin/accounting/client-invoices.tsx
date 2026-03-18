@@ -31,10 +31,10 @@ function DualAmount({ amount, currency, audEquivalent }: { amount?: string | num
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "draft").toLowerCase();
   const map: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-700", sent: "bg-blue-100 text-blue-800",
-    paid: "bg-green-100 text-green-800", overdue: "bg-red-100 text-red-800", cancelled: "bg-gray-100 text-gray-500",
+    draft: "bg-[#F4F3F1] text-[#57534E]", sent: "bg-[#FEF0E3] text-[#F5821F]",
+    paid: "bg-[#DCFCE7] text-[#16A34A]", overdue: "bg-[#FEF2F2] text-[#DC2626]", cancelled: "bg-[#F4F3F1] text-[#A8A29E]",
   };
-  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${map[s] ?? "bg-gray-100 text-gray-700"}`}>{s}</span>;
+  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${map[s] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>{s}</span>;
 }
 
 interface Invoice {
@@ -117,7 +117,7 @@ export default function ClientInvoices() {
                     </Button>
                   )}
                   {r.status === "sent" && (
-                    <Button size="sm" className="h-6 text-[10px] px-2 bg-green-600 hover:bg-green-700 text-white" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "paid", paidAt: new Date().toISOString() } }); }}>
+                    <Button size="sm" className="h-6 text-[10px] px-2 bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "paid", paidAt: new Date().toISOString() } }); }}>
                       Mark Paid
                     </Button>
                   )}
@@ -148,12 +148,12 @@ export default function ClientInvoices() {
               {selected.notes && <div><div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notes</div><p className="text-sm">{selected.notes}</p></div>}
               <div className="flex gap-2 pt-2">
                 {selected.status === "draft" && (
-                  <Button size="sm" className="bg-[#F08301] hover:bg-[#d97706] text-white flex-1 gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}>
+                  <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white flex-1 gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}>
                     <Send className="w-3.5 h-3.5" /> Send Invoice
                   </Button>
                 )}
                 {selected.status === "sent" && (
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white flex-1" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "paid", paidAt: new Date().toISOString() } })}>
+                  <Button size="sm" className="bg-[#16A34A] hover:bg-[#15803D] text-white flex-1" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "paid", paidAt: new Date().toISOString() } })}>
                     Mark as Paid
                   </Button>
                 )}

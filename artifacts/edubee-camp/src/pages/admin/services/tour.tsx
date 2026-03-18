@@ -20,18 +20,18 @@ const PAGE_SIZE = 10;
 const STATUSES = ["pending", "confirmed", "in_progress", "completed", "cancelled"];
 
 const CONTRACT_STATUS_COLORS: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700", active: "bg-green-100 text-green-800",
-  signed: "bg-blue-100 text-blue-800", completed: "bg-purple-100 text-purple-800",
-  cancelled: "bg-red-100 text-red-800", suspended: "bg-yellow-100 text-yellow-800",
+  draft: "bg-[#F4F3F1] text-[#57534E]", active: "bg-[#DCFCE7] text-[#16A34A]",
+  signed: "bg-[#FEF0E3] text-[#F5821F]", completed: "bg-[#DCFCE7] text-[#16A34A]",
+  cancelled: "bg-[#FEF2F2] text-[#DC2626]", suspended: "bg-[#FEF9C3] text-[#CA8A04]",
 };
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "pending").toLowerCase();
   const map: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-800", confirmed: "bg-blue-100 text-blue-800",
-    in_progress: "bg-purple-100 text-purple-800", completed: "bg-green-100 text-green-800", cancelled: "bg-red-100 text-red-800",
+    pending: "bg-[#FEF9C3] text-[#CA8A04]", confirmed: "bg-[#FEF0E3] text-[#F5821F]",
+    in_progress: "bg-[#FEF0E3] text-[#F5821F]", completed: "bg-[#DCFCE7] text-[#16A34A]", cancelled: "bg-[#FEF2F2] text-[#DC2626]",
   };
-  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${map[s] ?? "bg-gray-100 text-gray-700"}`}>{s.replace(/_/g, " ")}</span>;
+  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${map[s] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>{s.replace(/_/g, " ")}</span>;
 }
 
 interface Rec {
@@ -46,20 +46,20 @@ interface Rec {
 function ContractCard({ rec, onViewContract }: { rec: Rec; onViewContract: () => void }) {
   if (!rec.contractId) return null;
   const cs = (rec.contractStatus ?? "draft").toLowerCase();
-  const ccls = CONTRACT_STATUS_COLORS[cs] ?? "bg-gray-100 text-gray-700";
+  const ccls = CONTRACT_STATUS_COLORS[cs] ?? "bg-[#F4F3F1] text-[#57534E]";
   const amt = rec.totalAmount ? Number(rec.totalAmount) : null;
   const sym = rec.currency === "AUD" ? "A$" : (rec.currency ?? "A$");
   return (
-    <div className="rounded-lg border border-[#F08301]/30 bg-[#F08301]/5 p-3 space-y-2.5">
+    <div className="rounded-lg border border-[#F5821F]/30 bg-[#F5821F]/5 p-3 space-y-2.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FileText className="w-3.5 h-3.5 text-[#F08301]" />
+          <FileText className="w-3.5 h-3.5 text-[#F5821F]" />
           <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Contract</span>
-          {rec.contractNumber && <span className="font-mono text-xs font-bold text-[#F08301]">{rec.contractNumber}</span>}
+          {rec.contractNumber && <span className="font-mono text-xs font-bold text-[#F5821F]">{rec.contractNumber}</span>}
         </div>
         <div className="flex items-center gap-2">
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${ccls}`}>{cs}</span>
-          <button onClick={onViewContract} className="flex items-center gap-0.5 text-[11px] text-[#F08301] hover:underline font-medium">
+          <button onClick={onViewContract} className="flex items-center gap-0.5 text-[11px] text-[#F5821F] hover:underline font-medium">
             View <ArrowUpRight className="w-3 h-3" />
           </button>
         </div>
@@ -157,7 +157,7 @@ export default function TourManagement() {
               </td></tr>
             ) : rows.map(r => (
               <tr key={r.id} className="hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => { setSelected(r); setForm({ ...r }); setEditing(false); }}>
-                <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F08301]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
+                <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F5821F]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.tourName ?? "—"}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{r.tourDate ? format(new Date(r.tourDate), "MMM d, yyyy") : "—"}</td>
@@ -176,7 +176,7 @@ export default function TourManagement() {
       <Sheet open={!!selected} onOpenChange={o => { if (!o) { setSelected(null); setEditing(false); } }}>
         <SheetContent className="w-[520px] sm:max-w-[520px] overflow-y-auto bg-background">
           <SheetHeader>
-            <SheetTitle className="flex items-center gap-2"><MapIcon className="w-4 h-4 text-[#F08301]" /> Tour Record</SheetTitle>
+            <SheetTitle className="flex items-center gap-2"><MapIcon className="w-4 h-4 text-[#F5821F]" /> Tour Record</SheetTitle>
             <SheetDescription className="text-xs">{selected?.tourName ?? "Tour service detail"}</SheetDescription>
           </SheetHeader>
           {selected && (
@@ -219,7 +219,7 @@ export default function TourManagement() {
                     </Select>
                   </div>
                   <div className="flex gap-2 pt-2">
-                    <Button size="sm" className="flex-1 bg-[#F08301] hover:bg-[#d97706] text-white" onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending}>
+                    <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending}>
                       {saveMutation.isPending ? "Saving…" : "Save Changes"}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>

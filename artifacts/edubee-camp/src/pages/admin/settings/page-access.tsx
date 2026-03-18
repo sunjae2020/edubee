@@ -81,10 +81,10 @@ export default function PageAccess() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F08301]/10 flex items-center justify-center"><Lock className="w-5 h-5 text-[#F08301]" /></div>
+          <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><Lock className="w-5 h-5 text-[#F5821F]" /></div>
           <div><h1 className="text-lg font-bold">Page Access</h1><p className="text-xs text-muted-foreground">Control which roles can access each admin page</p></div>
         </div>
-        <Button size="sm" className="bg-[#F08301] hover:bg-[#d97706] text-white gap-1.5 sticky bottom-4" onClick={handleSave}>
+        <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5 sticky bottom-4" onClick={handleSave}>
           <Save className="w-3.5 h-3.5" /> Save All
         </Button>
       </div>
@@ -99,7 +99,7 @@ export default function PageAccess() {
               {ROLES.map(r => (
                 <th key={r.key} className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wide min-w-[70px]">
                   <div>{r.label}</div>
-                  {r.locked && <Lock className="w-3 h-3 mx-auto mt-0.5 text-[#F08301]" />}
+                  {r.locked && <Lock className="w-3 h-3 mx-auto mt-0.5 text-[#F5821F]" />}
                 </th>
               ))}
             </tr>
@@ -120,10 +120,10 @@ export default function PageAccess() {
                           disabled={r.locked}
                           className={`w-5 h-5 rounded border-2 flex items-center justify-center mx-auto transition-all ${
                             r.locked
-                              ? "bg-[#F08301] border-[#F08301] cursor-not-allowed"
+                              ? "bg-[#F5821F] border-[#F5821F] cursor-not-allowed"
                               : matrix[p.slug]?.[r.key]
-                              ? "bg-[#F08301] border-[#F08301] hover:bg-[#d97706]"
-                              : "border-muted-foreground/30 hover:border-[#F08301]/50"
+                              ? "bg-[#F5821F] border-[#F5821F] hover:bg-[#d97706]"
+                              : "border-muted-foreground/30 hover:border-[#F5821F]/50"
                           }`}
                         >
                           {(r.locked || matrix[p.slug]?.[r.key]) && (
@@ -143,7 +143,7 @@ export default function PageAccess() {
       </div>
 
       <div className="flex justify-end sticky bottom-4">
-        <Button className="bg-[#F08301] hover:bg-[#d97706] text-white gap-1.5 shadow-lg" onClick={handleSave}>
+        <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5 shadow-lg" onClick={handleSave}>
           <Save className="w-4 h-4" /> Save All Changes
         </Button>
       </div>
