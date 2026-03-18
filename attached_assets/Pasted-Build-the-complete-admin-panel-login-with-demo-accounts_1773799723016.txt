@@ -1,0 +1,317 @@
+Build the complete admin panel: login with demo accounts, role view switcher,
+layout, dashboard, and all core management pages.
+All data filtering uses partnerScope middleware — partners see ONLY their own data.
+
+═══════════════════════════════════════════
+ PART 1: LOGIN PAGE WITH DEMO ACCOUNTS
+═══════════════════════════════════════════
+
+/client/src/pages/public/LoginPage.tsx
+
+┌─────────────────────────────────────────────┐
+│            🐝  Edubee Camp                  │
+│                                             │
+│  Email ________________________________     │
+│  Password ___________________________[👁]   │
+│  [           Sign In            ]           │
+│                                             │
+│  ─── Demo accounts — click to fill: ─────  │
+│  [👑 Super Admin] [🛡️ Admin] [📋 Coordinator]│
+│  [🎓 Agent]  [🏫 Institute] [🏨 Hotel]       │
+│  [🚗 Pickup]  [🗺️ Tour]    [👪 Parent]       │
+│                                             │
+│  [🇦🇺 EN] [🇰🇷 KO] [🇯🇵 JA] [🇹🇭 TH]        │
+└─────────────────────────────────────────────┘
+
+DEMO_ACCOUNTS (all password: Admin1234!):
+  👑 Super Admin   admin@edubee.com      purple
+  🛡️ Admin         ops@edubee.com        blue
+  📋 Coordinator   coord1@edubee.com     indigo
+  🎓 Agent         agent1@agency.com     green
+  🏫 Institute     institute@school.com  orange
+  🏨 Hotel         hotel@stay.com        orange
+  🚗 Pickup        driver@pickup.com     orange
+  🗺️ Tour          guide@tours.com       orange
+  👪 Parent        parent1@gmail.com     gray
+
+Chip behavior:
+  Click → fills email + password fields (user still clicks Sign In)
+  Selected: filled bg + white text | Hover tooltip: email address
+  Confirmation: "✓ Filled: agent1@agency.com"
+
+═══════════════════════════════════════════
+ PART 2: ADMIN LAYOUT & ROLE VIEW SWITCHER
+═══════════════════════════════════════════
+
+SIDEBAR (#0F172A dark, 240px/64px collapsed):
+
+  ── MAIN ──────────────────────────────────
+  📊 Dashboard                /admin/dashboard
+
+  ── MY PROGRAMS (CC) / PROGRAMS (SA/AD) ──
+  📦 Package Groups           /admin/package-groups
+  🗂️  Packages                /admin/packages
+  📦 Products                 /admin/products
+
+  ── SALES ─────────────────────────────────
+  🎯 Leads                    /admin/leads
+  📋 Applications             /admin/applications
+  📄 Contracts                /admin/contracts
+
+  ── SERVICES ──────────────────────────────
+  🎓 Institute                /admin/services/institute
+  🏨 Hotel                    /admin/services/hotel
+  🚗 Pickup                   /admin/services/pickup
+  🗺️  Tour                    /admin/services/tour
+  🗓️  Interviews               /admin/services/interviews
+  💵 Settlement               /admin/services/settlement
+  ★ Settlement is IN SERVICES, not Accounting
+
+  ── ACCOUNTING [SA/AD only] ───────────────
+  💰 Client Invoices          /admin/accounting/client-invoices
+  🏢 Agent Invoices           /admin/accounting/agent-invoices
+  🤝 Partner Invoices         /admin/accounting/partner-invoices
+  🧾 Receipts                 /admin/accounting/receipts
+  🏦 Transactions             /admin/accounting/transactions
+  💱 Exchange Rates           /admin/accounting/exchange-rates
+
+  ── MY ACCOUNTING [CC/EA/partners] ────────
+  💵 My Settlements           /admin/my-accounting/settlements
+  🧾 My Invoices              /admin/my-accounting/invoices
+  💰 My Revenue               /admin/my-accounting/revenue
+
+  ── REPORTS ───────────────────────────────
+  📊 Program Reports          /admin/reports
+
+  ── USERS [SA/AD only] ────────────────────
+  👥 Users                    /admin/users
+
+  ── SETTINGS [SA only] ────────────────────
+  ⚙️  General                 /admin/settings/general
+  🔐 Page Access              /admin/settings/page-access
+  🗂️  Field Permissions       /admin/settings/field-permissions
+  📄 Doc Permissions          /admin/settings/doc-permissions
+  🕵️  Impersonation Logs      /admin/settings/impersonation-logs
+
+  ── MY PROGRAMS [parent_client] ───────────
+                              /admin/my-programs
+
+  Role-based sidebar filtering (use effectiveRole):
+    camp_coordinator: MY PROGRAMS + SALES(own) + SERVICES(own) +
+                      REPORTS(own) + MY ACCOUNTING
+    education_agent:  SALES(own) + REPORTS(own clients) + MY ACCOUNTING
+    partner_institute: SERVICES/Institute(own) + MY ACCOUNTING
+    partner_hotel:     SERVICES/Hotel(own) + MY ACCOUNTING
+    partner_pickup:    SERVICES/Pickup(own) + MY ACCOUNTING
+    partner_tour:      SERVICES/Tour(own) + MY ACCOUNTING
+    parent_client:     MY PROGRAMS only
+
+HEADER (white, 64px):
+  Left:  Page title (dynamic)
+  Right: [Role Switcher] [🔔 Bell] [Avatar ▾ → Sign Out]
+
+  If impersonating — orange banner below header:
+  "👁 Viewing as: 🎓 Education Agent — Sarah Kim (agent1@agency.com)
+   Preview mode     [↩ Return to My Account]"
+  Background:#FEF3C7 | Border:#F59E0B | Text:#92400E
+
+── ROLE VIEW SWITCHER ────────────────────────────────────────
+
+Show ONLY for: super_admin, admin, camp_coordinator
+
+ROLE_HIERARCHY: super_admin:100 | admin:80 | camp_coordinator:60
+  education_agent:40 | partner_*:30 | parent_client:20
+
+canSwitchTo(my, target) = HIERARCHY[my] > HIERARCHY[target]
+  → NEVER allow upward switch
+
+Normal button: [🔍 View as: [My Role] ▾]
+
+Dropdown shows users with lower hierarchy:
+  Roles with multiple users → sub-menu per user
+  Fetch from GET /api/users/switchable
+
+Impersonating button: [👁 Viewing as: Sarah Kim ▾] (amber)
+  Dropdown adds: [↩ Return to My Account] at top
+
+Behavior:
+  Sidebar filtered by effectiveRole
+  All API calls send X-View-As-User-Id header
+  Backend partnerScope uses effectiveUserId for data filtering
+  Stored in sessionStorage → clears on tab close
+  All sessions logged to impersonation_logs
+
+Permissions table:
+  super_admin → can view as: all lower roles
+  admin       → can view as: CC, EA, partners, parent (NOT SA)
+  camp_coord  → can view as: EA, partners, parent (NOT SA/AD/CC)
+  Others      → ✗ not shown
+
+═══════════════════════════════════════════
+ PART 3: DASHBOARD (role-adaptive)
+═══════════════════════════════════════════
+
+GET /api/dashboard/stats → role-specific data
+
+SA/AD:
+  KPIs: Total Applications | Active Contracts | Revenue MTD (AUD) | Pending
+  Charts: LineChart(6mo apps+revenue) | PieChart(status breakdown)
+  Tables: Recent Applications | Service Status Overview (4 types)
+
+camp_coordinator (own camps only):
+  KPIs: My Active Packages | My Contracts | My Revenue MTD | Pending Apps
+  Charts: My monthly revenue | My contracts by status
+  Tables: Recent apps to my camps | My service status
+
+education_agent (own clients only):
+  KPIs: My Applications | Approved | Commission MTD
+  Tables: Recent applications | My clients
+
+partner_* (own assignments only):
+  Upcoming assignments next 7 days | Assignment list
+
+parent_client:
+  Program status card (large) | Service timeline (✈→🎓→🏨→🗺️)
+  Payment status | [View Full Report] if published
+
+═══════════════════════════════════════════
+ PART 4: PACKAGE MANAGEMENT
+═══════════════════════════════════════════
+
+Package Groups (/admin/package-groups):
+  SA/AD: see ALL | camp_coordinator: see OWN only (campProviderId=own id)
+
+  Create/Edit — TABS:
+  [General]: Thumbnail | Name×4langs | Description×4langs |
+             Location | Country (→ sets countryCode) | Status
+             Camp Provider (SA/AD only — CC auto-assigned to self)
+
+  [Packages]: Table with all 8 currency columns
+    Primary price highlighted by countryCode
+    AU→AUD highlighted | PH→PHP highlighted | SG→SGD highlighted etc.
+
+  [Products]: Linked products | [Link] | [Remove]
+
+  [Enrollment Spots]:
+    Toggle: enable | Toggle: show on landing
+    Sortable table: Grade | Total | Reserved(auto) | Manual | Available | Bar
+    [Add Grade] | inline edit | drag reorder
+
+  [Interview]:
+    Toggle: requires interview
+    Format | Duration | Notes for applicants
+
+═══════════════════════════════════════════
+ PART 5: LEADS (/admin/leads)
+═══════════════════════════════════════════
+
+education_agent: own leads only (WHERE agent_id = own id)
+camp_coordinator: leads for their programs
+SA/AD: all leads
+
+Kanban (New/Contacted/Qualified/Converted/Lost) + List toggle
+Lead detail drawer: [Convert to Application] button
+
+═══════════════════════════════════════════
+ PART 6: APPLICATIONS (/admin/applications)
+═══════════════════════════════════════════
+
+Data scope by role:
+  SA/AD: all applications
+  camp_coordinator: WHERE packageGroup.camp_provider_id = own id
+  education_agent: WHERE agent_id = own id
+  parent_client: WHERE client_id = own id
+
+List filters: Status | Agent | Program | Date range
+Status badges: pending=yellow | under_review=blue |
+  interview_scheduled=purple | approved=green |
+  rejected=red | contracted=indigo | cancelled=gray
+
+Application Detail TABS:
+
+[Overview]: Details + Status timeline
+  SA/AD/CC actions: [Approve] [Reject] [Convert to Contract] [Schedule Interview]
+  EA: readonly status
+
+[Participants]:
+  Primary Student card (all info, age auto-calc)
+  Additional Children cards | [Add Child]
+  Accompanying Adults cards | [Add Adult]
+  Bar: "👦 2  👨 1  Total: 3"
+
+[Interview] (if package requires):
+  Not scheduled: [Schedule Interview]
+  Scheduled: info card + result section (CC/admin only)
+
+[Documents]: (LEFT: checklist | RIGHT: cards + upload)
+  ✅ Approved | ⏳ Pending | ⬜ Optional | ❌ Rejected | ⚠️ Expiring
+  Upload modal: drag&drop | Category | Participant link | Expiry | Notes
+
+[Notes]: Internal log (CC/admin only) + [Add Note]
+
+POST /api/applications/:id/convert-contract
+  → Creates contract + contractNumber (CNT-2026-XXXX)
+  → Creates empty service records (institute/hotel/pickup/tour/settlement)
+  → Returns { contractId }
+
+═══════════════════════════════════════════
+ PART 7: CONTRACTS (/admin/contracts)
+═══════════════════════════════════════════
+
+Data scope: SA/AD=all | CC=own camps | EA=own clients
+
+Contract Detail TABS:
+
+[Overview]: Summary bar (CNT# | Status | Dates | Amount)
+  Service status grid (6 boxes):
+  🎓 Institute | 🏨 Hotel | 🚗 Pickup | 🗺️ Tour | 💵 Settlement | 📋 Overall
+
+[Services]: 5 sub-sections (Institute/Hotel/Pickup/Tour/Settlement)
+  Each shows provider + details + status + [Edit]
+  Partner edit: restricted to own service fields only
+
+[Documents]: 5 sub-tabs
+  Application Docs | Contract Docs | School Docs | Travel Docs | Financial Docs
+  Partner upload rights by tab:
+    partner_institute → School Docs
+    partner_hotel     → Travel Docs (hotel_booking)
+    partner_pickup    → Travel Docs (pickup_confirmation)
+    partner_tour      → Travel Docs (tour_voucher)
+
+[Accounting] (SA/AD only):
+  Settlement breakdown:
+  ┌───────────────────────────────────────────┐
+  │ Total Contract: A$2,600                   │
+  │ ─── Receivables ─────────────────────── │
+  │ Client Invoice:   A$2,600  Paid ✓         │
+  │ ─── Provider Settlements ───────────── │
+  │ 🎓 Institute  A$1,200  ≈₩1,260,000 Pend  │
+  │ 🏨 Hotel      A$680    ≈₩714,000   Pend  │
+  │ 🚗 Pickup     A$120    Completed ✓        │
+  │ 🗺️ Tour       A$200    Pending            │
+  │ 💵 Edubee Fee A$400    (platform comm.)   │
+  └───────────────────────────────────────────┘
+  [View All Settlements] → /admin/services/settlement?contractId=
+
+[Report]: Generate/Edit/View/Download PDF
+
+[Activity Log]: All changes chronological
+
+═══════════════════════════════════════════
+ PART 8: USER MANAGEMENT (/admin/users)
+═══════════════════════════════════════════
+
+SA/AD only.
+Table: Avatar | Name | Email | Role badge | Status | Last Login | Actions
+
+Add/Edit Modal:
+  Standard fields + for camp_coordinator role:
+    Company/Camp Name | Business Reg# | Country of Operation
+    Platform Commission Rate (%) [default 10]
+    Primary Currency (auto from country)
+
+Role badge colors: SA=purple | AD=blue | CC=indigo |
+  EA=green | partners=orange | parent=gray
+
+DELETE: SA only, confirmation modal.
+

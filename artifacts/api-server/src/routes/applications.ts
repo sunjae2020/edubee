@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leads, applications, applicationParticipants } from "@workspace/db/schema";
-import { eq, and, ilike, or, count, SQL } from "drizzle-orm";
+import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt } from "@workspace/db/schema";
+import { eq, and, ilike, or, count, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -158,6 +158,43 @@ router.put("/applications/:id/status", authenticate, async (req, res) => {
     if (!application) return res.status(404).json({ error: "Not Found" });
     return res.json(application);
   } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/applications/:id/convert-contract", authenticate, requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
+  try {
+    const [application] = await db.select().from(applications).where(eq(applications.id, req.params.id)).limit(1);
+    if (!application) return res.status(404).json({ error: "Not Found" });
+
+    const existingContract = await db.select().from(contracts).where(eq(contracts.applicationId, req.params.id)).limit(1);
+    if (existingContract.length > 0) {
+      return res.status(409).json({ error: "Conflict", message: "Contract already exists", contractId: existingContract[0].id });
+    }
+
+    const year = new Date().getFullYear();
+    const [countResult] = await db.select({ count: count() }).from(contracts);
+    const seq = String(Number(countResult.count) + 1).padStart(4, "0");
+    const contractNumber = `CNT-${year}-${seq}`;
+
+    const [contract] = await db.insert(contracts).values({
+      contractNumber,
+      applicationId: req.params.id,
+      campProviderId: req.user!.id,
+      status: "draft",
+      currency: "AUD",
+    }).returning();
+
+    await db.insert(instituteMgt).values({ contractId: contract.id, status: "pending" });
+    await db.insert(hotelMgt).values({ contractId: contract.id, status: "pending" });
+    await db.insert(pickupMgt).values({ contractId: contract.id, status: "pending" });
+    await db.insert(tourMgt).values({ contractId: contract.id, status: "pending" });
+
+    await db.update(applications).set({ status: "contracted", updatedAt: new Date() }).where(eq(applications.id, req.params.id));
+
+    return res.status(201).json({ contractId: contract.id, contractNumber });
+  } catch (err) {
+    console.error("Convert contract error:", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

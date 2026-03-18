@@ -53,6 +53,15 @@ export default defineConfig({
     },
     dedupe: ["react", "react-dom"],
   },
+  optimizeDeps: {
+    include: [
+      "react", "react-dom",
+      "@radix-ui/react-tabs", "@radix-ui/react-dialog", "@radix-ui/react-sheet",
+      "@radix-ui/react-dropdown-menu", "@radix-ui/react-select", "@radix-ui/react-tooltip",
+      "@radix-ui/react-avatar", "@radix-ui/react-label", "@radix-ui/react-slot",
+      "@tanstack/react-query", "axios", "wouter", "date-fns",
+    ],
+  },
   root: path.resolve(import.meta.dirname),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),

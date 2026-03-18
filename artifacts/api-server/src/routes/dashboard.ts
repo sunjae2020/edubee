@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { applications, contracts, leads, notifications } from "@workspace/db/schema";
-import { eq, count, gte, sql } from "drizzle-orm";
+import { applications, contracts, leads, notifications, users } from "@workspace/db/schema";
+import { eq, count, gte, sql, ne } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 
 const router = Router();
@@ -9,19 +9,29 @@ const router = Router();
 router.get("/dashboard/stats", authenticate, async (req, res) => {
   try {
     const [totalApps] = await db.select({ count: count() }).from(applications);
-    const [pendingApps] = await db.select({ count: count() }).from(applications).where(eq(applications.status, "pending"));
+    const [pendingApps] = await db.select({ count: count() }).from(applications).where(eq(applications.status, "submitted"));
+    const [contractedApps] = await db.select({ count: count() }).from(applications).where(eq(applications.status, "contracted"));
+    const [totalContracts] = await db.select({ count: count() }).from(contracts);
     const [activeContracts] = await db.select({ count: count() }).from(contracts).where(eq(contracts.status, "active"));
     const [totalLeads] = await db.select({ count: count() }).from(leads);
+    const [activeLeads] = await db.select({ count: count() }).from(leads).where(ne(leads.status, "converted"));
+    const [totalUsers] = await db.select({ count: count() }).from(users);
+    const [activeUsers] = await db.select({ count: count() }).from(users).where(eq(users.status, "active"));
 
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-    const [newLeads] = await db.select({ count: count() }).from(leads).where(gte(leads.createdAt, startOfMonth));
+    const recentApplications = await db.select({
+      id: applications.id,
+      applicationNumber: applications.applicationNumber,
+      status: applications.status,
+      createdAt: applications.createdAt,
+      studentName: applications.studentName,
+    }).from(applications).orderBy(sql`${applications.createdAt} DESC`).limit(5);
 
-    const revenueResult = await db.execute(sql`SELECT COALESCE(SUM(total_amount::numeric), 0) as total FROM contracts WHERE status NOT IN ('cancelled')`);
-    const totalRevenue = (revenueResult.rows[0] as any)?.total || "0";
-
-    const recentApplications = await db.select().from(applications).orderBy(applications.createdAt).limit(5);
+    const recentLeads = await db.select({
+      id: leads.id,
+      studentName: leads.studentName,
+      status: leads.status,
+      createdAt: leads.createdAt,
+    }).from(leads).orderBy(sql`${leads.createdAt} DESC`).limit(5);
 
     const appsByStatus = await db.execute(sql`
       SELECT status, COUNT(*)::int as count FROM applications GROUP BY status ORDER BY count DESC
@@ -30,11 +40,15 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
     return res.json({
       totalApplications: Number(totalApps.count),
       pendingApplications: Number(pendingApps.count),
+      contractedApplications: Number(contractedApps.count),
+      totalContracts: Number(totalContracts.count),
       activeContracts: Number(activeContracts.count),
-      totalRevenue: String(totalRevenue),
       totalLeads: Number(totalLeads.count),
-      newLeadsThisMonth: Number(newLeads.count),
+      activeLeads: Number(activeLeads.count),
+      totalUsers: Number(totalUsers.count),
+      activeUsers: Number(activeUsers.count),
       recentApplications,
+      recentLeads,
       applicationsByStatus: (appsByStatus.rows as any[]).map(r => ({ status: r.status, count: r.count })),
     });
   } catch (err) {
@@ -50,18 +64,9 @@ router.get("/notifications", authenticate, async (req, res) => {
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
 
-    const conditions = [eq(notifications.userId, req.user!.id)];
-    if (isRead !== undefined) {
-      conditions.push(eq(notifications.isRead, isRead === "true"));
-    }
-    const whereClause = conditions.length > 1 
-      ? sql`${notifications.userId} = ${req.user!.id} AND ${notifications.isRead} = ${isRead === "true"}`
-      : eq(notifications.userId, req.user!.id);
-
     const [totalResult] = await db.select({ count: count() }).from(notifications).where(eq(notifications.userId, req.user!.id));
-    const data = await db.select().from(notifications)
-      .where(eq(notifications.userId, req.user!.id))
-      .limit(limitNum).offset(offset).orderBy(notifications.createdAt);
+    let q = db.select().from(notifications).where(eq(notifications.userId, req.user!.id));
+    const data = await q.limit(limitNum).offset(offset).orderBy(notifications.createdAt);
 
     const total = Number(totalResult.count);
     return res.json({ data, meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) } });

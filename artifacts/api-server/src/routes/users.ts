@@ -89,6 +89,27 @@ router.post("/", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => 
   }
 });
 
+const ROLE_HIERARCHY: Record<string, number> = {
+  super_admin: 100, admin: 80, camp_coordinator: 60,
+  education_agent: 40, partner_institute: 30, partner_hotel: 30,
+  partner_pickup: 30, partner_tour: 30, parent_client: 20,
+};
+
+router.get("/switchable", authenticate, async (req, res) => {
+  try {
+    const myLevel = ROLE_HIERARCHY[req.user!.role] || 0;
+    if (myLevel < 60) return res.json([]);
+    const allUsers = await db.select({
+      id: users.id, email: users.email, fullName: users.fullName,
+      role: users.role, avatarUrl: users.avatarUrl, status: users.status,
+    }).from(users).where(eq(users.status, "active"));
+    const switchable = allUsers.filter(u => (ROLE_HIERARCHY[u.role] || 0) < myLevel && u.id !== req.user!.id);
+    return res.json(switchable);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.get("/:id", authenticate, async (req, res) => {
   try {
     const [user] = await db.select({

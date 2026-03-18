@@ -23,28 +23,31 @@ Edubee Camp is a comprehensive multi-operator educational camp marketplace platf
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
-## User Roles
+## User Roles & Hierarchy
 
-| Role | Description |
-|------|-------------|
-| `super_admin` | Full platform control |
-| `admin` | Platform management, all data |
-| `camp_coordinator` | External partner: registers & operates own camps |
-| `education_agent` | Sales partner: consults clients, submits applications |
-| `partner_institute` | Service partner: provides educational programs |
-| `partner_hotel` | Service partner: provides accommodation |
-| `partner_pickup` | Service partner: provides transportation |
-| `partner_tour` | Service partner: provides tour activities |
-| `parent_client` | End customer: monitors child's program |
+| Role | Level | Description |
+|------|-------|-------------|
+| `super_admin` | 100 | Full platform control |
+| `admin` | 80 | Platform management, all data |
+| `camp_coordinator` | 60 | External partner: registers & operates own camps |
+| `education_agent` | 40 | Sales partner: consults clients, submits applications |
+| `partner_institute` | 30 | Service partner: provides educational programs |
+| `partner_hotel` | 30 | Service partner: provides accommodation |
+| `partner_pickup` | 30 | Service partner: provides transportation |
+| `partner_tour` | 30 | Service partner: provides tour activities |
+| `parent_client` | 20 | End customer: monitors child's program |
 
 ## Seed Credentials (all use password: `password123`)
 
 - Super Admin: `superadmin@edubee.com`
-- Admin: `admin@edubee.com`
-- Camp Coordinator: `coordinator@edubee.com`
+- Admin: `admin@edubee.com` / `ops@edubee.com`
+- Camp Coordinator: `coordinator@edubee.com` / `coord1@edubee.com`
 - Education Agent: `agent@edubee.com`
-- Parent Client: `parent@example.com`
+- Parent Client: `parent@example.com` / `parent1@gmail.com`
 - Partner Institute: `institute@example.com`
+- Partner Hotel: `hotel@example.com`
+- Partner Pickup: `driver@pickup.com`
+- Partner Tour: `guide@tours.com`
 
 ## Structure
 
@@ -62,7 +65,7 @@ artifacts-monorepo/
 │           ├── users.ts        # users, refreshTokens, pagePermissions
 │           ├── packages.ts     # packageGroups, packages, products, enrollmentSpots
 │           ├── applications.ts # leads, applications, participants, interviews
-│           ├── contracts.ts    # contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt, settlementMgt
+│           ├── contracts.ts    # contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt
 │           ├── documents.ts    # documentCategories, documents, permissions
 │           ├── finance.ts      # exchangeRates, banking, invoices, transactions, receipts
 │           └── reports.ts      # programReports, notifications, tasks
@@ -71,50 +74,99 @@ artifacts-monorepo/
 └── pnpm-workspace.yaml
 ```
 
+## Frontend Routes
+
+### Public
+- `/` — Landing page (programs, hero, CTA)
+- `/login` — Admin login with demo role chips + language switcher
+
+### Admin Panel (all under `/admin/`)
+- `/admin/dashboard` — Role-adaptive KPIs + quick actions
+- `/admin/leads` — Leads CRM (kanban board, 6 status columns, drag-drop)
+- `/admin/applications` — Applications table + sheet detail (tabs: Overview, Participants, Interview, Documents, Notes)
+- `/admin/contracts` — Contracts table + sheet detail (tabs: Overview, Services, Documents, Accounting, Activity)
+- `/admin/package-groups` — Card grid + create/edit modal (tabs: Basic Info, Details)
+- `/admin/packages` — Stub
+- `/admin/products` — Stub
+- `/admin/services/institute|hotel|pickup|tour` — Stub
+- `/admin/services/interviews` — Stub
+- `/admin/services/settlement` — Stub (Settlement is in Services, NOT Accounting)
+- `/admin/accounting/client-invoices|agent-invoices|partner-invoices|receipts|transactions|exchange-rates` — Stubs
+- `/admin/my-accounting/settlements|invoices|revenue` — Stubs
+- `/admin/reports` — Stub
+- `/admin/users` — Enhanced users table with role chips filter + add modal
+- `/admin/settings/general|page-access|field-permissions|doc-permissions|impersonation-logs` — Stubs
+- `/admin/my-programs` — Stub (parent_client only)
+
+## Admin Panel Architecture
+
+### Layout
+- `MainLayout` — Custom flex layout (no Shadcn SidebarProvider)
+- `AppSidebar` — Custom dark sidebar (#0F172A), 240px expanded / 64px collapsed
+  - Navigation is role-adaptive (built from user's `effectiveRole`)
+  - Effective role = viewAsUser.role if impersonating, else user.role
+- `Header` — Page title + "View as" role switcher + notification bell + avatar dropdown
+  - Impersonation banner shows when ViewAs is active (amber strip)
+
+### Hooks
+- `use-auth.tsx` — JWT auth context, fetch interceptor injects:
+  - `Authorization: Bearer <token>` 
+  - `X-View-As-User-Id: <id>` (if impersonating)
+  - On 401 → clears token + redirects to /login
+  - On login success → redirects to /admin/dashboard
+- `use-view-as.tsx` — ViewAs context with sessionStorage persistence (`edubee_view_as`)
+  - ROLE_HIERARCHY, ROLE_LABELS, ROLE_EMOJIS exports
+  - getViewAsUserId() helper (reads sessionStorage directly for fetch interceptor)
+
 ## API Routes
 
+### Auth
 - `POST /api/auth/login` — JWT login
 - `POST /api/auth/refresh` — Refresh access token
 - `POST /api/auth/logout` — Logout
 - `GET  /api/auth/me` — Current user
+
+### Users
 - `GET|POST /api/users` — User management
+- `GET  /api/users/switchable` — Returns users with lower role hierarchy (for ViewAs switcher). MUST be registered BEFORE /:id route.
+- `GET|PUT|DELETE /api/users/:id` — Single user
+
+### Programs
 - `GET|POST /api/package-groups` — Package group management
 - `GET|POST /api/packages` — Package management
 - `GET|POST /api/products` — Product management
+
+### Sales
 - `GET|POST /api/leads` — Lead CRM
+- `PUT  /api/leads/:id/status` — Update lead status
 - `GET|POST /api/applications` — Application management
 - `PUT  /api/applications/:id/status` — Update application status
+- `POST /api/applications/:id/convert-contract` — Convert approved application to contract (creates contract + seeds instituteMgt/hotelMgt/pickupMgt/tourMgt)
 - `GET|POST /api/contracts` — Contract management
+
+### Finance
 - `GET|POST /api/invoices` — Invoice management
 - `GET|POST /api/transactions` — Transaction log
 - `GET|POST /api/exchange-rates` — Exchange rates
-- `GET  /api/dashboard/stats` — Dashboard statistics
+
+### Dashboard & Notifications
+- `GET  /api/dashboard/stats` — Dashboard stats (totalLeads, activeLeads, totalApplications, pendingApplications, contractedApplications, totalContracts, activeContracts, totalUsers, activeUsers, recentApplications, recentLeads, applicationsByStatus)
 - `GET  /api/notifications` — User notifications
 - `PUT  /api/notifications/:id/read` — Mark notification read
 
-## Public-Facing Features (Landing Page)
-
-- **Sticky navbar**: Logo, nav links (Home/Programs/How It Works/Contact), language switcher, Login, Apply Now
-- **Language switcher**: 🇦🇺 English · 🇰🇷 한국어 · 🇯🇵 日本語 · 🇹🇭 ภาษาไทย — persisted to `localStorage["edubee_lang"]`
-  - **FLAG RULE**: English always uses 🇦🇺 (Australian flag), NEVER 🇺🇸
-- **Hero**: Gradient `#1E40AF → #1D4ED8 → #0D9488`, white text, stats bar, Explore/Apply CTAs
-- **Programs section**: Fetches `GET /api/public/packages`, displays responsive card grid
-  - **Country currency rule**: AU→A$, PH→₱, SG→S$, TH→฿, KR→₩, JP→¥, GB→£, US→$
-  - Program name/description displayed in active language (fallback EN)
-- **ProgramDetailDrawer**: Right slide-in (480px), packages table, enrollment availability, Apply button
-- **ApplicationModal**: 4-step wizard (Program → Primary Student → Participants → Review)
-  - Spot-aware grade selector (shows available count, disables full grades)
-  - Terms + Privacy checkboxes on final step
-  - Submits to `POST /api/public/applications`, shows `APP-YYYY-XXXX` confirmation
-- **How It Works**: 3-step stepper (Browse → Apply → Start)
-- **Testimonials**: 3 static cards
-- **Footer**: 4-col with language switcher
-- **Back-to-top button**: Appears after 400px scroll
-
-## Public APIs (no auth)
-
+### Public (no auth)
 - `GET  /api/public/packages` — Active programs with localized names, country-currency prices, spot summaries
 - `POST /api/public/applications` — Submit application, auto-generate APP number, decrement spots
+
+## Key Design Rules
+
+- **Primary color**: `#F08301` (hsl 33 99% 47%) orange — all accent elements use this
+- **Flag rule**: English always uses 🇦🇺 (Australian flag), NEVER 🇺🇸
+- **Country-currency**: AU→A$, PH→₱, SG→S$, TH→฿, KR→₩, JP→¥, GB→£
+- **Contract numbers**: `CNT-YYYY-XXXX` format
+- **Application numbers**: `APP-YYMMM-XXXX` format
+- **Settlement page**: In SERVICES section, NOT Accounting
+- **Route order**: `/api/users/switchable` must come BEFORE `/api/users/:id` to avoid shadowing
 
 ## Running
 
