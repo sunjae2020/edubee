@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearch } from "wouter";
 import axios from "axios";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -95,11 +96,14 @@ function ServiceCard({ icon: Icon, title, record, fields }: {
 
 export default function Contracts() {
   const { toast } = useToast();
+  const searchStr = useSearch();
+  const targetContractId = new URLSearchParams(searchStr).get("contractId");
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Contract | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [autoOpened, setAutoOpened] = useState<string | null>(null);
 
   const queryKey = ["contracts", { search, status: activeStatus, page }];
   const { data: resp, isLoading } = useQuery({
@@ -113,6 +117,22 @@ export default function Contracts() {
   });
   const contracts: Contract[] = resp?.data ?? [];
   const total: number = resp?.meta?.total ?? contracts.length;
+
+  const { data: targetContract } = useQuery({
+    queryKey: ["contract-by-id", targetContractId],
+    queryFn: () => axios.get(`${BASE}/api/contracts/${targetContractId}`).then(r => r.data),
+    enabled: !!targetContractId && autoOpened !== targetContractId,
+  });
+
+  useEffect(() => {
+    if (!targetContractId || autoOpened === targetContractId) return;
+    const match = contracts.find(c => c.id === targetContractId) ?? targetContract ?? null;
+    if (match) {
+      setSelected(match);
+      setActiveTab("overview");
+      setAutoOpened(targetContractId);
+    }
+  }, [targetContractId, contracts, targetContract, autoOpened]);
 
   const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["contract-services", selected?.id],
