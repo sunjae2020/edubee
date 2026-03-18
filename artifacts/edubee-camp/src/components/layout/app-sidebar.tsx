@@ -153,7 +153,7 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
             <img
               src={logoImg}
               alt="Edubee Camp"
-              className="h-7 w-auto object-contain"
+              className="h-[39px] w-auto object-contain"
             />
           </Link>
         )}
