@@ -103,7 +103,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-5 h-14 flex items-center gap-6">
           {/* Logo */}
           <a href="#" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="shrink-0 flex items-center">
-            <img src={logoImg} alt="Edubee Camp" className="h-7 w-auto object-contain" />
+            <img src={logoImg} alt="Edubee Camp" className="h-[42px] w-auto object-contain" />
           </a>
 
           {/* Center nav */}
@@ -152,7 +152,7 @@ export default function Landing() {
             transition={{ duration: 0.2 }}
           >
             <div className="flex items-center justify-between px-5 h-14 border-b border-border">
-              <img src={logoImg} alt="Edubee Camp" className="h-7 w-auto object-contain" />
+              <img src={logoImg} alt="Edubee Camp" className="h-[42px] w-auto object-contain" />
               <button onClick={() => setMobileOpen(false)} className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded-md">
                 <X className="w-4 h-4" />
               </button>
@@ -434,7 +434,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div className="space-y-4">
-            <img src={logoImg} alt="Edubee Camp" className="h-7 w-auto object-contain brightness-0 invert opacity-90" />
+            <img src={logoImg} alt="Edubee Camp" className="h-[42px] w-auto object-contain brightness-0 invert opacity-90" />
             <p className="text-sm leading-relaxed">{t("footer.tagline")}</p>
             <LanguageSwitcher variant="footer" />
           </div>
