@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { invoices, transactions, exchangeRates } from "@workspace/db/schema";
+import { invoices, transactions, exchangeRates, receipts } from "@workspace/db/schema";
 import { eq, and, count, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -126,4 +126,35 @@ router.post("/exchange-rates", authenticate, requireRole(...ADMIN_ROLES), async 
   }
 });
 
+// ── Receipts ─────────────────────────────────────────────────
+router.get("/receipts", authenticate, async (req, res) => {
+  try {
+    const { invoiceId, status } = req.query as Record<string, string>;
+    const conditions: SQL[] = [];
+    if (invoiceId) conditions.push(eq(receipts.invoiceId, invoiceId));
+    if (status) conditions.push(eq(receipts.status, status));
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const data = await db.select().from(receipts).where(whereClause).orderBy(receipts.createdAt);
+    return res.json({ data, total: data.length });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/receipts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    function generateReceiptNumber() {
+      const now = new Date();
+      return `RCP-${now.getFullYear().toString().slice(-2)}${String(now.getMonth() + 1).padStart(2, "0")}-${Math.floor(Math.random() * 9000) + 1000}`;
+    }
+    const body = { ...req.body, receiptNumber: req.body.receiptNumber || generateReceiptNumber(), createdBy: req.user!.id };
+    const [receipt] = await db.insert(receipts).values(body).returning();
+    return res.status(201).json(receipt);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 export default router;
+

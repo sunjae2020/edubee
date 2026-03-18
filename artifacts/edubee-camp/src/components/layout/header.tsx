@@ -4,9 +4,9 @@ import { useViewAs, ROLE_HIERARCHY, ROLE_LABELS, ROLE_EMOJIS } from "@/hooks/use
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Check, Clock } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation, Link } from "wouter";
 import axios from "axios";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -14,6 +14,11 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 interface SwitchableUser {
   id: string; email: string; fullName: string;
   role: string; avatarUrl?: string | null;
+}
+
+interface Notification {
+  id: string; type?: string | null; title?: string | null; message?: string | null;
+  isRead?: boolean | null; createdAt?: string | null; referenceType?: string | null;
 }
 
 const PAGE_TITLES: Record<string, string> = {
@@ -49,12 +54,26 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin/my-programs": "My Programs",
 };
 
+const NOTIF_ICONS: Record<string, string> = {
+  application_submitted: "📋",
+  status_changed: "🔄",
+  interview_scheduled: "📅",
+  contract_created: "📄",
+  document_expiring: "⚠️",
+  report_published: "📊",
+  invoice_sent: "💰",
+  invoice_overdue: "🔴",
+  default: "🔔",
+};
+
 type Props = { collapsed: boolean; onToggle: () => void; title?: string };
 
 export function Header({ collapsed, onToggle, title }: Props) {
   const { user, logout } = useAuth();
   const { viewAsUser, setViewAs, clearViewAs, isImpersonating } = useViewAs();
   const [location] = useLocation();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const qc = useQueryClient();
 
   const myRole = user?.role ?? "";
   const myLevel = ROLE_HIERARCHY[myRole] ?? 0;
@@ -64,6 +83,26 @@ export function Header({ collapsed, onToggle, title }: Props) {
     queryKey: ["switchable-users"],
     queryFn: () => axios.get(`${BASE}/api/users/switchable`).then(r => r.data),
     enabled: canSwitch,
+  });
+
+  // Notifications with 30s polling
+  const { data: notifData } = useQuery({
+    queryKey: ["notifications-unread-count"],
+    queryFn: () => axios.get(`${BASE}/api/notifications/unread-count`).then(r => r.data),
+    refetchInterval: 30000,
+    enabled: !!user,
+  });
+  const unreadCount: number = notifData?.count ?? 0;
+
+  const { data: notifList } = useQuery<Notification[]>({
+    queryKey: ["notifications-dropdown"],
+    queryFn: () => axios.get(`${BASE}/api/notifications?limit=10`).then(r => r.data?.data ?? []),
+    enabled: notifOpen && !!user,
+  });
+
+  const markAllMutation = useMutation({
+    mutationFn: () => axios.post(`${BASE}/api/notifications/mark-all-read`).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications-unread-count"] }); qc.invalidateQueries({ queryKey: ["notifications-dropdown"] }); },
   });
 
   const pageTitle = title ?? PAGE_TITLES[location] ?? "Edubee Camp Admin";
@@ -146,11 +185,53 @@ export function Header({ collapsed, onToggle, title }: Props) {
             </DropdownMenu>
           )}
 
-          {/* Notifications */}
-          <button className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors relative">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#F08301]" />
-          </button>
+          {/* Notifications Bell */}
+          <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
+            <DropdownMenuTrigger asChild>
+              <button className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors relative">
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-[#F08301] text-white text-[9px] font-bold flex items-center justify-center px-0.5">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80 p-0">
+              <div className="flex items-center justify-between px-3 py-2 border-b">
+                <span className="text-sm font-semibold">Notifications</span>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button className="text-[10px] text-[#F08301] hover:text-[#d97706] font-medium" onClick={() => markAllMutation.mutate()}>
+                      Mark all read
+                    </button>
+                  )}
+                  <Link href="/admin/notifications" className="text-[10px] text-muted-foreground hover:text-foreground">View all</Link>
+                </div>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {!notifList || notifList.length === 0 ? (
+                  <div className="px-3 py-6 text-center text-muted-foreground text-xs">
+                    <Bell className="w-6 h-6 mx-auto mb-2 opacity-30" />
+                    No notifications
+                  </div>
+                ) : notifList.map(n => (
+                  <div key={n.id} className={`px-3 py-2.5 border-b last:border-0 flex items-start gap-2.5 hover:bg-muted/30 transition-colors ${!n.isRead ? "bg-[#F08301]/5" : ""}`}>
+                    <span className="text-base mt-0.5 shrink-0">{NOTIF_ICONS[n.type ?? ""] ?? NOTIF_ICONS.default}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium leading-snug">{n.title}</div>
+                      {n.message && <div className="text-[10px] text-muted-foreground mt-0.5 leading-snug line-clamp-2">{n.message}</div>}
+                      <div className="text-[9px] text-muted-foreground mt-1 flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" />
+                        {n.createdAt ? new Date(n.createdAt).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                      </div>
+                    </div>
+                    {!n.isRead && <div className="w-2 h-2 rounded-full bg-[#F08301] mt-1 shrink-0" />}
+                  </div>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Avatar dropdown */}
           <DropdownMenu>

@@ -8,6 +8,10 @@ import contractsRouter from "./contracts.js";
 import financeRouter from "./finance.js";
 import dashboardRouter from "./dashboard.js";
 import publicRouter from "./public.js";
+import servicesRouter from "./services.js";
+import myAccountingRouter from "./my-accounting.js";
+import reportsRouter from "./reports.js";
+import notificationsRouter from "./notifications.js";
 
 const router: IRouter = Router();
 
@@ -20,5 +24,9 @@ router.use(contractsRouter);
 router.use(financeRouter);
 router.use(dashboardRouter);
 router.use(publicRouter);
+router.use(servicesRouter);
+router.use(myAccountingRouter);
+router.use(reportsRouter);
+router.use(notificationsRouter);
 
 export default router;

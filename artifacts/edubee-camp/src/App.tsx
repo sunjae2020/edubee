@@ -17,6 +17,43 @@ import Contracts from "@/pages/admin/contracts";
 import AdminStub from "@/pages/admin/stub";
 import NotFound from "@/pages/not-found";
 
+// Services
+import InstituteManagement from "@/pages/admin/services/institute";
+import HotelManagement from "@/pages/admin/services/hotel";
+import PickupManagement from "@/pages/admin/services/pickup";
+import TourManagement from "@/pages/admin/services/tour";
+import Interviews from "@/pages/admin/services/interviews";
+import Settlement from "@/pages/admin/services/settlement";
+
+// Accounting
+import ExchangeRates from "@/pages/admin/accounting/exchange-rates";
+import ClientInvoices from "@/pages/admin/accounting/client-invoices";
+import AgentInvoices from "@/pages/admin/accounting/agent-invoices";
+import PartnerInvoices from "@/pages/admin/accounting/partner-invoices";
+import Receipts from "@/pages/admin/accounting/receipts";
+import Transactions from "@/pages/admin/accounting/transactions";
+
+// My Accounting
+import MySettlements from "@/pages/admin/my-accounting/settlements";
+import MyInvoices from "@/pages/admin/my-accounting/invoices";
+import MyRevenue from "@/pages/admin/my-accounting/revenue";
+
+// Reports
+import Reports from "@/pages/admin/reports";
+
+// Settings
+import GeneralSettings from "@/pages/admin/settings/general";
+import PageAccess from "@/pages/admin/settings/page-access";
+import FieldPermissions from "@/pages/admin/settings/field-permissions";
+import DocPermissions from "@/pages/admin/settings/doc-permissions";
+import ImpersonationLogs from "@/pages/admin/settings/impersonation-logs";
+
+// My Programs
+import MyPrograms from "@/pages/admin/my-programs";
+
+// Notifications
+import Notifications from "@/pages/admin/notifications";
+
 import { MainLayout } from "@/components/layout/main-layout";
 
 const queryClient = new QueryClient({
@@ -55,80 +92,92 @@ function Router() {
         <AdminRoute title="Contracts"><Contracts /></AdminRoute>
       </Route>
 
+      {/* Service Pages */}
       <Route path="/admin/services/institute">
-        <AdminRoute title="Institute Management"><AdminStub title="Institute Management" icon="🎓" /></AdminRoute>
+        <AdminRoute title="Institute Management"><InstituteManagement /></AdminRoute>
       </Route>
       <Route path="/admin/services/hotel">
-        <AdminRoute title="Hotel Management"><AdminStub title="Hotel Management" icon="🏨" /></AdminRoute>
+        <AdminRoute title="Hotel Management"><HotelManagement /></AdminRoute>
       </Route>
       <Route path="/admin/services/pickup">
-        <AdminRoute title="Pickup Management"><AdminStub title="Pickup Management" icon="🚗" /></AdminRoute>
+        <AdminRoute title="Pickup Management"><PickupManagement /></AdminRoute>
       </Route>
       <Route path="/admin/services/tour">
-        <AdminRoute title="Tour Management"><AdminStub title="Tour Management" icon="🗺️" /></AdminRoute>
+        <AdminRoute title="Tour Management"><TourManagement /></AdminRoute>
       </Route>
       <Route path="/admin/services/interviews">
-        <AdminRoute title="Interviews"><AdminStub title="Interviews" icon="🗓️" /></AdminRoute>
+        <AdminRoute title="Interviews"><Interviews /></AdminRoute>
       </Route>
       <Route path="/admin/services/settlement">
-        <AdminRoute title="Settlement"><AdminStub title="Settlement" icon="💵" /></AdminRoute>
+        <AdminRoute title="Settlement"><Settlement /></AdminRoute>
       </Route>
 
+      {/* Accounting Pages */}
       <Route path="/admin/accounting/client-invoices">
-        <AdminRoute title="Client Invoices"><AdminStub title="Client Invoices" icon="💰" /></AdminRoute>
+        <AdminRoute title="Client Invoices"><ClientInvoices /></AdminRoute>
       </Route>
       <Route path="/admin/accounting/agent-invoices">
-        <AdminRoute title="Agent Invoices"><AdminStub title="Agent Invoices" icon="🏢" /></AdminRoute>
+        <AdminRoute title="Agent Invoices"><AgentInvoices /></AdminRoute>
       </Route>
       <Route path="/admin/accounting/partner-invoices">
-        <AdminRoute title="Partner Invoices"><AdminStub title="Partner Invoices" icon="🤝" /></AdminRoute>
+        <AdminRoute title="Partner Invoices"><PartnerInvoices /></AdminRoute>
       </Route>
       <Route path="/admin/accounting/receipts">
-        <AdminRoute title="Receipts"><AdminStub title="Receipts" icon="🧾" /></AdminRoute>
+        <AdminRoute title="Receipts"><Receipts /></AdminRoute>
       </Route>
       <Route path="/admin/accounting/transactions">
-        <AdminRoute title="Transactions"><AdminStub title="Transactions" icon="🏦" /></AdminRoute>
+        <AdminRoute title="Transactions"><Transactions /></AdminRoute>
       </Route>
       <Route path="/admin/accounting/exchange-rates">
-        <AdminRoute title="Exchange Rates"><AdminStub title="Exchange Rates" icon="💱" /></AdminRoute>
+        <AdminRoute title="Exchange Rates"><ExchangeRates /></AdminRoute>
       </Route>
 
+      {/* My Accounting */}
       <Route path="/admin/my-accounting/settlements">
-        <AdminRoute title="My Settlements"><AdminStub title="My Settlements" icon="💵" /></AdminRoute>
+        <AdminRoute title="My Settlements"><MySettlements /></AdminRoute>
       </Route>
       <Route path="/admin/my-accounting/invoices">
-        <AdminRoute title="My Invoices"><AdminStub title="My Invoices" icon="🧾" /></AdminRoute>
+        <AdminRoute title="My Invoices"><MyInvoices /></AdminRoute>
       </Route>
       <Route path="/admin/my-accounting/revenue">
-        <AdminRoute title="My Revenue"><AdminStub title="My Revenue" icon="💰" /></AdminRoute>
+        <AdminRoute title="My Revenue"><MyRevenue /></AdminRoute>
       </Route>
 
+      {/* Reports */}
       <Route path="/admin/reports">
-        <AdminRoute title="Program Reports"><AdminStub title="Program Reports" icon="📊" /></AdminRoute>
+        <AdminRoute title="Program Reports"><Reports /></AdminRoute>
       </Route>
 
+      {/* Users */}
       <Route path="/admin/users">
         <AdminRoute title="Users"><Users /></AdminRoute>
       </Route>
 
+      {/* Settings */}
       <Route path="/admin/settings/general">
-        <AdminRoute title="General Settings"><AdminStub title="General Settings" icon="⚙️" /></AdminRoute>
+        <AdminRoute title="General Settings"><GeneralSettings /></AdminRoute>
       </Route>
       <Route path="/admin/settings/page-access">
-        <AdminRoute title="Page Access"><AdminStub title="Page Access" icon="🔐" /></AdminRoute>
+        <AdminRoute title="Page Access"><PageAccess /></AdminRoute>
       </Route>
       <Route path="/admin/settings/field-permissions">
-        <AdminRoute title="Field Permissions"><AdminStub title="Field Permissions" icon="🗂️" /></AdminRoute>
+        <AdminRoute title="Field Permissions"><FieldPermissions /></AdminRoute>
       </Route>
       <Route path="/admin/settings/doc-permissions">
-        <AdminRoute title="Document Permissions"><AdminStub title="Document Permissions" icon="📄" /></AdminRoute>
+        <AdminRoute title="Document Permissions"><DocPermissions /></AdminRoute>
       </Route>
       <Route path="/admin/settings/impersonation-logs">
-        <AdminRoute title="Impersonation Logs"><AdminStub title="Impersonation Logs" icon="🕵️" /></AdminRoute>
+        <AdminRoute title="Impersonation Logs"><ImpersonationLogs /></AdminRoute>
       </Route>
 
+      {/* My Programs */}
       <Route path="/admin/my-programs">
-        <AdminRoute title="My Programs"><AdminStub title="My Programs" icon="🎓" /></AdminRoute>
+        <AdminRoute title="My Programs"><MyPrograms /></AdminRoute>
+      </Route>
+
+      {/* Notifications */}
+      <Route path="/admin/notifications">
+        <AdminRoute title="Notifications"><Notifications /></AdminRoute>
       </Route>
 
       {/* Legacy redirects */}

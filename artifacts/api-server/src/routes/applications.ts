@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt } from "@workspace/db/schema";
+import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt, interviewSchedules } from "@workspace/db/schema";
 import { eq, and, ilike, or, count, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -199,4 +199,70 @@ router.post("/applications/:id/convert-contract", authenticate, requireRole("sup
   }
 });
 
+// ── Interview Schedules ───────────────────────────────────────
+router.get("/interview-schedules", authenticate, async (req, res) => {
+  try {
+    const { applicationId, status } = req.query as Record<string, string>;
+    const conditions: any[] = [];
+    if (applicationId) conditions.push(eq(interviewSchedules.applicationId, applicationId));
+    if (status) conditions.push(eq(interviewSchedules.status, status));
+
+    const rows = conditions.length > 0
+      ? await db.select().from(interviewSchedules).where(and(...conditions)).orderBy(interviewSchedules.scheduledDatetime)
+      : await db.select().from(interviewSchedules).orderBy(interviewSchedules.scheduledDatetime);
+
+    return res.json({ data: rows, total: rows.length });
+  } catch (err) {
+    console.error("GET interview-schedules error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/interview-schedules", authenticate, async (req, res) => {
+  try {
+    const { applicationId, packageGroupId, interviewerId, scheduledDatetime, timezone, format, meetingLink, location, candidateNotes } = req.body;
+    if (!scheduledDatetime) return res.status(400).json({ error: "scheduledDatetime is required" });
+    const [created] = await db.insert(interviewSchedules).values({
+      applicationId: applicationId || null,
+      packageGroupId: packageGroupId || null,
+      interviewerId: interviewerId || null,
+      scheduledDatetime: new Date(scheduledDatetime),
+      timezone: timezone ?? "Asia/Seoul",
+      format: format ?? "online",
+      meetingLink: meetingLink || null,
+      location: location || null,
+      status: "scheduled",
+      candidateNotes: candidateNotes || null,
+    }).returning();
+    return res.status(201).json(created);
+  } catch (err) {
+    console.error("POST interview-schedules error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.patch("/interview-schedules/:id", authenticate, async (req, res) => {
+  try {
+    const { scheduledDatetime, format, meetingLink, location, status, result, interviewerNotes, candidateNotes, timezone } = req.body;
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (scheduledDatetime) updates.scheduledDatetime = new Date(scheduledDatetime);
+    if (format !== undefined) updates.format = format;
+    if (meetingLink !== undefined) updates.meetingLink = meetingLink;
+    if (location !== undefined) updates.location = location;
+    if (status !== undefined) updates.status = status;
+    if (result !== undefined) updates.result = result;
+    if (interviewerNotes !== undefined) updates.interviewerNotes = interviewerNotes;
+    if (candidateNotes !== undefined) updates.candidateNotes = candidateNotes;
+    if (timezone !== undefined) updates.timezone = timezone;
+
+    const [updated] = await db.update(interviewSchedules).set(updates).where(eq(interviewSchedules.id, req.params.id)).returning();
+    if (!updated) return res.status(404).json({ error: "Not Found" });
+    return res.json(updated);
+  } catch (err) {
+    console.error("PATCH interview-schedules error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 export default router;
+
