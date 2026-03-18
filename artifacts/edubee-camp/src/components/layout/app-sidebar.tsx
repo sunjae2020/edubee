@@ -135,35 +135,48 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
 
   return (
     <aside
-      className="flex flex-col shrink-0 h-full overflow-hidden border-r border-border bg-sidebar transition-all duration-200"
-      style={{ width: collapsed ? 60 : 232 }}
+      className="flex flex-col shrink-0 h-full overflow-hidden transition-all duration-200"
+      style={{
+        width: collapsed ? 60 : 232,
+        background: "#0F172A",
+        borderRight: "1px solid rgba(255,255,255,0.06)",
+      }}
     >
       {/* Logo */}
-      <div className="flex items-center h-14 border-b border-border px-3 shrink-0">
+      <div
+        className="flex items-center h-14 shrink-0 px-3"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+      >
         {!collapsed && (
           <Link href="/">
             <img
               src={logoImg}
               alt="Edubee Camp"
-              className="h-6 w-auto object-contain dark:brightness-0 dark:invert dark:opacity-90"
+              className="h-6 w-auto object-contain brightness-0 invert opacity-90"
             />
           </Link>
         )}
         <button
           onClick={onToggle}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={`w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors shrink-0 ${collapsed ? "mx-auto" : "ml-auto"}`}
+          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${collapsed ? "mx-auto" : "ml-auto"}`}
+          style={{ color: "#64748b" }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLButtonElement).style.color = "#e2e8f0"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "#64748b"; }}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
 
-      {/* Nav — no scrollbar visible, still scrollable */}
+      {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {nav.map((group) => (
           <div key={group.label} className="mb-1">
             {!collapsed && (
-              <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 select-none">
+              <div
+                className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest select-none"
+                style={{ color: "#475569" }}
+              >
                 {group.label}
               </div>
             )}
@@ -172,21 +185,7 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href}>
-                  <div
-                    title={collapsed ? item.label : undefined}
-                    className={`flex items-center gap-2.5 mx-2 px-2.5 py-2 rounded-lg text-sm cursor-pointer transition-all duration-150 ${
-                      isActive
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-sidebar-foreground/70 hover:bg-accent hover:text-accent-foreground font-medium"
-                    } ${collapsed ? "justify-center" : ""}`}
-                  >
-                    <Icon
-                      className={`shrink-0 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}
-                      size={16}
-                      strokeWidth={isActive ? 2.2 : 1.8}
-                    />
-                    {!collapsed && <span className="truncate">{item.label}</span>}
-                  </div>
+                  <SidebarNavItem icon={Icon} label={item.label} isActive={isActive} collapsed={collapsed} />
                 </Link>
               );
             })}
@@ -195,19 +194,72 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
       </nav>
 
       {/* User footer */}
-      {!collapsed && user && (
-        <div className="border-t border-border p-3 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center shrink-0">
+      {user && (
+        <div
+          className="p-3 shrink-0"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          {collapsed ? (
+            <div
+              className="w-8 h-8 rounded-full text-xs font-bold flex items-center justify-center mx-auto"
+              style={{ background: "rgba(240,131,1,0.2)", color: "#F08301" }}
+              title={user.fullName}
+            >
               {user.fullName.substring(0, 2).toUpperCase()}
             </div>
-            <div className="min-w-0">
-              <div className="text-xs font-semibold text-sidebar-foreground truncate">{user.fullName}</div>
-              <div className="text-[10px] text-muted-foreground truncate">{user.email}</div>
+          ) : (
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0"
+                style={{ background: "rgba(240,131,1,0.2)", color: "#F08301" }}
+              >
+                {user.fullName.substring(0, 2).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-semibold truncate" style={{ color: "#e2e8f0" }}>{user.fullName}</div>
+                <div className="text-[10px] truncate" style={{ color: "#64748b" }}>{user.email}</div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </aside>
+  );
+}
+
+function SidebarNavItem({
+  icon: Icon, label, isActive, collapsed,
+}: { icon: LucideIcon; label: string; isActive: boolean; collapsed: boolean }) {
+  return (
+    <div
+      title={collapsed ? label : undefined}
+      className="flex items-center gap-2.5 mx-2 px-2.5 py-2 rounded-lg text-sm cursor-pointer transition-all duration-150 select-none"
+      style={{
+        background: isActive ? "rgba(255,255,255,0.10)" : "transparent",
+        color: isActive ? "#ffffff" : "#94a3b8",
+        fontWeight: isActive ? 600 : 500,
+        justifyContent: collapsed ? "center" : undefined,
+      }}
+      onMouseEnter={e => {
+        if (!isActive) {
+          (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.06)";
+          (e.currentTarget as HTMLDivElement).style.color = "#e2e8f0";
+        }
+      }}
+      onMouseLeave={e => {
+        if (!isActive) {
+          (e.currentTarget as HTMLDivElement).style.background = "transparent";
+          (e.currentTarget as HTMLDivElement).style.color = "#94a3b8";
+        }
+      }}
+    >
+      <Icon
+        className="shrink-0 transition-colors"
+        size={16}
+        strokeWidth={isActive ? 2.2 : 1.8}
+        style={{ color: isActive ? "#F08301" : undefined }}
+      />
+      {!collapsed && <span className="truncate">{label}</span>}
+    </div>
   );
 }

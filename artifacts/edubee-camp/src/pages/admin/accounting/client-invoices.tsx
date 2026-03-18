@@ -3,11 +3,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ListToolbar } from "@/components/ui/list-toolbar";
+import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
-import { Receipt, Plus, Send } from "lucide-react";
+import { Receipt, Send, ChevronRight } from "lucide-react";
+import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const PAGE_SIZE = 10;
+const STATUSES = ["draft", "sent", "paid", "overdue", "cancelled"];
 
 const CURRENCY_SYMBOLS: Record<string, string> = { AUD: "A$", USD: "$", SGD: "S$", PHP: "₱", THB: "฿", KRW: "₩", JPY: "¥", GBP: "£" };
 
@@ -24,126 +28,135 @@ function DualAmount({ amount, currency, audEquivalent }: { amount?: string | num
   );
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700 border-gray-200",
-  sent: "bg-blue-100 text-blue-800 border-blue-200",
-  paid: "bg-green-100 text-green-800 border-green-200",
-  overdue: "bg-red-100 text-red-800 border-red-200",
-  cancelled: "bg-gray-100 text-gray-500 border-gray-200",
-};
-
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "draft").toLowerCase();
-  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[s] ?? "bg-gray-100 text-gray-700 border-gray-200"}`}>{s}</span>;
+  const map: Record<string, string> = {
+    draft: "bg-gray-100 text-gray-700", sent: "bg-blue-100 text-blue-800",
+    paid: "bg-green-100 text-green-800", overdue: "bg-red-100 text-red-800", cancelled: "bg-gray-100 text-gray-500",
+  };
+  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${map[s] ?? "bg-gray-100 text-gray-700"}`}>{s}</span>;
 }
 
-interface Invoice { id: string; invoiceNumber?: string | null; contractId?: string | null; invoiceType?: string | null; totalAmount?: string | null; currency?: string | null; originalCurrency?: string | null; originalAmount?: string | null; audEquivalent?: string | null; status?: string | null; issuedAt?: string | null; dueDate?: string | null; paidAt?: string | null; notes?: string | null; }
+interface Invoice {
+  id: string; invoiceNumber?: string | null; contractId?: string | null;
+  studentName?: string | null; invoiceType?: string | null;
+  totalAmount?: string | null; currency?: string | null;
+  originalCurrency?: string | null; originalAmount?: string | null; audEquivalent?: string | null;
+  status?: string | null; issuedAt?: string | null; dueDate?: string | null;
+  paidAt?: string | null; notes?: string | null;
+}
 
 export default function ClientInvoices() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [search, setSearch] = useState("");
+  const [activeStatus, setActiveStatus] = useState("all");
+  const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Invoice | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["invoices-client"],
-    queryFn: () => axios.get(`${BASE}/api/invoices?invoiceType=client`).then(r => r.data),
+  const queryKey = ["invoices-client", { search, status: activeStatus, page }];
+  const { data: resp, isLoading } = useQuery({
+    queryKey,
+    queryFn: () => {
+      const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), invoiceType: "client" });
+      if (search) params.set("search", search);
+      if (activeStatus !== "all") params.set("status", activeStatus);
+      return axios.get(`${BASE}/api/invoices?${params}`).then(r => r.data);
+    },
   });
-  const rows: Invoice[] = data?.data ?? [];
+  const rows: Invoice[] = resp?.data ?? [];
+  const total: number = resp?.meta?.total ?? rows.length;
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Partial<Invoice> }) => axios.put(`${BASE}/api/invoices/${id}`, payload).then(r => r.data),
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<Invoice> }) =>
+      axios.put(`${BASE}/api/invoices/${id}`, payload).then(r => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices-client"] }); toast({ title: "Invoice updated" }); setSelected(null); },
     onError: () => toast({ title: "Update failed", variant: "destructive" }),
   });
 
-  const totalPaid = rows.filter(r => r.status === "paid").reduce((s, r) => s + Number(r.totalAmount ?? 0), 0);
-  const totalOutstanding = rows.filter(r => r.status === "sent" || r.status === "overdue").reduce((s, r) => s + Number(r.totalAmount ?? 0), 0);
-  const overdueCount = rows.filter(r => r.status === "overdue").length;
-
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F08301]/10 flex items-center justify-center"><Receipt className="w-5 h-5 text-[#F08301]" /></div>
-          <div><h1 className="text-lg font-bold">Client Invoices</h1><p className="text-xs text-muted-foreground">Invoices issued to parent clients for program fees</p></div>
-        </div>
-        <Button size="sm" className="bg-[#F08301] hover:bg-[#d97706] text-white gap-1.5" onClick={() => toast({ title: "Feature coming soon", description: "Invoice creation will open contract picker" })}>
-          <Plus className="w-3.5 h-3.5" /> New Invoice
-        </Button>
-      </div>
+    <div className="space-y-4">
+      <ListToolbar
+        search={search} onSearch={v => { setSearch(v); setPage(1); }}
+        statuses={STATUSES} activeStatus={activeStatus} onStatusChange={s => { setActiveStatus(s); setPage(1); }}
+        total={total} addLabel="New Invoice" onAdd={() => toast({ title: "Coming soon", description: "Invoice creation will open contract picker" })}
+      />
 
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        {[
-          { label: "Total Paid", value: `A$${totalPaid.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, color: "text-green-700" },
-          { label: "Outstanding", value: `A$${totalOutstanding.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, color: "text-yellow-700" },
-          { label: "Overdue", value: `${overdueCount} invoice${overdueCount !== 1 ? "s" : ""}`, color: overdueCount > 0 ? "text-red-600" : "" },
-        ].map(k => (
-          <div key={k.label} className="bg-white rounded-lg border p-3">
-            <div className="text-xs text-muted-foreground font-medium mb-1">{k.label}</div>
-            <div className={`text-base font-bold ${k.color ?? ""}`}>{k.value}</div>
-          </div>
-        ))}
-      </div>
-
-      {isLoading ? <div className="space-y-2">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div> : (
-        <div className="rounded-lg border overflow-x-auto bg-white">
-          <table className="w-full text-sm">
-            <thead><tr className="border-b bg-muted/30">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Invoice #</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Contract</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">Amount</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Issued</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Due</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
-              <th className="px-4 py-3"></th>
-            </tr></thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground text-sm">No client invoices yet</td></tr>
-              ) : rows.map(r => (
-                <tr key={r.id} className="border-b last:border-0 hover:bg-muted/20 cursor-pointer" onClick={() => setSelected(r)}>
-                  <td className="px-4 py-3 font-mono text-xs">{r.invoiceNumber ?? "—"}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.contractId?.slice(0, 8) ?? "—"}</td>
-                  <td className="px-4 py-3 text-right"><DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{r.issuedAt ? new Date(r.issuedAt).toLocaleDateString("en-AU") : "—"}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{r.dueDate ?? "—"}</td>
-                  <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-                  <td className="px-4 py-3">
-                    {r.status === "draft" && (
-                      <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "sent", issuedAt: new Date().toISOString() } }); }}>
-                        <Send className="w-2.5 h-2.5" /> Send
-                      </Button>
-                    )}
-                    {r.status === "sent" && (
-                      <Button size="sm" className="h-6 text-[10px] px-2 bg-green-600 hover:bg-green-700 text-white" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "paid", paidAt: new Date().toISOString() } }); }}>
-                        Mark Paid
-                      </Button>
-                    )}
-                  </td>
-                </tr>
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-muted/30">
+              {["Invoice #", "Student", "Amount", "Issued", "Due", "Status", ""].map(h => (
+                <th key={h} className={`px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide ${h === "Amount" ? "text-right" : "text-left"}`}>{h}</th>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {isLoading ? (
+              [...Array(PAGE_SIZE)].map((_, i) => (
+                <tr key={i}>{[...Array(7)].map((_, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>)}</tr>
+              ))
+            ) : rows.length === 0 ? (
+              <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                <Receipt className="w-8 h-8 mx-auto mb-3 opacity-30" />No client invoices found
+              </td></tr>
+            ) : rows.map(r => (
+              <tr key={r.id} className="hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => setSelected(r)}>
+                <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{r.invoiceNumber ?? "—"}</td>
+                <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>
+                <td className="px-4 py-3 text-right">
+                  <DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} />
+                </td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{r.issuedAt ? format(new Date(r.issuedAt), "MMM d, yyyy") : "—"}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{r.dueDate ?? "—"}</td>
+                <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                <td className="px-4 py-3">
+                  {r.status === "draft" && (
+                    <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "sent", issuedAt: new Date().toISOString() } }); }}>
+                      <Send className="w-2.5 h-2.5" /> Send
+                    </Button>
+                  )}
+                  {r.status === "sent" && (
+                    <Button size="sm" className="h-6 text-[10px] px-2 bg-green-600 hover:bg-green-700 text-white" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "paid", paidAt: new Date().toISOString() } }); }}>
+                      Mark Paid
+                    </Button>
+                  )}
+                  {!["draft", "sent"].includes(r.status ?? "") && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
 
       <Sheet open={!!selected} onOpenChange={o => { if (!o) setSelected(null); }}>
-        <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto">
+        <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto bg-background">
           <SheetHeader><SheetTitle>Invoice {selected?.invoiceNumber}</SheetTitle></SheetHeader>
           {selected && (
             <div className="mt-4 space-y-4">
               <StatusBadge status={selected.status} />
               <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Contract</span><span className="font-mono">{selected.contractId?.slice(0, 8)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Student</span><span className="font-medium">{selected.studentName ?? "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Contract</span><span className="font-mono text-xs">{selected.contractId?.slice(0, 8)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Amount</span><DualAmount amount={selected.originalAmount ?? selected.totalAmount} currency={selected.originalCurrency ?? selected.currency} audEquivalent={selected.audEquivalent} /></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Issued</span><span>{selected.issuedAt ? new Date(selected.issuedAt).toLocaleDateString("en-AU") : "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Issued</span><span>{selected.issuedAt ? format(new Date(selected.issuedAt), "MMM d, yyyy") : "—"}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Due</span><span>{selected.dueDate ?? "—"}</span></div>
-                {selected.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">Paid At</span><span>{new Date(selected.paidAt).toLocaleDateString("en-AU")}</span></div>}
+                {selected.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">Paid At</span><span>{format(new Date(selected.paidAt), "MMM d, yyyy")}</span></div>}
               </div>
               {selected.notes && <div><div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notes</div><p className="text-sm">{selected.notes}</p></div>}
               <div className="flex gap-2 pt-2">
-                {selected.status === "draft" && <Button size="sm" className="bg-[#F08301] hover:bg-[#d97706] text-white flex-1 gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}><Send className="w-3.5 h-3.5" /> Send Invoice</Button>}
-                {selected.status === "sent" && <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white flex-1" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "paid", paidAt: new Date().toISOString() } })}>Mark as Paid</Button>}
+                {selected.status === "draft" && (
+                  <Button size="sm" className="bg-[#F08301] hover:bg-[#d97706] text-white flex-1 gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}>
+                    <Send className="w-3.5 h-3.5" /> Send Invoice
+                  </Button>
+                )}
+                {selected.status === "sent" && (
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white flex-1" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "paid", paidAt: new Date().toISOString() } })}>
+                    Mark as Paid
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>
               </div>
             </div>

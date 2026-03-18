@@ -5,7 +5,7 @@ import {
   instituteMgt, hotelMgt, pickupMgt, tourMgt, settlementMgt,
   invoices, receipts, transactions, users,
 } from "@workspace/db/schema";
-import { eq, and, ilike, count, SQL } from "drizzle-orm";
+import { eq, and, ilike, count, inArray, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -35,7 +35,26 @@ router.get("/contracts", authenticate, async (req, res) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(contracts).where(whereClause);
-    const data = await db.select().from(contracts).where(whereClause).limit(limitNum).offset(offset).orderBy(contracts.createdAt);
+    const rawData = await db.select().from(contracts).where(whereClause).limit(limitNum).offset(offset).orderBy(contracts.createdAt);
+
+    // Enrich with student name via application → client user
+    const appIds = [...new Set(rawData.map(c => c.applicationId).filter(Boolean))] as string[];
+    const appRows = appIds.length > 0
+      ? await db.select({ id: applications.id, clientId: applications.clientId, applicationNumber: applications.applicationNumber })
+          .from(applications).where(inArray(applications.id, appIds))
+      : [];
+    const clientIds = [...new Set(appRows.map(a => a.clientId).filter(Boolean))] as string[];
+    const userRows = clientIds.length > 0
+      ? await db.select({ id: users.id, fullName: users.fullName }).from(users).where(inArray(users.id, clientIds))
+      : [];
+    const userMap = new Map(userRows.map(u => [u.id, u.fullName]));
+    const appMap = new Map(appRows.map(a => [a.id, { clientId: a.clientId, applicationNumber: a.applicationNumber }]));
+
+    const data = rawData.map(c => {
+      const app = c.applicationId ? appMap.get(c.applicationId) : null;
+      const studentName = app?.clientId ? (userMap.get(app.clientId) ?? null) : null;
+      return { ...c, studentName, application: app ? { studentName, applicationNumber: app.applicationNumber } : null };
+    });
 
     const total = Number(totalResult.count);
     return res.json({ data, meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) } });

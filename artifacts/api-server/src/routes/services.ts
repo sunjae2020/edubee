@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import {
-  instituteMgt, hotelMgt, pickupMgt, tourMgt, settlementMgt, contracts
+  instituteMgt, hotelMgt, pickupMgt, tourMgt, settlementMgt, contracts, applications, users
 } from "@workspace/db/schema";
-import { eq, and, sql, SQL } from "drizzle-orm";
+import { eq, and, inArray, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 
 const router = Router();
@@ -14,25 +14,39 @@ function isAdminOrCC(role: UserRole) {
   return ["super_admin", "admin", "camp_coordinator"].includes(role);
 }
 
+/** Batch enrich rows with studentName via contractId → contract → application → client user */
+async function enrichWithStudentName(rows: any[]): Promise<any[]> {
+  const contractIds = [...new Set(rows.map(r => r.contractId).filter(Boolean))];
+  if (contractIds.length === 0) return rows;
+
+  // contracts → applications → users (client)
+  const contractRows = await db
+    .select({
+      contractId: contracts.id,
+      applicationId: contracts.applicationId,
+      clientId: applications.clientId,
+      studentName: users.fullName,
+    })
+    .from(contracts)
+    .leftJoin(applications, eq(contracts.applicationId, applications.id))
+    .leftJoin(users, eq(applications.clientId, users.id))
+    .where(inArray(contracts.id, contractIds));
+
+  const contractMap = new Map(contractRows.map(c => [c.contractId, c.studentName ?? null]));
+  return rows.map(r => ({ ...r, studentName: contractMap.get(r.contractId) ?? null }));
+}
+
 // ── Institute Management ─────────────────────────────────────────────
 
 router.get("/services/institute", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
     const uid = req.user!.id;
-    let query = db.select({
-      id: instituteMgt.id, contractId: instituteMgt.contractId,
-      instituteId: instituteMgt.instituteId, programDetails: instituteMgt.programDetails,
-      startDate: instituteMgt.startDate, endDate: instituteMgt.endDate,
-      schedule: instituteMgt.schedule, totalHours: instituteMgt.totalHours,
-      englishLevelStart: instituteMgt.englishLevelStart, englishLevelEnd: instituteMgt.englishLevelEnd,
-      teacherComments: instituteMgt.teacherComments, status: instituteMgt.status,
-      progressNotes: instituteMgt.progressNotes, createdAt: instituteMgt.createdAt, updatedAt: instituteMgt.updatedAt,
-    }).from(instituteMgt);
+    let query = db.select().from(instituteMgt);
     const data = role === "partner_institute"
       ? await query.where(eq(instituteMgt.instituteId, uid))
       : await query;
-    return res.json({ data });
+    return res.json({ data: await enrichWithStudentName(data) });
   } catch (err) {
     console.error("Institute list error:", err);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -61,11 +75,9 @@ router.put("/services/institute/:id", authenticate, async (req, res) => {
     if (role === "partner_institute" && rec.instituteId !== uid) return res.status(403).json({ error: "Forbidden" });
 
     const { schedule, teacherComments, englishLevelEnd, status, progressNotes,
-      // admin-only fields (SA/AD/CC only)
       programDetails, startDate, endDate, totalHours, englishLevelStart, instituteId } = req.body;
 
     const updates: Record<string, any> = { updatedAt: new Date() };
-    // partner_institute: limited edit
     if (schedule !== undefined) updates.schedule = schedule;
     if (teacherComments !== undefined) updates.teacherComments = teacherComments;
     if (englishLevelEnd !== undefined) updates.englishLevelEnd = englishLevelEnd;
@@ -98,7 +110,7 @@ router.get("/services/hotel", authenticate, async (req, res) => {
     const data = role === "partner_hotel"
       ? await query.where(eq(hotelMgt.hotelId, uid))
       : await query;
-    return res.json({ data });
+    return res.json({ data: await enrichWithStudentName(data) });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
@@ -159,7 +171,7 @@ router.get("/services/pickup", authenticate, async (req, res) => {
     const data = role === "partner_pickup"
       ? await query.where(eq(pickupMgt.driverId, uid))
       : await query;
-    return res.json({ data });
+    return res.json({ data: await enrichWithStudentName(data) });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
@@ -217,7 +229,7 @@ router.get("/services/tour", authenticate, async (req, res) => {
     const data = role === "partner_tour"
       ? await query.where(eq(tourMgt.tourCompanyId, uid))
       : await query;
-    return res.json({ data });
+    return res.json({ data: await enrichWithStudentName(data) });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
@@ -282,18 +294,15 @@ router.get("/services/settlement", authenticate, async (req, res) => {
     if (providerId) conditions.push(eq(settlementMgt.providerUserId, providerId));
     if (status) conditions.push(eq(settlementMgt.status, status));
 
-    // Partner isolation
     if (role.startsWith("partner_")) {
       conditions.push(eq(settlementMgt.providerUserId, uid));
     } else if (role === "camp_coordinator") {
-      // CC sees settlements where contract.campProviderId = own id
       const ownContracts = await db.select({ id: contracts.id }).from(contracts).where(eq(contracts.campProviderId, uid));
       const contractIds = ownContracts.map(c => c.id);
       if (contractIds.length === 0) return res.json({ data: [] });
-      // Filter by own contract IDs
       const rawData = await db.select().from(settlementMgt);
       const data = rawData.filter(s => s.contractId && contractIds.includes(s.contractId));
-      return res.json({ data });
+      return res.json({ data: await enrichWithStudentName(data) });
     } else if (role === "education_agent") {
       conditions.push(eq(settlementMgt.providerUserId, uid));
     }
@@ -302,7 +311,7 @@ router.get("/services/settlement", authenticate, async (req, res) => {
       ? await db.select().from(settlementMgt).where(conditions.length === 1 ? conditions[0] : and(...conditions))
       : await db.select().from(settlementMgt);
 
-    return res.json({ data });
+    return res.json({ data: await enrichWithStudentName(data) });
   } catch (err) {
     console.error("Settlement list error:", err);
     return res.status(500).json({ error: "Internal Server Error" });

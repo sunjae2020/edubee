@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt, interviewSchedules } from "@workspace/db/schema";
-import { eq, and, ilike, or, count, sql, SQL } from "drizzle-orm";
+import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt, interviewSchedules, users } from "@workspace/db/schema";
+import { eq, and, ilike, or, count, inArray, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -32,7 +32,8 @@ router.get("/leads", authenticate, async (req, res) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(leads).where(whereClause);
-    const data = await db.select().from(leads).where(whereClause).limit(limitNum).offset(offset).orderBy(leads.createdAt);
+    const rawData = await db.select().from(leads).where(whereClause).limit(limitNum).offset(offset).orderBy(leads.createdAt);
+    const data = rawData.map(l => ({ ...l, studentName: l.fullName }));
 
     const total = Number(totalResult.count);
     return res.json({ data, meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) } });
@@ -83,6 +84,46 @@ router.delete("/leads/:id", authenticate, async (req, res) => {
   }
 });
 
+router.put("/leads/:id/status", authenticate, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const [lead] = await db.update(leads).set({ status, updatedAt: new Date() })
+      .where(eq(leads.id, req.params.id)).returning();
+    if (!lead) return res.status(404).json({ error: "Not Found" });
+    return res.json(lead);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/leads/:id/convert", authenticate, async (req, res) => {
+  try {
+    const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id)).limit(1);
+    if (!lead) return res.status(404).json({ error: "Lead not found" });
+    const applicationNumber = generateApplicationNumber();
+    const [app] = await db.insert(applications).values({
+      applicationNumber,
+      agentId: lead.agentId ?? req.user!.id,
+      packageGroupId: lead.interestedIn ?? undefined,
+      status: "submitted",
+      referralSource: lead.source ?? undefined,
+      notes: [
+        `Converted from lead: ${lead.fullName}`,
+        lead.email ? `Email: ${lead.email}` : "",
+        lead.phone ? `Phone: ${lead.phone}` : "",
+        lead.nationality ? `Nationality: ${lead.nationality}` : "",
+        lead.notes ? `Original notes: ${lead.notes}` : "",
+      ].filter(Boolean).join("\n"),
+      specialRequests: lead.fullName,
+    }).returning();
+    await db.update(leads).set({ status: "converted", updatedAt: new Date() }).where(eq(leads.id, lead.id));
+    return res.status(201).json({ success: true, application: app });
+  } catch (err) {
+    console.error("Lead convert error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Applications
 router.get("/applications", authenticate, async (req, res) => {
   try {
@@ -101,7 +142,18 @@ router.get("/applications", authenticate, async (req, res) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(applications).where(whereClause);
-    const data = await db.select().from(applications).where(whereClause).limit(limitNum).offset(offset).orderBy(applications.createdAt);
+    const rawData = await db.select().from(applications).where(whereClause).limit(limitNum).offset(offset).orderBy(applications.createdAt);
+
+    // Enrich with student name (client user's fullName)
+    const clientIds = [...new Set(rawData.map(a => a.clientId).filter(Boolean))] as string[];
+    const userRows = clientIds.length > 0
+      ? await db.select({ id: users.id, fullName: users.fullName }).from(users).where(inArray(users.id, clientIds))
+      : [];
+    const userMap = new Map(userRows.map(u => [u.id, u.fullName]));
+    const data = rawData.map(a => ({
+      ...a,
+      studentName: a.clientId ? (userMap.get(a.clientId) ?? a.applicationNumber) : a.applicationNumber,
+    }));
 
     const total = Number(totalResult.count);
     return res.json({ data, meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) } });

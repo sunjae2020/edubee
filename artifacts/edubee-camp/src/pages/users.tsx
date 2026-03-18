@@ -12,7 +12,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs, ROLE_LABELS, ROLE_EMOJIS, ROLE_HIERARCHY } from "@/hooks/use-view-as";
 import { useLocation } from "wouter";
-import { Search, Plus, MoreVertical, Trash2, Eye, Loader2, ShieldOff, UserCheck } from "lucide-react";
+import { MoreVertical, Trash2, Eye, Loader2, ShieldOff, UserCheck } from "lucide-react";
+import { ListToolbar } from "@/components/ui/list-toolbar";
+import { ListPagination } from "@/components/ui/list-pagination";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -52,6 +54,8 @@ export default function Users() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [form, setForm] = useState(emptyForm);
 
   const currentRole = currentUser?.role ?? "parent_client";
@@ -99,6 +103,7 @@ export default function Users() {
     const matchRole = roleFilter === "all" || u.role === roleFilter;
     return matchSearch && matchRole;
   });
+  const pagedUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const roleStats = ALL_ROLES.map(role => ({
     role, count: users.filter(u => u.role === role).length,
@@ -151,19 +156,13 @@ export default function Users() {
         )}
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">{filtered.length} users</span>
-          <Button size="sm" className="h-9 gap-1.5 bg-[#F08301] hover:bg-[#d97706] text-white" onClick={() => setShowModal(true)}>
-            <Plus className="w-4 h-4" /> Add User
-          </Button>
-        </div>
-      </div>
+      <ListToolbar
+        search={search}
+        onSearch={v => { setSearch(v); setPage(1); }}
+        total={filtered.length}
+        addLabel="Add User"
+        onAdd={() => setShowModal(true)}
+      />
 
       {/* Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -177,19 +176,19 @@ export default function Users() {
           </thead>
           <tbody className="divide-y divide-border">
             {isLoading ? (
-              [...Array(6)].map((_, i) => (
+              [...Array(PAGE_SIZE)].map((_, i) => (
                 <tr key={i}>
                   {[...Array(6)].map((_, j) => (
                     <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                   ))}
                 </tr>
               ))
-            ) : filtered.length === 0 ? (
+            ) : pagedUsers.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">No users found</td>
               </tr>
             ) : (
-              filtered.map(user => (
+              pagedUsers.map(user => (
                 <tr key={user.id} className="hover:bg-muted/20 transition-colors group">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -273,6 +272,8 @@ export default function Users() {
           </tbody>
         </table>
       </div>
+
+      <ListPagination page={page} pageSize={PAGE_SIZE} total={filtered.length} onChange={setPage} />
 
       {/* Create Modal */}
       <Dialog open={showModal} onOpenChange={o => !o && closeModal()}>

@@ -9,8 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Globe, MapPin, Edit, Loader2 } from "lucide-react";
+import { Plus, Globe, MapPin, Edit, Loader2 } from "lucide-react";
+
+import { ListToolbar } from "@/components/ui/list-toolbar";
+import { ListPagination } from "@/components/ui/list-pagination";
 import { format } from "date-fns";
+
+const PAGE_SIZE = 12;
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -45,6 +50,7 @@ export default function PackageGroups() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<PackageGroup | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -113,18 +119,17 @@ export default function PackageGroups() {
     g.city?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search groups…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
-        </div>
-        <Button size="sm" className="h-9 gap-1.5 ml-auto" onClick={openCreate}>
-          <Plus className="w-4 h-4" /> New Package Group
-        </Button>
-      </div>
+      <ListToolbar
+        search={search}
+        onSearch={v => { setSearch(v); setPage(1); }}
+        total={filtered.length}
+        addLabel="New Package Group"
+        onAdd={openCreate}
+      />
 
       {/* Grid */}
       {isLoading ? (
@@ -132,15 +137,15 @@ export default function PackageGroups() {
           {[...Array(6)].map((_, i) => <div key={i} className="h-40 bg-muted rounded-xl animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border py-20 text-center">
+        <div className="bg-card rounded-xl border border-border py-20 text-center">
           <div className="text-4xl mb-3">📦</div>
           <h3 className="font-semibold mb-1">No Package Groups</h3>
           <p className="text-sm text-muted-foreground mb-4">Create your first package group to get started.</p>
-          <Button size="sm" onClick={openCreate} className="gap-1.5"><Plus className="w-4 h-4" /> New Package Group</Button>
+          <Button size="sm" onClick={openCreate} className="gap-1.5 bg-[#F08301] hover:bg-[#d97706] text-white"><Plus className="w-4 h-4" /> New Package Group</Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(g => {
+          {paged.map(g => {
             const countryInfo = COUNTRIES.find(c => c.code === g.country);
             return (
               <div key={g.id} className="bg-white rounded-xl border border-border p-5 hover:shadow-sm hover:border-[#F08301]/30 transition-all group">
@@ -198,6 +203,8 @@ export default function PackageGroups() {
           })}
         </div>
       )}
+
+      <ListPagination page={page} pageSize={PAGE_SIZE} total={filtered.length} onChange={setPage} />
 
       {/* Create/Edit Modal */}
       <Dialog open={showModal} onOpenChange={o => !o && closeModal()}>
