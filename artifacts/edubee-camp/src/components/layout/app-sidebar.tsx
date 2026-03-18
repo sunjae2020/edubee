@@ -161,7 +161,7 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
             <img
               src={logoImg}
               alt="Edubee Camp"
-              className={`h-6 w-auto object-contain ${dark ? "brightness-0 invert opacity-90" : ""}`}
+              className={`h-9 w-auto object-contain ${dark ? "brightness-0 invert opacity-90" : ""}`}
             />
           </Link>
         )}
