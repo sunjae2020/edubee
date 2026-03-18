@@ -92,6 +92,30 @@ artifacts-monorepo/
 - `GET  /api/notifications` — User notifications
 - `PUT  /api/notifications/:id/read` — Mark notification read
 
+## Public-Facing Features (Landing Page)
+
+- **Sticky navbar**: Logo, nav links (Home/Programs/How It Works/Contact), language switcher, Login, Apply Now
+- **Language switcher**: 🇦🇺 English · 🇰🇷 한국어 · 🇯🇵 日本語 · 🇹🇭 ภาษาไทย — persisted to `localStorage["edubee_lang"]`
+  - **FLAG RULE**: English always uses 🇦🇺 (Australian flag), NEVER 🇺🇸
+- **Hero**: Gradient `#1E40AF → #1D4ED8 → #0D9488`, white text, stats bar, Explore/Apply CTAs
+- **Programs section**: Fetches `GET /api/public/packages`, displays responsive card grid
+  - **Country currency rule**: AU→A$, PH→₱, SG→S$, TH→฿, KR→₩, JP→¥, GB→£, US→$
+  - Program name/description displayed in active language (fallback EN)
+- **ProgramDetailDrawer**: Right slide-in (480px), packages table, enrollment availability, Apply button
+- **ApplicationModal**: 4-step wizard (Program → Primary Student → Participants → Review)
+  - Spot-aware grade selector (shows available count, disables full grades)
+  - Terms + Privacy checkboxes on final step
+  - Submits to `POST /api/public/applications`, shows `APP-YYYY-XXXX` confirmation
+- **How It Works**: 3-step stepper (Browse → Apply → Start)
+- **Testimonials**: 3 static cards
+- **Footer**: 4-col with language switcher
+- **Back-to-top button**: Appears after 400px scroll
+
+## Public APIs (no auth)
+
+- `GET  /api/public/packages` — Active programs with localized names, country-currency prices, spot summaries
+- `POST /api/public/applications` — Submit application, auto-generate APP number, decrement spots
+
 ## Running
 
 ```bash

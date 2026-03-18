@@ -1,59 +1,28 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import en from "../locales/en/translation.json";
+import ko from "../locales/ko/translation.json";
+import ja from "../locales/ja/translation.json";
+import th from "../locales/th/translation.json";
 
-// In a real app, these would be in separate JSON files
-const resources = {
-  en: {
-    translation: {
-      "dashboard": "Dashboard",
-      "crm": "CRM",
-      "leads": "Leads",
-      "applications": "Applications",
-      "contracts": "Contracts & Services",
-      "finance": "Finance",
-      "invoices": "Invoices",
-      "transactions": "Transactions",
-      "exchange_rates": "Exchange Rates",
-      "admin": "Administration",
-      "users": "Users",
-      "packages": "Packages",
-      "products": "Products",
-      "notifications": "Notifications",
-      "welcome": "Welcome back",
-      "login_title": "Sign in to Edubee",
-      "login_subtitle": "Enter your credentials to access your account",
-      "email": "Email",
-      "password": "Password",
-      "sign_in": "Sign In",
-    }
-  },
-  ko: {
-    translation: {
-      "dashboard": "대시보드",
-      "login_title": "Edubee 로그인",
-    }
-  },
-  ja: {
-    translation: {
-      "dashboard": "ダッシュボード",
-    }
-  },
-  th: {
-    translation: {
-      "dashboard": "แผงควบคุม",
-    }
-  }
-};
+const STORAGE_KEY = "edubee_lang";
+const savedLang = localStorage.getItem(STORAGE_KEY) || "en";
 
-i18n
-  .use(initReactI18next)
-  .init({
-    resources,
-    lng: "en",
-    fallbackLng: "en",
-    interpolation: {
-      escapeValue: false 
-    }
-  });
+i18n.use(initReactI18next).init({
+  resources: {
+    en: { translation: en },
+    ko: { translation: ko },
+    ja: { translation: ja },
+    th: { translation: th },
+  },
+  lng: savedLang,
+  fallbackLng: "en",
+  interpolation: { escapeValue: false },
+});
+
+// Persist language changes
+i18n.on("languageChanged", (lng) => {
+  localStorage.setItem(STORAGE_KEY, lng);
+});
 
 export default i18n;

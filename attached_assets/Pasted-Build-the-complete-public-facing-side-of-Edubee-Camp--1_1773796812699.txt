@@ -1,0 +1,167 @@
+Build the complete public-facing side of Edubee Camp.
+
+═══════════════════════════════════════════
+ PART 1: i18n SETUP
+═══════════════════════════════════════════
+
+Setup react-i18next, localStorage key 'edubee_lang', fallback 'en'.
+
+★ FLAG RULE (applies to ALL language switchers in the entire app):
+  🇦🇺 English  ←  Australian flag, NEVER US flag 🇺🇸
+  🇰🇷 한국어
+  🇯🇵 日本語
+  🇹🇭 ภาษาไทย
+
+Translation files /client/src/locales/{en,ko,ja,th}/translation.json:
+{
+  "nav":      { home, programs, about, contact, login, applyNow },
+  "hero":     { headline, subheadline, cta_explore, cta_apply,
+                stats: { students, programs, institutes, rating } },
+  "programs": { title, duration, days, startingFrom, viewDetails,
+                applyProgram, interviewRequired, availability,
+                spotsLeft, full, limited, available, waitlist,
+                priceNote },
+  "howItWorks":{ title, step1_title/desc, step2_title/desc, step3_title/desc },
+  "apply":    { title, step1~step4, addAdult, addChild,
+                totalParticipants, submitting, successTitle, successMessage },
+  "footer":   { tagline, quickLinks, contact, followUs, copyright },
+  "auth":     { login, email, password, signIn, logout,
+                invalidCredentials, sessionExpired },
+  "common":   { save, cancel, delete, edit, add, search, filter,
+                loading, noData, confirm, confirmDelete, yes, no,
+                close, download, upload, view, status, actions, required },
+  "status":   { active, inactive, pending, approved, rejected, draft,
+                paid, overdue, sent, available, limited, full,
+                pending_review, expired },
+  "roles":    { all 9 role labels }
+}
+
+═══════════════════════════════════════════
+ PART 2: PUBLIC BACKEND APIs
+═══════════════════════════════════════════
+
+GET /api/public/packages  (no auth)
+  Returns active package groups with:
+  {
+    id, nameEn/Ko/Ja/Th, descriptionEn/Ko/Ja/Th,
+    thumbnailUrl, location, countryCode,
+    primaryCurrency, primaryCurrencySymbol, countryFlag,
+    interviewRequired,
+    spotSummary: null | { grades:[{label,available,total,status}] },
+    packages: [{
+      id, name, durationDays,
+      displayPrice, displayCurrency, displaySymbol, displayFormatted,
+      allPrices: { aud, usd, krw, jpy, thb, php, sgd, gbp }
+    }]
+  }
+
+POST /api/public/applications  (no auth)
+  Body: { packageGroupId, packageId, preferredStartDate,
+          referralSource, referralAgentCode, primaryLanguage,
+          specialRequests, termsAccepted:true,
+          participants: [...] }
+  Actions:
+    - Validate enrollment spot availability per child
+    - Auto-generate applicationNumber (APP-2026-XXXX)
+    - Create application + participants + grade records atomically
+    - Decrement reservedSpots
+    - Send confirmation email
+  Return: { applicationNumber, message }
+
+═══════════════════════════════════════════
+ PART 3: LANDING PAGE
+═══════════════════════════════════════════
+
+NAVBAR (sticky, shadow on scroll):
+  Left:   🐝 Edubee Camp
+  Center: Home | Programs | How It Works | Contact
+  Right:  [🇦🇺▾ Language] [Login] [Apply Now]
+
+  Language dropdown: 🇦🇺 English | 🇰🇷 한국어 | 🇯🇵 日本語 | 🇹🇭 ภาษาไทย
+  Saves to localStorage, updates i18n immediately.
+  Mobile: hamburger → full-screen overlay
+
+HERO (id="home"):
+  Gradient: #1E40AF → #1D4ED8 → #0D9488
+  Headline + subheadline (white)
+  [Explore Programs] (scroll to #programs) | [Apply Now] (modal)
+  Stats bar: 500+ Students | 20+ Programs | 10+ Institutes | 4.8★
+
+PROGRAMS (id="programs"):
+  Fetch GET /api/public/packages
+  Display name/description in active language (fallback EN)
+
+  ★ CURRENCY RULE — show price in program's operating country currency:
+    Australia (AU)   → A$1,800 🇦🇺
+    Philippines (PH) → ₱67,200 🇵🇭
+    Singapore (SG)   → S$1,080 🇸🇬
+    Thailand (TH)    → ฿43,000 🇹🇭
+    Korea (KR)       → ₩1,570,000 🇰🇷
+    Japan (JP)       → ¥180,000 🇯🇵
+    Use getProgramPrice(pkg, countryCode) utility.
+
+  Card grid (3/2/1 col responsive):
+  ┌────────────────────────────────┐
+  │ [thumbnail 16:9]              │
+  │ 📍 Cebu, Philippines           │
+  │ Summer English Camp            │
+  │ [📋 Interview Required]        │
+  │ From ₱67,200  🇵🇭              │
+  │ [    View Details    ]         │
+  └────────────────────────────────┘
+
+  ProgramDetailDrawer (right slide-in 480px):
+    Name + location flag + description (in active language)
+    Package table:
+      | Package | Duration | Price          |
+      | 2 Weeks | 14 days  | ₱67,200  🇵🇭  |
+    Price note: "Prices in Philippine Peso — operating currency"
+    Interview info box (if required)
+    Enrollment availability table (if spots configured):
+      Grade | Cap. | Available | Status (🟢/🟡/🔴)
+    [Apply for This Program] → opens ApplicationModal
+
+HOW IT WORKS:
+  3-step stepper: 🔍 Browse → 📝 Apply → 🚀 Start
+
+TESTIMONIALS: 3 static cards, carousel mobile.
+
+FOOTER: 4-col | Language switcher (🇦🇺/🇰🇷/🇯🇵/🇹🇭) | Copyright
+Back-to-top button (appears after scroll 400px)
+
+═══════════════════════════════════════════
+ PART 4: APPLICATION MODAL (4-step)
+═══════════════════════════════════════════
+
+Max-w-3xl centered modal.
+Progress: ① Program → ② Primary Student → ③ Participants → ④ Review
+
+STEP 1: Program Selection
+  Program (pre-selected from card or dropdown)
+  Package (shows price in program currency: "A$1,800 AUD")
+  Preferred Start Date | How heard | Referral Code
+
+STEP 2: Primary Student
+  Full Name EN* | Native Name | DOB* (→ "Age: X") | Gender* | Nationality*
+  Passport# | Expiry (6+ months validation)
+  Grade* — if enrollment spots: "Grade 7 (2 spots left)" / disabled if full
+  School | English Level*
+  Medical Conditions | Dietary | Special Needs
+  Emergency Phone* | WhatsApp | LINE ID
+
+STEP 3: Additional Participants (optional)
+  Counter: "👦 1  👨 0  Total: 1"
+  Adults (max 4): Name*, Relationship*, DOB, Nationality, Passport,
+                  Phone*, Email, WhatsApp, LINE, ☑ Emergency Contact
+  Children (max 5): Name*, DOB*, Gender*, Nationality*, Grade* (spot-aware),
+                    Passport, Medical, Dietary
+  Collapsible cards, [Remove ×] per card
+
+STEP 4: Review & Submit
+  Program card + Participants summary + [✏ Edit] links
+  ☐ Terms* | ☐ Privacy*
+  [Submit Application 🚀]
+  Success: "✅ APP-2026-0001 — We'll contact you within 2 business days."
+
+POST /api/public/applications handles submission.
+
