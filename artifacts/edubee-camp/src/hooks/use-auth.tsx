@@ -3,6 +3,28 @@ import { User, LoginRequest } from "@workspace/api-client-react";
 import { useLogin, useGetMe, useLogout } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { getViewAsUserId } from "./use-view-as";
+import axios from "axios";
+
+// Attach JWT + View-As to every axios request
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem("edubee_token");
+  const viewAsId = getViewAsUserId();
+  if (token) config.headers["Authorization"] = `Bearer ${token}`;
+  if (viewAsId) config.headers["X-View-As-User-Id"] = viewAsId;
+  return config;
+});
+
+// Redirect to login on 401
+axios.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401 && !err.config?.url?.includes("/login")) {
+      localStorage.removeItem("edubee_token");
+      window.location.href = "/login";
+    }
+    return Promise.reject(err);
+  }
+);
 
 interface AuthContextType {
   user: User | null;

@@ -7,10 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, MoreVertical, Trash2, Edit, ShieldCheck, Loader2 } from "lucide-react";
-import { ROLE_LABELS, ROLE_EMOJIS } from "@/hooks/use-view-as";
+import { useAuth } from "@/hooks/use-auth";
+import { useViewAs, ROLE_LABELS, ROLE_EMOJIS, ROLE_HIERARCHY } from "@/hooks/use-view-as";
+import { useLocation } from "wouter";
+import { Search, Plus, MoreVertical, Trash2, Eye, Loader2, ShieldOff, UserCheck } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -18,6 +20,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 interface User {
   id: string; email: string; fullName: string; role: string;
   status: string; avatarUrl?: string | null;
+  companyName?: string;
   createdAt?: string; lastLoginAt?: string;
 }
 
@@ -27,10 +30,10 @@ const ALL_ROLES = [
 ];
 
 const ROLE_COLORS: Record<string, string> = {
-  super_admin: "bg-purple-100 text-purple-700",
-  admin: "bg-blue-100 text-blue-700",
-  camp_coordinator: "bg-indigo-100 text-indigo-700",
-  education_agent: "bg-green-100 text-green-700",
+  super_admin: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  admin: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  camp_coordinator: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
+  education_agent: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
   partner_institute: "bg-orange-100 text-orange-700",
   partner_hotel: "bg-orange-100 text-orange-700",
   partner_pickup: "bg-orange-100 text-orange-700",
@@ -42,12 +45,17 @@ const emptyForm = { fullName: "", email: "", password: "", role: "education_agen
 
 export default function Users() {
   const qc = useQueryClient();
+  const { user: currentUser } = useAuth();
+  const { viewAsUser, setViewAs, clearViewAs, isImpersonating } = useViewAs();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<User | null>(null);
   const [form, setForm] = useState(emptyForm);
+
+  const currentRole = currentUser?.role ?? "parent_client";
+  const myLevel = ROLE_HIERARCHY[currentRole] ?? 0;
 
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["users"],
@@ -69,12 +77,19 @@ export default function Users() {
     onError: () => toast({ variant: "destructive", title: "Failed to remove user" }),
   });
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setShowModal(true); };
-  const closeModal = () => { setShowModal(false); setEditing(null); };
+  const closeModal = () => { setShowModal(false); setForm(emptyForm); };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createUser.mutate(form);
+  const handleImpersonate = (user: User) => {
+    setViewAs({
+      id: user.id, email: user.email, fullName: user.fullName,
+      role: user.role, avatarUrl: user.avatarUrl,
+    });
+    toast({ title: `Viewing as ${user.fullName}`, description: `Role: ${ROLE_LABELS[user.role] ?? user.role}` });
+    setLocation("/admin/dashboard");
+  };
+
+  const canImpersonate = (user: User) => {
+    return user.id !== currentUser?.id && (ROLE_HIERARCHY[user.role] ?? 0) < myLevel;
   };
 
   const filtered = users.filter(u => {
@@ -89,8 +104,29 @@ export default function Users() {
     role, count: users.filter(u => u.role === role).length,
   })).filter(r => r.count > 0);
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createUser.mutate(form);
+  };
+
   return (
     <div className="space-y-5">
+      {/* Active impersonation banner */}
+      {isImpersonating && viewAsUser && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Eye className="w-4 h-4 text-amber-600" />
+            <span className="text-amber-800 dark:text-amber-300 font-medium">
+              Currently viewing as <strong>{viewAsUser.fullName}</strong>
+              <span className="ml-1.5 text-amber-600">({ROLE_LABELS[viewAsUser.role] ?? viewAsUser.role})</span>
+            </span>
+          </div>
+          <button onClick={clearViewAs} className="text-xs text-amber-700 hover:text-amber-900 dark:text-amber-400 flex items-center gap-1 font-medium">
+            <ShieldOff className="w-3.5 h-3.5" /> Exit View As
+          </button>
+        </div>
+      )}
+
       {/* Role summary chips */}
       <div className="flex flex-wrap gap-2">
         {roleStats.map(({ role, count }) => (
@@ -110,7 +146,7 @@ export default function Users() {
         ))}
         {roleFilter !== "all" && (
           <button onClick={() => setRoleFilter("all")} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5">
-            Clear filter ×
+            Clear ×
           </button>
         )}
       </div>
@@ -123,38 +159,38 @@ export default function Users() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-sm text-muted-foreground">{filtered.length} users</span>
-          <Button size="sm" className="h-9 gap-1.5" onClick={openCreate}>
+          <Button size="sm" className="h-9 gap-1.5 bg-[#F08301] hover:bg-[#d97706] text-white" onClick={() => setShowModal(true)}>
             <Plus className="w-4 h-4" /> Add User
           </Button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-border overflow-hidden">
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["User", "Role", "Status", "Created", ""].map(h => (
+              {["User", "Role", "Status", "Last Login", "Created", ""].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {isLoading ? (
-              [...Array(5)].map((_, i) => (
+              [...Array(6)].map((_, i) => (
                 <tr key={i}>
-                  {[...Array(5)].map((_, j) => (
+                  {[...Array(6)].map((_, j) => (
                     <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                   ))}
                 </tr>
               ))
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-16 text-center text-muted-foreground text-sm">No users found</td>
+                <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">No users found</td>
               </tr>
             ) : (
               filtered.map(user => (
-                <tr key={user.id} className="hover:bg-muted/20 transition-colors">
+                <tr key={user.id} className="hover:bg-muted/20 transition-colors group">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
@@ -163,7 +199,14 @@ export default function Users() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium text-sm">{user.fullName}</div>
+                        <div className="font-medium text-sm text-foreground flex items-center gap-1.5">
+                          {user.fullName}
+                          {viewAsUser?.id === user.id && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                              <Eye className="w-2.5 h-2.5" /> viewing
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-muted-foreground">{user.email}</div>
                       </div>
                     </div>
@@ -175,7 +218,7 @@ export default function Users() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      user.status === "active" ? "bg-green-100 text-green-700" :
+                      user.status === "active" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" :
                       user.status === "inactive" ? "bg-gray-100 text-gray-600" :
                       "bg-red-100 text-red-700"
                     }`}>
@@ -183,25 +226,46 @@ export default function Users() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">
+                    {user.lastLoginAt ? format(new Date(user.lastLoginAt), "MMM d, yyyy") : "Never"}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
                     {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors">
-                          <MoreVertical className="w-4 h-4" />
+                    <div className="flex items-center gap-1 justify-end">
+                      {canImpersonate(user) && (
+                        <button
+                          onClick={() => handleImpersonate(user)}
+                          title={`View as ${user.fullName}`}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-[#F08301] hover:bg-[#F08301]/10"
+                        >
+                          <UserCheck className="w-4 h-4" />
                         </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem className="gap-2 text-xs">
-                          <Edit className="w-3.5 h-3.5" /> Edit User
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2 text-xs text-destructive focus:text-destructive"
-                          onClick={() => deleteUser.mutate(user.id)}>
-                          <Trash2 className="w-3.5 h-3.5" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors">
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          {canImpersonate(user) && (
+                            <>
+                              <DropdownMenuItem className="gap-2 text-xs" onClick={() => handleImpersonate(user)}>
+                                <Eye className="w-3.5 h-3.5 text-[#F08301]" /> View As This User
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                            </>
+                          )}
+                          <DropdownMenuItem
+                            className="gap-2 text-xs text-destructive focus:text-destructive"
+                            onClick={() => deleteUser.mutate(user.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -214,7 +278,7 @@ export default function Users() {
       <Dialog open={showModal} onOpenChange={o => !o && closeModal()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add User</DialogTitle>
+            <DialogTitle>Add New User</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
@@ -254,7 +318,7 @@ export default function Users() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
-              <Button type="submit" disabled={createUser.isPending} className="gap-2">
+              <Button type="submit" disabled={createUser.isPending} className="gap-2 bg-[#F08301] hover:bg-[#d97706] text-white">
                 {createUser.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Create User
               </Button>
