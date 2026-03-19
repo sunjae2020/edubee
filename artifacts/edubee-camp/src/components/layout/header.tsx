@@ -45,6 +45,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin/my-accounting/invoices": "My Invoices",
   "/admin/my-accounting/revenue": "My Revenue",
   "/admin/reports": "Program Reports",
+  "/admin/documents": "Documents",
   "/admin/users": "Users",
   "/admin/settings/general": "General Settings",
   "/admin/settings/page-access": "Page Access",

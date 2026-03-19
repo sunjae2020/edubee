@@ -1,0 +1,591 @@
+import { Router } from "express";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { db } from "@workspace/db";
+import {
+  documents,
+  documentCategories,
+  documentExtraCategories,
+  documentPermissions,
+  defaultDocPermissions,
+  documentAccessLogs,
+} from "@workspace/db/schema";
+import {
+  applications,
+  contracts,
+  instituteMgt,
+  hotelMgt,
+  pickupMgt,
+  tourMgt,
+  users,
+} from "@workspace/db/schema";
+import { authenticate } from "../middleware/authenticate.js";
+import { requireRole } from "../middleware/requireRole.js";
+import { eq, and, or, isNull, isNotNull, inArray, SQL } from "drizzle-orm";
+
+const router = Router();
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "./uploads";
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+});
+
+const GROUP_LABELS: Record<string, string> = {
+  personal: "Personal Documents",
+  school: "School & Program Documents",
+  financial: "Financial Documents",
+  travel: "Travel Documents",
+  contract: "Contract Documents",
+  internal: "Internal Documents",
+  other: "Additional Documents",
+};
+
+const GROUP_ORDER = ["personal", "school", "financial", "travel", "contract", "internal", "other"];
+
+async function getPermissionsForRole(role: string, group: string): Promise<{ canView: boolean; canDownload: boolean; canUploadExtra: boolean }> {
+  const [perm] = await db
+    .select()
+    .from(defaultDocPermissions)
+    .where(and(eq(defaultDocPermissions.categoryGroup, group), eq(defaultDocPermissions.role, role)))
+    .limit(1);
+  return {
+    canView: perm?.canView ?? false,
+    canDownload: perm?.canDownload ?? false,
+    canUploadExtra: perm?.canUploadExtra ?? false,
+  };
+}
+
+async function canViewDocument(role: string, doc: any): Promise<boolean> {
+  const overrideRow = await db
+    .select()
+    .from(documentPermissions)
+    .where(and(eq(documentPermissions.documentId, doc.id), eq(documentPermissions.role, role)))
+    .limit(1);
+  if (overrideRow.length > 0) return overrideRow[0].canView ?? false;
+
+  const group = doc.extraCategoryGroup ?? doc.categoryGroup ?? "other";
+  const defaultPerm = await db
+    .select()
+    .from(defaultDocPermissions)
+    .where(and(eq(defaultDocPermissions.categoryGroup, group), eq(defaultDocPermissions.role, role)))
+    .limit(1);
+  return defaultPerm[0]?.canView ?? false;
+}
+
+async function enrichDocuments(rawDocs: any[], role: string): Promise<any[]> {
+  if (rawDocs.length === 0) return [];
+
+  const categoryIds = [...new Set(rawDocs.map(d => d.categoryId).filter(Boolean))] as string[];
+  const extraCategoryIds = [...new Set(rawDocs.map(d => d.extraCategoryId).filter(Boolean))] as string[];
+
+  const categories = categoryIds.length > 0
+    ? await db.select().from(documentCategories).where(inArray(documentCategories.id, categoryIds))
+    : [];
+  const extraCategories = extraCategoryIds.length > 0
+    ? await db.select().from(documentExtraCategories).where(inArray(documentExtraCategories.id, extraCategoryIds))
+    : [];
+
+  const catMap = new Map(categories.map(c => [c.id, c]));
+  const extraCatMap = new Map(extraCategories.map(c => [c.id, c]));
+
+  const uploaderIds = [...new Set(rawDocs.map(d => d.uploadedBy).filter(Boolean))] as string[];
+  const uploaders = uploaderIds.length > 0
+    ? await db.select({ id: users.id, fullName: users.fullName }).from(users).where(inArray(users.id, uploaderIds))
+    : [];
+  const uploaderMap = new Map(uploaders.map(u => [u.id, u.fullName]));
+
+  const result = [];
+  for (const doc of rawDocs) {
+    const isExtra = !!doc.extraCategoryId;
+    const cat = doc.categoryId ? catMap.get(doc.categoryId) : null;
+    const extraCat = doc.extraCategoryId ? extraCatMap.get(doc.extraCategoryId) : null;
+
+    const group = isExtra ? (extraCat?.categoryGroup ?? "other") : (cat?.categoryGroup ?? "other");
+
+    const overrideRow = await db
+      .select()
+      .from(documentPermissions)
+      .where(and(eq(documentPermissions.documentId, doc.id), eq(documentPermissions.role, role)))
+      .limit(1);
+
+    let canView = false, canDownload = false, canDelete = false;
+    if (overrideRow.length > 0) {
+      canView = overrideRow[0].canView ?? false;
+      canDownload = overrideRow[0].canDownload ?? false;
+      canDelete = overrideRow[0].canDelete ?? false;
+    } else {
+      const defPerm = await db
+        .select()
+        .from(defaultDocPermissions)
+        .where(and(eq(defaultDocPermissions.categoryGroup, group), eq(defaultDocPermissions.role, role)))
+        .limit(1);
+      canView = defPerm[0]?.canView ?? false;
+      canDownload = defPerm[0]?.canDownload ?? false;
+    }
+
+    if (!canView && !["super_admin", "admin"].includes(role)) continue;
+
+    result.push({
+      ...doc,
+      isExtraCategory: isExtra,
+      extraCategoryName: extraCat?.categoryName ?? null,
+      categoryGroup: group,
+      categoryCode: cat?.categoryCode ?? null,
+      categoryNameEn: cat?.categoryNameEn ?? (isExtra ? extraCat?.categoryName : null),
+      serviceType: doc.serviceType ?? null,
+      uploadedByName: doc.uploadedBy ? (uploaderMap.get(doc.uploadedBy) ?? null) : null,
+      permissions: { canView, canDownload, canDelete },
+    });
+  }
+  return result;
+}
+
+router.use(authenticate);
+
+// POST /api/documents — upload
+router.post("/documents", upload.single("file"), async (req, res) => {
+  try {
+    const role = req.user!.role;
+    const {
+      referenceType,
+      referenceId,
+      categoryId,
+      participantId,
+      documentName,
+      status,
+      expiryDate,
+      notes,
+      isExtraCategory,
+      extraCategoryName,
+      serviceType,
+      serviceId,
+    } = req.body;
+
+    if (!req.file) return res.status(400).json({ error: "File is required" });
+    if (!referenceType || !referenceId) return res.status(400).json({ error: "referenceType and referenceId are required" });
+
+    const isExtra = isExtraCategory === "true" || isExtraCategory === true;
+
+    let extraCatId: string | null = null;
+
+    if (isExtra) {
+      if (!extraCategoryName || extraCategoryName.trim().length === 0) {
+        return res.status(400).json({ error: "extraCategoryName is required for extra category uploads" });
+      }
+      const extraPerm = await getPermissionsForRole(role, "other");
+      if (!extraPerm.canUploadExtra && !["super_admin", "admin"].includes(role)) {
+        return res.status(403).json({ error: "Not permitted to upload extra category documents" });
+      }
+      const [extraCat] = await db.insert(documentExtraCategories).values({
+        referenceType,
+        referenceId,
+        categoryName: extraCategoryName.trim().slice(0, 255),
+        categoryGroup: "other",
+        createdBy: req.user!.id,
+      }).returning();
+      extraCatId = extraCat.id;
+    }
+
+    const ext = path.extname(req.file.originalname).slice(1).toLowerCase();
+    const [doc] = await db.insert(documents).values({
+      referenceType,
+      referenceId,
+      categoryId: isExtra ? null : (categoryId ?? null),
+      extraCategoryId: extraCatId,
+      serviceType: serviceType ?? null,
+      serviceId: serviceId ?? null,
+      participantId: participantId ?? null,
+      documentName: documentName ?? req.file.originalname,
+      originalFilename: req.file.originalname,
+      filePath: req.file.path,
+      fileSizeBytes: req.file.size,
+      fileType: req.file.mimetype,
+      fileExtension: ext,
+      status: status ?? "pending_review",
+      expiryDate: expiryDate ?? null,
+      notes: notes ?? null,
+      uploadedBy: req.user!.id,
+    }).returning();
+
+    return res.status(201).json(doc);
+  } catch (err) {
+    console.error("Document upload error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/documents/list
+router.get("/documents/list", async (req, res) => {
+  try {
+    const role = req.user!.role;
+    const { referenceType, referenceId, group, serviceType, serviceId, includeExtra } = req.query as Record<string, string>;
+
+    if (!referenceType || !referenceId) return res.status(400).json({ error: "referenceType and referenceId are required" });
+
+    const conditions: SQL[] = [
+      eq(documents.referenceType, referenceType),
+      eq(documents.referenceId, referenceId),
+      isNull(documents.deletedAt),
+    ];
+
+    if (serviceType) conditions.push(eq(documents.serviceType, serviceType));
+    if (serviceId) conditions.push(eq(documents.serviceId, serviceId));
+    if (includeExtra === "false") conditions.push(isNull(documents.extraCategoryId));
+
+    const rawDocs = await db.select().from(documents).where(and(...conditions)).orderBy(documents.createdAt);
+    const enriched = await enrichDocuments(rawDocs, role);
+
+    let filtered = enriched;
+    if (group) filtered = enriched.filter(d => d.categoryGroup === group);
+
+    return res.json({ data: filtered });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/documents/permissions-check
+router.get("/documents/permissions-check", async (req, res) => {
+  try {
+    const role = req.user!.role;
+    const { categoryGroup } = req.query as Record<string, string>;
+
+    const group = categoryGroup ?? "other";
+    const perm = await getPermissionsForRole(role, group);
+
+    const categoriesInGroup = await db
+      .select()
+      .from(documentCategories)
+      .where(eq(documentCategories.categoryGroup, group))
+      .orderBy(documentCategories.sortOrder);
+
+    return res.json({
+      canUpload: perm.canView,
+      canView: perm.canView,
+      canDownload: perm.canDownload,
+      canUploadExtra: perm.canUploadExtra,
+      availableCategories: perm.canView ? categoriesInGroup : [],
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/documents/by-entity
+router.get("/documents/by-entity", async (req, res) => {
+  try {
+    const role = req.user!.role;
+    const { entityType, entityId } = req.query as Record<string, string>;
+
+    if (!entityType || !entityId) return res.status(400).json({ error: "entityType and entityId are required" });
+
+    let rawDocs: any[] = [];
+    const SERVICE_TYPES = ["institute_mgt", "hotel_mgt", "pickup_mgt", "tour_mgt"];
+
+    if (entityType === "application" || entityType === "contract") {
+      const conds: SQL[] = [
+        eq(documents.referenceType, entityType),
+        eq(documents.referenceId, entityId),
+        isNull(documents.deletedAt),
+      ];
+      rawDocs = await db.select().from(documents).where(and(...conds)).orderBy(documents.createdAt);
+    } else if (SERVICE_TYPES.includes(entityType)) {
+      const tableMap: Record<string, any> = {
+        institute_mgt: instituteMgt,
+        hotel_mgt: hotelMgt,
+        pickup_mgt: pickupMgt,
+        tour_mgt: tourMgt,
+      };
+      const svcTable = tableMap[entityType];
+      const [svcRow] = await db.select().from(svcTable).where(eq(svcTable.id, entityId)).limit(1);
+      if (!svcRow) return res.status(404).json({ error: "Service record not found" });
+
+      const contractId = svcRow.contractId;
+      const serviceShortType = entityType.replace("_mgt", "");
+      rawDocs = await db
+        .select()
+        .from(documents)
+        .where(
+          and(
+            eq(documents.referenceType, "contract"),
+            eq(documents.referenceId, contractId),
+            isNull(documents.deletedAt),
+            or(
+              eq(documents.serviceType, serviceShortType),
+              isNull(documents.serviceType)
+            )
+          )
+        )
+        .orderBy(documents.createdAt);
+    } else if (entityType === "user") {
+      if (!["super_admin", "admin"].includes(role)) {
+        return res.status(403).json({ error: "Not permitted" });
+      }
+      const appRows = await db
+        .select({ id: applications.id })
+        .from(applications)
+        .where(or(
+          eq(applications.clientId, entityId),
+          eq(applications.agentId, entityId)
+        ));
+
+      const contractRows = await db
+        .select({ id: contracts.id })
+        .from(contracts)
+        .where(or(
+          eq(contracts.campProviderId, entityId)
+        ));
+
+      const appIds = appRows.map(a => a.id);
+      const contractIds = contractRows.map(c => c.id);
+
+      const docConds: SQL[] = [isNull(documents.deletedAt)];
+      const refConds: SQL[] = [];
+
+      if (appIds.length > 0) {
+        refConds.push(and(eq(documents.referenceType, "application"), inArray(documents.referenceId, appIds))!);
+      }
+      if (contractIds.length > 0) {
+        refConds.push(and(eq(documents.referenceType, "contract"), inArray(documents.referenceId, contractIds))!);
+      }
+
+      if (refConds.length === 0) {
+        return res.json([]);
+      }
+
+      rawDocs = await db
+        .select()
+        .from(documents)
+        .where(and(...docConds, or(...refConds)))
+        .orderBy(documents.createdAt);
+    } else {
+      return res.status(400).json({ error: "Invalid entityType" });
+    }
+
+    const enriched = await enrichDocuments(rawDocs, role);
+
+    const grouped: Record<string, any[]> = {};
+    for (const group of GROUP_ORDER) grouped[group] = [];
+
+    for (const doc of enriched) {
+      const grp = doc.categoryGroup ?? "other";
+      if (!grouped[grp]) grouped[grp] = [];
+      grouped[grp].push(doc);
+    }
+
+    const allGroups = await db.select({ group: defaultDocPermissions.categoryGroup }).from(defaultDocPermissions).where(and(eq(defaultDocPermissions.role, role), eq(defaultDocPermissions.canView, true)));
+    const viewableGroups = new Set(allGroups.map(g => g.group));
+
+    const result = GROUP_ORDER
+      .filter(g => viewableGroups.has(g) || grouped[g]?.length > 0)
+      .map(g => ({
+        group: g,
+        groupLabel: GROUP_LABELS[g] ?? g,
+        documents: grouped[g] ?? [],
+      }));
+
+    return res.json(result);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/documents/:id/view
+router.get("/documents/:id/view", async (req, res) => {
+  try {
+    const role = req.user!.role;
+    const [doc] = await db.select().from(documents).where(and(eq(documents.id, req.params.id), isNull(documents.deletedAt))).limit(1);
+    if (!doc) return res.status(404).json({ error: "Not Found" });
+
+    const canView = await canViewDocument(role, doc);
+    if (!canView && !["super_admin", "admin"].includes(role)) return res.status(403).json({ error: "Forbidden" });
+
+    await db.insert(documentAccessLogs).values({
+      documentId: doc.id,
+      userId: req.user!.id,
+      action: "view",
+      ipAddress: req.ip ?? null,
+      userAgent: req.headers["user-agent"]?.slice(0, 500) ?? null,
+    }).catch(() => {});
+
+    if (!fs.existsSync(doc.filePath)) return res.status(404).json({ error: "File not found on server" });
+    return res.sendFile(path.resolve(doc.filePath));
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/documents/:id/download
+router.get("/documents/:id/download", async (req, res) => {
+  try {
+    const role = req.user!.role;
+    const [doc] = await db.select().from(documents).where(and(eq(documents.id, req.params.id), isNull(documents.deletedAt))).limit(1);
+    if (!doc) return res.status(404).json({ error: "Not Found" });
+
+    const canView = await canViewDocument(role, doc);
+    if (!canView && !["super_admin", "admin"].includes(role)) return res.status(403).json({ error: "Forbidden" });
+
+    await db.insert(documentAccessLogs).values({
+      documentId: doc.id,
+      userId: req.user!.id,
+      action: "download",
+      ipAddress: req.ip ?? null,
+      userAgent: req.headers["user-agent"]?.slice(0, 500) ?? null,
+    }).catch(() => {});
+
+    if (!fs.existsSync(doc.filePath)) return res.status(404).json({ error: "File not found on server" });
+    return res.download(path.resolve(doc.filePath), doc.originalFilename ?? doc.documentName);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PATCH /api/documents/:id/status
+router.patch("/documents/:id/status", requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
+  try {
+    const { status, rejectionReason } = req.body;
+    const [doc] = await db
+      .update(documents)
+      .set({ status, rejectionReason: rejectionReason ?? null, reviewedBy: req.user!.id, reviewedAt: new Date(), updatedAt: new Date() })
+      .where(eq(documents.id, req.params.id))
+      .returning();
+    if (!doc) return res.status(404).json({ error: "Not Found" });
+    return res.json(doc);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// DELETE /api/documents/:id
+router.delete("/documents/:id", requireRole("super_admin", "admin"), async (req, res) => {
+  try {
+    const [doc] = await db
+      .update(documents)
+      .set({ deletedAt: new Date() })
+      .where(eq(documents.id, req.params.id))
+      .returning();
+    if (!doc) return res.status(404).json({ error: "Not Found" });
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/documents/all — central management (SA/AD only)
+router.get("/documents/all", requireRole("super_admin", "admin"), async (req, res) => {
+  try {
+    const { entityType, categoryGroup, status: statusFilter, search, page = "1", limit = "50" } = req.query as Record<string, string>;
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(200, parseInt(limit));
+    const offset = (pageNum - 1) * limitNum;
+
+    const conds: SQL[] = [isNull(documents.deletedAt)];
+    if (entityType) conds.push(eq(documents.referenceType, entityType));
+    if (statusFilter) conds.push(eq(documents.status, statusFilter));
+
+    const rawDocs = await db
+      .select()
+      .from(documents)
+      .where(and(...conds))
+      .orderBy(documents.createdAt)
+      .limit(limitNum)
+      .offset(offset);
+
+    const enriched = await enrichDocuments(rawDocs, "super_admin");
+
+    let filtered = enriched;
+    if (categoryGroup) filtered = enriched.filter(d => d.categoryGroup === categoryGroup);
+    if (search) {
+      const s = search.toLowerCase();
+      filtered = filtered.filter(d => d.documentName?.toLowerCase().includes(s) || d.originalFilename?.toLowerCase().includes(s));
+    }
+
+    return res.json({ data: filtered, meta: { page: pageNum, limit: limitNum } });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/documents/:id/access-log
+router.get("/documents/:id/access-log", requireRole("super_admin", "admin"), async (req, res) => {
+  try {
+    const logs = await db
+      .select()
+      .from(documentAccessLogs)
+      .where(eq(documentAccessLogs.documentId, req.params.id))
+      .orderBy(documentAccessLogs.accessedAt);
+    return res.json({ data: logs });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/documents/categories — list all categories
+router.get("/documents/categories", async (req, res) => {
+  try {
+    const cats = await db.select().from(documentCategories).orderBy(documentCategories.categoryGroup, documentCategories.sortOrder);
+    return res.json({ data: cats });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/documents/default-permissions — for settings page
+router.get("/documents/default-permissions", requireRole("super_admin"), async (req, res) => {
+  try {
+    const perms = await db.select().from(defaultDocPermissions).orderBy(defaultDocPermissions.categoryGroup, defaultDocPermissions.role);
+    const cats = await db.select().from(documentCategories).orderBy(documentCategories.categoryGroup, documentCategories.sortOrder);
+    return res.json({ data: perms, categories: cats });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PUT /api/documents/default-permissions — save settings
+router.put("/documents/default-permissions", requireRole("super_admin"), async (req, res) => {
+  try {
+    const { permissions, categorySettings } = req.body;
+
+    for (const perm of permissions) {
+      await db
+        .update(defaultDocPermissions)
+        .set({
+          canView: perm.canView,
+          canDownload: perm.canDownload,
+          canUploadExtra: perm.canUploadExtra ?? false,
+        })
+        .where(and(eq(defaultDocPermissions.categoryGroup, perm.categoryGroup), eq(defaultDocPermissions.role, perm.role)));
+    }
+
+    if (categorySettings) {
+      for (const cat of categorySettings) {
+        await db
+          .update(documentCategories)
+          .set({ allowExtraUpload: cat.allowExtraUpload })
+          .where(eq(documentCategories.id, cat.id));
+      }
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+export default router;

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArTimeline } from "@/components/shared/ArTimeline";
+import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -70,6 +71,7 @@ export default function TourMgtDetail() {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="accounting">Accounting</TabsTrigger>
         </TabsList>
 
@@ -116,6 +118,14 @@ export default function TourMgtDetail() {
               )}
             </DetailSection>
           </div>
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <EntityDocumentsTab
+            entityType="tour_mgt"
+            entityId={id!}
+            mode="full"
+          />
         </TabsContent>
 
         <TabsContent value="accounting">

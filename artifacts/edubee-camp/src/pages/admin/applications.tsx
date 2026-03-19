@@ -5,6 +5,7 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { NotePanel } from "@/components/shared/NotePanel";
+import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -416,9 +417,11 @@ export default function Applications() {
                   </TabsContent>
 
                   <TabsContent value="documents" className="p-6 m-0">
-                    <div className="text-center py-12 text-muted-foreground text-sm">
-                      <FileText className="w-8 h-8 mx-auto mb-3 opacity-30" /><p>Documents upload coming soon</p>
-                    </div>
+                    <EntityDocumentsTab
+                      entityType="application"
+                      entityId={selectedApp.id}
+                      mode="full"
+                    />
                   </TabsContent>
 
                   <TabsContent value="notes" className="p-6 m-0">

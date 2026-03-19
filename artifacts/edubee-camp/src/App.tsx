@@ -56,6 +56,9 @@ import MyRevenue from "@/pages/admin/my-accounting/revenue";
 // Reports
 import Reports from "@/pages/admin/reports";
 
+// Documents
+import DocumentsPage from "@/pages/admin/documents";
+
 // Settings
 import GeneralSettings from "@/pages/admin/settings/general";
 import PageAccess from "@/pages/admin/settings/page-access";
@@ -203,6 +206,11 @@ function Router() {
       {/* Reports */}
       <Route path="/admin/reports">
         <AdminRoute title="Program Reports"><Reports /></AdminRoute>
+      </Route>
+
+      {/* Documents */}
+      <Route path="/admin/documents">
+        <AdminRoute title="Documents"><DocumentsPage /></AdminRoute>
       </Route>
 
       {/* Users */}

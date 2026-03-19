@@ -1,0 +1,482 @@
+════════════════════════════════════════════════════════════
+ DOCUMENT PERMISSIONS — FEATURE UPDATE
+ ⚠️  CRITICAL: Do NOT modify any existing functionality.
+ Only ADD new features as described. Preserve all existing
+ routes, components, API endpoints, and database logic.
+════════════════════════════════════════════════════════════
+
+━━━ OVERVIEW ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This update adds three interconnected features:
+  1. Extra document upload beyond defined categories
+  2. Documents tab on Account/Service/User pages (role-based)
+  3. Central document management linking all entities
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 1: DATABASE CHANGES (additive only — no table drops)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── 1.1 Add new column to document_categories ────────────────
+
+ALTER TABLE document_categories
+  ADD COLUMN allow_extra_upload boolean DEFAULT true;
+-- When true: users with upload permission can add documents
+-- outside the defined category list for that group.
+-- When false: only the explicitly listed categories are allowed.
+
+── 1.2 Add new table: document_extra_categories ─────────────
+
+-- Stores ad-hoc categories created during extra uploads.
+-- These are per-reference (not global), so they don't pollute
+-- the master document_categories table.
+
+export const documentExtraCategories = pgTable('document_extra_categories', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  referenceType: varchar('reference_type', { length: 20 }).notNull(),
+  -- 'application'|'contract'|'institute_mgt'|'hotel_mgt'
+  -- |'pickup_mgt'|'tour_mgt'|'user'
+  referenceId:   uuid('reference_id').notNull(),
+  categoryName:  varchar('category_name', { length: 255 }).notNull(),
+  -- Free-text name entered by uploader
+  categoryGroup: varchar('category_group', { length: 50 }).default('other'),
+  -- Always stored as 'other' so existing permission rules apply
+  createdBy:     uuid('created_by').references(() => users.id),
+  createdAt:     timestamp('created_at').defaultNow(),
+});
+
+-- Add FK column to existing documents table (migration, not rebuild):
+ALTER TABLE documents
+  ADD COLUMN extra_category_id uuid
+    REFERENCES document_extra_categories(id);
+-- NULL = uses standard categoryId; NOT NULL = uses extra category.
+-- A document uses exactly ONE of categoryId or extra_category_id.
+
+── 1.3 Add service-level document linking ───────────────────
+
+-- Services (institute_mgt, hotel_mgt, pickup_mgt, tour_mgt)
+-- already link to contracts. Documents already link to contracts.
+-- We need a direct view-level association for the service
+-- Documents tab to filter relevant documents efficiently.
+
+-- Add optional service_reference columns to documents table:
+ALTER TABLE documents
+  ADD COLUMN service_type varchar(20),
+  -- 'institute'|'hotel'|'pickup'|'tour' (null if not service-linked)
+  ADD COLUMN service_id uuid;
+  -- FK to respective *_mgt table (polymorphic, no hard FK)
+
+── 1.4 Add allow_extra_upload to doc_permissions tables ─────
+
+ALTER TABLE default_doc_permissions
+  ADD COLUMN can_upload_extra boolean DEFAULT false;
+
+ALTER TABLE document_permissions
+  ADD COLUMN can_upload_extra boolean DEFAULT false;
+
+-- Default extra upload rights (seed this):
+-- SA/AD/CC: can_upload_extra = true for ALL category groups
+-- EA: can_upload_extra = true for personal, school, travel
+-- Partners: can_upload_extra = true for their specific group only
+--   partner_institute → school group only
+--   partner_hotel     → travel group only
+--   partner_pickup    → travel group only
+--   partner_tour      → travel group only
+-- parent_client: can_upload_extra = false (no extra uploads)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 2: BACKEND API CHANGES (additive — no existing routes
+ modified, only new endpoints and new optional query params)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── 2.1 Update existing POST /api/documents (upload) ─────────
+
+EXISTING behavior: unchanged.
+ADD new optional fields to the multipart body:
+
+  isExtraCategory: boolean (default false)
+  extraCategoryName: string (required if isExtraCategory=true,
+                             max 100 chars)
+  serviceType: string (optional — 'institute'|'hotel'|'pickup'|'tour')
+  serviceId: uuid (optional — ID of the service record)
+
+Server logic when isExtraCategory=true:
+  1. Check can_upload_extra permission for role + category_group
+     (use 'other' group for extra uploads)
+  2. If permitted: INSERT into document_extra_categories
+     { referenceType, referenceId, categoryName, createdBy }
+  3. Insert document with extra_category_id = new ID
+     (categoryId = null)
+  4. Apply default_doc_permissions for 'other' group to this doc
+
+── 2.2 Update existing GET /api/documents/list ──────────────
+
+EXISTING params: referenceType, referenceId, group
+ADD new optional params:
+  serviceType: filter by service_type column
+  serviceId: filter by service_id column
+  includeExtra: boolean (default true)
+    — if false, exclude documents with extra_category_id set
+
+Response shape: UNCHANGED except add to each document object:
+  isExtraCategory: boolean
+  extraCategoryName: string | null
+  serviceType: string | null
+
+── 2.3 NEW endpoint: GET /api/documents/by-entity ───────────
+
+Purpose: Powers the new Documents tab on any entity page.
+Auth: Required (Bearer token). Enforces partnerScope.
+
+Query params:
+  entityType: 'application'|'contract'|'institute_mgt'
+              |'hotel_mgt'|'pickup_mgt'|'tour_mgt'|'user'
+  entityId: uuid
+
+Logic:
+  1. Resolve which referenceType/referenceId to query:
+     - For application/contract: direct match
+     - For service types (institute_mgt etc.):
+       • Load the service record → get contract_id
+       • Return documents WHERE referenceType='contract'
+         AND referenceId=contract_id
+         AND (service_type=entityType OR service_type IS NULL)
+     - For user:
+       • Return documents from ALL applications and contracts
+         associated with this user (as client, agent, or provider)
+       • Filter by can_view permission for the requesting role
+
+  2. Apply role-based visibility:
+     • Filter each document by documentPermissions or
+       defaultDocPermissions (same logic as existing list endpoint)
+     • Never return documents the role cannot view
+
+  3. Return grouped by category_group:
+     [
+       {
+         group: 'personal',
+         groupLabel: 'Personal Documents',
+         documents: [ ...doc objects with permissions ]
+       },
+       ...
+       {
+         group: 'other',
+         groupLabel: 'Additional Documents',
+         documents: [ ...extra uploaded docs ]
+       }
+     ]
+
+── 2.4 NEW endpoint: GET /api/documents/permissions-check ───
+
+Purpose: Frontend uses this before showing the upload button.
+
+Query params:
+  entityType: string
+  entityId: uuid
+  categoryGroup: string
+
+Returns:
+  {
+    canUpload: boolean,
+    canUploadExtra: boolean,
+    availableCategories: [ { id, categoryCode, categoryNameEn, ... } ]
+    -- Only categories visible to this role for this group
+  }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 3: SETTINGS — Doc Permissions page update
+ (/admin/settings/doc-permissions — SA only)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXISTING page: category_group × role × {View, Download}
+ADD to each cell: a third toggle column "Upload Extra"
+
+Updated matrix header:
+  [Category Group] | [Role] | View | Download | Upload Extra
+
+"Upload Extra" column tooltip:
+  "Allow this role to upload documents that are not in the
+   predefined category list for this group."
+
+Also add a section below the matrix:
+  ── Per-Category Extra Upload Toggle ──
+  Table: Category Code | Category Name | Allow Extra Upload | Toggle
+  (Maps to allow_extra_upload column on document_categories)
+  Default: all true. Admin can disable for sensitive categories
+  (e.g. disable extra upload on 'contract' group so only
+  defined contract docs can be uploaded).
+
+[Save All] button behavior: UNCHANGED (saves all changes atomically)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 4: NEW SHARED COMPONENT — <EntityDocumentsTab />
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create: /client/src/components/shared/EntityDocumentsTab.tsx
+
+Props:
+  entityType: 'application'|'contract'|'institute_mgt'
+              |'hotel_mgt'|'pickup_mgt'|'tour_mgt'|'user'
+  entityId: string
+  mode?: 'full' | 'simple'  (default: 'full')
+  -- 'simple' = view/download only, no upload UI
+  -- 'full'   = view/download + upload if permitted
+
+This component:
+  1. Calls GET /api/documents/by-entity?entityType=&entityId=
+     on mount
+  2. Renders documents grouped by category_group
+  3. Shows upload button only if canUpload=true
+     (from GET /api/documents/permissions-check)
+  4. Reuses existing DocumentUploadModal (already built)
+     — pass extra props: isExtraCategory, extraCategoryName
+  5. Reuses existing inline viewer (PDF iframe, image lightbox)
+  6. Shows "Additional Documents" section at the bottom
+     for documents with extra_category_id set
+
+Upload modal for extra documents:
+  ADD a toggle: "Standard category" / "Other (custom)"
+  When "Other" selected:
+    — Hide the category dropdown
+    — Show text input: "Document name / type"
+       placeholder: "e.g. Insurance waiver, Medical certificate"
+    — Show warning badge:
+      "This document will be stored under 'Other' category.
+       Visibility follows 'Other' document permissions."
+
+Design:
+  Same design system as existing DocumentManager component.
+  Use Accordion or collapsible sections per category_group.
+  Show document count badge next to each group label.
+  Empty group: show "No documents in this category" in
+    muted text — do NOT hide the group entirely if the
+    user has upload permission for it (they need to see
+    the upload button).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 5: ADD DOCUMENTS TAB TO ENTITY PAGES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rules for showing the tab:
+  Show the "Documents" tab IF:
+    • The user's role has can_view=true for at least one
+      category_group in default_doc_permissions
+    • OR document_permissions has can_view=true for at least
+      one document linked to this entity
+  Hide the tab entirely if the role can see nothing.
+
+This check is done via a single API call on page load:
+  GET /api/documents/permissions-check?entityType=&entityId=
+  → if canView: false for all groups → hide tab
+
+── 5.1 Application Detail page ──────────────────────────────
+
+EXISTING tabs: Overview | Participants | Interview | Documents | Notes
+The [Documents] tab already exists — it uses DocumentManager.
+
+ACTION: Replace the existing DocumentManager usage inside
+the [Documents] tab with <EntityDocumentsTab
+  entityType="application"
+  entityId={applicationId}
+  mode="full"
+/>
+-- This preserves existing behaviour while adding:
+   (a) extra upload capability
+   (b) unified data from the central store
+
+⚠️ Do NOT remove or rename the existing [Documents] tab.
+   Only swap the inner component.
+
+── 5.2 Contract Detail page ─────────────────────────────────
+
+EXISTING tabs: Overview | Services | Documents | Accounting | Report | Activity Log
+The [Documents] tab already exists.
+
+ACTION: Same as 5.1 — replace inner component:
+<EntityDocumentsTab
+  entityType="contract"
+  entityId={contractId}
+  mode="full"
+/>
+
+── 5.3 Service detail drawers (Institute, Hotel, Pickup, Tour)
+
+EXISTING: Each service has a detail drawer with fields and a [Save] button.
+The drawer currently has NO documents tab.
+
+ACTION: Add a tab bar to each service detail drawer:
+  [Details] [Documents]
+
+[Details] tab: all existing content — UNCHANGED.
+[Documents] tab:
+  <EntityDocumentsTab
+    entityType={serviceType}  -- e.g. "institute_mgt"
+    entityId={serviceRecordId}
+    mode="full"
+  />
+
+Partner visibility rule (enforced by API, not just UI):
+  partner_institute: sees only documents where
+    service_type='institute' OR categoryGroup='school'
+  partner_hotel: sees only hotel_booking category docs
+  partner_pickup: sees only pickup_confirmation category docs
+  partner_tour: sees only tour_voucher category docs
+
+Tab bar design:
+  Same shadcn/ui Tabs component used elsewhere in the app.
+  [Details] is default active tab.
+  [Documents] shows a badge with document count (0 if none).
+  Do not show [Documents] tab for a partner if they have
+  zero view permissions (use permissions-check endpoint).
+
+── 5.4 User profile page (/admin/users/:id) ─────────────────
+
+EXISTING page: User detail with fields (name, email, role, etc.)
+There is currently no tab bar on this page.
+
+ACTION: Add a tab bar to the user detail page:
+  [Account] [Documents]
+
+[Account] tab: all existing user detail content — UNCHANGED.
+[Documents] tab: visible only to SA/AD.
+  <EntityDocumentsTab
+    entityType="user"
+    entityId={userId}
+    mode="full"
+  />
+  This shows all documents associated with contracts and
+  applications where this user is the client, agent, or
+  service provider — giving SA/AD a single view of
+  everything linked to a user.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 6: CENTRAL DOCUMENT MANAGEMENT VIEW
+ (/admin/documents — NEW PAGE, SA/AD only)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Add to sidebar under SETTINGS section (SA/AD only):
+  📁 Documents    /admin/documents
+
+Page layout: standard list page with filters.
+
+Filters (top bar):
+  [Entity Type ▾] [Category Group ▾] [Status ▾]
+  [Uploaded by ▾] [Date range] [🔍 Search name]
+
+Table columns:
+  Document Name | Entity | Category | Uploaded by |
+  Uploaded at | Status | Expiry | Actions
+
+Entity column format:
+  "Contract CNT-2026-0001" (links to /admin/contracts/:id)
+  "Application APP-2026-0003" (links to /admin/applications/:id)
+  "Institute — John Smith" (links to service detail)
+
+Actions per row:
+  [👁 View] [⬇ Download] [✏ Edit status] [🗑 Delete]
+  (Same permission rules as existing document endpoints)
+
+[Bulk Download] button: appears when rows are selected.
+  Uses existing POST /api/documents/bulk-download endpoint.
+
+Access log drawer: click any row → shows document_access_logs
+  (reuse existing access log display, already built for
+  the per-document access log in /admin/settings area)
+
+Add page_permissions entry:
+  'documents' page → SA: ✓, AD: ✓, all others: ✗
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 7: SEED DATA UPDATES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Add to /db/seed.ts — run after existing seed logic:
+
+1. Set allow_extra_upload on document_categories:
+   UPDATE document_categories
+   SET allow_extra_upload = false
+   WHERE category_code IN ('contract_signed', 'terms_conditions');
+   -- Prevent extra uploads from being added to the contract group
+
+2. Seed default extra-upload permissions
+   (add can_upload_extra column to existing seed rows):
+   SA/AD/CC → true for all groups
+   EA        → true for personal, school, travel groups
+   partner_institute → true for school group only
+   partner_hotel     → true for travel group only
+   partner_pickup    → true for travel group only
+   partner_tour      → true for travel group only
+   parent_client     → false for all groups
+
+3. Seed page_permissions for 'documents' page:
+   SA → true, AD → true, all others → false
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 8: ⚠️ PRESERVATION RULES — READ BEFORE CODING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+These rules MUST be followed to avoid breaking existing code:
+
+1. DATABASE: Use only ALTER TABLE ADD COLUMN (never DROP,
+   RENAME, or MODIFY existing columns). All new columns
+   must have DEFAULT values so existing rows are unaffected.
+
+2. API: All new endpoints use NEW paths (/by-entity,
+   /permissions-check). The existing /api/documents/* routes
+   (upload, list, view, download, status, delete,
+   new-version, bulk-download, checklist, access-log)
+   remain UNCHANGED in signature and behaviour.
+   Only the upload endpoint gets optional new body fields —
+   they are optional so existing callers break nothing.
+
+3. COMPONENTS: DocumentManager component is NOT modified.
+   The new EntityDocumentsTab is a separate component that
+   internally may call the same API endpoints.
+   In Application and Contract [Documents] tabs, swap
+   DocumentManager for EntityDocumentsTab — but ONLY
+   inside those tab panels. DocumentManager remains in
+   the codebase and is not deleted.
+
+4. SETTINGS PAGE: /admin/settings/doc-permissions gets
+   new columns added to the existing matrix UI and a new
+   section below. The existing matrix layout, save logic,
+   and API calls are UNCHANGED. Only extend them.
+
+5. SERVICE DRAWERS: Adding a tab bar to service drawers
+   must not change the existing [Details] form layout,
+   save logic, or any field editing behaviour. The tab bar
+   wraps existing content inside [Details] — it does not
+   restructure it.
+
+6. SIDEBAR: Add the Documents page link ONLY for SA/AD
+   (checked via effectiveRole). Do not reorder any existing
+   sidebar items.
+
+7. MIGRATIONS: Create a new migration file for the ALTER
+   TABLE statements. Do not edit existing migration files.
+
+8. PERMISSIONS: The partnerScope middleware is NOT modified.
+   The new /by-entity endpoint enforces scope by querying
+   through the same contract/service join chains already
+   defined in partnerScope. Implement filtering in the
+   route handler, not in the middleware.
+
+9. TYPESCRIPT: All new columns added to Drizzle schema
+   must be optional (e.g. .default(true)) so existing
+   insert/update calls that don't pass the new fields
+   continue to compile without changes.
+
+10. TESTING: After implementation, verify:
+    ✓ Existing Application [Documents] tab still works
+    ✓ Existing Contract [Documents] tab still works
+    ✓ partner_hotel login → sees hotel service Documents
+      tab but CANNOT see financial or personal docs
+    ✓ parent_client → no Documents tab on user page
+    ✓ Extra upload with custom name → stored under 'other'
+      group, visible per 'other' group permissions
+    ✓ /admin/settings/doc-permissions saves correctly
+      including new Upload Extra column
+    ✓ /admin/documents page loads for SA/AD only (403 others)
+
+════════════════════════════════════════════════════════════
+ END OF UPDATE PROMPT
+════════════════════════════════════════════════════════════

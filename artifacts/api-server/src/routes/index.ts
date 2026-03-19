@@ -16,6 +16,7 @@ import tasksRouter from "./tasks.js";
 import notesRouter from "./notes.js";
 import dataManagerRouter from "./data-manager.js";
 import ledgerRouter from "./ledger.js";
+import documentsRouter from "./documents.js";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(tasksRouter);
 router.use(notesRouter);
 router.use("/data-manager", dataManagerRouter);
 router.use(ledgerRouter);
+router.use(documentsRouter);
 
 export default router;

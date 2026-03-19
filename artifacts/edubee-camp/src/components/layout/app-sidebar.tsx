@@ -103,6 +103,13 @@ function buildNav(effectiveRole: string): NavGroup[] {
   }
 
   if (isSAorAD) {
+    nav.push({
+      label: "Documents",
+      items: [{ icon: FolderOpen, label: "All Documents", href: "/admin/documents" }],
+    });
+  }
+
+  if (isSAorAD) {
     nav.push({ label: "Users", items: [{ icon: Users, label: "Users", href: "/admin/users" }] });
   }
 

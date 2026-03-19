@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -120,6 +121,9 @@ export default function UserDetail() {
         <TabsList className="mb-4">
           <TabsTrigger value="account">Account</TabsTrigger>
           <TabsTrigger value="ledger">Ledger</TabsTrigger>
+          {ADMIN_ROLES.includes(currentUser?.role ?? "") && (
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="account">
@@ -248,6 +252,16 @@ export default function UserDetail() {
             </div>
           </div>
         </TabsContent>
+
+        {ADMIN_ROLES.includes(currentUser?.role ?? "") && (
+          <TabsContent value="documents">
+            <EntityDocumentsTab
+              entityType="user"
+              entityId={id!}
+              mode="full"
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </DetailPageLayout>
   );

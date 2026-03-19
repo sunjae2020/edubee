@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
-import { Package, Pencil, Trash2 } from "lucide-react";
+import { Package, Pencil, Trash2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -31,6 +31,11 @@ interface Product {
 }
 
 const PRODUCT_TYPES = ["accommodation", "program", "activity", "transport", "meal", "insurance", "visa", "other"];
+const DISPLAY_CURRENCIES = ["AUD", "KRW", "JPY", "THB", "USD", "SGD", "GBP", "EUR", "PHP"];
+const CCY_FLAGS: Record<string, string> = {
+  AUD: "🇦🇺", KRW: "🇰🇷", JPY: "🇯🇵", THB: "🇹🇭",
+  USD: "🇺🇸", SGD: "🇸🇬", GBP: "🇬🇧", EUR: "🇪🇺", PHP: "🇵🇭",
+};
 const STATUSES = ["active", "inactive", "archived"];
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green-100 text-green-700",
@@ -50,6 +55,7 @@ export default function Products() {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [displayCurrency, setDisplayCurrency] = useState("AUD");
 
   const queryKey = ["products", { search, typeFilter, page }];
   const { data: resp, isLoading } = useQuery({
@@ -109,9 +115,24 @@ export default function Products() {
     else createProduct.mutate(payload);
   };
 
-  const fmtCost = (cost: string | null | undefined, ccy = "AUD") => {
-    if (!cost) return "—";
-    return `${ccy} ${Number(cost).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtCost = (p: Product) => {
+    if (displayCurrency !== "AUD" && p.convertedCost?.[displayCurrency.toLowerCase()] != null) {
+      const converted = p.convertedCost[displayCurrency.toLowerCase()]!;
+      return (
+        <span>
+          <span className="text-[#F5821F] font-semibold">
+            {displayCurrency} {converted.toLocaleString("en-AU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          </span>
+          {p.cost && (
+            <span className="block text-[10px] text-muted-foreground font-normal">
+              AUD {Number(p.cost).toLocaleString("en-AU", { minimumFractionDigits: 0 })}
+            </span>
+          )}
+        </span>
+      );
+    }
+    if (!p.cost) return "—";
+    return `${p.currency ?? "AUD"} ${Number(p.cost).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (
@@ -134,6 +155,21 @@ export default function Products() {
               {PRODUCT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
+
+          {/* Currency conversion toggle */}
+          <div className="flex items-center gap-1 border rounded-lg h-8 px-2 bg-muted/30">
+            <RefreshCw className="w-3 h-3 text-muted-foreground shrink-0" />
+            <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
+              <SelectTrigger className="h-7 text-xs w-24 border-0 bg-transparent p-0 shadow-none focus:ring-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DISPLAY_CURRENCIES.map(c => (
+                  <SelectItem key={c} value={c}>{CCY_FLAGS[c]} {c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </ListToolbar>
 
@@ -161,7 +197,7 @@ export default function Products() {
               </td>
             )}
             <td className="px-4 py-3 text-right font-mono text-sm font-semibold">
-              {fmtCost(p.cost, p.currency ?? "AUD")}
+              {fmtCost(p)}
             </td>
             <td className="px-4 py-3">
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[p.status ?? "active"] ?? "bg-gray-100 text-gray-600"}`}>

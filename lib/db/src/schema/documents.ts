@@ -23,6 +23,17 @@ export const documentCategories = pgTable("document_categories", {
   icon: varchar("icon", { length: 50 }),
   isRequired: boolean("is_required").default(false),
   sortOrder: integer("sort_order").default(0),
+  allowExtraUpload: boolean("allow_extra_upload").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const documentExtraCategories = pgTable("document_extra_categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  referenceType: varchar("reference_type", { length: 20 }).notNull(),
+  referenceId: uuid("reference_id").notNull(),
+  categoryName: varchar("category_name", { length: 255 }).notNull(),
+  categoryGroup: varchar("category_group", { length: 50 }).default("other"),
+  createdBy: uuid("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -31,6 +42,9 @@ export const documents = pgTable("documents", {
   referenceType: varchar("reference_type", { length: 20 }).notNull(),
   referenceId: uuid("reference_id").notNull(),
   categoryId: uuid("category_id").references(() => documentCategories.id),
+  extraCategoryId: uuid("extra_category_id").references(() => documentExtraCategories.id),
+  serviceType: varchar("service_type", { length: 20 }),
+  serviceId: uuid("service_id"),
   participantId: uuid("participant_id").references(
     () => applicationParticipants.id
   ),
@@ -63,6 +77,7 @@ export const defaultDocPermissions = pgTable(
     role: varchar("role", { length: 50 }).notNull(),
     canView: boolean("can_view").default(false),
     canDownload: boolean("can_download").default(false),
+    canUploadExtra: boolean("can_upload_extra").default(false),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (t) => [unique().on(t.categoryGroup, t.role)]
@@ -77,6 +92,7 @@ export const documentPermissions = pgTable(
     canView: boolean("can_view").default(false),
     canDownload: boolean("can_download").default(false),
     canDelete: boolean("can_delete").default(false),
+    canUploadExtra: boolean("can_upload_extra").default(false),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (t) => [unique().on(t.documentId, t.role)]
@@ -94,3 +110,4 @@ export const documentAccessLogs = pgTable("document_access_logs", {
 
 export type DocumentCategory = typeof documentCategories.$inferSelect;
 export type Document = typeof documents.$inferSelect;
+export type DocumentExtraCategory = typeof documentExtraCategories.$inferSelect;
