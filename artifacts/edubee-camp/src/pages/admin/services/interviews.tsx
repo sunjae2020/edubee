@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { NotePanel } from "@/components/shared/NotePanel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -153,6 +154,15 @@ export default function Interviews() {
                   {updateMutation.isPending ? "Saving…" : "Save Changes"}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>
+              </div>
+              <div className="border-t border-border pt-4">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Notes</h4>
+                <NotePanel
+                  entityType="interview_schedule"
+                  entityId={selected.id}
+                  allowedNoteTypes={["internal", "interviewer", "candidate"]}
+                  defaultVisibility="internal"
+                />
               </div>
             </div>
           )}

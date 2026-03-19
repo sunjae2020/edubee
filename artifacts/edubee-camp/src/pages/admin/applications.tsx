@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { NotePanel } from "@/components/shared/NotePanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -418,13 +419,15 @@ export default function Applications() {
                   </TabsContent>
 
                   <TabsContent value="notes" className="p-6 m-0">
-                    {selectedApp.notes ? (
-                      <div className="text-sm bg-muted/40 rounded-lg p-4">{selectedApp.notes}</div>
-                    ) : (
-                      <div className="text-center py-12 text-muted-foreground text-sm">
-                        <FileText className="w-8 h-8 mx-auto mb-3 opacity-30" /><p>No notes added yet</p>
-                      </div>
+                    {selectedApp.notes && (
+                      <div className="text-sm bg-muted/40 rounded-lg p-4 mb-4">{selectedApp.notes}</div>
                     )}
+                    <NotePanel
+                      entityType="application"
+                      entityId={selectedApp.id}
+                      allowedNoteTypes={["internal", "special_request"]}
+                      defaultVisibility="internal"
+                    />
                   </TabsContent>
                 </div>
               </Tabs>

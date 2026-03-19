@@ -1,0 +1,881 @@
+══════════════════════════════════════════════════════════════
+ EDUBEE CAMP — Universal Note System Implementation
+ SAFE MODE: Self-Review Required Before Any Execution
+══════════════════════════════════════════════════════════════
+
+## MANDATORY PRE-EXECUTION REVIEW PROTOCOL
+
+Before writing or modifying ANY file, you MUST complete ALL
+checks below in order. If ANY check fails or raises doubt,
+STOP immediately and report the issue with:
+  ❌ [CHECK FAILED] <check name>
+  → Problem: <describe exactly what you found>
+  → Risk: <what could break>
+  → Awaiting instruction before proceeding.
+
+Do NOT proceed past a failed check under any circumstance.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PHASE 0: PRE-FLIGHT CHECKS  (read-only — touch nothing)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CHECK-01 | Confirm project structure
+  Locate and confirm these paths exist:
+    /db/schema.ts
+    /db/seed.ts
+    /server/src/routes/
+    /server/src/middleware/
+    /client/src/
+  If any path is missing → STOP and report.
+
+CHECK-02 | Confirm database ORM
+  Open /db/schema.ts.
+  Confirm it uses Drizzle ORM (pgTable, uuid, varchar, text,
+  boolean, timestamp imports from drizzle-orm/pg-core).
+  If different ORM is found → STOP and report.
+
+CHECK-03 | Scan existing Note-related fields
+  Search the entire codebase for these field names:
+    notes, progress_notes, teacher_comments, guest_notes,
+    driver_notes, tour_notes, summary_notes, description,
+    interviewer_notes, candidate_notes, special_requests,
+    rejection_reason
+  For each match, record:
+    - file path
+    - table/entity name
+    - whether it is currently used in any route or component
+  Output the full list before proceeding.
+  If any field is used as a foreign key or has a DB constraint
+  → STOP and report.
+
+CHECK-04 | Confirm no existing 'note' or 'notes' table
+  Search /db/schema.ts for any table already named:
+    'note', 'notes', 'note_log', 'activity_notes'
+  If found → STOP and report. Do not create a duplicate.
+
+CHECK-05 | Check active migrations
+  Look for /db/migrations/ directory.
+  List all existing migration files.
+  Confirm the latest migration has already been applied
+  (check for a migration state file or drizzle config).
+  If migration state is unclear → STOP and report.
+
+CHECK-06 | Identify all files that import or reference
+  the fields found in CHECK-03.
+  List every route file, service file, and React component
+  that reads or writes those fields.
+  This is your impact map — required before touching anything.
+
+CHECK-07 | Confirm partnerScope middleware location
+  Open /server/src/middleware/partnerScope.ts (or equivalent).
+  Confirm the scopeFilter pattern used for other entities
+  (e.g. how institute_mgt is scoped).
+  Note the exact pattern — the Note table will follow the same.
+
+CHECK-08 | Confirm shadcn/ui component availability
+  Check /client/src/components/ui/ for:
+    textarea.tsx, button.tsx, badge.tsx, avatar.tsx
+  If any are missing → note it (non-blocking, will use fallback).
+
+── After ALL checks pass, output this summary ──────────────
+  ✅ CHECK-01 Project structure confirmed
+  ✅ CHECK-02 Drizzle ORM confirmed
+  ✅ CHECK-03 Found N note-related fields across X tables: [list]
+  ✅ CHECK-04 No existing note table — safe to create
+  ✅ CHECK-05 Migrations: [list files], state: [confirmed/unclear]
+  ✅ CHECK-06 Impact map: [list affected files]
+  ✅ CHECK-07 partnerScope pattern confirmed
+  ✅ CHECK-08 UI components: [present/missing list]
+
+  ── READY TO EXECUTE? ──
+  All N checks passed. Proceeding with implementation.
+──────────────────────────────────────────────────────────────
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PHASE 1: DATABASE — Add note table to schema (NON-BREAKING)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+RULE: Only APPEND to /db/schema.ts. Never modify or remove
+any existing table definition. Existing fields (notes,
+progress_notes, etc.) stay in place for now — they will be
+deprecated gradually, not deleted.
+
+Add the following table at the END of /db/schema.ts,
+after all existing table definitions:
+
+─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+// UNIVERSAL NOTE TABLE
+// Replaces all scattered *_notes / *_comments fields
+// across the platform with a single polymorphic table.
+// Existing fields are kept for backward compatibility
+// until full migration is confirmed.
+// ═══════════════════════════════════════════════════════
+
+export const notes = pgTable('notes', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+
+  // Polymorphic reference ─ which entity this note belongs to
+  entityType:  varchar('entity_type', { length: 50 }).notNull(),
+  // Allowed values:
+  // 'task' | 'lead' | 'application' | 'contract'
+  // | 'institute_mgt' | 'hotel_mgt' | 'pickup_mgt'
+  // | 'tour_mgt' | 'settlement_mgt' | 'interview_schedule'
+
+  entityId:    uuid('entity_id').notNull(),
+  // References the PK of the corresponding entity table.
+  // No DB-level FK (polymorphic). Enforced at app level.
+
+  // Note classification ─ multiple note types per entity
+  noteType:    varchar('note_type', { length: 50 }).notNull().default('internal'),
+  // Allowed values per entity:
+  //   task               → 'internal'
+  //   lead               → 'internal'
+  //   application        → 'internal' | 'special_request'
+  //   contract           → 'internal'
+  //   institute_mgt      → 'internal' | 'teacher' | 'progress'
+  //   hotel_mgt          → 'internal' | 'guest'
+  //   pickup_mgt         → 'internal' | 'driver'
+  //   tour_mgt           → 'internal' | 'guide'
+  //   settlement_mgt     → 'internal'
+  //   interview_schedule → 'internal' | 'interviewer' | 'candidate'
+
+  content:     text('content').notNull(),
+
+  // Visibility control — maps to partnerScope roles
+  visibility:  varchar('visibility', { length: 20 }).notNull().default('internal'),
+  // 'internal'  → admin, camp_coordinator only
+  // 'partner'   → includes the assigned service partner
+  // 'client'    → visible to parent_client too
+
+  isPinned:    boolean('is_pinned').default(false),
+  // Pin important notes to top of list
+
+  // Authorship
+  createdBy:   uuid('created_by').references(() => users.id),
+  createdAt:   timestamp('created_at').defaultNow(),
+  updatedAt:   timestamp('updated_at').defaultNow(),
+});
+─────────────────────────────────────────────────────────────
+
+After adding the table, run migration:
+  npx drizzle-kit push
+
+Confirm output shows:
+  · table 'notes' created
+  · NO existing tables modified
+  · NO existing columns dropped
+
+If migration output shows anything being dropped or altered
+→ STOP immediately. Do not proceed.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PHASE 2: BACKEND — Notes API routes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create NEW file: /server/src/routes/notes.ts
+Do NOT modify any existing route file.
+
+─────────────────────────────────────────────────────────────
+import { Router } from 'express';
+import { db } from '../db';
+import { notes } from '../../db/schema';
+import { and, eq, desc } from 'drizzle-orm';
+import { authenticate } from '../middleware/authenticate';
+import { requireRole } from '../middleware/requireRole';
+
+const router = Router();
+
+// ── ALLOWED entity types (whitelist — prevent injection) ──
+const ALLOWED_ENTITY_TYPES = [
+  'task', 'lead', 'application', 'contract',
+  'institute_mgt', 'hotel_mgt', 'pickup_mgt',
+  'tour_mgt', 'settlement_mgt', 'interview_schedule',
+] as const;
+
+// ── ALLOWED note types per entity ──
+const ALLOWED_NOTE_TYPES: Record<string, string[]> = {
+  task:               ['internal'],
+  lead:               ['internal'],
+  application:        ['internal', 'special_request'],
+  contract:           ['internal'],
+  institute_mgt:      ['internal', 'teacher', 'progress'],
+  hotel_mgt:          ['internal', 'guest'],
+  pickup_mgt:         ['internal', 'driver'],
+  tour_mgt:           ['internal', 'guide'],
+  settlement_mgt:     ['internal'],
+  interview_schedule: ['internal', 'interviewer', 'candidate'],
+};
+
+// ── VISIBILITY rules per role ──
+// Returns the visibility values a role is allowed to READ
+function getAllowedVisibility(role: string): string[] {
+  switch (role) {
+    case 'super_admin':
+    case 'admin':
+      return ['internal', 'partner', 'client'];
+    case 'camp_coordinator':
+      return ['internal', 'partner', 'client'];
+    case 'education_agent':
+      return ['partner', 'client'];
+    case 'partner_institute':
+    case 'partner_hotel':
+    case 'partner_pickup':
+    case 'partner_tour':
+      return ['partner'];
+    case 'parent_client':
+      return ['client'];
+    default:
+      return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// GET /api/notes?entityType=contract&entityId=<uuid>
+// Returns notes for one entity, filtered by caller's role
+// ─────────────────────────────────────────────────────────
+router.get('/', authenticate, async (req, res) => {
+  try {
+    const { entityType, entityId } = req.query as Record<string, string>;
+
+    if (!entityType || !entityId) {
+      return res.status(400).json({
+        success: false, error: 'entityType and entityId are required',
+      });
+    }
+    if (!ALLOWED_ENTITY_TYPES.includes(entityType as any)) {
+      return res.status(400).json({
+        success: false, error: 'Invalid entityType',
+      });
+    }
+
+    const role = req.user.role;
+    const allowedVis = getAllowedVisibility(role);
+
+    if (allowedVis.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const rows = await db
+      .select()
+      .from(notes)
+      .where(
+        and(
+          eq(notes.entityType, entityType),
+          eq(notes.entityId, entityId),
+        )
+      )
+      .orderBy(desc(notes.isPinned), desc(notes.createdAt));
+
+    // Filter by visibility at app level
+    const filtered = rows.filter(n => allowedVis.includes(n.visibility));
+
+    return res.json({ success: true, data: filtered });
+  } catch (err) {
+    console.error('[notes GET]', err);
+    return res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────
+// POST /api/notes
+// Create a new note
+// ─────────────────────────────────────────────────────────
+router.post('/', authenticate, async (req, res) => {
+  try {
+    const { entityType, entityId, noteType = 'internal',
+            content, visibility = 'internal', isPinned = false } = req.body;
+
+    // Validate
+    if (!entityType || !entityId || !content?.trim()) {
+      return res.status(400).json({
+        success: false, error: 'entityType, entityId, content are required',
+      });
+    }
+    if (!ALLOWED_ENTITY_TYPES.includes(entityType)) {
+      return res.status(400).json({ success: false, error: 'Invalid entityType' });
+    }
+    const validNoteTypes = ALLOWED_NOTE_TYPES[entityType] ?? ['internal'];
+    if (!validNoteTypes.includes(noteType)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid noteType '${noteType}' for entity '${entityType}'`,
+      });
+    }
+
+    // Visibility permission check
+    const role = req.user.role;
+    const canWriteInternal = ['super_admin','admin','camp_coordinator'].includes(role);
+    if (visibility === 'internal' && !canWriteInternal) {
+      return res.status(403).json({
+        success: false, error: 'Not permitted to write internal notes',
+      });
+    }
+
+    const [created] = await db.insert(notes).values({
+      entityType,
+      entityId,
+      noteType,
+      content: content.trim(),
+      visibility,
+      isPinned: Boolean(isPinned),
+      createdBy: req.user.id,
+    }).returning();
+
+    return res.status(201).json({ success: true, data: created });
+  } catch (err) {
+    console.error('[notes POST]', err);
+    return res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────
+// PATCH /api/notes/:id
+// Update content or isPinned (author or admin only)
+// ─────────────────────────────────────────────────────────
+router.patch('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await db.query.notes.findFirst({
+      where: eq(notes.id, id),
+    });
+    if (!existing) return res.status(404).json({ success: false, error: 'Not found' });
+
+    const role = req.user.role;
+    const isAdmin = ['super_admin', 'admin'].includes(role);
+    const isAuthor = existing.createdBy === req.user.id;
+    if (!isAdmin && !isAuthor) {
+      return res.status(403).json({ success: false, error: 'Not permitted' });
+    }
+
+    const { content, isPinned } = req.body;
+    const updateData: Partial<typeof existing> = { updatedAt: new Date() };
+    if (content !== undefined) updateData.content = content.trim();
+    if (isPinned !== undefined) updateData.isPinned = Boolean(isPinned);
+
+    const [updated] = await db
+      .update(notes)
+      .set(updateData)
+      .where(eq(notes.id, id))
+      .returning();
+
+    return res.json({ success: true, data: updated });
+  } catch (err) {
+    console.error('[notes PATCH]', err);
+    return res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────
+// DELETE /api/notes/:id  (admin or author only)
+// ─────────────────────────────────────────────────────────
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await db.query.notes.findFirst({
+      where: eq(notes.id, id),
+    });
+    if (!existing) return res.status(404).json({ success: false, error: 'Not found' });
+
+    const role = req.user.role;
+    const isAdmin = ['super_admin', 'admin'].includes(role);
+    const isAuthor = existing.createdBy === req.user.id;
+    if (!isAdmin && !isAuthor) {
+      return res.status(403).json({ success: false, error: 'Not permitted' });
+    }
+
+    await db.delete(notes).where(eq(notes.id, id));
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[notes DELETE]', err);
+    return res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+export default router;
+─────────────────────────────────────────────────────────────
+
+Register the router in the main server file.
+Open /server/src/index.ts (or app.ts — whichever registers routes).
+ADD (do not replace anything):
+  import notesRouter from './routes/notes';
+  app.use('/api/notes', notesRouter);
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PHASE 3: FRONTEND — NotePanel shared component
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create NEW file: /client/src/components/shared/NotePanel.tsx
+Do NOT modify any existing component.
+
+─────────────────────────────────────────────────────────────
+/**
+ * NotePanel — Universal Note component
+ *
+ * Usage (drop into any detail page/drawer):
+ *   <NotePanel entityType="contract" entityId={contract.id} />
+ *   <NotePanel entityType="institute_mgt" entityId={mgt.id} />
+ *
+ * The component handles its own data fetching, creation,
+ * and permission-aware rendering. No prop drilling needed.
+ */
+
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from '@/lib/axios';
+import { useAuth } from '@/context/AuthContext';
+import { format } from 'date-fns';
+import { Pin, Trash2, Send } from 'lucide-react';
+
+// ── Types ──────────────────────────────────────────────────
+interface Note {
+  id: string;
+  entityType: string;
+  entityId: string;
+  noteType: string;
+  content: string;
+  visibility: 'internal' | 'partner' | 'client';
+  isPinned: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  // joined from user (optional, if API populates)
+  createdByName?: string;
+}
+
+interface NotePanelProps {
+  entityType: string;
+  entityId: string;
+  // Optional: restrict which noteTypes are shown/created
+  allowedNoteTypes?: string[];
+  // Optional: default visibility for new notes
+  defaultVisibility?: 'internal' | 'partner' | 'client';
+  // Optional: compact mode for drawers
+  compact?: boolean;
+}
+
+// ── Helpers ────────────────────────────────────────────────
+const VISIBILITY_LABELS: Record<string, { label: string; color: string }> = {
+  internal: { label: 'Internal', color: '#F5821F' },
+  partner:  { label: 'Partner',  color: '#0EA5E9' },
+  client:   { label: 'Client',   color: '#16A34A' },
+};
+
+const NOTE_TYPE_LABELS: Record<string, string> = {
+  internal:        'Internal',
+  teacher:         'Teacher',
+  progress:        'Progress',
+  guest:           'Guest',
+  driver:          'Driver',
+  guide:           'Guide',
+  interviewer:     'Interviewer',
+  candidate:       'Candidate',
+  special_request: 'Special Request',
+};
+
+// ── Component ──────────────────────────────────────────────
+export function NotePanel({
+  entityType,
+  entityId,
+  allowedNoteTypes = ['internal'],
+  defaultVisibility = 'internal',
+  compact = false,
+}: NotePanelProps) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const [content, setContent] = useState('');
+  const [noteType, setNoteType] = useState(allowedNoteTypes[0] ?? 'internal');
+  const [visibility, setVisibility] = useState<'internal'|'partner'|'client'>(
+    defaultVisibility
+  );
+
+  const isAdmin = ['super_admin', 'admin', 'camp_coordinator'].includes(
+    user?.role ?? ''
+  );
+
+  // ── Fetch notes ──────────────────────────────────────────
+  const { data, isLoading } = useQuery({
+    queryKey: ['notes', entityType, entityId],
+    queryFn: () =>
+      axios
+        .get('/api/notes', { params: { entityType, entityId } })
+        .then(r => r.data.data as Note[]),
+    enabled: Boolean(entityId),
+  });
+
+  // ── Create note ──────────────────────────────────────────
+  const createMutation = useMutation({
+    mutationFn: () =>
+      axios.post('/api/notes', {
+        entityType, entityId, noteType, content, visibility,
+      }),
+    onSuccess: () => {
+      setContent('');
+      queryClient.invalidateQueries({ queryKey: ['notes', entityType, entityId] });
+    },
+  });
+
+  // ── Pin toggle ───────────────────────────────────────────
+  const pinMutation = useMutation({
+    mutationFn: ({ id, isPinned }: { id: string; isPinned: boolean }) =>
+      axios.patch(`/api/notes/${id}`, { isPinned: !isPinned }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['notes', entityType, entityId] }),
+  });
+
+  // ── Delete ───────────────────────────────────────────────
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => axios.delete(`/api/notes/${id}`),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['notes', entityType, entityId] }),
+  });
+
+  const noteList = data ?? [];
+  const pinned   = noteList.filter(n => n.isPinned);
+  const regular  = noteList.filter(n => !n.isPinned);
+  const sorted   = [...pinned, ...regular];
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap: compact ? 12 : 16 }}>
+
+      {/* ── Input area ─────────────────────────────────── */}
+      <div style={{
+        border: '1.5px solid var(--color-border-tertiary)',
+        borderRadius: 10,
+        padding: 12,
+        background: 'var(--color-background-primary)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+      }}>
+        {/* Note type + Visibility selectors (admin only) */}
+        {isAdmin && (
+          <div style={{ display:'flex', gap:8 }}>
+            {allowedNoteTypes.length > 1 && (
+              <select
+                value={noteType}
+                onChange={e => setNoteType(e.target.value)}
+                style={{
+                  fontSize: 12, padding:'4px 8px',
+                  borderRadius: 6, border:'1px solid var(--color-border-tertiary)',
+                  background: 'var(--color-background-secondary)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                {allowedNoteTypes.map(t => (
+                  <option key={t} value={t}>{NOTE_TYPE_LABELS[t] ?? t}</option>
+                ))}
+              </select>
+            )}
+            <select
+              value={visibility}
+              onChange={e => setVisibility(e.target.value as any)}
+              style={{
+                fontSize: 12, padding:'4px 8px',
+                borderRadius: 6, border:'1px solid var(--color-border-tertiary)',
+                background: 'var(--color-background-secondary)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              <option value="internal">Internal only</option>
+              <option value="partner">Visible to partner</option>
+              <option value="client">Visible to client</option>
+            </select>
+          </div>
+        )}
+
+        <textarea
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          placeholder="Add a note..."
+          rows={compact ? 2 : 3}
+          style={{
+            width: '100%', resize: 'vertical',
+            border: 'none', outline: 'none',
+            background: 'transparent',
+            fontSize: 14, lineHeight: 1.6,
+            color: 'var(--color-text-primary)',
+            fontFamily: 'inherit',
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              if (content.trim()) createMutation.mutate();
+            }
+          }}
+        />
+        <div style={{ display:'flex', justifyContent:'flex-end' }}>
+          <button
+            disabled={!content.trim() || createMutation.isPending}
+            onClick={() => createMutation.mutate()}
+            style={{
+              display:'flex', alignItems:'center', gap:6,
+              padding:'7px 16px', borderRadius:8,
+              background: content.trim() ? '#F5821F' : 'var(--color-border-tertiary)',
+              color: '#fff', border:'none', cursor:'pointer',
+              fontSize:13, fontWeight:500,
+              opacity: createMutation.isPending ? 0.7 : 1,
+            }}
+          >
+            <Send style={{ width:14, height:14 }} />
+            {createMutation.isPending ? 'Adding…' : 'Add note'}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Note list ───────────────────────────────────── */}
+      {isLoading && (
+        <div style={{ fontSize:13, color:'var(--color-text-secondary)', padding:'8px 0' }}>
+          Loading notes…
+        </div>
+      )}
+
+      {!isLoading && sorted.length === 0 && (
+        <div style={{
+          textAlign:'center', padding:'24px 0',
+          fontSize:13, color:'var(--color-text-secondary)',
+        }}>
+          No notes yet.
+        </div>
+      )}
+
+      {sorted.map(note => {
+        const vis = VISIBILITY_LABELS[note.visibility] ?? VISIBILITY_LABELS.internal;
+        const canManage = isAdmin || note.createdBy === user?.id;
+        return (
+          <div key={note.id} style={{
+            border: note.isPinned
+              ? '1.5px solid #F5821F'
+              : '1px solid var(--color-border-tertiary)',
+            borderRadius: 10,
+            padding: compact ? '10px 14px' : '12px 16px',
+            background: note.isPinned
+              ? '#FEF0E3'
+              : 'var(--color-background-primary)',
+            display:'flex', flexDirection:'column', gap:6,
+          }}>
+            {/* Header row */}
+            <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+              <span style={{
+                fontSize:12, fontWeight:500, color:'var(--color-text-secondary)',
+              }}>
+                {note.createdByName ?? 'User'}
+              </span>
+              <span style={{ fontSize:11, color:'var(--color-text-secondary)' }}>
+                {format(new Date(note.createdAt), 'MMM d, yyyy HH:mm')}
+              </span>
+              {/* Note type badge */}
+              {note.noteType !== 'internal' && (
+                <span style={{
+                  fontSize:11, padding:'2px 8px', borderRadius:999,
+                  background:'var(--color-background-secondary)',
+                  color:'var(--color-text-secondary)',
+                }}>
+                  {NOTE_TYPE_LABELS[note.noteType] ?? note.noteType}
+                </span>
+              )}
+              {/* Visibility badge */}
+              <span style={{
+                fontSize:11, padding:'2px 8px', borderRadius:999,
+                background: vis.color + '18',
+                color: vis.color,
+                marginLeft:'auto',
+              }}>
+                {vis.label}
+              </span>
+              {/* Actions */}
+              {canManage && (
+                <div style={{ display:'flex', gap:4 }}>
+                  <button
+                    onClick={() => pinMutation.mutate({ id: note.id, isPinned: note.isPinned })}
+                    title={note.isPinned ? 'Unpin' : 'Pin'}
+                    style={{
+                      background:'none', border:'none', cursor:'pointer',
+                      padding:4, borderRadius:4,
+                      color: note.isPinned ? '#F5821F' : 'var(--color-text-secondary)',
+                    }}
+                  >
+                    <Pin style={{ width:13, height:13 }} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm('Delete this note?')) deleteMutation.mutate(note.id);
+                    }}
+                    title="Delete"
+                    style={{
+                      background:'none', border:'none', cursor:'pointer',
+                      padding:4, borderRadius:4,
+                      color:'var(--color-text-danger)',
+                    }}
+                  >
+                    <Trash2 style={{ width:13, height:13 }} />
+                  </button>
+                </div>
+              )}
+            </div>
+            {/* Content */}
+            <p style={{
+              margin:0, fontSize:14, lineHeight:1.6,
+              color:'var(--color-text-primary)',
+              whiteSpace:'pre-wrap',
+            }}>
+              {note.content}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+─────────────────────────────────────────────────────────────
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PHASE 4: INTEGRATION — Add NotePanel to each service page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For each of the following pages, ADD a "Notes" tab or section
+to the existing detail drawer/modal.
+NEVER remove or replace existing content.
+ONLY add the NotePanel component at the bottom of the drawer
+or as a new tab.
+
+-- Institute detail drawer --
+  import { NotePanel } from '@/components/shared/NotePanel';
+  <NotePanel
+    entityType="institute_mgt"
+    entityId={record.id}
+    allowedNoteTypes={['internal', 'teacher', 'progress']}
+    defaultVisibility="internal"
+  />
+
+-- Hotel detail drawer --
+  <NotePanel
+    entityType="hotel_mgt"
+    entityId={record.id}
+    allowedNoteTypes={['internal', 'guest']}
+    defaultVisibility="internal"
+  />
+
+-- Pickup detail drawer --
+  <NotePanel
+    entityType="pickup_mgt"
+    entityId={record.id}
+    allowedNoteTypes={['internal', 'driver']}
+    defaultVisibility="internal"
+  />
+
+-- Tour detail drawer --
+  <NotePanel
+    entityType="tour_mgt"
+    entityId={record.id}
+    allowedNoteTypes={['internal', 'guide']}
+    defaultVisibility="internal"
+  />
+
+-- Interviews detail --
+  <NotePanel
+    entityType="interview_schedule"
+    entityId={record.id}
+    allowedNoteTypes={['internal', 'interviewer', 'candidate']}
+    defaultVisibility="internal"
+  />
+
+-- Settlement detail drawer --
+  <NotePanel
+    entityType="settlement_mgt"
+    entityId={record.id}
+    allowedNoteTypes={['internal']}
+    defaultVisibility="internal"
+  />
+
+-- Tasks detail (existing Tasks/CS page) --
+  <NotePanel
+    entityType="task"
+    entityId={task.id}
+    allowedNoteTypes={['internal']}
+    defaultVisibility="internal"
+    compact={true}
+  />
+
+-- Applications detail (Notes tab) --
+  <NotePanel
+    entityType="application"
+    entityId={application.id}
+    allowedNoteTypes={['internal', 'special_request']}
+    defaultVisibility="internal"
+  />
+
+-- Contracts detail (Notes tab) --
+  <NotePanel
+    entityType="contract"
+    entityId={contract.id}
+    allowedNoteTypes={['internal']}
+    defaultVisibility="internal"
+  />
+
+-- Leads detail (Notes section) --
+  <NotePanel
+    entityType="lead"
+    entityId={lead.id}
+    allowedNoteTypes={['internal']}
+    defaultVisibility="internal"
+    compact={true}
+  />
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PHASE 5: FINAL SAFETY CHECKS before declaring done
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Run the following checks after all phases complete.
+Report result of each. If any FAIL → report before closing.
+
+FINAL-01 | TypeScript compilation
+  Run: npx tsc --noEmit
+  Expected: 0 errors.
+  If errors exist → list them all. Do NOT mark as complete.
+
+FINAL-02 | Migration was additive only
+  Re-read /db/schema.ts and confirm:
+  - All original tables and columns are still present
+  - Only the new 'notes' table was added
+  - No existing table was modified
+
+FINAL-03 | Existing routes untouched
+  List all files modified during this implementation.
+  Only these should appear:
+    /db/schema.ts              (appended only)
+    /server/src/routes/notes.ts  (new file)
+    /server/src/index.ts or app.ts  (1 import + 1 app.use line added)
+    /client/src/components/shared/NotePanel.tsx  (new file)
+    Each service page drawer/modal  (NotePanel import + usage added)
+  If any OTHER file was modified → explain why.
+
+FINAL-04 | No existing note/comments fields removed
+  Confirm that notes, progress_notes, teacher_comments,
+  guest_notes, driver_notes, tour_notes, interviewer_notes,
+  candidate_notes fields are still present in schema.ts.
+  These are deprecated gradually — NOT deleted now.
+
+FINAL-05 | API route responds correctly
+  Verify the notes router is mounted at /api/notes.
+  Spot-check: GET /api/notes?entityType=contract&entityId=test
+  should return { success: true, data: [] } (not a 404 or crash).
+
+─────────────────────────────────────────────────────────────
+ OUTPUT FINAL REPORT:
+
+ ✅ or ❌ FINAL-01 TypeScript: [result]
+ ✅ or ❌ FINAL-02 Migration additive: [result]
+ ✅ or ❌ FINAL-03 Modified files: [list]
+ ✅ or ❌ FINAL-04 Legacy fields preserved: [result]
+ ✅ or ❌ FINAL-05 API route: [result]
+
+ Files created:   [list]
+ Files modified:  [list with change summary]
+ Files deleted:   NONE (if any listed → explain)
+
+ Implementation complete.
+ Legacy *_notes fields remain in DB — remove only after
+ confirming all data has been migrated via a separate task.
+─────────────────────────────────────────────────────────────
+══════════════════════════════════════════════════════════════

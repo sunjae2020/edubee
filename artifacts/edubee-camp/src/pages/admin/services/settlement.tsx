@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { NotePanel } from "@/components/shared/NotePanel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { DollarSign, Pencil, TrendingDown, Plus, FileText, ArrowUpRight, CalendarRange } from "lucide-react";
@@ -308,6 +309,15 @@ export default function Settlement() {
                   </div>
                 </div>
               )}
+              <div className="border-t border-border pt-4">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Notes</h4>
+                <NotePanel
+                  entityType="settlement_mgt"
+                  entityId={selected.id}
+                  allowedNoteTypes={["internal"]}
+                  defaultVisibility="internal"
+                />
+              </div>
             </div>
           )}
         </SheetContent>

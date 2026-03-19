@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { NotePanel } from "@/components/shared/NotePanel";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
@@ -232,6 +233,15 @@ export default function PickupManagement() {
                   </div>
                 </div>
               )}
+              <div className="border-t border-border pt-4">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Notes</h4>
+                <NotePanel
+                  entityType="pickup_mgt"
+                  entityId={selected.id}
+                  allowedNoteTypes={["internal", "driver"]}
+                  defaultVisibility="internal"
+                />
+              </div>
             </div>
           )}
         </SheetContent>

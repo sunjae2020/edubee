@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { NotePanel } from "@/components/shared/NotePanel";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -350,7 +351,7 @@ export default function Leads() {
 
                 {/* Notes */}
                 <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes</h3>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lead Notes (Field)</h3>
                   {isEditing ? (
                     <Textarea className="text-sm resize-none" rows={4} value={editForm.notes ?? ""} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} placeholder="Add notes…" />
                   ) : (
@@ -358,6 +359,17 @@ export default function Leads() {
                       {selectedLead.notes || <span className="text-muted-foreground italic">No notes yet</span>}
                     </div>
                   )}
+                </div>
+
+                {/* NotePanel */}
+                <div className="space-y-2 border-t border-border pt-4">
+                  <NotePanel
+                    entityType="lead"
+                    entityId={selectedLead.id}
+                    allowedNoteTypes={["internal"]}
+                    defaultVisibility="internal"
+                    compact={true}
+                  />
                 </div>
 
                 {/* Move to */}

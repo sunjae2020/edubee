@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearch } from "wouter";
 import axios from "axios";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { NotePanel } from "@/components/shared/NotePanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ListToolbar } from "@/components/ui/list-toolbar";
@@ -490,6 +491,15 @@ export default function Contracts() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                    <div className="border-t border-border pt-4 mt-4">
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Notes</h4>
+                      <NotePanel
+                        entityType="contract"
+                        entityId={selected.id}
+                        allowedNoteTypes={["internal"]}
+                        defaultVisibility="internal"
+                      />
                     </div>
                   </TabsContent>
                 </div>
