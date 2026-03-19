@@ -9,6 +9,7 @@ import {
   jsonb,
   date,
   unique,
+  index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -69,6 +70,7 @@ export const invoices = pgTable("invoices", {
   dueDate: date("due_date"),
   paidAt: timestamp("paid_at"),
   notes: text("notes"),
+  ledgerEntryId: uuid("ledger_entry_id"),
   createdBy: uuid("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -92,6 +94,7 @@ export const transactions = pgTable("transactions", {
   description: varchar("description", { length: 500 }),
   bankReference: varchar("bank_reference", { length: 200 }),
   transactionDate: date("transaction_date"),
+  ledgerEntryId: uuid("ledger_entry_id"),
   createdBy: uuid("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -114,8 +117,38 @@ export const receipts = pgTable("receipts", {
   receiptDate: date("receipt_date"),
   status: varchar("status", { length: 20 }).default("confirmed"),
   notes: text("notes"),
+  ledgerEntryId: uuid("ledger_entry_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const accountLedgerEntries = pgTable(
+  "account_ledger_entries",
+  {
+    id:               uuid("id").primaryKey().defaultRandom(),
+    accountId:        uuid("account_id").references(() => users.id).notNull(),
+    sourceType:       varchar("source_type", { length: 50 }).notNull(),
+    sourceId:         uuid("source_id").notNull(),
+    contractId:       uuid("contract_id").references(() => contracts.id),
+    entryType:        varchar("entry_type", { length: 10 }).notNull(),
+    amount:           decimal("amount", { precision: 12, scale: 2 }).notNull(),
+    currency:         varchar("currency", { length: 10 }).default("AUD"),
+    originalAmount:   decimal("original_amount", { precision: 12, scale: 2 }),
+    originalCurrency: varchar("original_currency", { length: 10 }),
+    audEquivalent:    decimal("aud_equivalent", { precision: 12, scale: 2 }),
+    exchangeRateToAud: decimal("exchange_rate_to_aud", { precision: 10, scale: 6 }),
+    status:           varchar("status", { length: 20 }).default("pending"),
+    description:      varchar("description", { length: 500 }),
+    entryDate:        date("entry_date").notNull(),
+    createdBy:        uuid("created_by").references(() => users.id),
+    createdAt:        timestamp("created_at").defaultNow(),
+    updatedAt:        timestamp("updated_at").defaultNow(),
+  },
+  (t) => [
+    index("idx_ledger_account").on(t.accountId, t.entryDate),
+    index("idx_ledger_source").on(t.sourceType, t.sourceId),
+    index("idx_ledger_contract").on(t.contractId),
+  ]
+);
 
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   id: true,
@@ -130,9 +163,16 @@ export const insertExchangeRateSchema = createInsertSchema(exchangeRates).omit({
   id: true,
   createdAt: true,
 });
+export const insertLedgerEntrySchema = createInsertSchema(accountLedgerEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Transaction = typeof transactions.$inferSelect;
 export type ExchangeRate = typeof exchangeRates.$inferSelect;
+export type AccountLedgerEntry = typeof accountLedgerEntries.$inferSelect;
+export type InsertLedgerEntry = z.infer<typeof insertLedgerEntrySchema>;

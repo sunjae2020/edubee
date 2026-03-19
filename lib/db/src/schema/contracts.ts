@@ -66,6 +66,7 @@ export const instituteMgt = pgTable("institute_mgt", {
   teacherComments: text("teacher_comments"),
   status: varchar("status", { length: 50 }).default("pending"),
   progressNotes: text("progress_notes"),
+  ledgerEntryId: uuid("ledger_entry_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -82,6 +83,7 @@ export const hotelMgt = pgTable("hotel_mgt", {
   confirmationNo: varchar("confirmation_no", { length: 100 }),
   guestNotes: text("guest_notes"),
   status: varchar("status", { length: 50 }).default("pending"),
+  ledgerEntryId: uuid("ledger_entry_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -97,6 +99,7 @@ export const pickupMgt = pgTable("pickup_mgt", {
   vehicleInfo: varchar("vehicle_info", { length: 100 }),
   driverNotes: text("driver_notes"),
   status: varchar("status", { length: 50 }).default("pending"),
+  ledgerEntryId: uuid("ledger_entry_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -114,6 +117,7 @@ export const tourMgt = pgTable("tour_mgt", {
   guideInfo: varchar("guide_info", { length: 255 }),
   tourNotes: text("tour_notes"),
   status: varchar("status", { length: 50 }).default("pending"),
+  ledgerEntryId: uuid("ledger_entry_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -140,6 +144,7 @@ export const settlementMgt = pgTable("settlement_mgt", {
   status: varchar("status", { length: 50 }).default("pending"),
   settlementDate: date("settlement_date"),
   notes: text("notes"),
+  ledgerEntryId: uuid("ledger_entry_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
