@@ -64,6 +64,7 @@ import DocPermissions from "@/pages/admin/settings/doc-permissions";
 import ImpersonationLogs from "@/pages/admin/settings/impersonation-logs";
 import DataManager from "@/pages/admin/settings/data-manager";
 import Products from "@/pages/admin/products";
+import ProductDetail from "@/pages/admin/product-detail";
 
 // My Programs
 import MyPrograms from "@/pages/admin/my-programs";
@@ -104,6 +105,9 @@ function Router() {
       </Route>
       <Route path="/admin/packages">
         <AdminRoute title="Packages"><Packages /></AdminRoute>
+      </Route>
+      <Route path="/admin/products/:id">
+        <AdminRoute title="Product Detail"><ProductDetail /></AdminRoute>
       </Route>
       <Route path="/admin/products">
         <AdminRoute title="Products"><Products /></AdminRoute>

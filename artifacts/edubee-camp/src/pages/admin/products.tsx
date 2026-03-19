@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
-import { Package, Plus, Pencil, Trash2 } from "lucide-react";
+import { Package, Pencil, Trash2, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -40,6 +41,7 @@ const STATUS_COLORS: Record<string, string> = {
 const emptyForm = { productName: "", productType: "program", description: "", cost: "", currency: "AUD", status: "active" };
 
 export default function Products() {
+  const [, setLocation] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
@@ -171,7 +173,11 @@ export default function Products() {
                 </td>
               </tr>
             ) : products.map(p => (
-              <tr key={p.id} className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors">
+              <tr
+                key={p.id}
+                className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
+                onClick={() => setLocation(`${BASE}/admin/products/${p.id}`)}
+              >
                 <td className="px-4 py-3">
                   <div className="font-medium text-foreground">{p.productName}</div>
                   {p.description && <div className="text-xs text-muted-foreground truncate max-w-[200px]">{p.description}</div>}
