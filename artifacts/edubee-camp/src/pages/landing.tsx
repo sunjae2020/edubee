@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowRight, ChevronUp, ArrowUpRight } from "lucide-react";
+import { Menu, X, ArrowRight, ChevronUp, ArrowUpRight, LayoutDashboard, LogOut } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { ProgramDetailDrawer } from "@/components/public/program-detail-drawer";
 import { ApplicationModal } from "@/components/public/application-modal";
 import type { PublicProgram } from "@/lib/program-utils";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
+import { useAuth } from "@/hooks/use-auth";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -54,6 +55,8 @@ const TESTIMONIALS = [
 
 export default function Landing() {
   const { t } = useTranslation();
+  const { user, logout, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
   const [scrolled, setScrolled]             = useState(false);
   const [showTop, setShowTop]               = useState(false);
   const [mobileOpen, setMobileOpen]         = useState(false);
@@ -129,11 +132,43 @@ export default function Landing() {
           <div className="flex items-center gap-2 ml-auto">
             <CurrencySelector />
             <LanguageSwitcher />
-            <Link href="/login">
-              <button className="hidden sm:block px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                {t("nav.login")}
-              </button>
-            </Link>
+
+            {isAuthenticated && user ? (
+              /* ── 로그인 상태 ── */
+              <div className="hidden sm:flex items-center gap-1.5">
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[#FEF0E3]">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#F5821F] text-white text-[11px] font-bold shrink-0">
+                    {(user.fullName ?? user.email ?? "?")[0].toUpperCase()}
+                  </span>
+                  <span className="text-xs font-medium text-[#F5821F] max-w-[90px] truncate">
+                    {user.fullName ?? user.email}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setLocation(`${BASE}/admin`)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                  title="Admin Dashboard"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  <span>Admin</span>
+                </button>
+                <button
+                  onClick={() => logout()}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>로그아웃</span>
+                </button>
+              </div>
+            ) : (
+              /* ── 비로그인 상태 ── */
+              <Link href="/login">
+                <button className="hidden sm:block px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  {t("nav.login")}
+                </button>
+              </Link>
+            )}
+
             <Button
               size="sm"
               className="hidden sm:inline-flex rounded-md h-8 px-4 text-sm font-semibold"
@@ -170,9 +205,35 @@ export default function Landing() {
                   {l.label}
                 </button>
               ))}
-              <Link href="/login" onClick={() => setMobileOpen(false)}>
-                <div className="px-3 py-2.5 text-base font-medium text-foreground hover:bg-muted rounded-md cursor-pointer">{t("nav.login")}</div>
-              </Link>
+              {isAuthenticated && user ? (
+                <>
+                  <div className="flex items-center gap-2 px-3 py-2.5 my-1 rounded-lg bg-[#FEF0E3]">
+                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#F5821F] text-white text-xs font-bold shrink-0">
+                      {(user.fullName ?? user.email ?? "?")[0].toUpperCase()}
+                    </span>
+                    <div>
+                      <div className="text-sm font-semibold text-[#F5821F]">{user.fullName ?? user.email}</div>
+                      <div className="text-[10px] text-muted-foreground capitalize">{user.role?.replace("_", " ")}</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { setLocation(`${BASE}/admin`); setMobileOpen(false); }}
+                    className="flex items-center gap-2 px-3 py-2.5 text-base font-medium text-foreground hover:bg-muted rounded-md"
+                  >
+                    <LayoutDashboard className="w-4 h-4" /> Admin Dashboard
+                  </button>
+                  <button
+                    onClick={() => { logout(); setMobileOpen(false); }}
+                    className="flex items-center gap-2 px-3 py-2.5 text-base font-medium text-red-500 hover:bg-red-50 rounded-md"
+                  >
+                    <LogOut className="w-4 h-4" /> 로그아웃
+                  </button>
+                </>
+              ) : (
+                <Link href="/login" onClick={() => setMobileOpen(false)}>
+                  <div className="px-3 py-2.5 text-base font-medium text-foreground hover:bg-muted rounded-md cursor-pointer">{t("nav.login")}</div>
+                </Link>
+              )}
             </nav>
             <div className="p-5 space-y-3 border-t border-border">
               <LanguageSwitcher />
