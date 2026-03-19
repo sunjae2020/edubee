@@ -174,9 +174,37 @@ router.post("/packages", authenticate, requireRole(...ADMIN_ROLES, "camp_coordin
 
 router.get("/packages/:id", authenticate, async (req, res) => {
   try {
-    const [pkg] = await db.select().from(packages).where(eq(packages.id, req.params.id)).limit(1);
-    if (!pkg) return res.status(404).json({ error: "Not Found" });
-    return res.json(pkg);
+    const [row] = await db
+      .select({
+        id: packages.id,
+        packageGroupId: packages.packageGroupId,
+        name: packages.name,
+        durationDays: packages.durationDays,
+        maxParticipants: packages.maxParticipants,
+        priceAud: packages.priceAud,
+        priceUsd: packages.priceUsd,
+        priceKrw: packages.priceKrw,
+        priceJpy: packages.priceJpy,
+        priceThb: packages.priceThb,
+        pricePhp: packages.pricePhp,
+        priceSgd: packages.priceSgd,
+        priceGbp: packages.priceGbp,
+        features: packages.features,
+        status: packages.status,
+        createdAt: packages.createdAt,
+        updatedAt: packages.updatedAt,
+        groupNameEn: packageGroups.nameEn,
+        groupNameKo: packageGroups.nameKo,
+        groupLocation: packageGroups.location,
+        groupCountryCode: packageGroups.countryCode,
+        groupStatus: packageGroups.status,
+      })
+      .from(packages)
+      .leftJoin(packageGroups, eq(packages.packageGroupId, packageGroups.id))
+      .where(eq(packages.id, req.params.id))
+      .limit(1);
+    if (!row) return res.status(404).json({ error: "Not Found" });
+    return res.json(row);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }

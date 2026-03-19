@@ -14,6 +14,7 @@ import Users from "@/pages/users";
 import Applications from "@/pages/admin/applications";
 import PackageGroups from "@/pages/admin/package-groups";
 import Packages from "@/pages/packages";
+import PackageDetail from "@/pages/admin/package-detail";
 import Leads from "@/pages/admin/leads";
 import Contracts from "@/pages/admin/contracts";
 import AdminStub from "@/pages/admin/stub";
@@ -97,6 +98,9 @@ function Router() {
       </Route>
       <Route path="/admin/package-groups">
         <AdminRoute title="Package Groups"><PackageGroups /></AdminRoute>
+      </Route>
+      <Route path="/admin/packages/:id">
+        <AdminRoute title="Package Detail"><PackageDetail /></AdminRoute>
       </Route>
       <Route path="/admin/packages">
         <AdminRoute title="Packages"><Packages /></AdminRoute>
