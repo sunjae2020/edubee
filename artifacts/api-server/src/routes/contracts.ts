@@ -8,6 +8,7 @@ import {
 import { eq, and, ilike, count, inArray, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { reverseAllPendingForContract } from "../services/ledgerService.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
@@ -108,6 +109,21 @@ router.put("/contracts/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coo
     const [contract] = await db.update(contracts).set({ ...body, updatedAt: new Date() })
       .where(eq(contracts.id, req.params.id)).returning();
     if (!contract) return res.status(404).json({ error: "Not Found" });
+
+    // TRIGGER D: Contract cancelled → reverse all pending ledger entries
+    if (body.status === 'cancelled') {
+      try {
+        const result = await reverseAllPendingForContract(
+          req.params.id,
+          'Contract cancelled',
+          req.user!.id,
+        );
+        console.log(`Reversed ${result.reversed} ledger entries for contract ${req.params.id}`);
+      } catch (e: any) {
+        console.error('Contract cancellation ledger reversal failed:', e.message);
+      }
+    }
+
     return res.json(contract);
   } catch (err) {
     console.error("PUT /contracts/:id error:", err);

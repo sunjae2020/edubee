@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { invoices, transactions, exchangeRates, receipts, contracts, applications, users } from "@workspace/db/schema";
-import { eq, and, count, inArray, SQL } from "drizzle-orm";
+import { invoices, transactions, exchangeRates, receipts, contracts, applications, users, accountLedgerEntries, settlementMgt } from "@workspace/db/schema";
+import { eq, and, count, inArray, sql, SQL } from "drizzle-orm";
+import { createLedgerEntry, confirmLedgerEntriesBySource, reverseLedgerEntry } from "../services/ledgerService.js";
 
 async function enrichWithStudentName(rows: any[]): Promise<any[]> {
   const contractIds = [...new Set(rows.map(r => r.contractId).filter(Boolean))] as string[];
@@ -64,6 +65,34 @@ router.post("/invoices", authenticate, requireRole(...ADMIN_ROLES), async (req, 
     body.invoiceNumber = generateInvoiceNumber();
     body.createdBy = req.user!.id;
     const [invoice] = await db.insert(invoices).values(body).returning();
+
+    // TRIGGER A: Invoice issued → debit ledger entry
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const ledgerEntry = await createLedgerEntry({
+        accountId:         invoice.recipientId,
+        sourceType:        'invoice',
+        sourceId:          invoice.id,
+        contractId:        invoice.contractId,
+        entryType:         'debit',
+        amount:            parseFloat(invoice.totalAmount),
+        currency:          invoice.currency ?? 'AUD',
+        originalAmount:    parseFloat(invoice.originalAmount ?? invoice.totalAmount),
+        originalCurrency:  invoice.originalCurrency ?? invoice.currency ?? 'AUD',
+        audEquivalent:     parseFloat(invoice.audEquivalent ?? invoice.totalAmount),
+        exchangeRateToAud: parseFloat(invoice.exchangeRateToAud ?? '1'),
+        status:            'pending',
+        description:       `Invoice ${invoice.invoiceNumber} issued`,
+        entryDate:         today,
+        createdBy:         req.user!.id,
+      });
+      await db.update(invoices)
+        .set({ ledgerEntryId: ledgerEntry.id })
+        .where(eq(invoices.id, invoice.id));
+    } catch (ledgerErr: any) {
+      console.error('Ledger entry for invoice failed:', ledgerErr.message);
+    }
+
     return res.status(201).json(invoice);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -119,6 +148,86 @@ router.post("/transactions", authenticate, requireRole(...ADMIN_ROLES), async (r
   try {
     const body = { ...req.body, createdBy: req.user!.id };
     const [transaction] = await db.insert(transactions).values(body).returning();
+
+    // TRIGGER B: payment_received → credit ledger entry
+    if (transaction.transactionType === 'payment_received') {
+      try {
+        const ledgerEntry = await createLedgerEntry({
+          accountId:         req.body.payerId ?? req.body.clientId,
+          sourceType:        'transaction',
+          sourceId:          transaction.id,
+          contractId:        transaction.contractId,
+          entryType:         'credit',
+          amount:            parseFloat(transaction.amount),
+          currency:          transaction.currency ?? 'AUD',
+          originalAmount:    parseFloat(transaction.originalAmount ?? transaction.amount),
+          originalCurrency:  transaction.originalCurrency ?? transaction.currency ?? 'AUD',
+          audEquivalent:     parseFloat(transaction.audEquivalent ?? transaction.amount),
+          exchangeRateToAud: parseFloat(transaction.exchangeRateToAud ?? '1'),
+          status:            'pending',
+          description:       `Payment received - ${transaction.bankReference ?? ''}`,
+          entryDate:         transaction.transactionDate,
+          createdBy:         req.user!.id,
+        });
+        await db.update(transactions)
+          .set({ ledgerEntryId: ledgerEntry.id })
+          .where(eq(transactions.id, transaction.id));
+
+        // Partial payment check
+        if (transaction.contractId && transaction.invoiceId) {
+          const paidRows = await db.select({ total: sql<string>`SUM(amount)` })
+            .from(accountLedgerEntries)
+            .where(and(
+              eq(accountLedgerEntries.contractId, transaction.contractId),
+              eq(accountLedgerEntries.sourceType, 'transaction'),
+              eq(accountLedgerEntries.entryType, 'credit'),
+              sql`status IN ('pending','confirmed')`,
+            ));
+          const paidSoFar = parseFloat(paidRows[0]?.total ?? '0');
+          const linkedInv = await db.select().from(invoices)
+            .where(eq(invoices.id, transaction.invoiceId)).limit(1);
+          const invoiceTotal = parseFloat(linkedInv[0]?.totalAmount ?? '0');
+
+          if (paidSoFar > 0 && paidSoFar < invoiceTotal) {
+            await db.update(invoices)
+              .set({ status: 'partially_paid' })
+              .where(eq(invoices.id, transaction.invoiceId));
+          } else if (paidSoFar >= invoiceTotal) {
+            await db.update(invoices)
+              .set({ status: 'awaiting_receipt' })
+              .where(eq(invoices.id, transaction.invoiceId));
+          }
+        }
+      } catch (ledgerErr: any) {
+        console.error('Ledger entry for transaction failed:', ledgerErr.message);
+      }
+    }
+
+    // TRIGGER B: refund_issued → reverse original credit entry
+    if (transaction.transactionType === 'refund_issued') {
+      try {
+        const original = await db.select()
+          .from(accountLedgerEntries)
+          .where(and(
+            eq(accountLedgerEntries.contractId, transaction.contractId),
+            eq(accountLedgerEntries.sourceType, 'transaction'),
+            eq(accountLedgerEntries.entryType, 'credit'),
+            sql`status != 'reversed'`,
+          ))
+          .limit(1);
+        if (original[0]) {
+          await reverseLedgerEntry(original[0].id, 'Refund issued', req.user!.id);
+          if (req.body.invoiceId) {
+            await db.update(invoices)
+              .set({ status: 'refunded' })
+              .where(eq(invoices.id, req.body.invoiceId));
+          }
+        }
+      } catch (e: any) {
+        console.error('Refund reversal failed:', e.message);
+      }
+    }
+
     return res.status(201).json(transaction);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -183,6 +292,100 @@ router.post("/receipts", authenticate, requireRole(...ADMIN_ROLES), async (req, 
     }
     const body = { ...req.body, receiptNumber: req.body.receiptNumber || generateReceiptNumber(), createdBy: req.user!.id };
     const [receipt] = await db.insert(receipts).values(body).returning();
+
+    // TRIGGER C: Receipt confirmed → confirm ledger entries + mark invoice paid + agent commission
+    try {
+      const PLATFORM_ADMIN_ID = process.env.PLATFORM_ADMIN_USER_ID;
+      const today = new Date().toISOString().split('T')[0];
+
+      // Step 1: Confirm the transaction credit entry
+      if (receipt.transactionId) {
+        await confirmLedgerEntriesBySource('transaction', receipt.transactionId);
+      }
+
+      // Step 2: Confirm the invoice debit entry
+      if (receipt.invoiceId) {
+        await confirmLedgerEntriesBySource('invoice', receipt.invoiceId);
+      }
+
+      // Step 3: Resolve contractId via invoice
+      let linkedContractId: string | null = null;
+      let linkedContract: any = null;
+      if (receipt.invoiceId) {
+        const [inv] = await db.select().from(invoices).where(eq(invoices.id, receipt.invoiceId)).limit(1);
+        if (inv) {
+          linkedContractId = inv.contractId;
+          // Step 3a: Mark invoice as paid
+          await db.update(invoices)
+            .set({ status: 'paid', paidAt: new Date() })
+            .where(eq(invoices.id, receipt.invoiceId));
+          // Step 3b: Fetch contract
+          if (linkedContractId) {
+            const [con] = await db.select().from(contracts).where(eq(contracts.id, linkedContractId)).limit(1);
+            linkedContract = con ?? null;
+          }
+        }
+      }
+
+      // Step 4: Platform receipt credit entry
+      if (PLATFORM_ADMIN_ID && linkedContractId) {
+        const platformEntry = await createLedgerEntry({
+          accountId:     PLATFORM_ADMIN_ID,
+          sourceType:    'receipt',
+          sourceId:      receipt.id,
+          contractId:    linkedContractId,
+          entryType:     'credit',
+          amount:        parseFloat(receipt.amount),
+          currency:      receipt.currency ?? 'AUD',
+          audEquivalent: parseFloat(receipt.audEquivalent ?? receipt.amount),
+          status:        'confirmed',
+          description:   `Receipt ${receipt.receiptNumber} confirmed`,
+          entryDate:     receipt.receiptDate ?? today,
+          createdBy:     req.user!.id,
+        });
+        await db.update(receipts)
+          .set({ ledgerEntryId: platformEntry.id })
+          .where(eq(receipts.id, receipt.id));
+      }
+
+      // Step 5: Auto-create agent commission entry
+      if (linkedContract?.applicationId && linkedContractId) {
+        const [application] = await db.select()
+          .from(applications)
+          .where(eq(applications.id, linkedContract.applicationId))
+          .limit(1);
+        if (application?.agentId) {
+          const [agentSettlement] = await db.select()
+            .from(settlementMgt)
+            .where(and(
+              eq(settlementMgt.contractId, linkedContractId),
+              eq(settlementMgt.providerRole, 'education_agent'),
+            ))
+            .limit(1);
+          if (agentSettlement && !agentSettlement.ledgerEntryId) {
+            const agentEntry = await createLedgerEntry({
+              accountId:   application.agentId,
+              sourceType:  'settlement_mgt',
+              sourceId:    agentSettlement.id,
+              contractId:  linkedContractId,
+              entryType:   'credit',
+              amount:      parseFloat(agentSettlement.netAmount),
+              currency:    'AUD',
+              status:      'pending',
+              description: `Agent commission - ${receipt.receiptNumber}`,
+              entryDate:   today,
+              createdBy:   req.user!.id,
+            });
+            await db.update(settlementMgt)
+              .set({ ledgerEntryId: agentEntry.id })
+              .where(eq(settlementMgt.id, agentSettlement.id));
+          }
+        }
+      }
+    } catch (ledgerErr: any) {
+      console.error('Receipt ledger processing failed:', ledgerErr.message);
+    }
+
     return res.status(201).json(receipt);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });

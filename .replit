@@ -27,3 +27,8 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+PLATFORM_ADMIN_USER_ID = "639154e0-0f35-4e3b-a7c5-ee458b205fa1"
