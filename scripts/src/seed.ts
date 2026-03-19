@@ -1,5 +1,6 @@
 import { db } from "@workspace/db";
-import { users, packageGroups, packages, products, leads, applications, notifications } from "@workspace/db";
+import { users, packageGroups, packages, products, leads, applications, notifications, contracts, invoices, transactions, receipts, accountLedgerEntries, settlementMgt } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 async function seed() {
@@ -173,6 +174,190 @@ async function seed() {
     { userId: adminUser.id, type: "new_application", title: "New Application Received", message: "New application APP-2501-1002 requires review.", isRead: false },
     { userId: adminUser.id, type: "payment", title: "Payment Received", message: "Deposit payment received for contract CON-2501-0042.", isRead: true },
   ]).onConflictDoNothing();
+
+  // ── AR Cycle Sample Data ─────────────────────────────────────────────────
+  // Helper: insert ledger entry only if no matching (sourceType, sourceId, entryType) exists
+  async function insertLedgerIfNotExists(
+    sourceType: string,
+    sourceId: string,
+    entryType: string,
+    values: any
+  ) {
+    const existing = await db.select()
+      .from(accountLedgerEntries)
+      .where(and(
+        eq(accountLedgerEntries.sourceType, sourceType),
+        eq(accountLedgerEntries.sourceId, sourceId),
+        eq(accountLedgerEntries.entryType, entryType),
+      ))
+      .limit(1);
+    if (existing.length === 0) {
+      const [entry] = await db.insert(accountLedgerEntries).values(values).returning();
+      return entry;
+    }
+    return existing[0];
+  }
+
+  // Fetch first available contract (created by data manager / previous seed)
+  const allContracts = await db.select().from(contracts).limit(1);
+  if (allContracts.length > 0) {
+    const contract1Id  = allContracts[0].id;
+    const parent1Id    = parentUser.id;
+    const adminUserId  = adminUser.id;
+    const agent1Id     = agentUser.id;
+
+    // Ensure education_agent settlement_mgt record exists for this contract
+    let agentSettlementRows = await db.select().from(settlementMgt)
+      .where(and(
+        eq(settlementMgt.contractId, contract1Id),
+        eq(settlementMgt.providerRole, 'education_agent'),
+      ))
+      .limit(1);
+    if (agentSettlementRows.length === 0) {
+      agentSettlementRows = await db.insert(settlementMgt).values({
+        contractId:    contract1Id,
+        providerRole:  'education_agent',
+        providerName:  agentUser.fullName ?? 'Education Agent Kim',
+        grossAmount:   '2600.00',
+        commissionRate: '10.00',
+        netAmount:     '260.00',
+        currency:      'AUD',
+        status:        'pending',
+        createdBy:     adminUser.id,
+      }).onConflictDoNothing().returning();
+    }
+    const agentSettlementId = agentSettlementRows[0]?.id;
+
+    // 1. Ensure invoice exists
+    let clientInvoice = await db.select().from(invoices)
+      .where(eq(invoices.invoiceNumber, 'INV-CLIENT-2026-0001'))
+      .limit(1);
+    if (clientInvoice.length === 0) {
+      clientInvoice = await db.insert(invoices).values({
+        invoiceNumber:     'INV-CLIENT-2026-0001',
+        contractId:        contract1Id,
+        invoiceType:       'client',
+        recipientId:       parent1Id,
+        totalAmount:       '2600.00',
+        currency:          'AUD',
+        audEquivalent:     '2600.00',
+        exchangeRateToAud: '1.000000',
+        status:            'paid',
+        issuedAt:          new Date('2026-03-20'),
+        dueDate:           '2026-04-03',
+        paidAt:            new Date('2026-03-26'),
+        createdBy:         adminUserId,
+      }).onConflictDoNothing().returning();
+    }
+    const invoiceId = clientInvoice[0].id;
+
+    // 2. Ledger DEBIT — client owes
+    const debitEntry = await insertLedgerIfNotExists(
+      'invoice', invoiceId, 'debit',
+      {
+        accountId:     parent1Id,
+        sourceType:    'invoice',
+        sourceId:      invoiceId,
+        contractId:    contract1Id,
+        entryType:     'debit',
+        amount:        '2600.00',
+        currency:      'AUD',
+        audEquivalent: '2600.00',
+        status:        'confirmed',
+        description:   'Invoice INV-CLIENT-2026-0001 issued',
+        entryDate:     '2026-03-20',
+        createdBy:     adminUserId,
+      }
+    );
+    await db.update(invoices)
+      .set({ ledgerEntryId: debitEntry.id })
+      .where(eq(invoices.id, invoiceId));
+
+    // 3. Transaction — payment received
+    let paymentTxn = await db.select().from(transactions)
+      .where(eq(transactions.bankReference, 'REF-20260325-001'))
+      .limit(1);
+    if (paymentTxn.length === 0) {
+      paymentTxn = await db.insert(transactions).values({
+        contractId:      contract1Id,
+        invoiceId:       invoiceId,
+        transactionType: 'payment_received',
+        amount:          '2600.00',
+        currency:        'AUD',
+        audEquivalent:   '2600.00',
+        bankReference:   'REF-20260325-001',
+        transactionDate: '2026-03-25',
+        createdBy:       adminUserId,
+      }).onConflictDoNothing().returning();
+    }
+    const txnId = paymentTxn[0].id;
+
+    // 4. Ledger CREDIT — payment in
+    const creditEntry = await insertLedgerIfNotExists(
+      'transaction', txnId, 'credit',
+      {
+        accountId:     parent1Id,
+        sourceType:    'transaction',
+        sourceId:      txnId,
+        contractId:    contract1Id,
+        entryType:     'credit',
+        amount:        '2600.00',
+        currency:      'AUD',
+        audEquivalent: '2600.00',
+        status:        'confirmed',
+        description:   'Payment received - REF-20260325-001',
+        entryDate:     '2026-03-25',
+        createdBy:     adminUserId,
+      }
+    );
+    await db.update(transactions)
+      .set({ ledgerEntryId: creditEntry.id })
+      .where(eq(transactions.id, txnId));
+
+    // 5. Receipt
+    let rcpt = await db.select().from(receipts)
+      .where(eq(receipts.receiptNumber, 'RCP-2026-0001'))
+      .limit(1);
+    if (rcpt.length === 0) {
+      rcpt = await db.insert(receipts).values({
+        receiptNumber:  'RCP-2026-0001',
+        invoiceId:      invoiceId,
+        payerId:        parent1Id,
+        amount:         '2600.00',
+        currency:       'AUD',
+        audEquivalent:  '2600.00',
+        paymentMethod:  'bank_transfer',
+        receiptDate:    '2026-03-26',
+        status:         'confirmed',
+        createdBy:      adminUserId,
+      }).onConflictDoNothing().returning();
+    }
+
+    // 6. Agent commission ledger entry
+    if (agentSettlementId) {
+      await insertLedgerIfNotExists(
+        'settlement_mgt', agentSettlementId, 'credit',
+        {
+          accountId:     agent1Id,
+          sourceType:    'settlement_mgt',
+          sourceId:      agentSettlementId,
+          contractId:    contract1Id,
+          entryType:     'credit',
+          amount:        '260.00',
+          currency:      'AUD',
+          audEquivalent: '260.00',
+          status:        'pending',
+          description:   'Agent commission - RCP-2026-0001',
+          entryDate:     '2026-03-26',
+          createdBy:     adminUserId,
+        }
+      );
+    }
+
+    console.log('✅ AR cycle seed complete');
+  } else {
+    console.log('⚠️  No contracts found — skipping AR cycle seed');
+  }
 
   console.log("✅ Seed completed successfully!");
   console.log("\n📧 Login credentials:");
