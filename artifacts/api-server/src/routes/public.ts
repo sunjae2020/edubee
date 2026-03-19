@@ -9,8 +9,9 @@ import {
   applications,
   applicationParticipants,
   applicationGrade,
+  exchangeRates,
 } from "@workspace/db/schema";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { eq, and, inArray, sql, desc } from "drizzle-orm";
 import { z } from "zod/v4";
 
 const router = Router();
@@ -59,12 +60,35 @@ router.get("/public/packages", async (req, res) => {
 
     const groupIds = groups.map((g) => g.id);
 
-    const [pkgList, spotList, settingsList, interviewList] = await Promise.all([
+    const [pkgList, spotList, settingsList, interviewList, allRates] = await Promise.all([
       db.select().from(packages).where(and(inArray(packages.packageGroupId, groupIds), eq(packages.status, "active"))),
       db.select().from(enrollmentSpots).where(inArray(enrollmentSpots.packageGroupId, groupIds)).orderBy(enrollmentSpots.gradeOrder),
       db.select().from(enrollmentSettings).where(inArray(enrollmentSettings.packageGroupId, groupIds)),
       db.select().from(interviewSettings).where(inArray(interviewSettings.packageGroupId, groupIds)),
+      db.select().from(exchangeRates).orderBy(desc(exchangeRates.effectiveDate)),
     ]);
+
+    // Build latest AUD→X rate map (from_currency=AUD)
+    const latestRateMap: Record<string, { rate: number; date: string }> = {};
+    for (const r of allRates) {
+      if (r.fromCurrency === "AUD") {
+        const key = r.toCurrency.toUpperCase();
+        if (!latestRateMap[key]) {
+          latestRateMap[key] = { rate: parseFloat(r.rate), date: r.effectiveDate };
+        }
+      }
+    }
+    // Also build X→AUD map so we can invert for currencies stored as X→AUD
+    const invertedRateMap: Record<string, { rate: number; date: string }> = {};
+    for (const r of allRates) {
+      if (r.toCurrency === "AUD") {
+        const key = r.fromCurrency.toUpperCase();
+        if (!invertedRateMap[key]) {
+          invertedRateMap[key] = { rate: 1 / parseFloat(r.rate), date: r.effectiveDate };
+        }
+      }
+    }
+    const rateMap = { ...invertedRateMap, ...latestRateMap, AUD: { rate: 1, date: new Date().toISOString().slice(0, 10) } };
 
     const result = groups.map((group) => {
       const countryInfo = COUNTRY_CURRENCY[group.countryCode ?? "AU"] ?? COUNTRY_CURRENCY["AU"];
@@ -76,6 +100,16 @@ router.get("/public/packages", async (req, res) => {
           const currencyField = CURRENCY_FIELD[currency] ?? "priceAud";
           const rawPrice = (pkg as Record<string, unknown>)[currencyField] as string | null;
           const displayFormatted = rawPrice ? formatPrice(rawPrice, symbol, decimalPlaces) : null;
+
+          const audPrice = pkg.priceAud ? parseFloat(pkg.priceAud) : null;
+          const convertedPrices: Record<string, { amount: number | null; rate: number | null; rateDate: string | null }> = {};
+          for (const [ccy, info] of Object.entries(rateMap)) {
+            convertedPrices[ccy.toLowerCase()] = {
+              amount: audPrice !== null ? Math.round(audPrice * info.rate * 100) / 100 : null,
+              rate: info.rate,
+              rateDate: info.date,
+            };
+          }
 
           return {
             id: pkg.id,
@@ -95,6 +129,7 @@ router.get("/public/packages", async (req, res) => {
               sgd: pkg.priceSgd,
               gbp: pkg.priceGbp,
             },
+            convertedPrices,
           };
         });
 

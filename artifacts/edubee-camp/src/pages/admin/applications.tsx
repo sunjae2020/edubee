@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -90,6 +91,7 @@ const emptyForm = {
 export default function Applications() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
@@ -204,8 +206,8 @@ export default function Applications() {
               <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">No applications found</td></tr>
             ) : (
               apps.map(app => (
-                <tr key={app.id} className="hover:bg-muted/20 transition-colors cursor-pointer"
-                  onClick={() => { setSelectedApp(app); setActiveTab("overview"); }}>
+                <tr key={app.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
+                  onClick={() => setLocation(`${BASE}/admin/applications/${app.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{app.applicationNumber}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-foreground">{app.studentName ?? "—"}</div>

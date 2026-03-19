@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,6 +101,7 @@ const emptyPkgForm: PkgForm = {
 export default function PackageGroups() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -312,7 +314,7 @@ export default function PackageGroups() {
             const country = getCountryInfo(g.countryCode);
             const isActive = g.status === "active";
             return (
-              <div key={g.id} className="bg-white rounded-xl border border-border p-5 hover:shadow-sm hover:border-[#F5821F]/30 transition-all group relative overflow-hidden">
+              <div key={g.id} className="bg-white rounded-xl border border-border p-5 hover:shadow-sm hover:border-[#F5821F]/30 transition-all group relative overflow-hidden cursor-pointer" onClick={() => setLocation(`${BASE}/admin/package-groups/${g.id}`)}>
                 {g.thumbnailUrl && (
                   <div className="absolute inset-0 opacity-5">
                     <img src={g.thumbnailUrl} alt="" className="w-full h-full object-cover" />
@@ -331,7 +333,7 @@ export default function PackageGroups() {
                       {g.nameKo && <p className="text-[11px] text-muted-foreground mt-0.5">{g.nameKo}</p>}
                     </div>
                     <button
-                      onClick={() => openEdit(g)}
+                      onClick={(e) => { e.stopPropagation(); openEdit(g); }}
                       className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                     >
                       <Edit className="w-3.5 h-3.5" />

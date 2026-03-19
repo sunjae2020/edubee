@@ -205,10 +205,11 @@ export default function Users() {
               pagedUsers.map(user => (
                 <tr
                   key={user.id}
-                  className="group transition-colors"
+                  className="group transition-colors cursor-pointer"
                   style={{ borderBottom: "1px solid #F4F3F1" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#FAFAF9")}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#FEF0E3")}
                   onMouseLeave={e => (e.currentTarget.style.background = "")}
+                  onClick={() => setLocation(`${BASE}/admin/users/${user.id}`)}
                 >
                   <td className="px-4 py-3" style={{ height: 48 }}>
                     <div className="flex items-center gap-3">

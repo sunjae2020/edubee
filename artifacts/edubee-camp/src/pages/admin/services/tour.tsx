@@ -157,7 +157,7 @@ export default function TourManagement() {
                 <MapIcon className="w-8 h-8 mx-auto mb-3 opacity-30" />No tour records found
               </td></tr>
             ) : rows.map(r => (
-              <tr key={r.id} className="hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => { setSelected(r); setForm({ ...r }); setEditing(false); }}>
+              <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`${BASE}/admin/services/tour/${r.id}`)}>
                 <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F5821F]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.tourName ?? "—"}</td>

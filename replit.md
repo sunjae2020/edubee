@@ -90,18 +90,22 @@ artifacts-monorepo/
 ### Admin Panel (all under `/admin/`)
 - `/admin/dashboard` — Role-adaptive KPIs + quick actions
 - `/admin/leads` — Leads CRM (kanban board, 6 status columns, drag-drop)
-- `/admin/applications` — Applications table + sheet detail (tabs: Overview, Participants, Interview, Documents, Notes)
-- `/admin/contracts` — Contracts table + sheet detail (tabs: Overview, Services, Documents, Accounting, Activity)
-- `/admin/package-groups` — Card grid + create/edit modal (tabs: Basic Info, Details)
+- `/admin/applications` — Table (row-click → detail); `/admin/applications/:id` — Detail page
+- `/admin/contracts` — Table (row-click → detail); `/admin/contracts/:id` — Detail page (tabs: General, Services, Accounting)
+- `/admin/package-groups` — Card grid (clickable → detail) + create/edit modal; `/admin/package-groups/:id` — Detail page with tabs: General, Packages (auto-convert toggle), Enrollment Spots, Interview
 - `/admin/packages` — Stub
-- `/admin/products` — Stub
-- `/admin/services/institute|hotel|pickup|tour` — Stub
+- `/admin/products` — Full table with AUD cost + ≈ KRW + ≈ PHP converted columns; CRUD modal
+- `/admin/services/institute` — Table (row-click → detail); `/:id` detail page
+- `/admin/services/hotel` — Table (row-click → detail); `/:id` detail page
+- `/admin/services/pickup` — Table (row-click → detail); `/:id` detail page
+- `/admin/services/tour` — Table (row-click → detail); `/:id` detail page
+- `/admin/services/settlement` — Table (row-click → detail); `/:id` detail page (in SERVICES, NOT Accounting)
 - `/admin/services/interviews` — Stub
-- `/admin/services/settlement` — Stub (Settlement is in Services, NOT Accounting)
-- `/admin/accounting/client-invoices|agent-invoices|partner-invoices|receipts|transactions|exchange-rates` — Stubs
+- `/admin/accounting/exchange-rates` — Live preview strip (1 AUD = X rates), rate cards with timestamps, add dialog with real-time preview + descriptive save toast
+- `/admin/accounting/client-invoices|agent-invoices|partner-invoices|receipts|transactions` — Stubs
+- `/admin/users` — Table (row-click → detail); `/admin/users/:id` — Detail page
 - `/admin/my-accounting/settlements|invoices|revenue` — Stubs
 - `/admin/reports` — Stub
-- `/admin/users` — Enhanced users table with role chips filter + add modal
 - `/admin/settings/general|page-access|field-permissions|doc-permissions|impersonation-logs` — Stubs
 - `/admin/my-programs` — Stub (parent_client only)
 
@@ -114,6 +118,12 @@ artifacts-monorepo/
   - Effective role = viewAsUser.role if impersonating, else user.role
 - `Header` — Page title + "View as" role switcher + notification bell + avatar dropdown
   - Impersonation banner shows when ViewAs is active (amber strip)
+
+### Shared Components & Hooks
+- `src/components/shared/DetailPageLayout.tsx` — Shared detail page layout with back button, tab nav, edit/save/cancel controls. Sub-exports: `DetailSection`, `DetailRow`, `EditableField`
+- `src/hooks/useDetailEdit.ts` — Edit state management hook for detail pages (isEditing, getValue, handleChange, startEdit, cancelEdit, saveEdit)
+- `src/components/ui/list-toolbar.tsx` — Search bar + total count + add button + optional status filter + CSV export trigger
+- `src/components/ui/list-pagination.tsx` — Paginated nav for list pages
 
 ### Hooks
 - `use-auth.tsx` — JWT auth context, fetch interceptor injects:

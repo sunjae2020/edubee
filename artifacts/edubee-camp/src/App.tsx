@@ -17,6 +17,17 @@ import Contracts from "@/pages/admin/contracts";
 import AdminStub from "@/pages/admin/stub";
 import NotFound from "@/pages/not-found";
 
+// Detail Pages
+import PackageGroupDetail from "@/pages/admin/package-group-detail";
+import ApplicationDetail from "@/pages/admin/application-detail";
+import ContractDetail from "@/pages/admin/contract-detail";
+import InstituteMgtDetail from "@/pages/admin/services/institute-detail";
+import HotelMgtDetail from "@/pages/admin/services/hotel-detail";
+import PickupMgtDetail from "@/pages/admin/services/pickup-detail";
+import TourMgtDetail from "@/pages/admin/services/tour-detail";
+import SettlementMgtDetail from "@/pages/admin/services/settlement-detail";
+import UserDetail from "@/pages/admin/user-detail";
+
 // Services
 import InstituteManagement from "@/pages/admin/services/institute";
 import HotelManagement from "@/pages/admin/services/hotel";
@@ -49,6 +60,7 @@ import FieldPermissions from "@/pages/admin/settings/field-permissions";
 import DocPermissions from "@/pages/admin/settings/doc-permissions";
 import ImpersonationLogs from "@/pages/admin/settings/impersonation-logs";
 import DataManager from "@/pages/admin/settings/data-manager";
+import Products from "@/pages/admin/products";
 
 // My Programs
 import MyPrograms from "@/pages/admin/my-programs";
@@ -78,6 +90,9 @@ function Router() {
       <Route path="/admin/dashboard">
         <AdminRoute title="Dashboard"><Dashboard /></AdminRoute>
       </Route>
+      <Route path="/admin/package-groups/:id">
+        <AdminRoute title="Package Group Detail"><PackageGroupDetail /></AdminRoute>
+      </Route>
       <Route path="/admin/package-groups">
         <AdminRoute title="Package Groups"><PackageGroups /></AdminRoute>
       </Route>
@@ -85,7 +100,7 @@ function Router() {
         <AdminRoute title="Packages"><AdminStub title="Packages" icon="🗂️" /></AdminRoute>
       </Route>
       <Route path="/admin/products">
-        <AdminRoute title="Products"><AdminStub title="Products" icon="📦" /></AdminRoute>
+        <AdminRoute title="Products"><Products /></AdminRoute>
       </Route>
       <Route path="/admin/enrollment-spots">
         <AdminRoute title="Enrollment Spots"><EnrollmentSpots /></AdminRoute>
@@ -93,28 +108,49 @@ function Router() {
       <Route path="/admin/leads">
         <AdminRoute title="Leads"><Leads /></AdminRoute>
       </Route>
+      <Route path="/admin/applications/:id">
+        <AdminRoute title="Application Detail"><ApplicationDetail /></AdminRoute>
+      </Route>
       <Route path="/admin/applications">
         <AdminRoute title="Applications"><Applications /></AdminRoute>
+      </Route>
+      <Route path="/admin/contracts/:id">
+        <AdminRoute title="Contract Detail"><ContractDetail /></AdminRoute>
       </Route>
       <Route path="/admin/contracts">
         <AdminRoute title="Contracts"><Contracts /></AdminRoute>
       </Route>
 
       {/* Service Pages */}
+      <Route path="/admin/services/institute/:id">
+        <AdminRoute title="Institute Detail"><InstituteMgtDetail /></AdminRoute>
+      </Route>
       <Route path="/admin/services/institute">
         <AdminRoute title="Institute Management"><InstituteManagement /></AdminRoute>
+      </Route>
+      <Route path="/admin/services/hotel/:id">
+        <AdminRoute title="Hotel Detail"><HotelMgtDetail /></AdminRoute>
       </Route>
       <Route path="/admin/services/hotel">
         <AdminRoute title="Hotel Management"><HotelManagement /></AdminRoute>
       </Route>
+      <Route path="/admin/services/pickup/:id">
+        <AdminRoute title="Pickup Detail"><PickupMgtDetail /></AdminRoute>
+      </Route>
       <Route path="/admin/services/pickup">
         <AdminRoute title="Pickup Management"><PickupManagement /></AdminRoute>
+      </Route>
+      <Route path="/admin/services/tour/:id">
+        <AdminRoute title="Tour Detail"><TourMgtDetail /></AdminRoute>
       </Route>
       <Route path="/admin/services/tour">
         <AdminRoute title="Tour Management"><TourManagement /></AdminRoute>
       </Route>
       <Route path="/admin/services/interviews">
         <AdminRoute title="Interviews"><Interviews /></AdminRoute>
+      </Route>
+      <Route path="/admin/services/settlement/:id">
+        <AdminRoute title="Settlement Detail"><SettlementMgtDetail /></AdminRoute>
       </Route>
       <Route path="/admin/services/settlement">
         <AdminRoute title="Settlement"><Settlement /></AdminRoute>
@@ -160,6 +196,9 @@ function Router() {
       </Route>
 
       {/* Users */}
+      <Route path="/admin/users/:id">
+        <AdminRoute title="User Detail"><UserDetail /></AdminRoute>
+      </Route>
       <Route path="/admin/users">
         <AdminRoute title="Users"><Users /></AdminRoute>
       </Route>

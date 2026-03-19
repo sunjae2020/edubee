@@ -239,7 +239,7 @@ export default function Settlement() {
             </tr></thead>
             <tbody>
               {rows.map(r => (
-                <tr key={r.id} className="border-b last:border-0 hover:bg-muted/20 cursor-pointer transition-colors" onClick={() => openSheet(r)}>
+                <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3] cursor-pointer transition-colors" onClick={() => navigate(`${BASE}/admin/services/settlement/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F5821F]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
                   <td className="px-4 py-3"><span className="px-1.5 py-0.5 bg-muted rounded text-xs">{ROLE_LABELS[r.providerRole ?? ""] ?? r.providerRole ?? "—"}</span></td>
                   <td className="px-4 py-3 text-xs max-w-[160px] truncate">{r.serviceDescription ?? "—"}</td>

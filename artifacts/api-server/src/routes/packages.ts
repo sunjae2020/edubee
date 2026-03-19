@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { packageGroups, packages, products, enrollmentSpots } from "@workspace/db/schema";
-import { eq, and, count, asc, SQL, ilike } from "drizzle-orm";
+import { packageGroups, packages, products, enrollmentSpots, exchangeRates } from "@workspace/db/schema";
+import { eq, and, count, asc, SQL, ilike, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -165,11 +165,35 @@ router.get("/products", authenticate, async (req, res) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(products).where(whereClause);
-    const data = await db.select().from(products).where(whereClause).limit(limitNum).offset(offset);
+    const [data, allRates] = await Promise.all([
+      db.select().from(products).where(whereClause).limit(limitNum).offset(offset),
+      db.select().from(exchangeRates).orderBy(desc(exchangeRates.effectiveDate)),
+    ]);
+
+    // Build latest AUD→X rate map
+    const rateMap: Record<string, { rate: number; date: string }> = { AUD: { rate: 1, date: new Date().toISOString().slice(0, 10) } };
+    for (const r of allRates) {
+      if (r.fromCurrency === "AUD") {
+        const key = r.toCurrency.toUpperCase();
+        if (!rateMap[key]) rateMap[key] = { rate: parseFloat(r.rate), date: r.effectiveDate };
+      } else if (r.toCurrency === "AUD") {
+        const key = r.fromCurrency.toUpperCase();
+        if (!rateMap[key]) rateMap[key] = { rate: 1 / parseFloat(r.rate), date: r.effectiveDate };
+      }
+    }
+
+    const enriched = data.map((p) => {
+      const audCost = p.cost ? parseFloat(p.cost) : null;
+      const convertedCost: Record<string, number | null> = {};
+      for (const [ccy, info] of Object.entries(rateMap)) {
+        convertedCost[ccy.toLowerCase()] = audCost !== null ? Math.round(audCost * info.rate * 100) / 100 : null;
+      }
+      return { ...p, convertedCost };
+    });
 
     const total = Number(totalResult.count);
     return res.json({
-      data,
+      data: enriched,
       meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) },
     });
   } catch (err) {

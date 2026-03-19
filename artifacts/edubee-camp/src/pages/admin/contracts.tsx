@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSearch } from "wouter";
+import { useSearch, useLocation } from "wouter";
 import axios from "axios";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { NotePanel } from "@/components/shared/NotePanel";
@@ -104,6 +104,7 @@ export default function Contracts() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const searchStr = useSearch();
+  const [, setLocation] = useLocation();
   const targetContractId = new URLSearchParams(searchStr).get("contractId");
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
@@ -213,8 +214,8 @@ export default function Contracts() {
             ) : contracts.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">No contracts found</td></tr>
             ) : contracts.map(c => (
-              <tr key={c.id} className="hover:bg-muted/20 transition-colors cursor-pointer"
-                onClick={() => { setSelected(c); setActiveTab("overview"); }}>
+              <tr key={c.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
+                onClick={() => setLocation(`${BASE}/admin/contracts/${c.id}`)}>
                 <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{c.contractNumber}</td>
                 <td className="px-4 py-3">
                   <div className="font-medium text-foreground">{getStudentName(c)}</div>
