@@ -24,6 +24,7 @@ import PickupManagement from "@/pages/admin/services/pickup";
 import TourManagement from "@/pages/admin/services/tour";
 import Interviews from "@/pages/admin/services/interviews";
 import Settlement from "@/pages/admin/services/settlement";
+import TasksCS from "@/pages/admin/services/tasks";
 
 // Accounting
 import ExchangeRates from "@/pages/admin/accounting/exchange-rates";
@@ -116,6 +117,9 @@ function Router() {
       </Route>
       <Route path="/admin/services/settlement">
         <AdminRoute title="Settlement"><Settlement /></AdminRoute>
+      </Route>
+      <Route path="/admin/services/tasks">
+        <AdminRoute title="Tasks / CS"><TasksCS /></AdminRoute>
       </Route>
 
       {/* Accounting Pages */}

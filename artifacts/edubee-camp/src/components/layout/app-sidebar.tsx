@@ -10,6 +10,7 @@ import {
   Receipt, Building, Handshake, FileCheck, ArrowLeftRight, RefreshCw,
   Wallet, BarChart2, BarChart3,
   Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
+  Ticket,
   LucideIcon,
 } from "lucide-react";
 
@@ -53,7 +54,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
     });
   }
 
-  if (isSAorAD || isCC || isPartner) {
+  if (isSAorAD || isCC || isPartner || isEA || isParent) {
     const serviceItems: NavItem[] = [];
     if (isSAorAD || isCC || effectiveRole === "partner_institute")
       serviceItems.push({ icon: GraduationCap, label: "Institute", href: "/admin/services/institute" });
@@ -68,6 +69,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
         { icon: CalendarCheck, label: "Interviews", href: "/admin/services/interviews" },
         { icon: Banknote, label: "Settlement", href: "/admin/services/settlement" },
       );
+    serviceItems.push({ icon: Ticket, label: "Tasks / CS", href: "/admin/services/tasks" });
     if (serviceItems.length > 0) nav.push({ label: "Services", items: serviceItems });
   }
 

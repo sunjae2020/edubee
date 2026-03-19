@@ -59,6 +59,10 @@ export default function Landing() {
   const [drawerProgram, setDrawerProgram]   = useState<PublicProgram | null>(null);
   const [modalOpen, setModalOpen]           = useState(false);
   const [modalProgramId, setModalProgramId] = useState<string | undefined>();
+  const [contactForm, setContactForm] = useState({ name: "", email: "", phone: "", category: "inquiry", message: "" });
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactResult, setContactResult] = useState<{ taskNumber: string } | null>(null);
+  const [contactError, setContactError] = useState("");
 
   const programsRef    = useRef<HTMLElement>(null);
   const howItWorksRef  = useRef<HTMLElement>(null);
@@ -431,6 +435,139 @@ export default function Landing() {
           >
             {t("nav.applyNow")} <ArrowRight className="w-4 h-4 ml-1.5" />
           </Button>
+        </div>
+      </section>
+
+      {/* ── CONTACT US ── */}
+      <section className="py-20 px-5 bg-muted/30 border-y border-border">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">Contact Us</h2>
+            <p className="text-muted-foreground mt-2 text-sm max-w-md mx-auto">
+              Have a question or need help? We'll get back to you within 2 business days.
+            </p>
+          </div>
+          <div className="max-w-xl mx-auto bg-white rounded-2xl border border-border p-8 shadow-sm">
+            {contactResult ? (
+              <div className="text-center py-8 space-y-3">
+                <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                  <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-foreground">Message Received!</h3>
+                <p className="text-muted-foreground text-sm">Your request number is</p>
+                <span className="inline-block font-mono text-lg font-bold text-[#F5821F] bg-[#F5821F]/10 px-4 py-1.5 rounded-full">
+                  {contactResult.taskNumber}
+                </span>
+                <p className="text-xs text-muted-foreground">Keep this number for reference. We'll contact you via email soon.</p>
+                <button
+                  onClick={() => { setContactResult(null); setContactForm({ name: "", email: "", phone: "", category: "inquiry", message: "" }); }}
+                  className="text-xs text-[#F5821F] underline underline-offset-2 mt-2"
+                >
+                  Submit another request
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={async e => {
+                  e.preventDefault();
+                  setContactError("");
+                  setContactLoading(true);
+                  try {
+                    const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+                    const res = await fetch(`${BASE}/api/public/tasks`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(contactForm),
+                    });
+                    const json = await res.json();
+                    if (!res.ok) throw new Error(json.error ?? "Failed to submit");
+                    setContactResult({ taskNumber: json.taskNumber });
+                  } catch (err: unknown) {
+                    setContactError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+                  } finally {
+                    setContactLoading(false);
+                  }
+                }}
+                className="space-y-4"
+              >
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 block">Name *</label>
+                    <input
+                      required
+                      type="text"
+                      value={contactForm.name}
+                      onChange={e => setContactForm(f => ({ ...f, name: e.target.value }))}
+                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30 focus:border-[#F5821F]"
+                      placeholder="Your full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 block">Email *</label>
+                    <input
+                      required
+                      type="email"
+                      value={contactForm.email}
+                      onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))}
+                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30 focus:border-[#F5821F]"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 block">Phone</label>
+                    <input
+                      type="tel"
+                      value={contactForm.phone}
+                      onChange={e => setContactForm(f => ({ ...f, phone: e.target.value }))}
+                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30 focus:border-[#F5821F]"
+                      placeholder="+82 10 0000 0000"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 block">Subject</label>
+                    <select
+                      value={contactForm.category}
+                      onChange={e => setContactForm(f => ({ ...f, category: e.target.value }))}
+                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30 focus:border-[#F5821F] bg-white"
+                    >
+                      {[["inquiry", "General Inquiry"], ["complaint", "Complaint"], ["request", "Service Request"], ["document", "Document"], ["payment", "Payment"], ["service", "Service Issue"], ["other", "Other"]].map(([v, l]) => (
+                        <option key={v} value={v}>{l}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1 block">Message *</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={contactForm.message}
+                    onChange={e => setContactForm(f => ({ ...f, message: e.target.value }))}
+                    className="w-full rounded-md border border-border px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30 focus:border-[#F5821F]"
+                    placeholder="Tell us how we can help you…"
+                  />
+                </div>
+                {contactError && (
+                  <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{contactError}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={contactLoading}
+                  className="w-full h-10 bg-[#F5821F] hover:bg-[#d97706] text-white font-semibold rounded-md text-sm transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {contactLoading ? (
+                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                  ) : null}
+                  {contactLoading ? "Submitting…" : "Send Message"}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </section>
 

@@ -12,6 +12,7 @@ import servicesRouter from "./services.js";
 import myAccountingRouter from "./my-accounting.js";
 import reportsRouter from "./reports.js";
 import notificationsRouter from "./notifications.js";
+import tasksRouter from "./tasks.js";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(servicesRouter);
 router.use(myAccountingRouter);
 router.use(reportsRouter);
 router.use(notificationsRouter);
+router.use(tasksRouter);
 
 export default router;

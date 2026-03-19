@@ -4,6 +4,13 @@
 
 Edubee Camp is a comprehensive multi-operator educational camp marketplace platform. It connects educational agencies, camp coordinators, partner institutes, and parent clients to manage student enrollments end-to-end.
 
+## Key Features Added (Tasks/CS System)
+- **DB**: `tasks`, `task_attachments`, `task_comments` tables in `lib/db/src/schema/reports.ts`
+- **API**: `/api/public/tasks` (no auth), `/api/tasks` CRUD with role-scoped access
+- **Admin Page**: `/admin/services/tasks` — List + Kanban view, detail drawer with comments thread
+- **Landing Page**: Contact Us section (above footer) → submits to `POST /api/public/tasks`, shows TSK-YYYY-XXXX confirmation
+- **Sidebar**: "Tasks / CS" (Ticket icon) added to Services section for all roles
+
 ## Stack
 
 - **Monorepo tool**: pnpm workspaces
