@@ -189,6 +189,44 @@ router.get("/applications/:id", authenticate, async (req, res) => {
   }
 });
 
+router.patch("/applications/participants/:id", authenticate, async (req, res) => {
+  try {
+    const {
+      fullName, fullNameNative, dateOfBirth, gender, nationality,
+      passportNumber, passportExpiry, grade, schoolName, englishLevel,
+      medicalConditions, dietaryRequirements, specialNeeds,
+      relationshipToStudent, isEmergencyContact, email, phone, whatsapp, lineId,
+    } = req.body;
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (fullName !== undefined) updates.fullName = fullName;
+    if (fullNameNative !== undefined) updates.fullNameNative = fullNameNative;
+    if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth || null;
+    if (gender !== undefined) updates.gender = gender;
+    if (nationality !== undefined) updates.nationality = nationality;
+    if (passportNumber !== undefined) updates.passportNumber = passportNumber;
+    if (passportExpiry !== undefined) updates.passportExpiry = passportExpiry || null;
+    if (grade !== undefined) updates.grade = grade;
+    if (schoolName !== undefined) updates.schoolName = schoolName;
+    if (englishLevel !== undefined) updates.englishLevel = englishLevel;
+    if (medicalConditions !== undefined) updates.medicalConditions = medicalConditions;
+    if (dietaryRequirements !== undefined) updates.dietaryRequirements = dietaryRequirements;
+    if (specialNeeds !== undefined) updates.specialNeeds = specialNeeds;
+    if (relationshipToStudent !== undefined) updates.relationshipToStudent = relationshipToStudent;
+    if (isEmergencyContact !== undefined) updates.isEmergencyContact = isEmergencyContact;
+    if (email !== undefined) updates.email = email;
+    if (phone !== undefined) updates.phone = phone;
+    if (whatsapp !== undefined) updates.whatsapp = whatsapp;
+    if (lineId !== undefined) updates.lineId = lineId;
+    const [updated] = await db.update(applicationParticipants).set(updates)
+      .where(eq(applicationParticipants.id, req.params.id)).returning();
+    if (!updated) return res.status(404).json({ error: "Not Found" });
+    return res.json(updated);
+  } catch (err) {
+    console.error("PATCH participant error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.put("/applications/:id", authenticate, async (req, res) => {
   try {
     const [application] = await db.update(applications).set({ ...req.body, updatedAt: new Date() })
