@@ -14,6 +14,7 @@ import { format } from "date-fns";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const CONTRACT_STATUSES = ["draft", "sent", "signed", "active", "completed", "cancelled", "suspended"];
+const CURRENCIES = ["AUD", "USD", "KRW", "JPY", "THB", "PHP", "SGD", "GBP"];
 const CURRENCY_SYMBOLS: Record<string, string> = { AUD: "A$", USD: "$", KRW: "₩", JPY: "¥", THB: "฿", PHP: "₱", SGD: "S$", GBP: "£" };
 
 const TABS = [
@@ -128,10 +129,34 @@ export default function ContractDetail() {
                   </SelectContent>
                 </Select>
               } />
-            <DetailRow label="Currency" value={contract.currency} />
-            <DetailRow label="Total Amount" value={fmtCcy(contract.totalAmount, contract.currency)} />
-            <DetailRow label="Paid Amount" value={fmtCcy(contract.paidAmount, contract.currency)} />
-            <DetailRow label="Balance" value={fmtCcy(contract.balanceAmount ?? (Number(contract.totalAmount ?? 0) - Number(contract.paidAmount ?? 0)), contract.currency)} />
+            <EditableField label="Currency" isEditing={isEditing}
+              value={contract.currency ?? "AUD"}
+              editChildren={
+                <Select value={getValue("currency") ?? "AUD"} onValueChange={v => setField("currency", v)}>
+                  <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map(c => (
+                      <SelectItem key={c} value={c}>{CURRENCY_SYMBOLS[c] ?? ""} {c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              } />
+            <EditableField label="Total Amount" isEditing={isEditing}
+              value={fmtCcy(contract.totalAmount, contract.currency)}
+              editValue={getValue("totalAmount")} onEdit={v => setField("totalAmount", v)} type="number" />
+            <EditableField label="Paid Amount" isEditing={isEditing}
+              value={fmtCcy(contract.paidAmount, contract.currency)}
+              editValue={getValue("paidAmount")} onEdit={v => setField("paidAmount", v)} type="number" />
+            <DetailRow label="Balance">
+              <span className="font-mono text-sm">
+                {fmtCcy(
+                  isEditing
+                    ? String(Number(getValue("totalAmount") ?? contract.totalAmount ?? 0) - Number(getValue("paidAmount") ?? contract.paidAmount ?? 0))
+                    : String(Number(contract.totalAmount ?? 0) - Number(contract.paidAmount ?? 0)),
+                  isEditing ? (getValue("currency") ?? contract.currency) : contract.currency
+                )}
+              </span>
+            </DetailRow>
           </DetailSection>
 
           <DetailSection title="Dates">
@@ -139,20 +164,33 @@ export default function ContractDetail() {
               editValue={getValue("startDate")} onEdit={v => setField("startDate", v)} type="date" />
             <EditableField label="End Date" isEditing={isEditing} value={contract.endDate ? format(new Date(contract.endDate), "PPP") : "—"}
               editValue={getValue("endDate")} onEdit={v => setField("endDate", v)} type="date" />
-            <DetailRow label="Signed At" value={contract.signedAt ? format(new Date(contract.signedAt), "PPP") : "—"} />
+            <EditableField label="Signed At" isEditing={isEditing} value={contract.signedAt ? format(new Date(contract.signedAt), "PPP") : "—"}
+              editValue={getValue("signedAt")} onEdit={v => setField("signedAt", v)} type="date" />
             <DetailRow label="Created" value={contract.createdAt ? format(new Date(contract.createdAt), "PPP") : "—"} />
           </DetailSection>
 
           <DetailSection title="Student / Client">
-            <DetailRow label="Student Name" value={contract.studentName ?? contract.application?.studentName} />
-            <DetailRow label="Email" value={contract.clientEmail ?? contract.application?.clientEmail} />
-            <DetailRow label="Country" value={contract.clientCountry} />
+            <EditableField label="Student Name" isEditing={isEditing}
+              value={contract.studentName ?? contract.application?.studentName ?? "—"}
+              editValue={getValue("studentName")} onEdit={v => setField("studentName", v)} />
+            <EditableField label="Email" isEditing={isEditing}
+              value={contract.clientEmail ?? contract.application?.clientEmail ?? "—"}
+              editValue={getValue("clientEmail")} onEdit={v => setField("clientEmail", v)} type="email" />
+            <EditableField label="Country" isEditing={isEditing}
+              value={contract.clientCountry ?? "—"}
+              editValue={getValue("clientCountry")} onEdit={v => setField("clientCountry", v)} />
           </DetailSection>
 
           <DetailSection title="Package">
-            <DetailRow label="Package Group" value={contract.packageGroupName ?? "—"} />
-            <DetailRow label="Package" value={contract.packageName ?? "—"} />
-            <DetailRow label="Agent" value={contract.agentName ?? "—"} />
+            <EditableField label="Package Group" isEditing={isEditing}
+              value={contract.packageGroupName ?? "—"}
+              editValue={getValue("packageGroupName")} onEdit={v => setField("packageGroupName", v)} />
+            <EditableField label="Package" isEditing={isEditing}
+              value={contract.packageName ?? "—"}
+              editValue={getValue("packageName")} onEdit={v => setField("packageName", v)} />
+            <EditableField label="Agent" isEditing={isEditing}
+              value={contract.agentName ?? "—"}
+              editValue={getValue("agentName")} onEdit={v => setField("agentName", v)} />
             <EditableField label="Notes" isEditing={isEditing} value={contract.notes}
               editValue={getValue("notes")} onEdit={v => setField("notes", v)} />
           </DetailSection>

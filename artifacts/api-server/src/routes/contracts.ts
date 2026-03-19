@@ -94,11 +94,23 @@ router.get("/contracts/:id", authenticate, async (req, res) => {
 
 router.put("/contracts/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const [contract] = await db.update(contracts).set({ ...req.body, updatedAt: new Date() })
+    const ALLOWED = [
+      "status", "currency", "totalAmount", "paidAmount", "balanceAmount",
+      "startDate", "endDate", "signedAt",
+      "studentName", "clientEmail", "clientCountry",
+      "packageGroupName", "packageName", "agentName",
+      "notes", "campProviderId",
+    ];
+    const body: Record<string, unknown> = {};
+    for (const key of ALLOWED) {
+      if (key in req.body) body[key] = req.body[key] === "" ? null : req.body[key];
+    }
+    const [contract] = await db.update(contracts).set({ ...body, updatedAt: new Date() })
       .where(eq(contracts.id, req.params.id)).returning();
     if (!contract) return res.status(404).json({ error: "Not Found" });
     return res.json(contract);
   } catch (err) {
+    console.error("PUT /contracts/:id error:", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
