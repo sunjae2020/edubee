@@ -81,7 +81,7 @@ export default function ImpersonationLogs() {
             {logs.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground text-sm">No impersonation sessions recorded</td></tr>
             ) : logs.map(log => (
-              <tr key={log.id} className="border-t hover:bg-muted/10">
+              <tr key={log.id} className="border-t hover:bg-[#FEF0E3]">
                 <td className="px-4 py-3">
                   <div className="font-medium text-xs">{log.actor?.fullName ?? "—"}</div>
                   <div className="text-[10px] text-muted-foreground">{log.actor?.email}</div>

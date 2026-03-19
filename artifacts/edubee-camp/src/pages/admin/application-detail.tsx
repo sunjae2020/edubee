@@ -155,7 +155,7 @@ export default function ApplicationDetail() {
               {participants.length === 0 ? (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground text-xs">No participants loaded</td></tr>
               ) : participants.map((p: any, i: number) => (
-                <tr key={p.id} className="border-b last:border-0 hover:bg-muted/20">
+                <tr key={p.id} className="border-b last:border-0 hover:bg-[#FEF0E3]">
                   <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                   <td className="px-4 py-3 font-medium">{p.firstName} {p.lastName}</td>
                   <td className="px-4 py-3 capitalize">{p.participantType ?? "child"}</td>

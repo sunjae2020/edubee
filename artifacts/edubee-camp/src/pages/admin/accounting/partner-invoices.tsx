@@ -104,7 +104,7 @@ export default function PartnerInvoices() {
                 <Handshake className="w-8 h-8 mx-auto mb-3 opacity-30" />No partner invoices found
               </td></tr>
             ) : rows.map(r => (
-              <tr key={r.id} className="hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => setSelected(r)}>
+              <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                 <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{r.invoiceNumber ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>
                 <td className="px-4 py-3">

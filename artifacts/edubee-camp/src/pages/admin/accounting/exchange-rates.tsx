@@ -226,7 +226,7 @@ export default function ExchangeRates() {
                     </td>
                   </tr>
                 ) : [...rates].reverse().map(r => (
-                  <tr key={r.id} className="border-b last:border-0 hover:bg-muted/20">
+                  <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3]">
                     <td className="px-4 py-2 font-medium">{FLAG[r.fromCurrency]} {r.fromCurrency}</td>
                     <td className="px-4 py-2">{FLAG[r.toCurrency]} {r.toCurrency}</td>
                     <td className="px-4 py-2 text-right font-mono text-sm">

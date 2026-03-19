@@ -79,7 +79,7 @@ export default function MyInvoices() {
             </tr></thead>
             <tbody>
               {rows.map(r => (
-                <tr key={r.id} className="border-b last:border-0 hover:bg-muted/20">
+                <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3]">
                   <td className="px-4 py-3 font-mono text-xs">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.contractId?.slice(0, 8) ?? "—"}</td>
                   <td className="px-4 py-3 text-right"><DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>

@@ -84,7 +84,7 @@ export default function DocPermissions() {
             </thead>
             <tbody>
               {group.categories.map(cat => (
-                <tr key={cat} className="border-t hover:bg-muted/10">
+                <tr key={cat} className="border-t hover:bg-[#FEF0E3]">
                   <td className="px-4 py-2 text-xs">{cat}</td>
                   {ROLES.map(r => {
                     const perm = perms[cat]?.[r] ?? { view: false, download: false };

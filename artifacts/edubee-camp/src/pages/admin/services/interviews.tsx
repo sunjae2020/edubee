@@ -101,7 +101,7 @@ export default function Interviews() {
             </tr></thead>
             <tbody>
               {rows.map(r => (
-                <tr key={r.id} className="border-b last:border-0 hover:bg-muted/20 cursor-pointer transition-colors" onClick={() => openSheet(r)}>
+                <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3] cursor-pointer transition-colors" onClick={() => openSheet(r)}>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.applicationId?.slice(0, 8) ?? "—"}</td>
                   <td className="px-4 py-3 text-xs whitespace-nowrap">{new Date(r.scheduledDatetime).toLocaleString("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
                   <td className="px-4 py-3">

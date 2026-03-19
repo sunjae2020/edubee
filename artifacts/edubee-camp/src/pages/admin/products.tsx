@@ -171,7 +171,7 @@ export default function Products() {
                 </td>
               </tr>
             ) : products.map(p => (
-              <tr key={p.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
+              <tr key={p.id} className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors">
                 <td className="px-4 py-3">
                   <div className="font-medium text-foreground">{p.productName}</div>
                   {p.description && <div className="text-xs text-muted-foreground truncate max-w-[200px]">{p.description}</div>}

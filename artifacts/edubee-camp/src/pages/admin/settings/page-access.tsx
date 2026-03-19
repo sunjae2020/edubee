@@ -111,7 +111,7 @@ export default function PageAccess() {
                   <td colSpan={ROLES.length + 1} className="px-4 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{group}</td>
                 </tr>
                 {PAGES.filter(p => p.group === group).map(p => (
-                  <tr key={p.slug} className="border-t hover:bg-muted/10">
+                  <tr key={p.slug} className="border-t hover:bg-[#FEF0E3]">
                     <td className="px-4 py-2 text-xs sticky left-0 bg-white">{p.label}</td>
                     {ROLES.map(r => (
                       <td key={r.key} className="px-3 py-2 text-center">

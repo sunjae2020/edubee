@@ -557,7 +557,7 @@ export default function PackageGroups() {
                       const days = pkg.durationDays;
                       const weeks = Math.round(days / 7);
                       return (
-                        <div key={pkg.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-muted/30">
+                        <div key={pkg.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-[#FEF0E3]/60 transition-colors">
                           <div>
                             <p className="text-sm font-medium">{pkg.name}</p>
                             <p className="text-xs text-muted-foreground">{days} days ({weeks} weeks){displayPrice ? ` · ${symbol}${Number(displayPrice).toLocaleString()}` : ""}</p>

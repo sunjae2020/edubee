@@ -75,7 +75,7 @@ export default function Transactions() {
                 <ArrowDownLeft className="w-8 h-8 mx-auto mb-3 opacity-30" />No transactions found
               </td></tr>
             ) : rows.map(r => (
-              <tr key={r.id} className="hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => setSelected(r)}>
+              <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">
                     {r.transactionType === "credit"

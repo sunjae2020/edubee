@@ -72,7 +72,7 @@ export default function FieldPermissions() {
           </thead>
           <tbody>
             {fields.map(field => (
-              <tr key={field} className="border-t hover:bg-muted/10">
+              <tr key={field} className="border-t hover:bg-[#FEF0E3]">
                 <td className="px-4 py-2 font-mono text-xs">{field}</td>
                 {ROLES.map(r => (
                   <td key={r} className="px-2 py-1.5 text-center">

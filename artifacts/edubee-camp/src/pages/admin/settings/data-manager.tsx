@@ -547,7 +547,7 @@ function HistoryTab() {
             <tbody>
               {history.map((row: any) => (
                 <>
-                  <tr key={row.id} className="border-t hover:bg-muted/30">
+                  <tr key={row.id} className="border-t hover:bg-[#FEF0E3]">
                     <td className="px-3 py-2.5 text-xs whitespace-nowrap">
                       {row.createdAt ? new Date(row.createdAt).toLocaleString() : "—"}
                     </td>

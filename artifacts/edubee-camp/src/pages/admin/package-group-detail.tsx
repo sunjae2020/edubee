@@ -330,7 +330,7 @@ export default function PackageGroupDetail() {
                 {spots.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-xs">No enrollment spots</td></tr>
                 ) : spots.map((s: any) => (
-                  <tr key={s.id} className="border-b last:border-0 hover:bg-muted/20">
+                  <tr key={s.id} className="border-b last:border-0 hover:bg-[#FEF0E3]">
                     <td className="px-4 py-3 font-medium">{s.gradeLabel}</td>
                     <td className="px-4 py-3 text-right">{s.totalSpots}</td>
                     <td className="px-4 py-3 text-right text-orange-600">{s.reservedSpots ?? 0}</td>
