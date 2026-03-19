@@ -9,6 +9,7 @@ import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NotePanel } from "@/components/shared/NotePanel";
+import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -19,6 +20,7 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "participants", label: "Participants" },
   { key: "interview", label: "Interview" },
+  { key: "documents", label: "Documents" },
   { key: "notes", label: "Notes" },
 ];
 
@@ -184,6 +186,14 @@ export default function ApplicationDetail() {
             </DetailSection>
           ))}
         </div>
+      )}
+
+      {activeTab === "documents" && (
+        <EntityDocumentsTab
+          entityType="application"
+          entityId={id!}
+          mode="full"
+        />
       )}
 
       {activeTab === "notes" && (

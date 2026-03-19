@@ -10,6 +10,7 @@ import { ArTimeline } from "@/components/shared/ArTimeline";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NotePanel } from "@/components/shared/NotePanel";
+import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -22,6 +23,7 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "services", label: "Services" },
   { key: "accounting", label: "Accounting" },
+  { key: "documents", label: "Documents" },
   { key: "notes", label: "Notes" },
 ];
 
@@ -290,6 +292,14 @@ export default function ContractDetail() {
         <div className="space-y-4">
           <ArTimeline contractId={id!} />
         </div>
+      )}
+
+      {activeTab === "documents" && (
+        <EntityDocumentsTab
+          entityType="contract"
+          entityId={id!}
+          mode="full"
+        />
       )}
 
       {activeTab === "notes" && (

@@ -444,12 +444,15 @@ export default function EntityDocumentsTab({ entityType, entityId, mode = "full"
                     <Badge variant="secondary" className="text-[10px] h-4 px-1.5">{docCount}</Badge>
                   </div>
                   {mode === "full" && (permCheck?.canUpload || isAdmin) && (
-                    <button
+                    <span
+                      role="button"
+                      tabIndex={0}
                       onClick={e => { e.stopPropagation(); setUploadGroup(group.group); setUploadOpen(true); }}
-                      className="text-[10px] text-[#F5821F] hover:underline font-medium"
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setUploadGroup(group.group); setUploadOpen(true); } }}
+                      className="text-[10px] text-[#F5821F] hover:underline font-medium cursor-pointer"
                     >
                       + Add
-                    </button>
+                    </span>
                   )}
                 </div>
               </CollapsibleTrigger>
