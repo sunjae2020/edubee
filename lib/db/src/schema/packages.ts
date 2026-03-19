@@ -29,6 +29,7 @@ export const packageGroups = pgTable("package_groups", {
   countryCode: varchar("country_code", { length: 10 }),
   status: varchar("status", { length: 20 }).default("draft"),
   sortOrder: integer("sort_order").default(0),
+  landingOrder: integer("landing_order"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

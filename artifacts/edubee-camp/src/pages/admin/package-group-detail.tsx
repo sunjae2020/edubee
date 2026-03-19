@@ -222,6 +222,33 @@ export default function PackageGroupDetail() {
                 } />
               <EditableField label="Sort Order" isEditing={isEditing} value={group.sortOrder}
                 editValue={getValue("sortOrder")} onEdit={v => setField("sortOrder", v)} type="number" />
+              {isEditing ? (
+                <DetailRow label="Landing Page Order">
+                  <Select
+                    value={getValue("landingOrder") != null ? String(getValue("landingOrder")) : "none"}
+                    onValueChange={v => setField("landingOrder", v === "none" ? null : parseInt(v))}
+                  >
+                    <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— Not shown on landing page —</SelectItem>
+                      {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
+                        <SelectItem key={n} value={String(n)}>#{n} — Position {n}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </DetailRow>
+              ) : (
+                <DetailRow label="Landing Page Order">
+                  {group.landingOrder != null ? (
+                    <span className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#F5821F] text-white text-[10px] font-bold">{group.landingOrder}</span>
+                      <span className="text-sm">Shown on landing (#{group.landingOrder})</span>
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground/60">Not shown on landing page</span>
+                  )}
+                </DetailRow>
+              )}
               <DetailRow label="Thumbnail URL" value={group.thumbnailUrl} />
               {isEditing && (
                 <EditableField label="Thumbnail URL" isEditing={isEditing} value={group.thumbnailUrl}

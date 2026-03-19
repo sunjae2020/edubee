@@ -11,7 +11,7 @@ import {
   applicationGrade,
   exchangeRates,
 } from "@workspace/db/schema";
-import { eq, and, inArray, sql, desc } from "drizzle-orm";
+import { eq, and, inArray, sql, desc, isNotNull, asc } from "drizzle-orm";
 import { z } from "zod/v4";
 
 const router = Router();
@@ -51,8 +51,8 @@ router.get("/public/packages", async (req, res) => {
     const groups = await db
       .select()
       .from(packageGroups)
-      .where(eq(packageGroups.status, "active"))
-      .orderBy(packageGroups.sortOrder);
+      .where(and(eq(packageGroups.status, "active"), isNotNull(packageGroups.landingOrder)))
+      .orderBy(asc(packageGroups.landingOrder));
 
     if (groups.length === 0) {
       return res.json([]);
