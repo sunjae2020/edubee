@@ -190,5 +190,14 @@
   "notifications": "알림",
   "welcome": "다시 오신 것을 환영합니다",
   "login_title": "Edubee 로그인",
-  "login_subtitle": "계정에 접근하려면 자격 증명을 입력하세요"
+  "login_subtitle": "계정에 접근하려면 자격 증명을 입력하세요",
+  "currency": {
+    "selector_label": "표시 통화",
+    "reference_suffix": "참고",
+    "reference_note": "참고용",
+    "price_info_title": "환율 참고 안내",
+    "price_info_body": "가격은 현지 통화로 표시됩니다. 선택하신 통화({{currency}})는 참고용 금액입니다. 실제 결제는 프로그램 현지 통화로 이루어집니다.",
+    "rate_date": "{{date}} 기준 환율",
+    "billing_warning": "실제 결제: {{currency}}"
+  }
 }

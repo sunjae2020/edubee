@@ -5,6 +5,8 @@ import { X, ChevronRight, ChevronLeft, Plus, Trash2, CheckCircle2, Edit3 } from 
 import { Button } from "@/components/ui/button";
 import { type PublicProgram, type SpotGrade, getLocalizedName } from "@/lib/program-utils";
 import axios from "axios";
+import { DualPriceDisplay } from "@/components/public/dual-price-display";
+import { useDisplayCurrency } from "@/context/DisplayCurrencyContext";
 
 type Props = {
   open: boolean;
@@ -219,6 +221,8 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   const selectedProgram = programs.find((p) => p.id === programId) || null;
+  const selectedPackage = selectedProgram?.packages.find((p) => p.id === packageId) || null;
+  const { displayCurrency } = useDisplayCurrency();
 
   useEffect(() => {
     if (defaultProgramId) setProgramId(defaultProgramId);
@@ -410,11 +414,31 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                           {selectedProgram.packages.map((pkg) => (
                             <option key={pkg.id} value={pkg.id}>
                               {pkg.name} — {pkg.durationDays} {t("programs.days")}
-                              {pkg.displayFormatted ? ` (${pkg.displayFormatted} ${selectedProgram.primaryCurrency})` : ""}
+                              {pkg.displayFormatted ? ` (${pkg.displayFormatted})` : ""}
                             </option>
                           ))}
                         </Select>
                       </Field>
+                    )}
+
+                    {selectedPackage && selectedPackage.displayPrice != null && (
+                      <div className="rounded-xl border border-border bg-muted/30 p-4 flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-1">Selected Package</p>
+                          <p className="text-sm font-semibold text-foreground mb-1.5">{selectedPackage.name} · {selectedPackage.durationDays} {t("programs.days")}</p>
+                          <DualPriceDisplay
+                            localAmount={selectedPackage.displayPrice}
+                            localCurrency={selectedPackage.displayCurrency}
+                            countryCode={selectedProgram?.countryCode}
+                            size="detail"
+                          />
+                        </div>
+                        {selectedProgram && displayCurrency !== selectedProgram.primaryCurrency && (
+                          <p className="text-[10px] text-[#92400E] bg-[#FEF0E3] border border-[#F5821F]/20 rounded-lg px-2 py-1.5 max-w-[140px] leading-relaxed">
+                            💱 {t("currency.billing_warning", "Billing in {{currency}}", { currency: selectedProgram.primaryCurrency })}
+                          </p>
+                        )}
+                      </div>
                     )}
 
                     <Field label={t("apply.preferredStartDate")}>
@@ -662,11 +686,22 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                     {/* Program summary */}
                     {selectedProgram && (
                       <div className="bg-muted/40 rounded-xl p-4 flex items-start justify-between gap-4">
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Program</div>
                           <div className="font-semibold text-foreground">{getLocalizedName(selectedProgram, lang)}</div>
                           <div className="text-sm text-muted-foreground">{selectedProgram.location} {selectedProgram.countryFlag}</div>
                           {startDate && <div className="text-sm text-muted-foreground mt-1">Starting: {startDate}</div>}
+                          {selectedPackage && selectedPackage.displayPrice != null && (
+                            <div className="mt-2 pt-2 border-t border-border/60">
+                              <p className="text-xs text-muted-foreground mb-1">{selectedPackage.name} · {selectedPackage.durationDays} {t("programs.days")}</p>
+                              <DualPriceDisplay
+                                localAmount={selectedPackage.displayPrice}
+                                localCurrency={selectedPackage.displayCurrency}
+                                countryCode={selectedProgram.countryCode}
+                                size="card"
+                              />
+                            </div>
+                          )}
                         </div>
                         <button onClick={() => setStep(1)} className="text-primary hover:text-primary/80 shrink-0">
                           <Edit3 className="w-4 h-4" />

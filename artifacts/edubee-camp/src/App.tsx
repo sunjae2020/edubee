@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ViewAsProvider } from "@/hooks/use-view-as";
+import { DisplayCurrencyProvider } from "@/context/DisplayCurrencyContext";
 import "@/lib/i18n";
 
 import Landing from "@/pages/landing";
@@ -248,18 +249,20 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <ViewAsProvider>
-            <AuthProvider>
-              <Router />
-              <Toaster />
-            </AuthProvider>
-          </ViewAsProvider>
-        </WouterRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <DisplayCurrencyProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <ViewAsProvider>
+              <AuthProvider>
+                <Router />
+                <Toaster />
+              </AuthProvider>
+            </ViewAsProvider>
+          </WouterRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </DisplayCurrencyProvider>
   );
 }
 

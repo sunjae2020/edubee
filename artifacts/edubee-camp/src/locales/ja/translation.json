@@ -190,5 +190,14 @@
   "notifications": "通知",
   "welcome": "おかえりなさい",
   "login_title": "Edubeeにログイン",
-  "login_subtitle": "ポータルにアクセスするには認証情報を入力してください"
+  "login_subtitle": "ポータルにアクセスするには認証情報を入力してください",
+  "currency": {
+    "selector_label": "表示通貨",
+    "reference_suffix": "参考",
+    "reference_note": "参考用",
+    "price_info_title": "参考為替レート",
+    "price_info_body": "価格は現地通貨で表示されます。選択した通貨（{{currency}}）は参考金額です。実際の請求はプログラムの現地通貨で行われます。",
+    "rate_date": "{{date}}時点のレート",
+    "billing_warning": "請求通貨: {{currency}}"
+  }
 }

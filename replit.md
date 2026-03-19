@@ -4,6 +4,18 @@
 
 Edubee Camp is a comprehensive multi-operator educational camp marketplace platform. It connects educational agencies, camp coordinators, partner institutes, and parent clients to manage student enrollments end-to-end.
 
+## Key Features Added (Dual Currency Display)
+- **API**: `GET /api/public/exchange-rates` — returns latest X→AUD rates per currency (no auth required)
+- **Context**: `DisplayCurrencyContext` (`src/context/DisplayCurrencyContext.tsx`) — `convertPrice()`, `formatReference()`, localStorage persistence, browser lang detection
+- **Components**:
+  - `CurrencySelector` (`src/components/public/currency-selector.tsx`) — dropdown with flag + currency code (default + mobile variants)
+  - `DualPriceDisplay` (`src/components/public/dual-price-display.tsx`) — local price (orange, bold) + reference price (italic, muted) when currencies differ
+- **Landing Navbar**: CurrencySelector added next to LanguageSwitcher (desktop + mobile menu)
+- **Program Card**: `DualPriceDisplay` replaces static `displayFormatted` text
+- **Program Detail Drawer**: Package table rows use `DualPriceDisplay`; orange PriceInfoBox shown when currencies differ
+- **Application Modal**: Step 1 shows price summary card with `DualPriceDisplay` + billing warning; Step 4 review shows package price
+- **i18n**: `currency.*` keys added to all 4 locale files (en/ko/ja/th)
+
 ## Key Features Added (Tasks/CS System)
 - **DB**: `tasks`, `task_attachments`, `task_comments` tables in `lib/db/src/schema/reports.ts`
 - **API**: `/api/public/tasks` (no auth), `/api/tasks` CRUD with role-scoped access

@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/public/language-switcher";
+import { CurrencySelector } from "@/components/public/currency-selector";
 import { ProgramCard } from "@/components/public/program-card";
 import heroBg from "@assets/1_2_1773827220210.jpg";
 import { ProgramDetailDrawer } from "@/components/public/program-detail-drawer";
@@ -126,6 +127,7 @@ export default function Landing() {
 
           {/* Right */}
           <div className="flex items-center gap-2 ml-auto">
+            <CurrencySelector />
             <LanguageSwitcher />
             <Link href="/login">
               <button className="hidden sm:block px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -174,6 +176,7 @@ export default function Landing() {
             </nav>
             <div className="p-5 space-y-3 border-t border-border">
               <LanguageSwitcher />
+              <CurrencySelector variant="mobile" />
               <Button className="w-full" onClick={() => { openApply(); setMobileOpen(false); }}>{t("nav.applyNow")}</Button>
             </div>
           </motion.div>

@@ -317,4 +317,42 @@ router.post("/public/applications", async (req, res) => {
   }
 });
 
+// GET /api/public/exchange-rates — public, no auth required
+// Returns latest X→AUD rate per currency, formatted for frontend context
+router.get("/public/exchange-rates", async (_req, res) => {
+  try {
+    // Get all rates ordered by effectiveDate desc so we can take latest per currency
+    const allRates = await db
+      .select()
+      .from(exchangeRates)
+      .orderBy(desc(exchangeRates.effectiveDate));
+
+    // Build latest rate map: only X→AUD rows, pick most recent per fromCurrency
+    const latestMap: Record<string, { rate: number; date: string }> = {};
+    for (const r of allRates) {
+      if (r.toCurrency === "AUD" && !latestMap[r.fromCurrency]) {
+        latestMap[r.fromCurrency] = { rate: parseFloat(r.rate), date: r.effectiveDate };
+      }
+    }
+
+    // Build response rates object (X→AUD format: rate = how many AUD is 1 X)
+    const rates: Record<string, { rate: number; inverse: number }> = {
+      AUD: { rate: 1, inverse: 1 },
+    };
+    let updatedAt = new Date().toISOString().slice(0, 10);
+    for (const [ccy, info] of Object.entries(latestMap)) {
+      rates[ccy] = { rate: info.rate, inverse: Math.round((1 / info.rate) * 100) / 100 };
+      if (info.date > updatedAt) updatedAt = info.date;
+    }
+    if (Object.keys(latestMap).length > 0) {
+      updatedAt = Object.values(latestMap).sort((a, b) => b.date.localeCompare(a.date))[0].date;
+    }
+
+    return res.json({ success: true, baseCurrency: "AUD", updatedAt, rates });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, error: "RATES_UNAVAILABLE" });
+  }
+});
+
 export default router;

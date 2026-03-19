@@ -190,5 +190,14 @@
   "notifications": "Notifications",
   "welcome": "Welcome back",
   "login_title": "Sign in to Edubee",
-  "login_subtitle": "Enter your credentials to access your portal"
+  "login_subtitle": "Enter your credentials to access your portal",
+  "currency": {
+    "selector_label": "My Currency",
+    "reference_suffix": "est.",
+    "reference_note": "for reference only",
+    "price_info_title": "Currency Reference",
+    "price_info_body": "Prices shown in local currency. Your selected currency ({{currency}}) is shown as an estimate only. Actual billing will be in the program's local currency.",
+    "rate_date": "Rate as of {{date}}",
+    "billing_warning": "Billing in {{currency}}"
+  }
 }

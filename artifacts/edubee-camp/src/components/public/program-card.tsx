@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { MapPin, ChevronRight } from "lucide-react";
 import { getLocalizedName, getLocalizedDesc, getLowestPackagePrice, type PublicProgram } from "@/lib/program-utils";
 import { Button } from "@/components/ui/button";
+import { DualPriceDisplay } from "@/components/public/dual-price-display";
 
 type Props = {
   program: PublicProgram;
@@ -101,10 +102,15 @@ export function ProgramCard({ program, onViewDetails }: Props) {
         {/* Price + CTA */}
         <div className="mt-auto pt-3 border-t border-border flex items-center justify-between">
           <div>
-            {lowestPkg?.displayFormatted ? (
+            {lowestPkg?.displayPrice != null ? (
               <div>
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t("programs.startingFrom")}</div>
-                <div className="font-extrabold text-lg text-[#F5821F] leading-tight">{lowestPkg.displayFormatted}</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">{t("programs.startingFrom")}</div>
+                <DualPriceDisplay
+                  localAmount={lowestPkg.displayPrice}
+                  localCurrency={lowestPkg.displayCurrency}
+                  countryCode={program.countryCode}
+                  size="card"
+                />
               </div>
             ) : (
               <span className="text-sm text-muted-foreground">—</span>

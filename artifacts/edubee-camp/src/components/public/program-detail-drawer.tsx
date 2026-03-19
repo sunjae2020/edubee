@@ -3,6 +3,8 @@ import { X, MapPin, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getLocalizedName, getLocalizedDesc, type PublicProgram, type SpotGrade } from "@/lib/program-utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { DualPriceDisplay } from "@/components/public/dual-price-display";
+import { useDisplayCurrency } from "@/context/DisplayCurrencyContext";
 
 type Props = {
   program: PublicProgram | null;
@@ -27,6 +29,7 @@ function SpotStatusBadge({ status }: { status: SpotGrade["status"] }) {
 export function ProgramDetailDrawer({ program, onClose, onApply }: Props) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
+  const { displayCurrency } = useDisplayCurrency();
 
   return (
     <AnimatePresence>
@@ -111,11 +114,12 @@ export function ProgramDetailDrawer({ program, onClose, onApply }: Props) {
                               {pkg.durationDays} {t("programs.days")}
                             </td>
                             <td className="px-4 py-3 text-right">
-                              {pkg.displayFormatted ? (
-                                <span className="font-bold text-[#F5821F]">{pkg.displayFormatted}</span>
-                              ) : (
-                                <span className="text-muted-foreground">—</span>
-                              )}
+                              <DualPriceDisplay
+                                localAmount={pkg.displayPrice}
+                                localCurrency={pkg.displayCurrency}
+                                countryCode={program.countryCode}
+                                size="detail"
+                              />
                             </td>
                           </tr>
                         ))}
@@ -125,6 +129,13 @@ export function ProgramDetailDrawer({ program, onClose, onApply }: Props) {
                   <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
                     <Info className="w-3 h-3" /> {t("programs.priceNote")}
                   </p>
+                  {displayCurrency !== program.primaryCurrency && (
+                    <div className="mt-2 p-3 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/20">
+                      <p className="text-[11px] text-[#92400E] leading-relaxed">
+                        💱 {t("currency.price_info_body", "Prices shown in local currency. Your selected currency ({{currency}}) is shown as an estimate only. Actual billing will be in the program's local currency.", { currency: displayCurrency })}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
