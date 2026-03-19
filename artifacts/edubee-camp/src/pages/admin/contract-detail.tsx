@@ -68,7 +68,8 @@ export default function ContractDetail() {
   });
 
   const contract = data?.data ?? data;
-  const services = servicesData?.data ?? servicesData ?? [];
+  // API returns {institute, hotel, pickup, tour, settlements} — NOT an array
+  const servicesObj = servicesData ?? null;
   const accounting = accountingData?.data ?? accountingData;
 
   const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
@@ -159,10 +160,90 @@ export default function ContractDetail() {
       )}
 
       {activeTab === "services" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {!services || services.length === 0 ? (
-            <div className="col-span-2 text-sm text-muted-foreground">No services linked to this contract.</div>
-          ) : services.map((s: any) => <ServiceCard key={s.id} service={s} />)}
+        <div className="space-y-4">
+          {!servicesObj ? (
+            <div className="text-sm text-muted-foreground">Loading services…</div>
+          ) : (
+            <>
+              {/* Institute service */}
+              {servicesObj.institute && (
+                <DetailSection title="Institute / Language School">
+                  <DetailRow label="Program" value={servicesObj.institute.programDetails} />
+                  <DetailRow label="Start Date" value={servicesObj.institute.startDate ? format(new Date(servicesObj.institute.startDate), "PPP") : "—"} />
+                  <DetailRow label="End Date" value={servicesObj.institute.endDate ? format(new Date(servicesObj.institute.endDate), "PPP") : "—"} />
+                  <DetailRow label="Total Hours" value={servicesObj.institute.totalHours ? `${servicesObj.institute.totalHours} hrs` : "—"} />
+                  <DetailRow label="English Level" value={servicesObj.institute.englishLevelStart ? `${servicesObj.institute.englishLevelStart} → ${servicesObj.institute.englishLevelEnd ?? "?"}` : "—"} />
+                  <DetailRow label="Status">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[servicesObj.institute.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{servicesObj.institute.status ?? "—"}</span>
+                  </DetailRow>
+                  {servicesObj.institute.progressNotes && <DetailRow label="Notes" value={servicesObj.institute.progressNotes} />}
+                </DetailSection>
+              )}
+
+              {/* Hotel service */}
+              {servicesObj.hotel && (
+                <DetailSection title="Accommodation">
+                  <DetailRow label="Room Type" value={servicesObj.hotel.roomType} />
+                  <DetailRow label="Check-in" value={servicesObj.hotel.checkinDate ? `${format(new Date(servicesObj.hotel.checkinDate), "PPP")} ${servicesObj.hotel.checkinTime ?? ""}`.trim() : "—"} />
+                  <DetailRow label="Check-out" value={servicesObj.hotel.checkoutDate ? `${format(new Date(servicesObj.hotel.checkoutDate), "PPP")} ${servicesObj.hotel.checkoutTime ?? ""}`.trim() : "—"} />
+                  <DetailRow label="Confirmation #" value={servicesObj.hotel.confirmationNo ?? "—"} />
+                  <DetailRow label="Status">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[servicesObj.hotel.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{servicesObj.hotel.status ?? "—"}</span>
+                  </DetailRow>
+                  {servicesObj.hotel.guestNotes && <DetailRow label="Notes" value={servicesObj.hotel.guestNotes} />}
+                </DetailSection>
+              )}
+
+              {/* Pickup service */}
+              {servicesObj.pickup && (
+                <DetailSection title="Airport Pickup / Transfer">
+                  <DetailRow label="Type" value={servicesObj.pickup.pickupType?.replace(/_/g, " ") ?? "—"} />
+                  <DetailRow label="From" value={servicesObj.pickup.fromLocation} />
+                  <DetailRow label="To" value={servicesObj.pickup.toLocation} />
+                  <DetailRow label="Date & Time" value={servicesObj.pickup.pickupDatetime ? format(new Date(servicesObj.pickup.pickupDatetime), "PPP HH:mm") : "—"} />
+                  <DetailRow label="Status">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[servicesObj.pickup.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{servicesObj.pickup.status ?? "—"}</span>
+                  </DetailRow>
+                  {servicesObj.pickup.driverNotes && <DetailRow label="Notes" value={servicesObj.pickup.driverNotes} />}
+                </DetailSection>
+              )}
+
+              {/* Tour service */}
+              {servicesObj.tour && (
+                <DetailSection title="Tour / Activity">
+                  <DetailRow label="Tour Name" value={servicesObj.tour.tourName} />
+                  <DetailRow label="Date" value={servicesObj.tour.tourDate ? format(new Date(servicesObj.tour.tourDate), "PPP") : "—"} />
+                  <DetailRow label="Time" value={servicesObj.tour.startTime ? `${servicesObj.tour.startTime} – ${servicesObj.tour.endTime ?? "?"}` : "—"} />
+                  <DetailRow label="Meeting Point" value={servicesObj.tour.meetingPoint} />
+                  <DetailRow label="Status">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[servicesObj.tour.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{servicesObj.tour.status ?? "—"}</span>
+                  </DetailRow>
+                  {servicesObj.tour.tourNotes && <DetailRow label="Notes" value={servicesObj.tour.tourNotes} />}
+                </DetailSection>
+              )}
+
+              {/* Settlements */}
+              {Array.isArray(servicesObj.settlements) && servicesObj.settlements.length > 0 && (
+                <DetailSection title="Settlements">
+                  <div className="space-y-2">
+                    {servicesObj.settlements.map((s: any) => (
+                      <div key={s.id} className="border rounded-lg p-3 text-sm grid grid-cols-2 gap-1">
+                        <div className="col-span-2 font-medium text-xs text-muted-foreground uppercase mb-1">{s.providerRole?.replace(/_/g, " ")} — {s.providerName ?? "—"}</div>
+                        <div><span className="text-muted-foreground">Gross:</span> {CURRENCY_SYMBOLS[s.currency ?? "AUD"] ?? s.currency}{Number(s.grossAmount ?? 0).toLocaleString()}</div>
+                        <div><span className="text-muted-foreground">Commission:</span> {s.commissionRate}%</div>
+                        <div><span className="text-muted-foreground">Net:</span> {CURRENCY_SYMBOLS[s.currency ?? "AUD"] ?? s.currency}{Number(s.netAmount ?? 0).toLocaleString()}</div>
+                        <div><span className={`px-1.5 py-0.5 rounded text-xs ${STATUS_COLORS[s.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{s.status ?? "—"}</span></div>
+                      </div>
+                    ))}
+                  </div>
+                </DetailSection>
+              )}
+
+              {!servicesObj.institute && !servicesObj.hotel && !servicesObj.pickup && !servicesObj.tour && (
+                <div className="text-sm text-muted-foreground">No services linked to this contract yet.</div>
+              )}
+            </>
+          )}
         </div>
       )}
 
