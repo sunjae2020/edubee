@@ -51,6 +51,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin/settings/field-permissions": "Field Permissions",
   "/admin/settings/doc-permissions": "Document Permissions",
   "/admin/settings/impersonation-logs": "Impersonation Logs",
+  "/admin/settings/data-manager": "Data Manager",
   "/admin/my-programs": "My Programs",
 };
 

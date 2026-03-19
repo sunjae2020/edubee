@@ -146,6 +146,7 @@ export default function Leads() {
         total={leads.length}
         addLabel="New Lead"
         onAdd={() => setShowCreate(true)}
+        csvExportTable="leads"
       />
 
       {/* Kanban Board */}

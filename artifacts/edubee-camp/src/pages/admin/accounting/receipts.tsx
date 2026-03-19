@@ -59,6 +59,7 @@ export default function Receipts() {
         search={search} onSearch={v => { setSearch(v); setPage(1); }}
         statuses={STATUSES} activeStatus={activeStatus} onStatusChange={s => { setActiveStatus(s); setPage(1); }}
         total={total}
+        csvExportTable="receipts"
       />
 
       <div className="bg-card rounded-xl border border-border overflow-x-auto">

@@ -14,6 +14,7 @@ import reportsRouter from "./reports.js";
 import notificationsRouter from "./notifications.js";
 import tasksRouter from "./tasks.js";
 import notesRouter from "./notes.js";
+import dataManagerRouter from "./data-manager.js";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(reportsRouter);
 router.use(notificationsRouter);
 router.use(tasksRouter);
 router.use(notesRouter);
+router.use("/data-manager", dataManagerRouter);
 
 export default router;

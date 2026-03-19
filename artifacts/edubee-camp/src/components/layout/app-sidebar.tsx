@@ -10,7 +10,7 @@ import {
   Receipt, Building, Handshake, FileCheck, ArrowLeftRight, RefreshCw,
   Wallet, BarChart2, BarChart3,
   Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
-  Ticket,
+  Ticket, FolderOpen,
   LucideIcon,
 } from "lucide-react";
 
@@ -115,6 +115,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
         { icon: Grid2x2, label: "Field Permissions", href: "/admin/settings/field-permissions" },
         { icon: FileSearch, label: "Doc Permissions", href: "/admin/settings/doc-permissions" },
         { icon: UserSearch, label: "Impersonation Logs", href: "/admin/settings/impersonation-logs" },
+        { icon: FolderOpen, label: "Data Manager", href: "/admin/settings/data-manager" },
       ],
     });
   }

@@ -102,6 +102,7 @@ function ServiceCard({ icon: Icon, title, record, fields }: {
 
 export default function Contracts() {
   const { toast } = useToast();
+  const qc = useQueryClient();
   const searchStr = useSearch();
   const targetContractId = new URLSearchParams(searchStr).get("contractId");
   const [search, setSearch] = useState("");
@@ -190,6 +191,7 @@ export default function Contracts() {
         activeStatus={activeStatus}
         onStatusChange={s => { setActiveStatus(s); setPage(1); }}
         total={total}
+        csvExportTable="contracts"
       />
 
       <div className="bg-card rounded-xl border border-border overflow-x-auto">

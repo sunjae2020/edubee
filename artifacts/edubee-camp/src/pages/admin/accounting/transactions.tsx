@@ -53,6 +53,7 @@ export default function Transactions() {
         statuses={TX_TYPES} filterLabel="Type"
         activeStatus={activeStatus} onStatusChange={s => { setActiveStatus(s); setPage(1); }}
         total={total}
+        csvExportTable="transactions"
       />
 
       <div className="bg-card rounded-xl border border-border overflow-x-auto">

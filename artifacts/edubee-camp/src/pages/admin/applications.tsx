@@ -181,6 +181,7 @@ export default function Applications() {
         total={total}
         addLabel="New Application"
         onAdd={() => setCreateDialog(true)}
+        csvExportTable="applications"
       />
 
       <div className="bg-card rounded-xl border border-border overflow-x-auto">

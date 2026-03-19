@@ -1,0 +1,416 @@
+⚠️ REPLIT ENVIRONMENT NOTES (read before coding):
+- Do NOT use local filesystem for temp files (ephemeral storage resets).
+  All CSV generation must happen IN MEMORY (Buffer/stream), 
+  never write to disk with fs.writeFile.
+- Use streaming responses for large exports to avoid memory overflow.
+- Replit has ~512MB RAM limit — chunk large DB queries 
+  (use LIMIT/OFFSET pagination, max 1000 rows per query batch).
+- Install new packages via package.json only, not shell commands.
+  Add to dependencies: "csv-parse": "^5.5.0", "csv-stringify": "^6.4.0"
+- Do NOT use child_process or worker_threads (restricted in Replit).
+- All file downloads must use res.setHeader() + res.send(buffer),
+  NOT res.sendFile() or fs streams.
+- Connection pool: keep pg pool max at 5 (Replit DB connection limit).
+- Timeout: set express timeout to 30s for export routes 
+  (large exports may be slow).
+- CORS: already configured — do not add new cors() middleware.
+- Environment variables: access only via process.env, 
+  never hardcode credentials.
+
+─────────────────────────────────────────────────────────────
+ADD: Centralized CSV Data Manager
+Page: /admin/settings/data-manager
+Access: super_admin + admin only (add to pagePermissions seed)
+Sidebar: add under ── SETTINGS ── as 📂 Data Manager
+─────────────────────────────────────────────────────────────
+
+═══════════════════════════════════════════
+ PART 1: BACKEND — NEW PACKAGES & SETUP
+═══════════════════════════════════════════
+
+Add to package.json dependencies:
+  "csv-parse": "^5.5.0"
+  "csv-stringify": "^6.4.0"
+
+Create /server/src/routes/dataManager.ts
+Mount at: app.use('/api/data-manager', authenticate, requireRole('super_admin','admin'), dataManagerRouter)
+
+Set route-level timeout (30s):
+  router.use((req, res, next) => {
+    req.setTimeout(30000);
+    res.setTimeout(30000);
+    next();
+  });
+
+═══════════════════════════════════════════
+ PART 2: DATABASE — IMPORT HISTORY TABLE
+═══════════════════════════════════════════
+
+Add to /db/schema.ts:
+
+export const importHistory = pgTable('import_history', {
+  id:           uuid('id').primaryKey().defaultRandom(),
+  tableName:    varchar('table_name', { length: 100 }).notNull(),
+  filename:     varchar('filename', { length: 255 }),
+  totalRows:    integer('total_rows').default(0),
+  successRows:  integer('success_rows').default(0),
+  errorRows:    integer('error_rows').default(0),
+  status:       varchar('status', { length: 20 }).default('completed'),
+  -- 'completed' | 'partial' | 'failed'
+  errorDetails: jsonb('error_details'),
+  -- [{ row: 3, field: 'email', message: 'Invalid format' }]
+  importedBy:   uuid('imported_by').references(() => users.id),
+  createdAt:    timestamp('created_at').defaultNow(),
+});
+
+Run: npx drizzle-kit push
+
+═══════════════════════════════════════════
+ PART 3: EXPORT API
+═══════════════════════════════════════════
+
+POST /api/data-manager/export/:tableName
+  Body: { filters?: object, columns?: string[] }
+
+⚠️ REPLIT MEMORY RULE:
+  - Query rows in batches of 1000 using LIMIT/OFFSET loop
+  - Build full CSV string in memory (string concatenation)
+  - Send as single Buffer at end — do NOT stream via pipe
+  - Max export rows: 10,000 (return 400 if count exceeds)
+
+Response headers:
+  Content-Type: text/csv; charset=utf-8
+  Content-Disposition: attachment; filename="{tableName}_{YYYY-MM-DD}.csv"
+  Add UTF-8 BOM prefix: \uFEFF (for Excel compatibility)
+
+EXPORT TABLES & COLUMNS:
+
+users:
+  id, email, role, full_name, phone, company_name,
+  country_of_ops, platform_comm_rate, status,
+  last_login_at, created_at
+  ⚠️ NEVER export: password_hash, refresh tokens
+
+leads:
+  id, agent_id, full_name, email, phone,
+  nationality, source, status, notes, created_at
+
+applications:
+  application_number, agent_id, client_id,
+  package_group_id, package_id, status,
+  total_children, total_adults, preferred_start_date,
+  primary_language, referral_source, created_at
+
+application_participants:
+  application_id, participant_type, sequence_order,
+  full_name, date_of_birth, gender, nationality,
+  grade, school_name, english_level,
+  medical_conditions, dietary_requirements,
+  email, phone
+  ⚠️ NEVER export: passport_number
+
+contracts:
+  contract_number, application_id, camp_provider_id,
+  total_amount, currency, status,
+  start_date, end_date, created_at
+
+contract_products:
+  contract_id, product_id, quantity,
+  unit_price, total_price, status
+
+institute_mgt:
+  contract_id, institute_id, start_date, end_date,
+  total_hours, english_level_start, english_level_end,
+  status, progress_notes
+
+hotel_mgt:
+  contract_id, hotel_id, room_type,
+  checkin_date, checkout_date, confirmation_no,
+  status, guest_notes
+
+pickup_mgt:
+  contract_id, driver_id, pickup_type,
+  from_location, to_location, pickup_datetime,
+  vehicle_info, status
+
+tour_mgt:
+  contract_id, tour_company_id, tour_name,
+  tour_date, start_time, end_time,
+  meeting_point, status
+
+settlement_mgt:
+  contract_id, provider_user_id, provider_role,
+  gross_amount, commission_rate, commission_amount,
+  net_amount, currency, original_currency,
+  original_net_amount, aud_equivalent,
+  exchange_rate_to_aud, status, settlement_date
+
+invoices:
+  invoice_number, contract_id, invoice_type,
+  recipient_id, subtotal, tax_amount, total_amount,
+  original_currency, original_amount, aud_equivalent,
+  currency, status, issued_at, due_date, paid_at
+
+transactions:
+  contract_id, invoice_id, transaction_type,
+  amount, currency, original_currency,
+  original_amount, aud_equivalent,
+  exchange_rate_to_aud, description,
+  bank_reference, transaction_date
+
+receipts:
+  receipt_number, invoice_id, payer_id,
+  amount, currency, original_currency,
+  original_amount, aud_equivalent,
+  payment_method, receipt_date, status
+
+exchange_rates:
+  from_currency, to_currency, rate,
+  effective_date, source, created_at
+
+package_groups:
+  id, camp_provider_id, name_en, name_ko,
+  name_ja, name_th, location, country_code,
+  status, created_at
+
+packages:
+  id, package_group_id, name, duration_days,
+  max_participants, price_aud, price_usd,
+  price_krw, price_jpy, price_thb,
+  price_php, price_sgd, price_gbp,
+  status
+
+products:
+  id, provider_account_id, product_name,
+  product_type, description, cost,
+  currency, status
+
+═══════════════════════════════════════════
+ PART 4: TEMPLATE DOWNLOAD API
+═══════════════════════════════════════════
+
+GET /api/data-manager/template/:tableName
+
+Returns empty CSV with header row only.
+Include a 2nd row with example values (prefixed with #EXAMPLE).
+⚠️ Build as string in memory, send as Buffer — no temp files.
+
+Templates provided for IMPORT-enabled tables:
+  users, exchange_rates, products,
+  enrollment_spots, transactions
+
+═══════════════════════════════════════════
+ PART 5: IMPORT API
+═══════════════════════════════════════════
+
+POST /api/data-manager/import/:tableName
+  Content-Type: multipart/form-data
+  Field: file (CSV)
+
+⚠️ REPLIT UPLOAD RULES:
+  - Use multer memoryStorage() — NEVER diskStorage()
+  - Max file size: 5MB (set in multer limits)
+  - Parse from req.file.buffer directly using csv-parse
+  - Process in batches of 100 rows per DB transaction
+  - If batch fails, rollback that batch only (partial success ok)
+
+IMPORT FLOW:
+  1. Parse CSV from buffer (csv-parse, skip #EXAMPLE rows)
+  2. Validate each row (type check, required fields, format)
+  3. Collect errors: [{ row, field, message }]
+  4. Insert valid rows in batches of 100
+  5. Save to import_history table
+  6. Return: {
+       totalRows, successRows, errorRows,
+       importHistoryId,
+       errorCsv: base64-encoded CSV of failed rows with error column
+     }
+
+IMPORT-ENABLED TABLES & VALIDATION RULES:
+
+users:
+  Required: email*, role*, full_name*
+  Validate: email format, role must be valid enum,
+            no duplicate email (skip+error if exists)
+  Auto-set: status='pending', password=temp random (send email)
+  ⚠️ Never allow import of super_admin role
+
+exchange_rates:
+  Required: from_currency*, rate*, effective_date*
+  Validate: rate > 0, date format YYYY-MM-DD,
+            currency must be in allowed list
+            [KRW,THB,JPY,USD,PHP,SGD,GBP,AUD]
+  Behavior: UPSERT on (from_currency, to_currency, effective_date)
+
+products:
+  Required: product_name*, product_type*, cost*
+  Validate: product_type in [institute,hotel,pickup,tour,settlement]
+            cost is numeric, cost > 0
+
+enrollment_spots:
+  Required: package_group_id*, grade_label*, total_spots*
+  Validate: package_group_id exists, total_spots integer > 0
+  Behavior: UPSERT on (package_group_id, grade_label)
+
+transactions:
+  Required: contract_id*, transaction_type*, amount*,
+            transaction_date*
+  Validate: contract_id exists, amount numeric,
+            date format YYYY-MM-DD
+  Auto-set: created_by = current user id
+
+═══════════════════════════════════════════
+ PART 6: IMPORT HISTORY API
+═══════════════════════════════════════════
+
+GET /api/data-manager/import-history
+  Query: ?tableName=&status=&page=1&limit=20
+  Returns: paginated import_history records with importer name
+
+GET /api/data-manager/import-history/:id/errors
+  Returns: error details JSON for that import
+
+GET /api/data-manager/import-history/:id/error-csv
+  Returns: CSV of failed rows (stored in errorDetails)
+  ⚠️ Regenerate from stored JSON — do NOT save CSV file
+
+═══════════════════════════════════════════
+ PART 7: FRONTEND — DATA MANAGER PAGE
+═══════════════════════════════════════════
+
+/client/src/pages/admin/settings/DataManagerPage.tsx
+
+3 TABS: [📤 Export] [📥 Import] [📋 Import History]
+
+──── TAB 1: EXPORT ────────────────────────
+
+Layout: 2-column grid of Export Cards
+
+Each card shows:
+  Icon + Table name (Korean friendly label)
+  Row count badge (fetch on load)
+  [⬇ Export CSV] button
+
+Group by category:
+  👥 Users & Access
+    └─ Users
+  🎯 Sales
+    └─ Leads / Applications / Participants
+  📄 Contracts
+    └─ Contracts / Contract Products
+  🔧 Services
+    └─ Institute / Hotel / Pickup / Tour / Settlement
+  💰 Finance
+    └─ Invoices / Transactions / Receipts / Exchange Rates
+  📦 Packages
+    └─ Package Groups / Packages / Products
+
+Export button behavior:
+  1. Show loading spinner on button
+  2. POST /api/data-manager/export/:tableName
+  3. Receive CSV blob → trigger browser download
+  4. ⚠️ Use URL.createObjectURL(blob) method
+     NOT window.location.href (Replit CORS issue)
+  5. Show toast: "✅ {tableName}_{date}.csv downloaded"
+
+──── TAB 2: IMPORT ────────────────────────
+
+Left panel (40%): Table selector
+  Only show import-enabled tables:
+  - 👤 Users
+  - 💱 Exchange Rates
+  - 📦 Products
+  - 🎓 Enrollment Spots
+  - 💳 Transactions
+
+Right panel (60%): Import zone
+  [⬇ Download Template] button (prominent, outlined orange)
+
+  Drag & drop zone:
+    "Drag CSV file here or click to browse"
+    Accept: .csv only
+    Max: 5MB
+    ⚠️ Read file as text client-side first for preview
+       use FileReader API (NOT fetch to server yet)
+
+  Preview table (after file selected):
+    Show first 5 data rows
+    Column headers highlighted
+    Row count: "📄 {filename} — {n} rows detected"
+    [✕ Remove] to clear
+
+  [📥 Import {n} rows] button
+    → POST multipart to /api/data-manager/import/:tableName
+    → Show progress bar (indeterminate during upload)
+
+  Result panel (after import):
+    ✅ Success: green card
+      "{successRows} rows imported successfully"
+    ⚠️ Partial: yellow card
+      "{successRows} imported, {errorRows} failed"
+      [⬇ Download Error CSV] button
+    ❌ Failed: red card
+      "Import failed: {message}"
+
+  Error preview table (if errors exist):
+    Show first 10 error rows
+    Columns: Row# | Field | Error Message
+    Red highlighted rows
+
+──── TAB 3: IMPORT HISTORY ────────────────
+
+Filters: [Table▾] [Status▾] [Date Range]
+
+Table columns:
+  Date | Table | Filename | Total | ✅ Success | ❌ Error | Status | By | Actions
+
+Status badges:
+  completed = green | partial = yellow | failed = red
+
+Actions per row:
+  [👁 View Errors] → expand error details inline
+  [⬇ Error CSV]   → download failed rows (if errorRows > 0)
+
+Empty state: "No imports yet. Go to Import tab to get started."
+
+═══════════════════════════════════════════
+ PART 8: INLINE EXPORT BUTTONS
+═══════════════════════════════════════════
+
+Add [⬇ CSV] button to these existing list pages:
+  /admin/applications    → exports filtered results
+  /admin/contracts       → exports filtered results
+  /admin/leads           → exports filtered results
+  /admin/users           → exports filtered results
+  /admin/accounting/transactions    → exports filtered
+  /admin/accounting/receipts        → exports filtered
+  /admin/services/settlement        → exports filtered
+
+Button style: Secondary small, placed in page header actions area
+Respects current active filters (pass filter state to export call)
+⚠️ Use same URL.createObjectURL blob download method
+
+═══════════════════════════════════════════
+ PART 9: SIDEBAR UPDATE
+═══════════════════════════════════════════
+
+Add to sidebar under ── SETTINGS ── (super_admin only):
+  📂 Data Manager    /admin/settings/data-manager
+
+Add to pagePermissions seed:
+  { role: 'super_admin', pageSlug: 'settings/data-manager', canAccess: true }
+  { role: 'admin',       pageSlug: 'settings/data-manager', canAccess: true }
+
+═══════════════════════════════════════════
+ PART 10: SECURITY CHECKLIST
+═══════════════════════════════════════════
+
+✓ authenticate + requireRole middleware on ALL routes
+✓ NEVER export password_hash or any token fields
+✓ NEVER export passport_number (PII protection)
+✓ Import of super_admin role → reject with 403
+✓ File type validation: reject non-CSV mimetype
+✓ File size limit: 5MB hard limit in multer
+✓ SQL injection: use parameterized queries only (Drizzle ORM)
+✓ Log all export/import actions to import_history
+✓ Error CSV returned as base64 in JSON — NOT saved to disk

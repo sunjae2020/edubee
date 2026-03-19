@@ -13,6 +13,21 @@ import { users } from "./users";
 import { contracts } from "./contracts";
 import { applications } from "./applications";
 
+export const importHistory = pgTable("import_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tableName: varchar("table_name", { length: 100 }).notNull(),
+  filename: varchar("filename", { length: 255 }),
+  totalRows: integer("total_rows").default(0),
+  successRows: integer("success_rows").default(0),
+  errorRows: integer("error_rows").default(0),
+  status: varchar("status", { length: 20 }).default("completed"),
+  errorDetails: jsonb("error_details"),
+  importedBy: uuid("imported_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type ImportHistory = typeof importHistory.$inferSelect;
+
 export const programReports = pgTable("program_reports", {
   id: uuid("id").primaryKey().defaultRandom(),
   contractId: uuid("contract_id").references(() => contracts.id),

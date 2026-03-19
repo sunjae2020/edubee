@@ -48,6 +48,7 @@ import PageAccess from "@/pages/admin/settings/page-access";
 import FieldPermissions from "@/pages/admin/settings/field-permissions";
 import DocPermissions from "@/pages/admin/settings/doc-permissions";
 import ImpersonationLogs from "@/pages/admin/settings/impersonation-logs";
+import DataManager from "@/pages/admin/settings/data-manager";
 
 // My Programs
 import MyPrograms from "@/pages/admin/my-programs";
@@ -178,6 +179,9 @@ function Router() {
       </Route>
       <Route path="/admin/settings/impersonation-logs">
         <AdminRoute title="Impersonation Logs"><ImpersonationLogs /></AdminRoute>
+      </Route>
+      <Route path="/admin/settings/data-manager">
+        <AdminRoute title="Data Manager"><DataManager /></AdminRoute>
       </Route>
 
       {/* My Programs */}

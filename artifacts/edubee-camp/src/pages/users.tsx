@@ -170,6 +170,7 @@ export default function Users() {
         total={filtered.length}
         addLabel="Add User"
         onAdd={() => setShowModal(true)}
+        csvExportTable="users"
       />
 
       {/* Table */}

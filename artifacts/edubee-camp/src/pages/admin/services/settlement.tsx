@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { NotePanel } from "@/components/shared/NotePanel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, Pencil, TrendingDown, Plus, FileText, ArrowUpRight, CalendarRange } from "lucide-react";
+import { DollarSign, Pencil, TrendingDown, Plus, FileText, ArrowUpRight, CalendarRange, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 
@@ -172,11 +172,26 @@ export default function Settlement() {
           <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-[#F5821F]" /></div>
           <div><h1 className="text-lg font-bold">Settlement</h1><p className="text-xs text-muted-foreground">Provider payouts & commission management</p></div>
         </div>
-        {canCreate && (
-          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => { setForm({}); setShowCreate(true); }}>
-            <Plus className="w-3.5 h-3.5" /> New Settlement
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={async () => {
+            try {
+              const axios = (await import("axios")).default;
+              const resp = await axios.post(`${BASE}/api/data-manager/export/settlement_mgt`, {}, { responseType: "blob" });
+              const url = URL.createObjectURL(resp.data);
+              const a = document.createElement("a"); a.href = url;
+              a.download = `settlement_mgt_${new Date().toISOString().slice(0, 10)}.csv`;
+              document.body.appendChild(a); a.click();
+              setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+            } catch { alert("Export failed"); }
+          }}>
+            <Download className="w-3.5 h-3.5" /> CSV
           </Button>
-        )}
+          {canCreate && (
+            <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => { setForm({}); setShowCreate(true); }}>
+              <Plus className="w-3.5 h-3.5" /> New Settlement
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Summary KPIs */}

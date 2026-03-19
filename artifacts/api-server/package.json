@@ -17,7 +17,10 @@
     "cors": "^2",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "multer": "^1.4.5-lts.1",
+    "csv-parse": "^5.5.0",
+    "csv-stringify": "^6.4.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -26,6 +29,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.9",
+    "@types/multer": "^1.4.12",
     "esbuild": "^0.27.3",
     "tsx": "catalog:"
   }
