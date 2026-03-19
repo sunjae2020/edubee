@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -6,7 +7,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ArTimeline } from "@/components/shared/ArTimeline";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -22,6 +25,7 @@ export default function PickupMgtDetail() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [tab, setTab] = useState("details");
 
   const { data, isLoading } = useQuery({
     queryKey: ["pickup-detail", id],
@@ -56,46 +60,63 @@ export default function PickupMgtDetail() {
       badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[rec.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{(rec.status ?? "—").replace(/_/g, " ")}</span>}
       backPath="/admin/services/pickup"
       backLabel="Pickup Management"
-      canEdit={canEdit}
+      canEdit={canEdit && tab === "details"}
       isEditing={isEditing}
       isSaving={isSaving}
       onEdit={startEdit}
       onSave={saveEdit}
       onCancel={cancelEdit}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <DetailSection title="Pickup Info">
-          <EditableField label="Status" isEditing={isEditing} value={(rec.status ?? "").replace(/_/g, " ")}
-            editChildren={
-              <Select value={getValue("status")} onValueChange={v => setField("status", v)}>
-                <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
-                <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
-              </Select>
-            } />
-          <DetailRow label="Pickup Datetime" value={rec.pickupDatetime ? format(new Date(rec.pickupDatetime), "PPp") : "—"} />
-          <DetailRow label="Pickup Location" value={rec.pickupLocation} />
-          <DetailRow label="Dropoff Location" value={rec.dropoffLocation} />
-          <EditableField label="Vehicle Info" isEditing={isEditing} value={rec.vehicleInfo}
-            editValue={getValue("vehicleInfo")} onEdit={v => setField("vehicleInfo", v)} />
-        </DetailSection>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="accounting">Accounting</TabsTrigger>
+        </TabsList>
 
-        <DetailSection title="Student Info">
-          <DetailRow label="Student" value={rec.studentName} />
-          <DetailRow label="Email" value={rec.clientEmail} />
-          <DetailRow label="Contract #" value={rec.contractNumber} />
-          <DetailRow label="Flight Info" value={rec.flightInfo} />
-          <DetailRow label="Passengers" value={rec.passengerCount} />
-        </DetailSection>
+        <TabsContent value="details">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <DetailSection title="Pickup Info">
+              <EditableField label="Status" isEditing={isEditing} value={(rec.status ?? "").replace(/_/g, " ")}
+                editChildren={
+                  <Select value={getValue("status")} onValueChange={v => setField("status", v)}>
+                    <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
+                  </Select>
+                } />
+              <DetailRow label="Pickup Datetime" value={rec.pickupDatetime ? format(new Date(rec.pickupDatetime), "PPp") : "—"} />
+              <DetailRow label="Pickup Location" value={rec.pickupLocation} />
+              <DetailRow label="Dropoff Location" value={rec.dropoffLocation} />
+              <EditableField label="Vehicle Info" isEditing={isEditing} value={rec.vehicleInfo}
+                editValue={getValue("vehicleInfo")} onEdit={v => setField("vehicleInfo", v)} />
+            </DetailSection>
 
-        <DetailSection title="Driver Notes" className="lg:col-span-2">
-          {isEditing ? (
-            <textarea value={getValue("driverNotes") ?? ""} onChange={e => setField("driverNotes", e.target.value)}
-              className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+            <DetailSection title="Student Info">
+              <DetailRow label="Student" value={rec.studentName} />
+              <DetailRow label="Email" value={rec.clientEmail} />
+              <DetailRow label="Contract #" value={rec.contractNumber} />
+              <DetailRow label="Flight Info" value={rec.flightInfo} />
+              <DetailRow label="Passengers" value={rec.passengerCount} />
+            </DetailSection>
+
+            <DetailSection title="Driver Notes" className="lg:col-span-2">
+              {isEditing ? (
+                <textarea value={getValue("driverNotes") ?? ""} onChange={e => setField("driverNotes", e.target.value)}
+                  className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+              ) : (
+                <p className="text-sm text-foreground whitespace-pre-wrap">{rec.driverNotes || <span className="text-muted-foreground/60">—</span>}</p>
+              )}
+            </DetailSection>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="accounting">
+          {rec.contractId ? (
+            <ArTimeline contractId={rec.contractId} />
           ) : (
-            <p className="text-sm text-foreground whitespace-pre-wrap">{rec.driverNotes || <span className="text-muted-foreground/60">—</span>}</p>
+            <div className="text-center py-10 text-muted-foreground text-sm">No contract linked to this record.</div>
           )}
-        </DetailSection>
-      </div>
+        </TabsContent>
+      </Tabs>
     </DetailPageLayout>
   );
 }

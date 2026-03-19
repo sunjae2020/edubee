@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -6,7 +7,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ArTimeline } from "@/components/shared/ArTimeline";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -22,6 +25,7 @@ export default function TourMgtDetail() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [tab, setTab] = useState("details");
 
   const { data, isLoading } = useQuery({
     queryKey: ["tour-detail", id],
@@ -56,55 +60,72 @@ export default function TourMgtDetail() {
       badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[rec.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{(rec.status ?? "—").replace(/_/g, " ")}</span>}
       backPath="/admin/services/tour"
       backLabel="Tour Management"
-      canEdit={canEdit}
+      canEdit={canEdit && tab === "details"}
       isEditing={isEditing}
       isSaving={isSaving}
       onEdit={startEdit}
       onSave={saveEdit}
       onCancel={cancelEdit}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <DetailSection title="Tour Info">
-          <EditableField label="Status" isEditing={isEditing} value={(rec.status ?? "").replace(/_/g, " ")}
-            editChildren={
-              <Select value={getValue("status")} onValueChange={v => setField("status", v)}>
-                <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
-                <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
-              </Select>
-            } />
-          <DetailRow label="Tour Date" value={rec.tourDate ? format(new Date(rec.tourDate), "PPP") : "—"} />
-          <DetailRow label="Tour Name" value={rec.tourName} />
-          <DetailRow label="Meeting Point" value={rec.meetingPoint} />
-          <DetailRow label="Duration (hrs)" value={rec.durationHours} />
-          <DetailRow label="Participants" value={rec.participantCount} />
-        </DetailSection>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="accounting">Accounting</TabsTrigger>
+        </TabsList>
 
-        <DetailSection title="Client Info">
-          <DetailRow label="Student" value={rec.studentName} />
-          <DetailRow label="Email" value={rec.clientEmail} />
-          <DetailRow label="Contract #" value={rec.contractNumber} />
-          <EditableField label="Guide Info" isEditing={isEditing} value={rec.guideInfo}
-            editValue={getValue("guideInfo")} onEdit={v => setField("guideInfo", v)} />
-        </DetailSection>
+        <TabsContent value="details">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <DetailSection title="Tour Info">
+              <EditableField label="Status" isEditing={isEditing} value={(rec.status ?? "").replace(/_/g, " ")}
+                editChildren={
+                  <Select value={getValue("status")} onValueChange={v => setField("status", v)}>
+                    <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
+                  </Select>
+                } />
+              <DetailRow label="Tour Date" value={rec.tourDate ? format(new Date(rec.tourDate), "PPP") : "—"} />
+              <DetailRow label="Tour Name" value={rec.tourName} />
+              <DetailRow label="Meeting Point" value={rec.meetingPoint} />
+              <DetailRow label="Duration (hrs)" value={rec.durationHours} />
+              <DetailRow label="Participants" value={rec.participantCount} />
+            </DetailSection>
 
-        <DetailSection title="Highlights" className="lg:col-span-2">
-          {isEditing ? (
-            <textarea value={getValue("highlights") ?? ""} onChange={e => setField("highlights", e.target.value)}
-              className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+            <DetailSection title="Client Info">
+              <DetailRow label="Student" value={rec.studentName} />
+              <DetailRow label="Email" value={rec.clientEmail} />
+              <DetailRow label="Contract #" value={rec.contractNumber} />
+              <EditableField label="Guide Info" isEditing={isEditing} value={rec.guideInfo}
+                editValue={getValue("guideInfo")} onEdit={v => setField("guideInfo", v)} />
+            </DetailSection>
+
+            <DetailSection title="Highlights" className="lg:col-span-2">
+              {isEditing ? (
+                <textarea value={getValue("highlights") ?? ""} onChange={e => setField("highlights", e.target.value)}
+                  className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+              ) : (
+                <p className="text-sm text-foreground whitespace-pre-wrap">{rec.highlights || <span className="text-muted-foreground/60">—</span>}</p>
+              )}
+            </DetailSection>
+
+            <DetailSection title="Tour Notes" className="lg:col-span-2">
+              {isEditing ? (
+                <textarea value={getValue("tourNotes") ?? ""} onChange={e => setField("tourNotes", e.target.value)}
+                  className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+              ) : (
+                <p className="text-sm text-foreground whitespace-pre-wrap">{rec.tourNotes || <span className="text-muted-foreground/60">—</span>}</p>
+              )}
+            </DetailSection>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="accounting">
+          {rec.contractId ? (
+            <ArTimeline contractId={rec.contractId} />
           ) : (
-            <p className="text-sm text-foreground whitespace-pre-wrap">{rec.highlights || <span className="text-muted-foreground/60">—</span>}</p>
+            <div className="text-center py-10 text-muted-foreground text-sm">No contract linked to this record.</div>
           )}
-        </DetailSection>
-
-        <DetailSection title="Tour Notes" className="lg:col-span-2">
-          {isEditing ? (
-            <textarea value={getValue("tourNotes") ?? ""} onChange={e => setField("tourNotes", e.target.value)}
-              className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
-          ) : (
-            <p className="text-sm text-foreground whitespace-pre-wrap">{rec.tourNotes || <span className="text-muted-foreground/60">—</span>}</p>
-          )}
-        </DetailSection>
-      </div>
+        </TabsContent>
+      </Tabs>
     </DetailPageLayout>
   );
 }
