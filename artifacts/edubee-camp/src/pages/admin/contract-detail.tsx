@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
+import { ArTimeline } from "@/components/shared/ArTimeline";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NotePanel } from "@/components/shared/NotePanel";
@@ -287,30 +288,7 @@ export default function ContractDetail() {
 
       {activeTab === "accounting" && (
         <div className="space-y-4">
-          {accounting?.transactions && (
-            <DetailSection title="Transactions">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-xs text-muted-foreground">
-                    <th className="text-left py-2">Date</th>
-                    <th className="text-left py-2">Type</th>
-                    <th className="text-right py-2">Amount</th>
-                    <th className="text-left py-2">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {accounting.transactions.map((t: any) => (
-                    <tr key={t.id} className="border-b last:border-0">
-                      <td className="py-2">{t.transactionDate ? format(new Date(t.transactionDate), "MMM d, yyyy") : "—"}</td>
-                      <td className="py-2 capitalize">{t.transactionType?.replace(/_/g, " ") ?? "—"}</td>
-                      <td className="py-2 text-right font-mono">{fmtCcy(t.amount, t.currency)}</td>
-                      <td className="py-2"><span className={`px-1.5 py-0.5 rounded text-xs ${STATUS_COLORS[t.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{t.status ?? "—"}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </DetailSection>
-          )}
+          <ArTimeline contractId={id!} />
         </div>
       )}
 

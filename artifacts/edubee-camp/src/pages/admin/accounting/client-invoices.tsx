@@ -3,15 +3,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
-import { Receipt, Send, ChevronRight } from "lucide-react";
+import { Receipt, Send, ChevronRight, CreditCard, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
-const STATUSES = ["draft", "sent", "paid", "overdue", "cancelled"];
+const STATUSES = ["draft", "sent", "partially_paid", "awaiting_receipt", "paid", "overdue", "cancelled", "refunded"];
 
 const CURRENCY_SYMBOLS: Record<string, string> = { AUD: "A$", USD: "$", SGD: "S$", PHP: "₱", THB: "฿", KRW: "₩", JPY: "¥", GBP: "£" };
 
@@ -31,10 +34,16 @@ function DualAmount({ amount, currency, audEquivalent }: { amount?: string | num
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "draft").toLowerCase();
   const map: Record<string, string> = {
-    draft: "bg-[#F4F3F1] text-[#57534E]", sent: "bg-[#FEF0E3] text-[#F5821F]",
-    paid: "bg-[#DCFCE7] text-[#16A34A]", overdue: "bg-[#FEF2F2] text-[#DC2626]", cancelled: "bg-[#F4F3F1] text-[#A8A29E]",
+    draft: "bg-[#F4F3F1] text-[#57534E]",
+    sent: "bg-[#FEF0E3] text-[#F5821F]",
+    paid: "bg-[#DCFCE7] text-[#16A34A]",
+    overdue: "bg-[#FEF2F2] text-[#DC2626]",
+    cancelled: "bg-[#F4F3F1] text-[#A8A29E]",
+    partially_paid: "bg-yellow-100 text-yellow-700",
+    awaiting_receipt: "bg-purple-100 text-purple-700",
+    refunded: "bg-gray-100 text-gray-500",
   };
-  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${map[s] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>{s}</span>;
+  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${map[s] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>{s.replace(/_/g, " ")}</span>;
 }
 
 interface Invoice {
@@ -46,6 +55,155 @@ interface Invoice {
   paidAt?: string | null; notes?: string | null;
 }
 
+interface RecordPaymentForm {
+  amount: string;
+  bankReference: string;
+  transactionDate: string;
+  notes: string;
+}
+
+function RecordPaymentModal({
+  invoice,
+  open,
+  onClose,
+  onSuccess,
+}: {
+  invoice: Invoice | null;
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const { toast } = useToast();
+  const [form, setForm] = useState<RecordPaymentForm>({
+    amount: invoice ? String(Number(invoice.totalAmount ?? 0).toFixed(2)) : "",
+    bankReference: "",
+    transactionDate: new Date().toISOString().split("T")[0],
+    notes: "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleOpen = (inv: Invoice | null) => {
+    setForm({
+      amount: inv ? String(Number(inv.totalAmount ?? 0).toFixed(2)) : "",
+      bankReference: "",
+      transactionDate: new Date().toISOString().split("T")[0],
+      notes: "",
+    });
+  };
+
+  if (!invoice) return null;
+
+  const handleSubmit = async () => {
+    if (!form.amount || Number(form.amount) <= 0) {
+      toast({ title: "Enter a valid amount", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      await axios.post(`${BASE}/api/transactions`, {
+        transactionType: "payment_received",
+        invoiceId: invoice.id,
+        contractId: invoice.contractId,
+        amount: Number(form.amount),
+        currency: invoice.currency ?? "AUD",
+        bankReference: form.bankReference || undefined,
+        transactionDate: form.transactionDate,
+        notes: form.notes || undefined,
+      });
+      toast({ title: "Payment recorded", description: `A$${Number(form.amount).toLocaleString()} recorded for ${invoice.invoiceNumber}` });
+      onSuccess();
+      onClose();
+    } catch (e: any) {
+      toast({ title: "Failed to record payment", description: e?.response?.data?.error ?? e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={o => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-[#F5821F]" />
+            Record Payment
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="bg-muted/30 rounded-lg p-3 text-sm space-y-1">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Invoice</span>
+              <span className="font-mono font-medium">{invoice.invoiceNumber}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Student</span>
+              <span>{invoice.studentName ?? "—"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Invoice Total</span>
+              <span className="font-medium">
+                <DualAmount amount={invoice.originalAmount ?? invoice.totalAmount} currency={invoice.originalCurrency ?? invoice.currency} audEquivalent={invoice.audEquivalent} />
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Transaction Type</Label>
+            <Input value="Payment Received" disabled className="bg-muted text-muted-foreground" />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Amount (AUD)</Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.amount}
+              onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+              placeholder="0.00"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Transaction Date</Label>
+            <Input
+              type="date"
+              value={form.transactionDate}
+              onChange={e => setForm(f => ({ ...f, transactionDate: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Bank Reference <span className="text-muted-foreground text-xs">(optional)</span></Label>
+            <Input
+              value={form.bankReference}
+              onChange={e => setForm(f => ({ ...f, bankReference: e.target.value }))}
+              placeholder="e.g. BSB transfer ref #"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Notes <span className="text-muted-foreground text-xs">(optional)</span></Label>
+            <Input
+              value={form.notes}
+              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              placeholder="Additional notes"
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
+            {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Recording…</> : "Record Payment"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function ClientInvoices() {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -53,6 +211,7 @@ export default function ClientInvoices() {
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Invoice | null>(null);
+  const [paymentTarget, setPaymentTarget] = useState<Invoice | null>(null);
 
   const queryKey = ["invoices-client", { search, status: activeStatus, page }];
   const { data: resp, isLoading } = useQuery({
@@ -73,6 +232,9 @@ export default function ClientInvoices() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices-client"] }); toast({ title: "Invoice updated" }); setSelected(null); },
     onError: () => toast({ title: "Update failed", variant: "destructive" }),
   });
+
+  const canRecordPayment = (status?: string | null) =>
+    !["paid", "refunded", "cancelled"].includes(status ?? "");
 
   return (
     <div className="space-y-4">
@@ -111,17 +273,23 @@ export default function ClientInvoices() {
                 <td className="px-4 py-3 text-xs text-muted-foreground">{r.dueDate ?? "—"}</td>
                 <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                 <td className="px-4 py-3">
-                  {r.status === "draft" && (
-                    <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "sent", issuedAt: new Date().toISOString() } }); }}>
-                      <Send className="w-2.5 h-2.5" /> Send
-                    </Button>
-                  )}
-                  {r.status === "sent" && (
-                    <Button size="sm" className="h-6 text-[10px] px-2 bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "paid", paidAt: new Date().toISOString() } }); }}>
-                      Mark Paid
-                    </Button>
-                  )}
-                  {!["draft", "sent"].includes(r.status ?? "") && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                  <div className="flex items-center gap-1.5">
+                    {r.status === "draft" && (
+                      <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "sent", issuedAt: new Date().toISOString() } }); }}>
+                        <Send className="w-2.5 h-2.5" /> Send
+                      </Button>
+                    )}
+                    {canRecordPayment(r.status) && (
+                      <Button
+                        size="sm"
+                        className="h-6 text-[10px] gap-1 px-2 bg-[#F5821F] hover:bg-[#d97706] text-white"
+                        onClick={e => { e.stopPropagation(); setPaymentTarget(r); }}
+                      >
+                        <CreditCard className="w-2.5 h-2.5" /> Pay
+                      </Button>
+                    )}
+                    {["paid", "refunded", "cancelled"].includes(r.status ?? "") && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -131,6 +299,15 @@ export default function ClientInvoices() {
 
       <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
 
+      {/* Record Payment Modal */}
+      <RecordPaymentModal
+        invoice={paymentTarget}
+        open={!!paymentTarget}
+        onClose={() => setPaymentTarget(null)}
+        onSuccess={() => { qc.invalidateQueries({ queryKey: ["invoices-client"] }); qc.invalidateQueries({ queryKey: ["ar-status"] }); }}
+      />
+
+      {/* Invoice Detail Sheet */}
       <Sheet open={!!selected} onOpenChange={o => { if (!o) setSelected(null); }}>
         <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto bg-background">
           <SheetHeader><SheetTitle>Invoice {selected?.invoiceNumber}</SheetTitle></SheetHeader>
@@ -152,9 +329,9 @@ export default function ClientInvoices() {
                     <Send className="w-3.5 h-3.5" /> Send Invoice
                   </Button>
                 )}
-                {selected.status === "sent" && (
-                  <Button size="sm" className="bg-[#16A34A] hover:bg-[#15803D] text-white flex-1" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "paid", paidAt: new Date().toISOString() } })}>
-                    Mark as Paid
+                {canRecordPayment(selected.status) && (
+                  <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white flex-1 gap-1.5" onClick={() => { setSelected(null); setPaymentTarget(selected); }}>
+                    <CreditCard className="w-3.5 h-3.5" /> Record Payment
                   </Button>
                 )}
                 <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>

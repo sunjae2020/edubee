@@ -66,27 +66,28 @@ export default function MyInvoices() {
       ) : rows.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground"><FileText className="w-10 h-10 mx-auto mb-3 opacity-30" /><p className="text-sm">No invoices yet</p></div>
       ) : (
-        <div className="rounded-lg border overflow-x-auto bg-white">
-          <table className="w-full min-w-[800px] text-sm">
+        <div className="rounded-lg border overflow-hidden bg-white">
+          <table className="w-full text-sm">
             <thead><tr className="border-b bg-muted/30">
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Invoice #</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Contract</th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">Amount</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Issued</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Due</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Due Date</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
               <th className="px-4 py-3"></th>
             </tr></thead>
             <tbody>
               {rows.map(r => (
                 <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3]">
-                  <td className="px-4 py-3 font-mono text-xs">{r.invoiceNumber ?? "—"}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.contractId?.slice(0, 8) ?? "—"}</td>
+                  <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3 text-right"><DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{r.issuedAt ? new Date(r.issuedAt).toLocaleDateString("en-AU") : "—"}</td>
                   <td className={`px-4 py-3 text-xs ${r.status === "overdue" ? "text-[#DC2626] font-medium" : "text-muted-foreground"}`}>{r.dueDate ?? "—"}</td>
-                  <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[r.status ?? "draft"] ?? "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]"}`}>{r.status ?? "draft"}</span></td>
-                  <td className="px-4 py-3"><Button size="sm" variant="ghost" className="h-6 px-2 gap-1 text-[10px]"><Download className="w-3 h-3" /> PDF</Button></td>
+                  <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[r.status ?? "draft"] ?? "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]"}`}>{r.status?.replace(/_/g, " ") ?? "draft"}</span></td>
+                  <td className="px-4 py-3">
+                    <Button size="sm" variant="ghost" className="h-6 px-2 gap-1 text-[10px]">
+                      <Download className="w-3 h-3" />
+                      {r.status === "paid" ? "Receipt" : "Invoice"}
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>

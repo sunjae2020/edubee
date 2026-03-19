@@ -1,0 +1,228 @@
+⚠️ REPLIT RULES REMINDER:
+- Register new router in index.ts — don't forget this step
+- All fetches in React must have error handling + loading skeleton
+- Never use position:fixed in components (Replit iframe issue)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 1: Create server/src/routes/ledger.ts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+import { Router } from 'express';
+import { eq, and, sql } from 'drizzle-orm';
+import { db } from '../../../db/client';
+import {
+  accountLedgerEntries, invoices, transactions, receipts, contracts
+} from '../../../db/schema';
+import { asyncHandler } from '../utils/asyncHandler';
+import { getAccountBalance } from '../services/ledgerService';
+import { requireRole } from '../middleware/requireRole';
+
+const router = Router();
+
+// ── GET balance summary for a user ─────────────────────────
+router.get('/balance/:userId', asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  // partnerScope: user can only query own id
+  if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
+    if (req.user.id !== userId) {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
+    }
+  }
+  const balance = await getAccountBalance(userId);
+  res.json({ success: true, data: balance });
+}));
+
+// ── GET full AR status for a contract ──────────────────────
+router.get('/ar-status/:contractId', asyncHandler(async (req, res) => {
+  const { contractId } = req.params;
+
+  const contractInvoices = await db.select()
+    .from(invoices)
+    .where(eq(invoices.contractId, contractId));
+
+  const result = await Promise.all(contractInvoices.map(async (inv) => {
+    const txns = await db.select()
+      .from(transactions)
+      .where(eq(transactions.invoiceId, inv.id));
+
+    const rcpts = await db.select()
+      .from(receipts)
+      .where(eq(receipts.invoiceId, inv.id));
+
+    const totalReceived = txns.reduce(
+      (s, t) => s + parseFloat(t.audEquivalent ?? t.amount ?? '0'), 0
+    );
+    const invoiced    = parseFloat(inv.audEquivalent ?? inv.totalAmount ?? '0');
+    const outstanding = Math.max(0, invoiced - totalReceived);
+
+    return {
+      invoiceId:     inv.id,
+      invoiceNumber: inv.invoiceNumber,
+      invoiceType:   inv.invoiceType,
+      totalAmount:   inv.totalAmount,
+      currency:      inv.currency,
+      audEquivalent: inv.audEquivalent,
+      status:        inv.status,
+      issuedAt:      inv.issuedAt,
+      dueDate:       inv.dueDate,
+      paidAt:        inv.paidAt,
+      transactions:  txns.map(t => ({
+        transactionId:   t.id,
+        amount:          t.amount,
+        currency:        t.currency,
+        audEquivalent:   t.audEquivalent,
+        bankReference:   t.bankReference,
+        transactionDate: t.transactionDate,
+      })),
+      receipts: rcpts.map(r => ({
+        receiptId:     r.id,
+        receiptNumber: r.receiptNumber,
+        amount:        r.amount,
+        receiptDate:   r.receiptDate,
+        status:        r.status,
+      })),
+      balance: {
+        invoiced,
+        received:    totalReceived,
+        outstanding,
+        isFullyPaid: outstanding === 0 && inv.status === 'paid',
+      },
+    };
+  }));
+
+  const totalInvoiced    = result.reduce((s, i) => s + i.balance.invoiced, 0);
+  const totalReceived    = result.reduce((s, i) => s + i.balance.received, 0);
+  const totalOutstanding = result.reduce((s, i) => s + i.balance.outstanding, 0);
+
+  res.json({
+    success: true,
+    data: {
+      contractId,
+      invoices: result,
+      arSummary: {
+        totalInvoiced,
+        totalReceived,
+        totalOutstanding,
+        isFullyPaid: totalOutstanding === 0,
+      },
+    },
+  });
+}));
+
+// ── GET ledger entries for an account (paginated) ──────────
+router.get('/account/:userId', asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
+    if (req.user.id !== userId) {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
+    }
+  }
+  const page   = parseInt(req.query.page as string ?? '1');
+  const limit  = 50;
+  const offset = (page - 1) * limit;
+
+  const entries = await db.select()
+    .from(accountLedgerEntries)
+    .where(eq(accountLedgerEntries.accountId, userId))
+    .orderBy(sql`entry_date DESC`)
+    .limit(limit)
+    .offset(offset);
+
+  res.json({ success: true, data: entries, page, limit });
+}));
+
+// ── POST manual ledger entry (SA/AD only) ──────────────────
+router.post('/entries',
+  requireRole('super_admin', 'admin'),
+  asyncHandler(async (req, res) => {
+    const { createLedgerEntry } = await import('../services/ledgerService');
+    const entry = await createLedgerEntry({ ...req.body, createdBy: req.user.id });
+    res.status(201).json({ success: true, data: entry });
+  })
+);
+
+export default router;
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 2: Register router in server/src/index.ts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Add these lines (after existing route registrations):
+
+  import ledgerRouter from './routes/ledger';
+  app.use('/api/ledger', authenticate, ledgerRouter);
+
+Also ensure these error handlers exist at the BOTTOM of index.ts
+(add if missing):
+
+  // Global error handler — must be last middleware
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error('Unhandled API error:', err.message);
+    res.status(err.status ?? 500).json({
+      success: false,
+      error: err.message ?? 'Internal server error',
+    });
+  });
+
+  // Crash guard — keeps server alive on uncaught errors
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught exception:', err.message);
+  });
+  process.on('unhandledRejection', (reason: any) => {
+    console.error('Unhandled rejection:', reason?.message ?? reason);
+  });
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 3: Frontend components
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A. Create client/src/components/shared/ArTimeline.tsx
+
+  Fetches: GET /api/ledger/ar-status/:contractId
+  ⚠ Always show Skeleton loader while loading
+  ⚠ Show inline error message on fetch failure (not page crash)
+
+  Layout:
+  ┌─ RECEIVABLES ──────────────────────────────────┐
+  │ INV-CLIENT-2026-0001              A$2,600       │
+  │  📤 Issued      20 Mar 2026                    │
+  │  💳 Payment     A$2,600   25 Mar  [pending]    │
+  │  🧾 Receipt     RCP-0001  26 Mar  [confirmed]  │
+  │  ✅ PAID        26 Mar 2026                    │
+  │  [████████████████████] 100% A$2,600/A$2,600   │
+  └─────────────────────────────────────────────────┘
+
+  For outstanding balance:
+  │  [████████░░░░░░░░░░░░]  A$1,000 / A$2,600     │
+  │  Outstanding: A$1,600    Due: 03 Apr 2026       │
+
+B. Add ArTimeline to Contract detail page → [Accounting] tab
+   Import and render: <ArTimeline contractId={contract.id} />
+
+C. Add "Record Payment" button to Invoice list rows
+   (client/src/pages/admin/accounting/ClientInvoicesPage.tsx)
+
+   Button appears when invoice.status is NOT 'paid' or 'refunded'.
+   Click → opens RecordPaymentModal with:
+     - transactionType: 'payment_received' (disabled, locked)
+     - invoiceId: pre-filled and locked
+     - amount: invoice outstanding balance (pre-filled, editable)
+     - bankAccountId: dropdown from /api/accounting/banking
+   On submit → POST /api/accounting/transactions
+   On success → refetch invoice list
+
+D. Client portal — /admin/my-programs → [Invoices] tab
+   Show ONLY: invoice number, amount, due date, status badge,
+   receipt download button (if receipt exists)
+   Hide: ledger entry IDs, internal transaction details,
+   bank references, audEquivalent raw values
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DONE CHECK — test these endpoints:
+  curl http://localhost:3001/api/ledger/ar-status/[contract-id] \
+    -H "Authorization: Bearer [token]"
+
+Reply with:
+"✅ PROMPT 4 DONE — ledger router registered, ArTimeline built,
+ Record Payment button added, client portal filtered"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
