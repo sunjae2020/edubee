@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -227,8 +227,8 @@ export default function Products() {
                 ) : grouped ? (
                   // Grouped view with type dividers
                   grouped.map(({ type, items }) => (
-                    <>
-                      <tr key={`divider-${type}`} className="bg-muted/20 border-b border-border">
+                    <Fragment key={type}>
+                      <tr className="bg-muted/20 border-b border-border">
                         <td colSpan={COLS} className="px-4 py-1.5">
                           <div className="flex items-center gap-2">
                             <span className="text-base leading-none">{TYPE_ICONS[type] ?? "📦"}</span>
@@ -240,7 +240,7 @@ export default function Products() {
                         </td>
                       </tr>
                       {items.map(p => renderRow(p))}
-                    </>
+                    </Fragment>
                   ))
                 ) : (
                   // Filtered single-type view

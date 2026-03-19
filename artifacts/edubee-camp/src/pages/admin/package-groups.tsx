@@ -361,9 +361,16 @@ export default function PackageGroups() {
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground">
-                      Created {format(new Date(g.createdAt), "MMM d, yyyy")}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-muted-foreground">
+                        Created {format(new Date(g.createdAt), "MMM d, yyyy")}
+                      </span>
+                      {g.sortOrder != null && (
+                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
+                          #{g.sortOrder}
+                        </span>
+                      )}
+                    </div>
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                       (g.packageCount ?? 0) > 0
                         ? "bg-[#FEF0E3] text-[#F5821F]"
