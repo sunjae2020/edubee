@@ -145,7 +145,7 @@ export default function Landing() {
                   </span>
                 </div>
                 <button
-                  onClick={() => setLocation(`${BASE}/admin`)}
+                  onClick={() => setLocation(`${BASE}/admin/dashboard`)}
                   className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
                   title="Admin Dashboard"
                 >
@@ -217,7 +217,7 @@ export default function Landing() {
                     </div>
                   </div>
                   <button
-                    onClick={() => { setLocation(`${BASE}/admin`); setMobileOpen(false); }}
+                    onClick={() => { setLocation(`${BASE}/admin/dashboard`); setMobileOpen(false); }}
                     className="flex items-center gap-2 px-3 py-2.5 text-base font-medium text-foreground hover:bg-muted rounded-md"
                   >
                     <LayoutDashboard className="w-4 h-4" /> Admin Dashboard
