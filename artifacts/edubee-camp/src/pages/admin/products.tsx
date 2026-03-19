@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
-import { Package, Pencil, Trash2, ChevronRight } from "lucide-react";
+import { Package, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -114,11 +114,6 @@ export default function Products() {
     return `${ccy} ${Number(cost).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  const fmtConverted = (amount: number | null | undefined, symbol: string) => {
-    if (amount == null) return "—";
-    return `${symbol}${Math.round(amount).toLocaleString()}`;
-  };
-
   return (
     <div className="space-y-4">
       <ListToolbar
@@ -142,83 +137,120 @@ export default function Products() {
         </div>
       </ListToolbar>
 
-      <div className="bg-card rounded-xl border border-border overflow-x-auto">
-        <table className="w-full min-w-[860px] text-sm">
-          <thead>
-            <tr className="border-b bg-muted/30">
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
-              <th className="px-4 py-2.5 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cost (AUD)</th>
-              <th className="px-4 py-2.5 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">≈ KRW</th>
-              <th className="px-4 py-2.5 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">≈ PHP</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Created</th>
-              <th className="px-4 py-2.5" />
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              [...Array(PAGE_SIZE)].map((_, i) => (
-                <tr key={i} className="border-b">
-                  {[...Array(8)].map((_, j) => (
-                    <td key={j} className="px-4 py-3"><Skeleton className="h-4" /></td>
-                  ))}
+      {/* Group products by type when "all" is selected */}
+      {(() => {
+        const COLS = 6;
+        const TYPE_ICONS: Record<string, string> = {
+          accommodation: "🏠", program: "📚", activity: "🏄", transport: "🚌",
+          meal: "🍽️", insurance: "🛡️", visa: "🛂", other: "📦",
+        };
+
+        const renderRow = (p: Product) => (
+          <tr
+            key={p.id}
+            className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
+            onClick={() => setLocation(`${BASE}/admin/products/${p.id}`)}
+          >
+            <td className="px-4 py-3">
+              <div className="font-medium text-foreground">{p.productName}</div>
+              {p.description && <div className="text-xs text-muted-foreground truncate max-w-[240px]">{p.description}</div>}
+            </td>
+            {typeFilter === "all" && (
+              <td className="px-4 py-3">
+                <span className="px-2 py-0.5 bg-muted rounded text-xs capitalize">{p.productType}</span>
+              </td>
+            )}
+            <td className="px-4 py-3 text-right font-mono text-sm font-semibold">
+              {fmtCost(p.cost, p.currency ?? "AUD")}
+            </td>
+            <td className="px-4 py-3">
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[p.status ?? "active"] ?? "bg-gray-100 text-gray-600"}`}>
+                {p.status ?? "active"}
+              </span>
+            </td>
+            <td className="px-4 py-3 text-muted-foreground text-xs">
+              {p.createdAt ? format(new Date(p.createdAt), "MMM d, yyyy") : "—"}
+            </td>
+            <td className="px-4 py-3">
+              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(p)}>
+                  <Pencil className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:text-red-600" onClick={() => {
+                  if (confirm(`Delete "${p.productName}"?`)) deleteProduct.mutate(p.id);
+                }}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </td>
+          </tr>
+        );
+
+        // Group by type when "all" is selected
+        const grouped = typeFilter === "all"
+          ? PRODUCT_TYPES
+              .map(t => ({ type: t, items: products.filter(p => p.productType === t) }))
+              .filter(g => g.items.length > 0)
+          : null;
+
+        return (
+          <div className="bg-card rounded-xl border border-border overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/30">
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product</th>
+                  {typeFilter === "all" && (
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
+                  )}
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cost</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Created</th>
+                  <th className="px-4 py-2.5 w-20" />
                 </tr>
-              ))
-            ) : products.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
-                  <Package className="w-8 h-8 mx-auto mb-3 opacity-30" />
-                  No products found
-                </td>
-              </tr>
-            ) : products.map(p => (
-              <tr
-                key={p.id}
-                className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
-                onClick={() => setLocation(`${BASE}/admin/products/${p.id}`)}
-              >
-                <td className="px-4 py-3">
-                  <div className="font-medium text-foreground">{p.productName}</div>
-                  {p.description && <div className="text-xs text-muted-foreground truncate max-w-[200px]">{p.description}</div>}
-                </td>
-                <td className="px-4 py-3">
-                  <span className="px-2 py-0.5 bg-muted rounded text-xs capitalize">{p.productType}</span>
-                </td>
-                <td className="px-4 py-3 text-right font-mono text-sm">
-                  {fmtCost(p.cost, p.currency ?? "AUD")}
-                </td>
-                <td className="px-4 py-3 text-right font-mono text-xs text-muted-foreground">
-                  {fmtConverted(p.convertedCost?.krw, "₩")}
-                </td>
-                <td className="px-4 py-3 text-right font-mono text-xs text-muted-foreground">
-                  {fmtConverted(p.convertedCost?.php, "₱")}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[p.status ?? "active"] ?? "bg-gray-100 text-gray-600"}`}>
-                    {p.status ?? "active"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground text-xs">
-                  {p.createdAt ? format(new Date(p.createdAt), "MMM d, yyyy") : "—"}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(p)}>
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:text-red-600" onClick={() => {
-                      if (confirm(`Delete "${p.productName}"?`)) deleteProduct.mutate(p.id);
-                    }}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  [...Array(6)].map((_, i) => (
+                    <tr key={i} className="border-b">
+                      {[...Array(COLS)].map((_, j) => (
+                        <td key={j} className="px-4 py-3"><Skeleton className="h-4" /></td>
+                      ))}
+                    </tr>
+                  ))
+                ) : products.length === 0 ? (
+                  <tr>
+                    <td colSpan={COLS} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                      <Package className="w-8 h-8 mx-auto mb-3 opacity-30" />
+                      No products found
+                    </td>
+                  </tr>
+                ) : grouped ? (
+                  // Grouped view with type dividers
+                  grouped.map(({ type, items }) => (
+                    <>
+                      <tr key={`divider-${type}`} className="bg-muted/20 border-b border-border">
+                        <td colSpan={COLS} className="px-4 py-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base leading-none">{TYPE_ICONS[type] ?? "📦"}</span>
+                            <span className="text-xs font-semibold text-foreground capitalize">{type}</span>
+                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                              {items.length}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      {items.map(p => renderRow(p))}
+                    </>
+                  ))
+                ) : (
+                  // Filtered single-type view
+                  products.map(p => renderRow(p))
+                )}
+              </tbody>
+            </table>
+          </div>
+        );
+      })()}
 
       <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
 
