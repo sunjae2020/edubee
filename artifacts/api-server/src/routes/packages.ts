@@ -81,11 +81,26 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
 
 router.put("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const [group] = await db.update(packageGroups).set({ ...req.body, updatedAt: new Date() })
+    const body = req.body as Record<string, unknown>;
+    // Coerce integer fields — they may arrive as strings from form inputs
+    const toIntOrNull = (v: unknown) => (v === null || v === "" || v === undefined) ? null : parseInt(String(v), 10);
+    const toInt = (v: unknown) => (v === null || v === "" || v === undefined) ? 0 : parseInt(String(v), 10);
+    const payload = {
+      ...body,
+      sortOrder: body.sortOrder !== undefined ? toInt(body.sortOrder) : undefined,
+      landingOrder: body.landingOrder !== undefined ? toIntOrNull(body.landingOrder) : undefined,
+      updatedAt: new Date(),
+    };
+    // Strip computed/unknown fields that aren't in the schema
+    const allowed = ["campProviderId","nameEn","nameKo","nameJa","nameTh","descriptionEn","descriptionKo","descriptionJa","descriptionTh","thumbnailUrl","location","countryCode","status","sortOrder","landingOrder","updatedAt"] as const;
+    const cleanPayload = Object.fromEntries(allowed.filter(k => payload[k] !== undefined).map(k => [k, payload[k]]));
+    cleanPayload.updatedAt = new Date();
+    const [group] = await db.update(packageGroups).set(cleanPayload as any)
       .where(eq(packageGroups.id, req.params.id)).returning();
     if (!group) return res.status(404).json({ error: "Not Found" });
     return res.json(group);
   } catch (err) {
+    console.error("[PUT /package-groups/:id]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
