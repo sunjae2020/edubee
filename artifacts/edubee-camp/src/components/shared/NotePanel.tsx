@@ -104,17 +104,6 @@ export function NotePanel({
       <div className="rounded-xl border border-border bg-card p-3 flex flex-col gap-2">
         {isAdmin && (
           <div className="flex gap-2 flex-wrap">
-            {allowedNoteTypes.length > 1 && (
-              <select
-                value={noteType}
-                onChange={e => setNoteType(e.target.value)}
-                className="text-xs px-2 py-1 rounded-md border border-border bg-muted text-foreground focus:outline-none"
-              >
-                {allowedNoteTypes.map(t => (
-                  <option key={t} value={t}>{NOTE_TYPE_LABELS[t] ?? t}</option>
-                ))}
-              </select>
-            )}
             <select
               value={visibility}
               onChange={e => setVisibility(e.target.value as any)}
