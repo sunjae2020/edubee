@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { packageGroups, packages, products, enrollmentSpots, exchangeRates } from "@workspace/db/schema";
-import { eq, and, count, asc, SQL, ilike, desc } from "drizzle-orm";
+import { eq, and, count, asc, SQL, ilike, desc, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -27,8 +27,23 @@ router.get("/package-groups", authenticate, async (req, res) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(packageGroups).where(whereClause);
-    const data = await db.select().from(packageGroups).where(whereClause).limit(limitNum).offset(offset);
+    const groups = await db.select().from(packageGroups).where(whereClause).limit(limitNum).offset(offset);
 
+    // Attach package count per group
+    const groupIds = groups.map(g => g.id);
+    let pkgCounts: Record<string, number> = {};
+    if (groupIds.length > 0) {
+      const countRows = await db
+        .select({ packageGroupId: packages.packageGroupId, cnt: count() })
+        .from(packages)
+        .where(sql`${packages.packageGroupId} = ANY(ARRAY[${sql.join(groupIds.map(id => sql`${id}::uuid`), sql`, `)}])`)
+        .groupBy(packages.packageGroupId);
+      for (const r of countRows) {
+        if (r.packageGroupId) pkgCounts[r.packageGroupId] = Number(r.cnt);
+      }
+    }
+
+    const data = groups.map(g => ({ ...g, packageCount: pkgCounts[g.id] ?? 0 }));
     const total = Number(totalResult.count);
     return res.json({
       data,
@@ -88,7 +103,7 @@ router.delete("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES), 
 // Packages
 router.get("/packages", authenticate, async (req, res) => {
   try {
-    const { packageGroupId, status, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const { packageGroupId, status, search, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
@@ -96,10 +111,46 @@ router.get("/packages", authenticate, async (req, res) => {
     const conditions: SQL[] = [];
     if (packageGroupId) conditions.push(eq(packages.packageGroupId, packageGroupId));
     if (status) conditions.push(eq(packages.status, status));
+    if (search) conditions.push(ilike(packages.name, `%${search}%`));
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    const [totalResult] = await db.select({ count: count() }).from(packages).where(whereClause);
-    const data = await db.select().from(packages).where(whereClause).limit(limitNum).offset(offset);
+
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(packages)
+      .leftJoin(packageGroups, eq(packages.packageGroupId, packageGroups.id))
+      .where(whereClause);
+
+    const data = await db
+      .select({
+        id: packages.id,
+        packageGroupId: packages.packageGroupId,
+        name: packages.name,
+        durationDays: packages.durationDays,
+        maxParticipants: packages.maxParticipants,
+        priceAud: packages.priceAud,
+        priceUsd: packages.priceUsd,
+        priceKrw: packages.priceKrw,
+        priceJpy: packages.priceJpy,
+        priceThb: packages.priceThb,
+        pricePhp: packages.pricePhp,
+        priceSgd: packages.priceSgd,
+        priceGbp: packages.priceGbp,
+        features: packages.features,
+        status: packages.status,
+        createdAt: packages.createdAt,
+        updatedAt: packages.updatedAt,
+        groupNameEn: packageGroups.nameEn,
+        groupNameKo: packageGroups.nameKo,
+        groupLocation: packageGroups.location,
+        groupCountryCode: packageGroups.countryCode,
+        groupStatus: packageGroups.status,
+      })
+      .from(packages)
+      .leftJoin(packageGroups, eq(packages.packageGroupId, packageGroups.id))
+      .where(whereClause)
+      .limit(limitNum)
+      .offset(offset);
 
     const total = Number(totalResult.count);
     return res.json({
@@ -107,6 +158,7 @@ router.get("/packages", authenticate, async (req, res) => {
       meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) },
     });
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

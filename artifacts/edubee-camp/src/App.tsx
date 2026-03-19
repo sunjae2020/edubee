@@ -13,6 +13,7 @@ import Dashboard from "@/pages/dashboard";
 import Users from "@/pages/users";
 import Applications from "@/pages/admin/applications";
 import PackageGroups from "@/pages/admin/package-groups";
+import Packages from "@/pages/packages";
 import Leads from "@/pages/admin/leads";
 import Contracts from "@/pages/admin/contracts";
 import AdminStub from "@/pages/admin/stub";
@@ -98,7 +99,7 @@ function Router() {
         <AdminRoute title="Package Groups"><PackageGroups /></AdminRoute>
       </Route>
       <Route path="/admin/packages">
-        <AdminRoute title="Packages"><AdminStub title="Packages" icon="🗂️" /></AdminRoute>
+        <AdminRoute title="Packages"><Packages /></AdminRoute>
       </Route>
       <Route path="/admin/products">
         <AdminRoute title="Products"><Products /></AdminRoute>

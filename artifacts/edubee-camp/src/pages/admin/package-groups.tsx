@@ -35,6 +35,7 @@ interface PackageGroup {
   status?: string | null;
   sortOrder?: number | null;
   campProviderId?: string | null;
+  packageCount?: number;
   createdAt: string;
   updatedAt?: string;
 }
@@ -359,8 +360,18 @@ export default function PackageGroups() {
                     )}
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-border text-[10px] text-muted-foreground">
-                    Created {format(new Date(g.createdAt), "MMM d, yyyy")}
+                  <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground">
+                      Created {format(new Date(g.createdAt), "MMM d, yyyy")}
+                    </span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                      (g.packageCount ?? 0) > 0
+                        ? "bg-[#FEF0E3] text-[#F5821F]"
+                        : "bg-muted text-muted-foreground"
+                    }`}>
+                      <Package className="w-2.5 h-2.5" />
+                      {g.packageCount ?? 0} pkg{(g.packageCount ?? 0) !== 1 ? "s" : ""}
+                    </span>
                   </div>
                 </div>
               </div>
