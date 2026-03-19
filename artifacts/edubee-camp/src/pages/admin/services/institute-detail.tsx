@@ -127,8 +127,11 @@ export default function InstituteMgtDetail() {
         </TabsContent>
 
         <TabsContent value="accounting">
+          <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
+            <span>Click any invoice row to expand details and navigate to related records. To edit this record, switch to the <strong>Details</strong> tab.</span>
+          </div>
           {rec.contractId ? (
-            <ArTimeline contractId={rec.contractId} />
+            <ArTimeline contractId={rec.contractId} showContractLink />
           ) : (
             <div className="text-center py-10 text-muted-foreground text-sm">No contract linked to this record.</div>
           )}
