@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { GripVertical, ClipboardList, Calendar, Mail, Phone, Globe, Tag, FileText, ArrowRight, Loader2 } from "lucide-react";
+import { GripVertical, ClipboardList, Calendar, Mail, Phone, Globe, Tag, FileText, ArrowRight, Loader2, Pencil, X, Check } from "lucide-react";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
@@ -65,6 +65,8 @@ export default function Leads() {
   const [dragging, setDragging] = useState<string | null>(null);
   const [converting, setConverting] = useState(false);
   const [form, setForm] = useState({ studentName: "", email: "", phone: "", nationality: "", source: "", notes: "", programInterest: "" });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Lead>>({});
 
   const { data: leads = [] } = useQuery<Lead[]>({
     queryKey: ["leads"],
@@ -87,6 +89,18 @@ export default function Leads() {
     mutationFn: ({ id, notes }: { id: string; notes: string }) =>
       axios.put(`${BASE}/api/leads/${id}`, { notes }).then(r => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["leads"] }); toast({ title: "Notes saved" }); },
+  });
+
+  const updateLead = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Lead> }) =>
+      axios.put(`${BASE}/api/leads/${id}`, data).then(r => r.data),
+    onSuccess: (updated) => {
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      setSelectedLead(updated);
+      setIsEditing(false);
+      toast({ title: "Lead updated" });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to update lead" }),
   });
 
   const filtered = leads.filter(l =>
@@ -248,16 +262,34 @@ export default function Leads() {
       </Dialog>
 
       {/* Detail Drawer */}
-      <Sheet open={!!selectedLead} onOpenChange={o => !o && setSelectedLead(null)}>
+      <Sheet open={!!selectedLead} onOpenChange={o => { if (!o) { setSelectedLead(null); setIsEditing(false); } }}>
         <SheetContent className="w-full sm:max-w-md overflow-y-auto bg-background">
           {selectedLead && (
             <>
               <SheetHeader className="pb-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <StatusDot status={selectedLead.status} size={2} />
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border capitalize ${LEAD_STATUSES.find(s => s.key === selectedLead.status)?.color ?? ""}`}>
-                    {selectedLead.status.replace(/_/g, " ")}
-                  </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 mb-1">
+                    <StatusDot status={selectedLead.status} size={2} />
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border capitalize ${LEAD_STATUSES.find(s => s.key === selectedLead.status)?.color ?? ""}`}>
+                      {selectedLead.status.replace(/_/g, " ")}
+                    </span>
+                  </div>
+                  {!isEditing ? (
+                    <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs"
+                      onClick={() => { setEditForm({ ...selectedLead }); setIsEditing(true); }}>
+                      <Pencil className="w-3.5 h-3.5" /> Edit
+                    </Button>
+                  ) : (
+                    <div className="flex gap-1.5">
+                      <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setIsEditing(false)}>
+                        <X className="w-3.5 h-3.5" /> Cancel
+                      </Button>
+                      <Button size="sm" className="h-7 gap-1 text-xs" disabled={updateLead.isPending}
+                        onClick={() => updateLead.mutate({ id: selectedLead.id, data: editForm })}>
+                        {updateLead.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Save
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <SheetTitle className="text-xl">{selectedLead.studentName}</SheetTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -269,21 +301,63 @@ export default function Leads() {
                 {/* Contact info */}
                 <div className="space-y-3">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contact</h3>
-                  <div className="space-y-2.5">
-                    <InfoRow icon={Mail} label="Email" value={selectedLead.email} />
-                    <InfoRow icon={Phone} label="Phone" value={selectedLead.phone} />
-                    <InfoRow icon={Globe} label="Nationality" value={selectedLead.nationality} />
-                    <InfoRow icon={Tag} label="Source" value={selectedLead.source ? selectedLead.source.charAt(0).toUpperCase() + selectedLead.source.slice(1) : undefined} />
-                    <InfoRow icon={FileText} label="Program Interest" value={(selectedLead as any).programInterest} />
-                  </div>
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Student Name</Label>
+                        <Input className="h-8 text-sm" value={editForm.studentName ?? ""} onChange={e => setEditForm(f => ({ ...f, studentName: e.target.value }))} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Email</Label>
+                          <Input className="h-8 text-sm" type="email" value={editForm.email ?? ""} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Phone</Label>
+                          <Input className="h-8 text-sm" value={editForm.phone ?? ""} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Nationality</Label>
+                          <Input className="h-8 text-sm" value={editForm.nationality ?? ""} onChange={e => setEditForm(f => ({ ...f, nationality: e.target.value }))} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Source</Label>
+                          <Select value={editForm.source ?? ""} onValueChange={v => setEditForm(f => ({ ...f, source: v }))}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent>
+                              {["referral", "website", "instagram", "facebook", "email", "event", "other"].map(s => (
+                                <SelectItem key={s} value={s} className="capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Program Interest</Label>
+                        <Input className="h-8 text-sm" value={(editForm as any).programInterest ?? ""} onChange={e => setEditForm(f => ({ ...f, programInterest: e.target.value } as any))} placeholder="e.g. English Camp, STEM" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      <InfoRow icon={Mail} label="Email" value={selectedLead.email} />
+                      <InfoRow icon={Phone} label="Phone" value={selectedLead.phone} />
+                      <InfoRow icon={Globe} label="Nationality" value={selectedLead.nationality} />
+                      <InfoRow icon={Tag} label="Source" value={selectedLead.source ? selectedLead.source.charAt(0).toUpperCase() + selectedLead.source.slice(1) : undefined} />
+                      <InfoRow icon={FileText} label="Program Interest" value={(selectedLead as any).programInterest} />
+                    </div>
+                  )}
                 </div>
 
                 {/* Notes */}
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes</h3>
-                  <div className="bg-muted/40 rounded-lg p-3 text-sm text-foreground min-h-[60px]">
-                    {selectedLead.notes || <span className="text-muted-foreground italic">No notes yet</span>}
-                  </div>
+                  {isEditing ? (
+                    <Textarea className="text-sm resize-none" rows={4} value={editForm.notes ?? ""} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} placeholder="Add notes…" />
+                  ) : (
+                    <div className="bg-muted/40 rounded-lg p-3 text-sm text-foreground min-h-[60px]">
+                      {selectedLead.notes || <span className="text-muted-foreground italic">No notes yet</span>}
+                    </div>
+                  )}
                 </div>
 
                 {/* Move to */}

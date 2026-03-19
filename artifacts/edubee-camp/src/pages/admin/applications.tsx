@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ChevronRight, FileText, GitMerge, Loader2,
   User, Users, CalendarCheck, Video, MapPin, CheckCircle2, XCircle, Clock, AlertCircle,
+  Pencil, X, Check,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -95,6 +97,8 @@ export default function Applications() {
   const [createDialog, setCreateDialog] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [activeTab, setActiveTab] = useState("overview");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Application>>({});
 
   const queryKey = ["applications", { search, status: activeStatus, page }];
   const { data: resp, isLoading } = useQuery({
@@ -148,6 +152,18 @@ export default function Applications() {
       qc.invalidateQueries({ queryKey: ["applications"] });
       if (selectedApp) setSelectedApp({ ...selectedApp, status: updated.status });
     },
+  });
+
+  const updateApp = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Application> }) =>
+      axios.put(`${BASE}/api/applications/${id}`, data).then(r => r.data),
+    onSuccess: (updated) => {
+      qc.invalidateQueries({ queryKey: ["applications"] });
+      setSelectedApp(prev => prev ? { ...prev, ...updated } : prev);
+      setIsEditing(false);
+      toast({ title: "Application updated" });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to update application" }),
   });
 
   const participants = appDetail?.participants ?? [];
@@ -210,7 +226,7 @@ export default function Applications() {
       <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
 
       {/* Detail Sheet */}
-      <Sheet open={!!selectedApp} onOpenChange={o => !o && setSelectedApp(null)}>
+      <Sheet open={!!selectedApp} onOpenChange={o => { if (!o) { setSelectedApp(null); setIsEditing(false); } }}>
         <SheetContent className="w-full sm:max-w-2xl p-0 flex flex-col bg-background">
           {selectedApp && (
             <>
@@ -223,12 +239,31 @@ export default function Applications() {
                       <AppStatusBadge status={selectedApp.status} />
                     </div>
                   </div>
-                  {selectedApp.status === "approved" && (
-                    <Button size="sm" onClick={() => setConvertDialog(true)}
-                      className="gap-1.5 text-xs h-8 bg-[#F5821F] hover:bg-[#d97706] text-white">
-                      <GitMerge className="w-3.5 h-3.5" /> Convert to Contract
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {!isEditing ? (
+                      <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs"
+                        onClick={() => { setEditForm({ ...selectedApp }); setIsEditing(true); setActiveTab("overview"); }}>
+                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      </Button>
+                    ) : (
+                      <>
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setIsEditing(false)}>
+                          <X className="w-3.5 h-3.5" /> Cancel
+                        </Button>
+                        <Button size="sm" className="h-7 gap-1 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
+                          disabled={updateApp.isPending}
+                          onClick={() => updateApp.mutate({ id: selectedApp.id, data: editForm })}>
+                          {updateApp.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Save
+                        </Button>
+                      </>
+                    )}
+                    {!isEditing && selectedApp.status === "approved" && (
+                      <Button size="sm" onClick={() => setConvertDialog(true)}
+                        className="gap-1.5 text-xs h-8 bg-[#F5821F] hover:bg-[#d97706] text-white">
+                        <GitMerge className="w-3.5 h-3.5" /> Convert to Contract
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </SheetHeader>
 
@@ -240,28 +275,72 @@ export default function Applications() {
                 </TabsList>
                 <div className="flex-1 overflow-y-auto">
                   <TabsContent value="overview" className="p-6 m-0 space-y-6">
-                    <dl className="grid grid-cols-2 gap-4">
-                      <DetailRow label="Student Name" value={selectedApp.studentName} />
-                      <DetailRow label="Nationality" value={selectedApp.nationality} />
-                      <DetailRow label="Email" value={selectedApp.email} />
-                      <DetailRow label="Phone" value={selectedApp.phone} />
-                      <DetailRow label="Program Type" value={selectedApp.programType} />
-                      <DetailRow label="Participants" value={selectedApp.participantCount} />
-                      <DetailRow label="Preferred Start" value={selectedApp.preferredStartDate ? format(new Date(selectedApp.preferredStartDate), "MMM d, yyyy") : undefined} />
-                      <DetailRow label="Created" value={format(new Date(selectedApp.createdAt), "MMM d, yyyy")} />
-                    </dl>
-                    <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Change Status</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {APP_STATUSES.filter(s => s !== selectedApp.status).map(s => (
-                          <button key={s}
-                            onClick={() => updateStatus.mutate({ id: selectedApp.id, status: s })}
-                            className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors text-foreground">
-                            → {s.replace(/_/g, " ")}
-                          </button>
-                        ))}
+                    {isEditing ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="col-span-2 space-y-1">
+                            <Label className="text-xs">Student Name</Label>
+                            <Input className="h-8 text-sm" value={editForm.studentName ?? ""} onChange={e => setEditForm(f => ({ ...f, studentName: e.target.value }))} />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Email</Label>
+                            <Input className="h-8 text-sm" type="email" value={editForm.email ?? ""} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Phone</Label>
+                            <Input className="h-8 text-sm" value={editForm.phone ?? ""} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Nationality</Label>
+                            <Input className="h-8 text-sm" value={editForm.nationality ?? ""} onChange={e => setEditForm(f => ({ ...f, nationality: e.target.value }))} />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Program Type</Label>
+                            <Select value={editForm.programType ?? ""} onValueChange={v => setEditForm(f => ({ ...f, programType: v }))}>
+                              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent>
+                                {["english_camp", "stem_camp", "arts_camp", "sports_camp", "cultural_exchange", "language_school", "university_prep", "other"].map(p => (
+                                  <SelectItem key={p} value={p}>{p.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Preferred Start Date</Label>
+                            <Input className="h-8 text-sm" type="date" value={editForm.preferredStartDate ? editForm.preferredStartDate.slice(0, 10) : ""} onChange={e => setEditForm(f => ({ ...f, preferredStartDate: e.target.value }))} />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Notes</Label>
+                          <Textarea className="text-sm resize-none" rows={3} value={editForm.notes ?? ""} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} placeholder="Add notes…" />
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        <dl className="grid grid-cols-2 gap-4">
+                          <DetailRow label="Student Name" value={selectedApp.studentName} />
+                          <DetailRow label="Nationality" value={selectedApp.nationality} />
+                          <DetailRow label="Email" value={selectedApp.email} />
+                          <DetailRow label="Phone" value={selectedApp.phone} />
+                          <DetailRow label="Program Type" value={selectedApp.programType} />
+                          <DetailRow label="Participants" value={selectedApp.participantCount} />
+                          <DetailRow label="Preferred Start" value={selectedApp.preferredStartDate ? format(new Date(selectedApp.preferredStartDate), "MMM d, yyyy") : undefined} />
+                          <DetailRow label="Created" value={format(new Date(selectedApp.createdAt), "MMM d, yyyy")} />
+                        </dl>
+                        <div>
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Change Status</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {APP_STATUSES.filter(s => s !== selectedApp.status).map(s => (
+                              <button key={s}
+                                onClick={() => updateStatus.mutate({ id: selectedApp.id, status: s })}
+                                className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors text-foreground">
+                                → {s.replace(/_/g, " ")}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </TabsContent>
 
                   <TabsContent value="participants" className="p-6 m-0 space-y-4">

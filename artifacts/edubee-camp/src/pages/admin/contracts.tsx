@@ -8,9 +8,14 @@ import { Button } from "@/components/ui/button";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ChevronRight, FileText, GraduationCap, Building2, Car, Map, Banknote,
   Receipt, ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock,
+  Pencil, X, Check, Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -104,6 +109,8 @@ export default function Contracts() {
   const [selected, setSelected] = useState<Contract | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [autoOpened, setAutoOpened] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Contract & { notes?: string }>>({});
 
   const queryKey = ["contracts", { search, status: activeStatus, page }];
   const { data: resp, isLoading } = useQuery({
@@ -153,6 +160,18 @@ export default function Contracts() {
       if (selected) setSelected({ ...selected, status: updated.status });
       toast({ title: "Status updated" });
     },
+  });
+
+  const updateContract = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      axios.put(`${BASE}/api/contracts/${id}`, data).then(r => r.data),
+    onSuccess: (updated) => {
+      qc.invalidateQueries({ queryKey: ["contracts"] });
+      if (selected) setSelected({ ...selected, ...updated });
+      setIsEditing(false);
+      toast({ title: "Contract updated" });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to update contract" }),
   });
 
   const fmtCcy = (amount: number | string, ccy = "AUD") =>
@@ -213,7 +232,7 @@ export default function Contracts() {
 
       <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
 
-      <Sheet open={!!selected} onOpenChange={o => !o && setSelected(null)}>
+      <Sheet open={!!selected} onOpenChange={o => { if (!o) { setSelected(null); setIsEditing(false); } }}>
         <SheetContent className="w-full sm:max-w-2xl p-0 flex flex-col bg-background">
           {selected && (
             <>
@@ -226,12 +245,31 @@ export default function Contracts() {
                       <span className="text-xs text-muted-foreground">{getStudentName(selected)}</span>
                     </div>
                   </div>
-                  {selected.totalAmount && (
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-foreground">{fmtCcy(selected.totalAmount, selected.currency)}</div>
-                      <div className="text-xs text-muted-foreground">{selected.currency}</div>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {selected.totalAmount && !isEditing && (
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-foreground">{fmtCcy(selected.totalAmount, selected.currency)}</div>
+                        <div className="text-xs text-muted-foreground">{selected.currency}</div>
+                      </div>
+                    )}
+                    {!isEditing ? (
+                      <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs"
+                        onClick={() => { setEditForm({ ...selected }); setIsEditing(true); setActiveTab("overview"); }}>
+                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      </Button>
+                    ) : (
+                      <>
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setIsEditing(false)}>
+                          <X className="w-3.5 h-3.5" /> Cancel
+                        </Button>
+                        <Button size="sm" className="h-7 gap-1 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
+                          disabled={updateContract.isPending}
+                          onClick={() => updateContract.mutate({ id: selected.id, data: editForm })}>
+                          {updateContract.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Save
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </SheetHeader>
 
@@ -244,28 +282,64 @@ export default function Contracts() {
 
                 <div className="flex-1 overflow-y-auto">
                   <TabsContent value="overview" className="p-6 m-0 space-y-5">
-                    <dl className="grid grid-cols-2 gap-4">
-                      <DetailRow label="Contract #" value={selected.contractNumber} />
-                      <DetailRow label="Status" value={selected.status} />
-                      <DetailRow label="Currency" value={selected.currency} />
-                      <DetailRow label="Total Amount" value={selected.totalAmount ? fmtCcy(selected.totalAmount, selected.currency) : undefined} />
-                      <DetailRow label="Start Date" value={selected.startDate ? format(new Date(selected.startDate), "MMM d, yyyy") : undefined} />
-                      <DetailRow label="End Date" value={selected.endDate ? format(new Date(selected.endDate), "MMM d, yyyy") : undefined} />
-                      <DetailRow label="Student" value={getStudentName(selected)} />
-                      <DetailRow label="Created" value={format(new Date(selected.createdAt), "MMM d, yyyy")} />
-                    </dl>
-                    <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Change Status</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {CONTRACT_STATUSES.filter(s => s !== selected.status).map(s => (
-                          <button key={s}
-                            onClick={() => updateStatus.mutate({ id: selected.id, status: s })}
-                            className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors text-foreground">
-                            → {s}
-                          </button>
-                        ))}
+                    {isEditing ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Start Date</Label>
+                            <Input className="h-8 text-sm" type="date" value={editForm.startDate ? editForm.startDate.slice(0, 10) : ""} onChange={e => setEditForm(f => ({ ...f, startDate: e.target.value }))} />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">End Date</Label>
+                            <Input className="h-8 text-sm" type="date" value={editForm.endDate ? editForm.endDate.slice(0, 10) : ""} onChange={e => setEditForm(f => ({ ...f, endDate: e.target.value }))} />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Total Amount</Label>
+                            <Input className="h-8 text-sm" type="number" value={editForm.totalAmount ?? ""} onChange={e => setEditForm(f => ({ ...f, totalAmount: e.target.value }))} placeholder="0" />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Currency</Label>
+                            <Select value={editForm.currency ?? "AUD"} onValueChange={v => setEditForm(f => ({ ...f, currency: v }))}>
+                              <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {Object.keys(CURRENCY_SYMBOLS).map(c => (
+                                  <SelectItem key={c} value={c}>{CURRENCY_SYMBOLS[c]} {c}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Notes</Label>
+                          <Textarea className="text-sm resize-none" rows={3} value={(editForm as any).notes ?? ""} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value } as any))} placeholder="Add notes…" />
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        <dl className="grid grid-cols-2 gap-4">
+                          <DetailRow label="Contract #" value={selected.contractNumber} />
+                          <DetailRow label="Status" value={selected.status} />
+                          <DetailRow label="Currency" value={selected.currency} />
+                          <DetailRow label="Total Amount" value={selected.totalAmount ? fmtCcy(selected.totalAmount, selected.currency) : undefined} />
+                          <DetailRow label="Start Date" value={selected.startDate ? format(new Date(selected.startDate), "MMM d, yyyy") : undefined} />
+                          <DetailRow label="End Date" value={selected.endDate ? format(new Date(selected.endDate), "MMM d, yyyy") : undefined} />
+                          <DetailRow label="Student" value={getStudentName(selected)} />
+                          <DetailRow label="Created" value={format(new Date(selected.createdAt), "MMM d, yyyy")} />
+                        </dl>
+                        <div>
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Change Status</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {CONTRACT_STATUSES.filter(s => s !== selected.status).map(s => (
+                              <button key={s}
+                                onClick={() => updateStatus.mutate({ id: selected.id, status: s })}
+                                className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors text-foreground">
+                                → {s}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </TabsContent>
 
                   <TabsContent value="services" className="p-6 m-0 space-y-4">
