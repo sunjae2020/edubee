@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
 import { db } from "@workspace/db";
-import { chatDocuments } from "@workspace/db/schema";
+import { chatDocuments, chatChunks } from "@workspace/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -70,6 +70,9 @@ router.get("/chatbot/docs", authenticate, requireRole(...ADMIN_ROLES), async (_r
       sourceType: chatDocuments.sourceType,
       createdAt: chatDocuments.createdAt,
       preview: sql<string>`left(${chatDocuments.content}, 200)`,
+      chunkCount: sql<number>`(
+        select count(*)::int from chat_chunks where doc_id = chat_documents.id
+      )`,
     }).from(chatDocuments).orderBy(desc(chatDocuments.createdAt));
     res.json(docs);
   } catch (e) {
