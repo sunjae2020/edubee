@@ -41,6 +41,13 @@ export default function Reports() {
   });
   const reports: Report[] = data?.data ?? [];
 
+  const { data: detailData, isLoading: detailLoading } = useQuery({
+    queryKey: ["report-detail", selected?.id],
+    queryFn: () => axios.get(`${BASE}/api/reports/${selected!.id}`).then(r => r.data),
+    enabled: !!selected?.id,
+  });
+  const detail: Report | null = detailData ?? null;
+
   const createMutation = useMutation({
     mutationFn: (payload: typeof form) => axios.post(`${BASE}/api/reports`, payload).then(r => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["reports"] }); toast({ title: "Report created" }); setShowCreate(false); setForm({ contractId: "", reportTitle: "", summaryNotes: "" }); },
@@ -132,20 +139,31 @@ export default function Reports() {
                 <span className="text-xs text-muted-foreground font-mono">{selected.contractId?.slice(0, 8)}</span>
               </div>
               <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-sm">
-                <div><span className="text-muted-foreground text-xs font-semibold uppercase">Summary Notes</span><p className="mt-1">{selected.summaryNotes ?? "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs font-semibold uppercase">Summary Notes</span><p className="mt-1">{(detail ?? selected).summaryNotes ?? "—"}</p></div>
               </div>
               <div>
                 <div className="text-xs font-semibold text-muted-foreground uppercase mb-2">Report Sections</div>
-                {!selected.sections || selected.sections.length === 0 ? (
+                {detailLoading ? (
+                  <div className="space-y-2">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+                ) : !detail?.sections || detail.sections.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No sections added yet{canEdit ? " — add sections in the report editor" : ""}</p>
                 ) : (
                   <div className="space-y-2">
-                    {selected.sections.map((s: any) => (
+                    {detail.sections.map((s: any) => (
                       <div key={s.id} className="bg-white border rounded-lg p-3">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">{s.sectionTitle}</span>
-                          <span className="px-1.5 py-0.5 bg-muted text-[10px] rounded">{s.sectionType}</span>
+                          <span className={`px-1.5 py-0.5 text-[10px] rounded ${s.isVisible ? "bg-[#FEF0E3] text-[#F5821F]" : "bg-muted text-muted-foreground"}`}>{s.sectionType}</span>
                         </div>
+                        {s.content && Object.keys(s.content).length > 0 && (
+                          <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
+                            {Object.entries(s.content as Record<string, unknown>)
+                              .filter(([, v]) => v && (typeof v === "string" ? v.trim() : Array.isArray(v) ? v.length > 0 : true))
+                              .slice(0, 2)
+                              .map(([k, v]) => `${k}: ${Array.isArray(v) ? (v as unknown[]).length + " items" : String(v).slice(0, 50)}`)
+                              .join(" · ")}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -158,7 +176,10 @@ export default function Reports() {
                   </Button>
                 )}
                 {selected.status === "published" && (
-                  <Button size="sm" variant="outline" className="gap-1.5"><Download className="w-3.5 h-3.5" /> Download PDF</Button>
+                  <Button size="sm" variant="outline" className="gap-1.5"
+                    onClick={() => window.open(`${BASE}/api/reports/${selected.id}/pdf`, "_blank")}>
+                    <Download className="w-3.5 h-3.5" /> Download PDF
+                  </Button>
                 )}
                 <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>
               </div>

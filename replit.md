@@ -16,6 +16,28 @@ Edubee Camp is a comprehensive multi-operator educational camp marketplace platf
 - **Application Modal**: Step 1 shows price summary card with `DualPriceDisplay` + billing warning; Step 4 review shows package price
 - **i18n**: `currency.*` keys added to all 4 locale files (en/ko/ja/th)
 
+## Key Features Added (Program Reports Module)
+- **DB**: `program_reports` (with `deletedAt`), `report_sections` tables — fully deployed
+- **Service**: `autoPopulateSections(contractId)` — pulls data from institute_mgt, hotel_mgt, pickup_mgt, tour_mgt, application_participants; returns 6 section objects
+- **API Routes** (all under `/api/reports`, `authenticate` middleware applied):
+  - `GET /` — role-scoped list (SA/admin=all, CC=own contracts, EA/parent=published only)
+  - `POST /` — create with auto-populated 6 sections; 409 if duplicate per contract
+  - `GET /:id` — full detail with sections; draft → 403 for EA/parent
+  - `PUT /:id` — update title/notes; 400 if published (unpublish first)
+  - `PATCH /:id/publish` — publish + send notifications to agent & client
+  - `PATCH /:id/unpublish` — admin+ only; sets back to draft
+  - `DELETE /:id` — super_admin only; soft-delete via `deletedAt`
+  - `PATCH /:id/sections/:sectionId` — update any field of a section (freeform JSONB content)
+  - `POST /:id/sections` — add custom section only (sectionType='custom')
+  - `DELETE /:id/sections/:sectionId` — delete custom sections only; rejects default section types
+  - `PATCH /:id/sections/reorder` — atomic reorder via transaction; body `{ orderedIds: string[] }`
+  - `POST /:id/sync` — re-populate unedited sections; skips manually-edited ones
+  - `GET /:id/pdf` — scoped like GET /:id; returns PDF binary
+- **Frontend** (`/admin/reports`): separate `GET /api/reports/:id` fetch on section detail open (fixes empty sections bug)
+- **Seed Data**: "John Smith — Leadership Camp Report", published, contract CNT-2501-1003, 6 sections with academic schedule + summary
+- **Visual Assets**: `EdubeeLogo`, `ReportSymbol` (15 symbols), `SectionHeader`, `ReportStatusBadge` components in `shared/`
+- **PDF utility**: `PdfLogo.tsx` in `api-server/src/utils/` using `@react-pdf/renderer`
+
 ## Key Features Added (Tasks/CS System)
 - **DB**: `tasks`, `task_attachments`, `task_comments` tables in `lib/db/src/schema/reports.ts`
 - **API**: `/api/public/tasks` (no auth), `/api/tasks` CRUD with role-scoped access

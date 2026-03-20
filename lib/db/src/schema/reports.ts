@@ -36,6 +36,7 @@ export const programReports = pgTable("program_reports", {
   generatedBy: uuid("generated_by").references(() => users.id),
   publishedAt: timestamp("published_at"),
   summaryNotes: text("summary_notes"),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -120,3 +121,5 @@ export type Notification = typeof notifications.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
 export type TaskAttachment = typeof taskAttachments.$inferSelect;
 export type TaskComment = typeof taskComments.$inferSelect;
+export type ProgramReport = typeof programReports.$inferSelect;
+export type ReportSection = typeof reportSections.$inferSelect;
