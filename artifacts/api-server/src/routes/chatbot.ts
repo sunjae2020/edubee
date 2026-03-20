@@ -18,7 +18,12 @@ import {
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
 
-// Initialize knowledge base on first request (lazy init)
+// ─── Server-side session history store ────────────────────────────────────
+// Stores last N turns per sessionId (mirrors the reference architecture)
+type Turn = { role: "user" | "model"; parts: { text: string }[] };
+const sessions = new Map<string, Turn[]>();
+
+// ─── Lazy KB initialization ────────────────────────────────────────────────
 let kbReady = false;
 async function ensureKB() {
   if (!kbReady) {
@@ -77,12 +82,11 @@ router.post("/chatbot/docs", authenticate, requireRole(...ADMIN_ROLES), async (r
     if (!title || !content) {
       return res.status(400).json({ error: "title and content are required" });
     }
-
     const [doc] = await db.insert(chatDocuments)
       .values({ title, content, source, sourceType })
       .returning();
 
-    // Generate embeddings in background (don't block response)
+    // Generate embeddings in background
     ensureKB().then(() =>
       addDocumentToKB(doc.id, title, content, source, sourceType)
         .catch((e) => console.error("[KB] embed error:", e))
@@ -138,8 +142,7 @@ router.post("/chatbot/docs/google", authenticate, requireRole(...ADMIN_ROLES), a
     const docData = docRes.data;
 
     const title = docData.title ?? "Untitled Document";
-    // Use enhanced extractor that handles tables too
-    const content = extractTextFromGoogleDoc(docData);
+    const content = extractTextFromGoogleDoc(docData); // handles paragraphs + tables
     if (!content) return res.status(400).json({ error: "Document appears to be empty" });
 
     const [doc] = await db.insert(chatDocuments).values({
@@ -161,11 +164,17 @@ router.post("/chatbot/docs/google", authenticate, requireRole(...ADMIN_ROLES), a
   }
 });
 
+// ─── DELETE /api/chatbot/session/:sessionId ────────────────────────────────
+router.delete("/chatbot/session/:sessionId", authenticate, (req, res) => {
+  sessions.delete(req.params.sessionId);
+  res.json({ cleared: true });
+});
+
 // ─── POST /api/chatbot/message ─────────────────────────────────────────────
 router.post("/chatbot/message", authenticate, async (req, res) => {
-  const { question, history = [] } = req.body as {
+  const { question, sessionId = "default" } = req.body as {
     question: string;
-    history?: { role: "user" | "assistant"; content: string }[];
+    sessionId?: string;
   };
   if (!question?.trim()) return res.status(400).json({ error: "question is required" });
 
@@ -173,59 +182,70 @@ router.post("/chatbot/message", authenticate, async (req, res) => {
     await ensureKB();
     const genAI = getGenAI();
 
-    // 1. Semantic retrieval via cosine similarity on embeddings
-    const contextChunks = await retrieveContext(question, 4);
-
-    // 2. Build prompt — use strict system prompt when KB has docs
+    // 1. Get system prompt (built from all KB documents)
     const systemPrompt = getSystemPrompt();
-    let promptToUse: string;
 
-    if (systemPrompt && contextChunks.length > 0) {
-      // Include the most relevant chunks highlighted
-      const chunkContext = contextChunks
-        .map((c, i) => `--- [${i + 1}] ${c.docTitle} (관련도: ${(c.score * 100).toFixed(0)}%) ---\n${c.text}`)
-        .join("\n\n");
+    // 2. Retrieve most relevant context chunks via cosine similarity
+    const relevantChunks = await retrieveContext(question, 4);
+    const contextText = relevantChunks
+      .map((c, i) => `[관련 문서 ${i + 1} — ${c.docTitle} (관련도 ${(c.score * 100).toFixed(0)}%)]\n${c.text}`)
+      .join("\n\n");
 
-      promptToUse = `${systemPrompt}
+    // 3. Augment the user message with retrieved context (prepend, as per RAG best practice)
+    const augmentedMessage = relevantChunks.length > 0
+      ? `[검색된 관련 내용]\n${contextText}\n\n[사용자 질문]\n${question}`
+      : question;
 
-## 이 질문에 가장 관련 있는 섹션
-${chunkContext}`;
-    } else if (systemPrompt) {
-      promptToUse = systemPrompt;
-    } else {
-      promptToUse = `당신은 Edubee Camp의 AI 어시스턴트입니다. 등록된 지식 베이스가 아직 없습니다. 일반적인 질문에 친절하게 답변하되, 플랫폼 내부 정보는 알 수 없다고 안내해주세요. 사용자와 같은 언어로 답변하세요.`;
-    }
+    // 4. Load / initialize session history
+    if (!sessions.has(sessionId)) sessions.set(sessionId, []);
+    const history = sessions.get(sessionId)!;
 
-    // 3. Build conversation history
-    const chatHistory = history.map((m) => ({
-      role: (m.role === "assistant" ? "model" : "user") as "model" | "user",
-      parts: [{ text: m.content }],
-    }));
-
-    // 4. Stream SSE response
+    // 5. Stream SSE response
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    const allContents = [
-      { role: "user" as const, parts: [{ text: promptToUse }] },
-      { role: "model" as const, parts: [{ text: "네, 내부 문서를 바탕으로 답변 드리겠습니다." }] },
-      ...chatHistory,
-      { role: "user" as const, parts: [{ text: question }] },
+    // Build contents: last 10 turns from session + augmented current message
+    const contents: Turn[] = [
+      ...history.slice(-10),
+      { role: "user", parts: [{ text: augmentedMessage }] },
     ];
+
+    const config = systemPrompt
+      ? { systemInstruction: systemPrompt }
+      : undefined;
 
     const stream = await genAI.models.generateContentStream({
       model: "gemini-2.5-flash",
-      contents: allContents,
+      config,
+      contents,
     });
-    const sources = [...new Set(contextChunks.map((c) => c.docTitle))];
 
+    let fullReply = "";
     for await (const chunk of stream) {
       const text = chunk.text;
-      if (text) res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+      if (text) {
+        fullReply += text;
+        res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+      }
     }
 
-    res.write(`data: ${JSON.stringify({ done: true, sources })}\n\n`);
+    // 6. Save turn to session history (original question, not augmented)
+    history.push(
+      { role: "user", parts: [{ text: question }] },
+      { role: "model", parts: [{ text: fullReply }] }
+    );
+
+    // 7. Send metadata in done event
+    const sources = [...new Set(relevantChunks.map((c) => c.docTitle))];
+    const topScore = relevantChunks[0]?.score;
+    res.write(`data: ${JSON.stringify({
+      done: true,
+      sources,
+      chunksUsed: relevantChunks.length,
+      topScore: topScore != null ? parseFloat(topScore.toFixed(3)) : null,
+      sessionId,
+    })}\n\n`);
     res.end();
   } catch (e: any) {
     console.error("[chatbot/message]", e);

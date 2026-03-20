@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Bot, Send, Plus, Trash2, FileText, Link2, Loader2, RefreshCw, X, ChevronDown } from "lucide-react";
+import { Bot, Send, Plus, Trash2, FileText, Link2, Loader2, X, RotateCcw, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +10,17 @@ import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-type ChatMessage = { role: "user" | "assistant"; content: string; sources?: string[] };
+function genSessionId() {
+  return `s_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+  sources?: string[];
+  chunksUsed?: number;
+  topScore?: number | null;
+};
 type Doc = { id: string; title: string; source?: string; sourceType: string; createdAt: string; preview: string };
 
 export default function ChatbotAdminPage() {
@@ -19,6 +29,7 @@ export default function ChatbotAdminPage() {
   const qc = useQueryClient();
 
   // ─── Chat state ────────────────────────────────────────────────────────
+  const [sessionId, setSessionId] = useState(genSessionId);
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "assistant", content: "안녕하세요! Edubee Camp AI 어시스턴트입니다. 지식 베이스에 등록된 문서를 기반으로 질문에 답변드립니다. 무엇이 궁금하신가요?" },
   ]);
@@ -26,14 +37,32 @@ export default function ChatbotAdminPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const clearSession = useCallback(async () => {
+    const newSessionId = genSessionId();
+    // Tell server to drop old session history
+    try {
+      const token = localStorage.getItem("edubee_token");
+      await fetch(`${BASE}/api/chatbot/session/${sessionId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch {}
+    setSessionId(newSessionId);
+    setMessages([
+      { role: "assistant", content: "대화가 초기화되었습니다. 새로운 질문을 입력하세요!" },
+    ]);
+  }, [sessionId]);
 
   const sendMessage = async () => {
     const question = input.trim();
     if (!question || isStreaming) return;
     setInput("");
+
     const userMsg: ChatMessage = { role: "user", content: question };
-    const history = messages.slice(-8).map(m => ({ role: m.role, content: m.content }));
     setMessages(prev => [...prev, userMsg, { role: "assistant", content: "" }]);
     setIsStreaming(true);
 
@@ -42,7 +71,7 @@ export default function ChatbotAdminPage() {
       const resp = await fetch(`${BASE}/api/chatbot/message`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ question, history }),
+        body: JSON.stringify({ question, sessionId }),
       });
       if (!resp.ok) throw new Error("요청 실패");
 
@@ -50,6 +79,8 @@ export default function ChatbotAdminPage() {
       const decoder = new TextDecoder();
       let assistantText = "";
       let sources: string[] = [];
+      let chunksUsed = 0;
+      let topScore: number | null = null;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -67,18 +98,27 @@ export default function ChatbotAdminPage() {
                 return updated;
               });
             }
-            if (data.sources) sources = data.sources;
+            if (data.done) {
+              sources = data.sources ?? [];
+              chunksUsed = data.chunksUsed ?? 0;
+              topScore = data.topScore ?? null;
+            }
             if (data.error) throw new Error(data.error);
           } catch {}
         }
       }
-      if (sources.length > 0) {
-        setMessages(prev => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: "assistant", content: assistantText, sources };
-          return updated;
-        });
-      }
+
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: assistantText,
+          sources: sources.length > 0 ? sources : undefined,
+          chunksUsed: chunksUsed > 0 ? chunksUsed : undefined,
+          topScore,
+        };
+        return updated;
+      });
     } catch (e: any) {
       setMessages(prev => {
         const updated = [...prev];
@@ -106,6 +146,7 @@ export default function ChatbotAdminPage() {
   const { data: status } = useQuery({
     queryKey: ["chatbot-status"],
     queryFn: () => axios.get(`${BASE}/api/chatbot/status`).then(r => r.data),
+    refetchInterval: 5000,
   });
 
   const addDoc = useMutation({
@@ -116,7 +157,7 @@ export default function ChatbotAdminPage() {
       qc.invalidateQueries({ queryKey: ["chatbot-status"] });
       setDocForm({ title: "", content: "" });
       setAddMode(null);
-      toast({ title: "문서가 추가되었습니다" });
+      toast({ title: "문서가 추가되었습니다", description: "임베딩 생성 중... 잠시 후 검색에 반영됩니다." });
     },
     onError: () => toast({ variant: "destructive", title: "추가 실패" }),
   });
@@ -147,7 +188,7 @@ export default function ChatbotAdminPage() {
       qc.invalidateQueries({ queryKey: ["chatbot-status"] });
       setGoogleUrl("");
       setAddMode(null);
-      toast({ title: `"${data.title}" 문서를 가져왔습니다` });
+      toast({ title: `"${data.title}" 문서를 가져왔습니다`, description: "임베딩 생성 중... 잠시 후 검색에 반영됩니다." });
     } catch (e: any) {
       toast({ variant: "destructive", title: "Google Docs 오류", description: e.message });
     } finally {
@@ -161,6 +202,9 @@ export default function ChatbotAdminPage() {
     file:       { label: "파일 업로드", className: "bg-purple-50 text-purple-700" },
   };
 
+  const kbChunks = status?.totalChunks ?? 0;
+  const kbDocs   = status?.documentCount ?? 0;
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
@@ -172,7 +216,7 @@ export default function ChatbotAdminPage() {
           <div>
             <h1 className="font-semibold text-base text-foreground">AI 챗봇</h1>
             <p className="text-xs text-muted-foreground">
-              Gemini 2.5 Flash · 지식 베이스 {status?.documentCount ?? 0}개 문서
+              Gemini 2.5 Flash · 문서 {kbDocs}개 · 청크 {kbChunks}개
             </p>
           </div>
         </div>
@@ -211,25 +255,39 @@ export default function ChatbotAdminPage() {
                       ? "bg-[#F5821F] text-white rounded-tr-sm"
                       : "bg-muted text-foreground rounded-tl-sm"
                   }`}>
-                    {msg.content}
-                    {msg.role === "assistant" && isStreaming && i === messages.length - 1 && msg.content === "" && (
-                      <span className="inline-flex gap-1 items-center">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#F5821F] animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#F5821F] animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#F5821F] animate-bounce" style={{ animationDelay: "300ms" }} />
-                      </span>
+                    {msg.content || (
+                      isStreaming && i === messages.length - 1 ? (
+                        <span className="inline-flex gap-1 items-center h-4">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#F5821F] animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#F5821F] animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#F5821F] animate-bounce" style={{ animationDelay: "300ms" }} />
+                        </span>
+                      ) : null
                     )}
                   </div>
-                  {msg.sources && msg.sources.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 px-1">
-                      <span className="text-[10px] text-muted-foreground">출처:</span>
-                      {msg.sources.map((s, si) => (
-                        <span key={si} className="text-[10px] bg-[#F5821F]/8 text-[#F5821F] px-2 py-0.5 rounded-full">
-                          {s}
+
+                  {/* Sources & RAG metadata */}
+                  {msg.role === "assistant" && (msg.sources?.length || msg.chunksUsed) ? (
+                    <div className="flex flex-wrap items-center gap-1.5 px-1">
+                      {msg.chunksUsed != null && msg.chunksUsed > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] bg-[#F5821F]/8 text-[#F5821F] px-2 py-0.5 rounded-full">
+                          <Zap className="w-2.5 h-2.5" />
+                          {msg.chunksUsed}개 청크 검색됨
+                          {msg.topScore != null && ` · 관련도 ${(msg.topScore * 100).toFixed(0)}%`}
                         </span>
-                      ))}
+                      )}
+                      {msg.sources && msg.sources.length > 0 && (
+                        <>
+                          <span className="text-[10px] text-muted-foreground">출처:</span>
+                          {msg.sources.map((s, si) => (
+                            <span key={si} className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                              {s}
+                            </span>
+                          ))}
+                        </>
+                      )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             ))}
@@ -256,9 +314,18 @@ export default function ChatbotAdminPage() {
                 {isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
-            <p className="text-[10px] text-muted-foreground/60 mt-1.5 pl-0.5">
-              지식 베이스에 등록된 문서를 바탕으로 답변합니다
-            </p>
+            <div className="flex items-center justify-between mt-1.5 px-0.5">
+              <p className="text-[10px] text-muted-foreground/60">
+                지식 베이스 문서를 기반으로 코사인 유사도 검색 후 답변합니다
+              </p>
+              <button
+                onClick={clearSession}
+                className="flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              >
+                <RotateCcw className="w-2.5 h-2.5" />
+                대화 초기화
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -269,7 +336,7 @@ export default function ChatbotAdminPage() {
           {/* Action buttons */}
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              총 <strong>{docs.length}</strong>개의 문서가 등록되어 있습니다
+              총 <strong>{docs.length}</strong>개 문서 · <strong>{kbChunks}</strong>개 청크 임베딩됨
             </p>
             <div className="flex gap-2">
               <Button
