@@ -1,0 +1,166 @@
+/**
+ * Knowledge Base Management Routes
+ * 
+ * GET    /api/docs/list              - List all documents in KB
+ * POST   /api/docs/google            - Add Google Doc by URL or ID
+ * POST   /api/docs/sync-all          - Re-sync all Google Docs
+ * DELETE /api/docs/:docId            - Remove document from KB
+ * GET    /api/docs/status            - KB health status
+ * POST   /api/docs/upload            - Upload .txt/.md file directly
+ */
+
+import { Router } from "express";
+import multer from "multer";
+import {
+  loadGoogleDoc,
+  loadLocalFile,
+  addDocument,
+  removeDocument,
+  getKnowledgeBase,
+} from "../knowledge-store.js";
+
+const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+// In-memory registry of synced Google Docs
+// In production: store in DB (the Drizzle schema you already have)
+const googleDocsRegistry = new Map();
+// Format: { docId → { docId, title, url, addedAt } }
+
+// ─── List all documents ────────────────────────────────────────────────
+router.get("/list", (req, res) => {
+  const kb = getKnowledgeBase();
+  const registeredDocs = [...googleDocsRegistry.values()];
+  res.json({ ...kb, registeredDocs });
+});
+
+// ─── Knowledge base status ─────────────────────────────────────────────
+router.get("/status", (req, res) => {
+  const kb = getKnowledgeBase();
+  res.json({
+    ready: kb.documents.length > 0,
+    documentCount: kb.documents.length,
+    totalChunks: kb.totalChunks,
+    lastRefresh: kb.lastCacheRefresh,
+  });
+});
+
+// ─── Add Google Doc by URL ─────────────────────────────────────────────
+/**
+ * POST /api/docs/google
+ * Body: { url: "https://docs.google.com/document/d/DOCID/edit", title?: "..." }
+ *    OR { docId: "...", title?: "..." }
+ */
+router.post("/google", async (req, res) => {
+  try {
+    let { url, docId, title } = req.body;
+
+    // Extract docId from URL if provided
+    if (url && !docId) {
+      const match = url.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
+      if (!match) {
+        return res.status(400).json({ error: "유효하지 않은 Google Docs URL입니다." });
+      }
+      docId = match[1];
+    }
+
+    if (!docId) {
+      return res.status(400).json({ error: "url 또는 docId가 필요합니다." });
+    }
+
+    console.log(`📄 Loading Google Doc: ${docId}`);
+    const docData = await loadGoogleDoc(docId, title);
+    await addDocument(docData);
+
+    // Save to registry
+    googleDocsRegistry.set(docId, {
+      docId,
+      title: docData.title,
+      url: `https://docs.google.com/document/d/${docId}`,
+      addedAt: new Date().toISOString(),
+      chunkCount: docData.chunkCount,
+    });
+
+    res.json({
+      success: true,
+      document: {
+        id: docData.id,
+        title: docData.title,
+        chunkCount: docData.chunkCount,
+        source: "google_docs",
+      },
+    });
+  } catch (err) {
+    console.error("Google Doc load error:", err.message);
+    res.status(500).json({
+      error: "Google Doc을 불러오지 못했습니다.",
+      detail: err.message,
+      tip: "서비스 계정이 해당 문서에 접근 권한이 있는지 확인하세요.",
+    });
+  }
+});
+
+// ─── Re-sync all registered Google Docs ────────────────────────────────
+router.post("/sync-all", async (req, res) => {
+  const results = [];
+  for (const { docId, title } of googleDocsRegistry.values()) {
+    try {
+      const docData = await loadGoogleDoc(docId, title);
+      await addDocument(docData);
+      results.push({ docId, title, status: "synced" });
+    } catch (err) {
+      results.push({ docId, title, status: "error", error: err.message });
+    }
+  }
+  res.json({ synced: results.filter((r) => r.status === "synced").length, results });
+});
+
+// ─── Upload local .txt or .md file ─────────────────────────────────────
+router.post("/upload", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "파일이 없습니다." });
+  }
+
+  const ext = req.file.originalname.split(".").pop().toLowerCase();
+  if (!["txt", "md"].includes(ext)) {
+    return res.status(400).json({ error: ".txt 또는 .md 파일만 지원됩니다." });
+  }
+
+  try {
+    const content = req.file.buffer.toString("utf-8");
+    const title = req.body.title || req.file.originalname;
+
+    const docData = {
+      id: `upload-${Date.now()}`,
+      title,
+      source: "file_upload",
+      sourceUrl: req.file.originalname,
+      content,
+      lastUpdated: new Date().toISOString(),
+    };
+
+    await addDocument(docData);
+
+    res.json({
+      success: true,
+      document: {
+        id: docData.id,
+        title: docData.title,
+        chunkCount: docData.chunkCount,
+        source: "file_upload",
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: "파일 처리 실패", detail: err.message });
+  }
+});
+
+// ─── Remove document ────────────────────────────────────────────────────
+router.delete("/:docId", (req, res) => {
+  const { docId } = req.params;
+  removeDocument(docId);
+  googleDocsRegistry.delete(docId);
+  res.json({ success: true, removed: docId });
+});
+
+export default router;

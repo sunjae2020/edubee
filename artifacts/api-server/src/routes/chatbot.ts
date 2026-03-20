@@ -1,4 +1,5 @@
 import { Router } from "express";
+import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
 import { db } from "@workspace/db";
 import { chatDocuments } from "@workspace/db/schema";
@@ -18,8 +19,12 @@ import {
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+});
+
 // ─── Server-side session history store ────────────────────────────────────
-// Stores last N turns per sessionId (mirrors the reference architecture)
 type Turn = { role: "user" | "model"; parts: { text: string }[] };
 const sessions = new Map<string, Turn[]>();
 
@@ -86,7 +91,6 @@ router.post("/chatbot/docs", authenticate, requireRole(...ADMIN_ROLES), async (r
       .values({ title, content, source, sourceType })
       .returning();
 
-    // Generate embeddings in background
     ensureKB().then(() =>
       addDocumentToKB(doc.id, title, content, source, sourceType)
         .catch((e) => console.error("[KB] embed error:", e))
@@ -99,15 +103,116 @@ router.post("/chatbot/docs", authenticate, requireRole(...ADMIN_ROLES), async (r
   }
 });
 
-// ─── DELETE /api/chatbot/docs/:id ─────────────────────────────────────────
-router.delete("/chatbot/docs/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+// ─── POST /api/chatbot/docs/upload — .txt / .md file upload ───────────────
+router.post(
+  "/chatbot/docs/upload",
+  authenticate,
+  requireRole(...ADMIN_ROLES),
+  upload.single("file"),
+  async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "파일이 없습니다." });
+
+    const ext = req.file.originalname.split(".").pop()?.toLowerCase();
+    if (!["txt", "md"].includes(ext ?? "")) {
+      return res.status(400).json({ error: ".txt 또는 .md 파일만 지원됩니다." });
+    }
+
+    try {
+      const content = req.file.buffer.toString("utf-8").trim();
+      if (!content) return res.status(400).json({ error: "파일 내용이 비어 있습니다." });
+
+      const title: string = (req.body.title as string) || req.file.originalname;
+
+      const [doc] = await db.insert(chatDocuments).values({
+        title,
+        content,
+        source: req.file.originalname,
+        sourceType: "file",
+      }).returning();
+
+      ensureKB().then(() =>
+        addDocumentToKB(doc.id, title, content, req.file!.originalname, "file")
+          .catch((e) => console.error("[KB] embed error:", e))
+      );
+
+      return res.status(201).json({
+        success: true,
+        document: { id: doc.id, title: doc.title, source: doc.source },
+      });
+    } catch (e: any) {
+      console.error("[chatbot/upload]", e);
+      return res.status(500).json({ error: "파일 처리 실패", detail: e?.message });
+    }
+  }
+);
+
+// ─── POST /api/chatbot/docs/sync-all — re-sync all Google Docs ────────────
+router.post("/chatbot/docs/sync-all", authenticate, requireRole(...ADMIN_ROLES), async (_req, res) => {
+  const saJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (!saJson) {
+    return res.status(503).json({ error: "GOOGLE_SERVICE_ACCOUNT_JSON is not configured." });
+  }
+
   try {
-    await db.delete(chatDocuments).where(eq(chatDocuments.id, req.params.id));
-    await ensureKB();
-    await removeDocumentFromKB(req.params.id);
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ error: "Failed to delete document" });
+    const googleDocs = await db.select().from(chatDocuments)
+      .where(eq(chatDocuments.sourceType, "google_doc"));
+
+    if (googleDocs.length === 0) {
+      return res.json({ synced: 0, results: [] });
+    }
+
+    const { google } = await import("googleapis");
+    const credentials = JSON.parse(saJson);
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: [
+        "https://www.googleapis.com/auth/documents.readonly",
+        "https://www.googleapis.com/auth/drive.readonly",
+      ],
+    });
+    const docsApi = google.docs({ version: "v1", auth });
+
+    const results: { title: string; status: string; error?: string }[] = [];
+
+    for (const dbDoc of googleDocs) {
+      try {
+        const urlMatch = dbDoc.source?.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
+        if (!urlMatch) throw new Error("Cannot parse Google Doc ID from source URL");
+        const gdocId = urlMatch[1];
+
+        const docRes = await docsApi.documents.get({ documentId: gdocId });
+        const freshContent = extractTextFromGoogleDoc(docRes.data);
+        if (!freshContent) throw new Error("Document appears to be empty");
+
+        // Update DB content
+        await db.update(chatDocuments)
+          .set({ content: freshContent, title: docRes.data.title ?? dbDoc.title })
+          .where(eq(chatDocuments.id, dbDoc.id));
+
+        // Re-embed
+        await ensureKB();
+        await addDocumentToKB(
+          dbDoc.id,
+          docRes.data.title ?? dbDoc.title,
+          freshContent,
+          dbDoc.source ?? undefined,
+          "google_doc"
+        );
+
+        results.push({ title: dbDoc.title, status: "synced" });
+      } catch (e: any) {
+        results.push({ title: dbDoc.title, status: "error", error: e?.message });
+      }
+    }
+
+    return res.json({
+      synced: results.filter((r) => r.status === "synced").length,
+      errors: results.filter((r) => r.status === "error").length,
+      results,
+    });
+  } catch (e: any) {
+    console.error("[chatbot/sync-all]", e);
+    return res.status(500).json({ error: e?.message ?? "Sync failed" });
   }
 });
 
@@ -142,14 +247,13 @@ router.post("/chatbot/docs/google", authenticate, requireRole(...ADMIN_ROLES), a
     const docData = docRes.data;
 
     const title = docData.title ?? "Untitled Document";
-    const content = extractTextFromGoogleDoc(docData); // handles paragraphs + tables
+    const content = extractTextFromGoogleDoc(docData);
     if (!content) return res.status(400).json({ error: "Document appears to be empty" });
 
     const [doc] = await db.insert(chatDocuments).values({
       title, content, source: url, sourceType: "google_doc",
     }).returning();
 
-    // Generate embeddings in background
     ensureKB().then(() =>
       addDocumentToKB(doc.id, title, content, url, "google_doc")
         .catch((e) => console.error("[KB] embed error:", e))
@@ -161,6 +265,18 @@ router.post("/chatbot/docs/google", authenticate, requireRole(...ADMIN_ROLES), a
     if (e?.status === 403) return res.status(403).json({ error: "Access denied. Share the document with the service account email." });
     if (e?.status === 404) return res.status(404).json({ error: "Document not found." });
     return res.status(500).json({ error: e?.message ?? "Failed to fetch Google Doc" });
+  }
+});
+
+// ─── DELETE /api/chatbot/docs/:id ─────────────────────────────────────────
+router.delete("/chatbot/docs/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    await db.delete(chatDocuments).where(eq(chatDocuments.id, req.params.id));
+    await ensureKB();
+    await removeDocumentFromKB(req.params.id);
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: "Failed to delete document" });
   }
 });
 
@@ -182,38 +298,30 @@ router.post("/chatbot/message", authenticate, async (req, res) => {
     await ensureKB();
     const genAI = getGenAI();
 
-    // 1. Get system prompt (built from all KB documents)
     const systemPrompt = getSystemPrompt();
 
-    // 2. Retrieve most relevant context chunks via cosine similarity
     const relevantChunks = await retrieveContext(question, 4);
     const contextText = relevantChunks
       .map((c, i) => `[관련 문서 ${i + 1} — ${c.docTitle} (관련도 ${(c.score * 100).toFixed(0)}%)]\n${c.text}`)
       .join("\n\n");
 
-    // 3. Augment the user message with retrieved context (prepend, as per RAG best practice)
     const augmentedMessage = relevantChunks.length > 0
       ? `[검색된 관련 내용]\n${contextText}\n\n[사용자 질문]\n${question}`
       : question;
 
-    // 4. Load / initialize session history
     if (!sessions.has(sessionId)) sessions.set(sessionId, []);
     const history = sessions.get(sessionId)!;
 
-    // 5. Stream SSE response
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    // Build contents: last 10 turns from session + augmented current message
     const contents: Turn[] = [
       ...history.slice(-10),
       { role: "user", parts: [{ text: augmentedMessage }] },
     ];
 
-    const config = systemPrompt
-      ? { systemInstruction: systemPrompt }
-      : undefined;
+    const config = systemPrompt ? { systemInstruction: systemPrompt } : undefined;
 
     const stream = await genAI.models.generateContentStream({
       model: "gemini-2.5-flash",
@@ -230,13 +338,11 @@ router.post("/chatbot/message", authenticate, async (req, res) => {
       }
     }
 
-    // 6. Save turn to session history (original question, not augmented)
     history.push(
       { role: "user", parts: [{ text: question }] },
       { role: "model", parts: [{ text: fullReply }] }
     );
 
-    // 7. Send metadata in done event
     const sources = [...new Set(relevantChunks.map((c) => c.docTitle))];
     const topScore = relevantChunks[0]?.score;
     res.write(`data: ${JSON.stringify({

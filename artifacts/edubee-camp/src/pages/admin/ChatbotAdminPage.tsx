@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Bot, Send, Plus, Trash2, FileText, Link2, Loader2, X, RotateCcw, Zap } from "lucide-react";
+import { Bot, Send, Plus, Trash2, FileText, Link2, Loader2, X, RotateCcw, Zap, Upload, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -132,10 +132,15 @@ export default function ChatbotAdminPage() {
   };
 
   // ─── Docs state ────────────────────────────────────────────────────────
-  const [addMode, setAddMode] = useState<"manual" | "google" | null>(null);
+  const [addMode, setAddMode] = useState<"manual" | "google" | "file" | null>(null);
   const [docForm, setDocForm] = useState({ title: "", content: "" });
   const [googleUrl, setGoogleUrl] = useState("");
   const [importingGoogle, setImportingGoogle] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [syncingAll, setSyncingAll] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: docs = [], isLoading: docsLoading } = useQuery<Doc[]>({
     queryKey: ["chatbot-docs"],
@@ -193,6 +198,57 @@ export default function ChatbotAdminPage() {
       toast({ variant: "destructive", title: "Google Docs 오류", description: e.message });
     } finally {
       setImportingGoogle(false);
+    }
+  };
+
+  const uploadDoc = async () => {
+    if (!uploadFile) return;
+    setUploadingFile(true);
+    try {
+      const token = localStorage.getItem("edubee_token");
+      const formData = new FormData();
+      formData.append("file", uploadFile);
+      if (uploadTitle.trim()) formData.append("title", uploadTitle.trim());
+      const res = await fetch(`${BASE}/api/chatbot/docs/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "업로드 실패");
+      qc.invalidateQueries({ queryKey: ["chatbot-docs"] });
+      qc.invalidateQueries({ queryKey: ["chatbot-status"] });
+      setUploadFile(null);
+      setUploadTitle("");
+      setAddMode(null);
+      toast({ title: `"${data.document?.title}" 파일 업로드 완료`, description: "임베딩 생성 중... 잠시 후 검색에 반영됩니다." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "업로드 오류", description: e.message });
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const syncAllDocs = async () => {
+    setSyncingAll(true);
+    try {
+      const token = localStorage.getItem("edubee_token");
+      const res = await fetch(`${BASE}/api/chatbot/docs/sync-all`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "동기화 실패");
+      qc.invalidateQueries({ queryKey: ["chatbot-docs"] });
+      qc.invalidateQueries({ queryKey: ["chatbot-status"] });
+      toast({
+        title: `Google Docs 동기화 완료`,
+        description: `${data.synced}개 문서 갱신${data.errors ? ` · ${data.errors}개 오류` : ""}`,
+      });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "동기화 오류", description: e.message });
+    } finally {
+      setSyncingAll(false);
     }
   };
 
@@ -334,11 +390,25 @@ export default function ChatbotAdminPage() {
       {activeTab === "docs" && (
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {/* Action buttons */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <p className="text-sm text-muted-foreground">
               총 <strong>{docs.length}</strong>개 문서 · <strong>{kbChunks}</strong>개 청크 임베딩됨
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              {docs.some(d => d.sourceType === "google_doc") && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 text-xs"
+                  onClick={syncAllDocs}
+                  disabled={syncingAll}
+                >
+                  {syncingAll
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 동기화 중...</>
+                    : <><RefreshCw className="w-3.5 h-3.5" /> Google Docs 재동기화</>
+                  }
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -346,6 +416,14 @@ export default function ChatbotAdminPage() {
                 onClick={() => setAddMode(addMode === "google" ? null : "google")}
               >
                 <Link2 className="w-3.5 h-3.5" /> Google Docs 추가
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
+                onClick={() => setAddMode(addMode === "file" ? null : "file")}
+              >
+                <Upload className="w-3.5 h-3.5" /> 파일 업로드
               </Button>
               <Button
                 size="sm"
@@ -414,6 +492,64 @@ export default function ChatbotAdminPage() {
                   onClick={importGoogleDoc}
                 >
                   {importingGoogle ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 가져오는 중...</> : "가져오기"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* File upload form */}
+          {addMode === "file" && (
+            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold">파일 업로드</h3>
+                <button onClick={() => { setAddMode(null); setUploadFile(null); setUploadTitle(""); }}>
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">.txt 또는 .md 파일을 업로드하면 자동으로 임베딩됩니다. 최대 5MB.</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.md"
+                className="hidden"
+                onChange={e => {
+                  const f = e.target.files?.[0] ?? null;
+                  setUploadFile(f);
+                  if (f && !uploadTitle) setUploadTitle(f.name.replace(/\.[^.]+$/, ""));
+                }}
+              />
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors ${
+                  uploadFile
+                    ? "border-[#F5821F]/50 bg-[#F5821F]/5"
+                    : "border-border hover:border-[#F5821F]/40 hover:bg-muted/50"
+                }`}
+              >
+                <Upload className={`w-6 h-6 ${uploadFile ? "text-[#F5821F]" : "text-muted-foreground/40"}`} />
+                {uploadFile ? (
+                  <p className="text-sm font-medium text-[#F5821F]">{uploadFile.name}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">클릭하여 파일 선택</p>
+                )}
+                <p className="text-[10px] text-muted-foreground/60">.txt · .md · 최대 5MB</p>
+              </div>
+              {uploadFile && (
+                <Input
+                  placeholder="문서 제목 (선택 — 비워두면 파일명 사용)"
+                  value={uploadTitle}
+                  onChange={e => setUploadTitle(e.target.value)}
+                />
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setAddMode(null); setUploadFile(null); setUploadTitle(""); }}>취소</Button>
+                <Button
+                  size="sm"
+                  className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5"
+                  disabled={!uploadFile || uploadingFile}
+                  onClick={uploadDoc}
+                >
+                  {uploadingFile ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 업로드 중...</> : "업로드"}
                 </Button>
               </div>
             </div>
