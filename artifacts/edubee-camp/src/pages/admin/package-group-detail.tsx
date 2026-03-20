@@ -288,6 +288,30 @@ export default function PackageGroupDetail() {
                 editValue={getValue("location")} onEdit={v => setField("location", v)} />
               <EditableField label="Country Code" isEditing={isEditing} value={group.countryCode}
                 editValue={getValue("countryCode")} onEdit={v => setField("countryCode", v)} />
+              <DetailRow label="Start Date">
+                {isEditing ? (
+                  <input
+                    type="date"
+                    value={getValue("startDate") ? new Date(getValue("startDate")).toISOString().slice(0, 10) : ""}
+                    onChange={e => setField("startDate", e.target.value ? new Date(e.target.value).toISOString() : null)}
+                    className="h-8 px-2 text-sm border border-[#F5821F] rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F] w-full"
+                  />
+                ) : (
+                  <span className="text-sm">{group.startDate ? format(new Date(group.startDate), "PPP") : <span className="text-muted-foreground/60">—</span>}</span>
+                )}
+              </DetailRow>
+              <DetailRow label="End Date">
+                {isEditing ? (
+                  <input
+                    type="date"
+                    value={getValue("endDate") ? new Date(getValue("endDate")).toISOString().slice(0, 10) : ""}
+                    onChange={e => setField("endDate", e.target.value ? new Date(e.target.value).toISOString() : null)}
+                    className="h-8 px-2 text-sm border border-[#F5821F] rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F] w-full"
+                  />
+                ) : (
+                  <span className="text-sm">{group.endDate ? format(new Date(group.endDate), "PPP") : <span className="text-muted-foreground/60">—</span>}</span>
+                )}
+              </DetailRow>
             </DetailSection>
             <DetailSection title="Settings">
               <EditableField label="Status" isEditing={isEditing} value={group.status}

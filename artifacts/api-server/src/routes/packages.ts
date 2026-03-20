@@ -137,9 +137,14 @@ router.put("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES, "cam
       landingOrder: body.landingOrder !== undefined ? toIntOrNull(body.landingOrder) : undefined,
       updatedAt: new Date(),
     };
+    // Coerce date fields — they may arrive as ISO strings or null
+    const toDateOrNull = (v: unknown) => (v === null || v === "" || v === undefined) ? null : new Date(String(v));
+    if (body.startDate !== undefined) (payload as any).startDate = toDateOrNull(body.startDate);
+    if (body.endDate !== undefined) (payload as any).endDate = toDateOrNull(body.endDate);
+
     // Strip computed/unknown fields that aren't in the schema
-    const allowed = ["campProviderId","nameEn","nameKo","nameJa","nameTh","descriptionEn","descriptionKo","descriptionJa","descriptionTh","thumbnailUrl","location","countryCode","status","sortOrder","landingOrder","updatedAt"] as const;
-    const cleanPayload = Object.fromEntries(allowed.filter(k => payload[k] !== undefined).map(k => [k, payload[k]]));
+    const allowed = ["campProviderId","nameEn","nameKo","nameJa","nameTh","descriptionEn","descriptionKo","descriptionJa","descriptionTh","thumbnailUrl","location","countryCode","status","sortOrder","landingOrder","startDate","endDate","updatedAt"] as const;
+    const cleanPayload = Object.fromEntries(allowed.filter(k => (payload as any)[k] !== undefined).map(k => [k, (payload as any)[k]]));
     cleanPayload.updatedAt = new Date();
     const [group] = await db.update(packageGroups).set(cleanPayload as any)
       .where(eq(packageGroups.id, req.params.id)).returning();

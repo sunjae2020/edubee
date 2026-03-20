@@ -30,6 +30,8 @@ export const packageGroups = pgTable("package_groups", {
   status: varchar("status", { length: 20 }).default("draft"),
   sortOrder: integer("sort_order").default(0),
   landingOrder: integer("landing_order"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
