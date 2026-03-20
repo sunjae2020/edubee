@@ -1,5 +1,5 @@
 import { db } from "@workspace/db";
-import { users, packageGroups, packages, products, leads, applications, notifications, contracts, invoices, transactions, receipts, accountLedgerEntries, settlementMgt } from "@workspace/db";
+import { users, packageGroups, packages, products, packageGroupProducts, leads, applications, notifications, contracts, invoices, transactions, receipts, accountLedgerEntries, settlementMgt } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
@@ -357,6 +357,139 @@ async function seed() {
     console.log('✅ AR cycle seed complete');
   } else {
     console.log('⚠️  No contracts found — skipping AR cycle seed');
+  }
+
+  // ── PART 1: Products + PackageGroupProducts ───────────────────────────────
+
+  // 유저 UUID 조회 (실제 DB의 이메일 기준)
+  const allSeedUsers = await db.select().from(users);
+  const adminUser2     = allSeedUsers.find(u => u.email === 'admin@edubee.com');
+  const instituteUser  = allSeedUsers.find(u => u.email === 'institute@example.com');
+  const hotelUser      = allSeedUsers.find(u => u.email === 'hotel@example.com');
+  const driverUser     = allSeedUsers.find(u => u.email === 'driver@pickup.com');
+  const tourUser       = allSeedUsers.find(u => u.email === 'guide@tours.com');
+
+  if (adminUser2 && instituteUser && hotelUser && driverUser && tourUser) {
+    // ── 3개 신규 Package Group 생성 (없으면) ─────────────────────────────
+    await db.insert(packageGroups).values([
+      {
+        campProviderId: allSeedUsers.find(u => u.email === 'coordinator@edubee.com')?.id,
+        nameEn: 'Summer English Camp',
+        nameKo: '여름 영어 캠프',
+        nameJa: '夏の英語キャンプ',
+        nameTh: 'ค่ายภาษาอังกฤษฤดูร้อน',
+        descriptionEn: 'Intensive English immersion program in Cebu, Philippines',
+        location: 'Cebu, Philippines',
+        countryCode: 'PH',
+        status: 'active',
+        sortOrder: 10,
+      },
+      {
+        campProviderId: allSeedUsers.find(u => u.email === 'coordinator@edubee.com')?.id,
+        nameEn: 'Science & Tech Camp',
+        nameKo: '과학 & 기술 캠프',
+        nameJa: 'サイエンス＆テックキャンプ',
+        nameTh: 'ค่ายวิทยาศาสตร์และเทคโนโลยี',
+        descriptionEn: 'Hands-on STEM program in Singapore',
+        location: 'Singapore',
+        countryCode: 'SG',
+        status: 'active',
+        sortOrder: 11,
+      },
+      {
+        campProviderId: allSeedUsers.find(u => u.email === 'coordinator@edubee.com')?.id,
+        nameEn: 'Leadership Camp',
+        nameKo: '리더십 캠프',
+        nameJa: 'リーダーシップキャンプ',
+        nameTh: 'ค่ายผู้นำ',
+        descriptionEn: 'Leadership and communication program in Melbourne, Australia',
+        location: 'Melbourne, Australia',
+        countryCode: 'AU',
+        status: 'active',
+        sortOrder: 12,
+      },
+    ]).onConflictDoNothing();
+
+    // ── Products INSERT ──────────────────────────────────────────────────
+    const productSeedData = [
+      // Institute
+      { productName: 'Cebu English Immersion Program',        productType: 'institute', providerAccountId: instituteUser.id, description: 'Intensive English language program in Cebu — grammar, speaking, IELTS prep', cost: '850.00',  currency: 'USD', status: 'active' },
+      { productName: 'Singapore STEM Academy Program',         productType: 'institute', providerAccountId: instituteUser.id, description: 'Hands-on science and technology curriculum in Singapore',                    cost: '720.00',  currency: 'SGD', status: 'active' },
+      { productName: 'Melbourne Leadership Academy Program',   productType: 'institute', providerAccountId: instituteUser.id, description: 'Leadership skills, communication, and team-building program in Melbourne',  cost: '1100.00', currency: 'AUD', status: 'active' },
+      // Hotel
+      { productName: 'Cebu Student Guesthouse (Twin Share)',   productType: 'hotel',     providerAccountId: hotelUser.id,      description: 'Safe and comfortable student accommodation near Cebu English campus',     cost: '280.00',  currency: 'USD', status: 'active' },
+      { productName: 'Singapore Student Dormitory',            productType: 'hotel',     providerAccountId: hotelUser.id,      description: 'Modern dormitory accommodation near Orchard Road, Singapore',              cost: '420.00',  currency: 'SGD', status: 'active' },
+      { productName: 'Melbourne Student Lodge (Standard Room)', productType: 'hotel',    providerAccountId: hotelUser.id,      description: 'Fully serviced student lodge in Melbourne CBD',                           cost: '580.00',  currency: 'AUD', status: 'active' },
+      // Pickup
+      { productName: 'Mactan Cebu Airport Pickup',              productType: 'pickup',   providerAccountId: driverUser.id,     description: 'Airport to campus transfer — Mactan-Cebu International Airport',          cost: '25.00',   currency: 'USD', status: 'active' },
+      { productName: 'Changi Airport Transfer (Singapore)',     productType: 'pickup',   providerAccountId: driverUser.id,     description: 'Airport to dormitory transfer — Changi Airport T1/T2/T3',                 cost: '55.00',   currency: 'SGD', status: 'active' },
+      { productName: 'Melbourne Airport Shuttle (Tullamarine)', productType: 'pickup',   providerAccountId: driverUser.id,     description: 'Airport to lodge transfer — Melbourne Airport',                           cost: '75.00',   currency: 'AUD', status: 'active' },
+      // Tour
+      { productName: 'Cebu Island Discovery Tour',              productType: 'tour',     providerAccountId: tourUser.id,       description: "Magellan's Cross, Oslob whale shark, Kawasan Falls day tour",              cost: '55.00',   currency: 'USD', status: 'active' },
+      { productName: 'Singapore City & Sentosa Tour',           productType: 'tour',     providerAccountId: tourUser.id,       description: 'Marina Bay Sands, Gardens by the Bay, Sentosa Island half-day tour',      cost: '120.00',  currency: 'SGD', status: 'active' },
+      { productName: 'Melbourne Cultural Experience Tour',      productType: 'tour',     providerAccountId: tourUser.id,       description: 'Great Ocean Road, Eureka Tower, Queen Victoria Market full-day tour',     cost: '150.00',  currency: 'AUD', status: 'active' },
+      // Settlement
+      { productName: 'Edubee Platform Coordination Fee — PH',  productType: 'settlement', providerAccountId: adminUser2.id,   description: 'Platform management and coordination fee for Philippines programs',      cost: '0.00',    currency: 'USD', status: 'active' },
+      { productName: 'Edubee Platform Coordination Fee — SG',  productType: 'settlement', providerAccountId: adminUser2.id,   description: 'Platform management and coordination fee for Singapore programs',        cost: '0.00',    currency: 'SGD', status: 'active' },
+      { productName: 'Edubee Platform Coordination Fee — AU',  productType: 'settlement', providerAccountId: adminUser2.id,   description: 'Platform management and coordination fee for Australia programs',        cost: '0.00',    currency: 'AUD', status: 'active' },
+    ];
+
+    for (const p of productSeedData) {
+      await db.insert(products).values(p).onConflictDoNothing();
+    }
+
+    // 이름으로 product UUID 조회 헬퍼
+    const findProduct = async (name: string) => {
+      const [p] = await db.select().from(products).where(eq(products.productName, name));
+      return p;
+    };
+
+    // ── PackageGroupProducts INSERT ──────────────────────────────────────
+    const allPG = await db.select().from(packageGroups);
+    const pgEnglish = allPG.find(g => g.nameEn === 'Summer English Camp');
+    const pgStem    = allPG.find(g => g.nameEn === 'Science & Tech Camp');
+    const pgLeader  = allPG.find(g => g.nameEn === 'Leadership Camp');
+
+    if (pgEnglish && pgStem && pgLeader) {
+      const pgpSeedData = [
+        // Summer English Camp (Cebu, PH)
+        { pgId: pgEnglish.id, name: 'Cebu English Immersion Program',        qty: 1, price: '850.00'  },
+        { pgId: pgEnglish.id, name: 'Cebu Student Guesthouse (Twin Share)',   qty: 1, price: '280.00'  },
+        { pgId: pgEnglish.id, name: 'Mactan Cebu Airport Pickup',             qty: 2, price: '25.00'   },
+        { pgId: pgEnglish.id, name: 'Cebu Island Discovery Tour',             qty: 1, price: '55.00'   },
+        { pgId: pgEnglish.id, name: 'Edubee Platform Coordination Fee — PH',  qty: 1, price: '0.00'    },
+        // Science & Tech Camp (Singapore)
+        { pgId: pgStem.id,    name: 'Singapore STEM Academy Program',         qty: 1, price: '720.00'  },
+        { pgId: pgStem.id,    name: 'Singapore Student Dormitory',            qty: 1, price: '420.00'  },
+        { pgId: pgStem.id,    name: 'Changi Airport Transfer (Singapore)',    qty: 2, price: '55.00'   },
+        { pgId: pgStem.id,    name: 'Singapore City & Sentosa Tour',          qty: 1, price: '120.00'  },
+        { pgId: pgStem.id,    name: 'Edubee Platform Coordination Fee — SG',  qty: 1, price: '0.00'    },
+        // Leadership Camp (Melbourne, AU)
+        { pgId: pgLeader.id,  name: 'Melbourne Leadership Academy Program',   qty: 1, price: '1100.00' },
+        { pgId: pgLeader.id,  name: 'Melbourne Student Lodge (Standard Room)', qty: 1, price: '580.00'  },
+        { pgId: pgLeader.id,  name: 'Melbourne Airport Shuttle (Tullamarine)', qty: 2, price: '75.00'   },
+        { pgId: pgLeader.id,  name: 'Melbourne Cultural Experience Tour',     qty: 1, price: '150.00'  },
+        { pgId: pgLeader.id,  name: 'Edubee Platform Coordination Fee — AU',  qty: 1, price: '0.00'    },
+      ];
+
+      let linkedCount = 0;
+      for (const item of pgpSeedData) {
+        const prod = await findProduct(item.name);
+        if (!prod) { console.warn(`  ⚠️  Product not found: ${item.name}`); continue; }
+        await db.insert(packageGroupProducts).values({
+          packageGroupId: item.pgId,
+          productId:      prod.id,
+          quantity:       item.qty,
+          unitPrice:      item.price,
+        }).onConflictDoNothing();
+        linkedCount++;
+      }
+      console.log(`✅ Products seeded: ${productSeedData.length} | PackageGroupProducts linked: ${linkedCount}`);
+    } else {
+      console.warn('⚠️  One or more target package groups not found — skipping PackageGroupProducts');
+    }
+  } else {
+    console.warn('⚠️  Required partner users not found — skipping Products seed');
   }
 
   console.log("✅ Seed completed successfully!");

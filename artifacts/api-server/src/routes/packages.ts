@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { packageGroups, packages, products, enrollmentSpots, exchangeRates } from "@workspace/db/schema";
+import { packageGroups, packages, products, packageGroupProducts, enrollmentSpots, exchangeRates } from "@workspace/db/schema";
 import { eq, and, count, asc, SQL, ilike, desc, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -111,6 +111,71 @@ router.delete("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES), 
       .where(eq(packageGroups.id, req.params.id));
     return res.json({ success: true, message: "Package group archived" });
   } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Package-Group → Products links (PART 2)
+router.get("/package-groups/:id/products", authenticate, async (req, res) => {
+  try {
+    const rows = await db
+      .select({
+        linkId:           packageGroupProducts.id,
+        packageGroupId:   packageGroupProducts.packageGroupId,
+        quantity:         packageGroupProducts.quantity,
+        unitPrice:        packageGroupProducts.unitPrice,
+        productId:        products.id,
+        productName:      products.productName,
+        productType:      products.productType,
+        description:      products.description,
+        cost:             products.cost,
+        currency:         products.currency,
+        status:           products.status,
+        providerAccountId: products.providerAccountId,
+        productCreatedAt: products.createdAt,
+        productUpdatedAt: products.updatedAt,
+      })
+      .from(packageGroupProducts)
+      .innerJoin(products, eq(packageGroupProducts.productId, products.id))
+      .where(eq(packageGroupProducts.packageGroupId, req.params.id))
+      .orderBy(asc(products.productType), asc(products.productName));
+    return res.json(rows);
+  } catch (err) {
+    console.error("[GET /package-groups/:id/products]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/package-groups/:id/products", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { productId, quantity = 1, unitPrice } = req.body;
+    if (!productId) return res.status(400).json({ error: "productId is required" });
+    const [link] = await db.insert(packageGroupProducts).values({
+      packageGroupId: req.params.id,
+      productId,
+      quantity:  quantity  ?? 1,
+      unitPrice: unitPrice ?? null,
+    }).returning();
+    return res.status(201).json(link);
+  } catch (err: any) {
+    if (err?.code === "23505") return res.status(409).json({ error: "Product already linked to this package group" });
+    console.error("[POST /package-groups/:id/products]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/package-groups/:id/products/:productId", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const deleted = await db.delete(packageGroupProducts)
+      .where(and(
+        eq(packageGroupProducts.packageGroupId, req.params.id),
+        eq(packageGroupProducts.productId,      req.params.productId),
+      ))
+      .returning();
+    if (deleted.length === 0) return res.status(404).json({ error: "Link not found" });
+    return res.json({ success: true, message: "Product unlinked from package group" });
+  } catch (err) {
+    console.error("[DELETE /package-groups/:id/products/:productId]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -305,6 +370,33 @@ router.post("/products", authenticate, requireRole(...ADMIN_ROLES), async (req, 
   }
 });
 
+router.get("/products/:id/linked-groups", authenticate, async (req, res) => {
+  try {
+    const rows = await db
+      .select({
+        linkId:           packageGroupProducts.id,
+        quantity:         packageGroupProducts.quantity,
+        unitPrice:        packageGroupProducts.unitPrice,
+        packageGroupId:   packageGroups.id,
+        nameEn:           packageGroups.nameEn,
+        nameKo:           packageGroups.nameKo,
+        nameJa:           packageGroups.nameJa,
+        nameTh:           packageGroups.nameTh,
+        location:         packageGroups.location,
+        countryCode:      packageGroups.countryCode,
+        groupStatus:      packageGroups.status,
+      })
+      .from(packageGroupProducts)
+      .innerJoin(packageGroups, eq(packageGroupProducts.packageGroupId, packageGroups.id))
+      .where(eq(packageGroupProducts.productId, req.params.id))
+      .orderBy(asc(packageGroups.nameEn));
+    return res.json(rows);
+  } catch (err) {
+    console.error("[GET /products/:id/linked-groups]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.get("/products/:id", authenticate, async (req, res) => {
   try {
     const [product] = await db.select().from(products).where(eq(products.id, req.params.id)).limit(1);
@@ -328,10 +420,21 @@ router.put("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async (re
 
 router.delete("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
+    const linkedGroups = await db
+      .select({ id: packageGroupProducts.id })
+      .from(packageGroupProducts)
+      .where(eq(packageGroupProducts.productId, req.params.id))
+      .limit(1);
+    if (linkedGroups.length > 0) {
+      return res.status(409).json({
+        error: "Cannot archive product while it is linked to one or more package groups. Remove all links first.",
+      });
+    }
     await db.update(products).set({ status: "archived", updatedAt: new Date() })
       .where(eq(products.id, req.params.id));
     return res.json({ success: true, message: "Product archived" });
   } catch (err) {
+    console.error("[DELETE /products/:id]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

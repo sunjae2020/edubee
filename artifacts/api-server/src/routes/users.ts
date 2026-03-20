@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { users } from "@workspace/db/schema";
-import { eq, ilike, and, or, count, SQL } from "drizzle-orm";
+import { users, products, packageGroupProducts, packageGroups } from "@workspace/db/schema";
+import { eq, ilike, and, or, count, SQL, asc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -160,6 +160,32 @@ router.put("/:id", authenticate, async (req, res) => {
     return res.json(userWithoutPassword);
   } catch (err) {
     console.error("Update user error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PART 4: Products owned by a partner user
+router.get("/:id/products", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const { status, type } = req.query as Record<string, string>;
+    const conditions = [eq(products.providerAccountId, req.params.id)];
+    if (status) conditions.push(eq(products.status, status));
+    if (type)   conditions.push(eq(products.productType, type));
+
+    const rows = await db
+      .select({
+        product:   products,
+        linkCount: count(packageGroupProducts.id),
+      })
+      .from(products)
+      .leftJoin(packageGroupProducts, eq(packageGroupProducts.productId, products.id))
+      .where(and(...conditions))
+      .groupBy(products.id)
+      .orderBy(asc(products.productType), asc(products.productName));
+
+    return res.json(rows);
+  } catch (err) {
+    console.error("[GET /users/:id/products]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
