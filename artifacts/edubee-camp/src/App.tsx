@@ -61,6 +61,7 @@ import ReportViewerPage from "@/pages/admin/ReportViewerPage";
 
 // Documents
 import DocumentsPage from "@/pages/admin/documents";
+import ChatbotAdminPage from "@/pages/admin/ChatbotAdminPage";
 
 // Settings
 import GeneralSettings from "@/pages/admin/settings/general";
@@ -220,6 +221,11 @@ function Router() {
       {/* Documents */}
       <Route path="/admin/documents">
         <AdminRoute title="Documents"><DocumentsPage /></AdminRoute>
+      </Route>
+
+      {/* AI Chatbot */}
+      <Route path="/admin/chatbot">
+        <AdminRoute title="AI 챗봇"><ChatbotAdminPage /></AdminRoute>
       </Route>
 
       {/* Users */}

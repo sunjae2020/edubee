@@ -12,7 +12,7 @@ import {
   Receipt, Building, Handshake, FileCheck, ArrowLeftRight, RefreshCw,
   Wallet, BarChart2,
   Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
-  Ticket, FolderOpen,
+  Ticket, FolderOpen, Bot,
   LucideIcon,
 } from "lucide-react";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
@@ -119,6 +119,10 @@ function buildNav(effectiveRole: string): NavGroup[] {
 
   if (isSAorAD) {
     nav.push({ label: "Users", items: [{ icon: Users, label: "Users", href: "/admin/users" }] });
+  }
+
+  if (isSAorAD) {
+    nav.push({ label: "AI", items: [{ icon: Bot, label: "AI 챗봇", href: "/admin/chatbot" }] });
   }
 
   if (isSA) {

@@ -4,6 +4,26 @@
 
 Edubee Camp is a comprehensive multi-operator educational camp marketplace platform. It connects educational agencies, camp coordinators, partner institutes, and parent clients to manage student enrollments end-to-end.
 
+## Key Features Added (AI Chatbot)
+- **DB**: `chat_documents` table — stores knowledge base documents (title, content, source, sourceType)
+- **API Routes** (under `/api/chatbot`):
+  - `POST /chatbot/message` — RAG chat with SSE streaming; PostgreSQL full-text search for context retrieval
+  - `GET /chatbot/docs` — list knowledge base documents
+  - `POST /chatbot/docs` — add document (manual text paste)
+  - `DELETE /chatbot/docs/:id` — remove document
+  - `POST /chatbot/docs/google` — import Google Doc (requires `GOOGLE_SERVICE_ACCOUNT_JSON` secret)
+  - `GET /chatbot/status` — status + document count
+- **AI**: Replit Gemini integration (gemini-2.5-flash); costs billed to Replit credits; no user API key needed
+- **Retrieval**: PostgreSQL `to_tsvector` full-text search for relevant document chunks
+- **Frontend**: `ChatbotAdminPage.tsx` — chat UI + knowledge base management; sidebar "AI 챗봇" (admin/SA only)
+- **Google Docs**: Requires `GOOGLE_SERVICE_ACCOUNT_JSON` secret + `googleapis` package + document shared with service account
+
+## Key Features Added (Object Storage / Thumbnail Upload)
+- **Storage**: Replit GCS object storage provisioned; `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PRIVATE_OBJECT_DIR`, `PUBLIC_OBJECT_SEARCH_PATHS` secrets set
+- **API Routes**: `POST /api/storage/uploads/request-url`, `GET /api/storage/objects/*`, `GET /api/storage/public-objects/*`
+- **Component**: `ThumbnailUploader.tsx` — 16:9 drag-and-drop image uploader with progress; saves to package group `thumbnailUrl`
+- **Package Group Detail**: Thumbnail row replaced with uploader; upload immediately saves to DB
+
 ## Key Features Added (Dual Currency Display)
 - **API**: `GET /api/public/exchange-rates` — returns latest X→AUD rates per currency (no auth required)
 - **Context**: `DisplayCurrencyContext` (`src/context/DisplayCurrencyContext.tsx`) — `convertPrice()`, `formatReference()`, localStorage persistence, browser lang detection

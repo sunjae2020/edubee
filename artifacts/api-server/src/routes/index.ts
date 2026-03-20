@@ -19,6 +19,7 @@ import dataManagerRouter from "./data-manager.js";
 import ledgerRouter from "./ledger.js";
 import documentsRouter from "./documents.js";
 import settingsRouter from "./settings.js";
+import chatbotRouter from "./chatbot.js";
 
 const router: IRouter = Router();
 
@@ -42,5 +43,6 @@ router.use("/data-manager", dataManagerRouter);
 router.use(ledgerRouter);
 router.use(documentsRouter);
 router.use("/settings", settingsRouter);
+router.use(chatbotRouter);
 
 export default router;
