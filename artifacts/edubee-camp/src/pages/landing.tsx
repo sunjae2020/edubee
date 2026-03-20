@@ -357,7 +357,7 @@ export default function Landing() {
 
         {/* Thin orange bottom strip */}
         <div className="border-t border-border bg-white/60 relative z-10">
-          <div className="max-w-6xl mx-auto px-5 py-3 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-muted-foreground">
+          <div className="max-w-6xl mx-auto px-5 py-3 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground">
             {["🇦🇺 Australia", "🇯🇵 Japan", "🇬🇧 United Kingdom", "🇸🇬 Singapore", "🇵🇭 Philippines", "🇹🇭 Thailand"].map((c) => (
               <span key={c} className="flex items-center gap-1">{c}</span>
             ))}
