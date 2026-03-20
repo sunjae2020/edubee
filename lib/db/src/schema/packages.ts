@@ -62,6 +62,7 @@ export const products = pgTable("products", {
   description: text("description"),
   cost: decimal("cost", { precision: 10, scale: 2 }),
   currency: varchar("currency", { length: 10 }).default("AUD"),
+  unit: varchar("unit", { length: 50 }),
   status: varchar("status", { length: 20 }).default("active"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

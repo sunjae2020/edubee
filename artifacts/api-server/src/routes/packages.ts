@@ -363,9 +363,11 @@ router.get("/products", authenticate, async (req, res) => {
 
 router.post("/products", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [product] = await db.insert(products).values(req.body).returning();
+    const { id: _id, createdAt: _ca, updatedAt: _ua, convertedCost: _cc, ...body } = req.body;
+    const [product] = await db.insert(products).values(body).returning();
     return res.status(201).json(product);
   } catch (err) {
+    console.error("[POST /products]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -409,11 +411,13 @@ router.get("/products/:id", authenticate, async (req, res) => {
 
 router.put("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [product] = await db.update(products).set({ ...req.body, updatedAt: new Date() })
+    const { id: _id, createdAt: _ca, updatedAt: _ua, convertedCost: _cc, ...body } = req.body;
+    const [product] = await db.update(products).set({ ...body, updatedAt: new Date() })
       .where(eq(products.id, req.params.id)).returning();
     if (!product) return res.status(404).json({ error: "Not Found" });
     return res.json(product);
   } catch (err) {
+    console.error("[PUT /products/:id]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

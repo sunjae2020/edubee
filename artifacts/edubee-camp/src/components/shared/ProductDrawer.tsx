@@ -66,7 +66,7 @@ export default function ProductDrawer({
   const [editing, setEditing] = useState(isCreate);
   const [form, setForm] = useState({
     productName: "", productType: "institute", description: "",
-    cost: "", currency: "AUD", status: "active",
+    cost: "", currency: "AUD", unit: "", status: "active",
   });
 
   const { data: rec, isLoading } = useQuery({
@@ -95,12 +95,13 @@ export default function ProductDrawer({
         description: rec.description ?? "",
         cost: rec.cost ?? "",
         currency: rec.currency ?? "AUD",
+        unit: rec.unit ?? "",
         status: rec.status ?? "active",
       });
       setEditing(false);
     }
     if (isCreate) {
-      setForm({ productName: "", productType: "institute", description: "", cost: "", currency: "AUD", status: "active" });
+      setForm({ productName: "", productType: "institute", description: "", cost: "", currency: "AUD", unit: "", status: "active" });
       setEditing(true);
     }
   }, [rec, isCreate, open]);
@@ -126,6 +127,7 @@ export default function ProductDrawer({
       ...form,
       cost: form.cost || null,
       description: form.description || null,
+      unit: form.unit || null,
     };
     if (isCreate && lockedProviderId) payload.providerAccountId = lockedProviderId;
     saveMutation.mutate(payload);
@@ -268,6 +270,18 @@ export default function ProductDrawer({
                   </div>
                 </div>
                 <div>
+                  <Label className="text-xs">Unit</Label>
+                  <Select value={form.unit || "none"} onValueChange={v => setForm(f => ({ ...f, unit: v === "none" ? "" : v }))}>
+                    <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue placeholder="선택…" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— No unit —</SelectItem>
+                      {["per person","per night","per day","per session","per trip","per group","per week","per transfer","per meal","flat fee"].map(u => (
+                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label className="text-xs">Status</Label>
                   <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
                     <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
@@ -284,8 +298,14 @@ export default function ProductDrawer({
                 <div className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
                   <span className="text-xs text-muted-foreground">Cost</span>
                   <span className="text-sm font-mono font-semibold">
-                    {rec?.cost ? `${rec.currency ?? "AUD"} ${Number(rec.cost).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+                    {rec?.cost
+                      ? `${rec.currency ?? "AUD"} ${Number(rec.cost).toLocaleString("en-AU", { minimumFractionDigits: 2 })}${rec?.unit ? ` / ${rec.unit}` : ""}`
+                      : "—"}
                   </span>
+                </div>
+                <div className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+                  <span className="text-xs text-muted-foreground">Unit</span>
+                  <span className="text-sm text-muted-foreground">{rec?.unit ?? "—"}</span>
                 </div>
                 <div className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
                   <span className="text-xs text-muted-foreground">Status</span>

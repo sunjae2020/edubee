@@ -1,4 +1,4 @@
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
@@ -7,17 +7,29 @@ import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/com
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const PRODUCT_TYPES = ["accommodation", "program", "activity", "transport", "meal", "insurance", "visa", "other"];
+const PRODUCT_TYPES = ["institute", "hotel", "pickup", "tour", "settlement", "program"];
 const CURRENCIES = ["AUD", "USD", "KRW", "JPY", "THB", "PHP", "SGD", "GBP"];
+const UNITS = ["per person", "per night", "per day", "per session", "per trip", "per group", "per week", "per transfer", "per meal", "flat fee"];
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green-100 text-green-700",
   inactive: "bg-gray-100 text-gray-600",
   archived: "bg-red-100 text-red-700",
+};
+
+const TYPE_BADGE: Record<string, string> = {
+  institute:  "bg-blue-50 text-blue-700",
+  hotel:      "bg-purple-50 text-purple-700",
+  pickup:     "bg-orange-50 text-orange-700",
+  tour:       "bg-green-50 text-green-700",
+  settlement: "bg-neutral-100 text-neutral-600",
+  program:    "bg-sky-50 text-sky-700",
 };
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -30,6 +42,7 @@ const CURRENCY_FLAGS: Record<string, string> = {
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
+  const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -40,6 +53,20 @@ export default function ProductDetail() {
   });
 
   const rec = data;
+
+  const { data: providerData } = useQuery({
+    queryKey: ["user-detail", rec?.providerAccountId],
+    queryFn: () => axios.get(`${BASE}/api/users/${rec.providerAccountId}`).then(r => r.data?.data ?? r.data),
+    enabled: !!rec?.providerAccountId,
+  });
+
+  const { data: linkedGroupsData } = useQuery({
+    queryKey: ["product-linked-groups", id],
+    queryFn: () => axios.get(`${BASE}/api/products/${id}/linked-groups`).then(r => r.data),
+    enabled: !!id,
+  });
+  const linkedGroups: any[] = linkedGroupsData ?? [];
+
   const canEdit = ["super_admin", "admin"].includes(user?.role ?? "");
 
   const updateMutation = useMutation({
@@ -70,8 +97,13 @@ export default function ProductDetail() {
   const sym = CURRENCY_SYMBOLS[rec.currency ?? "AUD"] ?? "A$";
   const costNum = rec.cost ? Number(rec.cost) : null;
   const costFormatted = costNum != null
-    ? `${sym}${costNum.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    ? `${sym}${costNum.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${rec.unit ? ` / ${rec.unit}` : ""}`
     : "—";
+
+  const provider = providerData;
+  const providerInitials = provider
+    ? (provider.fullName ?? provider.email ?? "?").split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2)
+    : "";
 
   return (
     <DetailPageLayout
@@ -91,6 +123,39 @@ export default function ProductDetail() {
       onCancel={cancelEdit}
       onSave={saveEdit}
     >
+      {/* Provider */}
+      {(provider || rec?.providerAccountId) && (
+        <DetailSection title="Provider">
+          {provider ? (
+            <div className="flex items-center gap-3">
+              <Avatar className="w-9 h-9 shrink-0">
+                <AvatarFallback className="bg-[#FEF0E3] text-[#F5821F] text-xs font-bold">{providerInitials}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">{provider.fullName ?? provider.email}</p>
+                <p className="text-xs text-muted-foreground truncate">{provider.email} · {provider.role}</p>
+              </div>
+              <button
+                onClick={() => navigate(`${BASE}/admin/users/${rec.providerAccountId}`)}
+                className="text-muted-foreground hover:text-[#F5821F] transition-colors shrink-0"
+                title="Go to user detail"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <DetailRow label="Provider ID">
+              <span className="font-mono text-xs text-muted-foreground">{rec.providerAccountId}</span>
+            </DetailRow>
+          )}
+          {isEditing && canEdit && (
+            <DetailRow label="Change Provider">
+              <span className="text-xs text-muted-foreground">User search not available inline. Edit from Products page.</span>
+            </DetailRow>
+          )}
+        </DetailSection>
+      )}
+
       {/* Product Details */}
       <DetailSection title="Product Details">
         <DetailRow label="Product Name">
@@ -118,7 +183,7 @@ export default function ProductDetail() {
               </SelectContent>
             </Select>
           ) : (
-            <span className="px-2 py-0.5 bg-muted rounded text-xs capitalize">
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_BADGE[rec.productType] ?? "bg-gray-100 text-gray-600"}`}>
               {rec.productType}
             </span>
           )}
@@ -131,7 +196,7 @@ export default function ProductDetail() {
             onChange={v => setField("description", v)}
             display={
               rec.description
-                ? <span className="text-sm">{rec.description}</span>
+                ? <span className="text-sm whitespace-pre-wrap">{rec.description}</span>
                 : <span className="text-muted-foreground/50">—</span>
             }
             multiline
@@ -198,7 +263,48 @@ export default function ProductDetail() {
             </span>
           )}
         </DetailRow>
+
+        <DetailRow label="Unit">
+          {isEditing ? (
+            <Select
+              value={getValue("unit", rec.unit) ?? ""}
+              onValueChange={v => setField("unit", v === "none" ? null : v)}
+            >
+              <SelectTrigger className="h-8 w-40 text-sm">
+                <SelectValue placeholder="Select unit…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— No unit —</SelectItem>
+                {UNITS.map(u => (
+                  <SelectItem key={u} value={u}>{u}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <span className="text-sm text-muted-foreground">
+              {rec.unit ? `/ ${rec.unit}` : <span className="opacity-50">—</span>}
+            </span>
+          )}
+        </DetailRow>
       </DetailSection>
+
+      {/* Linked Package Groups */}
+      {linkedGroups.length > 0 && (
+        <DetailSection title="Linked Package Groups">
+          <div className="flex flex-wrap gap-2 pt-1">
+            {linkedGroups.map((g: any) => (
+              <button
+                key={g.linkId}
+                onClick={() => navigate(`${BASE}/admin/package-groups/${g.packageGroupId}`)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F33] hover:bg-[#f5821f1a] transition-colors"
+              >
+                {g.nameEn}
+                <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+              </button>
+            ))}
+          </div>
+        </DetailSection>
+      )}
 
       {/* Metadata */}
       <DetailSection title="Metadata">
