@@ -1,19 +1,27 @@
 import { Router } from "express";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db } from "@workspace/db";
 import { chatDocuments } from "@workspace/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
-import { ai } from "@workspace/integrations-gemini-ai";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
+
+// Initialize Gemini with user's API key
+function getGenAI() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
+  return new GoogleGenerativeAI(apiKey);
+}
 
 // ─── GET /api/chatbot/status ───────────────────────────────────────────────
 router.get("/chatbot/status", authenticate, async (_req, res) => {
   try {
     const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(chatDocuments);
-    res.json({ ok: true, documentCount: count, model: "gemini-2.5-flash" });
+    const hasKey = !!process.env.GEMINI_API_KEY;
+    res.json({ ok: hasKey, documentCount: count, model: "gemini-2.5-flash", keyConfigured: hasKey });
   } catch {
     res.status(500).json({ error: "Status check failed" });
   }
@@ -65,7 +73,6 @@ router.delete("/chatbot/docs/:id", authenticate, requireRole(...ADMIN_ROLES), as
 });
 
 // ─── POST /api/chatbot/docs/google ────────────────────────────────────────
-// Fetches a Google Doc (requires GOOGLE_SERVICE_ACCOUNT_JSON secret)
 router.post("/chatbot/docs/google", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   const { url } = req.body as { url: string };
   if (!url) return res.status(400).json({ error: "url is required" });
@@ -125,6 +132,8 @@ router.post("/chatbot/message", authenticate, async (req, res) => {
   if (!question?.trim()) return res.status(400).json({ error: "question is required" });
 
   try {
+    const genAI = getGenAI();
+
     // 1. Search knowledge base with PostgreSQL full-text search
     const searchTerms = question.trim().split(/\s+/).filter(w => w.length > 1).join(" | ");
     let contextDocs: { title: string; content: string }[] = [];
@@ -137,7 +146,6 @@ router.post("/chatbot/message", authenticate, async (req, res) => {
         .where(sql`to_tsvector('simple', ${chatDocuments.content} || ' ' || ${chatDocuments.title}) @@ to_tsquery('simple', ${searchTerms})`)
         .limit(4);
     } catch {
-      // Full-text search may fail for some queries — fall back to all docs (limited)
       contextDocs = await db.select({
         title: chatDocuments.title,
         content: sql<string>`left(${chatDocuments.content}, 1000)`,
@@ -160,10 +168,12 @@ ${contextDocs.map((d, i) => `--- [${i + 1}] ${d.title} ---\n${d.content}`).join(
       parts: [{ text: m.content }],
     }));
 
-    // 4. Stream response
+    // 4. Stream response via SSE
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const allContents = [
       { role: "user" as const, parts: [{ text: systemPrompt }] },
@@ -172,16 +182,12 @@ ${contextDocs.map((d, i) => `--- [${i + 1}] ${d.title} ---\n${d.content}`).join(
       { role: "user" as const, parts: [{ text: question }] },
     ];
 
-    const stream = await ai.models.generateContentStream({
-      model: "gemini-2.5-flash",
-      contents: allContents,
-      config: { maxOutputTokens: 8192 },
-    });
+    const streamResult = await model.generateContentStream({ contents: allContents });
 
     const sources = contextDocs.map(d => d.title);
 
-    for await (const chunk of stream) {
-      const text = chunk.text;
+    for await (const chunk of streamResult.stream) {
+      const text = chunk.text();
       if (text) res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
     }
 
@@ -190,7 +196,7 @@ ${contextDocs.map((d, i) => `--- [${i + 1}] ${d.title} ---\n${d.content}`).join(
   } catch (e: any) {
     console.error("[chatbot/message]", e);
     if (!res.headersSent) {
-      res.status(500).json({ error: "AI 응답 생성에 실패했습니다." });
+      res.status(500).json({ error: e?.message ?? "AI 응답 생성에 실패했습니다." });
     } else {
       res.write(`data: ${JSON.stringify({ error: "AI 응답 생성에 실패했습니다." })}\n\n`);
       res.end();
