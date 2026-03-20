@@ -108,7 +108,7 @@ export default function Landing() {
     <div className="min-h-screen bg-white text-foreground font-sans">
 
       {/* ── NAVBAR ── */}
-      <header className={`fixed top-0 inset-x-0 z-30 transition-all duration-200 ${scrolled ? "bg-white border-b border-border shadow-xs" : "bg-white border-b border-transparent"}`}>
+      <header className={`fixed top-0 inset-x-0 z-30 transition-all duration-300 ${scrolled ? "bg-white border-b border-border shadow-sm" : "bg-white/0 border-b border-transparent backdrop-blur-[2px]"}`}>
         <div className="max-w-6xl mx-auto px-5 h-14 flex items-center gap-6">
           {/* Logo */}
           <a href="#" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="shrink-0 flex items-center">
