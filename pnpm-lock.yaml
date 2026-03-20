@@ -169,6 +169,9 @@ importers:
       '@google-cloud/storage':
         specifier: ^7.19.0
         version: 7.19.0
+      '@google/genai':
+        specifier: ^1.46.0
+        version: 1.46.0
       '@google/generative-ai':
         specifier: ^0.24.1
         version: 0.24.1

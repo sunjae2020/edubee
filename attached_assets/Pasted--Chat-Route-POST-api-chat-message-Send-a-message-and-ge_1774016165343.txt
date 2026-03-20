@@ -1,0 +1,99 @@
+/**
+ * Chat Route
+ * POST /api/chat/message  - Send a message and get RAG-powered response
+ * GET  /api/chat/history  - Get chat history (optional)
+ */
+
+import { Router } from "express";
+import { model } from "../index.js";
+import { retrieveContext, getSystemPrompt } from "../knowledge-store.js";
+
+const router = Router();
+
+// In-memory session store (use Redis/DB for production)
+const sessions = new Map();
+
+/**
+ * POST /api/chat/message
+ * Body: { sessionId, message, userId? }
+ */
+router.post("/message", async (req, res) => {
+  const { sessionId = "default", message, userId } = req.body;
+
+  if (!message?.trim()) {
+    return res.status(400).json({ error: "Message is required" });
+  }
+
+  try {
+    // 1. Get system prompt (full knowledge base)
+    const systemPrompt = getSystemPrompt();
+    if (!systemPrompt) {
+      return res.json({
+        reply: "지식 베이스가 아직 로드되지 않았습니다. 관리자에게 문의해 주세요.",
+        sources: [],
+        sessionId,
+      });
+    }
+
+    // 2. Retrieve most relevant context chunks for this query
+    const relevantChunks = await retrieveContext(message, 4);
+    const contextText = relevantChunks
+      .map((c) => `[관련 문서 발췌]\n${c.text}`)
+      .join("\n\n");
+
+    // 3. Build conversation history
+    if (!sessions.has(sessionId)) {
+      sessions.set(sessionId, []);
+    }
+    const history = sessions.get(sessionId);
+
+    // 4. Create Gemini chat with system prompt
+    const chat = model.startChat({
+      systemInstruction: systemPrompt,
+      history: history.slice(-10), // Keep last 10 turns for context
+    });
+
+    // 5. Build the user message with retrieved context
+    const augmentedMessage = relevantChunks.length > 0
+      ? `[검색된 관련 내용]\n${contextText}\n\n[사용자 질문]\n${message}`
+      : message;
+
+    // 6. Generate response
+    const result = await chat.sendMessage(augmentedMessage);
+    const reply = result.response.text();
+
+    // 7. Save to history
+    history.push(
+      { role: "user", parts: [{ text: message }] },
+      { role: "model", parts: [{ text: reply }] }
+    );
+
+    // 8. Extract source document info
+    const sources = [...new Set(relevantChunks.map((c) => c.docId))];
+
+    res.json({
+      reply,
+      sources,
+      sessionId,
+      chunksUsed: relevantChunks.length,
+      topScore: relevantChunks[0]?.score?.toFixed(3),
+    });
+  } catch (err) {
+    console.error("Chat error:", err);
+    res.status(500).json({
+      error: "AI 응답 생성 중 오류가 발생했습니다.",
+      detail: err.message,
+    });
+  }
+});
+
+/**
+ * DELETE /api/chat/session/:sessionId
+ * Clear conversation history
+ */
+router.delete("/session/:sessionId", (req, res) => {
+  sessions.delete(req.params.sessionId);
+  res.json({ cleared: true });
+});
+
+export default router;

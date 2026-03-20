@@ -1,27 +1,50 @@
 import { Router } from "express";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { db } from "@workspace/db";
 import { chatDocuments } from "@workspace/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import {
+  initKnowledgeBase,
+  addDocumentToKB,
+  removeDocumentFromKB,
+  retrieveContext,
+  getSystemPrompt,
+  getKnowledgeBaseStatus,
+  extractTextFromGoogleDoc,
+} from "../services/knowledgeBase.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
 
-// Initialize Gemini with user's API key
+// Initialize knowledge base on first request (lazy init)
+let kbReady = false;
+async function ensureKB() {
+  if (!kbReady) {
+    kbReady = true;
+    await initKnowledgeBase();
+  }
+}
+
 function getGenAI() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
-  return new GoogleGenerativeAI(apiKey);
+  return new GoogleGenAI({ apiKey });
 }
 
 // ─── GET /api/chatbot/status ───────────────────────────────────────────────
 router.get("/chatbot/status", authenticate, async (_req, res) => {
   try {
-    const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(chatDocuments);
-    const hasKey = !!process.env.GEMINI_API_KEY;
-    res.json({ ok: hasKey, documentCount: count, model: "gemini-2.5-flash", keyConfigured: hasKey });
+    await ensureKB();
+    const status = getKnowledgeBaseStatus();
+    res.json({
+      ok: !!process.env.GEMINI_API_KEY,
+      model: "gemini-2.5-flash",
+      embeddingModel: "gemini-embedding-001",
+      keyConfigured: !!process.env.GEMINI_API_KEY,
+      ...status,
+    });
   } catch {
     res.status(500).json({ error: "Status check failed" });
   }
@@ -54,7 +77,17 @@ router.post("/chatbot/docs", authenticate, requireRole(...ADMIN_ROLES), async (r
     if (!title || !content) {
       return res.status(400).json({ error: "title and content are required" });
     }
-    const [doc] = await db.insert(chatDocuments).values({ title, content, source, sourceType }).returning();
+
+    const [doc] = await db.insert(chatDocuments)
+      .values({ title, content, source, sourceType })
+      .returning();
+
+    // Generate embeddings in background (don't block response)
+    ensureKB().then(() =>
+      addDocumentToKB(doc.id, title, content, source, sourceType)
+        .catch((e) => console.error("[KB] embed error:", e))
+    );
+
     return res.status(201).json(doc);
   } catch (e) {
     console.error(e);
@@ -66,6 +99,8 @@ router.post("/chatbot/docs", authenticate, requireRole(...ADMIN_ROLES), async (r
 router.delete("/chatbot/docs/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     await db.delete(chatDocuments).where(eq(chatDocuments.id, req.params.id));
+    await ensureKB();
+    await removeDocumentFromKB(req.params.id);
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: "Failed to delete document" });
@@ -93,27 +128,30 @@ router.post("/chatbot/docs/google", authenticate, requireRole(...ADMIN_ROLES), a
     const credentials = JSON.parse(saJson);
     const auth = new google.auth.GoogleAuth({
       credentials,
-      scopes: ["https://www.googleapis.com/auth/documents.readonly", "https://www.googleapis.com/auth/drive.readonly"],
+      scopes: [
+        "https://www.googleapis.com/auth/documents.readonly",
+        "https://www.googleapis.com/auth/drive.readonly",
+      ],
     });
     const docs = google.docs({ version: "v1", auth });
     const docRes = await docs.documents.get({ documentId: docId });
     const docData = docRes.data;
 
     const title = docData.title ?? "Untitled Document";
-    let content = "";
-    for (const el of docData.body?.content ?? []) {
-      if (el.paragraph) {
-        for (const elem of el.paragraph.elements ?? []) {
-          if (elem.textRun?.content) content += elem.textRun.content;
-        }
-      }
-    }
-    content = content.trim();
+    // Use enhanced extractor that handles tables too
+    const content = extractTextFromGoogleDoc(docData);
     if (!content) return res.status(400).json({ error: "Document appears to be empty" });
 
     const [doc] = await db.insert(chatDocuments).values({
       title, content, source: url, sourceType: "google_doc",
     }).returning();
+
+    // Generate embeddings in background
+    ensureKB().then(() =>
+      addDocumentToKB(doc.id, title, content, url, "google_doc")
+        .catch((e) => console.error("[KB] embed error:", e))
+    );
+
     return res.status(201).json(doc);
   } catch (e: any) {
     console.error("[chatbot/google]", e);
@@ -132,62 +170,58 @@ router.post("/chatbot/message", authenticate, async (req, res) => {
   if (!question?.trim()) return res.status(400).json({ error: "question is required" });
 
   try {
+    await ensureKB();
     const genAI = getGenAI();
 
-    // 1. Search knowledge base with PostgreSQL full-text search
-    const searchTerms = question.trim().split(/\s+/).filter(w => w.length > 1).join(" | ");
-    let contextDocs: { title: string; content: string }[] = [];
-    try {
-      contextDocs = await db.select({
-        title: chatDocuments.title,
-        content: sql<string>`left(${chatDocuments.content}, 2000)`,
-      })
-        .from(chatDocuments)
-        .where(sql`to_tsvector('simple', ${chatDocuments.content} || ' ' || ${chatDocuments.title}) @@ to_tsquery('simple', ${searchTerms})`)
-        .limit(4);
-    } catch {
-      contextDocs = await db.select({
-        title: chatDocuments.title,
-        content: sql<string>`left(${chatDocuments.content}, 1000)`,
-      }).from(chatDocuments).limit(4);
+    // 1. Semantic retrieval via cosine similarity on embeddings
+    const contextChunks = await retrieveContext(question, 4);
+
+    // 2. Build prompt — use strict system prompt when KB has docs
+    const systemPrompt = getSystemPrompt();
+    let promptToUse: string;
+
+    if (systemPrompt && contextChunks.length > 0) {
+      // Include the most relevant chunks highlighted
+      const chunkContext = contextChunks
+        .map((c, i) => `--- [${i + 1}] ${c.docTitle} (관련도: ${(c.score * 100).toFixed(0)}%) ---\n${c.text}`)
+        .join("\n\n");
+
+      promptToUse = `${systemPrompt}
+
+## 이 질문에 가장 관련 있는 섹션
+${chunkContext}`;
+    } else if (systemPrompt) {
+      promptToUse = systemPrompt;
+    } else {
+      promptToUse = `당신은 Edubee Camp의 AI 어시스턴트입니다. 등록된 지식 베이스가 아직 없습니다. 일반적인 질문에 친절하게 답변하되, 플랫폼 내부 정보는 알 수 없다고 안내해주세요. 사용자와 같은 언어로 답변하세요.`;
     }
 
-    // 2. Build system prompt
-    const systemPrompt = contextDocs.length > 0
-      ? `당신은 Edubee Camp의 도움을 주는 AI 어시스턴트입니다. 아래의 내부 문서를 바탕으로 질문에 답변하세요. 문서에 없는 내용은 추측하지 말고 "해당 정보를 찾을 수 없습니다"라고 답하세요.
-
-【내부 문서】
-${contextDocs.map((d, i) => `--- [${i + 1}] ${d.title} ---\n${d.content}`).join("\n\n")}
-
-위 문서를 참고하여 한국어로 친절하게 답변하세요.`
-      : `당신은 Edubee Camp의 도움을 주는 AI 어시스턴트입니다. 등록된 지식 베이스 문서가 아직 없습니다. 일반적인 질문에 대해 친절하게 답변하세요. 답변은 한국어로 해주세요.`;
-
-    // 3. Build conversation history for Gemini
-    const chatHistory = history.map(m => ({
+    // 3. Build conversation history
+    const chatHistory = history.map((m) => ({
       role: (m.role === "assistant" ? "model" : "user") as "model" | "user",
       parts: [{ text: m.content }],
     }));
 
-    // 4. Stream response via SSE
+    // 4. Stream SSE response
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
     const allContents = [
-      { role: "user" as const, parts: [{ text: systemPrompt }] },
+      { role: "user" as const, parts: [{ text: promptToUse }] },
       { role: "model" as const, parts: [{ text: "네, 내부 문서를 바탕으로 답변 드리겠습니다." }] },
       ...chatHistory,
       { role: "user" as const, parts: [{ text: question }] },
     ];
 
-    const streamResult = await model.generateContentStream({ contents: allContents });
+    const stream = await genAI.models.generateContentStream({
+      model: "gemini-2.5-flash",
+      contents: allContents,
+    });
+    const sources = [...new Set(contextChunks.map((c) => c.docTitle))];
 
-    const sources = contextDocs.map(d => d.title);
-
-    for await (const chunk of streamResult.stream) {
-      const text = chunk.text();
+    for await (const chunk of stream) {
+      const text = chunk.text;
       if (text) res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
     }
 
