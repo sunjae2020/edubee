@@ -5,10 +5,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, MapPin, Globe, Users, GraduationCap, Building2, CheckCircle2, Clock } from "lucide-react";
 import { useLocation } from "wouter";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -17,17 +16,35 @@ const COUNTRY_FLAG: Record<string, string> = {
   AU: "🇦🇺", PH: "🇵🇭", SG: "🇸🇬", TH: "🇹🇭", KR: "🇰🇷", JP: "🇯🇵", GB: "🇬🇧", US: "🇺🇸",
 };
 
+// Currency config — full list; will be filtered by DB exchange rates
+const ALL_CURRENCIES = [
+  { ccy: "AUD", flag: "🇦🇺", sym: "A$", dec: 2, field: "priceAud" },
+  { ccy: "USD", flag: "🇺🇸", sym: "$",  dec: 2, field: "priceUsd" },
+  { ccy: "KRW", flag: "🇰🇷", sym: "₩",  dec: 0, field: "priceKrw" },
+  { ccy: "JPY", flag: "🇯🇵", sym: "¥",  dec: 0, field: "priceJpy" },
+  { ccy: "THB", flag: "🇹🇭", sym: "฿",  dec: 0, field: "priceThb" },
+  { ccy: "PHP", flag: "🇵🇭", sym: "₱",  dec: 0, field: "pricePhp" },
+  { ccy: "SGD", flag: "🇸🇬", sym: "S$", dec: 2, field: "priceSgd" },
+  { ccy: "GBP", flag: "🇬🇧", sym: "£",  dec: 2, field: "priceGbp" },
+];
+
+// Country code → primary currency code
+const COUNTRY_TO_CURRENCY: Record<string, string> = {
+  PH: "PHP", TH: "THB", SG: "SGD", JP: "JPY", KR: "KRW", GB: "GBP", US: "USD", AU: "AUD",
+};
+
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green-100 text-green-700",
   inactive: "bg-amber-100 text-amber-700",
   archived: "bg-red-100 text-red-700",
+  draft: "bg-gray-100 text-gray-600",
 };
 
-function fmtPrice(val: string | null | undefined, currency: string, decimals = 0) {
+function fmtPrice(val: string | null | undefined, sym: string, dec: number) {
   if (!val) return null;
   const n = parseFloat(val);
   if (isNaN(n)) return null;
-  return `${currency}${n.toLocaleString("en-AU", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+  return `${sym}${n.toLocaleString("en-AU", { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
 }
 
 export default function PackageDetail() {
@@ -40,6 +57,13 @@ export default function PackageDetail() {
   const { data, isLoading } = useQuery({
     queryKey: ["package-detail", id],
     queryFn: () => axios.get(`${BASE}/api/packages/${id}`).then(r => r.data),
+  });
+
+  // Public exchange rates — determines which currency fields to show
+  const { data: ratesData } = useQuery({
+    queryKey: ["public-exchange-rates"],
+    queryFn: () => axios.get(`${BASE}/api/public/exchange-rates`).then(r => r.data),
+    staleTime: 3_600_000,
   });
 
   const rec = data;
@@ -70,15 +94,29 @@ export default function PackageDetail() {
   }
   if (!rec) return <div className="p-6 text-muted-foreground">Package not found.</div>;
 
-  const groupFlag = rec.groupCountryCode ? (COUNTRY_FLAG[rec.groupCountryCode] ?? "🌐") : "";
+  const groupFlag = rec.groupCountryCode ? (COUNTRY_FLAG[rec.groupCountryCode] ?? "🌐") : "🌐";
+  const groupStatus = rec.groupStatus ?? "active";
+
+  // Filter currencies to only those in Exchange Rates DB
+  const dbRates: Record<string, unknown> = ratesData?.rates ?? {};
+  const activeCurrencies = ALL_CURRENCIES.filter(c => c.ccy === "AUD" || !!dbRates[c.ccy]);
+
+  // Determine primary currency for this package (based on Package Group's country)
+  const primaryCcy = rec.groupCountryCode ? (COUNTRY_TO_CURRENCY[rec.groupCountryCode] ?? "AUD") : "AUD";
+
+  // Sort so primary currency is always first
+  const sortedCurrencies = [
+    ...activeCurrencies.filter(c => c.ccy === primaryCcy),
+    ...activeCurrencies.filter(c => c.ccy !== primaryCcy),
+  ];
 
   return (
     <DetailPageLayout
       title={rec.name ?? "Package"}
       subtitle={rec.groupNameEn ? `${groupFlag} ${rec.groupNameEn}` : ""}
       badge={
-        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[rec.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>
-          {(rec.status ?? "active")}
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[groupStatus] ?? "bg-gray-100 text-gray-600"}`}>
+          {groupStatus}
         </span>
       }
       backPath="/admin/packages"
@@ -90,30 +128,76 @@ export default function PackageDetail() {
       onCancel={cancelEdit}
       onSave={saveEdit}
     >
-      {/* Package Group info */}
-      {rec.groupNameEn && (
-        <DetailSection title="Package Group">
-          <DetailRow label="Group Name (EN)">
-            <div className="flex items-center gap-2">
-              <span>{groupFlag} {rec.groupNameEn}</span>
-              <button
-                onClick={() => setLocation(`${BASE}/admin/package-groups/${rec.packageGroupId}`)}
-                className="inline-flex items-center gap-0.5 text-xs text-[#F5821F] hover:underline"
-              >
-                <ExternalLink className="w-3 h-3" /> View Group
-              </button>
-            </div>
-          </DetailRow>
-          {rec.groupNameKo && (
-            <DetailRow label="Group Name (KO)">{rec.groupNameKo}</DetailRow>
-          )}
-          {rec.groupLocation && (
-            <DetailRow label="Location">{rec.groupLocation}</DetailRow>
-          )}
-        </DetailSection>
-      )}
 
-      {/* Basic info */}
+      {/* ── Package Group Info (read-only lookup card) ───────────────── */}
+      <div className="rounded-xl border bg-gradient-to-br from-[#F5821F]/5 to-orange-50/50 p-4 mb-2">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-bold text-[#F5821F] uppercase tracking-wide">Package Group Info</p>
+          <button
+            onClick={() => setLocation(`${BASE}/admin/package-groups/${rec.packageGroupId}`)}
+            className="inline-flex items-center gap-1 text-xs text-[#F5821F] hover:underline font-medium"
+          >
+            <ExternalLink className="w-3 h-3" /> View Package Group →
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+          <div className="flex items-start gap-2">
+            <Building2 className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Group Name</div>
+              <div className="font-semibold">{rec.groupNameEn ?? "—"}</div>
+              {rec.groupNameKo && <div className="text-xs text-muted-foreground">{rec.groupNameKo}</div>}
+            </div>
+          </div>
+
+          {rec.coordinatorName && (
+            <div className="flex items-start gap-2">
+              <Users className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Camp Provider</div>
+                <div className="font-medium">{rec.coordinatorName}</div>
+                {rec.coordinatorEmail && <div className="text-xs text-muted-foreground">{rec.coordinatorEmail}</div>}
+              </div>
+            </div>
+          )}
+
+          {rec.groupLocation && (
+            <div className="flex items-start gap-2">
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Location</div>
+                <div className="font-medium">{rec.groupLocation}</div>
+              </div>
+            </div>
+          )}
+
+          {rec.groupCountryCode && (
+            <div className="flex items-start gap-2">
+              <Globe className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Country</div>
+                <div className="font-medium">{groupFlag} {rec.groupCountryCode}</div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-start gap-2">
+            <div className="w-3.5 h-3.5 mt-0.5 shrink-0 flex items-center justify-center">
+              {groupStatus === "active"
+                ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                : <Clock className="w-3.5 h-3.5 text-muted-foreground" />}
+            </div>
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Group Status</div>
+              <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${STATUS_COLORS[groupStatus] ?? "bg-gray-100 text-gray-600"}`}>
+                {groupStatus}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Package Details (editable) ────────────────────────────────── */}
       <DetailSection title="Package Details">
         <DetailRow label="Package Name">
           <EditableField
@@ -123,75 +207,89 @@ export default function PackageDetail() {
             display={<span className="font-medium">{rec.name}</span>}
           />
         </DetailRow>
-        <DetailRow label="Duration (Days)">
+
+        <DetailRow label={
+          <span className="flex items-center gap-1">
+            <Users className="w-3 h-3 text-blue-500" /> Adults
+          </span>
+        }>
           <EditableField
             isEditing={isEditing}
-            value={String(getValue("durationDays", rec.durationDays) ?? "")}
-            onChange={v => setField("durationDays", parseInt(v) || v)}
+            value={String(getValue("adults", rec.adults) ?? "")}
+            onChange={v => setField("adults", v ? parseInt(v) : null)}
             inputType="number"
-            display={<span>{rec.durationDays} days</span>}
+            display={
+              rec.adults != null
+                ? <span className="text-blue-600 font-semibold">{rec.adults} 명</span>
+                : <span className="text-muted-foreground/50">—</span>
+            }
           />
         </DetailRow>
-        <DetailRow label="Max Participants">
+
+        <DetailRow label={
+          <span className="flex items-center gap-1">
+            <GraduationCap className="w-3 h-3 text-green-500" /> Children
+          </span>
+        }>
           <EditableField
             isEditing={isEditing}
-            value={String(getValue("maxParticipants", rec.maxParticipants) ?? "")}
-            onChange={v => setField("maxParticipants", parseInt(v) || null)}
+            value={String(getValue("children", rec.children) ?? "")}
+            onChange={v => setField("children", v ? parseInt(v) : null)}
             inputType="number"
-            display={<span>{rec.maxParticipants ?? "—"}</span>}
+            display={
+              rec.children != null
+                ? <span className="text-green-600 font-semibold">{rec.children} 명</span>
+                : <span className="text-muted-foreground/50">—</span>
+            }
           />
-        </DetailRow>
-        <DetailRow label="Status">
-          {isEditing ? (
-            <Select value={getValue("status", rec.status) ?? "active"} onValueChange={v => setField("status", v)}>
-              <SelectTrigger className="h-8 w-36 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
-              </SelectContent>
-            </Select>
-          ) : (
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[rec.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>
-              {rec.status ?? "active"}
-            </span>
-          )}
         </DetailRow>
       </DetailSection>
 
-      {/* Pricing */}
+      {/* ── Pricing ─────────────────────────────────────────────────────── */}
       <DetailSection title="Pricing">
-        {[
-          { label: "🇦🇺 AUD", field: "priceAud", sym: "A$", dec: 2 },
-          { label: "🇰🇷 KRW", field: "priceKrw", sym: "₩", dec: 0 },
-          { label: "🇯🇵 JPY", field: "priceJpy", sym: "¥", dec: 0 },
-          { label: "🇺🇸 USD", field: "priceUsd", sym: "$", dec: 2 },
-          { label: "🇹🇭 THB", field: "priceThb", sym: "฿", dec: 0 },
-          { label: "🇵🇭 PHP", field: "pricePhp", sym: "₱", dec: 0 },
-          { label: "🇸🇬 SGD", field: "priceSgd", sym: "S$", dec: 2 },
-          { label: "🇬🇧 GBP", field: "priceGbp", sym: "£", dec: 2 },
-        ].map(({ label, field, sym, dec }) => (
-          <DetailRow key={field} label={label}>
-            <EditableField
-              isEditing={isEditing}
-              value={String(getValue(field, rec[field as keyof typeof rec]) ?? "")}
-              onChange={v => setField(field, v)}
-              inputType="number"
-              display={
-                <span className="font-mono">
-                  {fmtPrice(rec[field as keyof typeof rec] as string, sym, dec) ?? (
-                    <span className="text-muted-foreground/50">—</span>
-                  )}
-                </span>
-              }
-            />
-          </DetailRow>
-        ))}
+        {sortedCurrencies.length === 0 ? (
+          <div className="px-4 py-3 text-sm text-muted-foreground">
+            No exchange rates configured. Add rates in{" "}
+            <a href={`${BASE}/admin/accounting/exchange-rates`} className="text-[#F5821F] underline">Exchange Rates</a>.
+          </div>
+        ) : (
+          sortedCurrencies.map(({ ccy, flag, sym, dec, field }) => {
+            const isPrimary = ccy === primaryCcy;
+            return (
+              <DetailRow
+                key={field}
+                label={
+                  <span className={`flex items-center gap-1.5 ${isPrimary ? "font-bold text-foreground" : ""}`}>
+                    {flag} {ccy}
+                    {isPrimary && (
+                      <span className="px-1.5 py-0.5 bg-[#F5821F] text-white rounded text-[10px] font-bold uppercase">
+                        PRIMARY
+                      </span>
+                    )}
+                  </span>
+                }
+              >
+                <EditableField
+                  isEditing={isEditing}
+                  value={String(getValue(field, rec[field as keyof typeof rec]) ?? "")}
+                  onChange={v => setField(field, v)}
+                  inputType="number"
+                  className={isPrimary && isEditing ? "border-[#F5821F] ring-1 ring-[#F5821F]/30" : ""}
+                  display={
+                    <span className={`font-mono ${isPrimary ? "font-bold text-[#F5821F]" : ""}`}>
+                      {fmtPrice(rec[field as keyof typeof rec] as string, sym, dec) ?? (
+                        <span className="text-muted-foreground/50">—</span>
+                      )}
+                    </span>
+                  }
+                />
+              </DetailRow>
+            );
+          })
+        )}
       </DetailSection>
 
-      {/* Features */}
+      {/* ── Features ─────────────────────────────────────────────────────── */}
       {(() => {
         const rawFeatures = rec.features;
         const featuresArr: string[] = Array.isArray(rawFeatures)
@@ -232,7 +330,7 @@ export default function PackageDetail() {
         );
       })()}
 
-      {/* Metadata */}
+      {/* ── Metadata ─────────────────────────────────────────────────────── */}
       <DetailSection title="Metadata">
         <DetailRow label="Package ID">
           <span className="font-mono text-xs text-muted-foreground">{rec.id}</span>

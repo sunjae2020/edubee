@@ -158,7 +158,7 @@ export function DetailRow({
   children,
   className,
 }: {
-  label: string;
+  label: ReactNode;
   value?: string | number | null;
   children?: ReactNode;
   className?: string;
@@ -179,42 +179,81 @@ export function EditableField({
   value,
   editValue,
   onEdit,
+  onChange,
   type = "text",
+  inputType,
+  multiline,
+  placeholder,
+  className,
+  display,
   children,
   editChildren,
 }: {
-  label: string;
+  label?: string;
   isEditing: boolean;
   value?: string | number | null;
   editValue?: string;
   onEdit?: (v: string) => void;
+  onChange?: (v: string) => void;
   type?: string;
+  inputType?: string;
+  multiline?: boolean;
+  placeholder?: string;
+  className?: string;
+  display?: ReactNode;
   children?: ReactNode;
   editChildren?: ReactNode;
 }) {
-  return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-border/60 last:border-0">
-      <span className="text-xs font-medium text-muted-foreground w-36 shrink-0 pt-0.5">{label}</span>
-      <div className="flex-1 text-sm">
-        {isEditing ? (
-          editChildren ? (
-            editChildren
-          ) : (
-            <input
-              type={type}
-              value={editValue ?? ""}
-              onChange={(e) => onEdit?.(e.target.value)}
-              className="w-full border border-[#F5821F] rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#F5821F]"
-            />
-          )
-        ) : (
-          children ?? (value !== null && value !== undefined && value !== "" ? (
-            String(value)
-          ) : (
-            <span className="text-muted-foreground/60">—</span>
-          ))
-        )}
+  const handleChange = onChange ?? onEdit;
+  const inputVal = editValue ?? (value != null ? String(value) : "");
+  const inputKind = inputType ?? type ?? "text";
+
+  const inputEl = multiline ? (
+    <textarea
+      value={inputVal}
+      onChange={e => handleChange?.(e.target.value)}
+      placeholder={placeholder}
+      rows={3}
+      className={cn(
+        "w-full border border-[#F5821F] rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#F5821F] resize-y",
+        className
+      )}
+    />
+  ) : (
+    <input
+      type={inputKind}
+      value={inputVal}
+      onChange={e => handleChange?.(e.target.value)}
+      placeholder={placeholder}
+      className={cn(
+        "w-full border border-[#F5821F] rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#F5821F]",
+        className
+      )}
+    />
+  );
+
+  const displayNode = display ?? children ?? (
+    value !== null && value !== undefined && value !== "" ? (
+      String(value)
+    ) : (
+      <span className="text-muted-foreground/60">—</span>
+    )
+  );
+
+  if (label) {
+    return (
+      <div className="flex items-start gap-3 py-2.5 border-b border-border/60 last:border-0">
+        <span className="text-xs font-medium text-muted-foreground w-36 shrink-0 pt-0.5">{label}</span>
+        <div className="flex-1 text-sm">
+          {isEditing ? (editChildren ?? inputEl) : displayNode}
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 text-sm">
+      {isEditing ? (editChildren ?? inputEl) : displayNode}
     </div>
   );
 }

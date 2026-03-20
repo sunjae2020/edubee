@@ -2,12 +2,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Package as PackageIcon, Globe, Clock, CheckCircle2, ChevronRight } from "lucide-react";
-import { format } from "date-fns";
+import { Search, Package as PackageIcon, Globe, CheckCircle2, Clock, ChevronRight, Users, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -15,6 +13,18 @@ const PAGE_SIZE = 20;
 
 const COUNTRY_FLAG: Record<string, string> = {
   AU: "🇦🇺", PH: "🇵🇭", SG: "🇸🇬", TH: "🇹🇭", KR: "🇰🇷", JP: "🇯🇵", GB: "🇬🇧", US: "🇺🇸",
+};
+
+// Primary currency for each country code
+const COUNTRY_CURRENCY: Record<string, { field: string; sym: string; dec: number }> = {
+  PH: { field: "pricePhp", sym: "₱", dec: 0 },
+  TH: { field: "priceThb", sym: "฿", dec: 0 },
+  SG: { field: "priceSgd", sym: "S$", dec: 2 },
+  JP: { field: "priceJpy", sym: "¥", dec: 0 },
+  KR: { field: "priceKrw", sym: "₩", dec: 0 },
+  GB: { field: "priceGbp", sym: "£", dec: 2 },
+  US: { field: "priceUsd", sym: "$", dec: 2 },
+  AU: { field: "priceAud", sym: "A$", dec: 0 },
 };
 
 interface PackageGroup {
@@ -30,26 +40,29 @@ interface PkgRow {
   id: string;
   packageGroupId: string;
   name: string;
-  durationDays: number;
-  maxParticipants?: number | null;
+  adults?: number | null;
+  children?: number | null;
   priceAud?: string | null;
   priceUsd?: string | null;
   priceKrw?: string | null;
   priceJpy?: string | null;
   priceThb?: string | null;
-  status?: string;
+  pricePhp?: string | null;
+  priceSgd?: string | null;
+  priceGbp?: string | null;
   createdAt?: string;
   groupNameEn?: string | null;
   groupNameKo?: string | null;
   groupLocation?: string | null;
   groupCountryCode?: string | null;
+  groupStatus?: string | null;
 }
 
-function fmtAud(val: string | null | undefined) {
+function fmtPrice(val: string | null | undefined, sym: string, dec: number) {
   if (!val) return null;
   const n = parseFloat(val);
   if (isNaN(n)) return null;
-  return n.toLocaleString("en-AU", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  return `${sym}${n.toLocaleString("en-AU", { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
 }
 
 export default function Packages() {
@@ -94,7 +107,6 @@ export default function Packages() {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Package Groups</p>
           </div>
           <div className="overflow-y-auto max-h-[calc(100vh-200px)]">
-            {/* All */}
             <button
               onClick={() => { setSelectedGroupId("all"); setPage(1); }}
               className={cn(
@@ -116,7 +128,6 @@ export default function Packages() {
               </span>
             </button>
 
-            {/* Individual groups */}
             {groups.length === 0
               ? [...Array(4)].map((_, i) => (
                   <div key={i} className="px-3 py-2.5 border-b border-border/50">
@@ -149,9 +160,7 @@ export default function Packages() {
                       "shrink-0 ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
                       selectedGroupId === g.id
                         ? "bg-[#F5821F]/20 text-[#F5821F]"
-                        : (g.packageCount ?? 0) > 0
-                        ? "bg-muted text-muted-foreground"
-                        : "bg-muted text-muted-foreground/40"
+                        : "bg-muted text-muted-foreground"
                     )}>
                       {g.packageCount ?? 0}
                     </span>
@@ -209,11 +218,18 @@ export default function Packages() {
               <tr className="border-b bg-muted/30">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Package Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Package Group</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Days</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Max</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">🇦🇺 AUD Price</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">
+                  <div className="flex items-center justify-center gap-1">
+                    <Users className="w-3 h-3" /> Adults
+                  </div>
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">
+                  <div className="flex items-center justify-center gap-1">
+                    <GraduationCap className="w-3 h-3" /> Children
+                  </div>
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Price</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Created</th>
                 <th className="px-4 py-3 w-8" />
               </tr>
             </thead>
@@ -221,14 +237,14 @@ export default function Packages() {
               {isLoading ? (
                 [...Array(6)].map((_, i) => (
                   <tr key={i} className="border-b last:border-0">
-                    {[...Array(8)].map((_, j) => (
+                    {[...Array(7)].map((_, j) => (
                       <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
                     ))}
                   </tr>
                 ))
               ) : pkgs.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-16 text-center">
+                  <td colSpan={7} className="px-4 py-16 text-center">
                     <PackageIcon className="w-10 h-10 mx-auto mb-2 text-muted-foreground/20" />
                     <p className="text-muted-foreground text-sm">No packages found</p>
                     {(search || selectedGroupId !== "all") && (
@@ -243,7 +259,14 @@ export default function Packages() {
                 </tr>
               ) : (
                 pkgs.map(pkg => {
-                  const audStr = fmtAud(pkg.priceAud);
+                  const cc = pkg.groupCountryCode ?? "AU";
+                  const currInfo = COUNTRY_CURRENCY[cc] ?? COUNTRY_CURRENCY["AU"];
+                  const priceVal = (pkg as any)[currInfo.field];
+                  const priceStr = fmtPrice(priceVal, currInfo.sym, currInfo.dec);
+                  const audStr = fmtPrice(pkg.priceAud, "A$", 0);
+                  const showAudAlso = cc !== "AU" && audStr && priceStr;
+                  // Status comes from the parent Package Group
+                  const status = pkg.groupStatus ?? "active";
                   return (
                     <tr
                       key={pkg.id}
@@ -272,13 +295,34 @@ export default function Packages() {
                           <span className="text-muted-foreground text-xs">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-center font-mono text-sm">{pkg.durationDays}d</td>
-                      <td className="px-4 py-3 text-center text-muted-foreground text-sm">
-                        {pkg.maxParticipants ?? "—"}
+                      <td className="px-4 py-3 text-center">
+                        {pkg.adults != null ? (
+                          <span className="inline-flex items-center gap-1 text-blue-600 font-medium text-sm">
+                            <Users className="w-3 h-3" /> {pkg.adults}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground/40 text-sm">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {pkg.children != null ? (
+                          <span className="inline-flex items-center gap-1 text-green-600 font-medium text-sm">
+                            <GraduationCap className="w-3 h-3" /> {pkg.children}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground/40 text-sm">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {audStr ? (
-                          <span className="font-semibold text-foreground">A${audStr}</span>
+                        {priceStr ? (
+                          <div>
+                            <div className="font-semibold text-foreground">{priceStr}</div>
+                            {showAudAlso && (
+                              <div className="text-[11px] text-muted-foreground">{audStr}</div>
+                            )}
+                          </div>
+                        ) : audStr ? (
+                          <span className="font-semibold text-foreground">{audStr}</span>
                         ) : (
                           <span className="text-muted-foreground/40 text-sm">—</span>
                         )}
@@ -286,20 +330,17 @@ export default function Packages() {
                       <td className="px-4 py-3 text-center">
                         <span className={cn(
                           "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium",
-                          pkg.status === "active"
+                          status === "active"
                             ? "bg-green-50 text-green-700"
-                            : pkg.status === "archived"
+                            : status === "archived"
                             ? "bg-red-50 text-red-700"
                             : "bg-amber-50 text-amber-700"
                         )}>
-                          {pkg.status === "active"
+                          {status === "active"
                             ? <CheckCircle2 className="w-2.5 h-2.5" />
                             : <Clock className="w-2.5 h-2.5" />}
-                          {pkg.status ?? "active"}
+                          {status}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {pkg.createdAt ? format(new Date(pkg.createdAt), "MMM d, yyyy") : "—"}
                       </td>
                       <td className="px-4 py-3">
                         <ChevronRight className="w-4 h-4 text-muted-foreground/40" />

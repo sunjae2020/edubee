@@ -1,0 +1,110 @@
+아래는 Packages 수정 프롬프트입니다.
+
+---
+
+## Packages Page Modification Prompt
+
+Modify the **Packages** section as follows. Packages are sub-entities of Package Groups — all display and editing must reflect this hierarchy.
+
+---
+
+### 1. Packages List Page (`/admin/packages`)
+
+**Remove columns:**
+- `Duration (Days)`
+- `Max Participants`
+
+**Add columns in their place:**
+- `Adults` — number of accompanying adults for this package
+- `Children` — number of student participants for this package
+
+**Updated column order (suggested):**
+```
+Package Name | Package Group | Adults | Children | Prices (primary currency) | Status | Actions
+```
+
+The `Status` shown in the list should be inherited from the **parent Package Group's status**, not a standalone field.
+
+---
+
+### 2. Package Detail / Edit Form
+
+**Remove the following standalone fields entirely:**
+- `Duration (Days)`
+- `Max Participants`
+- `Status` (self-managed)
+
+**Replace with — Package Group Lookup Section (read-only):**
+
+At the top of the detail form, display a **read-only lookup card** that pulls all parent Package Group information:
+
+```
+┌─ Package Group Info (read-only lookup) ──────────────────────┐
+│  Group Name:      Summer English Camp                        │
+│  Camp Provider:   coord2 — Cebu English Academy              │
+│  Location:        Cebu, Philippines                          │
+│  Country:         🇵🇭 PH                                     │
+│  Status:          Active                                     │
+│  Interview:       Required (Online, 20 min)                  │
+│  Enrollment Spots: Grade5 (10) / Grade6 (10) / Grade7 (8)   │
+└──────────────────────────────────────────────────────────────┘
+```
+
+This block is populated via a join/lookup from `package_groups` — not editable on this form. Include a `[View Package Group →]` link to navigate to the parent record.
+
+---
+
+### 3. Package-Specific Editable Fields
+
+After the lookup section, show only the fields that belong to the Package itself:
+
+| Field | Type | Notes |
+|---|---|---|
+| Package Name | Text | e.g. "2 Weeks", "Package A" |
+| Adults | Number | Accompanying adults count |
+| Children | Number | Student/child participants count |
+| Prices | Multi-currency inputs | See rule below |
+
+---
+
+### 4. Price Fields — Show Only Configured Exchange Rate Currencies
+
+**Rule:** Only display price input fields for currencies that have an active exchange rate record in the `exchange_rates` table (`Current Rates`).
+
+Based on current seed data, show these fields only:
+
+| Flag | Currency | Field |
+|---|---|---|
+| 🇦🇺 | AUD | `price_aud` |
+| 🇺🇸 | USD | `price_usd` |
+| 🇰🇷 | KRW | `price_krw` |
+| 🇯🇵 | JPY | `price_jpy` |
+| 🇹🇭 | THB | `price_thb` |
+| 🇵🇭 | PHP | `price_php` |
+| 🇸🇬 | SGD | `price_sgd` |
+| 🇬🇧 | GBP | `price_gbp` |
+
+The **primary currency** (determined by the parent Package Group's `countryCode`) should be visually highlighted — bold label, orange border on the input, primary currency badge next to it.
+
+Example for a PH package:
+```
+Price (₱ PHP) [PRIMARY]  ₱ [  67,200  ] ← highlighted
+Price (A$ AUD)            A$[   1,850  ]
+Price ($ USD)             $ [   1,200  ]
+Price (₩ KRW)             ₩ [1,600,000 ]
+...
+```
+
+If a currency is not in the exchange rates table, its price field is **not shown** at all (neither in list nor in detail). This list is dynamic — driven by what's configured in `/admin/accounting/exchange-rates`.
+
+---
+
+### 5. API Changes
+
+```
+GET /api/packages → include adults, children fields; exclude duration_days, max_participants, status
+GET /api/packages/:id → join package_groups for lookup block; return only configured currency price fields
+PUT /api/packages/:id → accept adults, children, price fields only; ignore duration_days, max_participants, status
+```
+
+Backend: derive the list of visible price fields from `SELECT DISTINCT from_currency FROM exchange_rates WHERE status = 'active'` and map to the corresponding `price_{currency_lower}` column.

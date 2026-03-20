@@ -279,10 +279,8 @@ router.get("/packages", authenticate, async (req, res) => {
         id: packages.id,
         packageGroupId: packages.packageGroupId,
         name: packages.name,
-        durationDays: packages.durationDays,
-        maxParticipants: packages.maxParticipants,
-        maxAdults: packages.maxAdults,
-        maxStudents: packages.maxStudents,
+        adults: packages.maxAdults,
+        children: packages.maxStudents,
         priceAud: packages.priceAud,
         priceUsd: packages.priceUsd,
         priceKrw: packages.priceKrw,
@@ -292,7 +290,6 @@ router.get("/packages", authenticate, async (req, res) => {
         priceSgd: packages.priceSgd,
         priceGbp: packages.priceGbp,
         features: packages.features,
-        status: packages.status,
         createdAt: packages.createdAt,
         updatedAt: packages.updatedAt,
         groupNameEn: packageGroups.nameEn,
@@ -334,10 +331,8 @@ router.get("/packages/:id", authenticate, async (req, res) => {
         id: packages.id,
         packageGroupId: packages.packageGroupId,
         name: packages.name,
-        durationDays: packages.durationDays,
-        maxParticipants: packages.maxParticipants,
-        maxAdults: packages.maxAdults,
-        maxStudents: packages.maxStudents,
+        adults: packages.maxAdults,
+        children: packages.maxStudents,
         priceAud: packages.priceAud,
         priceUsd: packages.priceUsd,
         priceKrw: packages.priceKrw,
@@ -347,7 +342,6 @@ router.get("/packages/:id", authenticate, async (req, res) => {
         priceSgd: packages.priceSgd,
         priceGbp: packages.priceGbp,
         features: packages.features,
-        status: packages.status,
         createdAt: packages.createdAt,
         updatedAt: packages.updatedAt,
         groupNameEn: packageGroups.nameEn,
@@ -355,9 +349,13 @@ router.get("/packages/:id", authenticate, async (req, res) => {
         groupLocation: packageGroups.location,
         groupCountryCode: packageGroups.countryCode,
         groupStatus: packageGroups.status,
+        groupCampProviderId: packageGroups.campProviderId,
+        coordinatorName: users.fullName,
+        coordinatorEmail: users.email,
       })
       .from(packages)
       .leftJoin(packageGroups, eq(packages.packageGroupId, packageGroups.id))
+      .leftJoin(users, eq(packageGroups.campProviderId, users.id))
       .where(eq(packages.id, req.params.id))
       .limit(1);
     if (!row) return res.status(404).json({ error: "Not Found" });
@@ -369,7 +367,16 @@ router.get("/packages/:id", authenticate, async (req, res) => {
 
 router.put("/packages/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const [pkg] = await db.update(packages).set({ ...req.body, updatedAt: new Date() })
+    const allowed = ["name", "maxAdults", "maxStudents", "features",
+      "priceAud", "priceUsd", "priceKrw", "priceJpy", "priceThb", "pricePhp", "priceSgd", "priceGbp"] as const;
+    const patch: Record<string, unknown> = { updatedAt: new Date() };
+    for (const key of allowed) {
+      if (key in req.body) patch[key] = req.body[key];
+    }
+    // Support alias fields from frontend (adults → maxAdults, children → maxStudents)
+    if ("adults" in req.body) patch.maxAdults = req.body.adults;
+    if ("children" in req.body) patch.maxStudents = req.body.children;
+    const [pkg] = await db.update(packages).set(patch)
       .where(eq(packages.id, req.params.id)).returning();
     if (!pkg) return res.status(404).json({ error: "Not Found" });
     return res.json(pkg);
