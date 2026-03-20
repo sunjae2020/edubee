@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs, ROLE_HIERARCHY } from "@/hooks/use-view-as";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
+import { EdubeeLogo } from "@/components/shared/EdubeeLogo";
 import {
   ChevronLeft, ChevronRight,
   LayoutDashboard, Layers, Package, ShoppingBag, ListChecks,
@@ -158,7 +159,13 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
         className="flex items-center h-14 shrink-0 px-3 gap-2"
         style={{ borderBottom: "1px solid #E8E6E2" }}
       >
-        {!collapsed && (
+        {collapsed ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Link href="/">
+              <EdubeeLogo variant="icon" size="sm" />
+            </Link>
+          </div>
+        ) : (
           <Link href="/" className="flex-1 min-w-0 flex items-center">
             <img
               src={logoImg}
@@ -171,7 +178,7 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
           onClick={onToggle}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0 text-[#A8A29E] hover:bg-[#F4F3F1] hover:text-[#57534E]"
-          style={{ marginLeft: collapsed ? "auto" : undefined, marginRight: collapsed ? "auto" : undefined }}
+          style={{ marginLeft: collapsed ? undefined : undefined }}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
