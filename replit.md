@@ -2,263 +2,79 @@
 
 ## Overview
 
-Edubee Camp is a comprehensive multi-operator educational camp marketplace platform. It connects educational agencies, camp coordinators, partner institutes, and parent clients to manage student enrollments end-to-end.
+Edubee Camp is a multi-operator educational camp marketplace platform designed to connect educational agencies, camp coordinators, partner institutes, and parent clients. Its primary purpose is to streamline the end-to-end management of student enrollments for various educational camps. The platform aims to provide a comprehensive solution for camp management, sales, finance, and communication, enhancing efficiency for all stakeholders in the educational camp ecosystem.
 
-## Key Features Added (AI Chatbot)
-- **DB**: `chat_documents` table — stores knowledge base documents (title, content, source, sourceType)
-- **API Routes** (under `/api/chatbot`):
-  - `POST /chatbot/message` — RAG chat with SSE streaming; PostgreSQL full-text search for context retrieval
-  - `GET /chatbot/docs` — list knowledge base documents
-  - `POST /chatbot/docs` — add document (manual text paste)
-  - `DELETE /chatbot/docs/:id` — remove document
-  - `POST /chatbot/docs/google` — import Google Doc (requires `GOOGLE_SERVICE_ACCOUNT_JSON` secret)
-  - `GET /chatbot/status` — status + document count
-- **AI**: Replit Gemini integration (gemini-2.5-flash); costs billed to Replit credits; no user API key needed
-- **Retrieval**: PostgreSQL `to_tsvector` full-text search for relevant document chunks
-- **Frontend**: `ChatbotAdminPage.tsx` — chat UI + knowledge base management; sidebar "AI 챗봇" (admin/SA only)
-- **Google Docs**: Requires `GOOGLE_SERVICE_ACCOUNT_JSON` secret + `googleapis` package + document shared with service account
+## User Preferences
 
-## Key Features Added (Object Storage / Thumbnail Upload)
-- **Storage**: Replit GCS object storage provisioned; `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PRIVATE_OBJECT_DIR`, `PUBLIC_OBJECT_SEARCH_PATHS` secrets set
-- **API Routes**: `POST /api/storage/uploads/request-url`, `GET /api/storage/objects/*`, `GET /api/storage/public-objects/*`
-- **Component**: `ThumbnailUploader.tsx` — 16:9 drag-and-drop image uploader with progress; saves to package group `thumbnailUrl`
-- **Package Group Detail**: Thumbnail row replaced with uploader; upload immediately saves to DB
+- I prefer simple language and clear explanations.
+- I like an iterative development approach with regular updates.
+- Please ask for confirmation before making any major architectural changes or deleting significant portions of code.
+- Ensure that all frontend components adhere to the specified design guidelines, especially regarding the primary color and flag rules.
+- When implementing new features, prioritize modularity and reusability of components.
+- All database changes should be thoroughly reviewed and tested to prevent data loss or corruption.
+- I expect detailed explanations for complex technical decisions.
 
-## Key Features Added (Dual Currency Display)
-- **API**: `GET /api/public/exchange-rates` — returns latest X→AUD rates per currency (no auth required)
-- **Context**: `DisplayCurrencyContext` (`src/context/DisplayCurrencyContext.tsx`) — `convertPrice()`, `formatReference()`, localStorage persistence, browser lang detection
-- **Components**:
-  - `CurrencySelector` (`src/components/public/currency-selector.tsx`) — dropdown with flag + currency code (default + mobile variants)
-  - `DualPriceDisplay` (`src/components/public/dual-price-display.tsx`) — local price (orange, bold) + reference price (italic, muted) when currencies differ
-- **Landing Navbar**: CurrencySelector added next to LanguageSwitcher (desktop + mobile menu)
-- **Program Card**: `DualPriceDisplay` replaces static `displayFormatted` text
-- **Program Detail Drawer**: Package table rows use `DualPriceDisplay`; orange PriceInfoBox shown when currencies differ
-- **Application Modal**: Step 1 shows price summary card with `DualPriceDisplay` + billing warning; Step 4 review shows package price
-- **i18n**: `currency.*` keys added to all 4 locale files (en/ko/ja/th)
+## System Architecture
 
-## Key Features Added (Program Reports Module)
-- **DB**: `program_reports` (with `deletedAt`), `report_sections` tables — fully deployed
-- **Service**: `autoPopulateSections(contractId)` — pulls data from institute_mgt, hotel_mgt, pickup_mgt, tour_mgt, application_participants; returns 6 section objects
-- **API Routes** (all under `/api/reports`, `authenticate` middleware applied):
-  - `GET /` — role-scoped list (SA/admin=all, CC=own contracts, EA/parent=published only)
-  - `POST /` — create with auto-populated 6 sections; 409 if duplicate per contract
-  - `GET /:id` — full detail with sections; draft → 403 for EA/parent
-  - `PUT /:id` — update title/notes; 400 if published (unpublish first)
-  - `PATCH /:id/publish` — publish + send notifications to agent & client
-  - `PATCH /:id/unpublish` — admin+ only; sets back to draft
-  - `DELETE /:id` — super_admin only; soft-delete via `deletedAt`
-  - `PATCH /:id/sections/:sectionId` — update any field of a section (freeform JSONB content)
-  - `POST /:id/sections` — add custom section only (sectionType='custom')
-  - `DELETE /:id/sections/:sectionId` — delete custom sections only; rejects default section types
-  - `PATCH /:id/sections/reorder` — atomic reorder via transaction; body `{ orderedIds: string[] }`
-  - `POST /:id/sync` — re-populate unedited sections; skips manually-edited ones
-  - `GET /:id/pdf` — scoped like GET /:id; returns PDF binary
-- **Frontend** (`/admin/reports`): separate `GET /api/reports/:id` fetch on section detail open (fixes empty sections bug)
-- **Seed Data**: "John Smith — Leadership Camp Report", published, contract CNT-2501-1003, 6 sections with academic schedule + summary
-- **Visual Assets**: `EdubeeLogo`, `ReportSymbol` (15 symbols), `SectionHeader`, `ReportStatusBadge` components in `shared/`
-- **PDF utility**: `PdfLogo.tsx` in `api-server/src/utils/` using `@react-pdf/renderer`
+The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It consists of an Express.js API server and a React.js frontend.
 
-## Key Features Added (Tasks/CS System)
-- **DB**: `tasks`, `task_attachments`, `task_comments` tables in `lib/db/src/schema/reports.ts`
-- **API**: `/api/public/tasks` (no auth), `/api/tasks` CRUD with role-scoped access
-- **Admin Page**: `/admin/services/tasks` — List + Kanban view, detail drawer with comments thread
-- **Landing Page**: Contact Us section (above footer) → submits to `POST /api/public/tasks`, shows TSK-YYYY-XXXX confirmation
-- **Sidebar**: "Tasks / CS" (Ticket icon) added to Services section for all roles
+**Frontend Architecture:**
+- **Frameworks**: React 18 with Vite, TypeScript, Tailwind CSS, and shadcn/ui for UI components.
+- **Routing**: `wouter` for client-side navigation.
+- **State Management**: `TanStack Query v5` for data fetching and caching.
+- **Form Handling**: `react-hook-form` combined with `zod` for validation.
+- **Internationalization**: `react-i18next` supporting English, Korean, Japanese, and Thai.
+- **Layout**: Custom `MainLayout` with a role-adaptive `AppSidebar` and a `Header` component that includes a "View as" role switcher for impersonation.
+- **Shared Components**: `DetailPageLayout`, `useDetailEdit` hook, `list-toolbar`, and `list-pagination` for consistent UI/UX across admin pages.
+- **Design System**: Primary accent color is `#F08301` (orange). English language displays the Australian flag (🇦🇺).
 
-## Stack
+**Backend Architecture:**
+- **API Framework**: Express 5.
+- **Database**: PostgreSQL with Drizzle ORM.
+- **Authentication**: JWT-based (access token 8h, refresh token 7d) using `bcryptjs` for password hashing.
+- **Validation**: `Zod` and `drizzle-zod`.
+- **API Codegen**: `Orval` for generating API client code from OpenAPI specifications.
+- **Deployment**: Replit's environment with integrated PostgreSQL and object storage.
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **Frontend**: React 18 + Vite + TypeScript + Tailwind CSS + shadcn/ui
-- **Routing**: wouter (React router)
-- **State**: TanStack Query v5
-- **Forms**: react-hook-form + zod
-- **Charts**: recharts
-- **i18n**: react-i18next (en, ko, ja, th)
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Auth**: JWT (access 8h + refresh 7d) with bcryptjs
-- **Validation**: Zod, drizzle-zod
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+**Key Features & Technical Implementations:**
 
-## User Roles & Hierarchy
+-   **AI Chatbot**:
+    -   Integrated AI Chatbot using Replit Gemini (gemini-2.5-flash).
+    -   Knowledge base stored in `chat_documents` table with PostgreSQL full-text search (`to_tsvector`) for RAG context retrieval.
+    -   API endpoints for chat messaging (SSE streaming), document management (list, add, delete, Google Doc import).
+    -   Admin UI (`ChatbotAdminPage.tsx`) for chat interaction and knowledge base management.
+-   **Object Storage & Thumbnail Upload**:
+    -   Utilizes Replit GCS object storage for file uploads.
+    -   API endpoints for requesting upload URLs and retrieving objects.
+    -   `ThumbnailUploader.tsx` component for drag-and-drop image uploads with progress.
+-   **Dual Currency Display**:
+    -   API endpoint (`/api/public/exchange-rates`) for fetching real-time currency exchange rates.
+    -   `DisplayCurrencyContext` for price conversion and formatting, leveraging browser language detection and localStorage.
+    -   `CurrencySelector` and `DualPriceDisplay` components for presenting prices in local and reference currencies across the platform (landing page, program cards, application modals).
+-   **Program Reports Module**:
+    -   Database tables (`program_reports`, `report_sections`) for storing and managing program reports.
+    -   Automated section population from various management modules (`institute_mgt`, `hotel_mgt`, etc.).
+    -   Comprehensive API for CRUD operations, publishing/unpublishing, section reordering, and PDF generation (`@react-pdf/renderer`).
+    -   Role-scoped access control for report viewing and management.
+-   **Tasks/Customer Service System**:
+    -   Dedicated database tables (`tasks`, `task_attachments`, `task_comments`).
+    -   Public API for contact form submissions and authenticated API for CRUD operations with role-scoped access.
+    -   Admin page (`/admin/services/tasks`) featuring List and Kanban views with a detail drawer for comments.
+-   **User Roles**: Granular user role hierarchy (`super_admin`, `admin`, `camp_coordinator`, `education_agent`, `partner_institute`, `partner_hotel`, `partner_pickup`, `partner_tour`, `parent_client`) with adaptive access control.
 
-| Role | Level | Description |
-|------|-------|-------------|
-| `super_admin` | 100 | Full platform control |
-| `admin` | 80 | Platform management, all data |
-| `camp_coordinator` | 60 | External partner: registers & operates own camps |
-| `education_agent` | 40 | Sales partner: consults clients, submits applications |
-| `partner_institute` | 30 | Service partner: provides educational programs |
-| `partner_hotel` | 30 | Service partner: provides accommodation |
-| `partner_pickup` | 30 | Service partner: provides transportation |
-| `partner_tour` | 30 | Service partner: provides tour activities |
-| `parent_client` | 20 | End customer: monitors child's program |
+## External Dependencies
 
-## Seed Credentials (all use password: `password123`)
-
-- Super Admin: `superadmin@edubee.com`
-- Admin: `admin@edubee.com` / `ops@edubee.com`
-- Camp Coordinator: `coordinator@edubee.com` / `coord1@edubee.com`
-- Education Agent: `agent@edubee.com`
-- Parent Client: `parent@example.com` / `parent1@gmail.com`
-- Partner Institute: `institute@example.com`
-- Partner Hotel: `hotel@example.com`
-- Partner Pickup: `driver@pickup.com`
-- Partner Tour: `guide@tours.com`
-
-## Structure
-
-```text
-artifacts-monorepo/
-├── artifacts/
-│   ├── api-server/         # Express API server (JWT auth + all routes)
-│   └── edubee-camp/        # React + Vite frontend
-├── lib/
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
-│       └── src/schema/
-│           ├── users.ts        # users, refreshTokens, pagePermissions
-│           ├── packages.ts     # packageGroups, packages, products, enrollmentSpots
-│           ├── applications.ts # leads, applications, participants, interviews
-│           ├── contracts.ts    # contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt
-│           ├── documents.ts    # documentCategories, documents, permissions
-│           ├── finance.ts      # exchangeRates, banking, invoices, transactions, receipts
-│           └── reports.ts      # programReports, notifications, tasks
-├── scripts/
-│   └── src/seed.ts         # Database seed script
-└── pnpm-workspace.yaml
-```
-
-## Frontend Routes
-
-### Public
-- `/` — Landing page (programs, hero, CTA)
-- `/login` — Admin login with demo role chips + language switcher
-
-### Admin Panel (all under `/admin/`)
-- `/admin/dashboard` — Role-adaptive KPIs + quick actions
-- `/admin/leads` — Leads CRM (kanban board, 6 status columns, drag-drop)
-- `/admin/applications` — Table (row-click → detail); `/admin/applications/:id` — Detail page
-- `/admin/contracts` — Table (row-click → detail); `/admin/contracts/:id` — Detail page (tabs: General, Services, Accounting)
-- `/admin/package-groups` — Card grid (clickable → detail) + create/edit modal; `/admin/package-groups/:id` — Detail page with tabs: General, Packages (auto-convert toggle), Enrollment Spots, Interview
-- `/admin/packages` — Stub
-- `/admin/products` — Full table with AUD cost + ≈ KRW + ≈ PHP converted columns; CRUD modal
-- `/admin/services/institute` — Table (row-click → detail); `/:id` detail page
-- `/admin/services/hotel` — Table (row-click → detail); `/:id` detail page
-- `/admin/services/pickup` — Table (row-click → detail); `/:id` detail page
-- `/admin/services/tour` — Table (row-click → detail); `/:id` detail page
-- `/admin/services/settlement` — Table (row-click → detail); `/:id` detail page (in SERVICES, NOT Accounting)
-- `/admin/services/interviews` — Stub
-- `/admin/accounting/exchange-rates` — Live preview strip (1 AUD = X rates), rate cards with timestamps, add dialog with real-time preview + descriptive save toast
-- `/admin/accounting/client-invoices|agent-invoices|partner-invoices|receipts|transactions` — Stubs
-- `/admin/users` — Table (row-click → detail); `/admin/users/:id` — Detail page
-- `/admin/my-accounting/settlements|invoices|revenue` — Stubs
-- `/admin/reports` — Stub
-- `/admin/settings/general|page-access|field-permissions|doc-permissions|impersonation-logs` — Stubs
-- `/admin/my-programs` — Stub (parent_client only)
-
-## Admin Panel Architecture
-
-### Layout
-- `MainLayout` — Custom flex layout (no Shadcn SidebarProvider)
-- `AppSidebar` — Custom dark sidebar (#0F172A), 240px expanded / 64px collapsed
-  - Navigation is role-adaptive (built from user's `effectiveRole`)
-  - Effective role = viewAsUser.role if impersonating, else user.role
-- `Header` — Page title + "View as" role switcher + notification bell + avatar dropdown
-  - Impersonation banner shows when ViewAs is active (amber strip)
-
-### Shared Components & Hooks
-- `src/components/shared/DetailPageLayout.tsx` — Shared detail page layout with back button, tab nav, edit/save/cancel controls. Sub-exports: `DetailSection`, `DetailRow`, `EditableField`
-- `src/hooks/useDetailEdit.ts` — Edit state management hook for detail pages (isEditing, getValue, handleChange, startEdit, cancelEdit, saveEdit)
-- `src/components/ui/list-toolbar.tsx` — Search bar + total count + add button + optional status filter + CSV export trigger
-- `src/components/ui/list-pagination.tsx` — Paginated nav for list pages
-
-### Hooks
-- `use-auth.tsx` — JWT auth context, fetch interceptor injects:
-  - `Authorization: Bearer <token>` 
-  - `X-View-As-User-Id: <id>` (if impersonating)
-  - On 401 → clears token + redirects to /login
-  - On login success → redirects to /admin/dashboard
-- `use-view-as.tsx` — ViewAs context with sessionStorage persistence (`edubee_view_as`)
-  - ROLE_HIERARCHY, ROLE_LABELS, ROLE_EMOJIS exports
-  - getViewAsUserId() helper (reads sessionStorage directly for fetch interceptor)
-
-## API Routes
-
-### Auth
-- `POST /api/auth/login` — JWT login
-- `POST /api/auth/refresh` — Refresh access token
-- `POST /api/auth/logout` — Logout
-- `GET  /api/auth/me` — Current user
-
-### Users
-- `GET|POST /api/users` — User management
-- `GET  /api/users/switchable` — Returns users with lower role hierarchy (for ViewAs switcher). MUST be registered BEFORE /:id route.
-- `GET|PUT|DELETE /api/users/:id` — Single user
-
-### Programs
-- `GET|POST /api/package-groups` — Package group management
-- `GET|POST /api/packages` — Package management
-- `GET|POST /api/products` — Product management
-
-### Sales
-- `GET|POST /api/leads` — Lead CRM
-- `PUT  /api/leads/:id/status` — Update lead status
-- `GET|POST /api/applications` — Application management
-- `PUT  /api/applications/:id/status` — Update application status
-- `POST /api/applications/:id/convert-contract` — Convert approved application to contract (creates contract + seeds instituteMgt/hotelMgt/pickupMgt/tourMgt)
-- `GET|POST /api/contracts` — Contract management
-
-### Finance
-- `GET|POST /api/invoices` — Invoice management
-- `GET|POST /api/transactions` — Transaction log
-- `GET|POST /api/exchange-rates` — Exchange rates
-
-### Dashboard & Notifications
-- `GET  /api/dashboard/stats` — Dashboard stats (totalLeads, activeLeads, totalApplications, pendingApplications, contractedApplications, totalContracts, activeContracts, totalUsers, activeUsers, recentApplications, recentLeads, applicationsByStatus)
-- `GET  /api/notifications` — User notifications
-- `PUT  /api/notifications/:id/read` — Mark notification read
-
-### Public (no auth)
-- `GET  /api/public/packages` — Active programs with localized names, country-currency prices, spot summaries
-- `POST /api/public/applications` — Submit application, auto-generate APP number, decrement spots
-
-## Key Design Rules
-
-- **Primary color**: `#F08301` (hsl 33 99% 47%) orange — all accent elements use this
-- **Flag rule**: English always uses 🇦🇺 (Australian flag), NEVER 🇺🇸
-- **Country-currency**: AU→A$, PH→₱, SG→S$, TH→฿, KR→₩, JP→¥, GB→£
-- **Contract numbers**: `CNT-YYYY-XXXX` format
-- **Application numbers**: `APP-YYMMM-XXXX` format
-- **Settlement page**: In SERVICES section, NOT Accounting
-- **Route order**: `/api/users/switchable` must come BEFORE `/api/users/:id` to avoid shadowing
-
-## Running
-
-```bash
-# Install all dependencies
-pnpm install
-
-# Push DB schema (dev)
-pnpm --filter @workspace/db run push
-
-# Seed database
-pnpm --filter @workspace/scripts run seed
-
-# Run codegen (after OpenAPI spec changes)
-pnpm --filter @workspace/api-spec run codegen
-```
-
-## TypeScript & Composite Projects
-
-Every package extends `tsconfig.base.json` which sets `composite: true`. Run `pnpm run typecheck` from the root.
-
-## Production Migrations
-
-In development, use `pnpm --filter @workspace/db run push` or `push-force`. Production migrations are handled by Replit when publishing.
+-   **Replit Gemini**: AI integration (`gemini-2.5-flash`) for the chatbot.
+-   **Google Cloud Storage (GCS)**: Replit's provisioned object storage for file uploads.
+-   **googleapis**: Used for importing Google Docs into the chatbot's knowledge base.
+-   **PostgreSQL**: Primary database for all application data.
+-   **Drizzle ORM**: TypeScript ORM for interacting with PostgreSQL.
+-   **bcryptjs**: For password hashing in authentication.
+-   **@react-pdf/renderer**: Used for generating PDF versions of program reports.
+-   **TanStack Query v5**: For data fetching and caching in the frontend.
+-   **react-hook-form**: For form management in the frontend.
+-   **zod**: For schema validation (frontend forms, backend API).
+-   **wouter**: Lightweight React router.
+-   **react-i18next**: For internationalization.
+-   **recharts**: For charting (if used for dashboard KPIs).
+-   **shadcn/ui**: UI component library.

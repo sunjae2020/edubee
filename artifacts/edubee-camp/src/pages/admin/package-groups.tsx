@@ -79,6 +79,7 @@ type GroupForm = {
   nameEn: string; nameKo: string; nameJa: string; nameTh: string;
   descriptionEn: string; descriptionKo: string; descriptionJa: string; descriptionTh: string;
   thumbnailUrl: string; location: string; countryCode: string; status: string; sortOrder: string;
+  campProviderId: string;
 };
 
 type PkgForm = {
@@ -91,6 +92,7 @@ const emptyGroupForm: GroupForm = {
   nameEn: "", nameKo: "", nameJa: "", nameTh: "",
   descriptionEn: "", descriptionKo: "", descriptionJa: "", descriptionTh: "",
   thumbnailUrl: "", location: "", countryCode: "", status: "draft", sortOrder: "0",
+  campProviderId: "",
 };
 
 const emptyPkgForm: PkgForm = {
@@ -129,6 +131,14 @@ export default function PackageGroups() {
     queryKey: ["package-groups"],
     queryFn: () => axios.get(`${BASE}/api/package-groups`).then(r => r.data?.data ?? r.data),
   });
+
+  // Camp coordinators list for selector
+  const { data: coordinatorsData } = useQuery<{ data: any[] }>({
+    queryKey: ["users-coordinators"],
+    queryFn: () => axios.get(`${BASE}/api/users?role=camp_coordinator&limit=100`).then(r => r.data),
+    enabled: showModal,
+  });
+  const coordinators: any[] = coordinatorsData?.data ?? [];
 
   const { data: pkgData } = useQuery<{ data: Pkg[] }>({
     queryKey: ["packages", editing?.id],
@@ -234,6 +244,7 @@ export default function PackageGroups() {
       countryCode: g.countryCode ?? "",
       status: g.status ?? "draft",
       sortOrder: g.sortOrder?.toString() ?? "0",
+      campProviderId: g.campProviderId ?? "",
     });
     setModalTab("info");
     setLangTab("en");
@@ -258,6 +269,7 @@ export default function PackageGroups() {
       countryCode: form.countryCode || null,
       status: form.status,
       sortOrder: form.sortOrder ? parseInt(form.sortOrder) : 0,
+      campProviderId: form.campProviderId || null,
     };
     if (editing) updateGroup.mutate({ id: editing.id, data: payload });
     else createGroup.mutate(payload);
@@ -527,6 +539,37 @@ export default function PackageGroups() {
 
             {/* Tab 2: Image & Settings */}
             <TabsContent value="media" className="m-0 space-y-5">
+              {/* Coordinator selector */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-2 font-semibold">
+                  <span className="w-5 h-5 rounded-full bg-[#F5821F]/15 flex items-center justify-center text-[#F5821F] text-[11px] font-bold">C</span>
+                  Camp Coordinator
+                </Label>
+                <Select
+                  value={form.campProviderId || "none"}
+                  onValueChange={v => setForm(f => ({ ...f, campProviderId: v === "none" ? "" : v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="— Select a coordinator —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— No coordinator assigned —</SelectItem>
+                    {coordinators.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <span className="flex items-center gap-2">
+                          <span className="font-medium">{c.fullName}</span>
+                          <span className="text-xs text-muted-foreground">{c.email}</span>
+                          {c.companyName && <span className="text-xs text-muted-foreground">· {c.companyName}</span>}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  The camp coordinator responsible for this program. Must have coordinator role.
+                </p>
+              </div>
+
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1.5"><ImageIcon className="w-3.5 h-3.5" /> Thumbnail Image URL</Label>
                 <Input

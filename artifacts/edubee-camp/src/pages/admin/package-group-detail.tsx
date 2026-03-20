@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { UserRound, Mail, Phone, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
@@ -75,6 +76,7 @@ export default function PackageGroupDetail() {
     queryKey: ["package-group-detail", id],
     queryFn: () => axios.get(`${BASE}/api/package-groups/${id}`).then(r => r.data),
   });
+
   const { data: pkgsResp } = useQuery({
     queryKey: ["packages-by-group", id],
     queryFn: () => axios.get(`${BASE}/api/packages?packageGroupId=${id}&limit=100`).then(r => r.data),
@@ -199,6 +201,14 @@ export default function PackageGroupDetail() {
     initialData: group ?? {},
     onSave: async (data) => { await updateGroup.mutateAsync(data); },
   });
+
+  // Coordinator list — only fetched when editing (isEditing is now defined above)
+  const { data: coordinatorsData } = useQuery({
+    queryKey: ["users-coordinators"],
+    queryFn: () => axios.get(`${BASE}/api/users?role=camp_coordinator&limit=100`).then(r => r.data),
+    enabled: isEditing,
+  });
+  const coordinators: any[] = coordinatorsData?.data ?? [];
 
   const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
 
@@ -346,6 +356,61 @@ export default function PackageGroupDetail() {
                   className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
               ) : (
                 <p className="text-sm text-foreground whitespace-pre-wrap">{group.descriptionEn || <span className="text-muted-foreground/60">—</span>}</p>
+              )}
+            </DetailSection>
+
+            {/* Coordinator Section */}
+            <DetailSection title="Camp Coordinator" className="lg:col-span-2">
+              {isEditing ? (
+                <div className="space-y-2">
+                  <Select
+                    value={getValue("campProviderId") || "none"}
+                    onValueChange={v => setField("campProviderId", v === "none" ? null : v)}
+                  >
+                    <SelectTrigger className="h-9 text-sm border-[#F5821F]">
+                      <SelectValue placeholder="— Select coordinator —" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— No coordinator assigned —</SelectItem>
+                      {coordinators.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.fullName} · {c.email}
+                          {c.companyName ? ` · ${c.companyName}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : group.coordinator ? (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-[#F5821F]/10 flex items-center justify-center shrink-0">
+                      <UserRound className="w-5 h-5 text-[#F5821F]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm">{group.coordinator.fullName}</p>
+                      {group.coordinator.companyName && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <Building2 className="w-3 h-3" /> {group.coordinator.companyName}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    {group.coordinator.email && (
+                      <a href={`mailto:${group.coordinator.email}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+                        <Mail className="w-3.5 h-3.5" /> {group.coordinator.email}
+                      </a>
+                    )}
+                    {group.coordinator.phone && (
+                      <span className="flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5" /> {group.coordinator.phone}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground/60 italic">No coordinator assigned to this program.</p>
               )}
             </DetailSection>
           </div>

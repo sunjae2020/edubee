@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { packageGroups, packages, products, packageGroupProducts, enrollmentSpots, exchangeRates } from "@workspace/db/schema";
+import { packageGroups, packages, products, packageGroupProducts, enrollmentSpots, exchangeRates, users } from "@workspace/db/schema";
 import { eq, and, count, asc, SQL, ilike, desc, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -27,10 +27,24 @@ router.get("/package-groups", authenticate, async (req, res) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(packageGroups).where(whereClause);
-    const groups = await db.select().from(packageGroups).where(whereClause).limit(limitNum).offset(offset);
 
-    // Attach package count per group
-    const groupIds = groups.map(g => g.id);
+    // JOIN coordinator info
+    const rows = await db
+      .select({
+        group: packageGroups,
+        coordinatorId: users.id,
+        coordinatorName: users.fullName,
+        coordinatorEmail: users.email,
+        coordinatorPhone: users.phone,
+      })
+      .from(packageGroups)
+      .leftJoin(users, eq(packageGroups.campProviderId, users.id))
+      .where(whereClause)
+      .limit(limitNum)
+      .offset(offset)
+      .orderBy(asc(packageGroups.sortOrder), desc(packageGroups.createdAt));
+
+    const groupIds = rows.map(r => r.group.id);
     let pkgCounts: Record<string, number> = {};
     if (groupIds.length > 0) {
       const countRows = await db
@@ -43,7 +57,16 @@ router.get("/package-groups", authenticate, async (req, res) => {
       }
     }
 
-    const data = groups.map(g => ({ ...g, packageCount: pkgCounts[g.id] ?? 0 }));
+    const data = rows.map(r => ({
+      ...r.group,
+      packageCount: pkgCounts[r.group.id] ?? 0,
+      coordinator: r.coordinatorId ? {
+        id: r.coordinatorId,
+        fullName: r.coordinatorName,
+        email: r.coordinatorEmail,
+        phone: r.coordinatorPhone,
+      } : null,
+    }));
     const total = Number(totalResult.count);
     return res.json({
       data,
@@ -71,9 +94,32 @@ router.post("/package-groups", authenticate, requireRole(...ADMIN_ROLES, "camp_c
 
 router.get("/package-groups/:id", authenticate, async (req, res) => {
   try {
-    const [group] = await db.select().from(packageGroups).where(eq(packageGroups.id, req.params.id)).limit(1);
-    if (!group) return res.status(404).json({ error: "Not Found" });
-    return res.json(group);
+    const [row] = await db
+      .select({
+        group: packageGroups,
+        coordinatorId: users.id,
+        coordinatorName: users.fullName,
+        coordinatorEmail: users.email,
+        coordinatorPhone: users.phone,
+        coordinatorCompany: users.companyName,
+        coordinatorCountry: users.countryOfOps,
+      })
+      .from(packageGroups)
+      .leftJoin(users, eq(packageGroups.campProviderId, users.id))
+      .where(eq(packageGroups.id, req.params.id))
+      .limit(1);
+    if (!row) return res.status(404).json({ error: "Not Found" });
+    return res.json({
+      ...row.group,
+      coordinator: row.coordinatorId ? {
+        id: row.coordinatorId,
+        fullName: row.coordinatorName,
+        email: row.coordinatorEmail,
+        phone: row.coordinatorPhone,
+        companyName: row.coordinatorCompany,
+        countryOfOps: row.coordinatorCountry,
+      } : null,
+    });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
