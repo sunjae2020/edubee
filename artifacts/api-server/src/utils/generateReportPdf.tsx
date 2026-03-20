@@ -1,9 +1,12 @@
 import React from "react";
+import path from "path";
+import type { ProgramReport, ReportSection } from "@workspace/db/schema";
 import {
   Document,
   Page,
   View,
   Text,
+  Image,
   Svg,
   Circle,
   Path,
@@ -12,7 +15,8 @@ import {
   StyleSheet,
   renderToBuffer,
 } from "@react-pdf/renderer";
-import type { ProgramReport, ReportSection } from "@workspace/db/schema";
+
+const LOGO_PATH = path.resolve(process.cwd(), "../../attached_assets/edubee_logo_800x310b_1774000040384.png");
 
 // ── Design Tokens ─────────────────────────────────────────────────
 const C = {
@@ -73,37 +77,16 @@ function levelWidth(level: string | null | undefined): string {
   return `${pct}%`;
 }
 
-// ── Bee SVG Icon ──────────────────────────────────────────────────
-function BeeSvg({ size = 30 }: { size?: number }) {
-  return (
-    <Svg viewBox="0 0 30 30" width={size} height={size}>
-      <Ellipse cx="7" cy="13" rx="5" ry="7" fill={C.orangeLight} stroke={C.orange} strokeWidth={0.8} />
-      <Ellipse cx="23" cy="13" rx="5" ry="7" fill={C.orangeLight} stroke={C.orange} strokeWidth={0.8} />
-      <Ellipse cx="15" cy="17" rx="7" ry="9" fill={C.orange} />
-      <Path d="M 9,15 Q 15,13 21,15" stroke={C.white} strokeWidth={1.2} />
-      <Path d="M 9,18 Q 15,16 21,18" stroke={C.white} strokeWidth={1.2} />
-      <Path d="M 12,8 Q 10,4 9,2" stroke={C.orangeDark} strokeWidth={1} />
-      <Circle cx={9} cy={2} r={1} fill={C.orangeDark} />
-      <Path d="M 18,8 Q 20,4 21,2" stroke={C.orangeDark} strokeWidth={1} />
-      <Circle cx={21} cy={2} r={1} fill={C.orangeDark} />
-    </Svg>
-  );
-}
-
-// ── PdfLogo ───────────────────────────────────────────────────────
+// ── PdfLogo — image-based ─────────────────────────────────────────
+// Logo image: 800 × 310 px → aspect ratio 2.58 : 1
 function PdfLogo({ size = "sm" }: { size?: "sm" | "md" | "lg" }) {
-  const sz = size === "lg" ? 60 : size === "md" ? 40 : 30;
-  const textSz = size === "lg" ? 28 : size === "md" ? 18 : 14;
-  const subSz = size === "lg" ? 10 : size === "md" ? 8 : 7;
-
+  const w = size === "lg" ? 180 : size === "md" ? 130 : 96;
+  const h = Math.round(w / (800 / 310));
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-      <BeeSvg size={sz} />
-      <View style={{ flexDirection: "column" }}>
-        <Text style={{ fontSize: textSz, fontWeight: 700, color: C.textDark, letterSpacing: -0.2 }}>edubee</Text>
-        <Text style={{ fontSize: subSz, fontWeight: 500, color: C.orange, letterSpacing: 2, marginTop: 2 }}>CAMP</Text>
-      </View>
-    </View>
+    <Image
+      src={LOGO_PATH}
+      style={{ width: w, height: h, objectFit: "contain" }}
+    />
   );
 }
 
