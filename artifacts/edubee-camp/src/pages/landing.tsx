@@ -121,7 +121,7 @@ export default function Landing() {
               <button
                 key={l.label}
                 onClick={l.action}
-                className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors whitespace-nowrap"
               >
                 {l.label}
               </button>
