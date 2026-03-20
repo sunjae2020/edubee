@@ -1,4 +1,6 @@
+import cron from "node-cron";
 import app from "./app";
+import { syncExchangeRates } from "./services/exchangeRateSync.js";
 
 const rawPort = process.env["PORT"];
 
@@ -22,3 +24,15 @@ const server = app.listen(port, () => {
 server.timeout = 120000;
 server.keepAliveTimeout = 121000;
 console.log("[FIX APPLIED] server.timeout = 120000ms");
+
+// ─── Exchange Rate Auto-Sync ───────────────────────────────────────────────
+// Schedule: midnight every day in Australia/Sydney timezone (AEST UTC+10 / AEDT UTC+11)
+cron.schedule(
+  "0 0 * * *",
+  async () => {
+    console.log("[ExchangeRateSync] Scheduled run triggered (Australia/Sydney midnight)");
+    await syncExchangeRates();
+  },
+  { timezone: "Australia/Sydney" }
+);
+console.log("[ExchangeRateSync] Cron job registered — runs at midnight Australia/Sydney time");

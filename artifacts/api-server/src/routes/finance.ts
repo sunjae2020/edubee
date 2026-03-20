@@ -22,6 +22,7 @@ async function enrichWithStudentName(rows: any[]): Promise<any[]> {
 }
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { syncExchangeRates, getLastSyncInfo } from "../services/exchangeRateSync.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
@@ -260,6 +261,26 @@ router.delete("/exchange-rates/:id", authenticate, requireRole(...ADMIN_ROLES), 
     const deleted = await db.delete(exchangeRates).where(eq(exchangeRates.id, id)).returning();
     if (deleted.length === 0) return res.status(404).json({ error: "Not found" });
     return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Manual sync trigger — fetches from external API immediately
+router.post("/exchange-rates/sync", authenticate, requireRole(...ADMIN_ROLES), async (_req, res) => {
+  try {
+    const result = await syncExchangeRates();
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Sync status info — when was last auto-sync
+router.get("/exchange-rates/sync-info", authenticate, async (_req, res) => {
+  try {
+    const info = await getLastSyncInfo();
+    return res.json(info);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
