@@ -196,13 +196,14 @@ export default function PackageGroupDetail() {
   const spots = spotsResp?.data ?? [];
   const interviewSetting = interviewResp?.data?.[0] ?? interviewResp?.[0];
 
-  // Build live rate map from DB
+  // Build live rate map from DB — keep latest rate per currency (allRates ordered ASC, so last write wins)
   const allRates: any[] = ratesResp?.data ?? [];
   const liveRates: Record<string, { rate: number; date: string }> = {};
   for (const r of allRates) {
     if (r.fromCurrency === "AUD") {
       const k = r.toCurrency.toUpperCase();
-      if (!liveRates[k]) liveRates[k] = { rate: parseFloat(r.rate), date: r.effectiveDate };
+      // Always overwrite so last entry (latest effectiveDate, ASC order) wins
+      liveRates[k] = { rate: parseFloat(r.rate), date: r.effectiveDate };
     }
   }
   const getRateFor = (ccy: string) => liveRates[ccy]?.rate ?? RATES[ccy] ?? 1;
@@ -612,7 +613,6 @@ export default function PackageGroupDetail() {
                 <thead>
                   <tr className="border-b bg-muted/30 text-xs text-muted-foreground">
                     <th className="px-4 py-2.5 text-left">Package</th>
-                    <th className="px-4 py-2.5 text-right">Days</th>
                     <th className="px-4 py-2.5 text-right">어른</th>
                     <th className="px-4 py-2.5 text-right">학생</th>
                     <th className="px-4 py-2.5 text-right">Max</th>
@@ -627,7 +627,6 @@ export default function PackageGroupDetail() {
                   ) : pkgs.map(p => (
                     <tr key={p.id} className="border-b last:border-0 hover:bg-[#FEF0E3]/50">
                       <td className="px-4 py-3 font-medium">{p.name}</td>
-                      <td className="px-4 py-3 text-right">{p.durationDays}d</td>
                       <td className="px-4 py-3 text-right text-blue-600">{p.maxAdults ?? "—"}</td>
                       <td className="px-4 py-3 text-right text-green-600">{p.maxStudents ?? "—"}</td>
                       <td className="px-4 py-3 text-right">{p.maxParticipants ?? "—"}</td>
