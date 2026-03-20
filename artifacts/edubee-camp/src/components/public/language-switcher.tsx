@@ -36,6 +36,7 @@ export function LanguageSwitcher({ variant = "default" }: { variant?: "default" 
         }`}
       >
         <span className="text-base leading-none">{current.flag}</span>
+        <span className="hidden sm:inline">{current.label}</span>
         <ChevronDown className="w-3 h-3 opacity-50" />
       </button>
 

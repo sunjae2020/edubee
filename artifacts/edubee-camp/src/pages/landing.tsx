@@ -154,10 +154,11 @@ export default function Landing() {
                 </button>
                 <button
                   onClick={() => logout()}
-                  className="flex items-center px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                   title="로그아웃"
                 >
                   <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">로그아웃</span>
                 </button>
               </div>
             ) : (
