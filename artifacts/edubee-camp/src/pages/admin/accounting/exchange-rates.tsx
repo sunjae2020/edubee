@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Plus, TrendingUp, ArrowRight, Clock } from "lucide-react";
+import { RefreshCw, Plus, TrendingUp, ArrowRight, Clock, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, parseISO } from "date-fns";
 
@@ -63,6 +63,7 @@ export default function ExchangeRates() {
   const { toast } = useToast();
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState(defaultForm);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["exchange-rates"],
@@ -82,7 +83,6 @@ export default function ExchangeRates() {
   }, [rates]);
 
   // Build AUD→X rates for preview section
-  // Strategy: direct AUD→X row, or invert X→AUD row
   const audToX = useMemo(() => {
     const map: Record<string, number> = { AUD: 1 };
     latestRates.forEach(r => {
@@ -109,6 +109,16 @@ export default function ExchangeRates() {
       setForm(defaultForm);
     },
     onError: () => toast({ title: "Failed to add rate", variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => axios.delete(`${BASE}/api/exchange-rates/${id}`).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["exchange-rates"] });
+      toast({ title: "Exchange rate deleted" });
+      setConfirmDeleteId(null);
+    },
+    onError: () => toast({ title: "Failed to delete rate", variant: "destructive" }),
   });
 
   const previewRate = form.rate ? Number(form.rate) : null;
@@ -169,7 +179,7 @@ export default function ExchangeRates() {
             : latestRates.length === 0
             ? <p className="text-sm text-muted-foreground col-span-3">No rates configured. Click "Add Rate" to get started.</p>
             : latestRates.map(r => (
-                <div key={r.id} className="bg-white rounded-lg border p-4 hover:border-[#F5821F]/50 hover:shadow-sm transition-all">
+                <div key={r.id} className="bg-white rounded-lg border p-4 hover:border-[#F5821F]/50 hover:shadow-sm transition-all group">
                   <div className="flex items-center gap-3">
                     <div className="text-2xl leading-none">{FLAG[r.fromCurrency] ?? "🏳️"}</div>
                     <div className="flex-1 min-w-0">
@@ -180,13 +190,22 @@ export default function ExchangeRates() {
                       </div>
                       <div className="text-xs text-muted-foreground truncate">{NAMES[r.fromCurrency] ?? r.fromCurrency}</div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <div className="font-bold text-base">
-                        {Number(r.rate) >= 1000
-                          ? Number(r.rate).toLocaleString("en-AU", { maximumFractionDigits: 0 })
-                          : Number(r.rate).toFixed(4)}
+                    <div className="flex items-start gap-2">
+                      <div className="text-right shrink-0">
+                        <div className="font-bold text-base">
+                          {Number(r.rate) >= 1000
+                            ? Number(r.rate).toLocaleString("en-AU", { maximumFractionDigits: 0 })
+                            : Number(r.rate).toFixed(4)}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">{fmtDate(r.effectiveDate)}</div>
                       </div>
-                      <div className="text-[10px] text-muted-foreground">{fmtDate(r.effectiveDate)}</div>
+                      <button
+                        onClick={() => setConfirmDeleteId(r.id)}
+                        className="mt-0.5 p-1 rounded text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Delete this rate"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                   {(r.updatedAt || r.createdAt) && (
@@ -216,17 +235,18 @@ export default function ExchangeRates() {
                   <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Effective</th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Source</th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Added</th>
+                  <th className="px-4 py-2 w-10"></th>
                 </tr>
               </thead>
               <tbody>
                 {rates.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground text-sm">
                       No rates yet.
                     </td>
                   </tr>
                 ) : [...rates].reverse().map(r => (
-                  <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3]">
+                  <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3] group">
                     <td className="px-4 py-2 font-medium">{FLAG[r.fromCurrency]} {r.fromCurrency}</td>
                     <td className="px-4 py-2">{FLAG[r.toCurrency]} {r.toCurrency}</td>
                     <td className="px-4 py-2 text-right font-mono text-sm">
@@ -239,6 +259,15 @@ export default function ExchangeRates() {
                       <span className="px-1.5 py-0.5 bg-muted rounded text-[11px] capitalize">{r.source ?? "manual"}</span>
                     </td>
                     <td className="px-4 py-2 text-muted-foreground text-xs">{fmtDateTime(r.createdAt)}</td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => setConfirmDeleteId(r.id)}
+                        className="p-1 rounded text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -316,6 +345,28 @@ export default function ExchangeRates() {
               </Button>
               <Button size="sm" variant="outline" onClick={() => { setShowCreate(false); setForm(defaultForm); }}>Cancel</Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={!!confirmDeleteId} onOpenChange={v => { if (!v) setConfirmDeleteId(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Delete Exchange Rate?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground mt-1">
+            이 환율 데이터를 삭제하면 랜딩페이지 및 패키지 가격에 해당 통화가 더 이상 표시되지 않을 수 있습니다.
+          </p>
+          <div className="flex gap-2 mt-4">
+            <Button
+              size="sm"
+              variant="destructive"
+              className="flex-1"
+              onClick={() => confirmDeleteId && deleteMutation.mutate(confirmDeleteId)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting…" : "Delete"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
           </div>
         </DialogContent>
       </Dialog>

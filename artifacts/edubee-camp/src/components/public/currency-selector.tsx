@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useDisplayCurrency } from "@/context/DisplayCurrencyContext";
 import { ChevronDown, Check } from "lucide-react";
 
-const CURRENCIES = [
+const ALL_CURRENCIES = [
   { code: "AUD", flag: "🇦🇺", name: "Australian Dollar" },
   { code: "USD", flag: "🇺🇸", name: "US Dollar" },
   { code: "KRW", flag: "🇰🇷", name: "Korean Won" },
@@ -12,11 +12,14 @@ const CURRENCIES = [
   { code: "PHP", flag: "🇵🇭", name: "Philippine Peso" },
   { code: "SGD", flag: "🇸🇬", name: "Singapore Dollar" },
   { code: "GBP", flag: "🇬🇧", name: "British Pound" },
+  { code: "EUR", flag: "🇪🇺", name: "Euro" },
+  { code: "NZD", flag: "🇳🇿", name: "New Zealand Dollar" },
+  { code: "CNY", flag: "🇨🇳", name: "Chinese Yuan" },
 ];
 
 export function CurrencySelector({ variant = "default" }: { variant?: "default" | "mobile" }) {
   const { t } = useTranslation();
-  const { displayCurrency, setDisplayCurrency } = useDisplayCurrency();
+  const { displayCurrency, setDisplayCurrency, rates } = useDisplayCurrency();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -28,7 +31,10 @@ export function CurrencySelector({ variant = "default" }: { variant?: "default" 
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const current = CURRENCIES.find(c => c.code === displayCurrency) ?? CURRENCIES[0];
+  // Only show currencies that have a DB exchange rate (or AUD which is always the base)
+  const availableCurrencies = ALL_CURRENCIES.filter(c => c.code === "AUD" || !!rates[c.code]);
+
+  const current = availableCurrencies.find(c => c.code === displayCurrency) ?? availableCurrencies[0];
 
   if (variant === "mobile") {
     return (
@@ -36,7 +42,7 @@ export function CurrencySelector({ variant = "default" }: { variant?: "default" 
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-3 py-1">
           {t("currency.selector_label", "My Currency")}
         </p>
-        {CURRENCIES.map(c => (
+        {availableCurrencies.map(c => (
           <button
             key={c.code}
             onClick={() => setDisplayCurrency(c.code)}
@@ -62,7 +68,7 @@ export function CurrencySelector({ variant = "default" }: { variant?: "default" 
         aria-label="Select currency"
       >
         <span className="text-base leading-none">💱</span>
-        <span>{current.code}</span>
+        <span>{current?.code ?? "AUD"}</span>
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
@@ -73,7 +79,7 @@ export function CurrencySelector({ variant = "default" }: { variant?: "default" 
               💱 {t("currency.selector_label", "My Currency")} (참고용)
             </p>
           </div>
-          {CURRENCIES.map(c => (
+          {availableCurrencies.map(c => (
             <button
               key={c.code}
               onClick={() => { setDisplayCurrency(c.code); setOpen(false); }}

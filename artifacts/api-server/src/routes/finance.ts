@@ -254,6 +254,17 @@ router.post("/exchange-rates", authenticate, requireRole(...ADMIN_ROLES), async 
   }
 });
 
+router.delete("/exchange-rates/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await db.delete(exchangeRates).where(eq(exchangeRates.id, id)).returning();
+    if (deleted.length === 0) return res.status(404).json({ error: "Not found" });
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // ── Receipts ─────────────────────────────────────────────────
 router.get("/receipts", authenticate, async (req, res) => {
   try {

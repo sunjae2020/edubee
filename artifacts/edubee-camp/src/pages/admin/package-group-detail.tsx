@@ -208,6 +208,9 @@ export default function PackageGroupDetail() {
   const getRateFor = (ccy: string) => liveRates[ccy]?.rate ?? RATES[ccy] ?? 1;
   const rateDate = Object.values(liveRates)[0]?.date ?? "—";
 
+  // Only show currency columns/fields for currencies that have a DB exchange rate
+  const activeCurrencies = CURRENCIES.filter(c => c.ccy === "AUD" || !!liveRates[c.ccy]);
+
   const updateGroup = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
       axios.put(`${BASE}/api/package-groups/${id}`, payload).then(r => r.data),
@@ -246,20 +249,22 @@ export default function PackageGroupDetail() {
 
   const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
 
+  const DECIMAL_CCYS = new Set(["USD", "SGD", "GBP", "EUR", "NZD"]);
   const handlePkgAudChange = (v: string) => {
     setPkgForm(f => {
       const aud = parseFloat(v) || 0;
       if (!autoConvert) return { ...f, priceAud: v };
-      return {
-        ...f, priceAud: v,
-        priceKrw: aud ? Math.round(aud * getRateFor("KRW") / 100) * 100 + "" : "",
-        priceThb: aud ? Math.round(aud * getRateFor("THB") / 100) * 100 + "" : "",
-        priceJpy: aud ? Math.round(aud * getRateFor("JPY") / 100) * 100 + "" : "",
-        priceUsd: aud ? (aud * getRateFor("USD")).toFixed(2) : "",
-        pricePhp: aud ? Math.round(aud * getRateFor("PHP") / 100) * 100 + "" : "",
-        priceSgd: aud ? (aud * getRateFor("SGD")).toFixed(2) : "",
-        priceGbp: aud ? (aud * getRateFor("GBP")).toFixed(2) : "",
-      };
+      const updates: Record<string, string> = { priceAud: v };
+      activeCurrencies.forEach(c => {
+        if (c.ccy === "AUD") return;
+        const rate = getRateFor(c.ccy);
+        updates[c.field] = aud
+          ? DECIMAL_CCYS.has(c.ccy)
+            ? (aud * rate).toFixed(2)
+            : Math.round(aud * rate / 100) * 100 + ""
+          : "";
+      });
+      return { ...f, ...updates };
     });
   };
 
@@ -611,7 +616,7 @@ export default function PackageGroupDetail() {
                     <th className="px-4 py-2.5 text-right">어른</th>
                     <th className="px-4 py-2.5 text-right">학생</th>
                     <th className="px-4 py-2.5 text-right">Max</th>
-                    {CURRENCIES.map(c => <th key={c.ccy} className="px-3 py-2.5 text-right">{c.flag} {c.ccy}</th>)}
+                    {activeCurrencies.map(c => <th key={c.ccy} className="px-3 py-2.5 text-right">{c.flag} {c.ccy}</th>)}
                     <th className="px-4 py-2.5 text-center">Status</th>
                     {canEdit && <th className="px-4 py-2.5" />}
                   </tr>
@@ -626,7 +631,7 @@ export default function PackageGroupDetail() {
                       <td className="px-4 py-3 text-right text-blue-600">{p.maxAdults ?? "—"}</td>
                       <td className="px-4 py-3 text-right text-green-600">{p.maxStudents ?? "—"}</td>
                       <td className="px-4 py-3 text-right">{p.maxParticipants ?? "—"}</td>
-                      {CURRENCIES.map(c => (
+                      {activeCurrencies.map(c => (
                         <td key={c.ccy} className="px-3 py-3 text-right font-mono text-xs">
                           {(p as any)[c.field] ? Number((p as any)[c.field]).toLocaleString() : "—"}
                         </td>
@@ -960,7 +965,7 @@ export default function PackageGroupDetail() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {CURRENCIES.map(c => (
+                {activeCurrencies.map(c => (
                   <div key={c.ccy}>
                     <Label className="text-xs">{c.flag} {c.label}</Label>
                     <Input type="number" value={(pkgForm as any)[c.field]} onChange={e => {
