@@ -189,6 +189,32 @@ router.get("/applications/:id", authenticate, async (req, res) => {
   }
 });
 
+router.post("/applications/participants", authenticate, async (req, res) => {
+  try {
+    const { applicationId, participantType, sequenceOrder, fullName, fullNameNative, dateOfBirth,
+      gender, nationality, passportNumber, passportExpiry, grade, schoolName, englishLevel,
+      medicalConditions, dietaryRequirements, specialNeeds, relationshipToStudent,
+      isEmergencyContact, email, phone, whatsapp, lineId } = req.body;
+    if (!applicationId || !fullName) return res.status(400).json({ error: "applicationId and fullName are required" });
+    const [created] = await db.insert(applicationParticipants).values({
+      applicationId, participantType: participantType ?? "child",
+      sequenceOrder: sequenceOrder ?? 1, fullName,
+      fullNameNative: fullNameNative ?? null, dateOfBirth: dateOfBirth ?? null,
+      gender: gender ?? null, nationality: nationality ?? null,
+      passportNumber: passportNumber ?? null, passportExpiry: passportExpiry ?? null,
+      grade: grade ?? null, schoolName: schoolName ?? null, englishLevel: englishLevel ?? null,
+      medicalConditions: medicalConditions ?? null, dietaryRequirements: dietaryRequirements ?? null,
+      specialNeeds: specialNeeds ?? null, relationshipToStudent: relationshipToStudent ?? null,
+      isEmergencyContact: isEmergencyContact ?? false,
+      email: email ?? null, phone: phone ?? null, whatsapp: whatsapp ?? null, lineId: lineId ?? null,
+    }).returning();
+    return res.status(201).json(created);
+  } catch (err) {
+    console.error("POST participant error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.patch("/applications/participants/:id", authenticate, async (req, res) => {
   try {
     const {

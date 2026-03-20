@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ParticipantEditDialog, ParticipantAddDialog } from "@/components/shared/ParticipantDialogs";
 import { Pencil, Plus, Calendar, Video, MapPin, User, ClipboardList, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -60,175 +61,6 @@ const FORMAT_ICONS: Record<string, React.ReactNode> = {
   in_person: <MapPin className="w-3.5 h-3.5" />,
   phone: <User className="w-3.5 h-3.5" />,
 };
-
-// ─── Participant Edit Dialog ─────────────────────────────────────────────────
-function ParticipantEditDialog({
-  participant,
-  open,
-  onClose,
-  onSave,
-  saving,
-}: {
-  participant: any;
-  open: boolean;
-  onClose: () => void;
-  onSave: (data: Record<string, any>) => void;
-  saving: boolean;
-}) {
-  const [form, setForm] = useState({
-    fullName: participant?.fullName ?? "",
-    fullNameNative: participant?.fullNameNative ?? "",
-    dateOfBirth: participant?.dateOfBirth ?? "",
-    gender: participant?.gender ?? "",
-    nationality: participant?.nationality ?? "",
-    passportNumber: participant?.passportNumber ?? "",
-    passportExpiry: participant?.passportExpiry ?? "",
-    grade: participant?.grade ?? "",
-    schoolName: participant?.schoolName ?? "",
-    englishLevel: participant?.englishLevel ?? "",
-    email: participant?.email ?? "",
-    phone: participant?.phone ?? "",
-    whatsapp: participant?.whatsapp ?? "",
-    lineId: participant?.lineId ?? "",
-    medicalConditions: participant?.medicalConditions ?? "",
-    dietaryRequirements: participant?.dietaryRequirements ?? "",
-    specialNeeds: participant?.specialNeeds ?? "",
-    relationshipToStudent: participant?.relationshipToStudent ?? "",
-  });
-  const f = (k: string) => (v: string) => setForm(p => ({ ...p, [k]: v }));
-
-  return (
-    <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ClipboardList className="w-4 h-4 text-[#F5821F]" />
-            Edit Participant — {participant?.fullName}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-          {/* Personal Info */}
-          <div className="space-y-3 md:col-span-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Personal Info</p>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Full Name *</Label>
-            <Input value={form.fullName} onChange={e => f("fullName")(e.target.value)} className="h-8 text-sm" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Full Name (Native Script)</Label>
-            <Input value={form.fullNameNative} onChange={e => f("fullNameNative")(e.target.value)} className="h-8 text-sm" placeholder="e.g. 김철수" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Date of Birth</Label>
-            <Input type="date" value={form.dateOfBirth} onChange={e => f("dateOfBirth")(e.target.value)} className="h-8 text-sm" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Gender</Label>
-            <Select value={form.gender} onValueChange={f("gender")}>
-              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select gender" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">—</SelectItem>
-                {GENDERS.map(g => <SelectItem key={g} value={g}>{g.replace(/_/g, " ")}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Nationality</Label>
-            <Input value={form.nationality} onChange={e => f("nationality")(e.target.value)} className="h-8 text-sm" placeholder="e.g. Korean" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Relationship to Student</Label>
-            <Input value={form.relationshipToStudent} onChange={e => f("relationshipToStudent")(e.target.value)} className="h-8 text-sm" placeholder="e.g. parent, guardian" />
-          </div>
-
-          {/* Passport */}
-          <div className="space-y-3 md:col-span-2 pt-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Passport</p>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Passport Number</Label>
-            <Input value={form.passportNumber} onChange={e => f("passportNumber")(e.target.value)} className="h-8 text-sm" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Passport Expiry</Label>
-            <Input type="date" value={form.passportExpiry} onChange={e => f("passportExpiry")(e.target.value)} className="h-8 text-sm" />
-          </div>
-
-          {/* Academic */}
-          <div className="space-y-3 md:col-span-2 pt-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Academic</p>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Grade / Year</Label>
-            <Input value={form.grade} onChange={e => f("grade")(e.target.value)} className="h-8 text-sm" placeholder="e.g. Grade 7, Year 9" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">School Name</Label>
-            <Input value={form.schoolName} onChange={e => f("schoolName")(e.target.value)} className="h-8 text-sm" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">English Level</Label>
-            <Select value={form.englishLevel} onValueChange={f("englishLevel")}>
-              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select level" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">—</SelectItem>
-                {ENGLISH_LEVELS.map(l => <SelectItem key={l} value={l}>{l.replace(/_/g, " ")}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Contact */}
-          <div className="space-y-3 md:col-span-2 pt-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Contact</p>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Email</Label>
-            <Input type="email" value={form.email} onChange={e => f("email")(e.target.value)} className="h-8 text-sm" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Phone</Label>
-            <Input value={form.phone} onChange={e => f("phone")(e.target.value)} className="h-8 text-sm" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">WhatsApp</Label>
-            <Input value={form.whatsapp} onChange={e => f("whatsapp")(e.target.value)} className="h-8 text-sm" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">LINE ID</Label>
-            <Input value={form.lineId} onChange={e => f("lineId")(e.target.value)} className="h-8 text-sm" />
-          </div>
-
-          {/* Health */}
-          <div className="space-y-3 md:col-span-2 pt-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Health & Dietary</p>
-          </div>
-          <div className="space-y-1 md:col-span-2">
-            <Label className="text-xs">Medical Conditions</Label>
-            <Textarea value={form.medicalConditions} onChange={e => f("medicalConditions")(e.target.value)} className="text-sm min-h-[60px]" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Dietary Requirements</Label>
-            <Input value={form.dietaryRequirements} onChange={e => f("dietaryRequirements")(e.target.value)} className="h-8 text-sm" placeholder="e.g. vegetarian, halal" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Special Needs</Label>
-            <Input value={form.specialNeeds} onChange={e => f("specialNeeds")(e.target.value)} className="h-8 text-sm" />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-4 border-t mt-4">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => onSave(form)} disabled={saving}>
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-            Save Changes
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 // ─── Interview Edit Dialog ────────────────────────────────────────────────────
 function InterviewDialog({
@@ -356,6 +188,7 @@ export default function ApplicationDetail() {
 
   // Edit dialogs state
   const [editParticipant, setEditParticipant] = useState<any | null>(null);
+  const [addParticipant, setAddParticipant] = useState(false);
   const [editInterview, setEditInterview] = useState<any | null>(null);
   const [newInterview, setNewInterview] = useState(false);
 
@@ -396,6 +229,17 @@ export default function ApplicationDetail() {
       setEditParticipant(null);
     },
     onError: () => toast({ variant: "destructive", title: "Failed to update participant" }),
+  });
+
+  const createParticipant = useMutation({
+    mutationFn: (data: Record<string, any>) =>
+      axios.post(`${BASE}/api/applications/participants`, { ...data, applicationId: id }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["application-detail-page", id] });
+      toast({ title: "Participant added" });
+      setAddParticipant(false);
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to add participant" }),
   });
 
   const updateInterview = useMutation({
@@ -500,6 +344,14 @@ export default function ApplicationDetail() {
 
         {/* ── Participants ── */}
         {activeTab === "participants" && (
+          <div className="space-y-3">
+            {canEdit && (
+              <div className="flex justify-end">
+                <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setAddParticipant(true)}>
+                  <Plus className="w-3.5 h-3.5" /> Add Participant
+                </Button>
+              </div>
+            )}
           <div className="bg-card rounded-xl border overflow-hidden">
             <table className="w-full text-sm">
               <thead>
@@ -548,6 +400,7 @@ export default function ApplicationDetail() {
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
         )}
 
@@ -667,6 +520,15 @@ export default function ApplicationDetail() {
           saving={updateParticipant.isPending}
         />
       )}
+
+      {/* ── Add Participant Dialog ── */}
+      <ParticipantAddDialog
+        applicationId={id!}
+        open={addParticipant}
+        onClose={() => setAddParticipant(false)}
+        onSave={(data) => createParticipant.mutate(data)}
+        saving={createParticipant.isPending}
+      />
 
       {/* ── Interview Edit Dialog ── */}
       {editInterview && (
