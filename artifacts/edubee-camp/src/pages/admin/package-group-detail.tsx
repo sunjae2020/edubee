@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Edit, RefreshCw, X, Loader2 } from "lucide-react";
+import { Plus, Edit, RefreshCw, X, Loader2, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 
@@ -66,6 +66,9 @@ export default function PackageGroupDetail() {
   const [addQty, setAddQty] = useState(1);
   const [addUnitPrice, setAddUnitPrice] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editQty, setEditQty] = useState(1);
+  const [editUnitPrice, setEditUnitPrice] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["package-group-detail", id],
@@ -133,6 +136,23 @@ export default function PackageGroupDetail() {
     },
     onError: () => toast({ variant: "destructive", title: "Failed to remove product" }),
   });
+
+  const updateLinkedProduct = useMutation({
+    mutationFn: ({ productId, quantity, unitPrice }: { productId: string; quantity: number; unitPrice: string }) =>
+      axios.patch(`${BASE}/api/package-groups/${id}/products/${productId}`, { quantity, unitPrice }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pg-linked-products", id] });
+      setEditingProductId(null);
+      toast({ title: "Product updated" });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to update product" }),
+  });
+
+  const startEditProduct = (row: any) => {
+    setEditingProductId(row.productId);
+    setEditQty(row.quantity ?? 1);
+    setEditUnitPrice(row.unitPrice != null ? String(row.unitPrice) : String(row.cost ?? ""));
+  };
 
   const group = data?.data ?? data;
   const pkgs: Pkg[] = pkgsResp?.data ?? [];
@@ -453,29 +473,83 @@ export default function PackageGroupDetail() {
                     </tr>
                   ) : (
                     linkedProducts.map((row: any) => {
-                      const unitP = row.unitPrice ?? row.cost ?? 0;
-                      const total = Number(unitP) * (row.quantity ?? 1);
+                      const isEditingRow = editingProductId === row.productId;
+                      const unitP = isEditingRow ? editUnitPrice : (row.unitPrice ?? row.cost ?? 0);
+                      const qty = isEditingRow ? editQty : (row.quantity ?? 1);
+                      const total = Number(unitP) * Number(qty);
                       return (
-                        <tr key={row.linkId} className="border-b hover:bg-[#FEF0E3]/50 h-12">
+                        <tr key={row.linkId} className={`border-b h-12 ${isEditingRow ? "bg-[#FEF0E3]/70" : "hover:bg-[#FEF0E3]/50"}`}>
                           <td className="px-4 py-2 font-medium">{row.productName}</td>
                           <td className="px-4 py-2">
                             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground capitalize">{row.productType}</span>
                           </td>
-                          <td className="px-4 py-2 text-right font-mono text-xs">
-                            {unitP ? `${row.currency ?? "AUD"} ${Number(unitP).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+                          <td className="px-4 py-2 text-right">
+                            {isEditingRow ? (
+                              <Input
+                                type="number" step="0.01" min="0"
+                                value={editUnitPrice}
+                                onChange={e => setEditUnitPrice(e.target.value)}
+                                className="h-7 text-xs text-right font-mono w-28 ml-auto border-[#F5821F]"
+                              />
+                            ) : (
+                              <span className="font-mono text-xs">
+                                {unitP ? `${row.currency ?? "AUD"} ${Number(unitP).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+                              </span>
+                            )}
                           </td>
-                          <td className="px-4 py-2 text-right text-xs">{row.quantity ?? 1}</td>
+                          <td className="px-4 py-2 text-right">
+                            {isEditingRow ? (
+                              <Input
+                                type="number" min="1" step="1"
+                                value={editQty}
+                                onChange={e => setEditQty(Number(e.target.value))}
+                                className="h-7 text-xs text-right w-16 ml-auto border-[#F5821F]"
+                              />
+                            ) : (
+                              <span className="text-xs">{row.quantity ?? 1}</span>
+                            )}
+                          </td>
                           <td className="px-4 py-2 text-right font-mono text-xs font-semibold">
                             {unitP ? `${row.currency ?? "AUD"} ${total.toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
                           </td>
                           {canEdit && (
                             <td className="px-4 py-2">
-                              <button
-                                className="text-muted-foreground hover:text-red-500 transition-colors"
-                                onClick={() => { if (window.confirm("Remove this product?")) unlinkProduct.mutate(row.productId); }}
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
+                              {isEditingRow ? (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    className="text-[#F5821F] hover:text-[#d97706] transition-colors disabled:opacity-50"
+                                    disabled={updateLinkedProduct.isPending}
+                                    onClick={() => updateLinkedProduct.mutate({ productId: row.productId, quantity: editQty, unitPrice: editUnitPrice })}
+                                    title="Save"
+                                  >
+                                    {updateLinkedProduct.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                  </button>
+                                  <button
+                                    className="text-muted-foreground hover:text-foreground transition-colors"
+                                    onClick={() => setEditingProductId(null)}
+                                    title="Cancel"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    className="text-muted-foreground hover:text-[#F5821F] transition-colors"
+                                    onClick={() => startEditProduct(row)}
+                                    title="Edit"
+                                  >
+                                    <Edit className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    className="text-muted-foreground hover:text-red-500 transition-colors"
+                                    onClick={() => { if (window.confirm("Remove this product?")) unlinkProduct.mutate(row.productId); }}
+                                    title="Remove"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           )}
                         </tr>

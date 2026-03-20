@@ -164,6 +164,28 @@ router.post("/package-groups/:id/products", authenticate, requireRole(...ADMIN_R
   }
 });
 
+router.patch("/package-groups/:id/products/:productId", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { quantity, unitPrice } = req.body;
+    const updates: Record<string, unknown> = {};
+    if (quantity != null) updates.quantity = Number(quantity);
+    if (unitPrice != null) updates.unitPrice = unitPrice === "" ? null : String(unitPrice);
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No fields to update" });
+    const [updated] = await db.update(packageGroupProducts)
+      .set(updates)
+      .where(and(
+        eq(packageGroupProducts.packageGroupId, req.params.id),
+        eq(packageGroupProducts.productId, req.params.productId),
+      ))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Link not found" });
+    return res.json(updated);
+  } catch (err) {
+    console.error("[PATCH /package-groups/:id/products/:productId]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.delete("/package-groups/:id/products/:productId", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const deleted = await db.delete(packageGroupProducts)
