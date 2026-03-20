@@ -13,6 +13,7 @@ import heroBg from "@assets/1_2_1773827220210.jpg";
 import { ProgramDetailDrawer } from "@/components/public/program-detail-drawer";
 import { ApplicationModal } from "@/components/public/application-modal";
 import type { PublicProgram } from "@/lib/program-utils";
+import { getLocalizedName } from "@/lib/program-utils";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -54,7 +55,7 @@ const TESTIMONIALS = [
 ];
 
 export default function Landing() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, logout, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [scrolled, setScrolled]             = useState(false);
@@ -76,6 +77,15 @@ export default function Landing() {
     queryKey: ["public-programs"],
     queryFn: fetchPrograms,
   });
+
+  // Pick a stable random program each page load
+  const [heroIdx] = useState(() => Math.floor(Math.random() * 100));
+  const heroProgram = programs.length > 0 ? programs[heroIdx % programs.length] : null;
+  const heroPkgs = heroProgram?.packages?.slice(0, 3) ?? [];
+  const midIdx = Math.floor(heroPkgs.length / 2);
+  const spotsAvail = heroProgram?.spotSummary?.grades.reduce((s, g) => s + g.available, 0) ?? null;
+  const totalSpots = heroProgram?.spotSummary?.grades.reduce((s, g) => s + g.total, 0) ?? null;
+  const enrolled = totalSpots !== null && spotsAvail !== null ? totalSpots - spotsAvail : null;
 
   useEffect(() => {
     const fn = () => {
@@ -311,42 +321,69 @@ export default function Landing() {
             >
               <div className="relative w-full max-w-md">
                 {/* Main card */}
-                <div className="bg-white rounded-2xl border border-border p-6 shadow-lg space-y-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#F5821F]/10 flex items-center justify-center text-xl">🇦🇺</div>
-                    <div>
-                      <div className="font-semibold text-sm text-foreground">Sydney Summer English Camp</div>
-                      <div className="text-xs text-muted-foreground">Sydney, Australia</div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {["2 Weeks", "4 Weeks", "8 Weeks"].map((d, i) => (
-                      <div key={i} className={`rounded-lg p-3 text-center border ${i === 1 ? "border-[#F5821F] bg-[#F5821F]/5" : "border-border"}`}>
-                        <div className={`font-bold text-sm ${i === 1 ? "text-[#F5821F]" : "text-foreground"}`}>
-                          {["A$2,850", "A$5,200", "A$9,800"][i]}
+                <div className="bg-white rounded-2xl border border-border p-6 shadow-lg space-y-5 min-h-[200px]">
+                  {heroProgram ? (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#F5821F]/10 flex items-center justify-center text-xl">
+                          {heroProgram.countryFlag}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{d}</div>
+                        <div>
+                          <div className="font-semibold text-sm text-foreground leading-tight">
+                            {getLocalizedName(heroProgram, i18n.language)}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{heroProgram.location}</div>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-border">
-                    <div className="flex items-center gap-2">
-                      <div className="flex -space-x-1.5">
-                        {["KJ", "PH", "TH"].map((i) => (
-                          <div key={i} className="w-6 h-6 rounded-full bg-[#F5821F]/20 text-[#F5821F] text-xs font-bold flex items-center justify-center ring-2 ring-white">{i[0]}</div>
-                        ))}
+
+                      {heroPkgs.length > 0 && (
+                        <div className={`grid gap-3 ${heroPkgs.length === 1 ? "grid-cols-1" : heroPkgs.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+                          {heroPkgs.map((pkg, i) => {
+                            const isHighlight = i === midIdx;
+                            return (
+                              <div key={pkg.id} className={`rounded-lg p-3 text-center border ${isHighlight ? "border-[#F5821F] bg-[#F5821F]/5" : "border-border"}`}>
+                                <div className={`font-bold text-sm ${isHighlight ? "text-[#F5821F]" : "text-foreground"}`}>
+                                  {pkg.displayFormatted ?? "—"}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-0.5">{pkg.name}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-1 border-t border-border">
+                        <div className="flex items-center gap-2">
+                          {enrolled !== null && enrolled > 0 && (
+                            <>
+                              <div className="flex -space-x-1.5">
+                                {Array.from({ length: Math.min(3, enrolled) }).map((_, i) => (
+                                  <div key={i} className="w-6 h-6 rounded-full bg-[#F5821F]/20 text-[#F5821F] text-xs font-bold flex items-center justify-center ring-2 ring-white">
+                                    {String.fromCharCode(65 + ((heroIdx + i) % 26))}
+                                  </div>
+                                ))}
+                              </div>
+                              <span className="text-xs text-muted-foreground">{enrolled} enrolled</span>
+                            </>
+                          )}
+                        </div>
+                        {spotsAvail !== null && spotsAvail > 0 && (
+                          <div className="text-xs font-semibold text-[#F5821F] flex items-center gap-1">
+                            {spotsAvail} spots left <span className="w-1.5 h-1.5 rounded-full bg-[#F5821F] animate-pulse inline-block" />
+                          </div>
+                        )}
                       </div>
-                      <span className="text-xs text-muted-foreground">12 enrolled</span>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-full py-8">
+                      <div className="w-6 h-6 border-2 border-[#F5821F] border-t-transparent rounded-full animate-spin" />
                     </div>
-                    <div className="text-xs font-semibold text-[#F5821F] flex items-center gap-1">
-                      8 spots left <span className="w-1.5 h-1.5 rounded-full bg-[#F5821F] animate-pulse inline-block" />
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Floating badges */}
                 <div className="absolute -top-4 -right-4 bg-white border border-border rounded-xl px-3 py-2 shadow-md text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  🌏 <span>10+ Countries</span>
+                  🌏 <span>{programs.length > 0 ? `${programs.length}+ Programs` : "10+ Countries"}</span>
                 </div>
                 <div className="absolute -bottom-4 -left-4 bg-[#F5821F] rounded-xl px-3 py-2 shadow-md text-xs font-semibold text-white flex items-center gap-1.5">
                   ✓ Verified Programs
