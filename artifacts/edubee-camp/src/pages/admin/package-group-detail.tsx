@@ -5,6 +5,7 @@ import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
+import { ThumbnailUploader } from "@/components/shared/ThumbnailUploader";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -317,11 +318,25 @@ export default function PackageGroupDetail() {
                   )}
                 </DetailRow>
               )}
-              <DetailRow label="Thumbnail URL" value={group.thumbnailUrl} />
-              {isEditing && (
-                <EditableField label="Thumbnail URL" isEditing={isEditing} value={group.thumbnailUrl}
-                  editValue={getValue("thumbnailUrl")} onEdit={v => setField("thumbnailUrl", v)} />
-              )}
+              <DetailRow label="Thumbnail">
+                {canEdit ? (
+                  <ThumbnailUploader
+                    currentUrl={group.thumbnailUrl}
+                    onUploaded={async (objectPath) => {
+                      await updateGroup.mutateAsync({ ...group, thumbnailUrl: objectPath || null });
+                    }}
+                  />
+                ) : group.thumbnailUrl ? (
+                  <img
+                    src={group.thumbnailUrl.startsWith("/objects/") ? `${BASE}/api/storage${group.thumbnailUrl}` : group.thumbnailUrl}
+                    alt="Thumbnail"
+                    className="w-full max-w-xs rounded-lg object-cover border"
+                    style={{ aspectRatio: "16/9" }}
+                  />
+                ) : (
+                  <span className="text-muted-foreground/60 text-sm">—</span>
+                )}
+              </DetailRow>
               <DetailRow label="Created" value={group.createdAt ? format(new Date(group.createdAt), "PPP") : "—"} />
               <DetailRow label="Updated" value={group.updatedAt ? format(new Date(group.updatedAt), "PPP") : "—"} />
             </DetailSection>
