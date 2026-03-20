@@ -426,8 +426,13 @@ router.delete("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async 
       .where(eq(packageGroupProducts.productId, req.params.id))
       .limit(1);
     if (linkedGroups.length > 0) {
+      const [{ groupCount }] = await db
+        .select({ groupCount: count(packageGroupProducts.id) })
+        .from(packageGroupProducts)
+        .where(eq(packageGroupProducts.productId, req.params.id));
       return res.status(409).json({
-        error: "Cannot archive product while it is linked to one or more package groups. Remove all links first.",
+        error: `이 상품은 ${groupCount}개의 Package Group에서 사용 중입니다. 먼저 연결을 해제해주세요.`,
+        linkedGroupCount: Number(groupCount),
       });
     }
     await db.update(products).set({ status: "archived", updatedAt: new Date() })

@@ -9,11 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Package, Pencil, Trash2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import ProductDrawer from "@/components/shared/ProductDrawer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
@@ -26,11 +29,12 @@ interface Product {
   cost?: string | null;
   currency?: string | null;
   status?: string | null;
+  providerAccountId?: string | null;
   convertedCost?: Record<string, number | null>;
   createdAt?: string;
 }
 
-const PRODUCT_TYPES = ["accommodation", "program", "activity", "transport", "meal", "insurance", "visa", "other"];
+const PRODUCT_TYPES = ["institute", "hotel", "pickup", "tour", "settlement", "program"];
 const DISPLAY_CURRENCIES = ["AUD", "KRW", "JPY", "THB", "USD", "SGD", "GBP", "EUR", "PHP"];
 const CCY_FLAGS: Record<string, string> = {
   AUD: "🇦🇺", KRW: "🇰🇷", JPY: "🇯🇵", THB: "🇹🇭",
@@ -43,19 +47,61 @@ const STATUS_COLORS: Record<string, string> = {
   archived: "bg-red-100 text-red-700",
 };
 
-const emptyForm = { productName: "", productType: "program", description: "", cost: "", currency: "AUD", status: "active" };
+const emptyForm = {
+  productName: "", productType: "institute", description: "",
+  cost: "", currency: "AUD", status: "active",
+};
+
+// ── LinkedGroupsCell ────────────────────────────────────────────
+function LinkedGroupsCell({ productId }: { productId: string }) {
+  const { data = [], isLoading } = useQuery<{ nameEn: string }[]>({
+    queryKey: ["product-linked-groups", productId],
+    queryFn: () => axios.get(`${BASE}/api/products/${productId}/linked-groups`).then(r => r.data),
+    staleTime: 30_000,
+  });
+
+  if (isLoading) return <span className="text-muted-foreground text-xs">…</span>;
+  if (!data.length) return <span className="text-muted-foreground">—</span>;
+
+  const label = `${data.length} group${data.length !== 1 ? "s" : ""}`;
+  const names = data.map(g => `• ${g.nameEn}`).join("\n");
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F33] cursor-default">
+            {label}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="whitespace-pre-line max-w-[200px]">
+          {names}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 export default function Products() {
   const [, setLocation] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canEdit = ["super_admin", "admin"].includes(user?.role ?? "");
+
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const [showDialog, setShowDialog] = useState(false);
-  const [editing, setEditing] = useState<Product | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [displayCurrency, setDisplayCurrency] = useState("AUD");
+
+  // ProductDrawer state (PART 2)
+  const [drawerProductId, setDrawerProductId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const openDrawer = (id: string) => { setDrawerProductId(id); setDrawerOpen(true); };
+  const closeDrawer = () => { setDrawerOpen(false); setDrawerProductId(null); };
 
   const queryKey = ["products", { search, typeFilter, page }];
   const { data: resp, isLoading } = useQuery({
@@ -63,6 +109,7 @@ export default function Products() {
     queryFn: () => {
       const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
       if (typeFilter !== "all") params.set("productType", typeFilter);
+      if (search) params.set("search", search);
       return axios.get(`${BASE}/api/products?${params}`).then(r => r.data);
     },
   });
@@ -75,44 +122,26 @@ export default function Products() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products"] });
       toast({ title: "Product created" });
-      setShowDialog(false);
+      setShowCreateDialog(false);
       setForm(emptyForm);
     },
     onError: () => toast({ variant: "destructive", title: "Failed to create product" }),
-  });
-
-  const updateProduct = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      axios.put(`${BASE}/api/products/${id}`, data).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
-      toast({ title: "Product updated" });
-      setShowDialog(false);
-      setEditing(null);
-    },
-    onError: () => toast({ variant: "destructive", title: "Failed to update product" }),
   });
 
   const deleteProduct = useMutation({
     mutationFn: (id: string) => axios.delete(`${BASE}/api/products/${id}`).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products"] });
-      toast({ title: "Product deleted" });
+      toast({ title: "Product archived" });
     },
-    onError: () => toast({ variant: "destructive", title: "Failed to delete product" }),
+    onError: (err: any) => {
+      const msg = err?.response?.data?.error ?? "Failed to archive product";
+      toast({ variant: "destructive", title: msg });
+    },
   });
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setShowDialog(true); };
-  const openEdit = (p: Product) => {
-    setEditing(p);
-    setForm({ productName: p.productName, productType: p.productType, description: p.description ?? "", cost: p.cost ?? "", currency: p.currency ?? "AUD", status: p.status ?? "active" });
-    setShowDialog(true);
-  };
-
-  const handleSubmit = () => {
-    const payload = { ...form, cost: form.cost || null };
-    if (editing) updateProduct.mutate({ id: editing.id, data: payload });
-    else createProduct.mutate(payload);
+  const handleDelete = (p: Product) => {
+    if (confirm(`Archive "${p.productName}"?`)) deleteProduct.mutate(p.id);
   };
 
   const fmtCost = (p: Product) => {
@@ -142,7 +171,7 @@ export default function Products() {
         onSearch={v => { setSearch(v); setPage(1); }}
         total={total}
         addLabel="New Product"
-        onAdd={openCreate}
+        onAdd={canEdit ? () => setShowCreateDialog(true) : undefined}
         csvExportTable="products"
       >
         <div className="flex items-center gap-2">
@@ -156,7 +185,6 @@ export default function Products() {
             </SelectContent>
           </Select>
 
-          {/* Currency conversion toggle */}
           <div className="flex items-center gap-1 border rounded-lg h-8 px-2 bg-muted/30">
             <RefreshCw className="w-3 h-3 text-muted-foreground shrink-0" />
             <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
@@ -173,12 +201,11 @@ export default function Products() {
         </div>
       </ListToolbar>
 
-      {/* Group products by type when "all" is selected */}
       {(() => {
-        const COLS = 6;
+        const COLS = typeFilter === "all" ? 7 : 6;
         const TYPE_ICONS: Record<string, string> = {
-          accommodation: "🏠", program: "📚", activity: "🏄", transport: "🚌",
-          meal: "🍽️", insurance: "🛡️", visa: "🛂", other: "📦",
+          institute: "🏫", hotel: "🏨", pickup: "🚌", tour: "🗺️",
+          settlement: "💼", program: "📚",
         };
 
         const renderRow = (p: Product) => (
@@ -204,25 +231,27 @@ export default function Products() {
                 {p.status ?? "active"}
               </span>
             </td>
+            <td className="px-4 py-3">
+              <LinkedGroupsCell productId={p.id} />
+            </td>
             <td className="px-4 py-3 text-muted-foreground text-xs">
               {p.createdAt ? format(new Date(p.createdAt), "MMM d, yyyy") : "—"}
             </td>
             <td className="px-4 py-3">
               <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(p)}>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openDrawer(p.id)}>
                   <Pencil className="h-3 w-3" />
                 </Button>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:text-red-600" onClick={() => {
-                  if (confirm(`Delete "${p.productName}"?`)) deleteProduct.mutate(p.id);
-                }}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                {canEdit && (
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:text-red-600" onClick={() => handleDelete(p)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
             </td>
           </tr>
         );
 
-        // Group by type when "all" is selected
         const grouped = typeFilter === "all"
           ? PRODUCT_TYPES
               .map(t => ({ type: t, items: products.filter(p => p.productType === t) }))
@@ -240,6 +269,7 @@ export default function Products() {
                   )}
                   <th className="px-4 py-2.5 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cost</th>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Linked Groups</th>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Created</th>
                   <th className="px-4 py-2.5 w-20" />
                 </tr>
@@ -261,7 +291,6 @@ export default function Products() {
                     </td>
                   </tr>
                 ) : grouped ? (
-                  // Grouped view with type dividers
                   grouped.map(({ type, items }) => (
                     <Fragment key={type}>
                       <tr className="bg-muted/20 border-b border-border">
@@ -269,9 +298,7 @@ export default function Products() {
                           <div className="flex items-center gap-2">
                             <span className="text-base leading-none">{TYPE_ICONS[type] ?? "📦"}</span>
                             <span className="text-xs font-semibold text-foreground capitalize">{type}</span>
-                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                              {items.length}
-                            </span>
+                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{items.length}</span>
                           </div>
                         </td>
                       </tr>
@@ -279,7 +306,6 @@ export default function Products() {
                     </Fragment>
                   ))
                 ) : (
-                  // Filtered single-type view
                   products.map(p => renderRow(p))
                 )}
               </tbody>
@@ -290,10 +316,20 @@ export default function Products() {
 
       <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
 
-      <Dialog open={showDialog} onOpenChange={o => { if (!o) { setShowDialog(false); setEditing(null); } }}>
+      {/* ProductDrawer for Edit/View (PART 2) */}
+      <ProductDrawer
+        open={drawerOpen}
+        onClose={closeDrawer}
+        productId={drawerProductId}
+        canEdit={canEdit}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["products"] })}
+      />
+
+      {/* Create Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={o => { if (!o) { setShowCreateDialog(false); setForm(emptyForm); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit Product" : "New Product"}</DialogTitle>
+            <DialogTitle>New Product</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-1">
             <div>
@@ -337,11 +373,11 @@ export default function Products() {
             </div>
             <div className="flex gap-2 pt-1">
               <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white"
-                onClick={handleSubmit}
-                disabled={createProduct.isPending || updateProduct.isPending || !form.productName}>
-                {createProduct.isPending || updateProduct.isPending ? "Saving…" : editing ? "Update" : "Create"}
+                onClick={() => createProduct.mutate({ ...form, cost: form.cost || null })}
+                disabled={createProduct.isPending || !form.productName}>
+                {createProduct.isPending ? "Creating…" : "Create"}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
+              <Button size="sm" variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
             </div>
           </div>
         </DialogContent>

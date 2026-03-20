@@ -6,13 +6,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Pencil, Plus, Package } from "lucide-react";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
+import ProductDrawer from "@/components/shared/ProductDrawer";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -22,6 +25,7 @@ const ALL_ROLES = [
 ];
 const ALL_STATUSES = ["active", "inactive", "suspended", "pending_verification"];
 const ADMIN_ROLES = ["super_admin", "admin"];
+const PARTNER_PRODUCT_ROLES = ["partner_institute", "partner_hotel", "partner_pickup", "partner_tour"];
 
 const ROLE_COLORS: Record<string, string> = {
   super_admin: "bg-purple-100 text-purple-700",
@@ -52,6 +56,9 @@ export default function UserDetail() {
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const [tab, setTab] = useState("account");
+  const [productDrawerOpen, setProductDrawerOpen] = useState(false);
+  const [editProductId, setEditProductId] = useState<string | null>(null);
+  const [createProductMode, setCreateProductMode] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["user-detail", id],
@@ -69,6 +76,13 @@ export default function UserDetail() {
     queryFn: () => axios.get(`${BASE}/api/ledger/account/${id}`).then(r => r.data),
     enabled: !!id && tab === "ledger",
   });
+
+  const { data: userProductsData, isLoading: userProductsLoading } = useQuery({
+    queryKey: ["user-products", id],
+    queryFn: () => axios.get(`${BASE}/api/users/${id}/products`).then(r => r.data),
+    enabled: !!id && tab === "products",
+  });
+  const userProducts: any[] = userProductsData ?? [];
 
   const userRec = data?.data ?? data;
   const canEdit = ADMIN_ROLES.includes(currentUser?.role ?? "");
@@ -123,6 +137,10 @@ export default function UserDetail() {
           <TabsTrigger value="ledger">Ledger</TabsTrigger>
           {ADMIN_ROLES.includes(currentUser?.role ?? "") && (
             <TabsTrigger value="documents">Documents</TabsTrigger>
+          )}
+          {PARTNER_PRODUCT_ROLES.includes(userRec?.role ?? "") &&
+            (ADMIN_ROLES.includes(currentUser?.role ?? "") || currentUser?.id === id) && (
+            <TabsTrigger value="products">My Products</TabsTrigger>
           )}
         </TabsList>
 
@@ -262,7 +280,139 @@ export default function UserDetail() {
             />
           </TabsContent>
         )}
+
+        {/* My Products Tab (PART 4) */}
+        {PARTNER_PRODUCT_ROLES.includes(userRec?.role ?? "") &&
+          (ADMIN_ROLES.includes(currentUser?.role ?? "") || currentUser?.id === id) && (
+          <TabsContent value="products">
+            {(() => {
+              const canEditProducts = ADMIN_ROLES.includes(currentUser?.role ?? "") || currentUser?.id === id;
+              const TYPE_BADGE: Record<string, string> = {
+                institute:  "bg-blue-50 text-blue-700",
+                hotel:      "bg-purple-50 text-purple-700",
+                pickup:     "bg-orange-50 text-orange-700",
+                tour:       "bg-green-50 text-green-700",
+                settlement: "bg-neutral-100 text-neutral-600",
+                program:    "bg-sky-50 text-sky-700",
+              };
+
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">이 Service Provider가 제공하는 상품 목록입니다.</p>
+                    {canEditProducts && (
+                      <Button size="sm" className="gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white"
+                        onClick={() => { setCreateProductMode(true); setEditProductId(null); setProductDrawerOpen(true); }}>
+                        <Plus className="w-3.5 h-3.5" /> Add Product
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="bg-card rounded-xl border border-border overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-neutral-50">
+                          <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-500 uppercase">Product Name</th>
+                          <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-500 uppercase">Type</th>
+                          <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-500 uppercase">Linked Groups</th>
+                          <th className="px-4 py-2.5 text-right text-xs font-medium text-neutral-500 uppercase">Cost</th>
+                          <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-500 uppercase">Status</th>
+                          {canEditProducts && <th className="px-4 py-2.5 w-16" />}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userProductsLoading ? (
+                          [...Array(3)].map((_, i) => (
+                            <tr key={i} className="border-b">
+                              {[...Array(5)].map((_, j) => <td key={j} className="px-4 py-3"><Skeleton className="h-4" /></td>)}
+                            </tr>
+                          ))
+                        ) : userProducts.length === 0 ? (
+                          <tr>
+                            <td colSpan={canEditProducts ? 6 : 5} className="px-4 py-16 text-center">
+                              <Package className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-30" />
+                              <p className="text-sm text-muted-foreground mb-3">등록된 상품이 없습니다.</p>
+                              {canEditProducts && (
+                                <Button size="sm" className="gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white"
+                                  onClick={() => { setCreateProductMode(true); setEditProductId(null); setProductDrawerOpen(true); }}>
+                                  <Plus className="w-3.5 h-3.5" /> 첫 번째 상품 등록하기
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        ) : (
+                          userProducts.map((row: any) => {
+                            const p = row.product ?? row;
+                            const linkedNames: string[] = [];
+
+                            return (
+                              <tr key={p.id} className="border-b hover:bg-[#FEF0E3] h-12">
+                                <td className="px-4 py-2 font-medium">{p.productName}</td>
+                                <td className="px-4 py-2">
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_BADGE[p.productType] ?? "bg-gray-100 text-gray-600"}`}>
+                                    {p.productType}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2">
+                                  {row.linkCount > 0 ? (
+                                    <TooltipProvider delayDuration={200}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F33] cursor-default">
+                                            {row.linkCount} group{row.linkCount !== 1 ? "s" : ""}
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">Linked to {row.linkCount} package group(s)</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  ) : (
+                                    <span className="text-muted-foreground text-xs">—</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2 text-right font-mono text-sm">
+                                  {p.cost ? `${p.currency ?? "AUD"} ${Number(p.cost).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+                                </td>
+                                <td className="px-4 py-2">
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    p.status === "active" ? "bg-green-100 text-green-700" :
+                                    p.status === "inactive" ? "bg-gray-100 text-gray-600" :
+                                    "bg-red-100 text-red-700"
+                                  }`}>{p.status}</span>
+                                </td>
+                                {canEditProducts && (
+                                  <td className="px-4 py-2">
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0"
+                                      onClick={() => { setCreateProductMode(false); setEditProductId(p.id); setProductDrawerOpen(true); }}>
+                                      <Pencil className="h-3 w-3" />
+                                    </Button>
+                                  </td>
+                                )}
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
+          </TabsContent>
+        )}
       </Tabs>
+
+      {/* ProductDrawer for My Products tab */}
+      <ProductDrawer
+        open={productDrawerOpen}
+        onClose={() => { setProductDrawerOpen(false); setEditProductId(null); setCreateProductMode(false); }}
+        productId={createProductMode ? null : editProductId}
+        lockedProviderId={createProductMode ? id : undefined}
+        canEdit={ADMIN_ROLES.includes(currentUser?.role ?? "") || currentUser?.id === id}
+        onSaved={() => {
+          qc.invalidateQueries({ queryKey: ["user-products", id] });
+          if (createProductMode) { setCreateProductMode(false); setProductDrawerOpen(false); }
+        }}
+      />
     </DetailPageLayout>
   );
 }

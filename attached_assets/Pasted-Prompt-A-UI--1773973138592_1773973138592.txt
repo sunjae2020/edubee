@@ -1,0 +1,182 @@
+Prompt A의 백엔드 작업이 완료된 상태에서 아래 UI 작업을 진행한다.
+기존 페이지의 다른 탭/컴포넌트는 변경하지 않는다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 1: /admin/products 목록 페이지
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── 1-1. 테이블에 "Linked Groups" 컬럼 추가 ──
+
+Actions 컬럼 바로 앞에 삽입:
+컬럼 헤더: "Linked Groups"
+셀 내용: <LinkedGroupsCell productId={row.original.id} />
+
+LinkedGroupsCell 컴포넌트:
+  - GET /api/products/:id/linked-groups 호출
+  - 연결된 그룹이 없으면: "—" (muted)
+  - 1개 이상이면: Badge로 "${n} group(s)" 표시
+    스타일: bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F33] text-xs
+  - Badge에 Tooltip: 연결된 group nameEn 목록을 "•" 로 나열
+
+── 1-2. 삭제 시 에러 처리 추가 ──
+
+기존 삭제 확인 모달에 추가:
+API가 409 응답 시 → 확인 모달 대신 아래 에러 토스트 표시:
+  "이 상품은 N개의 Package Group에서 사용 중입니다. 먼저 연결을 해제해주세요."
+  (variant: destructive)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 2: Product 상세/편집 Drawer
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Edit] / [View] 클릭 시 열리는 Drawer 레이아웃을
+아래 섹션 순서로 구성한다.
+
+┌─────────────────────────────────────────┐
+│  헤더: productName + Type badge + Status badge
+├─────────────────────────────────────────┤
+│  PROVIDER (섹션)
+│  - 유저 avatar + fullName + email
+│  - 이름/이메일 클릭 → /admin/users/:id 로 navigate
+│  - 표시 조건: providerAccountId가 있을 때만
+├─────────────────────────────────────────┤
+│  DESCRIPTION (섹션)
+│  - 조회 모드: <p style={{ whiteSpace: 'pre-wrap' }}>
+│    빈 값이면 "설명 없음" (text-neutral-400)
+│  - 편집 모드: <Textarea rows={4} maxLength={1000} />
+│    우하단에 잔여 글자 수 표시 (예: "243 / 1000")
+├─────────────────────────────────────────┤
+│  PRICING (섹션)
+│  - Cost: [currency] [cost] 표시
+│  - Status 드롭다운 (active / inactive)
+│  - ⚠️ 회계 계좌(banking) 연결 필드는 이 폼에 포함하지 않는다
+│    기존에 해당 필드가 있다면 이 폼에서만 제거할 것
+├─────────────────────────────────────────┤
+│  LINKED PACKAGE GROUPS (섹션)
+│  - GET /api/products/:id/linked-groups 호출
+│  - 각 그룹을 Chip으로 표시: [Summer English Camp 🇵🇭]
+│    countryCode로 국기 이모지 결정
+│  - Chip 클릭 → /admin/package-groups?highlight=:id 로 navigate
+│  - 연결된 그룹 없으면: "연결된 Package Group 없음" (muted)
+├─────────────────────────────────────────┤
+│  푸터: [Cancel] [Save Changes]
+└─────────────────────────────────────────┘
+
+Type badge 색상:
+  institute=blue(bg-blue-50 text-blue-700)
+  hotel=purple(bg-purple-50 text-purple-700)
+  pickup=orange(bg-orange-50 text-orange-700)
+  tour=green(bg-green-50 text-green-700)
+  settlement=gray(bg-neutral-100 text-neutral-600)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 3: Package Group 편집 — [Products] 탭 교체
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/admin/package-groups 편집 모달의 [Products] 탭 전체를
+아래 컴포넌트로 교체한다. 다른 탭([General], [Packages] 등)은 변경하지 않는다.
+
+── 3-1. 탭 레이아웃 ──────────────────────────
+
+상단 배너:
+  "💡 픽업, 숙소, 투어 상품은 여러 Package Group에서 공유 사용할 수 있습니다."
+  스타일: bg-[#FEF0E3] border border-[#F5821F33] text-[#D96A0A] rounded-lg px-4 py-2 text-sm
+
+연결된 Products 테이블:
+  컬럼: Product Name | Type | Provider | Unit Price | Qty | Total | [× Remove]
+  데이터: GET /api/package-groups/:id/products
+  로딩 중: Skeleton 3줄
+  빈 상태: "연결된 상품이 없습니다."
+
+비용 소계 (테이블 하단, 상품이 1개 이상일 때):
+  타입별 소계 행 → 구분선 → "Estimated Cost Base" 합계
+  "* 참고용 수치입니다. 실제 패키지 가격과 별개입니다." (text-xs text-neutral-400)
+
+[+ Add Product] 버튼
+
+── 3-2. Add Product 모달 ─────────────────────
+
+max-w-lg Dialog.
+
+타입 탭 필터: institute | hotel | pickup | tour | settlement
+  (버튼 형태, 활성: bg-[#FEF0E3] text-[#F5821F])
+
+상품 목록 (max-h-52 overflow-y-auto):
+  - GET /api/products?status=active 로 전체 active 상품 조회
+  - 이미 연결된 항목: 비활성 + "연결됨" 뱃지
+  - 미연결 항목: radio 선택 가능
+  - 각 행: productName + currency + cost
+
+선택 후 하단 입력:
+  Quantity (number, min=1, default=1)
+  Unit Price (number, default=선택한 product.cost, 수정 가능)
+
+에러: API 409 → "이미 연결된 상품입니다." 인라인 표시
+
+버튼: [Cancel] [Add to Package Group]
+  → POST /api/package-groups/:id/products
+  → 성공 시 모달 닫고 목록 refetch
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 4: /admin/users/:id 상세 페이지 — [My Products] 탭 추가
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+유저 상세 페이지(또는 Drawer)의 탭 목록에
+[My Products] 탭을 조건부로 추가한다.
+
+── 4-1. 탭 표시 조건 ────────────────────────
+
+아래 role일 때만 탭 렌더링:
+  partner_institute | partner_hotel | partner_pickup | partner_tour
+
+camp_coordinator, education_agent, parent_client, admin, super_admin: 탭 비표시
+
+접근 권한:
+  SA/AD가 파트너 유저 상세 볼 때: 탭 표시 + 읽기 전용
+  파트너 본인이 자신의 프로필 볼 때: 탭 표시 + 편집 가능
+  그 외: 탭 비표시
+
+── 4-2. [My Products] 탭 UI ─────────────────
+
+상단 안내:
+  "이 Service Provider가 제공하는 상품 목록입니다."
+
+데이터: GET /api/users/:id/products
+
+상품 테이블:
+  컬럼: Product Name | Type badge | Linked Package Groups | Cost | Status | [Edit]
+  
+  Linked Package Groups 셀:
+    연결된 그룹 nameEn을 Chip으로 표시 (최대 2개 + "+N more" 툴팁)
+    없으면 "—"
+
+  [Edit] 버튼:
+    → 기존 Product 편집 Drawer 열기 (PART 2 컴포넌트 재사용)
+    SA/AD 또는 본인만 표시
+
+[+ Add Product] 버튼 (SA/AD 또는 본인만):
+  → Product 생성 Drawer 열기
+  → providerAccountId는 현재 유저 id로 자동 고정 (수정 불가)
+
+빈 상태:
+  "등록된 상품이 없습니다."
+  SA/AD 또는 본인이면 [+ 첫 번째 상품 등록하기] 버튼 표시
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+디자인 시스템 준수 (전체 공통)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Primary accent:  #F5821F (버튼, 활성 상태, 하이라이트)
+Hover accent:    #D96A0A
+Accent light:    #FEF0E3 (선택 배경, 배너)
+Border:          #E8E6E2
+Card radius:     12px (border-radius)
+Button radius:   8px
+
+테이블 헤더: text-xs uppercase text-neutral-500 font-medium bg-neutral-50
+테이블 행 높이: 48px, border-bottom, hover:bg-neutral-50
+Badge/Chip: text-xs px-2 py-0.5 rounded-full font-medium
+
+로딩: Skeleton 컴포넌트 (shadcn/ui)
+에러/빈 상태: 중앙 정렬, muted 색상, CTA 버튼 포함
+Toast: shadcn/ui useToast 사용
