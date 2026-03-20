@@ -61,6 +61,9 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
     -   Public API for contact form submissions and authenticated API for CRUD operations with role-scoped access.
     -   Admin page (`/admin/services/tasks`) featuring List and Kanban views with a detail drawer for comments.
 -   **User Roles**: Granular user role hierarchy (`super_admin`, `admin`, `camp_coordinator`, `education_agent`, `partner_institute`, `partner_hotel`, `partner_pickup`, `partner_tour`, `parent_client`) with adaptive access control.
+-   **Package Group Extended Fields**: `packageGroups` now includes `inclusionsEn`/`inclusionsKo` (포함내역), `exclusionsEn`/`exclusionsKo` (비포함 내역), `durationText` (기간), `startDate`, `endDate`.
+-   **Package Capacity Fields**: `packages` table includes `maxAdults` (어른 인원), `maxStudents` (학생 인원) alongside `maxParticipants`.
+-   **Per-Package Products**: New `package_products` table links individual packages to products (with `isOptional`, `quantity`, `unitPrice`). API routes at `/api/packages/:id/products` (GET/POST/PATCH/DELETE). UI in Package dialog when editing.
 
 ## External Dependencies
 

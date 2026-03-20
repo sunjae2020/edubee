@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { packageGroups, packages, products, packageGroupProducts, enrollmentSpots, exchangeRates, users } from "@workspace/db/schema";
+import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users } from "@workspace/db/schema";
 import { eq, and, count, asc, SQL, ilike, desc, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -143,7 +143,7 @@ router.put("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES, "cam
     if (body.endDate !== undefined) (payload as any).endDate = toDateOrNull(body.endDate);
 
     // Strip computed/unknown fields that aren't in the schema
-    const allowed = ["campProviderId","nameEn","nameKo","nameJa","nameTh","descriptionEn","descriptionKo","descriptionJa","descriptionTh","thumbnailUrl","location","countryCode","status","sortOrder","landingOrder","startDate","endDate","updatedAt"] as const;
+    const allowed = ["campProviderId","nameEn","nameKo","nameJa","nameTh","descriptionEn","descriptionKo","descriptionJa","descriptionTh","inclusionsEn","inclusionsKo","exclusionsEn","exclusionsKo","durationText","thumbnailUrl","location","countryCode","status","sortOrder","landingOrder","startDate","endDate","updatedAt"] as const;
     const cleanPayload = Object.fromEntries(allowed.filter(k => (payload as any)[k] !== undefined).map(k => [k, (payload as any)[k]]));
     cleanPayload.updatedAt = new Date();
     const [group] = await db.update(packageGroups).set(cleanPayload as any)
@@ -281,6 +281,8 @@ router.get("/packages", authenticate, async (req, res) => {
         name: packages.name,
         durationDays: packages.durationDays,
         maxParticipants: packages.maxParticipants,
+        maxAdults: packages.maxAdults,
+        maxStudents: packages.maxStudents,
         priceAud: packages.priceAud,
         priceUsd: packages.priceUsd,
         priceKrw: packages.priceKrw,
@@ -334,6 +336,8 @@ router.get("/packages/:id", authenticate, async (req, res) => {
         name: packages.name,
         durationDays: packages.durationDays,
         maxParticipants: packages.maxParticipants,
+        maxAdults: packages.maxAdults,
+        maxStudents: packages.maxStudents,
         priceAud: packages.priceAud,
         priceUsd: packages.priceUsd,
         priceKrw: packages.priceKrw,
@@ -380,6 +384,92 @@ router.delete("/packages/:id", authenticate, requireRole(...ADMIN_ROLES), async 
       .where(eq(packages.id, req.params.id));
     return res.json({ success: true, message: "Package archived" });
   } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Per-Package Products
+router.get("/packages/:id/products", authenticate, async (req, res) => {
+  try {
+    const rows = await db
+      .select({
+        linkId:      packageProducts.id,
+        packageId:   packageProducts.packageId,
+        isOptional:  packageProducts.isOptional,
+        quantity:    packageProducts.quantity,
+        unitPrice:   packageProducts.unitPrice,
+        productId:        products.id,
+        productName:      products.productName,
+        productType:      products.productType,
+        description:      products.description,
+        cost:             products.cost,
+        currency:         products.currency,
+        status:           products.status,
+      })
+      .from(packageProducts)
+      .innerJoin(products, eq(packageProducts.productId, products.id))
+      .where(eq(packageProducts.packageId, req.params.id))
+      .orderBy(asc(packageProducts.isOptional), asc(products.productType), asc(products.productName));
+    return res.json(rows);
+  } catch (err) {
+    console.error("[GET /packages/:id/products]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/packages/:id/products", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const { productId, isOptional = false, quantity = 1, unitPrice } = req.body;
+    if (!productId) return res.status(400).json({ error: "productId is required" });
+    const [link] = await db.insert(packageProducts).values({
+      packageId:  req.params.id,
+      productId,
+      isOptional: Boolean(isOptional),
+      quantity:   Number(quantity),
+      unitPrice:  unitPrice ?? null,
+    }).returning();
+    return res.status(201).json(link);
+  } catch (err: any) {
+    console.error("[POST /packages/:id/products]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.patch("/packages/:id/products/:productId", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const { quantity, unitPrice, isOptional } = req.body;
+    const updates: Record<string, unknown> = {};
+    if (quantity != null) updates.quantity = Number(quantity);
+    if (unitPrice != null) updates.unitPrice = unitPrice === "" ? null : String(unitPrice);
+    if (isOptional != null) updates.isOptional = Boolean(isOptional);
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No fields to update" });
+    const [updated] = await db.update(packageProducts)
+      .set(updates)
+      .where(and(
+        eq(packageProducts.packageId, req.params.id),
+        eq(packageProducts.productId, req.params.productId),
+      ))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Link not found" });
+    return res.json(updated);
+  } catch (err) {
+    console.error("[PATCH /packages/:id/products/:productId]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/packages/:id/products/:productId", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const deleted = await db.delete(packageProducts)
+      .where(and(
+        eq(packageProducts.packageId,  req.params.id),
+        eq(packageProducts.productId,  req.params.productId),
+      ))
+      .returning();
+    if (deleted.length === 0) return res.status(404).json({ error: "Link not found" });
+    return res.json({ success: true, message: "Product unlinked from package" });
+  } catch (err) {
+    console.error("[DELETE /packages/:id/products/:productId]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

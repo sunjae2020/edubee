@@ -41,13 +41,14 @@ const TABS = [
 
 interface Pkg {
   id: string; packageGroupId: string; name: string; durationDays: number;
-  maxParticipants?: number | null; status?: string;
+  maxParticipants?: number | null; maxAdults?: number | null; maxStudents?: number | null;
+  status?: string;
   priceAud?: string | null; priceUsd?: string | null; priceKrw?: string | null;
   priceJpy?: string | null; priceThb?: string | null; pricePhp?: string | null;
   priceSgd?: string | null; priceGbp?: string | null;
 }
 
-const emptyPkg = { name: "", durationDays: "", maxParticipants: "", priceAud: "", priceUsd: "", priceKrw: "", priceJpy: "", priceThb: "", pricePhp: "", priceSgd: "", priceGbp: "" };
+const emptyPkg = { name: "", durationDays: "", maxParticipants: "", maxAdults: "", maxStudents: "", priceAud: "", priceUsd: "", priceKrw: "", priceJpy: "", priceThb: "", pricePhp: "", priceSgd: "", priceGbp: "" };
 
 // Exchange rate multipliers (AUD base)
 const RATES: Record<string, number> = { KRW: 952.38, THB: 22.99, JPY: 102.04, USD: 0.633, PHP: 35.71, SGD: 0.847, GBP: 0.495 };
@@ -71,6 +72,15 @@ export default function PackageGroupDetail() {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [editQty, setEditQty] = useState(1);
   const [editUnitPrice, setEditUnitPrice] = useState("");
+
+  // Per-package product state
+  const [showPkgAddProduct, setShowPkgAddProduct] = useState(false);
+  const [pkgProdTypeFilter, setPkgProdTypeFilter] = useState("all");
+  const [selectedPkgProdId, setSelectedPkgProdId] = useState<string | null>(null);
+  const [pkgAddQty, setPkgAddQty] = useState(1);
+  const [pkgAddUnitPrice, setPkgAddUnitPrice] = useState("");
+  const [pkgAddIsOptional, setPkgAddIsOptional] = useState(false);
+  const [pkgAddError, setPkgAddError] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["package-group-detail", id],
@@ -108,9 +118,33 @@ export default function PackageGroupDetail() {
   const { data: allActiveProductsData } = useQuery({
     queryKey: ["all-active-products"],
     queryFn: () => axios.get(`${BASE}/api/products?status=active&limit=200`).then(r => r.data?.data ?? r.data),
-    enabled: showAddProductModal,
+    enabled: showAddProductModal || showPkgAddProduct,
   });
   const allActiveProducts: any[] = Array.isArray(allActiveProductsData) ? allActiveProductsData : (allActiveProductsData?.data ?? []);
+
+  // Per-package products
+  const { data: pkgProductsData, isLoading: pkgProductsLoading } = useQuery({
+    queryKey: ["pkg-linked-products", editingPkg?.id],
+    queryFn: () => axios.get(`${BASE}/api/packages/${editingPkg!.id}/products`).then(r => r.data),
+    enabled: !!editingPkg?.id && showPkgDialog,
+  });
+  const pkgLinkedProducts: any[] = pkgProductsData ?? [];
+
+  const linkPkgProduct = useMutation({
+    mutationFn: (payload: any) => axios.post(`${BASE}/api/packages/${editingPkg!.id}/products`, payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pkg-linked-products", editingPkg?.id] });
+      setShowPkgAddProduct(false); setSelectedPkgProdId(null); setPkgAddQty(1); setPkgAddUnitPrice(""); setPkgAddIsOptional(false); setPkgAddError(null);
+      toast({ title: "Product added to package" });
+    },
+    onError: (err: any) => setPkgAddError(err?.response?.data?.error ?? "Failed to add product"),
+  });
+
+  const unlinkPkgProduct = useMutation({
+    mutationFn: (productId: string) => axios.delete(`${BASE}/api/packages/${editingPkg!.id}/products/${productId}`).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pkg-linked-products", editingPkg?.id] }); toast({ title: "Product removed" }); },
+    onError: () => toast({ variant: "destructive", title: "Failed to remove product" }),
+  });
 
   const linkProduct = useMutation({
     mutationFn: (payload: any) =>
@@ -231,7 +265,15 @@ export default function PackageGroupDetail() {
 
   const openPkgDialog = (pkg?: Pkg) => {
     setEditingPkg(pkg ?? null);
-    setPkgForm(pkg ? { name: pkg.name, durationDays: String(pkg.durationDays), maxParticipants: String(pkg.maxParticipants ?? ""), priceAud: pkg.priceAud ?? "", priceUsd: pkg.priceUsd ?? "", priceKrw: pkg.priceKrw ?? "", priceJpy: pkg.priceJpy ?? "", priceThb: pkg.priceThb ?? "", pricePhp: pkg.pricePhp ?? "", priceSgd: pkg.priceSgd ?? "", priceGbp: pkg.priceGbp ?? "" } : emptyPkg);
+    setPkgForm(pkg ? {
+      name: pkg.name, durationDays: String(pkg.durationDays),
+      maxParticipants: String(pkg.maxParticipants ?? ""),
+      maxAdults: String(pkg.maxAdults ?? ""),
+      maxStudents: String(pkg.maxStudents ?? ""),
+      priceAud: pkg.priceAud ?? "", priceUsd: pkg.priceUsd ?? "", priceKrw: pkg.priceKrw ?? "",
+      priceJpy: pkg.priceJpy ?? "", priceThb: pkg.priceThb ?? "", pricePhp: pkg.pricePhp ?? "",
+      priceSgd: pkg.priceSgd ?? "", priceGbp: pkg.priceGbp ?? "",
+    } : emptyPkg);
     setShowPkgDialog(true);
   };
 
@@ -240,6 +282,8 @@ export default function PackageGroupDetail() {
       packageGroupId: id, name: pkgForm.name,
       durationDays: parseInt(pkgForm.durationDays) || 1,
       maxParticipants: pkgForm.maxParticipants ? parseInt(pkgForm.maxParticipants) : null,
+      maxAdults: pkgForm.maxAdults ? parseInt(pkgForm.maxAdults) : null,
+      maxStudents: pkgForm.maxStudents ? parseInt(pkgForm.maxStudents) : null,
       priceAud: pkgForm.priceAud || null, priceUsd: pkgForm.priceUsd || null,
       priceKrw: pkgForm.priceKrw || null, priceJpy: pkgForm.priceJpy || null,
       priceThb: pkgForm.priceThb || null, pricePhp: pkgForm.pricePhp || null,
@@ -383,6 +427,96 @@ export default function PackageGroupDetail() {
               )}
             </DetailSection>
 
+            {/* Duration, Inclusions, Exclusions */}
+            <DetailSection title="기간 / Duration" className="lg:col-span-2">
+              <DetailRow label="기간 (Duration)">
+                {isEditing ? (
+                  <Input
+                    value={getValue("durationText") ?? ""}
+                    onChange={e => setField("durationText", e.target.value)}
+                    placeholder="예: 14박 15일 / 14 nights 15 days"
+                    className="h-8 text-sm border-[#F5821F] focus-visible:ring-[#F5821F]"
+                  />
+                ) : (
+                  <span className="text-sm">{group.durationText || <span className="text-muted-foreground/60">—</span>}</span>
+                )}
+              </DetailRow>
+            </DetailSection>
+
+            <DetailSection title="포함내역 (Inclusions)" className="lg:col-span-2">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5 font-medium">English</p>
+                  {isEditing ? (
+                    <textarea value={getValue("inclusionsEn") ?? ""} onChange={e => setField("inclusionsEn", e.target.value)}
+                      placeholder={"항목을 줄 바꿈으로 구분\nInternational flights\nAirport transfers\nAccommodation"}
+                      className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+                  ) : group.inclusionsEn ? (
+                    <ul className="space-y-1">
+                      {group.inclusionsEn.split("\n").filter(Boolean).map((item: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
+                          <span className="text-[#F5821F] mt-0.5">✓</span> {item.trim()}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <span className="text-muted-foreground/60 text-sm">—</span>}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5 font-medium">한국어</p>
+                  {isEditing ? (
+                    <textarea value={getValue("inclusionsKo") ?? ""} onChange={e => setField("inclusionsKo", e.target.value)}
+                      placeholder={"항목을 줄 바꿈으로 구분\n국제선 항공권\n공항 픽업/샌딩\n숙소"}
+                      className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+                  ) : group.inclusionsKo ? (
+                    <ul className="space-y-1">
+                      {group.inclusionsKo.split("\n").filter(Boolean).map((item: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
+                          <span className="text-[#F5821F] mt-0.5">✓</span> {item.trim()}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <span className="text-muted-foreground/60 text-sm">—</span>}
+                </div>
+              </div>
+            </DetailSection>
+
+            <DetailSection title="비포함 내역 (Exclusions)" className="lg:col-span-2">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5 font-medium">English</p>
+                  {isEditing ? (
+                    <textarea value={getValue("exclusionsEn") ?? ""} onChange={e => setField("exclusionsEn", e.target.value)}
+                      placeholder={"항목을 줄 바꿈으로 구분\nPersonal expenses\nOptional excursions\nTravel insurance"}
+                      className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+                  ) : group.exclusionsEn ? (
+                    <ul className="space-y-1">
+                      {group.exclusionsEn.split("\n").filter(Boolean).map((item: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
+                          <span className="text-red-400 mt-0.5">✗</span> {item.trim()}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <span className="text-muted-foreground/60 text-sm">—</span>}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5 font-medium">한국어</p>
+                  {isEditing ? (
+                    <textarea value={getValue("exclusionsKo") ?? ""} onChange={e => setField("exclusionsKo", e.target.value)}
+                      placeholder={"항목을 줄 바꿈으로 구분\n개인 경비\n선택 투어\n여행자 보험"}
+                      className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+                  ) : group.exclusionsKo ? (
+                    <ul className="space-y-1">
+                      {group.exclusionsKo.split("\n").filter(Boolean).map((item: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
+                          <span className="text-red-400 mt-0.5">✗</span> {item.trim()}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <span className="text-muted-foreground/60 text-sm">—</span>}
+                </div>
+              </div>
+            </DetailSection>
+
             {/* Coordinator Section */}
             <DetailSection title="Camp Coordinator" className="lg:col-span-2">
               {isEditing ? (
@@ -474,6 +608,8 @@ export default function PackageGroupDetail() {
                   <tr className="border-b bg-muted/30 text-xs text-muted-foreground">
                     <th className="px-4 py-2.5 text-left">Package</th>
                     <th className="px-4 py-2.5 text-right">Days</th>
+                    <th className="px-4 py-2.5 text-right">어른</th>
+                    <th className="px-4 py-2.5 text-right">학생</th>
                     <th className="px-4 py-2.5 text-right">Max</th>
                     {CURRENCIES.map(c => <th key={c.ccy} className="px-3 py-2.5 text-right">{c.flag} {c.ccy}</th>)}
                     <th className="px-4 py-2.5 text-center">Status</th>
@@ -482,11 +618,13 @@ export default function PackageGroupDetail() {
                 </thead>
                 <tbody>
                   {pkgs.length === 0 ? (
-                    <tr><td colSpan={12} className="px-4 py-8 text-center text-muted-foreground text-xs">No packages yet</td></tr>
+                    <tr><td colSpan={14} className="px-4 py-8 text-center text-muted-foreground text-xs">No packages yet</td></tr>
                   ) : pkgs.map(p => (
                     <tr key={p.id} className="border-b last:border-0 hover:bg-[#FEF0E3]/50">
                       <td className="px-4 py-3 font-medium">{p.name}</td>
                       <td className="px-4 py-3 text-right">{p.durationDays}d</td>
+                      <td className="px-4 py-3 text-right text-blue-600">{p.maxAdults ?? "—"}</td>
+                      <td className="px-4 py-3 text-right text-green-600">{p.maxStudents ?? "—"}</td>
                       <td className="px-4 py-3 text-right">{p.maxParticipants ?? "—"}</td>
                       {CURRENCIES.map(c => (
                         <td key={c.ccy} className="px-3 py-3 text-right font-mono text-xs">
@@ -789,42 +927,175 @@ export default function PackageGroupDetail() {
       </Dialog>
 
       {/* Package Dialog */}
-      <Dialog open={showPkgDialog} onOpenChange={setShowPkgDialog}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={showPkgDialog} onOpenChange={o => { if (!o) { setShowPkgDialog(false); setShowPkgAddProduct(false); } }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingPkg ? "Edit Package" : "Add Package"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-1">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-3"><Label className="text-xs">Package Name</Label>
-                <Input value={pkgForm.name} onChange={e => setPkgForm(f => ({ ...f, name: e.target.value }))} className="mt-1 h-8 text-sm" /></div>
-              <div><Label className="text-xs">Duration (days)</Label>
-                <Input type="number" value={pkgForm.durationDays} onChange={e => setPkgForm(f => ({ ...f, durationDays: e.target.value }))} className="mt-1 h-8 text-sm" /></div>
-              <div><Label className="text-xs">Max Participants</Label>
-                <Input type="number" value={pkgForm.maxParticipants} onChange={e => setPkgForm(f => ({ ...f, maxParticipants: e.target.value }))} className="mt-1 h-8 text-sm" /></div>
-              <div />
+          <div className="space-y-4 mt-1">
+            {/* Basic Info */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">기본 정보</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2"><Label className="text-xs">Package Name</Label>
+                  <Input value={pkgForm.name} onChange={e => setPkgForm(f => ({ ...f, name: e.target.value }))} className="mt-1 h-8 text-sm" /></div>
+                <div><Label className="text-xs">기간 (Duration Days)</Label>
+                  <Input type="number" value={pkgForm.durationDays} onChange={e => setPkgForm(f => ({ ...f, durationDays: e.target.value }))} className="mt-1 h-8 text-sm" /></div>
+                <div><Label className="text-xs">전체 인원 (Max Participants)</Label>
+                  <Input type="number" value={pkgForm.maxParticipants} onChange={e => setPkgForm(f => ({ ...f, maxParticipants: e.target.value }))} className="mt-1 h-8 text-sm" /></div>
+                <div><Label className="text-xs">어른 인원 (Max Adults)</Label>
+                  <Input type="number" value={pkgForm.maxAdults} onChange={e => setPkgForm(f => ({ ...f, maxAdults: e.target.value }))} className="mt-1 h-8 text-sm" placeholder="—" /></div>
+                <div><Label className="text-xs">학생 인원 (Max Students)</Label>
+                  <Input type="number" value={pkgForm.maxStudents} onChange={e => setPkgForm(f => ({ ...f, maxStudents: e.target.value }))} className="mt-1 h-8 text-sm" placeholder="—" /></div>
+              </div>
             </div>
-            <div className="flex items-center gap-2 py-1">
-              <Switch id="ac-pkg" checked={autoConvert} onCheckedChange={setAutoConvert} />
-              <label htmlFor="ac-pkg" className="text-xs text-muted-foreground cursor-pointer">AUD 기준 자동 환산</label>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {CURRENCIES.map(c => (
-                <div key={c.ccy}>
-                  <Label className="text-xs">{c.flag} {c.label}</Label>
-                  <Input type="number" value={(pkgForm as any)[c.field]} onChange={e => {
-                    if (c.field === "priceAud") handlePkgAudChange(e.target.value);
-                    else setPkgForm(f => ({ ...f, [c.field]: e.target.value }));
-                  }} className={`mt-1 h-8 text-sm font-mono ${autoConvert && c.field !== "priceAud" ? "bg-muted/50 text-muted-foreground" : ""}`} readOnly={autoConvert && c.field !== "priceAud"} />
+
+            {/* Pricing */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">가격 (Pricing)</p>
+                <div className="flex items-center gap-2">
+                  <Switch id="ac-pkg" checked={autoConvert} onCheckedChange={setAutoConvert} />
+                  <label htmlFor="ac-pkg" className="text-xs text-muted-foreground cursor-pointer">AUD 기준 자동 환산</label>
                 </div>
-              ))}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {CURRENCIES.map(c => (
+                  <div key={c.ccy}>
+                    <Label className="text-xs">{c.flag} {c.label}</Label>
+                    <Input type="number" value={(pkgForm as any)[c.field]} onChange={e => {
+                      if (c.field === "priceAud") handlePkgAudChange(e.target.value);
+                      else setPkgForm(f => ({ ...f, [c.field]: e.target.value }));
+                    }} className={`mt-1 h-8 text-sm font-mono ${autoConvert && c.field !== "priceAud" ? "bg-muted/50 text-muted-foreground" : ""}`} readOnly={autoConvert && c.field !== "priceAud"} />
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-2 pt-2">
+
+            {/* Per-package Products (only when editing existing package) */}
+            {editingPkg && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">추가 상품 (Add-on Products)</p>
+                  <Button size="sm" variant="outline" className="h-6 text-xs gap-1 border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
+                    onClick={() => { setPkgProdTypeFilter("all"); setSelectedPkgProdId(null); setPkgAddQty(1); setPkgAddUnitPrice(""); setPkgAddIsOptional(false); setPkgAddError(null); setShowPkgAddProduct(true); }}>
+                    <Plus className="h-3 w-3" /> 상품 추가
+                  </Button>
+                </div>
+                {pkgProductsLoading ? (
+                  <div className="h-10 bg-muted/30 rounded animate-pulse" />
+                ) : pkgLinkedProducts.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic py-2">연결된 상품 없음</p>
+                ) : (
+                  <div className="rounded-lg border overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-muted/30 border-b text-muted-foreground">
+                          <th className="px-3 py-2 text-left">Product</th>
+                          <th className="px-3 py-2 text-left">Type</th>
+                          <th className="px-3 py-2 text-center">구분</th>
+                          <th className="px-3 py-2 text-right">Qty</th>
+                          <th className="px-3 py-2 text-right">Price</th>
+                          <th className="px-3 py-2 w-8" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pkgLinkedProducts.map((row: any) => (
+                          <tr key={row.linkId} className="border-b last:border-0 hover:bg-muted/20">
+                            <td className="px-3 py-2 font-medium">{row.productName}</td>
+                            <td className="px-3 py-2 text-muted-foreground capitalize">{row.productType}</td>
+                            <td className="px-3 py-2 text-center">
+                              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${row.isOptional ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-700"}`}>
+                                {row.isOptional ? "선택" : "포함"}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-right">{row.quantity ?? 1}</td>
+                            <td className="px-3 py-2 text-right font-mono">
+                              {row.unitPrice ? `${row.currency ?? "AUD"} ${Number(row.unitPrice).toLocaleString()}` : row.cost ? `${row.currency ?? "AUD"} ${Number(row.cost).toLocaleString()}` : "—"}
+                            </td>
+                            <td className="px-3 py-2">
+                              <button className="text-muted-foreground hover:text-red-500 transition-colors"
+                                onClick={() => { if (window.confirm("Remove product?")) unlinkPkgProduct.mutate(row.productId); }}>
+                                <X className="w-3 h-3" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Add product to package inline picker */}
+                {showPkgAddProduct && (
+                  <div className="mt-2 border border-[#F5821F33] rounded-lg p-3 bg-[#FEF0E3]/30 space-y-2">
+                    <div className="flex gap-1.5 flex-wrap">
+                      {["all", "institute", "hotel", "pickup", "tour", "settlement"].map(t => (
+                        <button key={t} onClick={() => { setPkgProdTypeFilter(t); setSelectedPkgProdId(null); }}
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${pkgProdTypeFilter === t ? "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F33]" : "border-border text-muted-foreground hover:bg-muted"}`}>
+                          {t === "all" ? "All" : t}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="max-h-36 overflow-y-auto border border-border rounded-md divide-y bg-white">
+                      {allActiveProducts
+                        .filter((p: any) => pkgProdTypeFilter === "all" || p.productType === pkgProdTypeFilter)
+                        .filter((p: any) => !pkgLinkedProducts.some((l: any) => l.productId === p.id))
+                        .map((p: any) => (
+                          <label key={p.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/40">
+                            <input type="radio" name="pkg-sel-prod" value={p.id}
+                              checked={selectedPkgProdId === p.id}
+                              onChange={() => { setSelectedPkgProdId(p.id); setPkgAddUnitPrice(p.cost ?? ""); }}
+                              className="shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs font-medium truncate block">{p.productName}</span>
+                              <span className="text-[11px] text-muted-foreground">{p.currency} {p.cost ? Number(p.cost).toLocaleString() : "—"}</span>
+                            </div>
+                          </label>
+                        ))}
+                    </div>
+                    {selectedPkgProdId && (
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-[11px]">Qty</Label>
+                          <Input type="number" min={1} value={pkgAddQty} onChange={e => setPkgAddQty(Number(e.target.value))} className="mt-0.5 h-7 text-xs" />
+                        </div>
+                        <div>
+                          <Label className="text-[11px]">Unit Price</Label>
+                          <Input type="number" step="0.01" value={pkgAddUnitPrice} onChange={e => setPkgAddUnitPrice(e.target.value)} className="mt-0.5 h-7 text-xs font-mono" />
+                        </div>
+                        <div>
+                          <Label className="text-[11px]">구분</Label>
+                          <Select value={pkgAddIsOptional ? "optional" : "included"} onValueChange={v => setPkgAddIsOptional(v === "optional")}>
+                            <SelectTrigger className="mt-0.5 h-7 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="included">포함</SelectItem>
+                              <SelectItem value="optional">선택</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                    {pkgAddError && <p className="text-xs text-red-500">{pkgAddError}</p>}
+                    <div className="flex gap-2">
+                      <Button size="sm" className="h-7 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
+                        disabled={!selectedPkgProdId || linkPkgProduct.isPending}
+                        onClick={() => linkPkgProduct.mutate({ productId: selectedPkgProdId, isOptional: pkgAddIsOptional, quantity: pkgAddQty, unitPrice: pkgAddUnitPrice || null })}>
+                        {linkPkgProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} 추가
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowPkgAddProduct(false)}>취소</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-1 border-t">
               <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white"
                 onClick={submitPkg} disabled={createPkg.isPending || updatePkg.isPending || !pkgForm.name}>
                 {createPkg.isPending || updatePkg.isPending ? "Saving…" : editingPkg ? "Update" : "Create"}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setShowPkgDialog(false)}>Cancel</Button>
+              <Button size="sm" variant="outline" onClick={() => { setShowPkgDialog(false); setShowPkgAddProduct(false); }}>Cancel</Button>
             </div>
           </div>
         </DialogContent>
