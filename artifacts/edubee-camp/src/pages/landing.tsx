@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight, ChevronUp, ArrowUpRight, LayoutDashboard, LogOut } from "lucide-react";
+import { ChatWidget } from "@/components/public/ChatWidget";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -741,13 +742,16 @@ export default function Landing() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed bottom-5 right-5 z-20 w-9 h-9 rounded-md bg-foreground text-white flex items-center justify-center shadow-lg hover:bg-foreground/80 transition-colors"
+            className="fixed bottom-20 right-4 z-30 w-9 h-9 rounded-md bg-foreground text-white flex items-center justify-center shadow-lg hover:bg-foreground/80 transition-colors"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
             <ChevronUp className="w-4 h-4" />
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* ── AI CHAT WIDGET ── */}
+      <ChatWidget />
 
       {/* ── PROGRAM DRAWER ── */}
       <ProgramDetailDrawer

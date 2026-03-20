@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
+import { GoogleGenAI } from "@google/genai";
 import {
   packageGroups,
   packages,
@@ -12,7 +13,22 @@ import {
   exchangeRates,
 } from "@workspace/db/schema";
 import { eq, and, inArray, sql, desc, isNotNull, asc } from "drizzle-orm";
+import {
+  initKnowledgeBase,
+  retrieveContext,
+  getSystemPrompt,
+} from "../services/knowledgeBase.js";
 import { z } from "zod/v4";
+
+// KB lazy init for public chatbot widget (idempotent)
+let kbReadyPublic = false;
+async function ensureKBPublic() {
+  if (!kbReadyPublic) { kbReadyPublic = true; await initKnowledgeBase(); }
+}
+
+// Session history for public widget users (keyed by browser-generated sessionId)
+type Turn = { role: "user" | "model"; parts: { text: string }[] };
+const pubSessions = new Map<string, Turn[]>();
 
 const router = Router();
 
@@ -352,6 +368,82 @@ router.get("/public/exchange-rates", async (_req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ success: false, error: "RATES_UNAVAILABLE" });
+  }
+});
+
+// ─── POST /api/public/chatbot/message — no auth, landing page widget ───────
+router.post("/public/chatbot/message", async (req, res) => {
+  const { question, sessionId = "public_default" } = req.body as {
+    question: string;
+    sessionId?: string;
+  };
+  if (!question?.trim()) return res.status(400).json({ error: "question is required" });
+
+  try {
+    await ensureKBPublic();
+    const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const systemPrompt = getSystemPrompt();
+    const relevantChunks = await retrieveContext(question, 4);
+    const contextText = relevantChunks
+      .map((c, i) => `[관련 문서 ${i + 1} — ${c.docTitle} (관련도 ${(c.score * 100).toFixed(0)}%)]\n${c.text}`)
+      .join("\n\n");
+
+    const augmentedMessage = relevantChunks.length > 0
+      ? `[검색된 관련 내용]\n${contextText}\n\n[사용자 질문]\n${question}`
+      : question;
+
+    if (!pubSessions.has(sessionId)) pubSessions.set(sessionId, []);
+    const history = pubSessions.get(sessionId)!;
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    const contents: Turn[] = [
+      ...history.slice(-10),
+      { role: "user", parts: [{ text: augmentedMessage }] },
+    ];
+
+    const config = systemPrompt ? { systemInstruction: systemPrompt } : undefined;
+
+    const stream = await genAI.models.generateContentStream({
+      model: "gemini-2.5-flash",
+      config,
+      contents,
+    });
+
+    let fullReply = "";
+    for await (const chunk of stream) {
+      const text = chunk.text;
+      if (text) {
+        fullReply += text;
+        res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+      }
+    }
+
+    history.push(
+      { role: "user", parts: [{ text: question }] },
+      { role: "model", parts: [{ text: fullReply }] }
+    );
+
+    const sources = [...new Set(relevantChunks.map((c) => c.docTitle))];
+    const topScore = relevantChunks[0]?.score;
+    res.write(`data: ${JSON.stringify({
+      done: true,
+      sources,
+      chunksUsed: relevantChunks.length,
+      topScore: topScore != null ? parseFloat(topScore.toFixed(3)) : null,
+      sessionId,
+    })}\n\n`);
+    res.end();
+  } catch (e: any) {
+    console.error("[public/chatbot/message]", e);
+    if (!res.headersSent) {
+      res.status(500).json({ error: e?.message ?? "AI 응답 생성에 실패했습니다." });
+    } else {
+      res.write(`data: ${JSON.stringify({ error: "AI 응답 생성에 실패했습니다." })}\n\n`);
+      res.end();
+    }
   }
 });
 
