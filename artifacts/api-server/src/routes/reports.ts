@@ -12,6 +12,7 @@ import {
 import { eq, and, desc, isNull, asc, sql, inArray } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { autoPopulateSections } from "../services/reportAutoPopulate.js";
+import { generateReportPdf } from "../utils/generateReportPdf.js";
 
 const router = Router();
 
@@ -687,31 +688,19 @@ router.get("/reports/:id/pdf", authenticate, async (req, res) => {
       .where(eq(reportSections.reportId, req.params.id))
       .orderBy(asc(reportSections.displayOrder));
 
-    const studentName = report.reportTitle ?? "Report";
+    // Build filename from student profile content or report title
+    const spSection = sections.find(s => s.sectionType === "student_profile");
+    const spContent = (spSection?.content ?? {}) as Record<string, unknown>;
+    const nameForFile = (spContent.fullName as string) || report.reportTitle || "Report";
     const year = new Date().getFullYear();
-    const filename = `EdubeeCamp_Report_${studentName.replace(/[^a-zA-Z0-9]/g, "_")}_${year}.pdf`;
+    const safeName = nameForFile.replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_");
+    const filename = `EdubeeCamp_Report_${safeName}_${year}.pdf`;
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 
-    // Placeholder PDF response — replace with react-pdf when installed
-    const pdfContent = `%PDF-1.4
-1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
-2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
-3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj
-4 0 obj<</Length 100>>stream
-BT /F1 20 Tf 72 720 Td (${report.reportTitle ?? "Program Report"}) Tj ET
-ET /F1 12 Tf 72 680 Td (Edubee Camp) Tj ET
-endstream
-endobj
-5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj
-xref 0 6
-0000000000 65535 f 0000000009 00000 n 0000000052 00000 n 0000000101 00000 n 0000000234 00000 n 0000000387 00000 n
-trailer<</Size 6/Root 1 0 R>>
-startxref 462
-%%EOF`;
-
-    return res.send(Buffer.from(pdfContent));
+    const pdfBuffer = await generateReportPdf(report as any, sections, role);
+    return res.send(pdfBuffer);
   } catch (err: any) {
     console.error("GET /reports/:id/pdf error:", err.message);
     return res.status(500).json({ error: "Internal Server Error" });

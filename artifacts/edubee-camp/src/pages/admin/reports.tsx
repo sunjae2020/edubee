@@ -30,10 +30,39 @@ export default function Reports() {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ contractId: "", reportTitle: "", summaryNotes: "" });
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+
   const role = user?.role ?? "";
   const canCreate = ["super_admin", "admin", "camp_coordinator"].includes(role);
   const canEdit = canCreate;
   const isViewOnly = role === "education_agent" || role === "parent_client";
+
+  async function downloadPdf(reportId: string, reportTitle: string) {
+    setPdfLoading(true);
+    try {
+      const token = localStorage.getItem("edubee_token") || "";
+      const resp = await fetch(`${BASE}/api/reports/${reportId}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) throw new Error(`PDF request failed: ${resp.status}`);
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const year = new Date().getFullYear();
+      const safeName = (reportTitle ?? "Report").replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_");
+      a.download = `EdubeeCamp_Report_${safeName}_${year}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "PDF downloaded", description: a.download });
+    } catch (err: any) {
+      toast({ title: "PDF download failed", description: err.message, variant: "destructive" });
+    } finally {
+      setPdfLoading(false);
+    }
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ["reports"],
@@ -177,8 +206,9 @@ export default function Reports() {
                 )}
                 {selected.status === "published" && (
                   <Button size="sm" variant="outline" className="gap-1.5"
-                    onClick={() => window.open(`${BASE}/api/reports/${selected.id}/pdf`, "_blank")}>
-                    <Download className="w-3.5 h-3.5" /> Download PDF
+                    onClick={() => downloadPdf(selected.id, selected.reportTitle ?? "Report")}
+                    disabled={pdfLoading}>
+                    <Download className="w-3.5 h-3.5" /> {pdfLoading ? "Generating…" : "Download PDF"}
                   </Button>
                 )}
                 <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>
