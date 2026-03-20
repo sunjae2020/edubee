@@ -383,7 +383,7 @@ export default function Landing() {
 
                 {/* Floating badges */}
                 <div className="absolute -top-4 -right-4 bg-white border border-border rounded-xl px-3 py-2 shadow-md text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  🌏 <span>{programs.length > 0 ? `${programs.length}+ Programs` : "10+ Countries"}</span>
+                  🌏 <span>{programs.length > 0 ? `${programs.length}+ Programs` : "20+ Cities"}</span>
                 </div>
                 <div className="absolute -bottom-4 -left-4 bg-[#F5821F] rounded-xl px-3 py-2 shadow-md text-xs font-semibold text-white flex items-center gap-1.5">
                   ✓ Verified Programs
