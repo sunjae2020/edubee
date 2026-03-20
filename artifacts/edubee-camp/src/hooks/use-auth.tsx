@@ -47,9 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const viewAsId = getViewAsUserId();
       if (currentToken || viewAsId) {
         init = init || {};
-        const headers: Record<string, string> = { ...(init.headers as Record<string, string>) };
-        if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
-        if (viewAsId) headers["X-View-As-User-Id"] = viewAsId;
+        const headers = new Headers(init.headers as HeadersInit);
+        if (currentToken) headers.set("Authorization", `Bearer ${currentToken}`);
+        if (viewAsId) headers.set("X-View-As-User-Id", viewAsId);
         init.headers = headers;
       }
       const response = await originalFetch(input, init);
