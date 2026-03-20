@@ -5,6 +5,7 @@ import axios from "axios";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EdubeeLogo } from "@/components/shared/EdubeeLogo";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
 import { SectionHeader } from "@/components/shared/SectionHeader";
@@ -431,6 +432,71 @@ function renderSectionViewer(section: Section, role: string, customIdx: number) 
   }
 }
 
+// ── Viewer Loading Skeleton ───────────────────────────────────────
+function ViewerLoadingSkeleton() {
+  return (
+    <div className="bg-[#FAFAF9] min-h-screen pb-24">
+      <div className="sticky top-0 z-10 bg-white border-b border-[#E8E6E2] px-6 py-2 flex items-center gap-2">
+        <Skeleton className="h-4 w-24" />
+      </div>
+      <div className="max-w-[860px] mx-auto mt-8 px-4">
+        <div className="bg-white border border-[#E8E6E2] rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-hidden">
+          <div className="bg-[#FEF0E3] px-14 py-12 flex flex-col items-center gap-4" style={{ minHeight: 300 }}>
+            <Skeleton className="h-12 w-32 bg-[#F5821F]/20" />
+            <Skeleton className="h-8 w-64 bg-[#F5821F]/15" />
+            <Skeleton className="h-5 w-48 bg-[#F5821F]/10" />
+            <div className="flex gap-8 mt-4">
+              {[0,1,2,3].map(i => <Skeleton key={i} className="h-10 w-20 bg-[#F5821F]/10" />)}
+            </div>
+          </div>
+          <div className="px-14 py-10 space-y-10">
+            {[0,1,2].map(i => (
+              <div key={i} className="border-t border-[#F4F3F1] pt-8 first:border-t-0 first:pt-0 space-y-3">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-4/5" />
+                <Skeleton className="h-4 w-3/5" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Error States ──────────────────────────────────────────────────
+function ForbiddenCard({ navigate }: { navigate: (path: string) => void }) {
+  return (
+    <div className="bg-[#FAFAF9] min-h-screen flex items-center justify-center">
+      <div className="bg-white border border-[#E8E6E2] rounded-2xl p-10 max-w-sm text-center shadow-sm space-y-4">
+        <ReportSymbol name="report" size={48} color="#E8E6E2" />
+        <h2 className="text-lg font-bold text-[#1C1917]">Report Not Available</h2>
+        <p className="text-sm text-[#57534E]">This report has not been published yet or you do not have access.</p>
+        <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => navigate("/admin/dashboard")}>
+          Back to Dashboard
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function NotFoundCard({ navigate, role }: { navigate: (path: string) => void; role: string }) {
+  const isParent = role === "parent_client";
+  return (
+    <div className="bg-[#FAFAF9] min-h-screen flex items-center justify-center">
+      <div className="bg-white border border-[#E8E6E2] rounded-2xl p-10 max-w-sm text-center shadow-sm space-y-4">
+        <ReportSymbol name="report" size={48} color="#E8E6E2" />
+        <h2 className="text-lg font-bold text-[#1C1917]">Report Not Found</h2>
+        <p className="text-sm text-[#57534E]">The requested report could not be found.</p>
+        <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => navigate(isParent ? "/admin/my-programs" : "/admin/reports")}>
+          {isParent ? "Back to My Programs" : "Back to Reports"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Viewer Page ──────────────────────────────────────────────
 export default function ReportViewerPage() {
   const { id } = useParams<{ id: string }>();
@@ -442,12 +508,15 @@ export default function ReportViewerPage() {
   const role = user?.role ?? "";
   const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(role);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(0);
 
-  const { data: reportData, isLoading } = useQuery({
+  const { data: reportData, isLoading, error } = useQuery({
     queryKey: ["report", id],
     queryFn: () => axios.get(`${BASE}/api/reports/${id}`).then(r => r.data),
+    retry: false,
   });
   const report: Report | null = reportData ?? null;
+  const httpStatus = (error as any)?.response?.status;
 
   const publishMutation = useMutation({
     mutationFn: () => axios.patch(`${BASE}/api/reports/${id}/publish`).then(r => r.data),
@@ -456,6 +525,11 @@ export default function ReportViewerPage() {
 
   const downloadPdf = useCallback(async () => {
     setPdfLoading(true);
+    setPdfProgress(0);
+    // Start progress animation for long PDFs
+    const progressInterval = setInterval(() => {
+      setPdfProgress(prev => Math.min(prev + 8, 85));
+    }, 250);
     try {
       const token = localStorage.getItem("edubee_token") || "";
       const resp = await fetch(`${BASE}/api/reports/${id}/pdf`, {
@@ -472,16 +546,19 @@ export default function ReportViewerPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      setPdfProgress(100);
       toast({ title: "PDF downloaded", description: a.download });
     } catch (err: any) {
-      toast({ title: "PDF download failed", description: err.message, variant: "destructive" });
+      toast({ title: "PDF generation failed. Please try again.", variant: "destructive", duration: 4000 } as any);
     } finally {
-      setPdfLoading(false);
+      clearInterval(progressInterval);
+      setTimeout(() => { setPdfLoading(false); setPdfProgress(0); }, 600);
     }
   }, [id, report?.reportTitle, toast]);
 
-  if (isLoading) return <div className="p-6 text-sm text-[#57534E]">Loading report…</div>;
-  if (!report) return <div className="p-6 text-sm text-red-500">Report not found.</div>;
+  if (isLoading) return <ViewerLoadingSkeleton />;
+  if (httpStatus === 403) return <ForbiddenCard navigate={navigate} />;
+  if (httpStatus === 404 || !report) return <NotFoundCard navigate={navigate} role={role} />;
 
   const sp = (report.sections?.find(s => s.sectionType === "student_profile")?.content ?? {}) as Record<string, unknown>;
   const studentName = (sp.fullName as string) || report.reportTitle || "Student";
@@ -550,6 +627,23 @@ export default function ReportViewerPage() {
         </div>
       </div>
 
+      {/* PDF Progress Modal */}
+      {pdfLoading && pdfProgress > 0 && pdfProgress < 100 && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-xs w-full mx-4 text-center space-y-4">
+            <ReportSymbol name="pdf" size={36} color="#F5821F" />
+            <p className="text-sm font-semibold text-[#1C1917]">Generating your PDF report…</p>
+            <div className="w-full bg-[#F4F3F1] rounded-full h-2 overflow-hidden">
+              <div
+                className="h-2 bg-[#F5821F] rounded-full transition-all duration-300"
+                style={{ width: `${pdfProgress}%` }}
+              />
+            </div>
+            <p className="text-xs text-[#A8A29E]">Please wait a moment</p>
+          </div>
+        </div>
+      )}
+
       {/* Floating Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E8E6E2] px-6 py-3 flex items-center justify-between shadow-[0_-4px_16px_rgba(0,0,0,0.06)] z-20">
         <div className="flex items-center gap-2">
@@ -570,7 +664,7 @@ export default function ReportViewerPage() {
         <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5"
           onClick={downloadPdf} disabled={pdfLoading}>
           <ReportSymbol name="pdf" size={15} color="white" />
-          {pdfLoading ? "Generating…" : "Download PDF"}
+          {pdfLoading ? "Generating PDF…" : "Download PDF"}
         </Button>
       </div>
     </div>

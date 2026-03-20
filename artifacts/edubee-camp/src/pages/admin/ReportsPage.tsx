@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -58,6 +58,11 @@ export default function ReportsPage() {
   const canDelete = role === "super_admin";
   const canUnpublish = ["super_admin", "admin"].includes(role);
   const isViewOnly = role === "education_agent" || role === "parent_client";
+
+  // parent_client sees their programs, not the reports list
+  useEffect(() => {
+    if (role === "parent_client") navigate("/admin/my-programs");
+  }, [role, navigate]);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");

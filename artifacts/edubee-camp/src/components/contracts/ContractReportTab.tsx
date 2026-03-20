@@ -39,13 +39,14 @@ export function ContractReportTab({ contractId }: { contractId: string }) {
   const canPublish = canCreate;
   const canUnpublish = ["super_admin", "admin"].includes(role);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["reports", "contract", contractId],
     queryFn: () => axios.get(`${BASE}/api/reports`).then(r => {
       const all: Report[] = r.data?.data ?? [];
       return all.find(rep => rep.contractId === contractId) ?? null;
     }),
     enabled: !!contractId,
+    retry: 1,
   });
   const report: Report | null = data ?? null;
 
@@ -107,6 +108,16 @@ export function ContractReportTab({ contractId }: { contractId: string }) {
       <div className="space-y-3 p-4">
         <Skeleton className="h-6 w-48" />
         <Skeleton className="h-20 w-full" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-4">
+        <ReportSymbol name="report" size={40} color="#E8E6E2" />
+        <p className="text-sm font-semibold text-red-500">Unable to load report</p>
+        <p className="text-xs text-[#A8A29E]">Please check your connection and refresh the page.</p>
       </div>
     );
   }

@@ -1,0 +1,281 @@
+Final integration, access control hardening, and polish for the
+Edubee Camp Program Reports module.
+PROMPTS 1–4 are fully in place.
+
+═══════════════════════════════════════════
+ PART 1: ACCESS CONTROL AUDIT
+═══════════════════════════════════════════
+
+Verify and enforce these rules across ALL report endpoints and pages:
+
+BACKEND — add to each route handler:
+
+  GET /api/reports / GET /api/reports/:id:
+    parent_client → status must be 'published' AND
+                    application.client_id = req.user.id
+    education_agent → status must be 'published' AND
+                      application.agent_id = req.user.id
+    camp_coordinator → contract.camp_provider_id = req.user.id
+                       (draft OR published)
+    super_admin / admin → unrestricted
+
+  POST /api/reports:
+    parent_client → 403 always
+    education_agent → 403 always
+    camp_coordinator → contract.camp_provider_id must = req.user.id
+
+  PATCH /api/reports/:id/unpublish:
+    camp_coordinator → 403 always
+    education_agent → 403 always
+    parent_client → 403 always
+    Only super_admin and admin allowed
+
+  DELETE /api/reports/:id:
+    Only super_admin allowed (admin → 403)
+
+  GET /api/reports/:id/pdf:
+    Same rules as GET /:id
+    Additionally: if status='draft' AND role is EA or parent → 403
+    Passport fields: strip passportNumber + passportExpiry
+    from section content BEFORE PDF generation
+    if role is education_agent or parent_client
+
+FRONTEND — route guards:
+
+  /admin/reports/:id/edit:
+    If effectiveRole is 'education_agent' or 'parent_client'
+    → redirect to /admin/reports/:id
+
+  /admin/reports:
+    If effectiveRole is 'parent_client'
+    → redirect to /admin/my-programs
+
+  Report viewer — field visibility:
+    If effectiveRole in ['education_agent', 'parent_client']:
+      passport number field → show "— (Hidden)"
+      passport expiry field → show "— (Hidden)"
+
+═══════════════════════════════════════════
+ PART 2: NOTIFICATIONS INTEGRATION
+═══════════════════════════════════════════
+
+Verify notification triggers in PATCH /api/reports/:id/publish:
+
+CREATE notification records for:
+
+  1. Education Agent (application.agent_id):
+  {
+    userId: agentId,
+    type: 'report_published',
+    title: 'Program Report Available',
+    message: `The program report for ${studentName} (${programName}) is now available.`,
+    referenceType: 'report',
+    referenceId: reportId,
+    isRead: false
+  }
+
+  2. Parent Client (application.client_id):
+  {
+    userId: parentId,
+    type: 'report_published',
+    title: 'Your Program Report is Ready',
+    message: `The program report for ${studentName} has been published. You can now view and download it.`,
+    referenceType: 'report',
+    referenceId: reportId,
+    isRead: false
+  }
+
+Notification click behavior (in NotificationDropdown):
+  referenceType === 'report' →
+    If role is EA or parent: navigate to /admin/reports/:referenceId
+    If role is CC/admin:     navigate to /admin/reports/:referenceId/edit
+
+═══════════════════════════════════════════
+ PART 3: ERROR STATES & LOADING
+═══════════════════════════════════════════
+
+LOADING STATES:
+
+  Reports List page:
+    Skeleton table: 5 rows × 5 cols, shimmer (#F4F3F1 → #E8E6E2)
+
+  Report Editor:
+    Left panel: skeleton section list (6 items)
+    Right panel: skeleton form (5 input placeholders)
+
+  Report Viewer:
+    Skeleton cover area (300px height)
+    Skeleton sections (3 section blocks)
+
+  PDF download button:
+    Loading state: spinner icon + "Generating PDF..."
+    Disable button during generation
+    On complete: revert button text
+
+ERROR STATES:
+
+  403 on report access:
+    Centered card:
+      <ReportSymbol name="report" size={48} color="#E8E6E2" />
+      "Report Not Available"
+      "This report has not been published yet."
+      [Back to Dashboard] button
+
+  404 on report not found:
+    "Report not found"
+    [Back to Reports] button
+
+  PDF generation failure:
+    Toast: "PDF generation failed. Please try again."
+    (error, 4s duration)
+
+  Publish failure:
+    Toast: "Could not publish report. Please check all sections."
+
+  Auto-save failure:
+    Indicator: "Save failed ✗" (red) instead of "Saved ✓"
+    Retry button inline
+
+═══════════════════════════════════════════
+ PART 4: PERFORMANCE
+═══════════════════════════════════════════
+
+REPORT LIST:
+  Implement server-side pagination (default limit=20)
+  Infinite scroll OR pagination controls below table
+
+REPORT EDITOR:
+  Section content saved individually (not full report)
+  Only changed sections trigger PATCH calls
+  Debounce: 1500ms (not on every keystroke)
+
+PDF GENERATION:
+  Target: < 5 seconds for standard report
+  Add progress indicator if > 2s:
+    Modal: "Generating your PDF report..." + animated progress bar
+
+SECTION SYNC:
+  POST /api/reports/:id/sync runs in background
+  Show spinner in Sync button while running
+  Toast result on complete
+
+═══════════════════════════════════════════
+ PART 5: FINAL SYMBOL AUDIT
+═══════════════════════════════════════════
+
+Search entire /client/src directory for any remaining emoji
+in the reports module. Replace ALL of them:
+
+Common replacements needed:
+  💾 (save)     → <ReportSymbol name="edit" />     or Lucide Save icon
+  📤 (publish)  → <ReportSymbol name="publish" />
+  👁 (preview)  → Lucide Eye icon
+  ⬇ (download) → <ReportSymbol name="pdf" />
+  ✏ (edit)     → <ReportSymbol name="edit" />
+  🔄 (sync)    → <ReportSymbol name="sync" />
+  📊 (report)  → <ReportSymbol name="report" />
+  ✅ (success) → Lucide CheckCircle2 icon
+  ⚠️ (warning) → Lucide AlertTriangle icon
+
+For sidebar, section headers, status indicators, and all
+button labels — use ReportSymbol or Lucide React icons only.
+
+Lucide icons allowed (stroke 1.5, size 16 or 20):
+  Eye, EyeOff, Save, Trash2, Plus, X, ChevronDown,
+  CheckCircle2, AlertTriangle, RotateCcw, ArrowLeft,
+  Download, Send, FileText
+
+═══════════════════════════════════════════
+ PART 6: SMOKE TEST SCENARIOS
+═══════════════════════════════════════════
+
+Run through these scenarios after build:
+
+SCENARIO A — Camp Coordinator creates report:
+  1. Login as coord1@edubee.com
+  2. Navigate to Contracts → open existing contract
+  3. Click [Report] tab
+  4. Click [Generate Report]
+  5. Editor opens with 6 auto-populated sections
+  6. Edit Academic section: add 2 schedule rows, fill teacher comments
+  7. Check auto-save fires (see "Saved ✓")
+  8. Navigate to Summary section, fill overall notes
+  9. Click [Sync from Services] — confirm toast
+  10. Click [Publish Report] — confirm success banner
+  11. Check notification created for agent + parent
+
+SCENARIO B — Education Agent views published report:
+  1. Login as agent1@agency.com
+  2. Navigate to /admin/reports
+  3. Published report visible (no draft reports)
+  4. Click [View] — viewer opens
+  5. Passport fields show "— (Hidden)"
+  6. Click [Download PDF] — PDF downloads
+  7. Confirm PDF has logo, all sections, no passport data
+
+SCENARIO C — Parent views report in My Programs:
+  1. Login as parent1@gmail.com
+  2. Navigate to /admin/my-programs
+  3. Click [Report] tab
+  4. Report viewer shows (published)
+  5. [Download PDF] works
+  6. Passport fields hidden
+
+SCENARIO D — Unpublish and re-publish:
+  1. Login as admin@edubee.com
+  2. Open report → click [Unpublish]
+  3. Login as agent1 → /admin/reports → report not visible
+  4. Login as admin → re-publish
+  5. Agent sees report again
+
+SCENARIO E — Super admin deletes report:
+  1. Login as admin@edubee.com
+  2. Confirm [Delete] only appears for super_admin role
+  3. Login as super_admin, delete report
+  4. Confirm soft-delete (deletedAt set, not visible in list)
+
+═══════════════════════════════════════════
+ FINAL VERIFICATION CHECKLIST
+═══════════════════════════════════════════
+
+ASSETS:
+  ✓ EdubeeLogo SVG renders in all 3 variants (full/icon/white)
+  ✓ EdubeeLogo used in navbar, report viewer, PDF cover
+  ✓ All 15 ReportSymbol symbols render without errors
+  ✓ Zero emoji characters in reports module
+
+ACCESS CONTROL:
+  ✓ Draft reports return 403 for EA and parent
+  ✓ CC can only access own camp reports
+  ✓ EA can only access own client published reports
+  ✓ Parent can only access own published report
+  ✓ Unpublish restricted to SA/AD only
+  ✓ Delete restricted to SA only
+  ✓ Passport data stripped from EA/parent PDF
+
+EDITOR:
+  ✓ 6 sections auto-populated on report creation
+  ✓ Drag-and-drop reorder works
+  ✓ Eye toggle reflects in viewer + PDF
+  ✓ Auto-save with debounce 1500ms
+  ✓ Sync respects manually edited sections
+  ✓ Custom sections addable and deletable
+  ✓ Default sections cannot be deleted
+
+PDF:
+  ✓ EdubeePdfLogo (SVG bee) on every page header
+  ✓ Cover page complete with all fields
+  ✓ All 6 section types render correctly
+  ✓ Hidden sections excluded
+  ✓ Passport hidden for EA/parent
+  ✓ File named EdubeeCamp_Report_[Name]_[Year].pdf
+  ✓ Renders in < 5 seconds
+
+NOTIFICATIONS:
+  ✓ Agent + parent notified on publish
+  ✓ Notification click navigates to correct page per role
+
+INTEGRATION:
+  ✓ Contract [Report] tab shows generate/status correctly
+  ✓ My Programs [Report] tab works for parent
+  ✓ Sidebar uses ReportSymbol icon (no emoji)

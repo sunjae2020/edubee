@@ -219,6 +219,32 @@ router.get("/reports/:id", authenticate, async (req, res) => {
       }
     }
 
+    // EA scope check: application.agent_id must = req.user.id
+    if (role === "education_agent" && report.contractId) {
+      const [c] = await db
+        .select({ applicationId: contracts.applicationId })
+        .from(contracts).where(eq(contracts.id, report.contractId)).limit(1);
+      if (c?.applicationId) {
+        const [app] = await db
+          .select({ agentId: applications.agentId })
+          .from(applications).where(eq(applications.id, c.applicationId)).limit(1);
+        if (app?.agentId !== uid) return res.status(403).json({ error: "Forbidden" });
+      }
+    }
+
+    // Parent scope check: application.client_id must = req.user.id
+    if (role === "parent_client" && report.contractId) {
+      const [c] = await db
+        .select({ applicationId: contracts.applicationId })
+        .from(contracts).where(eq(contracts.id, report.contractId)).limit(1);
+      if (c?.applicationId) {
+        const [app] = await db
+          .select({ clientId: applications.clientId })
+          .from(applications).where(eq(applications.id, c.applicationId)).limit(1);
+        if (app?.clientId !== uid) return res.status(403).json({ error: "Forbidden" });
+      }
+    }
+
     const sections = await db
       .select()
       .from(reportSections)
@@ -306,7 +332,7 @@ router.post("/reports", authenticate, async (req, res) => {
       )
       .returning();
 
-    return res.status(201).json({ ...report, sections: insertedSections });
+    return res.status(201).json({ data: { ...report, sections: insertedSections } });
   } catch (err: any) {
     console.error("POST /reports error:", err.message);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -418,21 +444,29 @@ router.patch("/reports/:id/publish", authenticate, async (req, res) => {
             .limit(1)
         )[0]?.fullName ?? "the student";
 
-        const notifPayload = {
+        const programName = report.reportTitle ?? "the program";
+        const basePayload = {
           type: "report_published",
-          title: "Program Report Available",
-          message: `Program report for ${studentName} is now ready.`,
           referenceType: "report",
           referenceId: updated.id,
           isRead: false,
         };
 
-        const notifTargets: string[] = [];
-        if (app?.agentId) notifTargets.push(app.agentId);
-        if (app?.clientId) notifTargets.push(app.clientId);
-
-        for (const userId of notifTargets) {
-          await db.insert(notifications).values({ ...notifPayload, userId });
+        if (app?.agentId) {
+          await db.insert(notifications).values({
+            ...basePayload,
+            userId: app.agentId,
+            title: "Program Report Available",
+            message: `The program report for ${studentName} (${programName}) is now available.`,
+          });
+        }
+        if (app?.clientId) {
+          await db.insert(notifications).values({
+            ...basePayload,
+            userId: app.clientId,
+            title: "Your Program Report is Ready",
+            message: `The program report for ${studentName} has been published. You can now view and download it.`,
+          });
         }
       }
     }
@@ -662,6 +696,7 @@ router.post("/reports/:id/sync", authenticate, async (req, res) => {
 router.get("/reports/:id/pdf", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
+    const uid = req.user!.id;
 
     if (!canManage(role) && role !== "education_agent" && role !== "parent_client") {
       return res.status(403).json({ error: "Forbidden" });
@@ -682,11 +717,49 @@ router.get("/reports/:id/pdf", authenticate, async (req, res) => {
       return res.status(403).json({ error: "Forbidden: report is not yet published" });
     }
 
+    // EA scope check for PDF
+    if (role === "education_agent" && report.contractId) {
+      const [c] = await db
+        .select({ applicationId: contracts.applicationId })
+        .from(contracts).where(eq(contracts.id, report.contractId)).limit(1);
+      if (c?.applicationId) {
+        const [app] = await db
+          .select({ agentId: applications.agentId })
+          .from(applications).where(eq(applications.id, c.applicationId)).limit(1);
+        if (app?.agentId !== uid) return res.status(403).json({ error: "Forbidden" });
+      }
+    }
+
+    // Parent scope check for PDF
+    if (role === "parent_client" && report.contractId) {
+      const [c] = await db
+        .select({ applicationId: contracts.applicationId })
+        .from(contracts).where(eq(contracts.id, report.contractId)).limit(1);
+      if (c?.applicationId) {
+        const [app] = await db
+          .select({ clientId: applications.clientId })
+          .from(applications).where(eq(applications.id, c.applicationId)).limit(1);
+        if (app?.clientId !== uid) return res.status(403).json({ error: "Forbidden" });
+      }
+    }
+
     const sections = await db
       .select()
       .from(reportSections)
       .where(eq(reportSections.reportId, req.params.id))
       .orderBy(asc(reportSections.displayOrder));
+
+    // Strip passport fields for EA / parent
+    const isRestrictedRole = role === "education_agent" || role === "parent_client";
+    if (isRestrictedRole) {
+      for (const section of sections) {
+        if (section.sectionType === "student_profile" && section.content) {
+          const content = section.content as Record<string, unknown>;
+          delete content.passportNumber;
+          delete content.passportExpiry;
+        }
+      }
+    }
 
     // Build filename from student profile content or report title
     const spSection = sections.find(s => s.sectionType === "student_profile");

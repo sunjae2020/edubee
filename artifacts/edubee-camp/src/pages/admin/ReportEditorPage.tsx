@@ -542,6 +542,33 @@ function CustomEditor({ section, onChange, onTitleChange }: {
   );
 }
 
+// ── Editor Loading Skeleton ───────────────────────────────────────
+function EditorLoadingSkeleton() {
+  return (
+    <div className="flex h-[calc(100vh-56px)] overflow-hidden">
+      <div className="w-[280px] shrink-0 border-r border-[#E8E6E2] flex flex-col bg-white p-3 gap-3">
+        <div className="h-4 w-24 bg-[#F4F3F1] rounded animate-pulse" />
+        <div className="h-5 w-40 bg-[#F4F3F1] rounded animate-pulse" />
+        <div className="h-8 w-full bg-[#FEF0E3] rounded animate-pulse" />
+        <div className="space-y-2 pt-2">
+          {[0,1,2,3,4,5].map(i => (
+            <div key={i} className="flex items-center gap-2 px-1 py-2">
+              <div className="w-3.5 h-3.5 bg-[#E8E6E2] rounded animate-pulse" />
+              <div className="h-3.5 bg-[#F4F3F1] rounded animate-pulse flex-1" style={{ width: `${60 + i*5}%` }} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex-1 bg-[#FAFAF9] p-6 space-y-4">
+        <div className="h-6 w-48 bg-[#F4F3F1] rounded animate-pulse" />
+        {[0,1,2,3,4].map(i => (
+          <div key={i} className="h-9 bg-white border border-[#E8E6E2] rounded animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Editor Page ──────────────────────────────────────────────
 export default function ReportEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -550,16 +577,12 @@ export default function ReportEditorPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const role = user?.role ?? "";
-  if (["education_agent", "parent_client"].includes(role)) {
-    navigate(`/admin/reports/${id}`);
-    return null;
-  }
-
+  // All hooks must be declared before any early returns
   const [sections, setSections] = useState<Section[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Record<string, Date>>({});
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "failed">("idle");
+  const [lastFailedSectionId, setLastFailedSectionId] = useState<string | null>(null);
   const [titleEditing, setTitleEditing] = useState(false);
   const [titleVal, setTitleVal] = useState("");
   const [showAddCustom, setShowAddCustom] = useState(false);
@@ -567,11 +590,20 @@ export default function ReportEditorPage() {
 
   const autoSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  const { data: reportData } = useQuery({
+  const role = user?.role ?? "";
+  const isViewOnly = ["education_agent", "parent_client"].includes(role);
+
+  const { data: reportData, isLoading: reportLoading } = useQuery({
     queryKey: ["report", id],
     queryFn: () => axios.get(`${BASE}/api/reports/${id}`).then(r => r.data),
+    enabled: !isViewOnly,
   });
   const report: Report | null = reportData ?? null;
+
+  // Redirect view-only roles to viewer
+  useEffect(() => {
+    if (isViewOnly && id) navigate(`/admin/reports/${id}`);
+  }, [isViewOnly, id, navigate]);
 
   useEffect(() => {
     if (reportData?.sections) {
@@ -646,6 +678,7 @@ export default function ReportEditorPage() {
   const handleSectionChange = useCallback((sectionId: string, newContent: Record<string, unknown>, newTitle?: string) => {
     setSections(prev => prev.map(s => s.id === sectionId ? { ...s, content: newContent, ...(newTitle !== undefined ? { sectionTitle: newTitle } : {}) } : s));
     setSaveState("saving");
+    setLastFailedSectionId(null);
 
     if (autoSaveTimers.current[sectionId]) clearTimeout(autoSaveTimers.current[sectionId]);
     autoSaveTimers.current[sectionId] = setTimeout(async () => {
@@ -657,15 +690,15 @@ export default function ReportEditorPage() {
         setSaveState("saved");
         setTimeout(() => setSaveState("idle"), 2000);
       } catch {
-        setSaveState("idle");
-        toast({ title: "Auto-save failed", variant: "destructive" });
+        setSaveState("failed");
+        setLastFailedSectionId(sectionId);
       }
     }, 1500);
-  }, [id, toast]);
+  }, [id]);
 
-  if (!report) {
-    return <div className="p-6 text-sm text-[#57534E]">Loading editor…</div>;
-  }
+  if (isViewOnly) return null;
+  if (reportLoading) return <EditorLoadingSkeleton />;
+  if (!report) return <div className="p-6 text-sm text-red-500">Report not found.</div>;
 
   return (
     <div className="flex h-[calc(100vh-56px)] overflow-hidden">
@@ -695,9 +728,25 @@ export default function ReportEditorPage() {
             </p>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <ReportStatusBadge status={(report.status ?? "draft") as "draft" | "published"} />
-            {saveState === "saved" && <span className="text-[10px] text-[#16A34A]">Saved</span>}
+            {saveState === "saved" && <span className="text-[10px] text-[#16A34A] font-medium">Saved ✓</span>}
+            {saveState === "saving" && <span className="text-[10px] text-[#A8A29E]">Saving…</span>}
+            {saveState === "failed" && (
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-red-500 font-medium">Save failed ✗</span>
+                {lastFailedSectionId && activeSection && (
+                  <button
+                    className="text-[10px] text-[#F5821F] underline"
+                    onClick={() => {
+                      handleSectionChange(lastFailedSectionId, activeSection.content);
+                    }}
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {report.status === "draft" ? (

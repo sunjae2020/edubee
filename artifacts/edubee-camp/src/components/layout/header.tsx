@@ -18,7 +18,8 @@ interface SwitchableUser {
 
 interface Notification {
   id: string; type?: string | null; title?: string | null; message?: string | null;
-  isRead?: boolean | null; createdAt?: string | null; referenceType?: string | null;
+  isRead?: boolean | null; createdAt?: string | null;
+  referenceType?: string | null; referenceId?: string | null;
 }
 
 const PAGE_TITLES: Record<string, string> = {
@@ -73,7 +74,7 @@ type Props = { collapsed: boolean; onToggle: () => void; title?: string };
 export function Header({ collapsed, onToggle, title }: Props) {
   const { user, logout } = useAuth();
   const { viewAsUser, setViewAs, clearViewAs, isImpersonating } = useViewAs();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
   const qc = useQueryClient();
 
@@ -242,8 +243,27 @@ export function Header({ collapsed, onToggle, title }: Props) {
                   </div>
                 ) : notifList.map(n => {
                   const NIcon = NOTIF_ICONS[n.type ?? ""] ?? NOTIF_ICONS.default;
+                  const isParent = myRole === "parent_client";
+                  const isEA = myRole === "education_agent";
+                  const notifTarget = (() => {
+                    if (n.referenceType === "report" && n.referenceId) {
+                      if (isParent || isEA) return `/admin/reports/${n.referenceId}`;
+                      return `/admin/reports/${n.referenceId}/edit`;
+                    }
+                    return null;
+                  })();
                   return (
-                    <div key={n.id} className={`px-3 py-2.5 border-b border-[#F4F3F1] last:border-0 flex items-start gap-2.5 transition-colors ${!n.isRead ? "bg-[#FEF0E3]/40" : "hover:bg-[#FAFAF9]"}`}>
+                    <div
+                      key={n.id}
+                      role={notifTarget ? "button" : undefined}
+                      onClick={() => {
+                        if (notifTarget) {
+                          setNotifOpen(false);
+                          navigate(notifTarget);
+                        }
+                      }}
+                      className={`px-3 py-2.5 border-b border-[#F4F3F1] last:border-0 flex items-start gap-2.5 transition-colors ${!n.isRead ? "bg-[#FEF0E3]/40" : "hover:bg-[#FAFAF9]"} ${notifTarget ? "cursor-pointer hover:bg-[#FEF0E3]/60" : ""}`}
+                    >
                       <span className="mt-0.5 shrink-0 text-[#A8A29E]"><NIcon className="w-4 h-4" /></span>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-medium leading-snug text-[#1C1917]">{n.title}</div>
