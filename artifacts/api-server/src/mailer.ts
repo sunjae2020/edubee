@@ -44,15 +44,27 @@ export async function sendMail(options: {
   html: string;
   text?: string;
 }) {
-  const cfg = await getSmtpConfig();
-  const fromName = cfg["smtp.fromName"] || "Edubee Camp";
-  const fromEmail = cfg["smtp.from"] || cfg["smtp.user"] || "";
-  const transporter = await createTransporter();
-  return transporter.sendMail({
-    from: `"${fromName}" <${fromEmail}>`,
-    to: options.to,
-    subject: options.subject,
-    html: options.html,
-    text: options.text ?? options.html.replace(/<[^>]+>/g, ""),
-  });
+  // CHECK 1.4 — Email mock for test environments (set EMAIL_ENABLED=false in Secrets)
+  if (process.env.EMAIL_ENABLED === "false") {
+    console.log("[NOTIFICATION MOCK]", { to: options.to, subject: options.subject });
+    return { success: true, mocked: true };
+  }
+
+  try {
+    const cfg = await getSmtpConfig();
+    const fromName = cfg["smtp.fromName"] || "Edubee Camp";
+    const fromEmail = cfg["smtp.from"] || cfg["smtp.user"] || "";
+    const transporter = await createTransporter();
+    return transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text ?? options.html.replace(/<[^>]+>/g, ""),
+    });
+  } catch (err) {
+    // R-8: Email failures must NEVER block the main workflow
+    console.error("[EMAIL FAILED — non-blocking]", String(err));
+    return { success: false, error: String(err) };
+  }
 }

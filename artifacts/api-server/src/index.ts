@@ -14,6 +14,11 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
+
+// CHECK 1.3 — Replit: prevent 120s reverse-proxy hard-cut
+server.timeout = 120000;
+server.keepAliveTimeout = 121000;
+console.log("[FIX APPLIED] server.timeout = 120000ms");

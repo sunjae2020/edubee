@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ParticipantEditDialog, ParticipantAddDialog } from "@/components/shared/ParticipantDialogs";
-import { Pencil, Plus, Calendar, Video, MapPin, User, ClipboardList, Loader2 } from "lucide-react";
+import { Pencil, Plus, Calendar, Video, MapPin, User, ClipboardList, Loader2, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -207,7 +207,8 @@ export default function ApplicationDetail() {
   const participants: any[] = app?.participants ?? [];
   const interviews: any[] = interviewData?.data ?? [];
 
-  const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
+  const isContracted = app?.status === "contracted";
+  const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "") && !isContracted;
 
   const updateApp = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
@@ -298,6 +299,24 @@ export default function ApplicationDetail() {
         onSave={saveEdit}
         onCancel={cancelEdit}
       >
+        {/* ── Contracted Banner ── */}
+        {app.status === "contracted" && app.contractId && (
+          <div className="mb-4 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-green-800">
+              <ClipboardList className="w-4 h-4 flex-shrink-0" />
+              <span>
+                Converted to Contract <strong>{app.contractNumber}</strong> — manage services in Contracts.
+              </span>
+            </div>
+            <a
+              href={`${BASE}/admin/contracts/${app.contractId}`}
+              className="flex items-center gap-1 rounded-md border border-green-300 bg-white px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-50 transition-colors"
+            >
+              View Contract <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        )}
+
         {/* ── Overview ── */}
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -345,13 +364,15 @@ export default function ApplicationDetail() {
         {/* ── Participants ── */}
         {activeTab === "participants" && (
           <div className="space-y-3">
-            {canEdit && (
+            {canEdit ? (
               <div className="flex justify-end">
                 <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setAddParticipant(true)}>
                   <Plus className="w-3.5 h-3.5" /> Add Participant
                 </Button>
               </div>
-            )}
+            ) : isContracted ? (
+              <p className="text-xs text-muted-foreground text-right">Participants are read-only after contract conversion.</p>
+            ) : null}
           <div className="bg-card rounded-xl border overflow-hidden">
             <table className="w-full text-sm">
               <thead>

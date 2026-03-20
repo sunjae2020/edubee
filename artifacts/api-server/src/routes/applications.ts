@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt, interviewSchedules, users } from "@workspace/db/schema";
+import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt } from "@workspace/db/schema";
 import { eq, and, ilike, or, count, inArray, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -182,8 +182,19 @@ router.get("/applications/:id", authenticate, async (req, res) => {
     
     const participants = await db.select().from(applicationParticipants)
       .where(eq(applicationParticipants.applicationId, req.params.id));
+
+    // Always look up linked contract (handles status inconsistency edge cases)
+    let contractInfo: { contractId: string; contractNumber: string } | null = null;
+    const [linkedContract] = await db
+      .select({ id: contracts.id, contractNumber: contracts.contractNumber })
+      .from(contracts)
+      .where(eq(contracts.applicationId, req.params.id))
+      .limit(1);
+    if (linkedContract) {
+      contractInfo = { contractId: linkedContract.id, contractNumber: linkedContract.contractNumber ?? "" };
+    }
     
-    return res.json({ ...application, participants });
+    return res.json({ ...application, participants, ...contractInfo });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
@@ -285,7 +296,7 @@ router.post("/applications/:id/convert-contract", authenticate, requireRole("sup
 
     const existingContract = await db.select().from(contracts).where(eq(contracts.applicationId, req.params.id)).limit(1);
     if (existingContract.length > 0) {
-      return res.status(409).json({ error: "Conflict", message: "Contract already exists", contractId: existingContract[0].id });
+      return res.status(409).json({ error: "Conflict", message: "Contract already exists", contractId: existingContract[0].id, contractNumber: existingContract[0].contractNumber });
     }
 
     const year = new Date().getFullYear();
@@ -293,25 +304,61 @@ router.post("/applications/:id/convert-contract", authenticate, requireRole("sup
     const seq = String(Number(countResult.count) + 1).padStart(4, "0");
     const contractNumber = `CNT-${year}-${seq}`;
 
-    const [contract] = await db.insert(contracts).values({
-      contractNumber,
-      applicationId: req.params.id,
-      campProviderId: req.user!.id,
-      status: "draft",
-      currency: "AUD",
-    }).returning();
+    // ── Atomic transaction: all records or nothing ──────────────────────────
+    const result = await db.transaction(async (tx) => {
+      const [contract] = await tx.insert(contracts).values({
+        contractNumber,
+        applicationId: req.params.id,
+        campProviderId: req.user!.id,
+        status: "draft",
+        currency: "AUD",
+      }).returning();
 
-    await db.insert(instituteMgt).values({ contractId: contract.id, status: "pending" });
-    await db.insert(hotelMgt).values({ contractId: contract.id, status: "pending" });
-    await db.insert(pickupMgt).values({ contractId: contract.id, status: "pending" });
-    await db.insert(tourMgt).values({ contractId: contract.id, status: "pending" });
+      await tx.insert(instituteMgt).values({ contractId: contract.id, status: "pending" });
+      await tx.insert(hotelMgt).values({ contractId: contract.id, status: "pending" });
+      await tx.insert(pickupMgt).values({ contractId: contract.id, status: "pending" });
+      await tx.insert(tourMgt).values({ contractId: contract.id, status: "pending" });
 
-    await db.update(applications).set({ status: "contracted", updatedAt: new Date() }).where(eq(applications.id, req.params.id));
+      // Create settlement_mgt record for the education agent (if any)
+      if (application.agentId) {
+        await tx.insert(settlementMgt).values({
+          contractId: contract.id,
+          providerUserId: application.agentId,
+          providerRole: "education_agent",
+          status: "pending",
+          currency: "AUD",
+          grossAmount: "0",
+          commissionRate: "10",
+          commissionAmount: "0",
+          netAmount: "0",
+        });
+      }
 
-    return res.status(201).json({ contractId: contract.id, contractNumber });
+      // Create settlement_mgt record for the coordinator
+      if (req.user!.role === "camp_coordinator") {
+        await tx.insert(settlementMgt).values({
+          contractId: contract.id,
+          providerUserId: req.user!.id,
+          providerRole: "camp_coordinator",
+          status: "pending",
+          currency: "AUD",
+          grossAmount: "0",
+          commissionRate: "0",
+          commissionAmount: "0",
+          netAmount: "0",
+        });
+      }
+
+      await tx.update(applications).set({ status: "contracted", updatedAt: new Date() }).where(eq(applications.id, req.params.id));
+
+      console.log("[FIX APPLIED] convert-contract: atomic transaction completed", { contractId: contract.id, contractNumber });
+      return { contractId: contract.id, contractNumber };
+    });
+
+    return res.status(201).json(result);
   } catch (err) {
-    console.error("Convert contract error:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error("Convert contract error (transaction rolled back):", err);
+    return res.status(500).json({ error: "Internal Server Error", detail: String(err) });
   }
 });
 
