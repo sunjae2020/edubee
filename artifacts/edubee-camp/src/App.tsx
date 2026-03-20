@@ -55,6 +55,9 @@ import MyRevenue from "@/pages/admin/my-accounting/revenue";
 
 // Reports
 import Reports from "@/pages/admin/reports";
+import ReportsPage from "@/pages/admin/ReportsPage";
+import ReportEditorPage from "@/pages/admin/ReportEditorPage";
+import ReportViewerPage from "@/pages/admin/ReportViewerPage";
 
 // Documents
 import DocumentsPage from "@/pages/admin/documents";
@@ -204,8 +207,14 @@ function Router() {
       </Route>
 
       {/* Reports */}
+      <Route path="/admin/reports/:id/edit">
+        <AdminRoute title="Edit Report"><ReportEditorPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/reports/:id">
+        <AdminRoute title="View Report"><ReportViewerPage /></AdminRoute>
+      </Route>
       <Route path="/admin/reports">
-        <AdminRoute title="Program Reports"><Reports /></AdminRoute>
+        <AdminRoute title="Program Reports"><ReportsPage /></AdminRoute>
       </Route>
 
       {/* Documents */}

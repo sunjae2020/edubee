@@ -3,7 +3,8 @@ import { useAuth } from "@/hooks/use-auth";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Calendar, MapPin, CheckCircle2, Clock, Download, BookOpen } from "lucide-react";
+import { GraduationCap, Calendar, CheckCircle2, Clock } from "lucide-react";
+import { ReportSymbol } from "@/components/shared/ReportSymbol";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -140,12 +141,28 @@ export default function MyPrograms() {
                 {report ? (
                   <div className="border-t bg-[#DCFCE7]/30 px-4 py-3 flex items-center justify-between rounded-b-xl">
                     <div className="flex items-center gap-2">
-                      <BookOpen className="w-3.5 h-3.5 text-[#16A34A]" />
+                      <ReportSymbol name="report" size={14} color="#16A34A" />
                       <span className="text-xs font-medium text-[#16A34A]">Program Report Available</span>
                       <span className="text-[10px] text-[#16A34A]">Published {new Date(report.publishedAt!).toLocaleDateString("en-AU")}</span>
                     </div>
-                    <Button size="sm" className="h-7 text-xs gap-1 bg-[#16A34A] hover:bg-[#15803D] text-white">
-                      <Download className="w-3 h-3" /> Download PDF
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs gap-1 bg-[#16A34A] hover:bg-[#15803D] text-white"
+                      onClick={() => {
+                        const token = localStorage.getItem("edubee_token");
+                        fetch(`${BASE}/api/reports/${report.id}/pdf`, { headers: { Authorization: `Bearer ${token}` } })
+                          .then(r => r.blob())
+                          .then(blob => {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `report-${report.id}.pdf`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          });
+                      }}
+                    >
+                      <ReportSymbol name="pdf" size={12} color="white" /> Download PDF
                     </Button>
                   </div>
                 ) : hasEnded ? (

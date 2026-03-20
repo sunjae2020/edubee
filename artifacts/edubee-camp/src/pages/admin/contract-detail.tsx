@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pencil, Plus, Loader2, School, Hotel, Car, Map } from "lucide-react";
+import { ContractReportTab } from "@/components/contracts/ContractReportTab";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -36,6 +37,7 @@ const TABS = [
   { key: "accounting", label: "Accounting" },
   { key: "documents", label: "Documents" },
   { key: "notes", label: "Notes" },
+  { key: "report", label: "Report" },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -844,6 +846,9 @@ export default function ContractDetail() {
         {/* ── Notes ── */}
         {activeTab === "notes" && (
           <NotePanel entityType="contract" entityId={id!} />
+        )}
+        {activeTab === "report" && (
+          <ContractReportTab contractId={id!} />
         )}
       </DetailPageLayout>
 

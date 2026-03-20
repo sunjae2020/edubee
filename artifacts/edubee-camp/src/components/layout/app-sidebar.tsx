@@ -1,3 +1,4 @@
+import React from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs, ROLE_HIERARCHY } from "@/hooks/use-view-as";
@@ -9,11 +10,17 @@ import {
   Target, ClipboardList, FileText,
   GraduationCap, Building2, Car, Map, CalendarCheck, Banknote,
   Receipt, Building, Handshake, FileCheck, ArrowLeftRight, RefreshCw,
-  Wallet, BarChart2, BarChart3,
+  Wallet, BarChart2,
   Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
   Ticket, FolderOpen,
   LucideIcon,
 } from "lucide-react";
+import { ReportSymbol } from "@/components/shared/ReportSymbol";
+
+// Wrapper to make ReportSymbol behave like a LucideIcon in the sidebar
+const ReportNavIcon = ({ size, style }: { size?: number; style?: React.CSSProperties; className?: string; strokeWidth?: number }) => (
+  <ReportSymbol name="report" size={size ?? 16} color={(style?.color as string) ?? "#A8A29E"} />
+);
 
 type NavItem = { icon: LucideIcon; label: string; href: string };
 type NavGroup = { label: string; items: NavItem[] };
@@ -100,7 +107,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
   }
 
   if (!isParent) {
-    nav.push({ label: "Reports", items: [{ icon: BarChart3, label: "Program Reports", href: "/admin/reports" }] });
+    nav.push({ label: "Reports", items: [{ icon: ReportNavIcon as unknown as LucideIcon, label: "Program Reports", href: "/admin/reports" }] });
   }
 
   if (isSAorAD) {
