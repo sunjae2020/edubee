@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Layers, Package, ShoppingBag, ListChecks,
   Target, ClipboardList, FileText,
   GraduationCap, Building2, Car, Map, CalendarCheck, Banknote,
-  Receipt, Building, Handshake, FileCheck, ArrowLeftRight, RefreshCw,
+  Receipt, FileCheck, ArrowLeftRight, RefreshCw,
   Wallet, BarChart2,
   Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
   Ticket, FolderOpen, Bot,
@@ -85,9 +85,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
     nav.push({
       label: "Accounting",
       items: [
-        { icon: Receipt, label: "Client Invoices", href: "/admin/accounting/client-invoices" },
-        { icon: Building, label: "Agent Invoices", href: "/admin/accounting/agent-invoices" },
-        { icon: Handshake, label: "Partner Invoices", href: "/admin/accounting/partner-invoices" },
+        { icon: Receipt, label: "Invoices", href: "/admin/accounting/invoices" },
         { icon: FileCheck, label: "Receipts", href: "/admin/accounting/receipts" },
         { icon: ArrowLeftRight, label: "Transactions", href: "/admin/accounting/transactions" },
         { icon: RefreshCw, label: "Exchange Rates", href: "/admin/accounting/exchange-rates" },

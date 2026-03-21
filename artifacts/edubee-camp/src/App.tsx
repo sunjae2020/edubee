@@ -43,9 +43,7 @@ import TasksCS from "@/pages/admin/services/tasks";
 
 // Accounting
 import ExchangeRates from "@/pages/admin/accounting/exchange-rates";
-import ClientInvoices from "@/pages/admin/accounting/client-invoices";
-import AgentInvoices from "@/pages/admin/accounting/agent-invoices";
-import PartnerInvoices from "@/pages/admin/accounting/partner-invoices";
+import Invoices from "@/pages/admin/accounting/invoices";
 import Receipts from "@/pages/admin/accounting/receipts";
 import Transactions from "@/pages/admin/accounting/transactions";
 
@@ -181,14 +179,17 @@ function Router() {
       </Route>
 
       {/* Accounting Pages */}
+      <Route path="/admin/accounting/invoices">
+        <AdminRoute title="Invoices"><Invoices /></AdminRoute>
+      </Route>
       <Route path="/admin/accounting/client-invoices">
-        <AdminRoute title="Client Invoices"><ClientInvoices /></AdminRoute>
+        <AdminRoute title="Invoices"><Invoices /></AdminRoute>
       </Route>
       <Route path="/admin/accounting/agent-invoices">
-        <AdminRoute title="Agent Invoices"><AgentInvoices /></AdminRoute>
+        <AdminRoute title="Invoices"><Invoices /></AdminRoute>
       </Route>
       <Route path="/admin/accounting/partner-invoices">
-        <AdminRoute title="Partner Invoices"><PartnerInvoices /></AdminRoute>
+        <AdminRoute title="Invoices"><Invoices /></AdminRoute>
       </Route>
       <Route path="/admin/accounting/receipts">
         <AdminRoute title="Receipts"><Receipts /></AdminRoute>
