@@ -1,0 +1,96 @@
+Build the Finance Tab UI within the existing Contract detail page.
+Add [Finance] as a new tab alongside: Overview / Services / Documents / Finance / Activity Log
+
+Design System (STRICT — no exceptions):
+  Primary Accent:   #F5821F (orange — only accent color, no blue/purple/gradient)
+  Accent Light:     #FEF0E3
+  Neutral 900:      #1C1917 (primary text)
+  Neutral 600:      #57534E (secondary text)
+  Neutral 200:      #E8E6E2 (borders)
+  Background:       #FFFFFF
+  Surface:          #FAFAF9
+  Font:             Inter
+  Border radius:    buttons 8px / cards 12px / modals 16px
+
+─── STATUS BADGE COLORS ─────────────────────────────────────────────
+  pending   → bg #FEF9C3  text #CA8A04
+  invoiced  → bg #EFF6FF  text #2563EB
+  partial   → bg #FEF0E3  text #F5821F
+  paid      → bg #DCFCE7  text #16A34A
+  overdue   → bg #FEF2F2  text #DC2626
+  cancelled → bg #F4F3F1  text #57534E
+
+─── COST CENTER BADGE COLORS ────────────────────────────────────────
+  RC-CAMP / RC-DIRECT  → bg #FEF0E3  text #F5821F  (revenue — orange)
+  CC-AGENT             → bg #FEF2F2  text #DC2626  (commission cost — red)
+  CC-INSTITUTE / CC-HOTEL / CC-PICKUP / CC-TOUR / CC-SETTLEMENT / CC-MISC
+                       → bg #F4F3F1  text #57534E  (service cost — gray)
+
+─── FINANCE TAB LAYOUT ──────────────────────────────────────────────
+
+[1] P&L SUMMARY — 4 cards in a row:
+    Card 1: "Total Revenue"    → totalFee         (RC-CAMP or RC-DIRECT)
+    Card 2: "Agent Commission" → agentCommission   (CC-AGENT) — red text
+    Card 3: "Net Camp Revenue" → netCampRevenue    (orange text)
+    Card 4: "Gross Profit"     → grossProfit       (green if positive)
+
+[2] RECEIVABLE SECTION — header "Receivable (수입)" + [+ Add Item] button
+    List rows — each row:
+      [Status Badge] [CC Badge] Label          Amount    Due Date   [⋮]
+      
+      Example:
+      [paid]    [RC-CAMP]  Client Invoice     A$3,400   2026-04-01  [⋮]
+      [pending] [RC-CAMP]  Agent Invoice      A$3,060   2026-04-15  [⋮]
+                           (Net of A$340 commission)
+
+[3] PAYABLE SECTION — header "Payable (지출)" + [+ Add Item] button
+    List rows — same row format:
+      [paid]    [CC-AGENT]      Agent Commission  A$340    —         [⋮]
+      [pending] [CC-INSTITUTE]  Institute Fee     A$1,200  2026-05-01 [⋮]
+      [pending] [CC-HOTEL]      Hotel Fee         A$680    2026-05-01 [⋮]
+      [pending] [CC-PICKUP]     Pickup Fee        A$120    2026-05-01 [⋮]
+      [pending] [CC-TOUR]       Tour Fee          A$200    2026-05-01 [⋮]
+
+[4] COST CENTER BREAKDOWN — horizontal bar chart
+    Each CC row: label + bar + percentage
+    RC- rows in orange, CC- rows in gray/red
+
+[5] USER LEDGER — bottom section or sub-tab
+    Table columns: Date / Type / Cost Center / Description / Amount
+    CREDIT entries: green text, + prefix
+    DEBIT entries:  red text, − prefix
+    Final row: "Net Balance" bold, orange if positive
+    [Export CSV] button top-right
+
+─── ROW ACTION MENU [⋮] ─────────────────────────────────────────────
+    ✓ Confirm Payment  (opens payment modal)
+    ✏ Edit             (inline edit or modal)
+    🗒 Add Note
+    🗑 Delete          (confirm prompt before soft-delete)
+
+─── CONFIRM PAYMENT MODAL ───────────────────────────────────────────
+  Title: "Confirm Payment — {item label}"
+  Fields:
+    Actual Amount (AUD) *    → pre-filled with estimatedAmount
+    Payment Date *           → date picker
+    Reference / Receipt No.  → text input
+    Payment Method           → select: Bank Transfer / Cash / Card / Other
+    Notes                    → textarea
+
+  Ledger Preview section (auto-calculated):
+    Shows: CREDIT or DEBIT / Cost Center / Amount / Date
+    Direction: Receivable → CREDIT, Payable → DEBIT
+
+  Buttons: [Cancel]  [Confirm Payment ✓]  (orange)
+
+─── ADD ITEM MODAL ──────────────────────────────────────────────────
+  Fields:
+    Type *           → radio: Receivable / Payable
+    Category *       → select (options depend on Type)
+    Cost Center      → auto-filled from category (read-only display)
+    Label *          → text input
+    Amount (AUD) *   → number input
+    Due Date         → date picker
+    Linked Partner   → searchable select (users list, partner roles)
+    Notes            → textarea
+  Buttons: [Cancel]  [Add Item]  (orange)

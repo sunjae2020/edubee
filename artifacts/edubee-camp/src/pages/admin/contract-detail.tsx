@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pencil, Plus, Loader2, School, Hotel, Car, Map } from "lucide-react";
 import { ContractReportTab } from "@/components/contracts/ContractReportTab";
+import { ContractFinanceTab } from "@/components/contracts/ContractFinanceTab";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -34,6 +35,7 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "participants", label: "Participants" },
   { key: "services", label: "Services" },
+  { key: "finance", label: "Finance" },
   { key: "accounting", label: "Accounting" },
   { key: "documents", label: "Documents" },
   { key: "notes", label: "Notes" },
@@ -829,6 +831,11 @@ export default function ContractDetail() {
               </>
             )}
           </div>
+        )}
+
+        {/* ── Finance ── */}
+        {activeTab === "finance" && (
+          <ContractFinanceTab contractId={id!} currency={contract.currency ?? "AUD"} />
         )}
 
         {/* ── Accounting ── */}
