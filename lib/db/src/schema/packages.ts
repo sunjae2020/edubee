@@ -61,6 +61,10 @@ export const packages = pgTable("packages", {
   priceGbp: decimal("price_gbp", { precision: 10, scale: 2 }),
   features: jsonb("features"),
   status: varchar("status", { length: 20 }).default("active"),
+  // Agent commission settings
+  agentCommissionType: varchar("agent_commission_type", { length: 20 }), // 'percentage' | 'fixed' | null
+  agentCommissionRate: decimal("agent_commission_rate", { precision: 5, scale: 2 }),
+  agentCommissionFixed: decimal("agent_commission_fixed", { precision: 12, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
