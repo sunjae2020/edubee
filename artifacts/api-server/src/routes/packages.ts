@@ -143,7 +143,9 @@ router.put("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES, "cam
     if (body.endDate !== undefined) (payload as any).endDate = toDateOrNull(body.endDate);
 
     // Strip computed/unknown fields that aren't in the schema
-    const allowed = ["campProviderId","nameEn","nameKo","nameJa","nameTh","descriptionEn","descriptionKo","descriptionJa","descriptionTh","inclusionsEn","inclusionsKo","exclusionsEn","exclusionsKo","durationText","thumbnailUrl","location","countryCode","status","sortOrder","landingOrder","startDate","endDate","updatedAt"] as const;
+    if (body.minAge !== undefined) (payload as any).minAge = toIntOrNull(body.minAge);
+    if (body.maxAge !== undefined) (payload as any).maxAge = toIntOrNull(body.maxAge);
+    const allowed = ["campProviderId","nameEn","nameKo","nameJa","nameTh","descriptionEn","descriptionKo","descriptionJa","descriptionTh","inclusionsEn","inclusionsKo","exclusionsEn","exclusionsKo","durationText","thumbnailUrl","location","countryCode","status","sortOrder","landingOrder","minAge","maxAge","startDate","endDate","updatedAt"] as const;
     const cleanPayload = Object.fromEntries(allowed.filter(k => (payload as any)[k] !== undefined).map(k => [k, (payload as any)[k]]));
     cleanPayload.updatedAt = new Date();
     const [group] = await db.update(packageGroups).set(cleanPayload as any)

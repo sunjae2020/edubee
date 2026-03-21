@@ -398,6 +398,48 @@ export default function PackageGroupDetail() {
                 editValue={getValue("location")} onEdit={v => setField("location", v)} />
               <EditableField label="Country Code" isEditing={isEditing} value={group.countryCode}
                 editValue={getValue("countryCode")} onEdit={v => setField("countryCode", v)} />
+
+              {/* Min Age / Max Age — English only */}
+              <DetailRow label="Min Age">
+                {isEditing ? (
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    value={getValue("minAge") ?? ""}
+                    onChange={e => setField("minAge", e.target.value === "" ? null : parseInt(e.target.value))}
+                    placeholder="e.g. 7"
+                    className="h-8 px-2 text-sm border border-[#F5821F] rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F] w-full"
+                  />
+                ) : (
+                  <span className="text-sm">
+                    {group.minAge != null
+                      ? <span className="font-semibold text-blue-600">{group.minAge} yrs</span>
+                      : <span className="text-muted-foreground/60">—</span>}
+                  </span>
+                )}
+              </DetailRow>
+
+              <DetailRow label="Max Age">
+                {isEditing ? (
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    value={getValue("maxAge") ?? ""}
+                    onChange={e => setField("maxAge", e.target.value === "" ? null : parseInt(e.target.value))}
+                    placeholder="e.g. 17"
+                    className="h-8 px-2 text-sm border border-[#F5821F] rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F] w-full"
+                  />
+                ) : (
+                  <span className="text-sm">
+                    {group.maxAge != null
+                      ? <span className="font-semibold text-blue-600">{group.maxAge} yrs</span>
+                      : <span className="text-muted-foreground/60">—</span>}
+                  </span>
+                )}
+              </DetailRow>
+
               <DetailRow label="Start Date">
                 {isEditing ? (
                   <input
