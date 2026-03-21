@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -6,8 +7,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
-import { ExternalLink, MapPin, Globe, Users, GraduationCap, Building2, CheckCircle2, Clock, FileText } from "lucide-react";
+import { ExternalLink, MapPin, Globe, Users, GraduationCap, Building2, CheckCircle2, Clock, FileText, Plus, X, Loader2, Package } from "lucide-react";
 import { useLocation } from "wouter";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -16,7 +21,6 @@ const COUNTRY_FLAG: Record<string, string> = {
   AU: "🇦🇺", PH: "🇵🇭", SG: "🇸🇬", TH: "🇹🇭", KR: "🇰🇷", JP: "🇯🇵", GB: "🇬🇧", US: "🇺🇸",
 };
 
-// Currency config — full list; will be filtered by DB exchange rates
 const ALL_CURRENCIES = [
   { ccy: "AUD", flag: "🇦🇺", sym: "A$", dec: 2, field: "priceAud" },
   { ccy: "USD", flag: "🇺🇸", sym: "$",  dec: 2, field: "priceUsd" },
@@ -28,7 +32,6 @@ const ALL_CURRENCIES = [
   { ccy: "GBP", flag: "🇬🇧", sym: "£",  dec: 2, field: "priceGbp" },
 ];
 
-// Country code → primary currency code
 const COUNTRY_TO_CURRENCY: Record<string, string> = {
   PH: "PHP", TH: "THB", SG: "SGD", JP: "JPY", KR: "KRW", GB: "GBP", US: "USD", AU: "AUD",
 };
@@ -49,6 +52,8 @@ const CONTRACT_STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-red-100 text-red-700",
 };
 
+const PROD_TYPES = ["all", "institute", "hotel", "pickup", "tour", "settlement"];
+
 function fmtPrice(val: string | null | undefined, sym: string, dec: number) {
   if (!val) return null;
   const n = parseFloat(val);
@@ -63,23 +68,90 @@ export default function PackageDetail() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // ── Product section state ─────────────────────────────────────────
+  const [showAddProd, setShowAddProd] = useState(false);
+  const [prodTypeFilter, setProdTypeFilter] = useState("all");
+  const [selectedProdId, setSelectedProdId] = useState<string | null>(null);
+  const [addQty, setAddQty] = useState(1);
+  const [addUnitPrice, setAddUnitPrice] = useState("");
+  const [addIsOptional, setAddIsOptional] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  // inline editing state per row
+  const [editingProdId, setEditingProdId] = useState<string | null>(null);
+  const [editQty, setEditQty] = useState(1);
+  const [editUnitPrice, setEditUnitPrice] = useState("");
+  const [editIsOptional, setEditIsOptional] = useState(false);
+
+  // ── Package data ──────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
     queryKey: ["package-detail", id],
     queryFn: () => axios.get(`${BASE}/api/packages/${id}`).then(r => r.data),
   });
 
-  // Public exchange rates — determines which currency fields to show
   const { data: ratesData } = useQuery({
     queryKey: ["public-exchange-rates"],
     queryFn: () => axios.get(`${BASE}/api/public/exchange-rates`).then(r => r.data),
     staleTime: 3_600_000,
   });
 
-  // Contracts linked to this package (via applications.packageId)
   const { data: contractsData } = useQuery({
     queryKey: ["package-contracts", id],
     queryFn: () => axios.get(`${BASE}/api/contracts`, { params: { packageId: id, limit: 100 } }).then(r => r.data),
     enabled: !!id,
+  });
+
+  // ── Products queries ──────────────────────────────────────────────
+  const { data: linkedProdsData, isLoading: linkedProdsLoading } = useQuery({
+    queryKey: ["pkg-products", id],
+    queryFn: () => axios.get(`${BASE}/api/packages/${id}/products`).then(r => r.data),
+    enabled: !!id,
+  });
+  const linkedProds: any[] = Array.isArray(linkedProdsData) ? linkedProdsData : (linkedProdsData?.data ?? []);
+
+  const { data: allActiveProdsData } = useQuery({
+    queryKey: ["products-active"],
+    queryFn: () => axios.get(`${BASE}/api/products`, { params: { status: "active", limit: 200 } }).then(r => r.data),
+    enabled: showAddProd,
+    staleTime: 60_000,
+  });
+  const allActiveProds: any[] = Array.isArray(allActiveProdsData) ? allActiveProdsData : (allActiveProdsData?.data ?? []);
+
+  // ── Products mutations ────────────────────────────────────────────
+  const addProd = useMutation({
+    mutationFn: (payload: { productId: string; quantity: number; unitPrice: string; isOptional: boolean }) =>
+      axios.post(`${BASE}/api/packages/${id}/products`, payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pkg-products", id] });
+      setShowAddProd(false);
+      setSelectedProdId(null);
+      setAddQty(1);
+      setAddUnitPrice("");
+      setAddIsOptional(false);
+      setAddError(null);
+      toast({ title: "Product added" });
+    },
+    onError: (e: any) => setAddError(e?.response?.data?.error ?? "Failed to add product"),
+  });
+
+  const updateProd = useMutation({
+    mutationFn: ({ productId, payload }: { productId: string; payload: any }) =>
+      axios.patch(`${BASE}/api/packages/${id}/products/${productId}`, payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pkg-products", id] });
+      setEditingProdId(null);
+      toast({ title: "Product updated" });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to update product" }),
+  });
+
+  const removeProd = useMutation({
+    mutationFn: (productId: string) =>
+      axios.delete(`${BASE}/api/packages/${id}/products/${productId}`).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pkg-products", id] });
+      toast({ title: "Product removed" });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to remove product" }),
   });
 
   const rec = data;
@@ -113,18 +185,23 @@ export default function PackageDetail() {
   const groupFlag = rec.groupCountryCode ? (COUNTRY_FLAG[rec.groupCountryCode] ?? "🌐") : "🌐";
   const groupStatus = rec.groupStatus ?? "active";
 
-  // Filter currencies to only those in Exchange Rates DB
   const dbRates: Record<string, unknown> = ratesData?.rates ?? {};
   const activeCurrencies = ALL_CURRENCIES.filter(c => c.ccy === "AUD" || !!dbRates[c.ccy]);
 
-  // Determine primary currency for this package (based on Package Group's country)
   const primaryCcy = rec.groupCountryCode ? (COUNTRY_TO_CURRENCY[rec.groupCountryCode] ?? "AUD") : "AUD";
-
-  // Sort so primary currency is always first
   const sortedCurrencies = [
     ...activeCurrencies.filter(c => c.ccy === primaryCcy),
     ...activeCurrencies.filter(c => c.ccy !== primaryCcy),
   ];
+
+  // Products total (included only)
+  const includedTotal = linkedProds
+    .filter((r: any) => !r.isOptional)
+    .reduce((sum: number, r: any) => {
+      const price = parseFloat(r.unitPrice ?? r.cost ?? "0") || 0;
+      const qty   = r.quantity ?? 1;
+      return sum + price * qty;
+    }, 0);
 
   return (
     <DetailPageLayout
@@ -345,6 +422,312 @@ export default function PackageDetail() {
           </DetailSection>
         );
       })()}
+
+      {/* ── Products ─────────────────────────────────────────────────────── */}
+      <DetailSection
+        title={
+          <span className="flex items-center gap-2">
+            <Package className="w-4 h-4 text-[#F5821F]" />
+            Products
+            <span className="ml-1 px-2 py-0.5 rounded-full bg-[#F5821F] text-white text-xs font-bold">
+              {linkedProds.length}
+            </span>
+          </span>
+        }
+      >
+        <div className="px-4 py-3 space-y-3">
+
+          {/* Add Product Button */}
+          {canEdit && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {linkedProds.length > 0
+                  ? `${linkedProds.filter((r: any) => !r.isOptional).length} included · ${linkedProds.filter((r: any) => r.isOptional).length} optional`
+                  : "No products linked yet"}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs gap-1 border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
+                onClick={() => {
+                  setProdTypeFilter("all");
+                  setSelectedProdId(null);
+                  setAddQty(1);
+                  setAddUnitPrice("");
+                  setAddIsOptional(false);
+                  setAddError(null);
+                  setShowAddProd(v => !v);
+                }}
+              >
+                <Plus className="h-3 w-3" /> Add Product
+              </Button>
+            </div>
+          )}
+
+          {/* Add Product Picker */}
+          {showAddProd && (
+            <div className="border border-[#F5821F33] rounded-lg p-3 bg-[#FEF0E3]/30 space-y-2">
+              {/* Type filter tabs */}
+              <div className="flex gap-1.5 flex-wrap">
+                {PROD_TYPES.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => { setProdTypeFilter(t); setSelectedProdId(null); }}
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${
+                      prodTypeFilter === t
+                        ? "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F33]"
+                        : "border-border text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {t === "all" ? "All" : t}
+                  </button>
+                ))}
+              </div>
+
+              {/* Product list */}
+              <div className="max-h-40 overflow-y-auto border border-border rounded-md divide-y bg-white">
+                {allActiveProds
+                  .filter((p: any) => prodTypeFilter === "all" || p.productType === prodTypeFilter)
+                  .filter((p: any) => !linkedProds.some((l: any) => l.productId === p.id))
+                  .length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">No products available</p>
+                ) : (
+                  allActiveProds
+                    .filter((p: any) => prodTypeFilter === "all" || p.productType === prodTypeFilter)
+                    .filter((p: any) => !linkedProds.some((l: any) => l.productId === p.id))
+                    .map((p: any) => (
+                      <label key={p.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/40">
+                        <input
+                          type="radio"
+                          name="add-prod-sel"
+                          value={p.id}
+                          checked={selectedProdId === p.id}
+                          onChange={() => { setSelectedProdId(p.id); setAddUnitPrice(p.cost ?? ""); }}
+                          className="shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-medium truncate block">{p.productName}</span>
+                          <span className="text-[11px] text-muted-foreground capitalize">
+                            {p.productType} · {p.currency} {p.cost ? Number(p.cost).toLocaleString() : "—"}
+                          </span>
+                        </div>
+                      </label>
+                    ))
+                )}
+              </div>
+
+              {/* Qty / Price / Optional */}
+              {selectedProdId && (
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label className="text-[11px]">Qty</Label>
+                    <Input
+                      type="number" min={1}
+                      value={addQty}
+                      onChange={e => setAddQty(Number(e.target.value))}
+                      className="mt-0.5 h-7 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[11px]">Unit Price</Label>
+                    <Input
+                      type="number" step="0.01"
+                      value={addUnitPrice}
+                      onChange={e => setAddUnitPrice(e.target.value)}
+                      className="mt-0.5 h-7 text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[11px]">구분</Label>
+                    <Select value={addIsOptional ? "optional" : "included"} onValueChange={v => setAddIsOptional(v === "optional")}>
+                      <SelectTrigger className="mt-0.5 h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="included">포함</SelectItem>
+                        <SelectItem value="optional">선택</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {addError && <p className="text-xs text-red-500">{addError}</p>}
+
+              <div className="flex gap-2 justify-end">
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowAddProd(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
+                  disabled={!selectedProdId || addProd.isPending}
+                  onClick={() => {
+                    if (!selectedProdId) return;
+                    addProd.mutate({ productId: selectedProdId, quantity: addQty, unitPrice: addUnitPrice, isOptional: addIsOptional });
+                  }}
+                >
+                  {addProd.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Add"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Products table */}
+          {linkedProdsLoading ? (
+            <div className="h-12 bg-muted/30 rounded animate-pulse" />
+          ) : linkedProds.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic text-center py-2">No products linked to this package.</p>
+          ) : (
+            <div className="rounded-lg border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/30 border-b">
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Name</th>
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
+                    <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">구분</th>
+                    <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Unit Price</th>
+                    <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Qty</th>
+                    <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total</th>
+                    {canEdit && <th className="w-16 px-3 py-2" />}
+                  </tr>
+                </thead>
+                <tbody>
+                  {linkedProds.map((row: any) => {
+                    const isEditRow = editingProdId === row.productId;
+                    const unitP = parseFloat(row.unitPrice ?? row.cost ?? "0") || 0;
+                    const qty   = row.quantity ?? 1;
+                    const total = unitP * qty;
+                    const currency = row.currency ?? "AUD";
+                    return (
+                      <tr key={row.linkId} className="border-b last:border-0 hover:bg-[#FEF0E3]/40 transition-colors">
+                        <td className="px-3 py-2 font-medium text-sm">{row.productName}</td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground capitalize">{row.productType}</td>
+                        <td className="px-3 py-2 text-center">
+                          {isEditRow ? (
+                            <Select value={editIsOptional ? "optional" : "included"} onValueChange={v => setEditIsOptional(v === "optional")}>
+                              <SelectTrigger className="h-6 text-xs w-20 mx-auto"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="included">포함</SelectItem>
+                                <SelectItem value="optional">선택</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${row.isOptional ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-700"}`}>
+                              {row.isOptional ? "선택" : "포함"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-sm">
+                          {isEditRow ? (
+                            <Input
+                              type="number" step="0.01"
+                              value={editUnitPrice}
+                              onChange={e => setEditUnitPrice(e.target.value)}
+                              className="h-6 text-xs w-24 text-right ml-auto font-mono"
+                            />
+                          ) : (
+                            <span>{currency} {unitP.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {isEditRow ? (
+                            <Input
+                              type="number" min={1}
+                              value={editQty}
+                              onChange={e => setEditQty(Number(e.target.value))}
+                              className="h-6 text-xs w-16 text-right ml-auto"
+                            />
+                          ) : (
+                            <span className="font-mono">{qty}</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-sm font-semibold">
+                          {isEditRow
+                            ? (() => {
+                                const ep = parseFloat(editUnitPrice) || 0;
+                                return `${currency} ${(ep * editQty).toLocaleString("en-AU", { minimumFractionDigits: 2 })}`;
+                              })()
+                            : `${currency} ${total.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`
+                          }
+                        </td>
+                        {canEdit && (
+                          <td className="px-3 py-2">
+                            {isEditRow ? (
+                              <div className="flex gap-1 justify-end">
+                                <Button
+                                  size="sm" variant="ghost"
+                                  className="h-6 px-2 text-xs text-muted-foreground"
+                                  onClick={() => setEditingProdId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="h-6 px-2 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
+                                  disabled={updateProd.isPending}
+                                  onClick={() => updateProd.mutate({
+                                    productId: row.productId,
+                                    payload: { quantity: editQty, unitPrice: editUnitPrice, isOptional: editIsOptional },
+                                  })}
+                                >
+                                  {updateProd.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex gap-1 justify-end">
+                                <button
+                                  className="text-muted-foreground hover:text-[#F5821F] transition-colors p-1"
+                                  title="Edit"
+                                  onClick={() => {
+                                    setEditingProdId(row.productId);
+                                    setEditQty(row.quantity ?? 1);
+                                    setEditUnitPrice(row.unitPrice ?? row.cost ?? "");
+                                    setEditIsOptional(row.isOptional ?? false);
+                                  }}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  className="text-muted-foreground hover:text-red-500 transition-colors p-1"
+                                  title="Remove"
+                                  disabled={removeProd.isPending}
+                                  onClick={() => {
+                                    if (window.confirm(`Remove "${row.productName}" from this package?`)) {
+                                      removeProd.mutate(row.productId);
+                                    }
+                                  }}
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                {/* Totals footer */}
+                {linkedProds.length > 0 && (
+                  <tfoot>
+                    <tr className="border-t bg-muted/20">
+                      <td colSpan={5} className="px-3 py-2 text-xs text-muted-foreground font-medium text-right">
+                        Included Total
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-sm font-bold text-[#F5821F]">
+                        AUD {includedTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}
+                      </td>
+                      {canEdit && <td />}
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+          )}
+        </div>
+      </DetailSection>
 
       {/* ── Contracts ────────────────────────────────────────────────────── */}
       {(() => {
