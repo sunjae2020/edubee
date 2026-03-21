@@ -118,79 +118,98 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-white text-foreground font-sans">
 
-      {/* ── NAVBAR ── */}
-      <header className={`fixed top-0 inset-x-0 z-30 transition-all duration-300 ${scrolled ? "bg-white border-b border-border shadow-sm" : "bg-white/0 border-b border-transparent backdrop-blur-[2px]"}`}>
-        <div className="max-w-6xl mx-auto px-5 h-14 flex items-center gap-6">
-          {/* Logo */}
-          <a href="#" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="shrink-0 flex items-center">
-            <img src={logoImg} alt="Edubee Camp" className="h-[39px] w-auto object-contain" />
-          </a>
+      {/* ── NAVBAR (two-tier) ── */}
+      <header className={`fixed top-0 inset-x-0 z-30 transition-all duration-300 ${scrolled ? "bg-white shadow-sm" : "bg-white/0 backdrop-blur-[2px]"}`}>
 
-          {/* Center nav */}
-          <nav className="hidden md:flex items-center gap-1 ml-4 flex-1">
-            {navLinks.map((l) => (
-              <button
-                key={l.label}
-                onClick={l.action}
-                className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors whitespace-nowrap"
-              >
-                {l.label}
-              </button>
-            ))}
-          </nav>
+        {/* ── Top utility bar ── */}
+        <div className={`border-b transition-colors duration-300 ${scrolled ? "border-border bg-gray-50/90" : "border-white/10 bg-white/10"}`}>
+          <div className="max-w-6xl mx-auto px-5 h-8 flex items-center justify-end gap-1">
+            {/* Currency + Language always visible */}
+            <div className="flex items-center gap-1">
+              <CurrencySelector />
+              <LanguageSwitcher />
+            </div>
 
-          {/* Right */}
-          <div className="flex items-center gap-2 ml-auto">
-            <CurrencySelector />
-            <LanguageSwitcher />
+            {/* Divider */}
+            <div className="w-px h-4 bg-border mx-1" />
 
+            {/* Auth area */}
             {isAuthenticated && user ? (
-              /* ── 로그인 상태 ── */
-              <div className="hidden sm:flex items-center gap-1.5">
-                <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[#FEF0E3]">
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#F5821F] text-white text-[11px] font-bold shrink-0">
+              <div className="flex items-center gap-1">
+                {/* User badge */}
+                <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#FEF0E3]">
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#F5821F] text-white text-[9px] font-bold shrink-0">
                     {(user.fullName ?? user.email ?? "?")[0].toUpperCase()}
                   </span>
-                  <span className="text-xs font-medium text-[#F5821F] max-w-[90px] truncate">
+                  <span className="text-[11px] font-medium text-[#F5821F] max-w-[80px] truncate leading-none">
                     {user.fullName ?? user.email}
                   </span>
                 </div>
+                {/* Admin link */}
                 <button
                   onClick={() => setLocation(`${BASE}/admin/dashboard`)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                  className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors whitespace-nowrap"
                   title="Admin Dashboard"
                 >
-                  <LayoutDashboard className="w-3.5 h-3.5" />
-                  <span>Admin</span>
+                  <LayoutDashboard className="w-3 h-3" />
+                  <span className="hidden sm:inline">Admin</span>
                 </button>
+                {/* Logout */}
                 <button
                   onClick={() => logout()}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                  title="로그아웃"
+                  className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded transition-colors whitespace-nowrap"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-3 h-3" />
                   <span className="hidden sm:inline">로그아웃</span>
                 </button>
               </div>
             ) : (
-              /* ── 비로그인 상태 ── */
               <Link href="/login">
-                <button className="hidden sm:block px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                <button className="px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
                   {t("nav.login")}
                 </button>
               </Link>
             )}
+          </div>
+        </div>
 
-            <Button
-              size="sm"
-              className="hidden sm:inline-flex rounded-md h-8 px-4 text-sm font-semibold"
-              onClick={() => openApply()}
-            >
-              {t("nav.applyNow")}
-            </Button>
-            <button className="md:hidden w-8 h-8 flex items-center justify-center text-foreground hover:bg-muted rounded-md" onClick={() => setMobileOpen(true)}>
-              <Menu className="w-4 h-4" />
-            </button>
+        {/* ── Main nav bar ── */}
+        <div className={`border-b transition-colors duration-300 ${scrolled ? "border-border" : "border-transparent"}`}>
+          <div className="max-w-6xl mx-auto px-5 h-12 flex items-center gap-6">
+            {/* Logo */}
+            <a href="#" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="shrink-0 flex items-center">
+              <img src={logoImg} alt="Edubee Camp" className="h-[34px] w-auto object-contain" />
+            </a>
+
+            {/* Center nav */}
+            <nav className="hidden md:flex items-center gap-1 ml-4 flex-1">
+              {navLinks.map((l) => (
+                <button
+                  key={l.label}
+                  onClick={l.action}
+                  className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors whitespace-nowrap"
+                >
+                  {l.label}
+                </button>
+              ))}
+            </nav>
+
+            {/* Right — Apply + hamburger */}
+            <div className="flex items-center gap-2 ml-auto">
+              <Button
+                size="sm"
+                className="hidden sm:inline-flex rounded-md h-8 px-4 text-sm font-semibold"
+                onClick={() => openApply()}
+              >
+                {t("nav.applyNow")}
+              </Button>
+              <button
+                className="md:hidden w-8 h-8 flex items-center justify-center text-foreground hover:bg-muted rounded-md"
+                onClick={() => setMobileOpen(true)}
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -258,7 +277,7 @@ export default function Landing() {
 
       {/* ── HERO ── */}
       <section
-        className="pt-14 relative"
+        className="pt-20 relative"
         style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center 40%" }}
       >
         <div className="absolute inset-0 bg-white/72 backdrop-blur-[1px]" />
