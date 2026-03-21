@@ -353,6 +353,7 @@ router.get("/packages/:id", authenticate, async (req, res) => {
         groupStatus: packageGroups.status,
         groupCampProviderId: packageGroups.campProviderId,
         durationDays: packages.durationDays,
+        status: packages.status,
         coordinatorName: users.fullName,
         coordinatorEmail: users.email,
       })
@@ -370,7 +371,7 @@ router.get("/packages/:id", authenticate, async (req, res) => {
 
 router.put("/packages/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const allowed = ["name", "maxAdults", "maxStudents", "features",
+    const allowed = ["name", "status", "maxAdults", "maxStudents", "features",
       "priceAud", "priceUsd", "priceKrw", "priceJpy", "priceThb", "pricePhp", "priceSgd", "priceGbp"] as const;
     const patch: Record<string, unknown> = { updatedAt: new Date() };
     for (const key of allowed) {

@@ -68,6 +68,9 @@ export default function PackageDetail() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // ── Status change state ───────────────────────────────────────────
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+
   // ── Product section state ─────────────────────────────────────────
   const [showAddProd, setShowAddProd] = useState(false);
   const [prodTypeFilter, setProdTypeFilter] = useState("all");
@@ -169,6 +172,18 @@ export default function PackageDetail() {
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
   });
 
+  const changeStatusMutation = useMutation({
+    mutationFn: (status: string) =>
+      axios.put(`${BASE}/api/packages/${id}`, { status }).then(r => r.data),
+    onSuccess: (_data, status) => {
+      qc.invalidateQueries({ queryKey: ["package-detail", id] });
+      qc.invalidateQueries({ queryKey: ["packages-list"] });
+      setPendingStatus(null);
+      toast({ title: "Status updated", description: `Package is now "${status}"` });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to update status" }),
+  });
+
   const cloneMutation = useMutation({
     mutationFn: async () => {
       if (!rec) throw new Error("No data");
@@ -251,8 +266,8 @@ export default function PackageDetail() {
       title={rec.name ?? "Package"}
       subtitle={rec.groupNameEn ? `${groupFlag} ${rec.groupNameEn}` : ""}
       badge={
-        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[groupStatus] ?? "bg-gray-100 text-gray-600"}`}>
-          {groupStatus}
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[rec.status ?? "active"] ?? "bg-gray-100 text-gray-600"}`}>
+          {rec.status ?? "active"}
         </span>
       }
       backPath="/admin/packages"
@@ -394,6 +409,49 @@ export default function PackageDetail() {
                 : <span className="text-muted-foreground/50">—</span>
             }
           />
+        </DetailRow>
+
+        {/* Status — always editable without entering full edit mode */}
+        <DetailRow label="Status">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[rec.status ?? "active"] ?? "bg-gray-100 text-gray-600"}`}>
+              {rec.status ?? "active"}
+            </span>
+            {canEdit && (
+              <>
+                <Select
+                  value={pendingStatus ?? (rec.status ?? "active")}
+                  onValueChange={v => setPendingStatus(v === (rec.status ?? "active") ? null : v)}
+                >
+                  <SelectTrigger className="h-7 text-xs w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(["active", "inactive", "archived", "draft"] as const).map(s => (
+                      <SelectItem key={s} value={s}>
+                        <span className={`capitalize font-medium ${STATUS_COLORS[s]?.replace("bg-", "text-").replace(/ text-\S+/, "") ?? ""}`}>
+                          {s}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {pendingStatus && pendingStatus !== (rec.status ?? "active") && (
+                  <Button
+                    size="sm"
+                    className="h-7 px-3 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
+                    disabled={changeStatusMutation.isPending}
+                    onClick={() => changeStatusMutation.mutate(pendingStatus)}
+                  >
+                    {changeStatusMutation.isPending
+                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                      : "Apply"
+                    }
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
         </DetailRow>
       </DetailSection>
 
