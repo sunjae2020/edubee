@@ -1,11 +1,17 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Package as PackageIcon, Globe, CheckCircle2, Clock, ChevronRight, Users, GraduationCap } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Search, Package as PackageIcon, Globe, CheckCircle2, Clock, ChevronRight, Users, GraduationCap, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -15,7 +21,6 @@ const COUNTRY_FLAG: Record<string, string> = {
   AU: "🇦🇺", PH: "🇵🇭", SG: "🇸🇬", TH: "🇹🇭", KR: "🇰🇷", JP: "🇯🇵", GB: "🇬🇧", US: "🇺🇸",
 };
 
-// Primary currency for each country code
 const COUNTRY_CURRENCY: Record<string, { field: string; sym: string; dec: number }> = {
   PH: { field: "pricePhp", sym: "₱", dec: 0 },
   TH: { field: "priceThb", sym: "฿", dec: 0 },
@@ -58,6 +63,16 @@ interface PkgRow {
   groupStatus?: string | null;
 }
 
+const EMPTY_FORM = {
+  packageGroupId: "",
+  name: "",
+  durationDays: "7",
+  maxAdults: "",
+  maxStudents: "",
+  priceAud: "",
+  status: "active",
+};
+
 function fmtPrice(val: string | null | undefined, sym: string, dec: number) {
   if (!val) return null;
   const n = parseFloat(val);
@@ -67,14 +82,25 @@ function fmtPrice(val: string | null | undefined, sym: string, dec: number) {
 
 export default function Packages() {
   const [, setLocation] = useLocation();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { user } = useAuth();
+
   const [search, setSearch] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
 
+  // ── Add dialog state ──────────────────────────────────────────────
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
+
   const { data: groupsData } = useQuery({
     queryKey: ["pkg-groups-filter"],
-    queryFn: () => axios.get(`${BASE}/api/package-groups?limit=100`).then(r => r.data),
+    queryFn: () => axios.get(`${BASE}/api/package-groups?limit=200`).then(r => r.data),
     staleTime: 60_000,
   });
   const groups: PackageGroup[] = groupsData?.data ?? [];
@@ -95,8 +121,42 @@ export default function Packages() {
 
   const pkgs: PkgRow[] = data?.data ?? [];
   const total = data?.meta?.total ?? 0;
-
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
+
+  // ── Create mutation ───────────────────────────────────────────────
+  const createPkg = useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      axios.post(`${BASE}/api/packages`, payload).then(r => r.data),
+    onSuccess: (newPkg) => {
+      qc.invalidateQueries({ queryKey: ["packages-list"] });
+      qc.invalidateQueries({ queryKey: ["pkg-groups-filter"] });
+      setShowAdd(false);
+      setForm({ ...EMPTY_FORM });
+      setFormError(null);
+      toast({ title: "Package created", description: `"${newPkg.name}" has been created.` });
+      setLocation(`${BASE}/admin/packages/${newPkg.id}`);
+    },
+    onError: (e: any) => {
+      setFormError(e?.response?.data?.error ?? "Failed to create package");
+    },
+  });
+
+  const handleCreate = () => {
+    if (!form.packageGroupId) return setFormError("Please select a Package Group.");
+    if (!form.name.trim()) return setFormError("Package name is required.");
+    const dur = parseInt(form.durationDays);
+    if (!form.durationDays || isNaN(dur) || dur < 1) return setFormError("Duration Days must be at least 1.");
+    setFormError(null);
+    createPkg.mutate({
+      packageGroupId: form.packageGroupId,
+      name: form.name.trim(),
+      durationDays: dur,
+      maxAdults: form.maxAdults ? parseInt(form.maxAdults) : null,
+      maxStudents: form.maxStudents ? parseInt(form.maxStudents) : null,
+      priceAud: form.priceAud || null,
+      status: form.status,
+    });
+  };
 
   return (
     <div className="flex gap-4 h-full">
@@ -203,12 +263,29 @@ export default function Packages() {
             ))}
           </div>
 
-          <span className="text-xs text-muted-foreground ml-auto">
+          <span className="text-xs text-muted-foreground">
             {total} package{total !== 1 ? "s" : ""}
             {selectedGroupId !== "all" && selectedGroup && (
               <span className="text-[#F5821F]"> · {selectedGroup.nameEn}</span>
             )}
           </span>
+
+          {canEdit && (
+            <Button
+              size="sm"
+              className="ml-auto gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white h-8"
+              onClick={() => {
+                setForm({
+                  ...EMPTY_FORM,
+                  packageGroupId: selectedGroupId !== "all" ? selectedGroupId : "",
+                });
+                setFormError(null);
+                setShowAdd(true);
+              }}
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Package
+            </Button>
+          )}
         </div>
 
         {/* Table */}
@@ -228,7 +305,7 @@ export default function Packages() {
                     <GraduationCap className="w-3 h-3" /> Children
                   </div>
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Price</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Price (AUD)</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
                 <th className="px-4 py-3 w-8" />
               </tr>
@@ -265,7 +342,6 @@ export default function Packages() {
                   const priceStr = fmtPrice(priceVal, currInfo.sym, currInfo.dec);
                   const audStr = fmtPrice(pkg.priceAud, "A$", 0);
                   const showAudAlso = cc !== "AU" && audStr && priceStr;
-                  // Status comes from the parent Package Group
                   const status = pkg.groupStatus ?? "active";
                   return (
                     <tr
@@ -355,6 +431,160 @@ export default function Packages() {
 
         <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={p => setPage(p)} />
       </div>
+
+      {/* ── Add Package Dialog ──────────────────────────────────────── */}
+      <Dialog open={showAdd} onOpenChange={o => { if (!o) { setShowAdd(false); setFormError(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PackageIcon className="w-4 h-4 text-[#F5821F]" />
+              Add New Package
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-1">
+            {/* Package Group */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                Package Group <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={form.packageGroupId}
+                onValueChange={v => setForm(f => ({ ...f, packageGroupId: v }))}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select a package group…" />
+                </SelectTrigger>
+                <SelectContent className="max-h-56 overflow-y-auto">
+                  {groups.map(g => (
+                    <SelectItem key={g.id} value={g.id}>
+                      <span className="flex items-center gap-2">
+                        <span>{g.countryCode ? (COUNTRY_FLAG[g.countryCode] ?? "🌐") : "🌐"}</span>
+                        <span>{g.nameEn}</span>
+                        {g.nameKo && <span className="text-muted-foreground text-xs">· {g.nameKo}</span>}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Package Name */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                Package Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                placeholder="e.g. 2-Week Language Camp"
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                className="h-9"
+              />
+            </div>
+
+            {/* Duration Days */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                Duration (Days) <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                placeholder="7"
+                value={form.durationDays}
+                onChange={e => setForm(f => ({ ...f, durationDays: e.target.value }))}
+                className="h-9"
+              />
+            </div>
+
+            {/* Adults / Children row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5 text-blue-500" /> Adults
+                </Label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="—"
+                  value={form.maxAdults}
+                  onChange={e => setForm(f => ({ ...f, maxAdults: e.target.value }))}
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <GraduationCap className="w-3.5 h-3.5 text-green-500" /> Children
+                </Label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="—"
+                  value={form.maxStudents}
+                  onChange={e => setForm(f => ({ ...f, maxStudents: e.target.value }))}
+                  className="h-9"
+                />
+              </div>
+            </div>
+
+            {/* Price AUD */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Price (AUD)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">A$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  placeholder="0.00"
+                  value={form.priceAud}
+                  onChange={e => setForm(f => ({ ...f, priceAud: e.target.value }))}
+                  className="h-9 pl-9 font-mono"
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">Additional currency prices can be set in Package Detail.</p>
+            </div>
+
+            {/* Status */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Status</Label>
+              <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formError && (
+              <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{formError}</p>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-1 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setShowAdd(false); setFormError(null); }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="bg-[#F5821F] hover:bg-[#d97706] text-white min-w-[100px]"
+                onClick={handleCreate}
+                disabled={createPkg.isPending}
+              >
+                {createPkg.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Package"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
