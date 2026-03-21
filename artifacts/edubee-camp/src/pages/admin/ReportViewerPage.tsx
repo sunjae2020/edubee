@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EdubeeLogo } from "@/components/shared/EdubeeLogo";
+import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { ReportStatusBadge } from "@/components/shared/ReportStatusBadge";
@@ -591,7 +591,7 @@ export default function ReportViewerPage() {
           {/* Cover Area */}
           <div className="bg-[#FEF0E3] border-b-[3px] border-[#F5821F] px-14 py-12 text-center">
             <div className="flex justify-center mb-6">
-              <EdubeeLogo variant="full" size="lg" />
+              <img src={logoImg} alt="Edubee Camp" className="h-12 w-auto object-contain" />
             </div>
             <h1 className="text-3xl font-bold text-[#1C1917]">{studentName}</h1>
             {programName && <p className="text-base text-[#57534E] mt-2">{programName}</p>}
