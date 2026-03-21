@@ -536,13 +536,13 @@ export default function PackageGroupDetail() {
             </DetailSection>
 
             {/* Duration, Inclusions, Exclusions */}
-            <DetailSection title="기간 / Duration" className="lg:col-span-2">
-              <DetailRow label="기간 (Duration)">
+            <DetailSection title="Duration" className="lg:col-span-2">
+              <DetailRow label="Duration">
                 {isEditing ? (
                   <Input
                     value={getValue("durationText") ?? ""}
                     onChange={e => setField("durationText", e.target.value)}
-                    placeholder="예: 14박 15일 / 14 nights 15 days"
+                    placeholder="e.g. 14 nights 15 days"
                     className="h-8 text-sm border-[#F5821F] focus-visible:ring-[#F5821F]"
                   />
                 ) : (
@@ -551,78 +551,36 @@ export default function PackageGroupDetail() {
               </DetailRow>
             </DetailSection>
 
-            <DetailSection title="포함내역 (Inclusions)" className="lg:col-span-2">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1.5 font-medium">English</p>
-                  {isEditing ? (
-                    <textarea value={getValue("inclusionsEn") ?? ""} onChange={e => setField("inclusionsEn", e.target.value)}
-                      placeholder={"항목을 줄 바꿈으로 구분\nInternational flights\nAirport transfers\nAccommodation"}
-                      className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
-                  ) : group.inclusionsEn ? (
-                    <ul className="space-y-1">
-                      {group.inclusionsEn.split("\n").filter(Boolean).map((item: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <span className="text-[#F5821F] mt-0.5">✓</span> {item.trim()}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : <span className="text-muted-foreground/60 text-sm">—</span>}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1.5 font-medium">한국어</p>
-                  {isEditing ? (
-                    <textarea value={getValue("inclusionsKo") ?? ""} onChange={e => setField("inclusionsKo", e.target.value)}
-                      placeholder={"항목을 줄 바꿈으로 구분\n국제선 항공권\n공항 픽업/샌딩\n숙소"}
-                      className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
-                  ) : group.inclusionsKo ? (
-                    <ul className="space-y-1">
-                      {group.inclusionsKo.split("\n").filter(Boolean).map((item: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <span className="text-[#F5821F] mt-0.5">✓</span> {item.trim()}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : <span className="text-muted-foreground/60 text-sm">—</span>}
-                </div>
-              </div>
+            <DetailSection title="Inclusions" className="lg:col-span-2">
+              {isEditing ? (
+                <textarea value={getValue("inclusionsEn") ?? ""} onChange={e => setField("inclusionsEn", e.target.value)}
+                  placeholder={"One item per line\nInternational flights\nAirport transfers\nAccommodation"}
+                  className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+              ) : group.inclusionsEn ? (
+                <ul className="space-y-1">
+                  {group.inclusionsEn.split("\n").filter(Boolean).map((item: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <span className="text-[#F5821F] mt-0.5">✓</span> {item.trim()}
+                    </li>
+                  ))}
+                </ul>
+              ) : <span className="text-muted-foreground/60 text-sm">—</span>}
             </DetailSection>
 
-            <DetailSection title="비포함 내역 (Exclusions)" className="lg:col-span-2">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1.5 font-medium">English</p>
-                  {isEditing ? (
-                    <textarea value={getValue("exclusionsEn") ?? ""} onChange={e => setField("exclusionsEn", e.target.value)}
-                      placeholder={"항목을 줄 바꿈으로 구분\nPersonal expenses\nOptional excursions\nTravel insurance"}
-                      className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
-                  ) : group.exclusionsEn ? (
-                    <ul className="space-y-1">
-                      {group.exclusionsEn.split("\n").filter(Boolean).map((item: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <span className="text-red-400 mt-0.5">✗</span> {item.trim()}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : <span className="text-muted-foreground/60 text-sm">—</span>}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1.5 font-medium">한국어</p>
-                  {isEditing ? (
-                    <textarea value={getValue("exclusionsKo") ?? ""} onChange={e => setField("exclusionsKo", e.target.value)}
-                      placeholder={"항목을 줄 바꿈으로 구분\n개인 경비\n선택 투어\n여행자 보험"}
-                      className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
-                  ) : group.exclusionsKo ? (
-                    <ul className="space-y-1">
-                      {group.exclusionsKo.split("\n").filter(Boolean).map((item: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <span className="text-red-400 mt-0.5">✗</span> {item.trim()}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : <span className="text-muted-foreground/60 text-sm">—</span>}
-                </div>
-              </div>
+            <DetailSection title="Exclusions" className="lg:col-span-2">
+              {isEditing ? (
+                <textarea value={getValue("exclusionsEn") ?? ""} onChange={e => setField("exclusionsEn", e.target.value)}
+                  placeholder={"One item per line\nPersonal expenses\nOptional excursions\nTravel insurance"}
+                  className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+              ) : group.exclusionsEn ? (
+                <ul className="space-y-1">
+                  {group.exclusionsEn.split("\n").filter(Boolean).map((item: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <span className="text-red-400 mt-0.5">✗</span> {item.trim()}
+                    </li>
+                  ))}
+                </ul>
+              ) : <span className="text-muted-foreground/60 text-sm">—</span>}
             </DetailSection>
 
             {/* Coordinator Section */}
