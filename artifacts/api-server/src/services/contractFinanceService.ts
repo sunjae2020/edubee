@@ -3,7 +3,7 @@ import {
   contracts, applications, packages, packageProducts, products,
   contractFinanceItems, userLedger, invoices, receipts, notifications,
 } from "@workspace/db/schema";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, inArray } from "drizzle-orm";
 
 // ── Product type → cost center / category mapping ──────────────────────────
 const PRODUCT_TYPE_MAP: Record<string, { category: string; costCenter: string }> = {
@@ -178,8 +178,26 @@ export async function buildFinanceSummary(contractId: string) {
     .from(contractFinanceItems)
     .where(and(eq(contractFinanceItems.contractId, contractId), eq(contractFinanceItems.isDeleted, false)));
 
-  const receivable = all.filter(i => i.itemType === "receivable");
-  const payable    = all.filter(i => i.itemType === "payable");
+  // Attach receipt info to paid items
+  const itemIds = all.map(i => i.id);
+  let receiptMap: Record<string, { id: string; receiptNumber: string | null }> = {};
+  if (itemIds.length > 0) {
+    const linkedReceipts = await db
+      .select({ id: receipts.id, receiptNumber: receipts.receiptNumber, financeItemId: receipts.financeItemId })
+      .from(receipts)
+      .where(inArray(receipts.financeItemId!, itemIds));
+    for (const r of linkedReceipts) {
+      if (r.financeItemId) receiptMap[r.financeItemId] = { id: r.id, receiptNumber: r.receiptNumber };
+    }
+  }
+  const allWithReceipt = all.map(item => ({
+    ...item,
+    receiptId: receiptMap[item.id]?.id ?? null,
+    receiptNumber: receiptMap[item.id]?.receiptNumber ?? null,
+  }));
+
+  const receivable = allWithReceipt.filter(i => i.itemType === "receivable");
+  const payable    = allWithReceipt.filter(i => i.itemType === "payable");
 
   const sumOf = (rows: any[], field = "estimatedAmount") =>
     rows.reduce((acc, r) => acc + parseFloat(r[field] ?? "0"), 0);
@@ -335,6 +353,11 @@ export async function confirmPayment(
     } catch (e: any) {
       console.error("Notification insert failed:", e.message);
     }
+
+    // Auto-email receipt PDF (non-blocking)
+    import("./receiptPdfService.js").then(({ emailReceipt }) => {
+      emailReceipt(receipt.id).catch(e => console.error("[EMAIL RECEIPT]", e.message));
+    });
   }
 
   return { item, receipt: newReceipt };

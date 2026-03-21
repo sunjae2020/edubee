@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { contractFinanceItems, userLedger } from "@workspace/db/schema";
+import { contractFinanceItems, userLedger, receipts } from "@workspace/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -9,6 +9,7 @@ import {
   buildFinanceSummary,
   confirmPayment,
 } from "../services/contractFinanceService.js";
+import { generateReceiptPdf } from "../services/receiptPdfService.js";
 
 const router = Router();
 
@@ -179,6 +180,59 @@ router.get(
       return res.json({ data: entries });
     } catch (err: any) {
       console.error("GET finance/ledger error:", err.message);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// ── GET /finance/receipts/:receiptId/pdf ──────────────────────────────────
+router.get(
+  "/finance/receipts/:receiptId/pdf",
+  authenticate,
+  async (req, res) => {
+    try {
+      const { receiptId } = req.params;
+      // Verify receipt exists
+      const [rcpt] = await db.select({ id: receipts.id, receiptNumber: receipts.receiptNumber })
+        .from(receipts).where(eq(receipts.id, receiptId)).limit(1);
+      if (!rcpt) return res.status(404).json({ error: "Receipt not found" });
+
+      const pdfBuffer = await generateReceiptPdf(receiptId);
+      const filename = `${rcpt.receiptNumber ?? "receipt"}.pdf`;
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Length": String(pdfBuffer.length),
+      });
+      return res.send(pdfBuffer);
+    } catch (err: any) {
+      console.error("receipt-pdf error:", err.message);
+      return res.status(500).json({ error: err.message ?? "Failed to generate PDF" });
+    }
+  }
+);
+
+// ── GET /contracts/:id/finance/receipts ───────────────────────────────────
+// Returns receipts linked to finance items for this contract
+router.get(
+  "/contracts/:id/finance/receipts",
+  authenticate,
+  requireRole(...FULL_ACCESS, "camp_coordinator"),
+  async (req, res) => {
+    try {
+      const { contractFinanceItems: cfi } = await import("@workspace/db/schema");
+      const items = await db.select({ id: cfi.id }).from(cfi)
+        .where(and(eq(cfi.contractId, req.params.id), eq(cfi.isDeleted, false)));
+      const itemIds = items.map(i => i.id);
+      if (itemIds.length === 0) return res.json({ data: [] });
+
+      const { inArray } = await import("drizzle-orm");
+      const rcpts = await db.select().from(receipts)
+        .where(inArray(receipts.financeItemId!, itemIds))
+        .orderBy(desc(receipts.receiptDate));
+      return res.json({ data: rcpts });
+    } catch (err: any) {
+      console.error("GET finance/receipts error:", err.message);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   }

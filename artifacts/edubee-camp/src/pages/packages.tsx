@@ -11,7 +11,7 @@ import { ListPagination } from "@/components/ui/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, Package as PackageIcon, Globe, CheckCircle2, Clock, ChevronRight, Users, GraduationCap, Plus, Loader2, X, Tag, DollarSign, Info } from "lucide-react";
+import { Search, Package as PackageIcon, Globe, CheckCircle2, Clock, ChevronRight, Users, GraduationCap, Plus, Loader2, X, Tag, DollarSign, Info, Percent } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -60,6 +60,12 @@ const EMPTY_FORM = {
   maxStudents: "",
   status: "active",
   features: "",
+};
+
+const EMPTY_COMMISSION = {
+  type: "none" as "none" | "percentage" | "fixed",
+  rate: "",
+  fixed: "",
 };
 
 interface PackageGroup {
@@ -128,6 +134,7 @@ export default function Packages() {
   const [featureInput, setFeatureInput] = useState("");
   const [featureTags, setFeatureTags] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [commission, setCommission] = useState({ ...EMPTY_COMMISSION });
 
   const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
 
@@ -200,6 +207,7 @@ export default function Packages() {
     setFeatureInput("");
     setFeatureTags([]);
     setFormError(null);
+    setCommission({ ...EMPTY_COMMISSION });
   };
 
   const openDialog = () => {
@@ -211,6 +219,7 @@ export default function Packages() {
     setFeatureInput("");
     setFeatureTags([]);
     setFormError(null);
+    setCommission({ ...EMPTY_COMMISSION });
     setShowAdd(true);
   };
 
@@ -243,6 +252,9 @@ export default function Packages() {
       ...pricePayload,
       status: form.status,
       features: featureTags.length > 0 ? featureTags : null,
+      agentCommissionType: commission.type === "none" ? null : commission.type,
+      agentCommissionRate: commission.type === "percentage" && commission.rate ? commission.rate : null,
+      agentCommissionFixed: commission.type === "fixed" && commission.fixed ? commission.fixed : null,
     });
   };
 
@@ -696,6 +708,94 @@ export default function Packages() {
                 </div>
               )}
             </div>
+
+            {/* ── Section: Commission Settings ─────────────────── */}
+            <SectionHeader icon={<Percent className="w-3.5 h-3.5" />} title="Commission Settings" />
+
+            {/* Commission Type (radio buttons) */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Commission Type</Label>
+              <div className="flex gap-2">
+                {(["none", "percentage", "fixed"] as const).map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setCommission(c => ({ ...c, type: t }))}
+                    className={cn(
+                      "flex-1 py-2 text-sm font-medium rounded-lg border transition-colors",
+                      commission.type === t
+                        ? "bg-[#FEF0E3] border-[#F5821F] text-[#F5821F]"
+                        : "border-[#E8E6E2] text-[#57534E] hover:bg-[#FAFAF9]"
+                    )}
+                  >
+                    {t === "none" ? "None" : t === "percentage" ? "Percentage (%)" : "Fixed Amount"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Percentage rate */}
+            {commission.type === "percentage" && (
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Rate (%)</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    max={100}
+                    placeholder="10.00"
+                    value={commission.rate}
+                    onChange={e => setCommission(c => ({ ...c, rate: e.target.value }))}
+                    className="h-9 pr-10 font-mono text-sm"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#57534E] font-medium">%</span>
+                </div>
+                {/* Live Preview */}
+                {commission.rate && prices.priceAud && (
+                  <div className="px-3 py-2 bg-[#FAFAF9] border border-[#E8E6E2] rounded-lg text-xs text-[#57534E]">
+                    A${parseFloat(prices.priceAud || "0").toLocaleString()} × {commission.rate}%
+                    {" "}= <span className="font-semibold text-[#DC2626]">
+                      A${(parseFloat(prices.priceAud || "0") * parseFloat(commission.rate || "0") / 100).toFixed(2)}
+                    </span> commission
+                    {" "}→ Agent Invoice:
+                    <span className="font-semibold text-[#16A34A]">
+                      {" "}A${(parseFloat(prices.priceAud || "0") - parseFloat(prices.priceAud || "0") * parseFloat(commission.rate || "0") / 100).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Fixed amount */}
+            {commission.type === "fixed" && (
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Fixed Amount (AUD)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[#57534E] font-medium">A$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    placeholder="200.00"
+                    value={commission.fixed}
+                    onChange={e => setCommission(c => ({ ...c, fixed: e.target.value }))}
+                    className="h-9 pl-8 font-mono text-sm"
+                  />
+                </div>
+                {/* Live Preview */}
+                {commission.fixed && prices.priceAud && (
+                  <div className="px-3 py-2 bg-[#FAFAF9] border border-[#E8E6E2] rounded-lg text-xs text-[#57534E]">
+                    Agent Invoice = A${parseFloat(prices.priceAud || "0").toLocaleString()}
+                    {" "}− <span className="font-semibold text-[#DC2626]">A${parseFloat(commission.fixed || "0").toFixed(2)}</span>
+                    {" "}=
+                    <span className="font-semibold text-[#16A34A]">
+                      {" "}A${(parseFloat(prices.priceAud || "0") - parseFloat(commission.fixed || "0")).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Error */}
             {formError && (

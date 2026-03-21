@@ -372,7 +372,8 @@ router.get("/packages/:id", authenticate, async (req, res) => {
 router.put("/packages/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
     const allowed = ["name", "status", "maxAdults", "maxStudents", "features",
-      "priceAud", "priceUsd", "priceKrw", "priceJpy", "priceThb", "pricePhp", "priceSgd", "priceGbp"] as const;
+      "priceAud", "priceUsd", "priceKrw", "priceJpy", "priceThb", "pricePhp", "priceSgd", "priceGbp",
+      "agentCommissionType", "agentCommissionRate", "agentCommissionFixed"] as const;
     const patch: Record<string, unknown> = { updatedAt: new Date() };
     for (const key of allowed) {
       if (key in req.body) patch[key] = req.body[key];

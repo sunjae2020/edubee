@@ -120,6 +120,22 @@ function ActionMenu({ item, onConfirm, onEdit, onDelete }: {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  const downloadReceiptPdf = () => {
+    const token = localStorage.getItem("edubee_token");
+    const url = `${BASE}/api/finance/receipts/${item.receiptId}/pdf`;
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.blob())
+      .then(blob => {
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = objUrl;
+        a.download = `${item.receiptNumber ?? "receipt"}.pdf`;
+        a.click();
+        URL.revokeObjectURL(objUrl);
+      })
+      .catch(() => {});
+  };
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -131,11 +147,17 @@ function ActionMenu({ item, onConfirm, onEdit, onDelete }: {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-7 z-20 bg-white border border-[#E8E6E2] rounded-xl shadow-lg w-44 py-1 text-sm">
+          <div className="absolute right-0 top-7 z-20 bg-white border border-[#E8E6E2] rounded-xl shadow-lg w-48 py-1 text-sm">
             {item.status !== "paid" && item.status !== "cancelled" && (
               <button onClick={() => { setOpen(false); onConfirm(item); }}
                 className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#FEF0E3] text-[#1C1917]">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" /> Confirm Payment
+              </button>
+            )}
+            {item.status === "paid" && item.receiptId && item.itemType === "receivable" && (
+              <button onClick={() => { setOpen(false); downloadReceiptPdf(); }}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#FEF0E3] text-[#1C1917]">
+                <Download className="w-3.5 h-3.5 text-[#F5821F]" /> Download Receipt
               </button>
             )}
             <button onClick={() => { setOpen(false); onEdit(item); }}
