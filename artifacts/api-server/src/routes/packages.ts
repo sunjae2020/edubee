@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users } from "@workspace/db/schema";
+import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings } from "@workspace/db/schema";
 import { eq, and, count, asc, SQL, ilike, desc, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -731,6 +731,37 @@ router.delete("/enrollment-spots/:id", authenticate, requireRole(...ADMIN_ROLES,
       .where(eq(enrollmentSpots.id, req.params.id)).returning({ id: enrollmentSpots.id });
     if (!spot) return res.status(404).json({ error: "Not Found" });
     return res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Interview Settings
+router.post("/interview-settings", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const { packageGroupId, isRequired, format, durationMinutes, notes } = req.body;
+    if (!packageGroupId) return res.status(400).json({ error: "packageGroupId is required" });
+    const [row] = await db.insert(interviewSettings)
+      .values({ packageGroupId, isRequired, format, durationMinutes, notes })
+      .onConflictDoUpdate({
+        target: interviewSettings.packageGroupId,
+        set: { isRequired, format, durationMinutes, notes, updatedAt: new Date() },
+      })
+      .returning();
+    return res.status(201).json(row);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/interview-settings/:packageGroupId", authenticate, async (req, res) => {
+  try {
+    const [row] = await db.select().from(interviewSettings)
+      .where(eq(interviewSettings.packageGroupId, req.params.packageGroupId)).limit(1);
+    if (!row) return res.status(404).json({ error: "Not Found" });
+    return res.json(row);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Internal Server Error" });

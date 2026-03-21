@@ -20,6 +20,7 @@ import ledgerRouter from "./ledger.js";
 import documentsRouter from "./documents.js";
 import settingsRouter from "./settings.js";
 import chatbotRouter from "./chatbot.js";
+import aiRouter from "./ai.js";
 
 const router: IRouter = Router();
 
@@ -44,5 +45,6 @@ router.use(ledgerRouter);
 router.use(documentsRouter);
 router.use("/settings", settingsRouter);
 router.use(chatbotRouter);
+router.use(aiRouter);
 
 export default router;

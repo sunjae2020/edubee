@@ -22,6 +22,7 @@ import NotFound from "@/pages/not-found";
 
 // Detail Pages
 import PackageGroupDetail from "@/pages/admin/package-group-detail";
+import NewPackageGroup from "@/pages/admin/new-package-group";
 import ApplicationDetail from "@/pages/admin/application-detail";
 import ContractDetail from "@/pages/admin/contract-detail";
 import InstituteMgtDetail from "@/pages/admin/services/institute-detail";
@@ -100,6 +101,9 @@ function Router() {
 
       <Route path="/admin/dashboard">
         <AdminRoute title="Dashboard"><Dashboard /></AdminRoute>
+      </Route>
+      <Route path="/admin/package-groups/new">
+        <AdminRoute title="New Package Group"><NewPackageGroup /></AdminRoute>
       </Route>
       <Route path="/admin/package-groups/:id">
         <AdminRoute title="Package Group Detail"><PackageGroupDetail /></AdminRoute>

@@ -221,11 +221,7 @@ export default function PackageGroups() {
   });
 
   const openCreate = () => {
-    setEditing(null);
-    setForm(emptyGroupForm);
-    setModalTab("info");
-    setLangTab("en");
-    setShowModal(true);
+    setLocation(`${BASE}/admin/package-groups/new`);
   };
 
   const openEdit = (g: PackageGroup) => {
