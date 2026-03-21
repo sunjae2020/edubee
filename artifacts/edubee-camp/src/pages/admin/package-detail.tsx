@@ -176,6 +176,7 @@ export default function PackageDetail() {
       const newPkg = await axios.post(`${BASE}/api/packages`, {
         packageGroupId: rec.packageGroupId,
         name: `Copy of ${rec.name}`,
+        durationDays: rec.durationDays ?? 1,
         maxAdults: rec.adults ?? null,
         maxStudents: rec.children ?? null,
         priceAud: rec.priceAud ?? null,

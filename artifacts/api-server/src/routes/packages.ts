@@ -352,6 +352,7 @@ router.get("/packages/:id", authenticate, async (req, res) => {
         groupCountryCode: packageGroups.countryCode,
         groupStatus: packageGroups.status,
         groupCampProviderId: packageGroups.campProviderId,
+        durationDays: packages.durationDays,
         coordinatorName: users.fullName,
         coordinatorEmail: users.email,
       })
