@@ -71,6 +71,7 @@ export default function PackageDetail() {
   // ── Product section state ─────────────────────────────────────────
   const [showAddProd, setShowAddProd] = useState(false);
   const [prodTypeFilter, setProdTypeFilter] = useState("all");
+  const [prodSearch, setProdSearch] = useState("");
   const [selectedProdId, setSelectedProdId] = useState<string | null>(null);
   const [addQty, setAddQty] = useState(1);
   const [addUnitPrice, setAddUnitPrice] = useState("");
@@ -451,6 +452,7 @@ export default function PackageDetail() {
                 className="h-7 text-xs gap-1 border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
                 onClick={() => {
                   setProdTypeFilter("all");
+                  setProdSearch("");
                   setSelectedProdId(null);
                   setAddQty(1);
                   setAddUnitPrice("");
@@ -484,17 +486,27 @@ export default function PackageDetail() {
                 ))}
               </div>
 
+              {/* Search box */}
+              <Input
+                placeholder="Search product name..."
+                value={prodSearch}
+                onChange={e => { setProdSearch(e.target.value); setSelectedProdId(null); }}
+                className="h-7 text-xs"
+              />
+
               {/* Product list */}
               <div className="max-h-40 overflow-y-auto border border-border rounded-md divide-y bg-white">
                 {allActiveProds
                   .filter((p: any) => prodTypeFilter === "all" || p.productType === prodTypeFilter)
                   .filter((p: any) => !linkedProds.some((l: any) => l.productId === p.id))
+                  .filter((p: any) => !prodSearch || p.productName?.toLowerCase().includes(prodSearch.toLowerCase()))
                   .length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-4">No products available</p>
                 ) : (
                   allActiveProds
                     .filter((p: any) => prodTypeFilter === "all" || p.productType === prodTypeFilter)
                     .filter((p: any) => !linkedProds.some((l: any) => l.productId === p.id))
+                    .filter((p: any) => !prodSearch || p.productName?.toLowerCase().includes(prodSearch.toLowerCase()))
                     .map((p: any) => (
                       <label key={p.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/40">
                         <input
@@ -538,12 +550,12 @@ export default function PackageDetail() {
                     />
                   </div>
                   <div>
-                    <Label className="text-[11px]">구분</Label>
+                    <Label className="text-[11px]">Inclusion</Label>
                     <Select value={addIsOptional ? "optional" : "included"} onValueChange={v => setAddIsOptional(v === "optional")}>
                       <SelectTrigger className="mt-0.5 h-7 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="included">포함</SelectItem>
-                        <SelectItem value="optional">선택</SelectItem>
+                        <SelectItem value="included">Included</SelectItem>
+                        <SelectItem value="optional">Optional</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -583,7 +595,7 @@ export default function PackageDetail() {
                   <tr className="bg-muted/30 border-b">
                     <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Name</th>
                     <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
-                    <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">구분</th>
+                    <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Inclusion</th>
                     <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Unit Price</th>
                     <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Qty</th>
                     <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total</th>
@@ -604,15 +616,15 @@ export default function PackageDetail() {
                         <td className="px-3 py-2 text-center">
                           {isEditRow ? (
                             <Select value={editIsOptional ? "optional" : "included"} onValueChange={v => setEditIsOptional(v === "optional")}>
-                              <SelectTrigger className="h-6 text-xs w-20 mx-auto"><SelectValue /></SelectTrigger>
+                              <SelectTrigger className="h-6 text-xs w-24 mx-auto"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="included">포함</SelectItem>
-                                <SelectItem value="optional">선택</SelectItem>
+                                <SelectItem value="included">Included</SelectItem>
+                                <SelectItem value="optional">Optional</SelectItem>
                               </SelectContent>
                             </Select>
                           ) : (
                             <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${row.isOptional ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-700"}`}>
-                              {row.isOptional ? "선택" : "포함"}
+                              {row.isOptional ? "Optional" : "Included"}
                             </span>
                           )}
                         </td>
