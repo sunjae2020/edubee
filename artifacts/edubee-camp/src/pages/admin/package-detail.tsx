@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
-import { ExternalLink, MapPin, Globe, Users, GraduationCap, Building2, CheckCircle2, Clock, FileText, Plus, X, Loader2, Package } from "lucide-react";
+import { ExternalLink, MapPin, Globe, Users, GraduationCap, Building2, CheckCircle2, Clock, FileText, Plus, X, Loader2, Package, Copy } from "lucide-react";
 import { useLocation } from "wouter";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -169,6 +169,47 @@ export default function PackageDetail() {
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
   });
 
+  const cloneMutation = useMutation({
+    mutationFn: async () => {
+      if (!rec) throw new Error("No data");
+      // 1. Create new package (copy of current, with "Copy of" prefix)
+      const newPkg = await axios.post(`${BASE}/api/packages`, {
+        packageGroupId: rec.packageGroupId,
+        name: `Copy of ${rec.name}`,
+        maxAdults: rec.adults ?? null,
+        maxStudents: rec.children ?? null,
+        priceAud: rec.priceAud ?? null,
+        priceUsd: rec.priceUsd ?? null,
+        priceKrw: rec.priceKrw ?? null,
+        priceJpy: rec.priceJpy ?? null,
+        priceThb: rec.priceThb ?? null,
+        pricePhp: rec.pricePhp ?? null,
+        priceSgd: rec.priceSgd ?? null,
+        priceGbp: rec.priceGbp ?? null,
+        features: rec.features ?? null,
+      }).then(r => r.data);
+      // 2. Copy all linked products to the new package
+      const prods: any[] = await axios.get(`${BASE}/api/packages/${id}/products`).then(r => r.data);
+      await Promise.all(
+        (Array.isArray(prods) ? prods : prods?.data ?? []).map((p: any) =>
+          axios.post(`${BASE}/api/packages/${newPkg.id}/products`, {
+            productId: p.productId,
+            quantity: p.quantity ?? 1,
+            unitPrice: p.unitPrice ?? p.cost ?? null,
+            isOptional: p.isOptional ?? false,
+          })
+        )
+      );
+      return newPkg;
+    },
+    onSuccess: (newPkg) => {
+      qc.invalidateQueries({ queryKey: ["packages-list"] });
+      toast({ title: "Package cloned", description: `"${newPkg.name}" created successfully.` });
+      setLocation(`${BASE}/admin/packages/${newPkg.id}`);
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to clone package" }),
+  });
+
   const { isEditing, isSaving, startEdit, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
     initialData: rec ?? {},
     onSave: async (data) => { await updateMutation.mutateAsync(data); },
@@ -221,6 +262,22 @@ export default function PackageDetail() {
       onEdit={startEdit}
       onCancel={cancelEdit}
       onSave={saveEdit}
+      headerExtra={
+        canEdit && !isEditing ? (
+          <Button
+            size="sm"
+            className="gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white border-0"
+            disabled={cloneMutation.isPending}
+            onClick={() => cloneMutation.mutate()}
+          >
+            {cloneMutation.isPending
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <Copy className="w-3.5 h-3.5" />
+            }
+            Clone
+          </Button>
+        ) : undefined
+      }
     >
 
       {/* ── Package Group Info (read-only lookup card) ───────────────── */}
