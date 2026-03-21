@@ -7,7 +7,7 @@ import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/com
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { ExternalLink, MapPin, Globe, Users, GraduationCap, Building2, CheckCircle2, Clock } from "lucide-react";
+import { ExternalLink, MapPin, Globe, Users, GraduationCap, Building2, CheckCircle2, Clock, FileText } from "lucide-react";
 import { useLocation } from "wouter";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -40,6 +40,15 @@ const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-600",
 };
 
+const CONTRACT_STATUS_COLORS: Record<string, string> = {
+  draft:     "bg-gray-100 text-gray-600",
+  pending:   "bg-amber-100 text-amber-700",
+  active:    "bg-blue-100 text-blue-700",
+  signed:    "bg-green-100 text-green-700",
+  completed: "bg-green-100 text-green-700",
+  cancelled: "bg-red-100 text-red-700",
+};
+
 function fmtPrice(val: string | null | undefined, sym: string, dec: number) {
   if (!val) return null;
   const n = parseFloat(val);
@@ -64,6 +73,13 @@ export default function PackageDetail() {
     queryKey: ["public-exchange-rates"],
     queryFn: () => axios.get(`${BASE}/api/public/exchange-rates`).then(r => r.data),
     staleTime: 3_600_000,
+  });
+
+  // Contracts linked to this package (via applications.packageId)
+  const { data: contractsData } = useQuery({
+    queryKey: ["package-contracts", id],
+    queryFn: () => axios.get(`${BASE}/api/contracts`, { params: { packageId: id, limit: 100 } }).then(r => r.data),
+    enabled: !!id,
   });
 
   const rec = data;
@@ -326,6 +342,84 @@ export default function PackageDetail() {
                 placeholder="e.g. Airport pickup, Meals, Wi-Fi"
               />
             </DetailRow>
+          </DetailSection>
+        );
+      })()}
+
+      {/* ── Contracts ────────────────────────────────────────────────────── */}
+      {(() => {
+        const contractList = contractsData?.data ?? [];
+        const total = contractsData?.meta?.total ?? 0;
+        return (
+          <DetailSection
+            title={
+              <span className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#F5821F]" />
+                Contracts
+                <span className="ml-1 px-2 py-0.5 rounded-full bg-[#F5821F] text-white text-xs font-bold">
+                  {total}
+                </span>
+              </span>
+            }
+          >
+            {contractList.length === 0 ? (
+              <div className="px-4 py-4 text-sm text-muted-foreground text-center">
+                No contracts linked to this package yet.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contract #</th>
+                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Student</th>
+                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+                      <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Amount</th>
+                      <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Paid</th>
+                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Start</th>
+                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">End</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contractList.map((c: Record<string, unknown>, i: number) => (
+                      <tr
+                        key={c.id as string}
+                        className={`border-b last:border-0 hover:bg-[#FEF0E3] cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}
+                        onClick={() => setLocation(`${BASE}/admin/contracts/${c.id}`)}
+                      >
+                        <td className="px-3 py-2 font-mono text-xs font-medium text-[#F5821F]">
+                          {c.contractNumber as string ?? "—"}
+                        </td>
+                        <td className="px-3 py-2 text-sm">
+                          {(c.studentName as string) ?? (c.clientEmail as string) ?? "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${CONTRACT_STATUS_COLORS[c.status as string] ?? "bg-gray-100 text-gray-600"}`}>
+                            {c.status as string ?? "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-sm">
+                          {c.totalAmount != null
+                            ? `${c.currency ?? "AUD"} ${parseFloat(c.totalAmount as string).toLocaleString("en-AU", { minimumFractionDigits: 2 })}`
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-sm text-green-600">
+                          {c.paidAmount != null && parseFloat(c.paidAmount as string) > 0
+                            ? `${parseFloat(c.paidAmount as string).toLocaleString("en-AU", { minimumFractionDigits: 2 })}`
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {c.startDate ? format(new Date(c.startDate as string), "dd MMM yyyy") : "—"}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {c.endDate ? format(new Date(c.endDate as string), "dd MMM yyyy") : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </DetailSection>
         );
       })()}

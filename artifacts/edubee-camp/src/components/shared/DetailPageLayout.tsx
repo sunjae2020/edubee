@@ -140,13 +140,13 @@ export function DetailSection({
   children,
   className,
 }: {
-  title?: string;
+  title?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <div className={cn("bg-card rounded-xl border border-border p-5", className)}>
-      {title && <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">{title}</h3>}
+      {title && <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">{title}</div>}
       {children}
     </div>
   );

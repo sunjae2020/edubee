@@ -5,7 +5,7 @@ import {
   instituteMgt, hotelMgt, pickupMgt, tourMgt, settlementMgt,
   invoices, receipts, transactions, users,
 } from "@workspace/db/schema";
-import { eq, and, ilike, count, inArray, SQL } from "drizzle-orm";
+import { eq, and, ilike, count, inArray, SQL, exists } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { reverseAllPendingForContract } from "../services/ledgerService.js";
@@ -23,7 +23,7 @@ function generateContractNumber() {
 
 router.get("/contracts", authenticate, async (req, res) => {
   try {
-    const { status, campProviderId, search, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const { status, campProviderId, packageId, search, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
@@ -33,6 +33,17 @@ router.get("/contracts", authenticate, async (req, res) => {
     if (campProviderId) conditions.push(eq(contracts.campProviderId, campProviderId));
     if (search) conditions.push(ilike(contracts.contractNumber, `%${search}%`));
     if (req.user!.role === "camp_coordinator") conditions.push(eq(contracts.campProviderId, req.user!.id));
+
+    // Filter by packageId via applications join
+    if (packageId) {
+      conditions.push(
+        exists(
+          db.select({ one: applications.id })
+            .from(applications)
+            .where(and(eq(applications.id, contracts.applicationId!), eq(applications.packageId, packageId)))
+        )
+      );
+    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(contracts).where(whereClause);
