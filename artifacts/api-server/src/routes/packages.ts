@@ -621,7 +621,10 @@ router.delete("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async 
 // Enrollment Spots
 router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
+    const { packageGroupId } = req.query as Record<string, string>;
     const conditions: SQL[] = [];
+
+    if (packageGroupId) conditions.push(eq(enrollmentSpots.packageGroupId, packageGroupId));
 
     // Camp coordinators can only see spots for their own package groups
     if (req.user!.role === "camp_coordinator") {
@@ -650,7 +653,7 @@ router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_
       .from(enrollmentSpots)
       .leftJoin(packageGroups, eq(enrollmentSpots.packageGroupId, packageGroups.id))
       .where(whereClause)
-      .orderBy(asc(packageGroups.nameEn), asc(enrollmentSpots.gradeOrder));
+      .orderBy(asc(enrollmentSpots.gradeOrder), asc(enrollmentSpots.gradeLabel));
 
     const data = rows.map(r => ({
       ...r,
@@ -658,6 +661,74 @@ router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_
     }));
 
     return res.json({ data });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const { packageGroupId, gradeLabel, gradeOrder, totalSpots, manualReserved, status, startDate, endDate, dobRangeStart, dobRangeEnd } = req.body;
+    if (!packageGroupId || !gradeLabel || totalSpots == null) {
+      return res.status(400).json({ error: "packageGroupId, gradeLabel, totalSpots are required" });
+    }
+    // Camp coordinators can only create for own groups
+    if (req.user!.role === "camp_coordinator") {
+      const [grp] = await db.select({ campProviderId: packageGroups.campProviderId })
+        .from(packageGroups).where(eq(packageGroups.id, packageGroupId)).limit(1);
+      if (!grp || grp.campProviderId !== req.user!.id) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+    }
+    const [spot] = await db.insert(enrollmentSpots).values({
+      packageGroupId,
+      gradeLabel,
+      gradeOrder: gradeOrder ?? 0,
+      totalSpots: Number(totalSpots),
+      manualReserved: manualReserved != null ? Number(manualReserved) : 0,
+      status: status ?? "available",
+      startDate: startDate ? new Date(startDate) : null,
+      endDate: endDate ? new Date(endDate) : null,
+      dobRangeStart: dobRangeStart ? new Date(dobRangeStart) : null,
+      dobRangeEnd: dobRangeEnd ? new Date(dobRangeEnd) : null,
+    }).returning();
+    return res.status(201).json(spot);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.put("/enrollment-spots/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const allowed = ["gradeLabel", "gradeOrder", "totalSpots", "manualReserved", "status", "startDate", "endDate", "dobRangeStart", "dobRangeEnd"] as const;
+    const patch: Record<string, unknown> = { updatedAt: new Date() };
+    for (const key of allowed) {
+      if (key in req.body) {
+        if (["startDate", "endDate", "dobRangeStart", "dobRangeEnd"].includes(key)) {
+          patch[key] = req.body[key] ? new Date(req.body[key]) : null;
+        } else {
+          patch[key] = req.body[key];
+        }
+      }
+    }
+    const [spot] = await db.update(enrollmentSpots).set(patch)
+      .where(eq(enrollmentSpots.id, req.params.id)).returning();
+    if (!spot) return res.status(404).json({ error: "Not Found" });
+    return res.json(spot);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/enrollment-spots/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const [spot] = await db.delete(enrollmentSpots)
+      .where(eq(enrollmentSpots.id, req.params.id)).returning({ id: enrollmentSpots.id });
+    if (!spot) return res.status(404).json({ error: "Not Found" });
+    return res.json({ success: true });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Internal Server Error" });

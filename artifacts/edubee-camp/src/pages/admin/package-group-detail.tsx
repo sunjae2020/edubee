@@ -73,6 +73,13 @@ export default function PackageGroupDetail() {
   const [editQty, setEditQty] = useState(1);
   const [editUnitPrice, setEditUnitPrice] = useState("");
 
+  // Enrollment Spots state
+  const EMPTY_SPOT = { gradeLabel: "", gradeOrder: "0", totalSpots: "", manualReserved: "0", status: "available", startDate: "", endDate: "", dobRangeStart: "", dobRangeEnd: "" };
+  const [showSpotDialog, setShowSpotDialog] = useState(false);
+  const [editingSpot, setEditingSpot] = useState<any>(null);
+  const [spotForm, setSpotForm] = useState<Record<string, string>>(EMPTY_SPOT);
+  const [deletingSpotId, setDeletingSpotId] = useState<string | null>(null);
+
   // Per-package product state
   const [showPkgAddProduct, setShowPkgAddProduct] = useState(false);
   const [pkgProdTypeFilter, setPkgProdTypeFilter] = useState("all");
@@ -234,6 +241,59 @@ export default function PackageGroupDetail() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["packages-by-group", id] }); setShowPkgDialog(false); toast({ title: "Package updated" }); },
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
   });
+
+  const createSpot = useMutation({
+    mutationFn: (payload: any) => axios.post(`${BASE}/api/enrollment-spots`, payload).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["spots-by-group", id] }); setShowSpotDialog(false); toast({ title: "Enrollment spot created" }); },
+    onError: () => toast({ variant: "destructive", title: "Failed to create spot" }),
+  });
+  const updateSpot = useMutation({
+    mutationFn: ({ spotId, data }: { spotId: string; data: any }) =>
+      axios.put(`${BASE}/api/enrollment-spots/${spotId}`, data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["spots-by-group", id] }); setShowSpotDialog(false); toast({ title: "Enrollment spot updated" }); },
+    onError: () => toast({ variant: "destructive", title: "Failed to update spot" }),
+  });
+  const deleteSpot = useMutation({
+    mutationFn: (spotId: string) => axios.delete(`${BASE}/api/enrollment-spots/${spotId}`).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["spots-by-group", id] }); setDeletingSpotId(null); toast({ title: "Enrollment spot deleted" }); },
+    onError: () => toast({ variant: "destructive", title: "Failed to delete spot" }),
+  });
+
+  const openAddSpot = () => { setEditingSpot(null); setSpotForm(EMPTY_SPOT); setShowSpotDialog(true); };
+  const openEditSpot = (s: any) => {
+    setEditingSpot(s);
+    setSpotForm({
+      gradeLabel: s.gradeLabel ?? "",
+      gradeOrder: String(s.gradeOrder ?? 0),
+      totalSpots: String(s.totalSpots ?? ""),
+      manualReserved: String(s.manualReserved ?? 0),
+      status: s.status ?? "available",
+      startDate: s.startDate ? s.startDate.slice(0, 10) : "",
+      endDate: s.endDate ? s.endDate.slice(0, 10) : "",
+      dobRangeStart: s.dobRangeStart ? s.dobRangeStart.slice(0, 10) : "",
+      dobRangeEnd: s.dobRangeEnd ? s.dobRangeEnd.slice(0, 10) : "",
+    });
+    setShowSpotDialog(true);
+  };
+  const handleSpotSave = () => {
+    const payload = {
+      packageGroupId: id,
+      gradeLabel: spotForm.gradeLabel,
+      gradeOrder: Number(spotForm.gradeOrder || 0),
+      totalSpots: Number(spotForm.totalSpots),
+      manualReserved: Number(spotForm.manualReserved || 0),
+      status: spotForm.status,
+      startDate: spotForm.startDate || null,
+      endDate: spotForm.endDate || null,
+      dobRangeStart: spotForm.dobRangeStart || null,
+      dobRangeEnd: spotForm.dobRangeEnd || null,
+    };
+    if (editingSpot) {
+      updateSpot.mutate({ spotId: editingSpot.id, data: payload });
+    } else {
+      createSpot.mutate(payload);
+    }
+  };
 
   const { isEditing, isSaving, formData, startEdit, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
     initialData: group ?? {},
@@ -655,33 +715,119 @@ export default function PackageGroupDetail() {
 
         {/* Enrollment Spots Tab */}
         {activeTab === "spots" && (
-          <div className="bg-card rounded-xl border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30 text-xs text-muted-foreground">
-                  <th className="px-4 py-2.5 text-left">Grade Label</th>
-                  <th className="px-4 py-2.5 text-right">Total Spots</th>
-                  <th className="px-4 py-2.5 text-right">Reserved</th>
-                  <th className="px-4 py-2.5 text-right">Available</th>
-                  <th className="px-4 py-2.5 text-left">Age Range</th>
-                  <th className="px-4 py-2.5 text-left">Program</th>
-                </tr>
-              </thead>
-              <tbody>
-                {spots.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-xs">No enrollment spots</td></tr>
-                ) : spots.map((s: any) => (
-                  <tr key={s.id} className="border-b last:border-0 hover:bg-[#FEF0E3]">
-                    <td className="px-4 py-3 font-medium">{s.gradeLabel}</td>
-                    <td className="px-4 py-3 text-right">{s.totalSpots}</td>
-                    <td className="px-4 py-3 text-right text-orange-600">{s.reservedSpots ?? 0}</td>
-                    <td className="px-4 py-3 text-right text-green-600">{(s.totalSpots ?? 0) - (s.reservedSpots ?? 0)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{s.ageMin ?? "—"}–{s.ageMax ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">{s.programLabel ?? "—"}</td>
+          <div className="space-y-3">
+            {/* Toolbar */}
+            {canEdit && (
+              <div className="flex justify-end">
+                <Button size="sm" onClick={openAddSpot} className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5">
+                  <Plus className="w-3.5 h-3.5" /> Add Enrollment Spot
+                </Button>
+              </div>
+            )}
+
+            {/* Table */}
+            <div className="bg-card rounded-xl border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30 text-xs text-muted-foreground font-semibold">
+                    <th className="px-4 py-2.5 text-left">Grade / Label</th>
+                    <th className="px-4 py-2.5 text-center">Status</th>
+                    <th className="px-4 py-2.5 text-right">Total</th>
+                    <th className="px-4 py-2.5 text-right">Reserved</th>
+                    <th className="px-4 py-2.5 text-right">Manual Hold</th>
+                    <th className="px-4 py-2.5 text-right text-green-700">Available</th>
+                    <th className="px-4 py-2.5 text-left">Program Dates</th>
+                    <th className="px-4 py-2.5 text-left">DOB Range</th>
+                    {canEdit && <th className="px-4 py-2.5 w-20" />}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {spots.length === 0 ? (
+                    <tr>
+                      <td colSpan={canEdit ? 9 : 8} className="px-4 py-12 text-center">
+                        <div className="text-muted-foreground/40 text-3xl mb-2">🎫</div>
+                        <p className="text-muted-foreground text-sm">No enrollment spots yet</p>
+                        {canEdit && (
+                          <button onClick={openAddSpot} className="mt-2 text-xs text-[#F5821F] underline">
+                            + Add first spot
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ) : spots.map((s: any) => {
+                    const available = (s.totalSpots ?? 0) - (s.reservedSpots ?? 0) - (s.manualReserved ?? 0);
+                    const statusColors: Record<string, string> = {
+                      available: "bg-green-100 text-green-700",
+                      waitlist: "bg-amber-100 text-amber-700",
+                      closed: "bg-red-100 text-red-700",
+                    };
+                    const fmtDate = (d: string | null) => d ? format(new Date(d), "MMM d, yyyy") : "—";
+                    return (
+                      <tr key={s.id} className="border-b last:border-0 hover:bg-[#FEF0E3]/50">
+                        <td className="px-4 py-3">
+                          <div className="font-semibold">{s.gradeLabel}</div>
+                          {s.gradeOrder != null && (
+                            <div className="text-[11px] text-muted-foreground">Order: {s.gradeOrder}</div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColors[s.status ?? "available"] ?? "bg-gray-100 text-gray-600"}`}>
+                            {s.status ?? "available"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono font-semibold">{s.totalSpots}</td>
+                        <td className="px-4 py-3 text-right font-mono text-orange-600">{s.reservedSpots ?? 0}</td>
+                        <td className="px-4 py-3 text-right font-mono text-blue-600">{s.manualReserved ?? 0}</td>
+                        <td className="px-4 py-3 text-right font-mono font-bold text-green-600">{Math.max(0, available)}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          <div>{fmtDate(s.startDate)}</div>
+                          {s.endDate && <div className="text-muted-foreground/60">→ {fmtDate(s.endDate)}</div>}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {s.dobRangeStart || s.dobRangeEnd ? (
+                            <div>
+                              <div>{fmtDate(s.dobRangeStart)}</div>
+                              {s.dobRangeEnd && <div className="text-muted-foreground/60">→ {fmtDate(s.dobRangeEnd)}</div>}
+                            </div>
+                          ) : "—"}
+                        </td>
+                        {canEdit && (
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1 justify-end">
+                              <button
+                                onClick={() => openEditSpot(s)}
+                                className="p-1.5 rounded hover:bg-[#F5821F]/10 text-muted-foreground hover:text-[#F5821F] transition-colors"
+                                title="Edit"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setDeletingSpotId(s.id)}
+                                className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
+                                title="Delete"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Summary bar */}
+            {spots.length > 0 && (
+              <div className="flex items-center gap-6 px-4 py-2.5 bg-muted/30 rounded-lg border text-sm">
+                <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Total</span>
+                <span className="font-mono"><span className="text-muted-foreground text-xs mr-1">Spots:</span><strong>{spots.reduce((a: number, s: any) => a + (s.totalSpots ?? 0), 0)}</strong></span>
+                <span className="font-mono"><span className="text-muted-foreground text-xs mr-1">Reserved:</span><strong className="text-orange-600">{spots.reduce((a: number, s: any) => a + (s.reservedSpots ?? 0), 0)}</strong></span>
+                <span className="font-mono"><span className="text-muted-foreground text-xs mr-1">Manual:</span><strong className="text-blue-600">{spots.reduce((a: number, s: any) => a + (s.manualReserved ?? 0), 0)}</strong></span>
+                <span className="font-mono"><span className="text-muted-foreground text-xs mr-1">Available:</span><strong className="text-green-600">{spots.reduce((a: number, s: any) => a + Math.max(0, (s.totalSpots ?? 0) - (s.reservedSpots ?? 0) - (s.manualReserved ?? 0)), 0)}</strong></span>
+              </div>
+            )}
           </div>
         )}
 
@@ -1101,6 +1247,160 @@ export default function PackageGroupDetail() {
               </Button>
               <Button size="sm" variant="outline" onClick={() => { setShowPkgDialog(false); setShowPkgAddProduct(false); }}>Cancel</Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Enrollment Spot Add/Edit Dialog */}
+      <Dialog open={showSpotDialog} onOpenChange={o => { if (!o) setShowSpotDialog(false); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingSpot ? "Edit Enrollment Spot" : "Add Enrollment Spot"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            {/* Grade Label & Order */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2 space-y-1">
+                <Label className="text-xs">Grade / Label <span className="text-red-500">*</span></Label>
+                <Input
+                  value={spotForm.gradeLabel}
+                  onChange={e => setSpotForm(f => ({ ...f, gradeLabel: e.target.value }))}
+                  placeholder="e.g. Grade 4–6, Elementary"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Sort Order</Label>
+                <Input
+                  type="number" min="0"
+                  value={spotForm.gradeOrder}
+                  onChange={e => setSpotForm(f => ({ ...f, gradeOrder: e.target.value }))}
+                  className="h-8 text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Spots */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Total Spots <span className="text-red-500">*</span></Label>
+                <Input
+                  type="number" min="0"
+                  value={spotForm.totalSpots}
+                  onChange={e => setSpotForm(f => ({ ...f, totalSpots: e.target.value }))}
+                  className="h-8 text-sm"
+                  placeholder="30"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Manual Hold</Label>
+                <Input
+                  type="number" min="0"
+                  value={spotForm.manualReserved}
+                  onChange={e => setSpotForm(f => ({ ...f, manualReserved: e.target.value }))}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Status</Label>
+                <Select value={spotForm.status} onValueChange={v => setSpotForm(f => ({ ...f, status: v }))}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="waitlist">Waitlist</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Program Dates */}
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Program Dates</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Start Date</Label>
+                  <Input
+                    type="date"
+                    value={spotForm.startDate}
+                    onChange={e => setSpotForm(f => ({ ...f, startDate: e.target.value }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">End Date</Label>
+                  <Input
+                    type="date"
+                    value={spotForm.endDate}
+                    onChange={e => setSpotForm(f => ({ ...f, endDate: e.target.value }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* DOB Range */}
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date of Birth Range (Eligibility)</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">DOB From (oldest)</Label>
+                  <Input
+                    type="date"
+                    value={spotForm.dobRangeStart}
+                    onChange={e => setSpotForm(f => ({ ...f, dobRangeStart: e.target.value }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">DOB To (youngest)</Label>
+                  <Input
+                    type="date"
+                    value={spotForm.dobRangeEnd}
+                    onChange={e => setSpotForm(f => ({ ...f, dobRangeEnd: e.target.value }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-1 border-t">
+              <Button size="sm" variant="outline" onClick={() => setShowSpotDialog(false)}>Cancel</Button>
+              <Button
+                size="sm"
+                onClick={handleSpotSave}
+                disabled={!spotForm.gradeLabel || !spotForm.totalSpots || createSpot.isPending || updateSpot.isPending}
+                className="bg-[#F5821F] hover:bg-[#d97706] text-white min-w-[80px]"
+              >
+                {(createSpot.isPending || updateSpot.isPending) ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : editingSpot ? "Update" : "Create"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Spot Confirmation */}
+      <Dialog open={!!deletingSpotId} onOpenChange={o => { if (!o) setDeletingSpotId(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Enrollment Spot?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">This action cannot be undone. All spot data will be permanently removed.</p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button size="sm" variant="outline" onClick={() => setDeletingSpotId(null)}>Cancel</Button>
+            <Button
+              size="sm"
+              onClick={() => deletingSpotId && deleteSpot.mutate(deletingSpotId)}
+              disabled={deleteSpot.isPending}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleteSpot.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Delete"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
