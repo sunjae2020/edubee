@@ -4,6 +4,7 @@ import { leads, applications, applicationParticipants, contracts, instituteMgt, 
 import { eq, and, ilike, or, count, inArray, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { financeAutoGenerate } from "../services/contractFinanceService.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
@@ -354,6 +355,13 @@ router.post("/applications/:id/convert-contract", authenticate, requireRole("sup
       console.log("[FIX APPLIED] convert-contract: atomic transaction completed", { contractId: contract.id, contractNumber });
       return { contractId: contract.id, contractNumber };
     });
+
+    // Auto-generate finance items (idempotent — safe to call after transaction)
+    try {
+      await financeAutoGenerate(result.contractId);
+    } catch (financeErr: any) {
+      console.error("financeAutoGenerate failed (non-fatal):", financeErr.message);
+    }
 
     return res.status(201).json(result);
   } catch (err) {
