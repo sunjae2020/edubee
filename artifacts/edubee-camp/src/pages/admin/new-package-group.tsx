@@ -44,7 +44,6 @@ const TABS = [
   { key: "packages",   label: "Packages" },
   { key: "enrollment", label: "Enrollment Spots" },
   { key: "interview",  label: "Interview" },
-  { key: "products",   label: "Products" },
 ];
 
 const EMPTY_PKG = {
@@ -873,15 +872,6 @@ export default function NewPackageGroup() {
               </div>
             )}
           </Sec>
-        )}
-
-        {/* ══ PRODUCTS TAB ═════════════════════════════════════════ */}
-        {tab === "products" && (
-          <div className="bg-card border rounded-xl p-14 text-center">
-            <div className="text-4xl mb-3">📦</div>
-            <p className="font-semibold text-foreground mb-1.5">Products</p>
-            <p className="text-sm text-muted-foreground">Save the package group first, then add products on the detail page.</p>
-          </div>
         )}
 
         {/* AI Confidence Footer */}

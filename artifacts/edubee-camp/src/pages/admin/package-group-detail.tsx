@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Edit, RefreshCw, X, Loader2, Check } from "lucide-react";
+import { Plus, Edit, RefreshCw, X, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 
@@ -36,7 +36,6 @@ const TABS = [
   { key: "packages", label: "Packages" },
   { key: "spots", label: "Enrollment Spots" },
   { key: "interview", label: "Interview" },
-  { key: "products", label: "Products" },
 ];
 
 interface Pkg {
@@ -63,15 +62,6 @@ export default function PackageGroupDetail() {
   const [editingPkg, setEditingPkg] = useState<Pkg | null>(null);
   const [pkgForm, setPkgForm] = useState(emptyPkg);
   const [autoConvert, setAutoConvert] = useState(false);
-  const [showAddProductModal, setShowAddProductModal] = useState(false);
-  const [addProductTypeFilter, setAddProductTypeFilter] = useState("all");
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [addQty, setAddQty] = useState(1);
-  const [addUnitPrice, setAddUnitPrice] = useState("");
-  const [addError, setAddError] = useState<string | null>(null);
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [editQty, setEditQty] = useState(1);
-  const [editUnitPrice, setEditUnitPrice] = useState("");
 
   // Enrollment Spots state
   const EMPTY_SPOT = { gradeLabel: "", gradeOrder: "0", totalSpots: "", manualReserved: "0", status: "available", startDate: "", endDate: "", dobRangeStart: "", dobRangeEnd: "" };
@@ -115,17 +105,10 @@ export default function PackageGroupDetail() {
     enabled: activeTab === "packages",
   });
 
-  const { data: linkedProductsData, isLoading: linkedProductsLoading } = useQuery({
-    queryKey: ["pg-linked-products", id],
-    queryFn: () => axios.get(`${BASE}/api/package-groups/${id}/products`).then(r => r.data),
-    enabled: activeTab === "products",
-  });
-  const linkedProducts: any[] = linkedProductsData ?? [];
-
   const { data: allActiveProductsData } = useQuery({
     queryKey: ["all-active-products"],
     queryFn: () => axios.get(`${BASE}/api/products?status=active&limit=200`).then(r => r.data?.data ?? r.data),
-    enabled: showAddProductModal || showPkgAddProduct,
+    enabled: showPkgAddProduct,
   });
   const allActiveProducts: any[] = Array.isArray(allActiveProductsData) ? allActiveProductsData : (allActiveProductsData?.data ?? []);
 
@@ -152,51 +135,6 @@ export default function PackageGroupDetail() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["pkg-linked-products", editingPkg?.id] }); toast({ title: "Product removed" }); },
     onError: () => toast({ variant: "destructive", title: "Failed to remove product" }),
   });
-
-  const linkProduct = useMutation({
-    mutationFn: (payload: any) =>
-      axios.post(`${BASE}/api/package-groups/${id}/products`, payload).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["pg-linked-products", id] });
-      setShowAddProductModal(false);
-      setSelectedProductId(null);
-      setAddQty(1);
-      setAddUnitPrice("");
-      setAddError(null);
-      toast({ title: "Product linked" });
-    },
-    onError: (err: any) => {
-      if (err?.response?.status === 409) setAddError("이미 연결된 상품입니다.");
-      else setAddError(err?.response?.data?.error ?? "Failed to link product");
-    },
-  });
-
-  const unlinkProduct = useMutation({
-    mutationFn: (productId: string) =>
-      axios.delete(`${BASE}/api/package-groups/${id}/products/${productId}`).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["pg-linked-products", id] });
-      toast({ title: "Product removed" });
-    },
-    onError: () => toast({ variant: "destructive", title: "Failed to remove product" }),
-  });
-
-  const updateLinkedProduct = useMutation({
-    mutationFn: ({ productId, quantity, unitPrice }: { productId: string; quantity: number; unitPrice: string }) =>
-      axios.patch(`${BASE}/api/package-groups/${id}/products/${productId}`, { quantity, unitPrice }).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["pg-linked-products", id] });
-      setEditingProductId(null);
-      toast({ title: "Product updated" });
-    },
-    onError: () => toast({ variant: "destructive", title: "Failed to update product" }),
-  });
-
-  const startEditProduct = (row: any) => {
-    setEditingProductId(row.productId);
-    setEditQty(row.quantity ?? 1);
-    setEditUnitPrice(row.unitPrice != null ? String(row.unitPrice) : String(row.cost ?? ""));
-  };
 
   const group = data?.data ?? data;
   const pkgs: Pkg[] = pkgsResp?.data ?? [];
@@ -831,164 +769,6 @@ export default function PackageGroupDetail() {
           </div>
         )}
 
-        {/* Products Tab */}
-        {activeTab === "products" && (
-          <div className="space-y-4">
-            <div className="bg-[#FEF0E3] border border-[#F5821F33] text-[#D96A0A] rounded-lg px-4 py-2 text-sm">
-              💡 픽업, 숙소, 투어 상품은 여러 Package Group에서 공유 사용할 수 있습니다.
-            </div>
-
-            <div className="rounded-xl border border-border overflow-hidden bg-card">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-neutral-50 border-b">
-                    <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-500 uppercase">Product Name</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-500 uppercase">Type</th>
-                    <th className="px-4 py-2.5 text-right text-xs font-medium text-neutral-500 uppercase">Unit Price</th>
-                    <th className="px-4 py-2.5 text-right text-xs font-medium text-neutral-500 uppercase">Qty</th>
-                    <th className="px-4 py-2.5 text-right text-xs font-medium text-neutral-500 uppercase">Total</th>
-                    {canEdit && <th className="px-4 py-2.5 w-10" />}
-                  </tr>
-                </thead>
-                <tbody>
-                  {linkedProductsLoading ? (
-                    [...Array(3)].map((_, i) => (
-                      <tr key={i} className="border-b">
-                        {[...Array(6)].map((_, j) => <td key={j} className="px-4 py-3"><div className="h-3 bg-muted rounded animate-pulse" /></td>)}
-                      </tr>
-                    ))
-                  ) : linkedProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan={canEdit ? 6 : 5} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                        연결된 상품이 없습니다.
-                      </td>
-                    </tr>
-                  ) : (
-                    linkedProducts.map((row: any) => {
-                      const isEditingRow = editingProductId === row.productId;
-                      const unitP = isEditingRow ? editUnitPrice : (row.unitPrice ?? row.cost ?? 0);
-                      const qty = isEditingRow ? editQty : (row.quantity ?? 1);
-                      const total = Number(unitP) * Number(qty);
-                      return (
-                        <tr key={row.linkId} className={`border-b h-12 ${isEditingRow ? "bg-[#FEF0E3]/70" : "hover:bg-[#FEF0E3]/50"}`}>
-                          <td className="px-4 py-2 font-medium">{row.productName}</td>
-                          <td className="px-4 py-2">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground capitalize">{row.productType}</span>
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            {isEditingRow ? (
-                              <Input
-                                type="number" step="0.01" min="0"
-                                value={editUnitPrice}
-                                onChange={e => setEditUnitPrice(e.target.value)}
-                                className="h-7 text-xs text-right font-mono w-28 ml-auto border-[#F5821F]"
-                              />
-                            ) : (
-                              <span className="font-mono text-xs">
-                                {unitP ? `${row.currency ?? "AUD"} ${Number(unitP).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            {isEditingRow ? (
-                              <Input
-                                type="number" min="1" step="1"
-                                value={editQty}
-                                onChange={e => setEditQty(Number(e.target.value))}
-                                className="h-7 text-xs text-right w-16 ml-auto border-[#F5821F]"
-                              />
-                            ) : (
-                              <span className="text-xs">{row.quantity ?? 1}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-right font-mono text-xs font-semibold">
-                            {unitP ? `${row.currency ?? "AUD"} ${total.toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
-                          </td>
-                          {canEdit && (
-                            <td className="px-4 py-2">
-                              {isEditingRow ? (
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    className="text-[#F5821F] hover:text-[#d97706] transition-colors disabled:opacity-50"
-                                    disabled={updateLinkedProduct.isPending}
-                                    onClick={() => updateLinkedProduct.mutate({ productId: row.productId, quantity: editQty, unitPrice: editUnitPrice })}
-                                    title="Save"
-                                  >
-                                    {updateLinkedProduct.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                  </button>
-                                  <button
-                                    className="text-muted-foreground hover:text-foreground transition-colors"
-                                    onClick={() => setEditingProductId(null)}
-                                    title="Cancel"
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    className="text-muted-foreground hover:text-[#F5821F] transition-colors"
-                                    onClick={() => startEditProduct(row)}
-                                    title="Edit"
-                                  >
-                                    <Edit className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    className="text-muted-foreground hover:text-red-500 transition-colors"
-                                    onClick={() => { if (window.confirm("Remove this product?")) unlinkProduct.mutate(row.productId); }}
-                                    title="Remove"
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              )}
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Cost subtotal */}
-            {linkedProducts.length > 0 && (() => {
-              const byType: Record<string, number> = {};
-              let grandTotal = 0;
-              linkedProducts.forEach((row: any) => {
-                const total = Number(row.unitPrice ?? row.cost ?? 0) * (row.quantity ?? 1);
-                byType[row.productType] = (byType[row.productType] ?? 0) + total;
-                grandTotal += total;
-              });
-              return (
-                <div className="rounded-lg border border-border p-3 bg-muted/20 text-sm space-y-1">
-                  {Object.entries(byType).map(([type, amt]) => (
-                    <div key={type} className="flex justify-between text-xs text-muted-foreground">
-                      <span className="capitalize">{type}</span>
-                      <span className="font-mono">{amt.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</span>
-                    </div>
-                  ))}
-                  <div className="border-t border-border pt-1 mt-1 flex justify-between font-semibold text-sm">
-                    <span>Estimated Cost Base</span>
-                    <span className="font-mono">{grandTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <p className="text-[10px] text-neutral-400">* 참고용 수치입니다. 실제 패키지 가격과 별개입니다.</p>
-                </div>
-              );
-            })()}
-
-            {canEdit && (
-              <Button
-                size="sm"
-                className="gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white"
-                onClick={() => { setAddError(null); setSelectedProductId(null); setAddQty(1); setAddUnitPrice(""); setShowAddProductModal(true); }}
-              >
-                <Plus className="w-3.5 h-3.5" /> Add Product
-              </Button>
-            )}
-          </div>
-        )}
 
         {/* Interview Tab */}
         {activeTab === "interview" && (
@@ -1007,74 +787,6 @@ export default function PackageGroupDetail() {
           </DetailSection>
         )}
       </DetailPageLayout>
-
-      {/* Add Product Dialog */}
-      <Dialog open={showAddProductModal} onOpenChange={o => { if (!o) setShowAddProductModal(false); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Add Product to Package Group</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 mt-1">
-            <div className="flex gap-1.5 flex-wrap">
-              {["all", "institute", "hotel", "pickup", "tour", "settlement"].map(t => (
-                <button key={t} onClick={() => { setAddProductTypeFilter(t); setSelectedProductId(null); }}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${addProductTypeFilter === t ? "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F33]" : "border-border text-muted-foreground hover:bg-muted"}`}>
-                  {t === "all" ? "All" : t}
-                </button>
-              ))}
-            </div>
-            <div className="max-h-56 overflow-y-auto border border-border rounded-lg divide-y">
-              {allActiveProducts
-                .filter((p: any) => addProductTypeFilter === "all" || p.productType === addProductTypeFilter)
-                .map((p: any) => {
-                  const isLinked = linkedProducts.some((l: any) => l.productId === p.id);
-                  return (
-                    <label key={p.id}
-                      className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/40 ${isLinked ? "opacity-50 cursor-not-allowed" : ""}`}>
-                      <input type="radio" name="sel-prod" value={p.id} disabled={isLinked}
-                        checked={selectedProductId === p.id}
-                        onChange={() => { setSelectedProductId(p.id); setAddUnitPrice(p.cost ?? ""); }}
-                        className="shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium truncate block">{p.productName}</span>
-                        <span className="text-xs text-muted-foreground">{p.currency} {p.cost ? Number(p.cost).toLocaleString() : "—"} {p.unit ? `/ ${p.unit}` : ""}</span>
-                      </div>
-                      {isLinked && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">연결됨</span>}
-                    </label>
-                  );
-                })}
-              {allActiveProducts.filter((p: any) => addProductTypeFilter === "all" || p.productType === addProductTypeFilter).length === 0 && (
-                <div className="px-4 py-6 text-center text-sm text-muted-foreground">No products found</div>
-              )}
-            </div>
-            {selectedProductId && (
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <div>
-                  <Label className="text-xs">Quantity</Label>
-                  <Input type="number" min={1} value={addQty} onChange={e => setAddQty(Number(e.target.value))} className="mt-1 h-8 text-sm" />
-                </div>
-                <div>
-                  <Label className="text-xs">Unit Price</Label>
-                  <Input type="number" step="0.01" value={addUnitPrice} onChange={e => setAddUnitPrice(e.target.value)} className="mt-1 h-8 text-sm font-mono" placeholder="0.00" />
-                </div>
-              </div>
-            )}
-            {addError && <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded px-3 py-2">{addError}</p>}
-            <div className="flex gap-2 justify-end pt-1">
-              <Button size="sm" variant="outline" onClick={() => setShowAddProductModal(false)}>Cancel</Button>
-              <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white"
-                disabled={!selectedProductId || linkProduct.isPending}
-                onClick={() => {
-                  if (!selectedProductId) return;
-                  linkProduct.mutate({ productId: selectedProductId, quantity: addQty, unitPrice: addUnitPrice || null });
-                }}>
-                {linkProduct.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
-                Add to Package Group
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Package Dialog */}
       <Dialog open={showPkgDialog} onOpenChange={o => { if (!o) { setShowPkgDialog(false); setShowPkgAddProduct(false); } }}>
