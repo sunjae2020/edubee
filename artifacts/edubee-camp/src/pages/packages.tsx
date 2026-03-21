@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -11,7 +11,7 @@ import { ListPagination } from "@/components/ui/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, Package as PackageIcon, Globe, CheckCircle2, Clock, ChevronRight, Users, GraduationCap, Plus, Loader2 } from "lucide-react";
+import { Search, Package as PackageIcon, Globe, CheckCircle2, Clock, ChevronRight, Users, GraduationCap, Plus, Loader2, X, Tag, DollarSign, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -21,7 +21,22 @@ const COUNTRY_FLAG: Record<string, string> = {
   AU: "🇦🇺", PH: "🇵🇭", SG: "🇸🇬", TH: "🇹🇭", KR: "🇰🇷", JP: "🇯🇵", GB: "🇬🇧", US: "🇺🇸",
 };
 
-const COUNTRY_CURRENCY: Record<string, { field: string; sym: string; dec: number }> = {
+const ALL_CURRENCIES = [
+  { ccy: "AUD", flag: "🇦🇺", sym: "A$",  dec: 2, field: "priceAud" },
+  { ccy: "USD", flag: "🇺🇸", sym: "$",   dec: 2, field: "priceUsd" },
+  { ccy: "KRW", flag: "🇰🇷", sym: "₩",   dec: 0, field: "priceKrw" },
+  { ccy: "JPY", flag: "🇯🇵", sym: "¥",   dec: 0, field: "priceJpy" },
+  { ccy: "THB", flag: "🇹🇭", sym: "฿",   dec: 0, field: "priceThb" },
+  { ccy: "PHP", flag: "🇵🇭", sym: "₱",   dec: 0, field: "pricePhp" },
+  { ccy: "SGD", flag: "🇸🇬", sym: "S$",  dec: 2, field: "priceSgd" },
+  { ccy: "GBP", flag: "🇬🇧", sym: "£",   dec: 2, field: "priceGbp" },
+];
+
+const COUNTRY_TO_CURRENCY: Record<string, string> = {
+  PH: "PHP", TH: "THB", SG: "SGD", JP: "JPY", KR: "KRW", GB: "GBP", US: "USD", AU: "AUD",
+};
+
+const COUNTRY_CURRENCY_LIST: Record<string, { field: string; sym: string; dec: number }> = {
   PH: { field: "pricePhp", sym: "₱", dec: 0 },
   TH: { field: "priceThb", sym: "฿", dec: 0 },
   SG: { field: "priceSgd", sym: "S$", dec: 2 },
@@ -30,6 +45,21 @@ const COUNTRY_CURRENCY: Record<string, { field: string; sym: string; dec: number
   GB: { field: "priceGbp", sym: "£", dec: 2 },
   US: { field: "priceUsd", sym: "$", dec: 2 },
   AU: { field: "priceAud", sym: "A$", dec: 0 },
+};
+
+const EMPTY_PRICES: Record<string, string> = {
+  priceAud: "", priceUsd: "", priceKrw: "", priceJpy: "",
+  priceThb: "", pricePhp: "", priceSgd: "", priceGbp: "",
+};
+
+const EMPTY_FORM = {
+  packageGroupId: "",
+  name: "",
+  durationDays: "7",
+  maxAdults: "",
+  maxStudents: "",
+  status: "active",
+  features: "",
 };
 
 interface PackageGroup {
@@ -63,21 +93,21 @@ interface PkgRow {
   groupStatus?: string | null;
 }
 
-const EMPTY_FORM = {
-  packageGroupId: "",
-  name: "",
-  durationDays: "7",
-  maxAdults: "",
-  maxStudents: "",
-  priceAud: "",
-  status: "active",
-};
-
 function fmtPrice(val: string | null | undefined, sym: string, dec: number) {
   if (!val) return null;
   const n = parseFloat(val);
   if (isNaN(n)) return null;
   return `${sym}${n.toLocaleString("en-AU", { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
+}
+
+function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
+  return (
+    <div className="flex items-center gap-2 pt-1">
+      <span className="text-[#F5821F]">{icon}</span>
+      <span className="text-sm font-semibold text-foreground">{title}</span>
+      <div className="flex-1 h-px bg-border ml-1" />
+    </div>
+  );
 }
 
 export default function Packages() {
@@ -94,16 +124,43 @@ export default function Packages() {
   // ── Add dialog state ──────────────────────────────────────────────
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [prices, setPrices] = useState({ ...EMPTY_PRICES });
+  const [featureInput, setFeatureInput] = useState("");
+  const [featureTags, setFeatureTags] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
   const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
 
+  // ── Groups ────────────────────────────────────────────────────────
   const { data: groupsData } = useQuery({
     queryKey: ["pkg-groups-filter"],
     queryFn: () => axios.get(`${BASE}/api/package-groups?limit=200`).then(r => r.data),
     staleTime: 60_000,
   });
   const groups: PackageGroup[] = groupsData?.data ?? [];
+
+  // ── Exchange rates (for currency fields) ─────────────────────────
+  const { data: ratesData } = useQuery({
+    queryKey: ["public-exchange-rates"],
+    queryFn: () => axios.get(`${BASE}/api/public/exchange-rates`).then(r => r.data),
+    staleTime: 3_600_000,
+  });
+  const dbRates: Record<string, unknown> = ratesData?.rates ?? {};
+  const activeCurrencies = ALL_CURRENCIES.filter(c => c.ccy === "AUD" || !!dbRates[c.ccy]);
+
+  // Determine primary currency from selected group's country
+  const selectedGroup = groups.find(g => g.id === form.packageGroupId);
+  const primaryCcy = selectedGroup?.countryCode
+    ? (COUNTRY_TO_CURRENCY[selectedGroup.countryCode] ?? "AUD")
+    : "AUD";
+
+  const sortedCurrencies = useMemo(() => [
+    ...activeCurrencies.filter(c => c.ccy === primaryCcy),
+    ...activeCurrencies.filter(c => c.ccy !== primaryCcy),
+  ], [activeCurrencies, primaryCcy]);
+
+  // ── Package list ──────────────────────────────────────────────────
+  const listGroup = groups.find(g => g.id === selectedGroupId);
 
   const { data, isLoading } = useQuery({
     queryKey: ["packages-list", search, selectedGroupId, statusFilter, page],
@@ -121,7 +178,6 @@ export default function Packages() {
 
   const pkgs: PkgRow[] = data?.data ?? [];
   const total = data?.meta?.total ?? 0;
-  const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
   // ── Create mutation ───────────────────────────────────────────────
   const createPkg = useMutation({
@@ -130,16 +186,41 @@ export default function Packages() {
     onSuccess: (newPkg) => {
       qc.invalidateQueries({ queryKey: ["packages-list"] });
       qc.invalidateQueries({ queryKey: ["pkg-groups-filter"] });
-      setShowAdd(false);
-      setForm({ ...EMPTY_FORM });
-      setFormError(null);
+      closeDialog();
       toast({ title: "Package created", description: `"${newPkg.name}" has been created.` });
       setLocation(`${BASE}/admin/packages/${newPkg.id}`);
     },
-    onError: (e: any) => {
-      setFormError(e?.response?.data?.error ?? "Failed to create package");
-    },
+    onError: (e: any) => setFormError(e?.response?.data?.error ?? "Failed to create package"),
   });
+
+  const closeDialog = () => {
+    setShowAdd(false);
+    setForm({ ...EMPTY_FORM });
+    setPrices({ ...EMPTY_PRICES });
+    setFeatureInput("");
+    setFeatureTags([]);
+    setFormError(null);
+  };
+
+  const openDialog = () => {
+    setForm({
+      ...EMPTY_FORM,
+      packageGroupId: selectedGroupId !== "all" ? selectedGroupId : "",
+    });
+    setPrices({ ...EMPTY_PRICES });
+    setFeatureInput("");
+    setFeatureTags([]);
+    setFormError(null);
+    setShowAdd(true);
+  };
+
+  const addTag = () => {
+    const tags = featureInput.split(",").map(t => t.trim()).filter(Boolean);
+    if (tags.length) {
+      setFeatureTags(prev => [...new Set([...prev, ...tags])]);
+      setFeatureInput("");
+    }
+  };
 
   const handleCreate = () => {
     if (!form.packageGroupId) return setFormError("Please select a Package Group.");
@@ -147,20 +228,27 @@ export default function Packages() {
     const dur = parseInt(form.durationDays);
     if (!form.durationDays || isNaN(dur) || dur < 1) return setFormError("Duration Days must be at least 1.");
     setFormError(null);
+
+    const pricePayload: Record<string, string | null> = {};
+    for (const { field } of ALL_CURRENCIES) {
+      pricePayload[field] = (prices as any)[field] || null;
+    }
+
     createPkg.mutate({
       packageGroupId: form.packageGroupId,
       name: form.name.trim(),
       durationDays: dur,
       maxAdults: form.maxAdults ? parseInt(form.maxAdults) : null,
       maxStudents: form.maxStudents ? parseInt(form.maxStudents) : null,
-      priceAud: form.priceAud || null,
+      ...pricePayload,
       status: form.status,
+      features: featureTags.length > 0 ? featureTags : null,
     });
   };
 
   return (
     <div className="flex gap-4 h-full">
-      {/* Left sidebar: Package Group categories */}
+      {/* ── Left sidebar ─────────────────────────────────────────── */}
       <aside className="w-56 shrink-0">
         <div className="bg-card border border-border rounded-xl overflow-hidden sticky top-0">
           <div className="px-3 py-2.5 border-b border-border bg-muted/20">
@@ -211,16 +299,12 @@ export default function Packages() {
                       </span>
                       <div className="min-w-0">
                         <div className="truncate text-xs font-medium">{g.nameEn}</div>
-                        {g.nameKo && (
-                          <div className="truncate text-[10px] text-muted-foreground">{g.nameKo}</div>
-                        )}
+                        {g.nameKo && <div className="truncate text-[10px] text-muted-foreground">{g.nameKo}</div>}
                       </div>
                     </div>
                     <span className={cn(
                       "shrink-0 ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
-                      selectedGroupId === g.id
-                        ? "bg-[#F5821F]/20 text-[#F5821F]"
-                        : "bg-muted text-muted-foreground"
+                      selectedGroupId === g.id ? "bg-[#F5821F]/20 text-[#F5821F]" : "bg-muted text-muted-foreground"
                     )}>
                       {g.packageCount ?? 0}
                     </span>
@@ -231,7 +315,7 @@ export default function Packages() {
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* ── Main content ─────────────────────────────────────────── */}
       <div className="flex-1 min-w-0 space-y-3">
         {/* Toolbar */}
         <div className="flex items-center gap-2">
@@ -245,7 +329,6 @@ export default function Packages() {
             />
           </div>
 
-          {/* Status tabs */}
           <div className="flex gap-1 bg-muted/40 rounded-lg p-0.5 border border-border">
             {(["all", "active", "inactive", "archived"] as const).map(s => (
               <button
@@ -253,9 +336,7 @@ export default function Packages() {
                 onClick={() => { setStatusFilter(s); setPage(1); }}
                 className={cn(
                   "px-2.5 py-1 rounded-md text-xs font-medium transition-colors capitalize",
-                  statusFilter === s
-                    ? "bg-white shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                  statusFilter === s ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
@@ -265,8 +346,8 @@ export default function Packages() {
 
           <span className="text-xs text-muted-foreground">
             {total} package{total !== 1 ? "s" : ""}
-            {selectedGroupId !== "all" && selectedGroup && (
-              <span className="text-[#F5821F]"> · {selectedGroup.nameEn}</span>
+            {selectedGroupId !== "all" && listGroup && (
+              <span className="text-[#F5821F]"> · {listGroup.nameEn}</span>
             )}
           </span>
 
@@ -274,14 +355,7 @@ export default function Packages() {
             <Button
               size="sm"
               className="ml-auto gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white h-8"
-              onClick={() => {
-                setForm({
-                  ...EMPTY_FORM,
-                  packageGroupId: selectedGroupId !== "all" ? selectedGroupId : "",
-                });
-                setFormError(null);
-                setShowAdd(true);
-              }}
+              onClick={openDialog}
             >
               <Plus className="w-3.5 h-3.5" /> Add Package
             </Button>
@@ -296,16 +370,12 @@ export default function Packages() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Package Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Package Group</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">
-                  <div className="flex items-center justify-center gap-1">
-                    <Users className="w-3 h-3" /> Adults
-                  </div>
+                  <div className="flex items-center justify-center gap-1"><Users className="w-3 h-3" /> Adults</div>
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">
-                  <div className="flex items-center justify-center gap-1">
-                    <GraduationCap className="w-3 h-3" /> Children
-                  </div>
+                  <div className="flex items-center justify-center gap-1"><GraduationCap className="w-3 h-3" /> Children</div>
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Price (AUD)</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Price</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
                 <th className="px-4 py-3 w-8" />
               </tr>
@@ -325,10 +395,7 @@ export default function Packages() {
                     <PackageIcon className="w-10 h-10 mx-auto mb-2 text-muted-foreground/20" />
                     <p className="text-muted-foreground text-sm">No packages found</p>
                     {(search || selectedGroupId !== "all") && (
-                      <button
-                        onClick={() => { setSearch(""); setSelectedGroupId("all"); }}
-                        className="mt-2 text-xs text-primary underline"
-                      >
+                      <button onClick={() => { setSearch(""); setSelectedGroupId("all"); }} className="mt-2 text-xs text-primary underline">
                         Clear filters
                       </button>
                     )}
@@ -337,7 +404,7 @@ export default function Packages() {
               ) : (
                 pkgs.map(pkg => {
                   const cc = pkg.groupCountryCode ?? "AU";
-                  const currInfo = COUNTRY_CURRENCY[cc] ?? COUNTRY_CURRENCY["AU"];
+                  const currInfo = COUNTRY_CURRENCY_LIST[cc] ?? COUNTRY_CURRENCY_LIST["AU"];
                   const priceVal = (pkg as any)[currInfo.field];
                   const priceStr = fmtPrice(priceVal, currInfo.sym, currInfo.dec);
                   const audStr = fmtPrice(pkg.priceAud, "A$", 0);
@@ -349,78 +416,52 @@ export default function Packages() {
                       className="border-b last:border-0 hover:bg-[#FEF0E3]/40 cursor-pointer transition-colors"
                       onClick={() => setLocation(`${BASE}/admin/packages/${pkg.id}`)}
                     >
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-foreground">{pkg.name}</div>
-                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">{pkg.name}</td>
                       <td className="px-4 py-3">
                         {pkg.groupNameEn ? (
                           <div>
                             <div className="flex items-center gap-1.5">
                               {pkg.groupCountryCode && (
-                                <span className="text-base leading-none">
-                                  {COUNTRY_FLAG[pkg.groupCountryCode] ?? <Globe className="w-3.5 h-3.5" />}
-                                </span>
+                                <span className="text-base leading-none">{COUNTRY_FLAG[pkg.groupCountryCode] ?? <Globe className="w-3.5 h-3.5" />}</span>
                               )}
                               <span className="text-sm font-medium text-[#F5821F]">{pkg.groupNameEn}</span>
                             </div>
-                            {pkg.groupNameKo && (
-                              <div className="text-[11px] text-muted-foreground mt-0.5 pl-5">{pkg.groupNameKo}</div>
-                            )}
+                            {pkg.groupNameKo && <div className="text-[11px] text-muted-foreground mt-0.5 pl-5">{pkg.groupNameKo}</div>}
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
+                        ) : <span className="text-muted-foreground text-xs">—</span>}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {pkg.adults != null ? (
-                          <span className="inline-flex items-center gap-1 text-blue-600 font-medium text-sm">
-                            <Users className="w-3 h-3" /> {pkg.adults}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground/40 text-sm">—</span>
-                        )}
+                        {pkg.adults != null
+                          ? <span className="inline-flex items-center gap-1 text-blue-600 font-medium text-sm"><Users className="w-3 h-3" /> {pkg.adults}</span>
+                          : <span className="text-muted-foreground/40 text-sm">—</span>}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {pkg.children != null ? (
-                          <span className="inline-flex items-center gap-1 text-green-600 font-medium text-sm">
-                            <GraduationCap className="w-3 h-3" /> {pkg.children}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground/40 text-sm">—</span>
-                        )}
+                        {pkg.children != null
+                          ? <span className="inline-flex items-center gap-1 text-green-600 font-medium text-sm"><GraduationCap className="w-3 h-3" /> {pkg.children}</span>
+                          : <span className="text-muted-foreground/40 text-sm">—</span>}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {priceStr ? (
                           <div>
                             <div className="font-semibold text-foreground">{priceStr}</div>
-                            {showAudAlso && (
-                              <div className="text-[11px] text-muted-foreground">{audStr}</div>
-                            )}
+                            {showAudAlso && <div className="text-[11px] text-muted-foreground">{audStr}</div>}
                           </div>
-                        ) : audStr ? (
-                          <span className="font-semibold text-foreground">{audStr}</span>
-                        ) : (
-                          <span className="text-muted-foreground/40 text-sm">—</span>
-                        )}
+                        ) : audStr
+                          ? <span className="font-semibold text-foreground">{audStr}</span>
+                          : <span className="text-muted-foreground/40 text-sm">—</span>}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={cn(
                           "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium",
-                          status === "active"
-                            ? "bg-green-50 text-green-700"
-                            : status === "archived"
-                            ? "bg-red-50 text-red-700"
+                          status === "active" ? "bg-green-50 text-green-700"
+                            : status === "archived" ? "bg-red-50 text-red-700"
                             : "bg-amber-50 text-amber-700"
                         )}>
-                          {status === "active"
-                            ? <CheckCircle2 className="w-2.5 h-2.5" />
-                            : <Clock className="w-2.5 h-2.5" />}
+                          {status === "active" ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
                           {status}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
-                      </td>
+                      <td className="px-4 py-3"><ChevronRight className="w-4 h-4 text-muted-foreground/40" /></td>
                     </tr>
                   );
                 })
@@ -432,17 +473,21 @@ export default function Packages() {
         <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={p => setPage(p)} />
       </div>
 
-      {/* ── Add Package Dialog ──────────────────────────────────────── */}
-      <Dialog open={showAdd} onOpenChange={o => { if (!o) { setShowAdd(false); setFormError(null); } }}>
-        <DialogContent className="max-w-lg">
+      {/* ── Add Package Dialog (expanded) ────────────────────────── */}
+      <Dialog open={showAdd} onOpenChange={o => { if (!o) closeDialog(); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base">
               <PackageIcon className="w-4 h-4 text-[#F5821F]" />
               Add New Package
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 mt-1">
+          <div className="space-y-5 mt-1">
+
+            {/* ── Section: Basic Info ─────────────────────────── */}
+            <SectionHeader icon={<Info className="w-3.5 h-3.5" />} title="Basic Info" />
+
             {/* Package Group */}
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">
@@ -455,57 +500,92 @@ export default function Packages() {
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Select a package group…" />
                 </SelectTrigger>
-                <SelectContent className="max-h-56 overflow-y-auto">
+                <SelectContent className="max-h-56">
                   {groups.map(g => (
                     <SelectItem key={g.id} value={g.id}>
                       <span className="flex items-center gap-2">
                         <span>{g.countryCode ? (COUNTRY_FLAG[g.countryCode] ?? "🌐") : "🌐"}</span>
-                        <span>{g.nameEn}</span>
+                        <span className="font-medium">{g.nameEn}</span>
                         {g.nameKo && <span className="text-muted-foreground text-xs">· {g.nameKo}</span>}
                       </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {form.packageGroupId && selectedGroup && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#FEF0E3]/50 rounded-lg border border-[#F5821F]/20 text-xs text-muted-foreground">
+                  <span className="text-base">{selectedGroup.countryCode ? (COUNTRY_FLAG[selectedGroup.countryCode] ?? "🌐") : "🌐"}</span>
+                  <span className="font-medium text-foreground">{selectedGroup.nameEn}</span>
+                  {selectedGroup.countryCode && (
+                    <span className="ml-auto text-[#F5821F] font-semibold">
+                      Primary: {COUNTRY_TO_CURRENCY[selectedGroup.countryCode] ?? "AUD"}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Package Name */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">
-                Package Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                placeholder="e.g. 2-Week Language Camp"
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                className="h-9"
-              />
-            </div>
-
-            {/* Duration Days */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">
-                Duration (Days) <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                type="number"
-                min={1}
-                placeholder="7"
-                value={form.durationDays}
-                onChange={e => setForm(f => ({ ...f, durationDays: e.target.value }))}
-                className="h-9"
-              />
-            </div>
-
-            {/* Adults / Children row */}
             <div className="grid grid-cols-2 gap-3">
+              {/* Package Name */}
+              <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                <Label className="text-sm font-medium">
+                  Package Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  placeholder="e.g. 2-Week Language Camp"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  className="h-9"
+                />
+              </div>
+
+              {/* Duration Days */}
               <div className="space-y-1.5">
-                <Label className="text-sm font-medium flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-blue-500" /> Adults
+                <Label className="text-sm font-medium">
+                  Duration (Days) <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="number"
-                  min={0}
+                  min={1}
+                  placeholder="7"
+                  value={form.durationDays}
+                  onChange={e => setForm(f => ({ ...f, durationDays: e.target.value }))}
+                  className="h-9"
+                />
+              </div>
+            </div>
+
+            {/* Status */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Status</Label>
+              <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger className="h-9 w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">
+                    <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Active</span>
+                  </SelectItem>
+                  <SelectItem value="inactive">
+                    <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Inactive</span>
+                  </SelectItem>
+                  <SelectItem value="draft">
+                    <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />Draft</span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* ── Section: Participants ───────────────────────── */}
+            <SectionHeader icon={<Users className="w-3.5 h-3.5" />} title="Participants" />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-blue-500" /> Adults
+                </Label>
+                <Input
+                  type="number" min={0}
                   placeholder="—"
                   value={form.maxAdults}
                   onChange={e => setForm(f => ({ ...f, maxAdults: e.target.value }))}
@@ -513,12 +593,11 @@ export default function Packages() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-sm font-medium flex items-center gap-1">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
                   <GraduationCap className="w-3.5 h-3.5 text-green-500" /> Children
                 </Label>
                 <Input
-                  type="number"
-                  min={0}
+                  type="number" min={0}
                   placeholder="—"
                   value={form.maxStudents}
                   onChange={e => setForm(f => ({ ...f, maxStudents: e.target.value }))}
@@ -527,59 +606,120 @@ export default function Packages() {
               </div>
             </div>
 
-            {/* Price AUD */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">Price (AUD)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">A$</span>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  placeholder="0.00"
-                  value={form.priceAud}
-                  onChange={e => setForm(f => ({ ...f, priceAud: e.target.value }))}
-                  className="h-9 pl-9 font-mono"
-                />
+            {/* ── Section: Pricing ────────────────────────────── */}
+            <SectionHeader icon={<DollarSign className="w-3.5 h-3.5" />} title="Pricing" />
+
+            {sortedCurrencies.length === 0 ? (
+              <p className="text-sm text-muted-foreground px-1">
+                No exchange rates configured.{" "}
+                <a href={`${BASE}/admin/accounting/exchange-rates`} className="text-[#F5821F] underline" target="_blank" rel="noreferrer">
+                  Set up rates →
+                </a>
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {sortedCurrencies.map(({ ccy, flag, sym, field }) => {
+                  const isPrimary = ccy === primaryCcy;
+                  return (
+                    <div key={field} className={cn("space-y-1.5", isPrimary && "col-span-2 sm:col-span-1")}>
+                      <Label className={cn("text-sm font-medium flex items-center gap-1.5", isPrimary && "text-[#F5821F]")}>
+                        <span>{flag}</span>
+                        <span>{ccy}</span>
+                        {isPrimary && (
+                          <span className="ml-1 px-1.5 py-0.5 bg-[#F5821F] text-white rounded text-[10px] font-bold uppercase">
+                            Primary
+                          </span>
+                        )}
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">{sym}</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          placeholder="0.00"
+                          value={(prices as any)[field]}
+                          onChange={e => setPrices(p => ({ ...p, [field]: e.target.value }))}
+                          className={cn(
+                            "h-9 pl-9 font-mono text-sm",
+                            isPrimary && "border-[#F5821F]/40 ring-1 ring-[#F5821F]/20 focus-visible:ring-[#F5821F]/40"
+                          )}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <p className="text-[11px] text-muted-foreground">Additional currency prices can be set in Package Detail.</p>
+            )}
+
+            {/* ── Section: Features ───────────────────────────── */}
+            <SectionHeader icon={<Tag className="w-3.5 h-3.5" />} title="Features" />
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Add Features</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g. Airport pickup, Meals, Wi-Fi"
+                  value={featureInput}
+                  onChange={e => setFeatureInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
+                  className="h-9 flex-1"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-9 px-3 border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
+                  onClick={addTag}
+                >
+                  Add
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">Separate multiple features with commas or press Enter.</p>
+
+              {featureTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {featureTags.map((tag, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 bg-[#FEF0E3] text-[#F5821F] text-xs px-2.5 py-1 rounded-full font-medium border border-[#F5821F]/20"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => setFeatureTags(prev => prev.filter((_, j) => j !== i))}
+                        className="hover:text-red-500 transition-colors ml-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Status */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">Status</Label>
-              <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+            {/* Error */}
             {formError && (
-              <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{formError}</p>
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 border border-red-200">
+                <X className="w-4 h-4 shrink-0" />
+                {formError}
+              </div>
             )}
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 pt-1 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => { setShowAdd(false); setFormError(null); }}
-              >
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button variant="outline" size="sm" onClick={closeDialog}>
                 Cancel
               </Button>
               <Button
                 size="sm"
-                className="bg-[#F5821F] hover:bg-[#d97706] text-white min-w-[100px]"
+                className="bg-[#F5821F] hover:bg-[#d97706] text-white min-w-[130px]"
                 onClick={handleCreate}
                 disabled={createPkg.isPending}
               >
-                {createPkg.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Package"}
+                {createPkg.isPending
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <><Plus className="w-3.5 h-3.5 mr-1" />Create Package</>
+                }
               </Button>
             </div>
           </div>
