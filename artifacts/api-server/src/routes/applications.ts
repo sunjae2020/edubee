@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt } from "@workspace/db/schema";
+import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes } from "@workspace/db/schema";
 import { eq, and, ilike, or, count, inArray, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -125,10 +125,35 @@ router.post("/leads/:id/convert", authenticate, async (req, res) => {
   }
 });
 
+// Applications stats
+router.get("/applications/stats", authenticate, async (req, res) => {
+  try {
+    const buildCount = async (extra?: SQL) => {
+      const conditions: SQL[] = [];
+      if (req.user!.role === "education_agent") conditions.push(eq(applications.agentId, req.user!.id));
+      if (req.user!.role === "parent_client") conditions.push(eq(applications.clientId, req.user!.id));
+      if (extra) conditions.push(extra);
+      const where = conditions.length ? and(...conditions) : undefined;
+      const [r] = await db.select({ count: count() }).from(applications).where(where);
+      return Number(r.count);
+    };
+    const [total, submitted, reviewing, converted] = await Promise.all([
+      buildCount(),
+      buildCount(eq(applications.applicationStatus, "submitted")),
+      buildCount(eq(applications.applicationStatus, "reviewing")),
+      buildCount(eq(applications.applicationStatus, "converted")),
+    ]);
+    return res.json({ total, submitted, reviewing, converted });
+  } catch (err) {
+    console.error("[GET /applications/stats]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Applications
 router.get("/applications", authenticate, async (req, res) => {
   try {
-    const { agentId, status, packageGroupId, search, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const { agentId, status, appStatus, applicationType, packageGroupId, search, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
@@ -136,8 +161,14 @@ router.get("/applications", authenticate, async (req, res) => {
     const conditions: SQL[] = [];
     if (agentId) conditions.push(eq(applications.agentId, agentId));
     if (status) conditions.push(eq(applications.status, status));
+    if (appStatus) conditions.push(eq(applications.applicationStatus, appStatus));
+    if (applicationType) conditions.push(eq(applications.applicationType, applicationType));
     if (packageGroupId) conditions.push(eq(applications.packageGroupId, packageGroupId));
-    if (search) conditions.push(ilike(applications.applicationNumber, `%${search}%`));
+    if (search) conditions.push(or(
+      ilike(applications.applicationNumber, `%${search}%`),
+      ilike(applications.applicantName, `%${search}%`),
+      ilike(applications.applicantEmail, `%${search}%`),
+    )!);
     if (req.user!.role === "education_agent") conditions.push(eq(applications.agentId, req.user!.id));
     if (req.user!.role === "parent_client") conditions.push(eq(applications.clientId, req.user!.id));
 
@@ -367,6 +398,69 @@ router.post("/applications/:id/convert-contract", authenticate, requireRole("sup
   } catch (err) {
     console.error("Convert contract error (transaction rolled back):", err);
     return res.status(500).json({ error: "Internal Server Error", detail: String(err) });
+  }
+});
+
+router.patch("/applications/:id", authenticate, async (req, res) => {
+  try {
+    const [application] = await db.update(applications).set({ ...req.body, updatedAt: new Date() })
+      .where(eq(applications.id, req.params.id)).returning();
+    if (!application) return res.status(404).json({ error: "Not Found" });
+    return res.json(application);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/applications/:id", authenticate, requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
+  try {
+    const [application] = await db.update(applications)
+      .set({ applicationStatus: "cancelled", updatedAt: new Date() })
+      .where(eq(applications.id, req.params.id)).returning();
+    if (!application) return res.status(404).json({ error: "Not Found" });
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/applications/:id/convert-to-quote", authenticate, requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
+  try {
+    const [application] = await db.select().from(applications).where(eq(applications.id, req.params.id)).limit(1);
+    if (!application) return res.status(404).json({ error: "Not Found" });
+    if (application.quoteId) {
+      return res.status(409).json({ error: "Already converted", quoteId: application.quoteId });
+    }
+
+    const quoteRefNumber = "QTE-" + Date.now().toString(36).toUpperCase().padStart(8, "0");
+    const serviceList = Array.isArray(application.serviceTypes) ? (application.serviceTypes as string[]).join(", ") : "";
+    const noteLines = [
+      `Created from Application ${application.applicationNumber}`,
+      application.applicantName   ? `Applicant: ${application.applicantName}` : "",
+      application.applicantEmail  ? `Email: ${application.applicantEmail}` : "",
+      application.applicantPhone  ? `Phone: ${application.applicantPhone}` : "",
+      serviceList ? `Services: ${serviceList}` : "",
+      application.notes ? `Notes: ${application.notes}` : "",
+    ].filter(Boolean).join("\n");
+
+    const [newQuote] = await db.insert(quotes).values({
+      quoteRefNumber,
+      leadId: application.agentId ?? null,
+      quoteStatus: "Draft",
+      notes: noteLines,
+      createdBy: req.user!.id,
+    }).returning();
+
+    await db.update(applications).set({
+      applicationStatus: "quoted",
+      quoteId: newQuote.id,
+      updatedAt: new Date(),
+    }).where(eq(applications.id, req.params.id));
+
+    return res.status(201).json({ quoteId: newQuote.id, quoteRefNumber: newQuote.quoteRefNumber });
+  } catch (err) {
+    console.error("[convert-to-quote]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

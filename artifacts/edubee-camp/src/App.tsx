@@ -29,6 +29,7 @@ import NotFound from "@/pages/not-found";
 import PackageGroupDetail from "@/pages/admin/package-group-detail";
 import NewPackageGroup from "@/pages/admin/new-package-group";
 import ApplicationDetail from "@/pages/admin/application-detail";
+import ApplicationForm from "@/pages/admin/application-form";
 import ContractDetail from "@/pages/admin/contract-detail";
 import InstituteMgtDetail from "@/pages/admin/services/institute-detail";
 import HotelMgtDetail from "@/pages/admin/services/hotel-detail";
@@ -166,6 +167,9 @@ function Router() {
       </Route>
       <Route path="/admin/leads">
         <AdminRoute title="Leads"><Leads /></AdminRoute>
+      </Route>
+      <Route path="/admin/applications/new">
+        <AdminRoute title="New Application"><ApplicationForm /></AdminRoute>
       </Route>
       <Route path="/admin/applications/:id">
         <AdminRoute title="Application Detail"><ApplicationDetail /></AdminRoute>

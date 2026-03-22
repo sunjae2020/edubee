@@ -8,6 +8,7 @@ import {
   boolean,
   date,
   decimal,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -55,6 +56,51 @@ export const applications = pgTable("applications", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // ── Service Application fields ──────────────────────────────
+  applicationType:    varchar("application_type",    { length: 50  }),
+  serviceTypes:       jsonb("service_types"),
+  applicationStatus:  varchar("application_status",  { length: 50  }).default("submitted"),
+  quoteId:            uuid("quote_id"),
+  contactId:          uuid("contact_id"),
+  accountId:          uuid("account_id"),
+  assignedStaffId:    uuid("assigned_staff_id").references(() => users.id),
+  applicantName:      varchar("applicant_name",      { length: 255 }),
+  applicantEmail:     varchar("applicant_email",     { length: 255 }),
+  applicantPhone:     varchar("applicant_phone",     { length: 50  }),
+  applicantNationality: varchar("applicant_nationality", { length: 100 }),
+  // Pickup service
+  flightNumber:       varchar("flight_number",       { length: 50  }),
+  flightDate:         date("flight_date"),
+  arrivalTime:        varchar("arrival_time",        { length: 20  }),
+  departureAirport:   varchar("departure_airport",   { length: 100 }),
+  arrivalAirport:     varchar("arrival_airport",     { length: 100 }),
+  passengerCount:     integer("passenger_count"),
+  // Accommodation service
+  checkinDate:        date("checkin_date"),
+  checkoutDate:       date("checkout_date"),
+  roomType:           varchar("room_type",           { length: 50  }),
+  numRooms:           integer("num_rooms"),
+  accommodationAddress: text("accommodation_address"),
+  // Study Abroad service
+  destinationCountry: varchar("destination_country", { length: 100 }),
+  studyStartDate:     date("study_start_date"),
+  studyEndDate:       date("study_end_date"),
+  institutionName:    varchar("institution_name",    { length: 255 }),
+  courseName:         varchar("course_name",         { length: 255 }),
+  // Internship service
+  internshipStartDate: date("internship_start_date"),
+  internshipEndDate:   date("internship_end_date"),
+  industry:            varchar("industry",           { length: 100 }),
+  companyPreference:   varchar("company_preference", { length: 255 }),
+  // Settlement service
+  settlementDate:     date("settlement_date"),
+  suburb:             varchar("suburb",              { length: 100 }),
+  settlementNotes:    text("settlement_notes"),
+  // Guardian service
+  guardianStartDate:  date("guardian_start_date"),
+  guardianEndDate:    date("guardian_end_date"),
+  studentNameForGuardian: varchar("student_name_for_guardian", { length: 255 }),
+  guardianType:       varchar("guardian_type",       { length: 50  }),
 });
 
 export const applicationParticipants = pgTable("application_participants", {

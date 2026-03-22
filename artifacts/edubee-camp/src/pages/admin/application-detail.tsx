@@ -14,9 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ParticipantEditDialog, ParticipantAddDialog } from "@/components/shared/ParticipantDialogs";
-import { Pencil, Plus, Calendar, Video, MapPin, User, ClipboardList, Loader2, ExternalLink } from "lucide-react";
+import { Pencil, Plus, Calendar, Video, MapPin, User, ClipboardList, Loader2, ExternalLink, FileText } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -191,6 +191,7 @@ export default function ApplicationDetail() {
   const [addParticipant, setAddParticipant] = useState(false);
   const [editInterview, setEditInterview] = useState<any | null>(null);
   const [newInterview, setNewInterview] = useState(false);
+  const [convertQuoteDialog, setConvertQuoteDialog] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["application-detail-page", id],
@@ -219,6 +220,21 @@ export default function ApplicationDetail() {
       toast({ title: "Application updated" });
     },
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
+  });
+
+  const convertToQuote = useMutation({
+    mutationFn: () => axios.post(`${BASE}/api/applications/${id}/convert-to-quote`).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["application-detail-page", id] });
+      qc.invalidateQueries({ queryKey: ["applications"] });
+      setConvertQuoteDialog(false);
+      toast({ title: `Quote created: ${data.quoteRefNumber}` });
+      window.location.href = `${BASE}/admin/crm/quotes/${data.quoteId}`;
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.error ?? "Failed to convert";
+      toast({ variant: "destructive", title: msg });
+    },
   });
 
   const updateParticipant = useMutation({
@@ -285,8 +301,8 @@ export default function ApplicationDetail() {
     <>
       <DetailPageLayout
         title={app.applicationNumber ?? "Application"}
-        subtitle={app.studentName ?? ""}
-        badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>{(app.status ?? "pending").replace(/_/g, " ")}</span>}
+        subtitle={app.applicantName ?? app.studentName ?? ""}
+        badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>{(app.applicationStatus ?? app.status ?? "pending").replace(/_/g, " ")}</span>}
         backPath="/admin/applications"
         backLabel="Applications"
         tabs={TABS}
@@ -298,6 +314,29 @@ export default function ApplicationDetail() {
         onEdit={startEdit}
         onSave={saveEdit}
         onCancel={cancelEdit}
+        headerExtra={
+          canEdit ? (
+            app.quoteId ? (
+              <a
+                href={`${BASE}/admin/crm/quotes/${app.quoteId}`}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-[#F5821F] text-[#F5821F] text-xs font-medium hover:bg-[#FEF0E3] transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
+                View Quote →
+              </a>
+            ) : (
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 text-xs bg-[#F5821F] hover:bg-[#D96A0A] text-white"
+                onClick={() => setConvertQuoteDialog(true)}
+                disabled={convertToQuote.isPending}
+              >
+                <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
+                Convert to Quote
+              </Button>
+            )
+          ) : null
+        }
       >
         {/* ── Contracted Banner ── */}
         {app.status === "contracted" && app.contractId && (
@@ -358,6 +397,69 @@ export default function ApplicationDetail() {
               <DetailRow label="Referral Code" value={app.referralAgentCode} />
               <DetailRow label="Special Requests" value={app.specialRequests} />
             </DetailSection>
+
+            {/* Service Details */}
+            {(app.serviceTypes || app.applicationType) && (
+              <DetailSection title="Service Details">
+                <DetailRow label="Application Type" value={app.applicationType?.replace(/_/g, " ")} />
+                <DetailRow label="Service Types" value={
+                  Array.isArray(app.serviceTypes) ? (app.serviceTypes as string[]).map((s: string) => s.replace(/_/g, " ")).join(", ") : null
+                } />
+                {app.applicantName && <DetailRow label="Applicant" value={app.applicantName} />}
+                {app.applicantEmail && <DetailRow label="Email" value={app.applicantEmail} />}
+                {app.applicantPhone && <DetailRow label="Phone" value={app.applicantPhone} />}
+                {app.applicantNationality && <DetailRow label="Nationality" value={app.applicantNationality} />}
+                {app.flightNumber && <DetailRow label="Flight #" value={app.flightNumber} />}
+                {app.flightDate && <DetailRow label="Flight Date" value={app.flightDate ? format(new Date(app.flightDate), "PPP") : null} />}
+                {app.arrivalTime && <DetailRow label="Arrival Time" value={app.arrivalTime} />}
+                {app.departureAirport && <DetailRow label="Departure Airport" value={app.departureAirport} />}
+                {app.arrivalAirport && <DetailRow label="Arrival Airport" value={app.arrivalAirport} />}
+                {app.passengerCount && <DetailRow label="Passengers" value={app.passengerCount} />}
+                {app.checkinDate && <DetailRow label="Check-in" value={app.checkinDate ? format(new Date(app.checkinDate), "PPP") : null} />}
+                {app.checkoutDate && <DetailRow label="Check-out" value={app.checkoutDate ? format(new Date(app.checkoutDate), "PPP") : null} />}
+                {app.roomType && <DetailRow label="Room Type" value={app.roomType} />}
+                {app.numRooms && <DetailRow label="Rooms" value={app.numRooms} />}
+                {app.accommodationAddress && <DetailRow label="Address" value={app.accommodationAddress} />}
+                {app.destinationCountry && <DetailRow label="Destination" value={app.destinationCountry} />}
+                {app.studyStartDate && <DetailRow label="Study Start" value={app.studyStartDate ? format(new Date(app.studyStartDate), "PPP") : null} />}
+                {app.studyEndDate && <DetailRow label="Study End" value={app.studyEndDate ? format(new Date(app.studyEndDate), "PPP") : null} />}
+                {app.institutionName && <DetailRow label="Institution" value={app.institutionName} />}
+                {app.courseName && <DetailRow label="Course" value={app.courseName} />}
+                {app.internshipStartDate && <DetailRow label="Internship Start" value={app.internshipStartDate ? format(new Date(app.internshipStartDate), "PPP") : null} />}
+                {app.internshipEndDate && <DetailRow label="Internship End" value={app.internshipEndDate ? format(new Date(app.internshipEndDate), "PPP") : null} />}
+                {app.industry && <DetailRow label="Industry" value={app.industry} />}
+                {app.companyPreference && <DetailRow label="Company Preference" value={app.companyPreference} />}
+                {app.settlementDate && <DetailRow label="Settlement Date" value={app.settlementDate ? format(new Date(app.settlementDate), "PPP") : null} />}
+                {app.suburb && <DetailRow label="Suburb" value={app.suburb} />}
+                {app.guardianStartDate && <DetailRow label="Guardian Start" value={app.guardianStartDate ? format(new Date(app.guardianStartDate), "PPP") : null} />}
+                {app.guardianEndDate && <DetailRow label="Guardian End" value={app.guardianEndDate ? format(new Date(app.guardianEndDate), "PPP") : null} />}
+                {app.guardianType && <DetailRow label="Guardian Type" value={app.guardianType} />}
+              </DetailSection>
+            )}
+
+            {/* Linked Records */}
+            {(app.quoteId || app.contractId) && (
+              <DetailSection title="Linked Records">
+                {app.quoteId && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Quote</span>
+                    <a href={`${BASE}/admin/crm/quotes/${app.quoteId}`}
+                      className="flex items-center gap-1 text-sm text-[#F5821F] hover:underline">
+                      View Quote <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
+                {app.contractId && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Contract</span>
+                    <a href={`${BASE}/admin/contracts/${app.contractId}`}
+                      className="flex items-center gap-1 text-sm text-[#F5821F] hover:underline">
+                      {app.contractNumber ?? "View Contract"} <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
+              </DetailSection>
+            )}
           </div>
         )}
 
@@ -532,6 +634,31 @@ export default function ApplicationDetail() {
       </DetailPageLayout>
 
       {/* ── Participant Edit Dialog ── */}
+      {/* Convert to Quote Dialog */}
+      <Dialog open={convertQuoteDialog} onOpenChange={setConvertQuoteDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Convert to Quote?</DialogTitle>
+            <DialogDescription>
+              This will create a new draft Quote in the CRM from this application's data. The application status will be updated to <strong>Quoted</strong>. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={() => setConvertQuoteDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="bg-[#F5821F] hover:bg-[#D96A0A] text-white"
+              onClick={() => convertToQuote.mutate()}
+              disabled={convertToQuote.isPending}
+            >
+              {convertToQuote.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Convert to Quote"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {editParticipant && (
         <ParticipantEditDialog
           participant={editParticipant}
