@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Folder, Activity, CheckSquare } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Folder, Activity, CheckSquare, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,6 +48,14 @@ interface Activity {
   createdOn: string;
 }
 
+interface CampApplicationSnippet {
+  id: string;
+  applicationRef?: string | null;
+  packageGroupId?: string | null;
+  preferredStartDate?: string | null;
+  applicationStatus?: string | null;
+}
+
 interface Lead {
   id: string;
   leadRefNumber?: string | null;
@@ -62,6 +70,7 @@ interface Lead {
   source?: string | null;
   notes?: string | null;
   activities?: Activity[];
+  campApplication?: CampApplicationSnippet | null;
 }
 
 function DetailField({ label, value }: { label: string; value?: string | null }) {
@@ -188,19 +197,53 @@ export default function LeadDetailPage() {
       </div>
 
       {tab === "details" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <DetailField label="Full Name"       value={lead.fullName} />
-          <DetailField label="Email"           value={lead.email} />
-          <DetailField label="Phone"           value={lead.phone} />
-          <DetailField label="Nationality"     value={lead.nationality} />
-          <DetailField label="Inquiry Type"    value={lead.inquiryType} />
-          <DetailField label="Budget"          value={lead.budget ? `A$${Number(lead.budget).toLocaleString("en-AU")}` : null} />
-          <DetailField label="Expected Start"  value={lead.expectedStartDate ? format(new Date(lead.expectedStartDate), "MMM d, yyyy") : null} />
-          <DetailField label="Source"          value={lead.source} />
-          {lead.notes && (
-            <div className="col-span-full">
-              <p className="text-xs text-stone-400 mb-0.5">Notes</p>
-              <p className="text-sm text-stone-700 whitespace-pre-wrap">{lead.notes}</p>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <DetailField label="Full Name"       value={lead.fullName} />
+            <DetailField label="Email"           value={lead.email} />
+            <DetailField label="Phone"           value={lead.phone} />
+            <DetailField label="Nationality"     value={lead.nationality} />
+            <DetailField label="Inquiry Type"    value={lead.inquiryType} />
+            <DetailField label="Budget"          value={lead.budget ? `A$${Number(lead.budget).toLocaleString("en-AU")}` : null} />
+            <DetailField label="Expected Start"  value={lead.expectedStartDate ? format(new Date(lead.expectedStartDate), "MMM d, yyyy") : null} />
+            <DetailField label="Source"          value={lead.source} />
+            {lead.notes && (
+              <div className="col-span-full">
+                <p className="text-xs text-stone-400 mb-0.5">Notes</p>
+                <p className="text-sm text-stone-700 whitespace-pre-wrap">{lead.notes}</p>
+              </div>
+            )}
+          </div>
+
+          {lead.source === "Camp Application" && lead.campApplication && (
+            <div className="border border-[#F5821F]/30 rounded-xl p-4 bg-[#FEF0E3]/40">
+              <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide mb-3">Linked Camp Application</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
+                <div>
+                  <p className="text-xs text-stone-400 mb-0.5">Application Ref</p>
+                  <p className="text-sm font-mono font-medium text-stone-800">{lead.campApplication.applicationRef ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-stone-400 mb-0.5">Preferred Start</p>
+                  <p className="text-sm font-medium text-stone-800">
+                    {lead.campApplication.preferredStartDate
+                      ? format(new Date(lead.campApplication.preferredStartDate), "MMM d, yyyy")
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-stone-400 mb-0.5">Status</p>
+                  <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-[#FEF9C3] text-[#CA8A04] capitalize">
+                    {lead.campApplication.applicationStatus ?? "—"}
+                  </span>
+                </div>
+              </div>
+              <a
+                href={`/admin/camp-applications/${lead.campApplication.id}`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#F5821F] hover:underline"
+              >
+                View Application <ExternalLink size={13} />
+              </a>
             </div>
           )}
         </div>

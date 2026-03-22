@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leads, lead_activities, quotes } from "@workspace/db/schema";
+import { leads, lead_activities, quotes, campApplications } from "@workspace/db/schema";
 import { eq, ilike, and, or, count, SQL, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -87,7 +87,21 @@ router.get("/api/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), asyn
       .where(eq(lead_activities.leadId, req.params.id))
       .orderBy(desc(lead_activities.createdOn));
 
-    return res.json({ ...lead, activities });
+    let campApplication: object | null = null;
+    if (lead.source === "Camp Application") {
+      const [ca] = await db.select({
+        id:                campApplications.id,
+        applicationRef:    campApplications.applicationRef,
+        packageGroupId:    campApplications.packageGroupId,
+        preferredStartDate: campApplications.preferredStartDate,
+        applicationStatus: campApplications.applicationStatus,
+      }).from(campApplications)
+        .where(eq(campApplications.leadId, req.params.id))
+        .limit(1);
+      campApplication = ca ?? null;
+    }
+
+    return res.json({ ...lead, activities, campApplication });
   } catch (err) {
     console.error("[GET /api/crm/leads/:id]", err);
     return res.status(500).json({ error: "Internal server error" });
