@@ -283,11 +283,8 @@ export default function ProductDetail() {
       {/* ── General ── */}
       <Section title="General">
         <FullRow>
-          <RadioYesNo label="Manual Input" value={gb("manualInput")} onChange={sf("manualInput")} disabled={disabled} />
-        </FullRow>
-        <FullRow>
           <TextField label="Product Name *" value={g("productName")} onChange={sf("productName")}
-            disabled={disabled || !gb("manualInput")} placeholder="Auto-filled from Product Type when Manual Input is off" />
+            disabled={disabled} placeholder="Enter product name" />
         </FullRow>
       </Section>
 
@@ -325,9 +322,6 @@ export default function ProductDetail() {
         <TextField label="Minimum Payment" type="number" value={String(g("minimumPayment") ?? "")} onChange={sf("minimumPayment")} disabled={disabled} placeholder="0.00" />
         <TextField label="Product Priority" type="number" value={String(g("productPriority") ?? "")} onChange={v => sf("productPriority")(v ? Number(v) : null)} disabled={disabled} placeholder="0" />
         <TextField label="Product Grade" value={g("productGrade")} onChange={sf("productGrade")} disabled={disabled} placeholder="e.g. Beginner" />
-        <FullRow>
-          <RadioYesNo label="VET in Schools" value={gb("isVetInSchools")} onChange={sf("isVetInSchools")} disabled={disabled} />
-        </FullRow>
         <FullRow>
           <RadioYesNo label="Recommend" value={gb("isRecommend")} onChange={sf("isRecommend")} disabled={disabled} />
         </FullRow>
