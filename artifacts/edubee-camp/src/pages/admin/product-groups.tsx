@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,7 @@ const EMPTY_FORM: FormState = { name: "", description: "", status: "Active" };
 export default function ProductGroups() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [, navigate] = useLocation();
 
   const [search, setSearch]       = useState("");
   const [statusFilter, setStatus] = useState("Active");
@@ -139,10 +141,13 @@ export default function ProductGroups() {
             ) : groups.map(g => (
               <tr key={g.id} className="hover:bg-[#FAFAF9] transition-colors">
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
-                  <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => navigate(`/admin/product-groups/${g.id}`)}
+                    className="flex items-center gap-2 text-left hover:text-[#F5821F] transition-colors"
+                  >
                     <Layers className="w-4 h-4 text-[#F5821F] shrink-0" strokeWidth={1.5} />
-                    {g.name}
-                  </div>
+                    <span className="hover:underline">{g.name}</span>
+                  </button>
                 </td>
                 <td className="px-4 py-3 text-[#57534E] max-w-xs">
                   {g.description ? (g.description.length > 60 ? g.description.slice(0, 60) + "…" : g.description) : "—"}

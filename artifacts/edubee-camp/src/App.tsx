@@ -75,6 +75,7 @@ import DataManager from "@/pages/admin/settings/data-manager";
 import Products from "@/pages/admin/products";
 import ProductDetail from "@/pages/admin/product-detail";
 import ProductGroups from "@/pages/admin/product-groups";
+import ProductGroupDetail from "@/pages/admin/product-group-detail";
 import ProductTypes from "@/pages/admin/product-types";
 import PromotionsPage from "@/pages/admin/promotions";
 
@@ -179,6 +180,9 @@ function Router() {
       </Route>
       <Route path="/admin/camp-contracts">
         <AdminRoute title="Camp Contract"><CampContracts /></AdminRoute>
+      </Route>
+      <Route path="/admin/product-groups/:id">
+        <AdminRoute title="Product Group Detail"><ProductGroupDetail /></AdminRoute>
       </Route>
       <Route path="/admin/product-groups">
         <AdminRoute title="Products Group"><ProductGroups /></AdminRoute>
