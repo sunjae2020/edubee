@@ -10,6 +10,7 @@ import "@/lib/i18n";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
+import DashboardCrmPage from "@/pages/admin/DashboardCrmPage";
 import Users from "@/pages/users";
 import Applications from "@/pages/admin/applications";
 import PackageGroups from "@/pages/admin/package-groups";
@@ -124,6 +125,9 @@ function Router() {
 
       <Route path="/admin/dashboard">
         <AdminRoute title="Dashboard"><Dashboard /></AdminRoute>
+      </Route>
+      <Route path="/admin/dashboard/crm">
+        <AdminRoute title="CRM Dashboard"><DashboardCrmPage /></AdminRoute>
       </Route>
       <Route path="/admin/package-groups/new">
         <AdminRoute title="New Package Group"><NewPackageGroup /></AdminRoute>
