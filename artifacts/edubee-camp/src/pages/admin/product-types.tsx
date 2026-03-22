@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,8 @@ const EMPTY_FORM: FormState = { name: "", productGroupId: "__none", serviceModul
 export default function ProductTypes() {
   const { toast } = useToast();
   const qc = useQueryClient();
+
+  const [, navigate] = useLocation();
 
   const [search, setSearch]          = useState("");
   const [statusFilter, setStatus]    = useState("Active");
@@ -183,7 +186,11 @@ export default function ProductTypes() {
             ) : types.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No product types found</td></tr>
             ) : types.map(t => (
-              <tr key={t.id} className="hover:bg-[#FAFAF9] transition-colors">
+              <tr
+                key={t.id}
+                className="hover:bg-[#FAFAF9] cursor-pointer transition-colors"
+                onClick={() => navigate(`/admin/product-types/${t.id}`)}
+              >
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <div className="flex items-center gap-2">
                     <Tag className="w-4 h-4 text-[#F5821F] shrink-0" strokeWidth={1.5} />
@@ -200,7 +207,7 @@ export default function ProductTypes() {
                 </td>
                 <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
                 <td className="px-4 py-3 text-[#A8A29E] text-xs">{t.createdOn ? format(new Date(t.createdOn), "dd MMM yyyy") : "—"}</td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center gap-1">
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-[#57534E] hover:bg-[#F4F3F1]" onClick={() => openEdit(t)}>
                       <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
