@@ -1,0 +1,174 @@
+You are a senior full-stack developer for Edubee CRM.
+Stack: React + TypeScript + Vite / Node.js + Express + Drizzle ORM + PostgreSQL
+Rule: Never break existing working code. Never drop or rename existing columns.
+
+---
+
+## BEFORE WRITING ANY CODE — Run this SQL and report the result:
+
+SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema='public' AND table_name='accounts');
+SELECT column_name, data_type FROM information_schema.columns WHERE table_name='accounts' ORDER BY ordinal_position;
+
+If table EXISTS → only ALTER TABLE to add missing columns below.
+If table does NOT exist → run the CREATE TABLE below.
+
+---
+
+## DATABASE
+
+### Option A — Add missing columns only:
+
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS primary_contact_id             UUID REFERENCES contacts(id);
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS secondary_contact_id           UUID REFERENCES contacts(id);
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS secondary_address               TEXT;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS phone_number_2                  VARCHAR(50);
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS fax                             VARCHAR(50);
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS website_url_2                   VARCHAR(500);
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS payment_info_id                 UUID REFERENCES payment_infos(id);
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS is_product_source               BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS is_product_provider             BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS found_year                      VARCHAR(10);
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS total_capacity                  INTEGER;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS agreement_id                    UUID REFERENCES files(id);
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS avetmiss_delivery_location_id   VARCHAR(100);
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS description                     TEXT;
+
+### Option B — Create fresh:
+
+CREATE TABLE accounts (
+  id                            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  name                          VARCHAR(255) NOT NULL,
+  manual_input                  BOOLEAN      NOT NULL DEFAULT FALSE,
+  account_type                  VARCHAR(50),
+  account_category              VARCHAR(50),
+  parent_account_id             UUID         REFERENCES accounts(id),
+  primary_contact_id            UUID         REFERENCES contacts(id),
+  secondary_contact_id          UUID         REFERENCES contacts(id),
+  phone_number                  VARCHAR(50),
+  phone_number_2                VARCHAR(50),
+  fax                           VARCHAR(50),
+  email                         VARCHAR(255),
+  website                       VARCHAR(500),
+  website_url_2                 VARCHAR(500),
+  address                       TEXT,
+  secondary_address             TEXT,
+  country                       VARCHAR(100),
+  state                         VARCHAR(100),
+  city                          VARCHAR(100),
+  postal_code                   VARCHAR(20),
+  abn                           VARCHAR(50),
+  payment_info_id               UUID         REFERENCES payment_infos(id),
+  is_product_source             BOOLEAN      NOT NULL DEFAULT FALSE,
+  is_product_provider           BOOLEAN      NOT NULL DEFAULT FALSE,
+  found_year                    VARCHAR(10),
+  total_capacity                INTEGER,
+  logo_id                       UUID         REFERENCES files(id),
+  agreement_id                  UUID         REFERENCES files(id),
+  avetmiss_delivery_location_id VARCHAR(100),
+  description                   TEXT,
+  owner_id                      UUID         NOT NULL REFERENCES users(id),
+  status                        VARCHAR(20)  NOT NULL DEFAULT 'Active',
+  created_on                    TIMESTAMP    NOT NULL DEFAULT NOW(),
+  modified_on                   TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_accounts_type   ON accounts(account_type);
+CREATE INDEX IF NOT EXISTS idx_accounts_owner  ON accounts(owner_id);
+CREATE INDEX IF NOT EXISTS idx_accounts_parent ON accounts(parent_account_id);
+
+### Update /db/schema.ts to match. Export Account and NewAccount types.
+
+---
+
+## BACKEND — /server/src/routes/accounts.ts
+
+GET    /api/accounts       query params: account_type, status, search
+GET    /api/accounts/:id   include primaryContact, parentAccount, lead/contract counts
+POST   /api/accounts
+PUT    /api/accounts/:id
+DELETE /api/accounts/:id   soft delete only (status = 'Inactive')
+
+Auto-name rule: when manual_input is false and account_type is Student, set name from primaryContact firstName + lastName.
+Soft delete rule: if account has linked leads or contracts, return 409.
+Register: app.use('/api/accounts', accountsRouter)
+
+---
+
+## FRONTEND
+
+### Files:
+/client/src/pages/accounts/AccountsListPage.tsx
+/client/src/pages/accounts/AccountDetailPage.tsx
+/client/src/components/accounts/AccountForm.tsx
+
+### AccountsListPage:
+- Header: title "Accounts" + [+ New Account] button
+- Filters: search input, account_type dropdown, status dropdown
+- Table: Name | Type | Category | Primary Contact | Email | Phone | Owner | Status | Actions
+- Type badge colours: Student #FEF0E3/#F5821F | School #DCFCE7/#16A34A | Agent #E0F2FE/#0369A1 | Provider #F3E8FF/#7C3AED | Organisation #F4F3F1/#57534E
+- Empty state: Building2 icon + "No accounts yet" + [+ New Account]
+
+### AccountDetailPage:
+- Layout: main form left (8 cols) + sidebar right (4 cols)
+- Tabs: Overview | Contacts | Leads | Contracts
+- Overview sections:
+  1. Basic Info: Name + manual_input toggle, Type (required), Category, Status, Description
+  2. Contacts & Address: Primary Contact lookup, Secondary Contact lookup, Primary Address, Secondary Address, Country, State, City, Postcode
+  3. Communication: Email, Phone 1, Phone 2, Fax, Website 1, Website 2
+  4. Organisation: Parent Account lookup (exclude self), ABN, Found Year, Total Capacity, AVETMISS ID
+  5. Product Settings: is_product_source toggle, is_product_provider toggle, Payment Info lookup
+  6. Files: Logo upload, Agreement upload
+  7. System: Owner (required lookup), Created On (read-only), Modified On (read-only)
+- Sidebar: Leads count card, Contracts count card, [New Lead] and [New Quote] buttons
+
+### AccountForm (modal or slide-over):
+- Category options by type:
+  Student: []
+  School: [Language School, University, TAFE, High School, Other]
+  Agent: [Sub-agent, Super-agent, Referral Partner]
+  Provider: [Homestay, Dormitory, Pickup, Insurance, Migration Agent, Tour Operator, Other]
+  Organisation: [Head Office, Branch, Partner Organisation]
+- On Primary Contact select: auto-fill email and phone only if currently empty
+- Required fields: account_type, owner_id
+
+### App.tsx routes:
+/accounts       → AccountsListPage
+/accounts/new   → AccountDetailPage
+/accounts/:id   → AccountDetailPage
+
+### Sidebar: add after Contacts — icon Building2, label "Accounts", path /accounts
+
+---
+
+## DESIGN TOKENS
+
+Font: Inter (Google Fonts)
+Icons: Lucide React, stroke-width 1.5, size 16px
+Primary: #F5821F | Hover: #D96A0A | Tint: #FEF0E3
+Text: #1C1917 | Secondary text: #57534E | Border: #E8E6E2
+Page bg: #FAFAF9 | Card: #FFFFFF, border-radius 12px
+Input: height 40px, border 1.5px solid #E8E6E2, border-radius 8px
+Input focus: border #F5821F, box-shadow 0 0 0 3px rgba(245,130,31,0.15)
+Button primary: bg #F5821F, text white, border-radius 8px
+Badge: border-radius 999px, padding 3px 10px, font-size 12px
+Status — Active: bg #DCFCE7 text #16A34A | Inactive: bg #F4F3F1 text #57534E
+
+---
+
+## VERIFY
+
+1. npx tsc --noEmit → 0 errors
+2. Server starts cleanly
+3. Run: SELECT column_name FROM information_schema.columns WHERE table_name='accounts' ORDER BY ordinal_position;
+4. GET /api/accounts → 200 with array
+
+---
+
+## REPORT FORMAT
+
+✅ Files modified:
+✅ DB changes:
+✅ tsc:
+✅ Server:
+✅ DB check:
+✅ API:
+⚠️ Next:

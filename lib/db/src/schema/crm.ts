@@ -35,6 +35,43 @@ export const contacts = pgTable("contacts", {
   modifiedOn:     timestamp("modified_on").notNull().defaultNow(),
 });
 
+export const accounts = pgTable("accounts", {
+  id:                         uuid("id").primaryKey().defaultRandom(),
+  name:                       varchar("name",         { length: 255 }).notNull(),
+  manualInput:                boolean("manual_input").notNull().default(false),
+  accountType:                varchar("account_type", { length: 50  }),
+  accountCategory:            varchar("account_category", { length: 50 }),
+  parentAccountId:            uuid("parent_account_id").references((): any => accounts.id),
+  primaryContactId:           uuid("primary_contact_id").references(() => contacts.id),
+  secondaryContactId:         uuid("secondary_contact_id").references(() => contacts.id),
+  phoneNumber:                varchar("phone_number",  { length: 50  }),
+  phoneNumber2:               varchar("phone_number_2",{ length: 50  }),
+  fax:                        varchar("fax",           { length: 50  }),
+  email:                      varchar("email",         { length: 255 }),
+  website:                    varchar("website",       { length: 500 }),
+  websiteUrl2:                varchar("website_url_2", { length: 500 }),
+  address:                    text("address"),
+  secondaryAddress:           text("secondary_address"),
+  country:                    varchar("country",       { length: 100 }),
+  state:                      varchar("state",         { length: 100 }),
+  city:                       varchar("city",          { length: 100 }),
+  postalCode:                 varchar("postal_code",   { length: 20  }),
+  abn:                        varchar("abn",           { length: 50  }),
+  paymentInfoId:              uuid("payment_info_id"),
+  isProductSource:            boolean("is_product_source").notNull().default(false),
+  isProductProvider:          boolean("is_product_provider").notNull().default(false),
+  foundYear:                  varchar("found_year",    { length: 10  }),
+  totalCapacity:              integer("total_capacity"),
+  logoId:                     uuid("logo_id"),
+  agreementId:                uuid("agreement_id"),
+  avetmissDeliveryLocationId: varchar("avetmiss_delivery_location_id", { length: 100 }),
+  description:                text("description"),
+  ownerId:                    uuid("owner_id").notNull().references(() => users.id),
+  status:                     varchar("status",        { length: 20  }).notNull().default("Active"),
+  createdOn:                  timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:                 timestamp("modified_on").notNull().defaultNow(),
+});
+
 export const lead_activities = pgTable("lead_activities", {
   id:          uuid("id").primaryKey().defaultRandom(),
   leadId:      uuid("lead_id").references(() => leads.id).notNull(),
@@ -76,6 +113,8 @@ export const quote_products = pgTable("quote_products", {
 
 export type Contact         = typeof contacts.$inferSelect;
 export type NewContact      = typeof contacts.$inferInsert;
+export type Account         = typeof accounts.$inferSelect;
+export type NewAccount      = typeof accounts.$inferInsert;
 export type LeadActivity    = typeof lead_activities.$inferSelect;
 export type NewLeadActivity = typeof lead_activities.$inferInsert;
 export type Quote           = typeof quotes.$inferSelect;

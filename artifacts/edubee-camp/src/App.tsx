@@ -77,6 +77,7 @@ import ProductDetail from "@/pages/admin/product-detail";
 import ContactsPage from "@/pages/admin/crm/ContactsPage";
 import ContactDetailPage from "@/pages/admin/crm/ContactDetailPage";
 import AccountsPage from "@/pages/admin/crm/AccountsPage";
+import AccountDetailPage from "@/pages/admin/crm/AccountDetailPage";
 import CrmLeadsPage from "@/pages/admin/crm/LeadsPage";
 import LeadDetailPage from "@/pages/admin/crm/LeadDetailPage";
 import QuotesPage from "@/pages/admin/crm/QuotesPage";
@@ -237,6 +238,12 @@ function Router() {
       </Route>
       <Route path="/admin/crm/contacts/:id">
         <AdminRoute title="Contact Detail"><ContactDetailPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/crm/accounts/new">
+        <AdminRoute title="New Account"><AccountDetailPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/crm/accounts/:id">
+        <AdminRoute title="Account Detail"><AccountDetailPage /></AdminRoute>
       </Route>
       <Route path="/admin/crm/accounts">
         <AdminRoute title="Accounts"><AccountsPage /></AdminRoute>

@@ -35,6 +35,7 @@ import servicesInternshipRouter from "./services-internship.js";
 import servicesGuardianRouter from "./services-guardian.js";
 import campApplicationsRouter from "./camp-applications.js";
 import dashboardCrmRouter from "./dashboard-crm.js";
+import crmAccountsRouter from "./crm-accounts.js";
 
 const router: IRouter = Router();
 
@@ -74,5 +75,6 @@ router.use(servicesInternshipRouter);
 router.use(servicesGuardianRouter);
 router.use(campApplicationsRouter);
 router.use(dashboardCrmRouter);
+router.use(crmAccountsRouter);
 
 export default router;
