@@ -14,7 +14,7 @@ import {
   Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
   Ticket, FolderOpen, Bot,
   BookOpen, CreditCard, BookMarked, Briefcase, Shield,
-  Tag, Percent,
+  Tag, Percent, BadgeDollarSign,
   LucideIcon,
 } from "lucide-react";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
@@ -99,8 +99,9 @@ function buildNav(effectiveRole: string): NavGroup[] {
       items: [
         { icon: Layers,     label: "Products Group", href: "/admin/product-groups" },
         { icon: Tag,        label: "Products Type",  href: "/admin/product-types"  },
-        { icon: ShoppingBag,label: "Products",       href: "/admin/products"       },
-        { icon: Percent,    label: "Promotion",      href: "/admin/promotions"     },
+        { icon: ShoppingBag,     label: "Products",    href: "/admin/products"     },
+        { icon: Percent,         label: "Promotion",   href: "/admin/promotions"   },
+        { icon: BadgeDollarSign, label: "Commission",  href: "/admin/commissions"  },
       ],
     });
   }

@@ -79,6 +79,7 @@ import ProductGroupDetail from "@/pages/admin/product-group-detail";
 import ProductTypes from "@/pages/admin/product-types";
 import ProductTypeDetail from "@/pages/admin/product-type-detail";
 import PromotionsPage from "@/pages/admin/promotions";
+import CommissionsPage from "@/pages/admin/commissions";
 
 // CRM
 import ContactsPage from "@/pages/admin/crm/ContactsPage";
@@ -196,6 +197,9 @@ function Router() {
       </Route>
       <Route path="/admin/promotions">
         <AdminRoute title="Promotions"><PromotionsPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/commissions">
+        <AdminRoute title="Commissions"><CommissionsPage /></AdminRoute>
       </Route>
 
       {/* Service Pages */}

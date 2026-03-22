@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { productGroups, productTypes, promotions } from "@workspace/db/schema";
+import { productGroups, productTypes, promotions, commissions } from "@workspace/db/schema";
 import { products } from "@workspace/db/schema";
 import { accounts } from "@workspace/db/schema";
 import { eq, ilike, and, count, SQL, gte, lte } from "drizzle-orm";
@@ -313,6 +313,87 @@ router.delete("/promotions/:id", authenticate, requireRole(...ADMIN_ROLES), asyn
   } catch (err) {
     console.error("[DELETE /promotions/:id]", err);
     res.status(500).json({ error: "Failed to deactivate promotion" });
+  }
+});
+
+// ─── COMMISSIONS ──────────────────────────────────────────────────────────────
+
+router.get("/commissions", authenticate, async (req, res) => {
+  try {
+    const { status, search, commission_type } = req.query as Record<string, string>;
+    const conditions: SQL[] = [];
+    if (status)          conditions.push(eq(commissions.status, status));
+    if (search)          conditions.push(ilike(commissions.name, `%${search}%`));
+    if (commission_type) conditions.push(eq(commissions.commissionType, commission_type));
+    const where = conditions.length ? and(...conditions) : undefined;
+
+    const rows = await db
+      .select()
+      .from(commissions)
+      .where(where)
+      .orderBy(commissions.commissionType, commissions.name);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("[GET /commissions]", err);
+    res.status(500).json({ error: "Failed to fetch commissions" });
+  }
+});
+
+router.post("/commissions", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { name, commissionType, rateValue, description, status = "Active" } = req.body;
+    if (!name) return res.status(400).json({ error: "name is required" });
+    const [row] = await db
+      .insert(commissions)
+      .values({ name, commissionType: commissionType ?? "rate", rateValue, description, status })
+      .returning();
+    res.status(201).json(row);
+  } catch (err) {
+    console.error("[POST /commissions]", err);
+    res.status(500).json({ error: "Failed to create commission" });
+  }
+});
+
+router.get("/commissions/:id", authenticate, async (req, res) => {
+  try {
+    const [row] = await db.select().from(commissions).where(eq(commissions.id, req.params.id));
+    if (!row) return res.status(404).json({ error: "Not found" });
+    res.json(row);
+  } catch (err) {
+    console.error("[GET /commissions/:id]", err);
+    res.status(500).json({ error: "Failed to fetch commission" });
+  }
+});
+
+router.put("/commissions/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { name, commissionType, rateValue, description, status } = req.body;
+    const [row] = await db
+      .update(commissions)
+      .set({ name, commissionType, rateValue, description, status, modifiedOn: new Date() })
+      .where(eq(commissions.id, req.params.id))
+      .returning();
+    if (!row) return res.status(404).json({ error: "Not found" });
+    res.json(row);
+  } catch (err) {
+    console.error("[PUT /commissions/:id]", err);
+    res.status(500).json({ error: "Failed to update commission" });
+  }
+});
+
+router.delete("/commissions/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const [row] = await db
+      .update(commissions)
+      .set({ status: "Inactive", modifiedOn: new Date() })
+      .where(eq(commissions.id, req.params.id))
+      .returning();
+    if (!row) return res.status(404).json({ error: "Not found" });
+    res.json(row);
+  } catch (err) {
+    console.error("[DELETE /commissions/:id]", err);
+    res.status(500).json({ error: "Failed to deactivate commission" });
   }
 });
 
