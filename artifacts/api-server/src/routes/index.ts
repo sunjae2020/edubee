@@ -37,6 +37,7 @@ import campApplicationsRouter from "./camp-applications.js";
 import dashboardCrmRouter from "./dashboard-crm.js";
 import crmAccountsRouter from "./crm-accounts.js";
 import productCatalogRouter from "./product-catalog.js";
+import accountingTransactionsRouter from "./accounting-transactions.js";
 
 const router: IRouter = Router();
 
@@ -78,5 +79,6 @@ router.use(campApplicationsRouter);
 router.use(dashboardCrmRouter);
 router.use(crmAccountsRouter);
 router.use(productCatalogRouter);
+router.use(accountingTransactionsRouter);
 
 export default router;

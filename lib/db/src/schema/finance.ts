@@ -172,6 +172,13 @@ export const transactions = pgTable("transactions", {
   ledgerEntryId: uuid("ledger_entry_id"),
   createdBy: uuid("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
+  // Extended fields for Create Transaction form
+  accountId:       uuid("account_id"),
+  contactId:       uuid("contact_id"),
+  paymentInfoId:   uuid("payment_info_id"),
+  costCenterCode:  varchar("cost_center_code", { length: 10 }),
+  creditAmount:    decimal("credit_amount", { precision: 12, scale: 2 }),
+  status:          varchar("status", { length: 20 }).default("Active"),
 });
 
 // ── Receipts (extended) ────────────────────────────────────────────────────
