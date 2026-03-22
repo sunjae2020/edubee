@@ -72,6 +72,24 @@ import DataManager from "@/pages/admin/settings/data-manager";
 import Products from "@/pages/admin/products";
 import ProductDetail from "@/pages/admin/product-detail";
 
+// CRM
+import ContactsPage from "@/pages/admin/crm/ContactsPage";
+import AccountsPage from "@/pages/admin/crm/AccountsPage";
+import CrmLeadsPage from "@/pages/admin/crm/LeadsPage";
+import QuotesPage from "@/pages/admin/crm/QuotesPage";
+
+// Accounting (new)
+import ChartOfAccountsPage from "@/pages/admin/accounting/ChartOfAccountsPage";
+import ArApTrackerPage from "@/pages/admin/accounting/ArApTrackerPage";
+import PaymentsPage from "@/pages/admin/accounting/PaymentsPage";
+import JournalEntriesPage from "@/pages/admin/accounting/JournalEntriesPage";
+
+// Services (new)
+import StudyAbroadPage from "@/pages/admin/services/StudyAbroadPage";
+import AccommodationPage from "@/pages/admin/services/AccommodationPage";
+import InternshipPage from "@/pages/admin/services/InternshipPage";
+import GuardianPage from "@/pages/admin/services/GuardianPage";
+
 // My Programs
 import MyPrograms from "@/pages/admin/my-programs";
 
@@ -177,6 +195,32 @@ function Router() {
       <Route path="/admin/services/tasks">
         <AdminRoute title="Tasks / CS"><TasksCS /></AdminRoute>
       </Route>
+      <Route path="/admin/services/study-abroad">
+        <AdminRoute title="Study Abroad"><StudyAbroadPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/services/accommodation">
+        <AdminRoute title="Accommodation"><AccommodationPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/services/internship">
+        <AdminRoute title="Internship"><InternshipPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/services/guardian">
+        <AdminRoute title="Guardian"><GuardianPage /></AdminRoute>
+      </Route>
+
+      {/* CRM Pages */}
+      <Route path="/admin/crm/contacts">
+        <AdminRoute title="Contacts"><ContactsPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/crm/accounts">
+        <AdminRoute title="Accounts"><AccountsPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/crm/leads">
+        <AdminRoute title="CRM Leads"><CrmLeadsPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/crm/quotes">
+        <AdminRoute title="Quotes"><QuotesPage /></AdminRoute>
+      </Route>
 
       {/* Accounting Pages */}
       <Route path="/admin/accounting/invoices">
@@ -199,6 +243,18 @@ function Router() {
       </Route>
       <Route path="/admin/accounting/exchange-rates">
         <AdminRoute title="Exchange Rates"><ExchangeRates /></AdminRoute>
+      </Route>
+      <Route path="/admin/accounting/coa">
+        <AdminRoute title="Chart of Accounts"><ChartOfAccountsPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/accounting/ar-ap">
+        <AdminRoute title="AR / AP Tracker"><ArApTrackerPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/accounting/payments">
+        <AdminRoute title="Payments"><PaymentsPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/accounting/journal">
+        <AdminRoute title="Journal Entries"><JournalEntriesPage /></AdminRoute>
       </Route>
 
       {/* My Accounting */}

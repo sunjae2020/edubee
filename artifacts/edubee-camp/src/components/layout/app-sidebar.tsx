@@ -13,6 +13,7 @@ import {
   Wallet, BarChart2,
   Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
   Ticket, FolderOpen, Bot,
+  BookOpen, CreditCard, BookMarked, Home, Briefcase, Shield,
   LucideIcon,
 } from "lucide-react";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
@@ -62,6 +63,18 @@ function buildNav(effectiveRole: string): NavGroup[] {
     });
   }
 
+  if (isSAorAD || isCC) {
+    nav.push({
+      label: "CRM",
+      items: [
+        { icon: Users,     label: "Contacts", href: "/admin/crm/contacts" },
+        { icon: Building2, label: "Accounts", href: "/admin/crm/accounts" },
+        { icon: Target,    label: "Leads",    href: "/admin/crm/leads" },
+        { icon: FileText,  label: "Quotes",   href: "/admin/crm/quotes" },
+      ],
+    });
+  }
+
   if (isSAorAD || isCC || isPartner || isEA || isParent) {
     const serviceItems: NavItem[] = [];
     if (isSAorAD || isCC || effectiveRole === "partner_institute")
@@ -77,6 +90,13 @@ function buildNav(effectiveRole: string): NavGroup[] {
         { icon: CalendarCheck, label: "Interviews", href: "/admin/services/interviews" },
         { icon: Banknote, label: "Settlement", href: "/admin/services/settlement" },
       );
+    if (isSAorAD || isCC)
+      serviceItems.push(
+        { icon: GraduationCap, label: "Study Abroad",  href: "/admin/services/study-abroad" },
+        { icon: Home,          label: "Accommodation", href: "/admin/services/accommodation" },
+        { icon: Briefcase,     label: "Internship",    href: "/admin/services/internship" },
+        { icon: Shield,        label: "Guardian",      href: "/admin/services/guardian" },
+      );
     serviceItems.push({ icon: Ticket, label: "Tasks / CS", href: "/admin/services/tasks" });
     if (serviceItems.length > 0) nav.push({ label: "Services", items: serviceItems });
   }
@@ -88,7 +108,11 @@ function buildNav(effectiveRole: string): NavGroup[] {
         { icon: Receipt, label: "Invoices", href: "/admin/accounting/invoices" },
         { icon: FileCheck, label: "Receipts", href: "/admin/accounting/receipts" },
         { icon: ArrowLeftRight, label: "Transactions", href: "/admin/accounting/transactions" },
-        { icon: RefreshCw, label: "Exchange Rates", href: "/admin/accounting/exchange-rates" },
+        { icon: RefreshCw,       label: "Exchange Rates",    href: "/admin/accounting/exchange-rates" },
+        { icon: BookOpen,        label: "Chart of Accounts", href: "/admin/accounting/coa" },
+        { icon: ArrowLeftRight,  label: "AR / AP Tracker",   href: "/admin/accounting/ar-ap" },
+        { icon: CreditCard,      label: "Payments",          href: "/admin/accounting/payments" },
+        { icon: BookMarked,      label: "Journal Entries",   href: "/admin/accounting/journal" },
       ],
     });
   }
