@@ -31,6 +31,8 @@ import accountingPaymentsRouter from "./accounting-payments.js";
 import servicesStudyAbroadRouter from "./services-study-abroad.js";
 import servicesAccommodationRouter from "./services-accommodation.js";
 import servicesPickupRouter from "./services-pickup.js";
+import servicesInternshipRouter from "./services-internship.js";
+import servicesGuardianRouter from "./services-guardian.js";
 
 const router: IRouter = Router();
 
@@ -66,5 +68,7 @@ router.use(accountingPaymentsRouter);
 router.use(servicesStudyAbroadRouter);
 router.use(servicesAccommodationRouter);
 router.use(servicesPickupRouter);
+router.use(servicesInternshipRouter);
+router.use(servicesGuardianRouter);
 
 export default router;
