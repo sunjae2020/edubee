@@ -1,0 +1,160 @@
+## TASK: Products Form — Full Field Implementation with Account & Product Type Linking
+
+---
+
+### STEP 1 — READ FIRST (mandatory before any code change)
+
+Read the following files completely before writing any code:
+1. `/db/schema.ts` — find the `products`, `productTypes`, `productGroups`, `accounts`, `commissions`, `promotions`, `taxRates` table definitions
+2. `/server/src/routes/products.ts` (or equivalent products route file)
+3. `/client/src/pages/Products/` — all files in this directory (form, list, detail)
+4. `/client/src/components/` — any shared SearchInput, Lookup, or Dropdown components
+
+Report back: exact field names in the `products` schema, what routes already exist, and what the current form renders.
+
+---
+
+### STEP 2 — ANALYSIS REPORT (report before touching any file)
+
+After reading, report:
+- Which form fields are currently implemented vs missing vs broken
+- What API endpoints exist for products (GET list, GET single, POST, PUT)
+- Whether `product_types` and `accounts` lookup endpoints already exist
+- What TypeScript types are already defined for Product
+
+Do NOT write any code yet. Wait for explicit "진행해" confirmation.
+
+---
+
+### STEP 3 — IMPLEMENTATION PLAN
+
+Implement the Products detail/create form with ALL sections below. 
+Match the exact field structure from the Edubee Products DB schema.
+
+---
+
+#### 3A. DB Schema Reference (DO NOT RENAME COLUMNS — use exact names)
+
+Table: `products`
+| Field | Type | Notes |
+|-------|------|-------|
+| id | UUID PK | auto |
+| name | VARCHAR(255) | Required |
+| manual_input | BOOLEAN | default false |
+| from_date | DATE | |
+| to_date | DATE | |
+| duration_weeks | INTEGER | |
+| category_1_id | UUID FK → product_groups | Product Type (group) |
+| category_2_id | UUID FK → accounts | Product Provider (Account) |
+| item_description | TEXT | |
+| price | DECIMAL(12,2) | Required |
+| is_gst_included | BOOLEAN | |
+| currency | VARCHAR(20) | default 'AUD' |
+| installment_plan | VARCHAR(50) | None / Weekly / Monthly / Termly |
+| default_payment_term | VARCHAR(50) | Once / Multiple Times / Monthly |
+| number_of_payments | INTEGER | |
+| minimum_payment | DECIMAL(12,2) | |
+| product_priority | INTEGER | |
+| avetmiss_product_id | UUID | |
+| is_vet_in_schools | BOOLEAN | |
+| product_grade | VARCHAR(50) | |
+| service_module_type | VARCHAR(50) | |
+| is_recommend | BOOLEAN | |
+| provider_id | UUID FK → accounts | |
+| commission_id | UUID FK → commissions | |
+| promotion_id | UUID FK → promotions | |
+| display_on_quote | BOOLEAN | default true |
+| display_on_invoice | BOOLEAN | default true |
+| tax_rate_id | UUID FK → tax_rates | |
+| product_type_id | UUID FK → product_types | Required link |
+| status | VARCHAR(20) | Active / Inactive |
+| created_on | TIMESTAMP | auto |
+| modified_on | TIMESTAMP | auto |
+
+---
+
+#### 3B. Form Sections & Fields (render in this exact order)
+
+**[Breadcrumb]** ProductGroup > {product_group_name} — top left  
+**[Button]** "Add New" — top right  
+
+---
+
+**Section: General**
+- [ ] Manual Input — checkbox
+- [ ] Name — text input (enabled only when manual_input = true; auto-populated from product_type when false)
+
+---
+
+**Section: Summary**
+- [ ] To Date — date picker (`to_date`)
+- [ ] From Date — date picker (`from_date`)
+- [ ] Product Duration (Number of weeks) — number input (`duration_weeks`)
+
+---
+
+**Section: Categories**
+- [ ] Product Type — SearchLookup → `product_types` table  
+  - Displays: `product_types.name`  
+  - Saves: `product_type_id` (UUID)  
+  - On select: if manual_input = false, auto-fill `name` from product_type.name  
+- [ ] Product Provider — SearchLookup → `accounts` table  
+  - Filter accounts where type is relevant (school / provider)  
+  - Displays: `accounts.name`  
+  - Saves: `category_2_id` (UUID)
+
+---
+
+**Section: Main**
+- [ ] Item Description — text input (`item_description`)
+- [ ] Price — number input (`price`)
+- [ ] GST Included — radio Yes/No (`is_gst_included`)
+- [ ] Currency — dropdown: AUD / NZD / USD / GBP / EUR / CAD (`currency`)
+- [ ] Installment Plan — dropdown: None / Weekly / Monthly / Termly (`installment_plan`)
+- [ ] Default Payment Term — dropdown: Once / Multiple Times / Monthly (`default_payment_term`)
+- [ ] Number Of Payments — number input (`number_of_payments`)
+- [ ] Minimum Payment — number input (`minimum_payment`)
+- [ ] Product Priority — number input (`product_priority`)
+- [ ] Avetmiss Product — SearchLookup (UUID reference, `avetmiss_product_id`)
+- [ ] VET in schools — radio Yes/No (`is_vet_in_schools`)
+- [ ] Product Grade — text input (`product_grade`)
+- [ ] Recommend — radio Yes/No (`is_recommend`)
+
+---
+
+**Section: Promotion**
+- [ ] Product Source — SearchLookup → `accounts` table (`provider_id`)
+- [ ] Commission — SearchLookup → `commissions` table (`commission_id`)
+- [ ] Promotion — SearchLookup → `promotions` table (`promotion_id`)
+
+---
+
+**Section: Setup**
+- [ ] Display On Quote — radio Yes/No (`display_on_quote`)
+- [ ] Display On Invoice — radio Yes/No (`display_on_invoice`)
+- [ ] Tax Rate — SearchLookup → `tax_rates` table (`tax_rate_id`)
+
+---
+
+**Section: Description & Notes**
+- [ ] Description — textarea (`item_description` — reuse same field, render as full-width textarea)
+
+---
+
+**Section: Admin** (read-only)
+- [ ] CreatedOn — date display (`created_on`)
+- [ ] ModifiedOn — date display (`modified_on`)
+- [ ] Status — dropdown: Active / Inactive (`status`)
+
+---
+
+**Bottom Buttons**
+- [ ] Submit — primary orange button (POST/PUT)
+- [ ] Cancel — secondary button (navigate back)
+- [ ] Field Rule — ghost button with gear icon (placeholder, no action required yet)
+
+---
+
+#### 3C. Backend API Requirements
+
+Ensure these endpoints exist and return correct data:
