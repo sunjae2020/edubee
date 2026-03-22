@@ -1,0 +1,55 @@
+SAFETY RULES:
+- Read /db/schema.ts first
+- NEVER rename, delete, or modify existing columns
+- Use ADD COLUMN IF NOT EXISTS only
+- Report file list first, wait for "진행해" before executing
+- Run npx tsc --noEmit after every change
+
+Add the following columns to existing tables in /db/schema.ts.
+Skip any column that already exists.
+
+--- contracts ---
+paymentFrequency:           varchar("payment_frequency", { length: 50 }),
+courseStartDate:            date("course_start_date"),
+courseEndDate:              date("course_end_date"),
+totalArAmount:              decimal("total_ar_amount", { precision: 12, scale: 2 }),
+totalApAmount:              decimal("total_ap_amount", { precision: 12, scale: 2 }),
+serviceModulesActivated:    jsonb("service_modules_activated"),
+
+--- contract_products ---
+arDueDate:          date("ar_due_date"),
+apDueDate:          date("ap_due_date"),
+arAmount:           decimal("ar_amount", { precision: 12, scale: 2 }),
+apAmount:           decimal("ap_amount", { precision: 12, scale: 2 }),
+arStatus:           varchar("ar_status", { length: 20 }).default("scheduled"),
+apStatus:           varchar("ap_status", { length: 20 }).default("pending"),
+coaArCode:          varchar("coa_ar_code", { length: 10 }),
+coaApCode:          varchar("coa_ap_code", { length: 10 }),
+serviceModuleType:  varchar("service_module_type", { length: 50 }),
+
+--- invoices ---
+parentInvoiceId:    uuid("parent_invoice_id").references(() => invoices.id),
+isRecurring:        boolean("is_recurring").default(false).notNull(),
+recurringCycle:     varchar("recurring_cycle", { length: 20 }),
+recurringSeq:       integer("recurring_seq"),
+
+--- products ---
+serviceModuleType:  varchar("service_module_type", { length: 50 }),
+
+--- product_types ---
+serviceModuleType:  varchar("service_module_type", { length: 50 }),
+
+Then run:
+npx drizzle-kit generate
+npx drizzle-kit push
+npx tsc --noEmit
+
+Verify with:
+SELECT column_name, data_type FROM information_schema.columns
+WHERE table_name IN ('contracts','contract_products','invoices','products','product_types')
+AND column_name IN (
+  'payment_frequency','course_start_date','total_ar_amount','service_modules_activated',
+  'ar_due_date','ap_due_date','ar_status','ap_status','service_module_type',
+  'coa_ar_code','coa_ap_code','parent_invoice_id','is_recurring','recurring_cycle','recurring_seq'
+)
+ORDER BY table_name, column_name;
