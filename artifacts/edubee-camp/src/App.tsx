@@ -89,6 +89,7 @@ import JournalEntriesPage from "@/pages/admin/accounting/JournalEntriesPage";
 
 // Services (new)
 import StudyAbroadPage from "@/pages/admin/services/StudyAbroadPage";
+import StudyAbroadDetailPage from "@/pages/admin/services/StudyAbroadDetailPage";
 import AccommodationPage from "@/pages/admin/services/AccommodationPage";
 import InternshipPage from "@/pages/admin/services/InternshipPage";
 import GuardianPage from "@/pages/admin/services/GuardianPage";
@@ -200,6 +201,9 @@ function Router() {
       </Route>
       <Route path="/admin/services/study-abroad">
         <AdminRoute title="Study Abroad"><StudyAbroadPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/services/study-abroad/:id">
+        <AdminRoute title="Study Abroad Detail"><StudyAbroadDetailPage /></AdminRoute>
       </Route>
       <Route path="/admin/services/accommodation">
         <AdminRoute title="Accommodation"><AccommodationPage /></AdminRoute>

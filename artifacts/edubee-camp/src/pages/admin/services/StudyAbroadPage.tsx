@@ -1,9 +1,304 @@
-import { Construction } from "lucide-react";
-export default function StudyAbroadPage() {
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import axios from "axios";
+import { AlertTriangle, ChevronRight, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { format, differenceInDays, parseISO } from "date-fns";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface StudyAbroadRow {
+  id: string;
+  contractId?: string | null;
+  contractNumber?: string | null;
+  studentName?: string | null;
+  agentName?: string | null;
+  applicationStage?: string | null;
+  coeNumber?: string | null;
+  visaType?: string | null;
+  visaExpiryDate?: string | null;
+  visaGranted?: boolean;
+  status?: string | null;
+  staffFirstName?: string | null;
+  staffLastName?: string | null;
+}
+
+// ─── Pipeline stages ─────────────────────────────────────────────────────────
+const STAGES: Array<{ key: string; label: string }> = [
+  { key: "counseling",       label: "Counseling"       },
+  { key: "school_selection", label: "School Selection" },
+  { key: "application",      label: "Application"      },
+  { key: "coe_issued",       label: "COE Issued"       },
+  { key: "visa_applied",     label: "Visa Applied"     },
+  { key: "visa_granted",     label: "Visa Granted"     },
+  { key: "departed",         label: "Departed"         },
+];
+
+const STAGE_BADGE: Record<string, { bg: string; text: string }> = {
+  counseling:       { bg: "#F4F3F1", text: "#57534E" },
+  school_selection: { bg: "#FEF0E3", text: "#F5821F" },
+  application:      { bg: "#FEF9C3", text: "#CA8A04" },
+  coe_issued:       { bg: "#DCFCE7", text: "#16A34A" },
+  visa_applied:     { bg: "#FEF0E3", text: "#F5821F" },
+  visa_granted:     { bg: "#DCFCE7", text: "#16A34A" },
+  departed:         { bg: "#F0FDF4", text: "#15803D" },
+};
+
+function fmtDate(d: string | null | undefined): string {
+  if (!d) return "—";
+  try { return format(parseISO(d), "MMM d, yyyy"); } catch { return d; }
+}
+
+// ─── Pipeline Stepper ────────────────────────────────────────────────────────
+function PipelineStepper({
+  activeStage,
+  onSelect,
+  counts,
+}: {
+  activeStage: string;
+  onSelect: (stage: string) => void;
+  counts: Record<string, number>;
+}) {
   return (
-    <div className="flex items-center justify-center h-64 gap-3 text-stone-400">
-      <Construction size={24} />
-      <p className="text-lg font-medium">Study Abroad — Coming Soon</p>
+    <div className="bg-white border border-stone-200 rounded-xl p-4">
+      <div className="flex items-center">
+        {STAGES.map((stage, i) => {
+          const isActive = activeStage === stage.key;
+          const badge    = STAGE_BADGE[stage.key];
+          return (
+            <div key={stage.key} className="flex items-center flex-1 min-w-0">
+              <button
+                onClick={() => onSelect(isActive ? "" : stage.key)}
+                className={`flex-1 flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-lg transition-all group min-w-0 ${
+                  isActive ? "ring-2 ring-[#F5821F] ring-offset-1" : "hover:bg-stone-50"
+                }`}
+              >
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                  style={isActive ? { background: "#F5821F", color: "#fff" } : { background: badge.bg, color: badge.text }}
+                >
+                  {counts[stage.key] ?? 0}
+                </div>
+                <span className={`text-[10px] font-medium text-center leading-tight truncate w-full ${
+                  isActive ? "text-[#F5821F]" : "text-stone-500 group-hover:text-stone-800"
+                }`}>
+                  {stage.label}
+                </span>
+              </button>
+              {i < STAGES.length - 1 && (
+                <ChevronRight size={14} className="text-stone-300 shrink-0 mx-0.5" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+export default function StudyAbroadPage() {
+  const [, navigate]   = useLocation();
+  const [activeStage, setActiveStage] = useState("");
+  const [search, setSearch]           = useState("");
+  const [page, setPage]               = useState(1);
+
+  const { data: alertsData } = useQuery({
+    queryKey: ["study-abroad-visa-alerts"],
+    queryFn: () => axios.get(`${BASE}/api/services/study-abroad/visa-alerts`).then(r => r.data),
+  });
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["study-abroad", activeStage, search, page],
+    queryFn: () => {
+      const p = new URLSearchParams({ page: String(page), limit: "20" });
+      if (activeStage) p.set("applicationStage", activeStage);
+      if (search)      p.set("search", search);
+      return axios.get(`${BASE}/api/services/study-abroad?${p}`).then(r => r.data);
+    },
+  });
+
+  // Also fetch all records to build stage counts
+  const { data: allData } = useQuery({
+    queryKey: ["study-abroad-all"],
+    queryFn: () => axios.get(`${BASE}/api/services/study-abroad?limit=100`).then(r => r.data),
+  });
+
+  const rows: StudyAbroadRow[] = data?.data ?? [];
+  const allRows: StudyAbroadRow[] = allData?.data ?? [];
+  const totalPages = data?.meta?.totalPages ?? 1;
+  const alertCount = alertsData?.count ?? 0;
+
+  // Build stage counts from all rows
+  const stageCounts: Record<string, number> = {};
+  for (const r of allRows) {
+    const s = r.applicationStage ?? "counseling";
+    stageCounts[s] = (stageCounts[s] ?? 0) + 1;
+  }
+
+  return (
+    <div className="p-6 space-y-5">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-stone-800">Study Abroad</h1>
+        <p className="text-sm text-stone-500 mt-1">Manage student study abroad applications and visas</p>
+      </div>
+
+      {/* Visa expiry alert banner */}
+      {alertCount > 0 && (
+        <div
+          className="flex items-center justify-between px-4 py-3 rounded-xl text-sm"
+          style={{
+            background: "#FEF9C3",
+            borderLeft: "4px solid #CA8A04",
+          }}
+        >
+          <div className="flex items-center gap-2 text-[#92400E] font-medium">
+            <AlertTriangle size={16} className="text-[#CA8A04]" />
+            ⚠️ {alertCount} student visa{alertCount > 1 ? "s" : ""} expiring within 30 days
+          </div>
+          <button
+            onClick={() => navigate("/admin/services/study-abroad?visaAlert=1")}
+            className="text-xs font-semibold text-[#92400E] underline hover:no-underline"
+          >
+            View All →
+          </button>
+        </div>
+      )}
+
+      {/* Pipeline stepper */}
+      <PipelineStepper
+        activeStage={activeStage}
+        onSelect={s => { setActiveStage(s); setPage(1); }}
+        counts={stageCounts}
+      />
+
+      {/* Search */}
+      <div className="flex items-center gap-3">
+        <div className="relative w-72">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+          <Input
+            placeholder="Search student, contract, COE…"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
+            className="h-9 text-sm pl-9"
+          />
+        </div>
+        {activeStage && (
+          <button
+            onClick={() => { setActiveStage(""); setPage(1); }}
+            className="text-xs text-[#F5821F] hover:underline font-medium"
+          >
+            Clear filter: {STAGES.find(s => s.key === activeStage)?.label}
+          </button>
+        )}
+      </div>
+
+      {/* Table */}
+      <div className="rounded-xl border border-stone-200 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-stone-50 border-b border-stone-200">
+            <tr>
+              {["Student", "Account / Contract", "Stage", "COE #", "Visa Type", "Visa Expiry", "Staff", "Status"].map(h => (
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-stone-100">
+            {isLoading && (
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+            )}
+            {!isLoading && rows.length === 0 && (
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
+            )}
+            {rows.map(row => {
+              const stage   = row.applicationStage ?? "counseling";
+              const badge   = STAGE_BADGE[stage] ?? STAGE_BADGE.counseling;
+              const staffName = row.staffFirstName
+                ? `${row.staffFirstName} ${row.staffLastName ?? ""}`.trim()
+                : "—";
+
+              // Visa expiry warning
+              let expiryBadge = null;
+              if (row.visaExpiryDate) {
+                const days = differenceInDays(parseISO(row.visaExpiryDate), new Date());
+                if (days < 30) {
+                  expiryBadge = (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#FEF2F2] text-[#DC2626]">
+                      !{days}d
+                    </span>
+                  );
+                } else if (days < 90) {
+                  expiryBadge = (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#FEF9C3] text-[#CA8A04]">
+                      {days}d
+                    </span>
+                  );
+                }
+              }
+
+              return (
+                <tr
+                  key={row.id}
+                  className="hover:bg-stone-50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/admin/services/study-abroad/${row.id}`)}
+                >
+                  <td className="px-4 py-3 font-medium text-stone-800 hover:text-[#F5821F] transition-colors">
+                    {row.studentName ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-stone-500">{row.contractNumber ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
+                      style={{ background: badge.bg, color: badge.text }}
+                    >
+                      {STAGES.find(s => s.key === stage)?.label ?? stage}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-stone-600">{row.coeNumber ?? "—"}</td>
+                  <td className="px-4 py-3 text-stone-600 text-xs">{row.visaType ?? "—"}</td>
+                  <td className="px-4 py-3 text-stone-700 whitespace-nowrap">
+                    <span>{fmtDate(row.visaExpiryDate)}</span>
+                    {expiryBadge}
+                  </td>
+                  <td className="px-4 py-3 text-stone-600 text-xs">{staffName}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
+                      style={{ background: "#F4F3F1", color: "#57534E" }}
+                    >
+                      {row.status ?? "—"}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-end gap-2">
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage(p => p - 1)}
+            className="px-3 py-1.5 text-xs border border-stone-200 rounded-lg hover:bg-stone-50 disabled:opacity-40"
+          >
+            Prev
+          </button>
+          <span className="text-sm text-stone-500">Page {page} / {totalPages}</span>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage(p => p + 1)}
+            className="px-3 py-1.5 text-xs border border-stone-200 rounded-lg hover:bg-stone-50 disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

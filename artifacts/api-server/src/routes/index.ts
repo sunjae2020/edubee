@@ -28,6 +28,7 @@ import crmQuotesRouter from "./crm-quotes.js";
 import accountingCoaRouter from "./accounting-coa.js";
 import accountingArApRouter from "./accounting-arap.js";
 import accountingPaymentsRouter from "./accounting-payments.js";
+import servicesStudyAbroadRouter from "./services-study-abroad.js";
 
 const router: IRouter = Router();
 
@@ -60,5 +61,6 @@ router.use(crmQuotesRouter);
 router.use(accountingCoaRouter);
 router.use(accountingArApRouter);
 router.use(accountingPaymentsRouter);
+router.use(servicesStudyAbroadRouter);
 
 export default router;
