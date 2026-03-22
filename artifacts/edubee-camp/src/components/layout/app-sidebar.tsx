@@ -76,6 +76,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
       { icon: Package,   label: "Packages",         href: "/admin/packages"         },
       { icon: ShoppingBag, label: "Products",       href: "/admin/products"         },
       { icon: ListChecks,  label: "Enrollment Spots", href: "/admin/enrollment-spots" },
+      { icon: FileText,    label: "Camp Contract",  href: "/admin/camp-contracts"   },
     );
   }
   if (isSAorAD || isCC || effectiveRole === "partner_institute")

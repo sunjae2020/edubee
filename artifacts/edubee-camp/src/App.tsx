@@ -18,6 +18,8 @@ import Packages from "@/pages/packages";
 import PackageDetail from "@/pages/admin/package-detail";
 import Leads from "@/pages/admin/leads";
 import Contracts from "@/pages/admin/contracts";
+import CampContracts from "@/pages/admin/camp-contracts";
+import CampContractDetail from "@/pages/admin/camp-contract-detail";
 import AdminStub from "@/pages/admin/stub";
 import NotFound from "@/pages/not-found";
 
@@ -168,6 +170,12 @@ function Router() {
       </Route>
       <Route path="/admin/contracts">
         <AdminRoute title="Contracts"><Contracts /></AdminRoute>
+      </Route>
+      <Route path="/admin/camp-contracts/:id">
+        <AdminRoute title="Camp Contract Detail"><CampContractDetail /></AdminRoute>
+      </Route>
+      <Route path="/admin/camp-contracts">
+        <AdminRoute title="Camp Contract"><CampContracts /></AdminRoute>
       </Route>
 
       {/* Service Pages */}
