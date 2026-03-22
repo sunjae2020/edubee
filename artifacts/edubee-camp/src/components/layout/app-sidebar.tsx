@@ -1,217 +1,253 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { useViewAs, ROLE_HIERARCHY } from "@/hooks/use-view-as";
+import { useViewAs } from "@/hooks/use-view-as";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
 import { EdubeeLogo } from "@/components/shared/EdubeeLogo";
 import {
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, ChevronDown,
   LayoutDashboard, Layers, Package, ShoppingBag, ListChecks,
   Target, ClipboardList, FileText,
-  GraduationCap, Building2, Car, Map, CalendarCheck, Banknote,
+  GraduationCap, Building2, Car, Map, CalendarCheck,
   Receipt, FileCheck, ArrowLeftRight, RefreshCw,
   Wallet, BarChart2,
   Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
   Ticket, FolderOpen, Bot,
-  BookOpen, CreditCard, BookMarked, Home, Briefcase, Shield,
+  BookOpen, CreditCard, BookMarked, Briefcase, Shield,
   LucideIcon,
 } from "lucide-react";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
 
-// Wrapper to make ReportSymbol behave like a LucideIcon in the sidebar
 const ReportNavIcon = ({ size, style }: { size?: number; style?: React.CSSProperties; className?: string; strokeWidth?: number }) => (
   <ReportSymbol name="report" size={size ?? 16} color={(style?.color as string) ?? "#A8A29E"} />
 );
 
-type NavItem = { icon: LucideIcon; label: string; href: string };
-type NavGroup = { label: string; items: NavItem[] };
+type NavItem  = { icon: LucideIcon; label: string; href: string };
+type NavGroup = { key: string; label: string; catIcon: LucideIcon; items: NavItem[] };
+
+// ── Build nav ─────────────────────────────────────────────────────────────
 
 function buildNav(effectiveRole: string): NavGroup[] {
-  const isSA = effectiveRole === "super_admin";
-  const isSAorAD = isSA || effectiveRole === "admin";
-  const isCC = effectiveRole === "camp_coordinator";
-  const isEA = effectiveRole === "education_agent";
+  const isSA      = effectiveRole === "super_admin";
+  const isSAorAD  = isSA || effectiveRole === "admin";
+  const isCC      = effectiveRole === "camp_coordinator";
+  const isEA      = effectiveRole === "education_agent";
   const isPartner = effectiveRole.startsWith("partner_");
-  const isParent = effectiveRole === "parent_client";
+  const isParent  = effectiveRole === "parent_client";
 
   const nav: NavGroup[] = [];
 
-  if (!isParent) {
-    nav.push({ label: "Main", items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" }] });
-  }
+  // ── 1 · Dashboard ────────────────────────────────────────────────────────
+  nav.push({
+    key: "dashboard", label: "Dashboard", catIcon: LayoutDashboard,
+    items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" }],
+  });
 
+  // ── 2 · CRM ──────────────────────────────────────────────────────────────
+  const crmItems: NavItem[] = [];
   if (isSAorAD || isCC) {
-    nav.push({
-      label: isSAorAD ? "Programs" : "My Programs",
-      items: [
-        { icon: Layers, label: "Package Groups", href: "/admin/package-groups" },
-        { icon: Package, label: "Packages", href: "/admin/packages" },
-        { icon: ShoppingBag, label: "Products", href: "/admin/products" },
-        { icon: ListChecks, label: "Enrollment Spots", href: "/admin/enrollment-spots" },
-      ],
-    });
+    crmItems.push(
+      { icon: Users,     label: "Contacts", href: "/admin/crm/contacts" },
+      { icon: Building2, label: "Accounts", href: "/admin/crm/accounts" },
+      { icon: Target,    label: "Leads",    href: "/admin/crm/leads"    },
+      { icon: FileText,  label: "Quotes",   href: "/admin/crm/quotes"   },
+    );
   }
+  // Tasks & CS is visible to all roles
+  crmItems.push({ icon: Ticket, label: "Tasks & CS", href: "/admin/services/tasks" });
+  nav.push({ key: "crm", label: "CRM", catIcon: Users, items: crmItems });
 
+  // ── 3 · Sales ────────────────────────────────────────────────────────────
   if (isSAorAD || isCC || isEA) {
-    nav.push({
-      label: "Sales",
-      items: [
-        { icon: Target, label: "Leads", href: "/admin/leads" },
-        { icon: ClipboardList, label: "Applications", href: "/admin/applications" },
-        { icon: FileText, label: "Contracts", href: "/admin/contracts" },
-      ],
-    });
+    const salesItems: NavItem[] = [
+      { icon: ClipboardList, label: "Applications", href: "/admin/applications" },
+      { icon: FileText,      label: "Contracts",    href: "/admin/contracts"    },
+    ];
+    if (isSAorAD)
+      salesItems.push({ icon: FolderOpen, label: "Documents", href: "/admin/documents" });
+    nav.push({ key: "sales", label: "Sales", catIcon: ClipboardList, items: salesItems });
   }
 
+  // ── 4 · Camp ─────────────────────────────────────────────────────────────
+  const campItems: NavItem[] = [];
+  if (isSAorAD || isCC) {
+    campItems.push(
+      { icon: Layers,    label: "Package Groups",   href: "/admin/package-groups"   },
+      { icon: Package,   label: "Packages",         href: "/admin/packages"         },
+      { icon: ShoppingBag, label: "Products",       href: "/admin/products"         },
+      { icon: ListChecks,  label: "Enrollment Spots", href: "/admin/enrollment-spots" },
+    );
+  }
+  if (isSAorAD || isCC || effectiveRole === "partner_institute")
+    campItems.push({ icon: GraduationCap, label: "Institute / Study",  href: "/admin/services/institute" });
+  if (isSAorAD || isCC || effectiveRole === "partner_hotel")
+    campItems.push({ icon: Building2, label: "Hotel",            href: "/admin/services/hotel"     });
+  if (isSAorAD || isCC || effectiveRole === "partner_pickup")
+    campItems.push({ icon: Car, label: "Pickup / Transfer", href: "/admin/services/pickup"    });
+  if (isSAorAD || isCC || effectiveRole === "partner_tour")
+    campItems.push({ icon: Map, label: "Tour",             href: "/admin/services/tour"      });
+  if (isSAorAD || isCC)
+    campItems.push({ icon: CalendarCheck, label: "Interviews", href: "/admin/services/interviews" });
+  if (campItems.length > 0)
+    nav.push({ key: "camp", label: "Camp", catIcon: GraduationCap, items: campItems });
+
+  // ── 5 · Services ─────────────────────────────────────────────────────────
   if (isSAorAD || isCC) {
     nav.push({
-      label: "CRM",
+      key: "services", label: "Services", catIcon: Briefcase,
       items: [
-        { icon: Users,     label: "Contacts", href: "/admin/crm/contacts" },
-        { icon: Building2, label: "Accounts", href: "/admin/crm/accounts" },
-        { icon: Target,    label: "Leads",    href: "/admin/crm/leads" },
-        { icon: FileText,  label: "Quotes",   href: "/admin/crm/quotes" },
+        { icon: GraduationCap, label: "Study Abroad",  href: "/admin/services/study-abroad"  },
+        { icon: Building2,     label: "Accommodation", href: "/admin/services/accommodation" },
+        { icon: Briefcase,     label: "Internship",    href: "/admin/services/internship"    },
+        { icon: Shield,        label: "Guardian",      href: "/admin/services/guardian"      },
+        { icon: FileCheck,     label: "Settlement",    href: "/admin/services/settlement"    },
       ],
     });
   }
 
-  if (isSAorAD || isCC || isPartner || isEA || isParent) {
-    const serviceItems: NavItem[] = [];
-    if (isSAorAD || isCC || effectiveRole === "partner_institute")
-      serviceItems.push({ icon: GraduationCap, label: "Institute", href: "/admin/services/institute" });
-    if (isSAorAD || isCC || effectiveRole === "partner_hotel")
-      serviceItems.push({ icon: Building2, label: "Hotel", href: "/admin/services/hotel" });
-    if (isSAorAD || isCC || effectiveRole === "partner_pickup")
-      serviceItems.push({ icon: Car, label: "Pickup", href: "/admin/services/pickup" });
-    if (isSAorAD || isCC || effectiveRole === "partner_tour")
-      serviceItems.push({ icon: Map, label: "Tour", href: "/admin/services/tour" });
-    if (isSAorAD || isCC)
-      serviceItems.push(
-        { icon: CalendarCheck, label: "Interviews", href: "/admin/services/interviews" },
-        { icon: Banknote, label: "Settlement", href: "/admin/services/settlement" },
-      );
-    if (isSAorAD || isCC)
-      serviceItems.push(
-        { icon: GraduationCap, label: "Study Abroad",  href: "/admin/services/study-abroad" },
-        { icon: Home,          label: "Accommodation", href: "/admin/services/accommodation" },
-        { icon: Briefcase,     label: "Internship",    href: "/admin/services/internship" },
-        { icon: Shield,        label: "Guardian",      href: "/admin/services/guardian" },
-      );
-    serviceItems.push({ icon: Ticket, label: "Tasks / CS", href: "/admin/services/tasks" });
-    if (serviceItems.length > 0) nav.push({ label: "Services", items: serviceItems });
-  }
-
+  // ── 6 · Finance ──────────────────────────────────────────────────────────
+  const financeItems: NavItem[] = [];
   if (isSAorAD) {
-    nav.push({
-      label: "Accounting",
-      items: [
-        { icon: Receipt, label: "Invoices", href: "/admin/accounting/invoices" },
-        { icon: FileCheck, label: "Receipts", href: "/admin/accounting/receipts" },
-        { icon: ArrowLeftRight, label: "Transactions", href: "/admin/accounting/transactions" },
-        { icon: RefreshCw,       label: "Exchange Rates",    href: "/admin/accounting/exchange-rates" },
-        { icon: BookOpen,        label: "Chart of Accounts", href: "/admin/accounting/coa" },
-        { icon: ArrowLeftRight,  label: "AR / AP Tracker",   href: "/admin/accounting/ar-ap" },
-        { icon: CreditCard,      label: "Payments",          href: "/admin/accounting/payments" },
-        { icon: BookMarked,      label: "Journal Entries",   href: "/admin/accounting/journal" },
-      ],
-    });
+    financeItems.push(
+      { icon: Receipt,       label: "Invoices",          href: "/admin/accounting/invoices"       },
+      { icon: FileCheck,     label: "Receipts",          href: "/admin/accounting/receipts"       },
+      { icon: CreditCard,    label: "Payments",          href: "/admin/accounting/payments"       },
+      { icon: ArrowLeftRight,label: "Transactions",      href: "/admin/accounting/transactions"   },
+      { icon: ArrowLeftRight,label: "AR / AP Tracker",   href: "/admin/accounting/ar-ap"         },
+      { icon: BookMarked,    label: "Journal Entries",   href: "/admin/accounting/journal"        },
+      { icon: BookOpen,      label: "Chart of Accounts", href: "/admin/accounting/coa"            },
+      { icon: RefreshCw,     label: "Exchange Rates",    href: "/admin/accounting/exchange-rates" },
+    );
   }
-
   if (isCC || isEA || isPartner) {
-    nav.push({
-      label: "My Accounting",
-      items: [
-        { icon: Wallet, label: "My Settlements", href: "/admin/my-accounting/settlements" },
-        { icon: FileText, label: "My Invoices", href: "/admin/my-accounting/invoices" },
-        { icon: BarChart2, label: "My Revenue", href: "/admin/my-accounting/revenue" },
-      ],
-    });
+    financeItems.push(
+      { icon: Wallet,    label: "My Settlements", href: "/admin/my-accounting/settlements" },
+      { icon: FileText,  label: "My Invoices",   href: "/admin/my-accounting/invoices"    },
+      { icon: BarChart2, label: "My Revenue",    href: "/admin/my-accounting/revenue"     },
+    );
   }
+  if (financeItems.length > 0)
+    nav.push({ key: "finance", label: "Finance", catIcon: Wallet, items: financeItems });
 
+  // ── 7 · Reports ──────────────────────────────────────────────────────────
   if (!isParent) {
-    nav.push({ label: "Reports", items: [{ icon: ReportNavIcon as unknown as LucideIcon, label: "Program Reports", href: "/admin/reports" }] });
-  }
-
-  if (isSAorAD) {
     nav.push({
-      label: "Documents",
-      items: [{ icon: FolderOpen, label: "All Documents", href: "/admin/documents" }],
+      key: "reports", label: "Reports", catIcon: BarChart2,
+      items: [{ icon: ReportNavIcon as unknown as LucideIcon, label: "Program Reports", href: "/admin/reports" }],
     });
   }
 
+  // ── 8 · AI Assistant ─────────────────────────────────────────────────────
   if (isSAorAD) {
-    nav.push({ label: "Users", items: [{ icon: Users, label: "Users", href: "/admin/users" }] });
+    nav.push({
+      key: "ai", label: "AI Assistant", catIcon: Bot,
+      items: [{ icon: Bot, label: "AI Chatbot", href: "/admin/chatbot" }],
+    });
   }
 
-  if (isSAorAD) {
-    nav.push({ label: "AI", items: [{ icon: Bot, label: "AI 챗봇", href: "/admin/chatbot" }] });
-  }
+  // ── 9 · Admin ────────────────────────────────────────────────────────────
+  const adminItems: NavItem[] = [];
+  if (isSAorAD)  adminItems.push({ icon: Users,        label: "Users",      href: "/admin/users"       });
+  if (isParent)  adminItems.push({ icon: GraduationCap, label: "My Programs", href: "/admin/my-programs" });
+  if (adminItems.length > 0)
+    nav.push({ key: "admin", label: "Admin", catIcon: Grid2x2, items: adminItems });
 
+  // ── 10 · Settings ────────────────────────────────────────────────────────
   if (isSA) {
     nav.push({
-      label: "Settings",
+      key: "settings", label: "Settings", catIcon: Settings,
       items: [
-        { icon: Settings, label: "General", href: "/admin/settings/general" },
-        { icon: Lock, label: "Page Access", href: "/admin/settings/page-access" },
-        { icon: Grid2x2, label: "Field Permissions", href: "/admin/settings/field-permissions" },
-        { icon: FileSearch, label: "Doc Permissions", href: "/admin/settings/doc-permissions" },
-        { icon: UserSearch, label: "Impersonation Logs", href: "/admin/settings/impersonation-logs" },
-        { icon: FolderOpen, label: "Data Manager", href: "/admin/settings/data-manager" },
+        { icon: Settings,    label: "General",            href: "/admin/settings/general"            },
+        { icon: Lock,        label: "Page Access",        href: "/admin/settings/page-access"        },
+        { icon: Grid2x2,     label: "Field Permissions",  href: "/admin/settings/field-permissions"  },
+        { icon: FileSearch,  label: "Doc Permissions",    href: "/admin/settings/doc-permissions"    },
+        { icon: UserSearch,  label: "Impersonation Logs", href: "/admin/settings/impersonation-logs" },
+        { icon: FolderOpen,  label: "Data Manager",       href: "/admin/settings/data-manager"       },
       ],
     });
-  }
-
-  if (isParent) {
-    nav.push({ label: "My Programs", items: [{ icon: GraduationCap, label: "My Programs", href: "/admin/my-programs" }] });
   }
 
   return nav;
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = "edubee_sidebar_collapsed";
+
+function readCollapsed(): Set<string> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveCollapsed(keys: Set<string>) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...keys]));
+  } catch { /* ignore */ }
+}
+
+// ── AppSidebar ────────────────────────────────────────────────────────────
+
 type Props = { collapsed: boolean; onToggle: () => void };
 
 export function AppSidebar({ collapsed, onToggle }: Props) {
-  const [location] = useLocation();
-  const { user } = useAuth();
+  const [location]                   = useLocation();
+  const { user }                     = useAuth();
   const { viewAsUser, isImpersonating } = useViewAs();
 
   const effectiveRole = viewAsUser?.role ?? user?.role ?? "parent_client";
-  const nav = buildNav(effectiveRole);
+  const nav           = buildNav(effectiveRole);
+
+  // Accordion state — set of category keys that are COLLAPSED
+  const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(readCollapsed);
+
+  const isGroupOpen = (group: NavGroup): boolean => {
+    // In icon-only mode show everything flat
+    if (collapsed) return true;
+    // Active-route category always stays open
+    const hasActive = group.items.some(
+      item => location === item.href || location.startsWith(item.href + "/")
+    );
+    if (hasActive) return true;
+    return !collapsedKeys.has(group.key);
+  };
+
+  const toggleGroup = (key: string) => {
+    setCollapsedKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      saveCollapsed(next);
+      return next;
+    });
+  };
 
   return (
     <aside
       className="flex flex-col shrink-0 h-full overflow-hidden transition-all duration-200"
-      style={{
-        width: collapsed ? 64 : 240,
-        background: "#FAFAF9",
-        borderRight: "1px solid #E8E6E2",
-      }}
+      style={{ width: collapsed ? 64 : 240, background: "#FAFAF9", borderRight: "1px solid #E8E6E2" }}
     >
-      {/* Logo header — matches top nav 56px height */}
+      {/* Logo header */}
       <div
         className="flex items-center h-14 shrink-0 px-3 gap-2"
         style={{ borderBottom: "1px solid #E8E6E2" }}
       >
         {collapsed ? (
           <div className="flex-1 flex items-center justify-center">
-            <Link href="/">
-              <EdubeeLogo variant="icon" size="sm" />
-            </Link>
+            <Link href="/"><EdubeeLogo variant="icon" size="sm" /></Link>
           </div>
         ) : (
           <Link href="/" className="flex-1 min-w-0 flex items-center">
-            <img
-              src={logoImg}
-              alt="Edubee Camp"
-              className="h-[39px] w-auto object-contain"
-            />
+            <img src={logoImg} alt="Edubee Camp" className="h-[39px] w-auto object-contain" />
           </Link>
         )}
         <button
           onClick={onToggle}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0 text-[#A8A29E] hover:bg-[#F4F3F1] hover:text-[#57534E]"
-          style={{ marginLeft: collapsed ? undefined : undefined }}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
@@ -219,40 +255,69 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {nav.map((group) => (
-          <div key={group.label} className="mb-1">
-            {!collapsed && (
-              <div
-                className="px-2 pt-3 pb-1 text-[11px] font-medium uppercase tracking-[0.08em] select-none"
-                style={{ color: "#A8A29E" }}
-              >
-                {group.label}
-              </div>
-            )}
-            {group.items.map((item) => {
-              const isActive = location === item.href || location.startsWith(item.href + "/");
-              const Icon = item.icon;
-              return (
-                <Link key={item.href} href={item.href}>
-                  <SidebarNavItem
-                    icon={Icon}
-                    label={item.label}
-                    isActive={isActive}
-                    collapsed={collapsed}
+        {nav.map(group => {
+          const open        = isGroupOpen(group);
+          const CatIcon     = group.catIcon;
+          const hasActive   = group.items.some(
+            item => location === item.href || location.startsWith(item.href + "/")
+          );
+
+          return (
+            <div key={group.key} className="mb-0.5">
+
+              {/* Category header — only in expanded mode */}
+              {!collapsed && (
+                <button
+                  onClick={() => toggleGroup(group.key)}
+                  className="w-full flex items-center gap-1.5 px-2 pt-3 pb-1.5 rounded-md transition-colors hover:bg-[#F4F3F1] group/cat"
+                >
+                  <CatIcon
+                    size={13}
+                    strokeWidth={hasActive ? 2.2 : 1.8}
+                    style={{ color: hasActive ? "#F5821F" : "#A8A29E", flexShrink: 0 }}
                   />
-                </Link>
-              );
-            })}
-          </div>
-        ))}
+                  <span
+                    className="flex-1 text-left text-[11px] font-semibold uppercase tracking-[0.08em] truncate"
+                    style={{ color: hasActive ? "#F5821F" : "#A8A29E" }}
+                  >
+                    {group.label}
+                  </span>
+                  <ChevronDown
+                    size={11}
+                    strokeWidth={1.8}
+                    style={{
+                      color: "#A8A29E",
+                      flexShrink: 0,
+                      transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+                      transition: "transform 150ms ease",
+                    }}
+                  />
+                </button>
+              )}
+
+              {/* Items */}
+              {open && group.items.map(item => {
+                const isActive = location === item.href || location.startsWith(item.href + "/");
+                const Icon     = item.icon;
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <SidebarNavItem
+                      icon={Icon}
+                      label={item.label}
+                      isActive={isActive}
+                      collapsed={collapsed}
+                    />
+                  </Link>
+                );
+              })}
+            </div>
+          );
+        })}
       </nav>
 
       {/* User footer */}
       {user && (
-        <div
-          className="p-3 shrink-0"
-          style={{ borderTop: "1px solid #E8E6E2" }}
-        >
+        <div className="p-3 shrink-0" style={{ borderTop: "1px solid #E8E6E2" }}>
           {collapsed ? (
             <div
               className="w-8 h-8 rounded-full text-xs font-bold flex items-center justify-center mx-auto"
@@ -281,18 +346,21 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
   );
 }
 
+// ── SidebarNavItem ────────────────────────────────────────────────────────
+
 function SidebarNavItem({
   icon: Icon, label, isActive, collapsed,
 }: { icon: LucideIcon; label: string; isActive: boolean; collapsed: boolean }) {
   return (
     <div
       title={collapsed ? label : undefined}
-      className="flex items-center gap-2.5 px-2 h-10 rounded-lg text-sm cursor-pointer transition-all duration-150 select-none group/item"
+      className="flex items-center gap-2.5 px-2 h-9 rounded-lg text-sm cursor-pointer transition-all duration-150 select-none"
       style={{
-        background: isActive ? "#FEF0E3" : "transparent",
-        color: isActive ? "#F5821F" : "#57534E",
-        fontWeight: isActive ? 600 : 400,
+        background:    isActive ? "#FEF0E3" : "transparent",
+        color:         isActive ? "#F5821F" : "#57534E",
+        fontWeight:    isActive ? 600 : 400,
         justifyContent: collapsed ? "center" : undefined,
+        marginLeft:    collapsed ? 0 : 4,
       }}
       onMouseEnter={e => {
         if (!isActive) {
@@ -309,11 +377,11 @@ function SidebarNavItem({
     >
       <Icon
         className="shrink-0"
-        size={16}
+        size={15}
         strokeWidth={isActive ? 2.2 : 1.8}
         style={{ color: isActive ? "#F5821F" : "#A8A29E" }}
       />
-      {!collapsed && <span className="truncate">{label}</span>}
+      {!collapsed && <span className="truncate text-[13px]">{label}</span>}
     </div>
   );
 }
