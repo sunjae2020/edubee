@@ -29,6 +29,8 @@ import accountingCoaRouter from "./accounting-coa.js";
 import accountingArApRouter from "./accounting-arap.js";
 import accountingPaymentsRouter from "./accounting-payments.js";
 import servicesStudyAbroadRouter from "./services-study-abroad.js";
+import servicesAccommodationRouter from "./services-accommodation.js";
+import servicesPickupRouter from "./services-pickup.js";
 
 const router: IRouter = Router();
 
@@ -62,5 +64,7 @@ router.use(accountingCoaRouter);
 router.use(accountingArApRouter);
 router.use(accountingPaymentsRouter);
 router.use(servicesStudyAbroadRouter);
+router.use(servicesAccommodationRouter);
+router.use(servicesPickupRouter);
 
 export default router;
