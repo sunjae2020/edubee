@@ -545,7 +545,27 @@ router.get("/products", authenticate, async (req, res) => {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(products).where(whereClause);
     const [data, allRates] = await Promise.all([
-      db.select().from(products).where(whereClause).limit(limitNum).offset(offset),
+      db.select({
+        id:              products.id,
+        productName:     products.productName,
+        productType:     products.productType,
+        description:     products.description,
+        cost:            products.cost,
+        currency:        products.currency,
+        price:           products.price,
+        productGrade:    products.productGrade,
+        productPriority: products.productPriority,
+        status:          products.status,
+        providerId:      products.providerId,
+        providerName:    accounts.name,
+        createdAt:       products.createdAt,
+        updatedAt:       products.updatedAt,
+      })
+        .from(products)
+        .leftJoin(accounts, eq(products.providerId, accounts.id))
+        .where(whereClause)
+        .limit(limitNum)
+        .offset(offset),
       db.select().from(exchangeRates).orderBy(desc(exchangeRates.effectiveDate)),
     ]);
 

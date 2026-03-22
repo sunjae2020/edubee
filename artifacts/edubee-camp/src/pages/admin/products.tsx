@@ -15,7 +15,6 @@ import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Package, Pencil, Trash2, RefreshCw } from "lucide-react";
-import { format } from "date-fns";
 import ProductDrawer from "@/components/shared/ProductDrawer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -28,8 +27,12 @@ interface Product {
   description?: string | null;
   cost?: string | null;
   currency?: string | null;
+  price?: string | null;
+  productGrade?: string | null;
+  productPriority?: number | null;
   status?: string | null;
-  providerAccountId?: string | null;
+  providerId?: string | null;
+  providerName?: string | null;
   convertedCost?: Record<string, number | null>;
   createdAt?: string;
 }
@@ -144,26 +147,6 @@ export default function Products() {
     if (confirm(`Archive "${p.productName}"?`)) deleteProduct.mutate(p.id);
   };
 
-  const fmtCost = (p: Product) => {
-    if (displayCurrency !== "AUD" && p.convertedCost?.[displayCurrency.toLowerCase()] != null) {
-      const converted = p.convertedCost[displayCurrency.toLowerCase()]!;
-      return (
-        <span>
-          <span className="text-[#F5821F] font-semibold">
-            {displayCurrency} {converted.toLocaleString("en-AU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-          </span>
-          {p.cost && (
-            <span className="block text-[10px] text-muted-foreground font-normal">
-              AUD {Number(p.cost).toLocaleString("en-AU", { minimumFractionDigits: 0 })}
-            </span>
-          )}
-        </span>
-      );
-    }
-    if (!p.cost) return "—";
-    return `${p.currency ?? "AUD"} ${Number(p.cost).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
   return (
     <div className="space-y-4">
       <ListToolbar
@@ -202,10 +185,15 @@ export default function Products() {
       </ListToolbar>
 
       {(() => {
-        const COLS = typeFilter === "all" ? 7 : 6;
+        const COLS = 8;
         const TYPE_ICONS: Record<string, string> = {
           institute: "🏫", hotel: "🏨", pickup: "🚌", tour: "🗺️",
           settlement: "💼", program: "📚",
+        };
+
+        const fmtPrice = (p: Product) => {
+          if (!p.price) return "—";
+          return `${p.currency ?? "AUD"} ${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         };
 
         const renderRow = (p: Product) => (
@@ -214,29 +202,41 @@ export default function Products() {
             className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
             onClick={() => setLocation(`${BASE}/admin/products/${p.id}`)}
           >
+            {/* Provider */}
+            <td className="px-4 py-3 text-sm text-[#57534E]">
+              {p.providerName ?? <span className="text-muted-foreground">—</span>}
+            </td>
+            {/* Product Name */}
             <td className="px-4 py-3">
               <div className="font-medium text-foreground">{p.productName}</div>
-              {p.description && <div className="text-xs text-muted-foreground truncate max-w-[240px]">{p.description}</div>}
             </td>
-            {typeFilter === "all" && (
-              <td className="px-4 py-3">
-                <span className="px-2 py-0.5 bg-muted rounded text-xs capitalize">{p.productType}</span>
-              </td>
-            )}
-            <td className="px-4 py-3 text-right font-mono text-sm font-semibold">
-              {fmtCost(p)}
-            </td>
+            {/* Product Type */}
             <td className="px-4 py-3">
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[p.status ?? "active"] ?? "bg-gray-100 text-gray-600"}`}>
-                {p.status ?? "active"}
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted rounded text-xs capitalize">
+                {TYPE_ICONS[p.productType] ?? "📦"} {p.productType}
               </span>
             </td>
-            <td className="px-4 py-3">
-              <LinkedGroupsCell productId={p.id} />
+            {/* Currency */}
+            <td className="px-4 py-3 text-sm font-mono text-[#57534E]">
+              {p.currency ?? "—"}
             </td>
-            <td className="px-4 py-3 text-muted-foreground text-xs">
-              {p.createdAt ? format(new Date(p.createdAt), "MMM d, yyyy") : "—"}
+            {/* Price */}
+            <td className="px-4 py-3 text-sm font-mono font-semibold text-[#1C1917]">
+              {fmtPrice(p)}
             </td>
+            {/* Grade */}
+            <td className="px-4 py-3 text-sm text-[#57534E]">
+              {p.productGrade ?? <span className="text-muted-foreground">—</span>}
+            </td>
+            {/* Priority */}
+            <td className="px-4 py-3 text-sm text-center text-[#57534E]">
+              {p.productPriority != null ? (
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#F4F3F1] text-xs font-semibold text-[#1C1917]">
+                  {p.productPriority}
+                </span>
+              ) : <span className="text-muted-foreground">—</span>}
+            </td>
+            {/* Actions */}
             <td className="px-4 py-3">
               <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openDrawer(p.id)}>
@@ -263,14 +263,13 @@ export default function Products() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product</th>
-                  {typeFilter === "all" && (
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
-                  )}
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cost</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Linked Groups</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Created</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provider</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Name</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Type</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Currency</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Price</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Grade</th>
+                  <th className="px-4 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Priority</th>
                   <th className="px-4 py-2.5 w-20" />
                 </tr>
               </thead>
