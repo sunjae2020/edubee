@@ -6,10 +6,12 @@ import {
   decimal,
   timestamp,
   boolean,
+  integer,
   jsonb,
   date,
   unique,
   index,
+  AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -144,6 +146,10 @@ export const invoices = pgTable("invoices", {
   commissionAmount: decimal("commission_amount", { precision: 12, scale: 2 }),
   netAmount: decimal("net_amount", { precision: 12, scale: 2 }),
   createdBy: uuid("created_by").references(() => users.id),
+  parentInvoiceId: uuid("parent_invoice_id").references((): AnyPgColumn => invoices.id),
+  isRecurring: boolean("is_recurring").default(false).notNull(),
+  recurringCycle: varchar("recurring_cycle", { length: 20 }),
+  recurringSeq: integer("recurring_seq"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

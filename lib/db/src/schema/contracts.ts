@@ -37,6 +37,12 @@ export const contracts = pgTable("contracts", {
   packageName: varchar("package_name", { length: 255 }),
   agentName: varchar("agent_name", { length: 255 }),
   notes: text("notes"),
+  paymentFrequency: varchar("payment_frequency", { length: 50 }),
+  courseStartDate: date("course_start_date"),
+  courseEndDate: date("course_end_date"),
+  totalArAmount: decimal("total_ar_amount", { precision: 12, scale: 2 }),
+  totalApAmount: decimal("total_ap_amount", { precision: 12, scale: 2 }),
+  serviceModulesActivated: jsonb("service_modules_activated"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -49,6 +55,15 @@ export const contractProducts = pgTable("contract_products", {
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }),
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }),
   status: varchar("status", { length: 50 }).default("pending"),
+  arDueDate: date("ar_due_date"),
+  apDueDate: date("ap_due_date"),
+  arAmount: decimal("ar_amount", { precision: 12, scale: 2 }),
+  apAmount: decimal("ap_amount", { precision: 12, scale: 2 }),
+  arStatus: varchar("ar_status", { length: 20 }).default("scheduled"),
+  apStatus: varchar("ap_status", { length: 20 }).default("pending"),
+  coaArCode: varchar("coa_ar_code", { length: 10 }),
+  coaApCode: varchar("coa_ap_code", { length: 10 }),
+  serviceModuleType: varchar("service_module_type", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

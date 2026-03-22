@@ -79,6 +79,7 @@ export const products = pgTable("products", {
   currency: varchar("currency", { length: 10 }).default("AUD"),
   unit: varchar("unit", { length: 50 }),
   status: varchar("status", { length: 20 }).default("active"),
+  serviceModuleType: varchar("service_module_type", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
