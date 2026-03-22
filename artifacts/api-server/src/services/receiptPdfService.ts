@@ -6,14 +6,12 @@ import { eq } from "drizzle-orm";
 import { sendMail } from "../mailer.js";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 
 // ── Resolve logo path ─────────────────────────────────────────────────────
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Use process.cwd() so this works in both ESM dev (tsx) and CJS prod (esbuild)
 let LOGO_DATA_URI = "";
 try {
-  const logoPath = path.join(__dirname, "../../../../attached_assets/edubee_logo_800x310b_1773796715563.png");
+  const logoPath = path.join(process.cwd(), "attached_assets/edubee_logo_800x310b_1773796715563.png");
   if (fs.existsSync(logoPath)) {
     const logoBuffer = fs.readFileSync(logoPath);
     LOGO_DATA_URI = `data:image/png;base64,${logoBuffer.toString("base64")}`;
