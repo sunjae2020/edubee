@@ -37,7 +37,7 @@ function buildWhere(
 
 // ─── GET /api/accounting/ar/summary ─────────────────────────────────────────
 router.get(
-  "/api/accounting/ar/summary",
+  "/accounting/ar/summary",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -65,7 +65,7 @@ router.get(
 
 // ─── GET /api/accounting/ar ─────────────────────────────────────────────────
 router.get(
-  "/api/accounting/ar",
+  "/accounting/ar",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -123,7 +123,7 @@ router.get(
 
 // ─── GET /api/accounting/ap ─────────────────────────────────────────────────
 router.get(
-  "/api/accounting/ap",
+  "/accounting/ap",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -182,7 +182,7 @@ router.get(
 
 // ─── PATCH /api/accounting/ar/:id/status ────────────────────────────────────
 router.patch(
-  "/api/accounting/ar/:id/status",
+  "/accounting/ar/:id/status",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -213,7 +213,7 @@ router.patch(
 
 // ─── PATCH /api/accounting/ap/:id/status ────────────────────────────────────
 router.patch(
-  "/api/accounting/ap/:id/status",
+  "/accounting/ap/:id/status",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {

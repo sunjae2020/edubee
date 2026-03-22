@@ -32,14 +32,13 @@ const SELECT_COLS = {
   contractNumber:      contracts.contractNumber,
   studentName:         contracts.studentName,
   agentName:           contracts.agentName,
-  staffFirstName:      users.firstName,
-  staffLastName:       users.lastName,
+  staffFirstName:      users.fullName,
 };
 
 // ─── GET /api/services/study-abroad/visa-alerts ──────────────────────────────
 // MUST be registered BEFORE /:id to avoid path conflict
 router.get(
-  "/api/services/study-abroad/visa-alerts",
+  "/services/study-abroad/visa-alerts",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -67,7 +66,7 @@ router.get(
 
 // ─── GET /api/services/study-abroad ──────────────────────────────────────────
 router.get(
-  "/api/services/study-abroad",
+  "/services/study-abroad",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -119,7 +118,7 @@ router.get(
 
 // ─── GET /api/services/study-abroad/:id ──────────────────────────────────────
 router.get(
-  "/api/services/study-abroad/:id",
+  "/services/study-abroad/:id",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -142,7 +141,7 @@ router.get(
 
 // ─── PATCH /api/services/study-abroad/:id ────────────────────────────────────
 router.patch(
-  "/api/services/study-abroad/:id",
+  "/services/study-abroad/:id",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {

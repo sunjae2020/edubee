@@ -30,7 +30,7 @@ function userId(req: any): string {
 
 // ─── GET /api/accounting/journal-entries ────────────────────────────────────
 router.get(
-  "/api/accounting/journal-entries",
+  "/accounting/journal-entries",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -80,7 +80,7 @@ router.get(
 
 // ─── GET /api/accounting/payments ───────────────────────────────────────────
 router.get(
-  "/api/accounting/payments",
+  "/accounting/payments",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -110,7 +110,7 @@ router.get(
 
 // ─── GET /api/accounting/payments/:id ───────────────────────────────────────
 router.get(
-  "/api/accounting/payments/:id",
+  "/accounting/payments/:id",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -141,7 +141,7 @@ router.get(
 
 // ─── POST /api/accounting/payments ──────────────────────────────────────────
 router.post(
-  "/api/accounting/payments",
+  "/accounting/payments",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -249,7 +249,7 @@ router.post(
 
 // ─── PATCH /api/accounting/payments/:id/void ────────────────────────────────
 router.patch(
-  "/api/accounting/payments/:id/void",
+  "/accounting/payments/:id/void",
   authenticate,
   requireRole(...ADMIN_ROLES),
   async (req, res) => {

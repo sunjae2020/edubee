@@ -8,7 +8,7 @@ import { requireRole } from "../middleware/requireRole.js";
 const router = Router();
 
 // ─── GET /api/accounting/coa ─────────────────────────────────────────────────
-router.get("/api/accounting/coa", authenticate, async (req, res) => {
+router.get("/accounting/coa", authenticate, async (req, res) => {
   try {
     const rows = await db
       .select()
@@ -31,7 +31,7 @@ router.get("/api/accounting/coa", authenticate, async (req, res) => {
 });
 
 // ─── GET /api/accounting/coa/:code ───────────────────────────────────────────
-router.get("/api/accounting/coa/:code", authenticate, async (req, res) => {
+router.get("/accounting/coa/:code", authenticate, async (req, res) => {
   try {
     const [row] = await db
       .select()
@@ -48,7 +48,7 @@ router.get("/api/accounting/coa/:code", authenticate, async (req, res) => {
 
 // ─── POST /api/accounting/coa ────────────────────────────────────────────────
 router.post(
-  "/api/accounting/coa",
+  "/accounting/coa",
   authenticate,
   requireRole("super_admin"),
   async (req, res) => {
@@ -73,7 +73,7 @@ router.post(
 
 // ─── PUT /api/accounting/coa/:code ───────────────────────────────────────────
 router.put(
-  "/api/accounting/coa/:code",
+  "/accounting/coa/:code",
   authenticate,
   requireRole("super_admin"),
   async (req, res) => {

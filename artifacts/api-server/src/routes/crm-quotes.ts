@@ -20,7 +20,7 @@ function genQuoteRef() {
 }
 
 // ─── GET /api/crm/quotes ────────────────────────────────────────────
-router.get("/api/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { quoteStatus, isTemplate, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum  = Math.max(1, parseInt(page));
@@ -56,7 +56,7 @@ router.get("/api/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (
 });
 
 // ─── GET /api/crm/quotes/templates ─────────────────────────────────
-router.get("/api/crm/quotes/templates", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/crm/quotes/templates", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const data = await db.select().from(quotes).where(eq(quotes.isTemplate, true));
     return res.json({ data });
@@ -67,7 +67,7 @@ router.get("/api/crm/quotes/templates", authenticate, requireRole(...ADMIN_ROLES
 });
 
 // ─── GET /api/crm/quotes/:id ────────────────────────────────────────
-router.get("/api/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
     if (!quote) return res.status(404).json({ error: "Quote not found" });
@@ -83,7 +83,7 @@ router.get("/api/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), asy
 });
 
 // ─── POST /api/crm/quotes ───────────────────────────────────────────
-router.post("/api/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.post("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { leadId, contactId, accountName, quoteStatus, expiryDate, isTemplate, notes,
             products: lineItems = [] } = req.body;
@@ -124,7 +124,7 @@ router.post("/api/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async 
 });
 
 // ─── PUT /api/crm/quotes/:id ────────────────────────────────────────
-router.put("/api/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.put("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [existing] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
     if (!existing) return res.status(404).json({ error: "Quote not found" });
@@ -166,7 +166,7 @@ router.put("/api/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), asy
 });
 
 // ─── POST /api/crm/quotes/:id/convert-to-contract ──────────────────
-router.post("/api/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
     if (!quote) return res.status(404).json({ error: "Quote not found" });
@@ -255,7 +255,7 @@ router.post("/api/crm/quotes/:id/convert-to-contract", authenticate, requireRole
 });
 
 // ─── GET /api/crm/quotes/:id/pdf ────────────────────────────────────
-router.get("/api/crm/quotes/:id/pdf", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/crm/quotes/:id/pdf", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
     if (!quote) return res.status(404).json({ error: "Quote not found" });

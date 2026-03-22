@@ -36,14 +36,13 @@ const SELECT_COLS = {
   contractNumber:                 contracts.contractNumber,
   studentName:                    contracts.studentName,
   agentName:                      contracts.agentName,
-  staffFirstName:                 users.firstName,
-  staffLastName:                  users.lastName,
+  staffFirstName:                 users.fullName,
 };
 
 // ─── GET /api/services/guardian/billing-due ───────────────────────────────────
 // MUST be before /:id
 router.get(
-  "/api/services/guardian/billing-due",
+  "/services/guardian/billing-due",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -80,7 +79,7 @@ router.get(
 
 // ─── GET /api/services/guardian ───────────────────────────────────────────────
 router.get(
-  "/api/services/guardian",
+  "/services/guardian",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -139,7 +138,7 @@ router.get(
 
 // ─── GET /api/services/guardian/:id ──────────────────────────────────────────
 router.get(
-  "/api/services/guardian/:id",
+  "/services/guardian/:id",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -177,7 +176,7 @@ router.get(
 
 // ─── PATCH /api/services/guardian/:id ────────────────────────────────────────
 router.patch(
-  "/api/services/guardian/:id",
+  "/services/guardian/:id",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -229,7 +228,7 @@ router.patch(
 
 // ─── POST /api/services/guardian/:id/monthly-report ──────────────────────────
 router.post(
-  "/api/services/guardian/:id/monthly-report",
+  "/services/guardian/:id/monthly-report",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -274,7 +273,7 @@ router.post(
 
 // ─── POST /api/accounting/invoices/recurring ──────────────────────────────────
 router.post(
-  "/api/accounting/invoices/recurring",
+  "/accounting/invoices/recurring",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {

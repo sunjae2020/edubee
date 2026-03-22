@@ -9,7 +9,7 @@ import { requireRole } from "../middleware/requireRole.js";
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
 
-router.get("/api/camp-applications", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { applicationStatus, search, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum  = Math.max(1, parseInt(page));
@@ -43,7 +43,7 @@ router.get("/api/camp-applications", authenticate, requireRole(...ADMIN_ROLES), 
   }
 });
 
-router.get("/api/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [application] = await db.select().from(campApplications)
       .where(eq(campApplications.id, req.params.id)).limit(1);
@@ -55,7 +55,7 @@ router.get("/api/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLE
   }
 });
 
-router.patch("/api/camp-applications/:id/status", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.patch("/camp-applications/:id/status", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { applicationStatus: newStatus } = req.body;
     if (!newStatus) return res.status(400).json({ error: "applicationStatus is required" });

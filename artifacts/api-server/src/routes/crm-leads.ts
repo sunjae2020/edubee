@@ -18,7 +18,7 @@ function genQuoteRef() {
   return "QTE-" + Date.now().toString(36).toUpperCase().padStart(8, "0");
 }
 
-router.get("/api/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { leadStatus, assignedStaffId, search, page = "1", limit = String(PAGE_SIZE) } =
       req.query as Record<string, string>;
@@ -55,7 +55,7 @@ router.get("/api/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (r
   }
 });
 
-router.get("/api/crm/leads/kanban", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/crm/leads/kanban", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const counts = await db.select({ status: leads.status, count: count() })
       .from(leads).groupBy(leads.status);
@@ -78,7 +78,7 @@ router.get("/api/crm/leads/kanban", authenticate, requireRole(...ADMIN_ROLES), a
   }
 });
 
-router.get("/api/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id));
     if (!lead) return res.status(404).json({ error: "Lead not found" });
@@ -108,7 +108,7 @@ router.get("/api/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), asyn
   }
 });
 
-router.post("/api/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.post("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { fullName, email, phone, nationality, source, interestedIn, notes,
             assignedStaffId, inquiryType, budget, expectedStartDate, contactId,
@@ -131,7 +131,7 @@ router.post("/api/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (
   }
 });
 
-router.put("/api/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.put("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [existing] = await db.select().from(leads).where(eq(leads.id, req.params.id));
     if (!existing) return res.status(404).json({ error: "Lead not found" });
@@ -153,7 +153,7 @@ router.put("/api/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), asyn
   }
 });
 
-router.patch("/api/crm/leads/:id/status", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.patch("/crm/leads/:id/status", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { status } = req.body;
     if (!status) return res.status(400).json({ error: "status is required" });
@@ -171,7 +171,7 @@ router.patch("/api/crm/leads/:id/status", authenticate, requireRole(...ADMIN_ROL
   }
 });
 
-router.post("/api/crm/leads/:id/activities", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.post("/crm/leads/:id/activities", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id));
     if (!lead) return res.status(404).json({ error: "Lead not found" });
@@ -195,7 +195,7 @@ router.post("/api/crm/leads/:id/activities", authenticate, requireRole(...ADMIN_
   }
 });
 
-router.post("/api/crm/leads/:id/convert-to-quote", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.post("/crm/leads/:id/convert-to-quote", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id));
     if (!lead) return res.status(404).json({ error: "Lead not found" });

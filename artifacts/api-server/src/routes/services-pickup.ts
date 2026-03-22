@@ -30,7 +30,7 @@ const SELECT_COLS = {
 
 // ─── GET /api/services/pickup ─────────────────────────────────────────────────
 router.get(
-  "/api/services/pickup",
+  "/services/pickup",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -98,7 +98,7 @@ router.get(
 
 // ─── GET /api/services/pickup/:id ────────────────────────────────────────────
 router.get(
-  "/api/services/pickup/:id",
+  "/services/pickup/:id",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -124,7 +124,7 @@ router.get(
 
 // ─── PATCH /api/services/pickup/:id ──────────────────────────────────────────
 router.patch(
-  "/api/services/pickup/:id",
+  "/services/pickup/:id",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -166,7 +166,7 @@ router.patch(
 
 // ─── PATCH /api/services/pickup/:id/assign ───────────────────────────────────
 router.patch(
-  "/api/services/pickup/:id/assign",
+  "/services/pickup/:id/assign",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {

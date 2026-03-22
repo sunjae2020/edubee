@@ -1,0 +1,62 @@
+SAFETY RULES:
+- Do not modify any production data
+- Use test records only
+- Report results for each step
+
+Run Test 1 — Study Abroad full workflow:
+
+  Step 1: POST /api/crm/leads
+    confirm leadRefNumber = LD-XXXXXXXX in response
+
+  Step 2: POST /api/crm/leads/:id/activities
+    SELECT * FROM lead_activities ORDER BY created_on DESC LIMIT 1;
+
+  Step 3: POST /api/crm/leads/:id/convert-to-quote
+    confirm quoteRefNumber = QTE-XXXXXXXX in response
+
+  Step 4: PUT /api/crm/quotes/:id
+    add 3 line items: serviceModuleType = study_abroad, pickup, accommodation
+
+  Step 5: POST /api/crm/quotes/:id/convert-to-contract
+    SELECT c.name, c.service_modules_activated,
+      (SELECT count(*) FROM contract_products WHERE contract_id = c.id) AS products,
+      (SELECT count(*) FROM study_abroad_mgt WHERE contract_id = c.id)  AS study,
+      (SELECT count(*) FROM pickup_mgt WHERE contract_id = c.id)        AS pickup,
+      (SELECT count(*) FROM accommodation_mgt WHERE contract_id = c.id) AS accom
+    FROM contracts c ORDER BY c.created_on DESC LIMIT 1;
+
+  Step 6: POST /api/accounting/payments { paymentType: 'trust_receipt', totalAmount: 5000 }
+    SELECT debit_coa, credit_coa, amount, entry_type
+    FROM journal_entries ORDER BY created_on DESC LIMIT 3;
+    expect: debit_coa='1200' credit_coa='1300'
+
+Run Test 2 — CAMP to CRM bridge:
+
+  Step 1: Pick any existing camp application, note its id
+  Step 2: PATCH status to 'reviewing'
+    SELECT lead_ref_number, lead_source FROM leads
+    WHERE lead_source = 'Camp Application' ORDER BY created_on DESC LIMIT 1;
+    SELECT application_ref, lead_id FROM camp_applications
+    WHERE lead_id IS NOT NULL ORDER BY updated_at DESC LIMIT 1;
+  Step 3: PATCH status to 'confirmed'
+    SELECT * FROM contracts ORDER BY created_on DESC LIMIT 1;
+
+Run Test 3 — CAMP regression check (report ✅ or ❌ for each):
+  Landing page loads → package list visible
+  Submit application modal → APP-2026-XXXX issued
+  Admin login → existing sidebar menus visible
+  Camp Applications list loads
+  Program Reports list loads
+  Settlement list loads
+
+Final checks:
+  npx tsc --noEmit → 0 errors
+  Restart server → no import or runtime errors
+  Login with all 9 demo accounts → correct menus per role
+
+Report in this format:
+✅ Modified files: [list]
+✅ Seed data: leads N / CoA 34 / templates 4
+✅ Test 1: [result] / Test 2: [result] / Test 3: [result]
+✅ Verification: tsc ✅ / server ✅ / DB ✅ / API ✅
+⚠️ Next: [if any]

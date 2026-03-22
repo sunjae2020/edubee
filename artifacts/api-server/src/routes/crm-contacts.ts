@@ -8,7 +8,7 @@ import { requireRole } from "../middleware/requireRole.js";
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
 
-router.get("/api/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { status, accountType, nationality, search, page = "1", limit = "20" } =
       req.query as Record<string, string>;
@@ -47,7 +47,7 @@ router.get("/api/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async
   }
 });
 
-router.get("/api/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [row] = await db.select().from(contacts).where(eq(contacts.id, req.params.id));
     if (!row) return res.status(404).json({ error: "Contact not found" });
@@ -58,7 +58,7 @@ router.get("/api/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), a
   }
 });
 
-router.post("/api/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.post("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { firstName, lastName, title, dob, gender, nationality, email, mobile,
             officeNumber, snsType, snsId, influxChannel, importantDate1, importantDate2,
@@ -83,7 +83,7 @@ router.post("/api/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), asyn
   }
 });
 
-router.put("/api/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.put("/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [existing] = await db.select().from(contacts).where(eq(contacts.id, req.params.id));
     if (!existing) return res.status(404).json({ error: "Contact not found" });
@@ -106,7 +106,7 @@ router.put("/api/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), a
   }
 });
 
-router.patch("/api/crm/contacts/:id/status", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.patch("/crm/contacts/:id/status", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { status } = req.body;
     if (!status) return res.status(400).json({ error: "status is required" });

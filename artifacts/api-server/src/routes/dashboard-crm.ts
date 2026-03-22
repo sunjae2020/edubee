@@ -23,7 +23,7 @@ async function scalar(q: SQL): Promise<number> {
 }
 
 // ── GET /api/dashboard/crm/kpi ────────────────────────────────────────────
-router.get("/api/dashboard/crm/kpi", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/dashboard/crm/kpi", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [
       activeContracts,
@@ -50,7 +50,7 @@ router.get("/api/dashboard/crm/kpi", authenticate, requireRole(...ADMIN_ROLES), 
 });
 
 // ── GET /api/dashboard/crm/revenue ───────────────────────────────────────
-router.get("/api/dashboard/crm/revenue", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/dashboard/crm/revenue", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const data = await rows(sql`
       SELECT
@@ -73,7 +73,7 @@ router.get("/api/dashboard/crm/revenue", authenticate, requireRole(...ADMIN_ROLE
 });
 
 // ── GET /api/dashboard/crm/funnel ────────────────────────────────────────
-router.get("/api/dashboard/crm/funnel", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/dashboard/crm/funnel", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const data = await rows(sql`
       SELECT COALESCE(status, 'new') AS status, COUNT(*)::int AS count
@@ -91,7 +91,7 @@ router.get("/api/dashboard/crm/funnel", authenticate, requireRole(...ADMIN_ROLES
 });
 
 // ── GET /api/dashboard/crm/ar-aging ──────────────────────────────────────
-router.get("/api/dashboard/crm/ar-aging", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/dashboard/crm/ar-aging", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const rawRows = await rows(sql`
       SELECT
@@ -127,7 +127,7 @@ router.get("/api/dashboard/crm/ar-aging", authenticate, requireRole(...ADMIN_ROL
 });
 
 // ── GET /api/dashboard/crm/staff-kpi ─────────────────────────────────────
-router.get("/api/dashboard/crm/staff-kpi", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/dashboard/crm/staff-kpi", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const data = await rows(sql`
       SELECT
@@ -158,7 +158,7 @@ router.get("/api/dashboard/crm/staff-kpi", authenticate, requireRole(...ADMIN_RO
 });
 
 // ── PATCH /api/dashboard/crm/staff-kpi/approve ───────────────────────────
-router.patch("/api/dashboard/crm/staff-kpi/approve", authenticate, requireRole("super_admin"), async (req, res) => {
+router.patch("/dashboard/crm/staff-kpi/approve", authenticate, requireRole("super_admin"), async (req, res) => {
   try {
     const { ids } = req.body as { ids: string[] };
     if (!Array.isArray(ids) || ids.length === 0) {

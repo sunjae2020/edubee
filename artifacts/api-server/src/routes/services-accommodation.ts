@@ -35,13 +35,12 @@ const SELECT_COLS = {
   contractNumber:    contracts.contractNumber,
   studentName:       contracts.studentName,
   agentName:         contracts.agentName,
-  staffFirstName:    users.firstName,
-  staffLastName:     users.lastName,
+  staffFirstName:    users.fullName,
 };
 
 // ─── GET /api/services/accommodation ─────────────────────────────────────────
 router.get(
-  "/api/services/accommodation",
+  "/services/accommodation",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -102,7 +101,7 @@ router.get(
 
 // ─── GET /api/services/accommodation/:id ──────────────────────────────────────
 router.get(
-  "/api/services/accommodation/:id",
+  "/services/accommodation/:id",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -125,7 +124,7 @@ router.get(
 
 // ─── PATCH /api/services/accommodation/:id ────────────────────────────────────
 router.patch(
-  "/api/services/accommodation/:id",
+  "/services/accommodation/:id",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
@@ -177,7 +176,7 @@ router.patch(
 
 // ─── POST /api/services/accommodation/:id/welfare-check ──────────────────────
 router.post(
-  "/api/services/accommodation/:id/welfare-check",
+  "/services/accommodation/:id/welfare-check",
   authenticate,
   requireRole(...STAFF_ROLES),
   async (req, res) => {
