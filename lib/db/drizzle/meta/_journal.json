@@ -43,6 +43,13 @@
       "when": 1774150602227,
       "tag": "0005_previous_zzzax",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774150980055,
+      "tag": "0006_low_sinister_six",
+      "breakpoints": true
     }
   ]
 }

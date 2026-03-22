@@ -23,6 +23,7 @@ import chatbotRouter from "./chatbot.js";
 import aiRouter from "./ai.js";
 import contractFinanceRouter from "./contract-finance.js";
 import crmContactsRouter from "./crm-contacts.js";
+import crmLeadsRouter from "./crm-leads.js";
 
 const router: IRouter = Router();
 
@@ -50,5 +51,6 @@ router.use(chatbotRouter);
 router.use(aiRouter);
 router.use(contractFinanceRouter);
 router.use(crmContactsRouter);
+router.use(crmLeadsRouter);
 
 export default router;

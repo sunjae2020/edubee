@@ -77,6 +77,7 @@ import ContactsPage from "@/pages/admin/crm/ContactsPage";
 import ContactDetailPage from "@/pages/admin/crm/ContactDetailPage";
 import AccountsPage from "@/pages/admin/crm/AccountsPage";
 import CrmLeadsPage from "@/pages/admin/crm/LeadsPage";
+import LeadDetailPage from "@/pages/admin/crm/LeadDetailPage";
 import QuotesPage from "@/pages/admin/crm/QuotesPage";
 
 // Accounting (new)
@@ -221,6 +222,9 @@ function Router() {
       </Route>
       <Route path="/admin/crm/leads">
         <AdminRoute title="CRM Leads"><CrmLeadsPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/crm/leads/:id">
+        <AdminRoute title="Lead Detail"><LeadDetailPage /></AdminRoute>
       </Route>
       <Route path="/admin/crm/quotes">
         <AdminRoute title="Quotes"><QuotesPage /></AdminRoute>

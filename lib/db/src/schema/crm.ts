@@ -6,6 +6,8 @@ import {
   date,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { users } from "./users";
+import { leads } from "./applications";
 
 export const contacts = pgTable("contacts", {
   id:             uuid("id").primaryKey().defaultRandom(),
@@ -30,5 +32,30 @@ export const contacts = pgTable("contacts", {
   modifiedOn:     timestamp("modified_on").notNull().defaultNow(),
 });
 
-export type Contact    = typeof contacts.$inferSelect;
-export type NewContact = typeof contacts.$inferInsert;
+export const lead_activities = pgTable("lead_activities", {
+  id:          uuid("id").primaryKey().defaultRandom(),
+  leadId:      uuid("lead_id").references(() => leads.id).notNull(),
+  channel:     varchar("channel", { length: 50 }).notNull(),
+  scheduledAt: timestamp("scheduled_at"),
+  description: text("description").notNull(),
+  createdBy:   uuid("created_by").references(() => users.id),
+  createdOn:   timestamp("created_on").notNull().defaultNow(),
+});
+
+export const quotes = pgTable("quotes", {
+  id:             uuid("id").primaryKey().defaultRandom(),
+  quoteRefNumber: varchar("quote_ref_number", { length: 30 }).unique(),
+  leadId:         uuid("lead_id").references(() => leads.id),
+  contactId:      uuid("contact_id"),
+  quoteStatus:    varchar("quote_status", { length: 30 }).notNull().default("Draft"),
+  createdBy:      uuid("created_by").references(() => users.id),
+  createdOn:      timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:     timestamp("modified_on").notNull().defaultNow(),
+});
+
+export type Contact         = typeof contacts.$inferSelect;
+export type NewContact      = typeof contacts.$inferInsert;
+export type LeadActivity    = typeof lead_activities.$inferSelect;
+export type NewLeadActivity = typeof lead_activities.$inferInsert;
+export type Quote           = typeof quotes.$inferSelect;
+export type NewQuote        = typeof quotes.$inferInsert;

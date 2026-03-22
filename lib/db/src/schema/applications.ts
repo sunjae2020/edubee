@@ -7,6 +7,7 @@ import {
   timestamp,
   boolean,
   date,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -22,10 +23,16 @@ export const leads = pgTable("leads", {
   nationality: varchar("nationality", { length: 100 }),
   source: varchar("source", { length: 100 }),
   interestedIn: uuid("interested_in").references(() => packageGroups.id),
-  status: varchar("status", { length: 50 }).default("new"),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  status:            varchar("status",              { length: 50  }).default("new"),
+  notes:             text("notes"),
+  leadRefNumber:     varchar("lead_ref_number",     { length: 30  }).unique(),
+  assignedStaffId:   uuid("assigned_staff_id").references(() => users.id),
+  inquiryType:       varchar("inquiry_type",        { length: 100 }),
+  budget:            decimal("budget",              { precision: 12, scale: 2 }),
+  expectedStartDate: date("expected_start_date"),
+  contactId:         uuid("contact_id"),
+  createdAt:         timestamp("created_at").defaultNow(),
+  updatedAt:         timestamp("updated_at").defaultNow(),
 });
 
 export const applications = pgTable("applications", {
