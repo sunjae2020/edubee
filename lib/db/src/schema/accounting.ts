@@ -1,0 +1,153 @@
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  decimal,
+  timestamp,
+  boolean,
+  integer,
+  date,
+  unique,
+} from "drizzle-orm/pg-core";
+import { users } from "./users";
+import { contracts } from "./contracts";
+import { contractProducts } from "./contracts";
+import { invoices } from "./finance";
+
+// ── Chart of Accounts ──────────────────────────────────────────────────────
+export const chartOfAccounts = pgTable("chart_of_accounts", {
+  id:          uuid("id").primaryKey().defaultRandom(),
+  code:        varchar("code", { length: 10 }).notNull().unique(),
+  name:        varchar("name", { length: 255 }).notNull(),
+  accountType: varchar("account_type", { length: 20 }).notNull(),
+  description: text("description"),
+  parentCode:  varchar("parent_code", { length: 10 }),
+  isActive:    boolean("is_active").notNull().default(true),
+  createdOn:   timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:  timestamp("modified_on").notNull().defaultNow(),
+});
+
+// ── Product Cost Lines ─────────────────────────────────────────────────────
+// Note: partnerId references an 'accounts' entity not yet in schema — stored as plain uuid
+export const productCostLines = pgTable("product_cost_lines", {
+  id:                uuid("id").primaryKey().defaultRandom(),
+  contractProductId: uuid("contract_product_id").notNull().references(() => contractProducts.id),
+  costType:          varchar("cost_type", { length: 50 }).notNull(),
+  partnerId:         uuid("partner_id"),
+  staffId:           uuid("staff_id").references(() => users.id),
+  calcType:          varchar("calc_type", { length: 20 }).notNull(),
+  rate:              decimal("rate", { precision: 8, scale: 4 }),
+  baseAmount:        decimal("base_amount", { precision: 12, scale: 2 }),
+  calculatedAmount:  decimal("calculated_amount", { precision: 12, scale: 2 }),
+  coaCode:           varchar("coa_code", { length: 10 }).references(() => chartOfAccounts.code),
+  description:       text("description"),
+  status:            varchar("status", { length: 20 }).notNull().default("pending"),
+  paidAt:            timestamp("paid_at"),
+  paymentHeaderId:   uuid("payment_header_id"),
+  createdOn:         timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:        timestamp("modified_on").notNull().defaultNow(),
+});
+
+// ── Payment Headers ────────────────────────────────────────────────────────
+// Note: receivedFrom / paidTo reference an 'accounts' entity — stored as plain uuid
+// Note: paymentInfoId references 'payment_infos' not yet in schema — stored as plain uuid
+export const paymentHeaders = pgTable("payment_headers", {
+  id:            uuid("id").primaryKey().defaultRandom(),
+  paymentRef:    varchar("payment_ref", { length: 50 }).unique(),
+  paymentDate:   date("payment_date").notNull(),
+  totalAmount:   decimal("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  currency:      varchar("currency", { length: 10 }).notNull().default("AUD"),
+  paymentMethod: varchar("payment_method", { length: 50 }),
+  paymentType:   varchar("payment_type", { length: 30 }).notNull(),
+  receivedFrom:  uuid("received_from"),
+  paidTo:        uuid("paid_to"),
+  bankReference: varchar("bank_reference", { length: 100 }),
+  paymentInfoId: uuid("payment_info_id"),
+  notes:         text("notes"),
+  createdBy:     uuid("created_by").notNull().references(() => users.id),
+  approvedBy:    uuid("approved_by").references(() => users.id),
+  status:        varchar("status", { length: 20 }).notNull().default("Active"),
+  createdOn:     timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:    timestamp("modified_on").notNull().defaultNow(),
+});
+
+// ── Payment Lines ──────────────────────────────────────────────────────────
+export const paymentLines = pgTable("payment_lines", {
+  id:                uuid("id").primaryKey().defaultRandom(),
+  paymentHeaderId:   uuid("payment_header_id").notNull().references(() => paymentHeaders.id),
+  invoiceId:         uuid("invoice_id").references(() => invoices.id),
+  contractProductId: uuid("contract_product_id").references(() => contractProducts.id),
+  coaCode:           varchar("coa_code", { length: 10 }).references(() => chartOfAccounts.code),
+  splitType:         varchar("split_type", { length: 50 }),
+  amount:            decimal("amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  staffId:           uuid("staff_id").references(() => users.id),
+  description:       text("description"),
+  createdOn:         timestamp("created_on").notNull().defaultNow(),
+});
+
+// ── Journal Entries ────────────────────────────────────────────────────────
+// Note: studentAccountId / partnerId reference 'accounts' — stored as plain uuid
+export const journalEntries = pgTable("journal_entries", {
+  id:               uuid("id").primaryKey().defaultRandom(),
+  entryDate:        date("entry_date").notNull(),
+  paymentHeaderId:  uuid("payment_header_id").references(() => paymentHeaders.id),
+  debitCoa:         varchar("debit_coa", { length: 10 }).notNull().references(() => chartOfAccounts.code),
+  creditCoa:        varchar("credit_coa", { length: 10 }).notNull().references(() => chartOfAccounts.code),
+  amount:           decimal("amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  description:      text("description"),
+  studentAccountId: uuid("student_account_id"),
+  partnerId:        uuid("partner_id"),
+  staffId:          uuid("staff_id").references(() => users.id),
+  contractId:       uuid("contract_id").references(() => contracts.id),
+  invoiceId:        uuid("invoice_id").references(() => invoices.id),
+  entryType:        varchar("entry_type", { length: 50 }),
+  autoGenerated:    boolean("auto_generated").notNull().default(true),
+  createdBy:        uuid("created_by").notNull().references(() => users.id),
+  createdOn:        timestamp("created_on").notNull().defaultNow(),
+});
+
+// ── Agent Commission Configs ───────────────────────────────────────────────
+// Note: partnerId / schoolId reference 'accounts' — stored as plain uuid
+export const agentCommissionConfigs = pgTable("agent_commission_configs", {
+  id:             uuid("id").primaryKey().defaultRandom(),
+  partnerId:      uuid("partner_id").notNull(),
+  schoolId:       uuid("school_id"),
+  commissionType: varchar("commission_type", { length: 20 }).notNull(),
+  defaultRate:    decimal("default_rate", { precision: 8, scale: 4 }),
+  defaultAmount:  decimal("default_amount", { precision: 12, scale: 2 }),
+  defaultBase:    varchar("default_base", { length: 30 }),
+  paymentMethod:  varchar("payment_method", { length: 20 }),
+  paymentTiming:  varchar("payment_timing", { length: 50 }),
+  notes:          text("notes"),
+  validFrom:      date("valid_from"),
+  validTo:        date("valid_to"),
+  status:         varchar("status", { length: 20 }).notNull().default("Active"),
+  createdOn:      timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:     timestamp("modified_on").notNull().defaultNow(),
+});
+
+// ── Staff KPI Periods ──────────────────────────────────────────────────────
+export const staffKpiPeriods = pgTable("staff_kpi_periods", {
+  id:                    uuid("id").primaryKey().defaultRandom(),
+  staffId:               uuid("staff_id").notNull().references(() => users.id),
+  periodType:            varchar("period_type", { length: 20 }).notNull(),
+  periodStart:           date("period_start").notNull(),
+  periodEnd:             date("period_end").notNull(),
+  leadCount:             integer("lead_count").notNull().default(0),
+  conversionCount:       integer("conversion_count").notNull().default(0),
+  conversionRate:        decimal("conversion_rate", { precision: 8, scale: 4 }),
+  attributedRevenue:     decimal("attributed_revenue", { precision: 12, scale: 2 }).notNull().default("0"),
+  paymentProcessedCount: integer("payment_processed_count").notNull().default(0),
+  visaGrantedCount:      integer("visa_granted_count").notNull().default(0),
+  incentiveRate:         decimal("incentive_rate", { precision: 8, scale: 4 }),
+  incentiveAmount:       decimal("incentive_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  bonusTier:             varchar("bonus_tier", { length: 50 }),
+  status:                varchar("status", { length: 20 }).notNull().default("draft"),
+  approvedBy:            uuid("approved_by").references(() => users.id),
+  approvedAt:            timestamp("approved_at"),
+  paidAt:                timestamp("paid_at"),
+  notes:                 text("notes"),
+  createdOn:             timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:            timestamp("modified_on").notNull().defaultNow(),
+}, (t) => [unique().on(t.staffId, t.periodType, t.periodStart)]);
