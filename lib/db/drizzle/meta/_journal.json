@@ -22,6 +22,13 @@
       "when": 1774149659943,
       "tag": "0002_nebulous_stature",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774149848075,
+      "tag": "0003_curly_ben_grimm",
+      "breakpoints": true
     }
   ]
 }
