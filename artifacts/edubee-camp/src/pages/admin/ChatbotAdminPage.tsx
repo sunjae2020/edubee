@@ -40,9 +40,9 @@ type AddModalType = "google" | "file" | "manual" | null;
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 const SOURCE_BADGE: Record<string, { label: string; className: string }> = {
-  manual:     { label: "수동 입력",    className: "bg-blue-50 text-blue-700" },
-  google_doc: { label: "Google Docs", className: "bg-green-50 text-green-700" },
-  file:       { label: "파일 업로드", className: "bg-purple-50 text-purple-700" },
+  manual:     { label: "Manual",       className: "bg-blue-50 text-blue-700" },
+  google_doc: { label: "Google Docs",  className: "bg-green-50 text-green-700" },
+  file:       { label: "File Upload",  className: "bg-purple-50 text-purple-700" },
 };
 
 // ─── Main Page ───────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ export default function ChatbotAdminPage() {
             <Bot className="w-5 h-5 text-[#F5821F]" />
           </div>
           <div>
-            <h1 className="font-semibold text-base text-foreground">AI 챗봇 관리</h1>
+            <h1 className="font-semibold text-base text-foreground">AI Chatbot Management</h1>
             <p className="text-xs text-muted-foreground">
               Gemini 2.5 Flash · gemini-embedding-001
             </p>
@@ -79,18 +79,18 @@ export default function ChatbotAdminPage() {
             kbReady ? "bg-green-50 text-green-700" : "bg-yellow-50 text-yellow-700"
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${kbReady ? "bg-green-500" : "bg-yellow-500"}`} />
-            {kbReady ? "챗봇 활성" : "문서 없음"}
+            {kbReady ? "Chatbot Active" : "No Documents"}
           </div>
           <span className="text-xs text-muted-foreground hidden sm:block">
-            문서 {status?.documentCount ?? 0}개 · 청크 {status?.totalChunks ?? 0}개
+            {status?.documentCount ?? 0} docs · {status?.totalChunks ?? 0} chunks
           </span>
 
           {/* Tab switcher */}
           <div className="flex gap-1 p-1 bg-muted rounded-lg">
             {([
-              { id: "knowledge", label: "지식 베이스" },
-              { id: "chat",      label: "챗봇 테스트" },
-              { id: "settings",  label: "설정" },
+              { id: "knowledge", label: "Knowledge Base" },
+              { id: "chat",      label: "Chat Test" },
+              { id: "settings",  label: "Settings" },
             ] as const).map(tab => (
               <button
                 key={tab.id}
@@ -135,9 +135,9 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["chatbot-docs"] });
       onStatusChange();
-      toast({ title: "문서 삭제 완료" });
+      toast({ title: "Document deleted" });
     },
-    onError: () => toast({ variant: "destructive", title: "삭제 실패" }),
+    onError: () => toast({ variant: "destructive", title: "Delete failed" }),
   });
 
   const syncAll = async () => {
@@ -149,15 +149,15 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "동기화 실패");
+      if (!res.ok) throw new Error(data.error ?? "Sync failed");
       qc.invalidateQueries({ queryKey: ["chatbot-docs"] });
       onStatusChange();
       toast({
-        title: "Google Docs 동기화 완료",
-        description: `${data.synced}개 갱신${data.errors ? ` · ${data.errors}개 오류` : ""}`,
+        title: "Google Docs sync complete",
+        description: `${data.synced} updated${data.errors ? ` · ${data.errors} errors` : ""}`,
       });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "동기화 오류", description: e.message });
+      toast({ variant: "destructive", title: "Sync error", description: e.message });
     } finally {
       setSyncingAll(false);
     }
@@ -173,24 +173,24 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
     <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
       {/* How-to tip */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p className="text-xs font-semibold text-blue-800 mb-1">Google Docs 공유 설정</p>
+        <p className="text-xs font-semibold text-blue-800 mb-1">Google Docs Sharing Setup</p>
         <p className="text-xs text-blue-700 leading-relaxed">
-          Google Docs → 공유 → 서비스 계정 이메일을 뷰어로 추가 → URL 입력.
-          문서 수정 시 <strong>전체 재동기화</strong>를 클릭하세요.
+          In Google Docs → Share → add the service account email as Viewer → paste the URL here.
+          After editing the document, click <strong>Sync All</strong> to refresh the knowledge base.
         </p>
       </div>
 
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-sm text-muted-foreground">
-          총 <strong>{docs.length}</strong>개 문서
+          <strong>{docs.length}</strong> document{docs.length !== 1 ? "s" : ""} total
         </p>
         <div className="flex gap-2 flex-wrap">
           <Button size="sm" variant="outline" className="gap-1.5 text-xs"
             onClick={syncAll} disabled={syncingAll}>
             {syncingAll
-              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 동기화 중...</>
-              : <><RefreshCw className="w-3.5 h-3.5" /> 전체 재동기화</>}
+              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Syncing...</>
+              : <><RefreshCw className="w-3.5 h-3.5" /> Sync All</>}
           </Button>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs"
             onClick={() => setAddModal("google")}>
@@ -198,11 +198,11 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
           </Button>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs"
             onClick={() => setAddModal("file")}>
-            <Upload className="w-3.5 h-3.5" /> 파일 업로드
+            <Upload className="w-3.5 h-3.5" /> Upload File
           </Button>
           <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5 text-xs"
             onClick={() => setAddModal("manual")}>
-            <Plus className="w-3.5 h-3.5" /> 직접 입력
+            <Plus className="w-3.5 h-3.5" /> Add Manual
           </Button>
         </div>
       </div>
@@ -217,9 +217,9 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
           <div className="w-14 h-14 rounded-2xl bg-[#F5821F]/8 flex items-center justify-center">
             <FileText className="w-7 h-7 text-[#F5821F]/60" />
           </div>
-          <p className="font-medium text-sm">등록된 문서가 없습니다</p>
+          <p className="font-medium text-sm">No documents added yet</p>
           <p className="text-xs text-muted-foreground">
-            FAQ, 정책 문서, 가이드 등을 추가하면<br />AI가 해당 내용을 기반으로 답변합니다
+            Add FAQs, policy docs, or guides so the AI<br />can answer questions based on them.
           </p>
         </div>
       ) : (
@@ -227,10 +227,10 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-4 py-3">문서명</th>
-                <th className="text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-4 py-3">소스</th>
-                <th className="text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-4 py-3">청크</th>
-                <th className="text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-4 py-3">추가일</th>
+                <th className="text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-4 py-3">Document</th>
+                <th className="text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-4 py-3">Source</th>
+                <th className="text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-4 py-3">Chunks</th>
+                <th className="text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-4 py-3">Added</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -254,7 +254,7 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
                       <span className="text-muted-foreground">
                         {doc.chunkCount > 0
                           ? <span className="text-[#F5821F] font-semibold">{doc.chunkCount}</span>
-                          : <span className="text-yellow-600 text-[10px]">처리 중...</span>
+                          : <span className="text-yellow-600 text-[10px]">Processing...</span>
                         }
                       </span>
                     </td>
@@ -263,7 +263,7 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => { if (confirm("이 문서를 삭제하시겠습니까?")) deleteDoc.mutate(doc.id); }}
+                        onClick={() => { if (confirm("Delete this document?")) deleteDoc.mutate(doc.id); }}
                         className="text-muted-foreground/40 hover:text-red-500 transition-colors p-1"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -316,10 +316,10 @@ function AddDocumentModal({ type, onClose, onAdded }: {
           body: JSON.stringify({ url }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "오류가 발생했습니다.");
-        toast({ title: `"${data.title}" 문서를 가져왔습니다`, description: "임베딩 생성 중..." });
+        if (!res.ok) throw new Error(data.error ?? "An error occurred.");
+        toast({ title: `"${data.title}" imported`, description: "Generating embeddings..." });
       } else if (type === "file") {
-        if (!file) throw new Error("파일을 선택해 주세요.");
+        if (!file) throw new Error("Please select a file.");
         const formData = new FormData();
         formData.append("file", file);
         if (title.trim()) formData.append("title", title.trim());
@@ -329,29 +329,32 @@ function AddDocumentModal({ type, onClose, onAdded }: {
           body: formData,
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "업로드 실패");
-        toast({ title: `"${data.document?.title}" 업로드 완료`, description: "임베딩 생성 중..." });
+        if (!res.ok) throw new Error(data.error ?? "Upload failed");
+        toast({ title: `"${data.document?.title}" uploaded`, description: "Generating embeddings..." });
       } else {
         // manual
-        if (!title.trim() || !content.trim()) throw new Error("제목과 내용을 입력해 주세요.");
+        if (!title.trim() || !content.trim()) throw new Error("Title and content are required.");
         const res = await fetch(`${BASE}/api/chatbot/docs`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ title, content, sourceType: "manual" }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "추가 실패");
-        toast({ title: "문서가 추가되었습니다", description: "임베딩 생성 중..." });
+        if (!res.ok) throw new Error(data.error ?? "Failed to add document");
+        toast({ title: "Document added", description: "Generating embeddings..." });
       }
       onAdded();
     } catch (e: any) {
-      setError(e.message ?? "오류가 발생했습니다.");
+      setError(e.message ?? "An error occurred.");
     } finally {
       setLoading(false);
     }
   };
 
-  const modalTitle = type === "google" ? "Google Docs 추가" : type === "file" ? "파일 업로드" : "직접 입력";
+  const modalTitle =
+    type === "google" ? "Add Google Doc" :
+    type === "file"   ? "Upload File" :
+                        "Add Manual Entry";
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -376,7 +379,7 @@ function AddDocumentModal({ type, onClose, onAdded }: {
                   placeholder="https://docs.google.com/document/d/..."
                 />
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  서비스 계정을 문서에 뷰어로 공유해야 합니다
+                  The service account must be shared as Viewer on the document.
                 </p>
               </div>
             </>
@@ -386,7 +389,7 @@ function AddDocumentModal({ type, onClose, onAdded }: {
             <>
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
-                  파일 선택 (.txt, .md) *
+                  Select File (.txt, .md) *
                 </label>
                 <input
                   ref={fileInputRef}
@@ -410,9 +413,9 @@ function AddDocumentModal({ type, onClose, onAdded }: {
                   <Upload className={`w-5 h-5 ${file ? "text-[#F5821F]" : "text-muted-foreground/40"}`} />
                   {file
                     ? <p className="text-sm font-medium text-[#F5821F]">{file.name}</p>
-                    : <p className="text-sm text-muted-foreground">클릭하여 파일 선택</p>
+                    : <p className="text-sm text-muted-foreground">Click to select a file</p>
                   }
-                  <p className="text-[10px] text-muted-foreground/60">.txt · .md · 최대 5MB</p>
+                  <p className="text-[10px] text-muted-foreground/60">.txt · .md · max 5 MB</p>
                 </div>
               </div>
             </>
@@ -421,10 +424,10 @@ function AddDocumentModal({ type, onClose, onAdded }: {
           {type === "manual" && (
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
-                내용 *
+                Content *
               </label>
               <Textarea
-                placeholder="FAQ, 정책 문서, 가이드 등 내용을 붙여넣으세요"
+                placeholder="Paste FAQs, policy documents, guides, or any text content here"
                 value={content}
                 onChange={e => setContent(e.target.value)}
                 className="min-h-[140px] text-sm font-mono"
@@ -435,12 +438,12 @@ function AddDocumentModal({ type, onClose, onAdded }: {
           {/* Title field — all types */}
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
-              문서 이름{type !== "manual" ? " (선택)" : " *"}
+              Document Name{type !== "manual" ? " (optional)" : " *"}
             </label>
             <Input
               value={title}
               onChange={e => setTitle(e.target.value)}
-              placeholder={type === "manual" ? "문서 제목" : "비워두면 자동 설정"}
+              placeholder={type === "manual" ? "Document title" : "Auto-set if left blank"}
             />
           </div>
 
@@ -453,13 +456,13 @@ function AddDocumentModal({ type, onClose, onAdded }: {
         </div>
 
         <div className="flex gap-3 px-6 pb-5">
-          <Button variant="outline" className="flex-1" onClick={onClose}>취소</Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
           <Button
             className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white"
             disabled={loading || (type === "google" ? !url.trim() : type === "file" ? !file : !title.trim() || !content.trim())}
             onClick={submit}
           >
-            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> 처리 중...</> : "추가"}
+            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</> : "Add"}
           </Button>
         </div>
       </div>
@@ -472,7 +475,7 @@ function ChatPanel() {
   const { toast } = useToast();
   const [sessionId, setSessionId] = useState(genSessionId);
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: "assistant", content: "안녕하세요! Edubee Camp AI 어시스턴트입니다. 지식 베이스에 등록된 문서를 기반으로 답변드립니다." },
+    { role: "assistant", content: "Hello! I'm the Edubee Camp AI Assistant. I answer questions based on the documents in the knowledge base." },
   ]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -489,7 +492,7 @@ function ChatPanel() {
       });
     } catch {}
     setSessionId(newId);
-    setMessages([{ role: "assistant", content: "대화가 초기화되었습니다. 새로운 질문을 입력하세요!" }]);
+    setMessages([{ role: "assistant", content: "Conversation cleared. Ask a new question!" }]);
   }, [sessionId]);
 
   const sendMessage = async () => {
@@ -506,7 +509,7 @@ function ChatPanel() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ question, sessionId }),
       });
-      if (!resp.ok) throw new Error("요청 실패");
+      if (!resp.ok) throw new Error("Request failed");
 
       const reader = resp.body!.getReader();
       const decoder = new TextDecoder();
@@ -547,19 +550,19 @@ function ChatPanel() {
     } catch (e: any) {
       setMessages(prev => {
         const u = [...prev];
-        u[u.length - 1] = { role: "assistant", content: "오류가 발생했습니다. 다시 시도해주세요." };
+        u[u.length - 1] = { role: "assistant", content: "An error occurred. Please try again." };
         return u;
       });
-      toast({ variant: "destructive", title: "AI 응답 오류", description: e.message });
+      toast({ variant: "destructive", title: "AI Response Error", description: e.message });
     } finally {
       setIsStreaming(false);
     }
   };
 
   const QUICK_QUESTIONS = [
-    "캠프 신청 자격이 어떻게 되나요?",
-    "프로그램 종류를 알려주세요",
-    "비용은 얼마인가요?",
+    "What are the camp eligibility requirements?",
+    "What programs are available?",
+    "How much does it cost?",
   ];
 
   return (
@@ -592,13 +595,13 @@ function ChatPanel() {
                   {msg.chunksUsed ? (
                     <span className="inline-flex items-center gap-0.5 text-[10px] bg-[#F5821F]/8 text-[#F5821F] px-2 py-0.5 rounded-full">
                       <Zap className="w-2.5 h-2.5" />
-                      {msg.chunksUsed}개 청크
+                      {msg.chunksUsed} chunk{msg.chunksUsed !== 1 ? "s" : ""}
                       {msg.topScore != null && ` · ${(msg.topScore * 100).toFixed(0)}%`}
                     </span>
                   ) : null}
                   {msg.sources?.length ? (
                     <>
-                      <span className="text-[10px] text-muted-foreground">출처:</span>
+                      <span className="text-[10px] text-muted-foreground">Sources:</span>
                       {msg.sources.map((s, si) => (
                         <span key={si} className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{s}</span>
                       ))}
@@ -633,7 +636,7 @@ function ChatPanel() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-            placeholder="질문을 입력하세요... (Shift+Enter 줄바꿈)"
+            placeholder="Type your question... (Shift+Enter for new line)"
             className="resize-none min-h-[48px] max-h-[120px] text-sm"
             disabled={isStreaming}
             rows={1}
@@ -645,11 +648,11 @@ function ChatPanel() {
         </div>
         <div className="flex items-center justify-between mt-1.5 px-0.5">
           <p className="text-[10px] text-muted-foreground/60">
-            코사인 유사도 검색으로 관련 청크를 찾아 답변합니다
+            Answers are generated using cosine similarity search over the knowledge base
           </p>
           <button onClick={clearSession}
             className="flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-            <RotateCcw className="w-2.5 h-2.5" /> 대화 초기화
+            <RotateCcw className="w-2.5 h-2.5" /> Clear chat
           </button>
         </div>
       </div>
@@ -667,17 +670,17 @@ function SettingsPanel({ status }: { status: any }) {
 
         {/* Model configuration */}
         <div className="bg-card border border-border rounded-xl p-5 space-y-1">
-          <h3 className="font-semibold text-sm mb-3">AI 모델 구성</h3>
+          <h3 className="font-semibold text-sm mb-3">AI Model Configuration</h3>
           {[
-            { icon: <Cpu className="w-4 h-4 text-[#F5821F]" />, label: "채팅 모델", value: "Gemini 2.5 Flash" },
-            { icon: <Database className="w-4 h-4 text-[#F5821F]" />, label: "임베딩 모델", value: "gemini-embedding-001" },
-            { icon: <Search className="w-4 h-4 text-[#F5821F]" />, label: "벡터 검색", value: "코사인 유사도 (인메모리)" },
+            { icon: <Cpu className="w-4 h-4 text-[#F5821F]" />, label: "Chat Model", value: "Gemini 2.5 Flash" },
+            { icon: <Database className="w-4 h-4 text-[#F5821F]" />, label: "Embedding Model", value: "gemini-embedding-001" },
+            { icon: <Search className="w-4 h-4 text-[#F5821F]" />, label: "Vector Search", value: "Cosine Similarity (In-Memory)" },
             {
               icon: geminiConfigured
                 ? <CheckCircle2 className="w-4 h-4 text-green-600" />
                 : <AlertCircle className="w-4 h-4 text-yellow-600" />,
               label: "Gemini API Key",
-              value: geminiConfigured ? "설정됨" : "설정 안 됨",
+              value: geminiConfigured ? "Configured" : "Not Configured",
               valueClass: geminiConfigured ? "text-green-700" : "text-yellow-700",
             },
           ].map(row => (
@@ -693,11 +696,11 @@ function SettingsPanel({ status }: { status: any }) {
         {/* KB Stats */}
         {status && (
           <div className="bg-card border border-border rounded-xl p-5">
-            <h3 className="font-semibold text-sm mb-3">지식 베이스 현황</h3>
+            <h3 className="font-semibold text-sm mb-3">Knowledge Base Stats</h3>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: "등록 문서 수", value: status.documentCount },
-                { label: "임베딩 청크 수", value: status.totalChunks },
+                { label: "Documents", value: status.documentCount },
+                { label: "Embedding Chunks", value: status.totalChunks },
               ].map(stat => (
                 <div key={stat.label} className="bg-[#F5821F]/5 rounded-lg p-3 text-center">
                   <p className="text-2xl font-bold text-[#F5821F]">{stat.value}</p>
@@ -712,15 +715,15 @@ function SettingsPanel({ status }: { status: any }) {
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-2">
             <Key className="w-4 h-4 text-amber-700" />
-            <h3 className="font-semibold text-sm text-amber-800">필요한 환경 변수 (Secrets)</h3>
+            <h3 className="font-semibold text-sm text-amber-800">Required Environment Variables (Secrets)</h3>
           </div>
           <div className="space-y-1 font-mono text-xs text-amber-800 bg-amber-100 rounded-lg p-3">
             <p>GEMINI_API_KEY=AIza...</p>
             <p>GOOGLE_SERVICE_ACCOUNT_JSON={"{"} ... {"}"}</p>
           </div>
           <p className="text-xs text-amber-700 mt-2">
-            Replit → Secrets 탭에서 설정하세요.
-            <code className="bg-amber-100 px-1 rounded ml-1">GEMINI_API_KEY</code>는 채팅 및 임베딩에 필수입니다.
+            Set these in Replit → Secrets tab.{" "}
+            <code className="bg-amber-100 px-1 rounded">GEMINI_API_KEY</code> is required for chat and embeddings.
           </p>
         </div>
       </div>
