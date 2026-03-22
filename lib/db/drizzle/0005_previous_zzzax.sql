@@ -1,0 +1,22 @@
+CREATE TABLE "contacts" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"first_name" varchar(100) NOT NULL,
+	"last_name" varchar(100) NOT NULL,
+	"title" varchar(20),
+	"dob" date,
+	"gender" varchar(20),
+	"nationality" varchar(100),
+	"email" varchar(255),
+	"mobile" varchar(50),
+	"office_number" varchar(50),
+	"sns_type" varchar(50),
+	"sns_id" varchar(255),
+	"influx_channel" varchar(50),
+	"important_date_1" date,
+	"important_date_2" date,
+	"description" text,
+	"status" varchar(20) DEFAULT 'Active' NOT NULL,
+	"account_type" varchar(50) DEFAULT 'Student' NOT NULL,
+	"created_on" timestamp DEFAULT now() NOT NULL,
+	"modified_on" timestamp DEFAULT now() NOT NULL
+);

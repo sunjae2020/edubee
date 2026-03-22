@@ -12,3 +12,4 @@ export * from "./i18n";
 export * from "./accounting";
 export * from "./services";
 export * from "./camp";
+export * from "./crm";

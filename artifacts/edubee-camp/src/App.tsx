@@ -74,6 +74,7 @@ import ProductDetail from "@/pages/admin/product-detail";
 
 // CRM
 import ContactsPage from "@/pages/admin/crm/ContactsPage";
+import ContactDetailPage from "@/pages/admin/crm/ContactDetailPage";
 import AccountsPage from "@/pages/admin/crm/AccountsPage";
 import CrmLeadsPage from "@/pages/admin/crm/LeadsPage";
 import QuotesPage from "@/pages/admin/crm/QuotesPage";
@@ -211,6 +212,9 @@ function Router() {
       {/* CRM Pages */}
       <Route path="/admin/crm/contacts">
         <AdminRoute title="Contacts"><ContactsPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/crm/contacts/:id">
+        <AdminRoute title="Contact Detail"><ContactDetailPage /></AdminRoute>
       </Route>
       <Route path="/admin/crm/accounts">
         <AdminRoute title="Accounts"><AccountsPage /></AdminRoute>

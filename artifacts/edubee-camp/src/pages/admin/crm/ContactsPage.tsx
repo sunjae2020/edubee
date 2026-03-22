@@ -1,9 +1,427 @@
-import { Construction } from "lucide-react";
-export default function ContactsPage() {
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import axios from "axios";
+import { Plus, Search, Pencil, Eye, MoreHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { useToast } from "@/hooks/use-toast";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const PAGE_SIZE = 20;
+
+const TITLES       = ["Mr", "Mrs", "Ms", "Dr", "Prof"];
+const ACCOUNT_TYPES = ["Student", "Agent", "School", "Partner"];
+const SNS_TYPES    = ["WhatsApp", "WeChat", "Line", "KakaoTalk", "Telegram", "Other"];
+const CHANNELS     = ["Online Ads", "Referral", "Walk-in", "Camp", "Other"];
+
+interface Contact {
+  id: string;
+  firstName: string;
+  lastName: string;
+  title?: string | null;
+  dob?: string | null;
+  gender?: string | null;
+  nationality?: string | null;
+  email?: string | null;
+  mobile?: string | null;
+  officeNumber?: string | null;
+  snsType?: string | null;
+  snsId?: string | null;
+  influxChannel?: string | null;
+  importantDate1?: string | null;
+  importantDate2?: string | null;
+  description?: string | null;
+  status: string;
+  accountType: string;
+  createdOn?: string | null;
+}
+
+type FormData = Partial<Omit<Contact, "id" | "createdOn">>;
+
+function Avatar({ name }: { name: string }) {
   return (
-    <div className="flex items-center justify-center h-64 gap-3 text-stone-400">
-      <Construction size={24} />
-      <p className="text-lg font-medium">Contacts — Coming Soon</p>
+    <div
+      className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold shrink-0"
+      style={{ background: "#FEF0E3", color: "#F5821F" }}
+    >
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const active = status.toLowerCase() === "active";
+  return (
+    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+      active ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#F4F3F1] text-[#57534E]"
+    }`}>
+      {status}
+    </span>
+  );
+}
+
+function FormField({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-medium text-stone-600">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </Label>
+      {children}
+    </div>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest pt-2 pb-1 border-b border-stone-100">
+      {children}
+    </p>
+  );
+}
+
+function SelectField({
+  value, onChange, options, placeholder,
+}: {
+  value?: string | null;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
+}) {
+  return (
+    <Select value={value ?? "__none"} onValueChange={v => onChange(v === "__none" ? "" : v)}>
+      <SelectTrigger className="h-9 text-sm">
+        <SelectValue placeholder={placeholder ?? "Select…"} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none">{placeholder ?? "None"}</SelectItem>
+        {options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+}
+
+export default function ContactsPage() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
+
+  const [search, setSearch]           = useState("");
+  const [statusFilter, setStatusFilter]       = useState("all");
+  const [typeFilter, setTypeFilter]   = useState("all");
+  const [page, setPage]               = useState(1);
+
+  const [sheetOpen, setSheetOpen]     = useState(false);
+  const [editContact, setEditContact] = useState<Contact | null>(null);
+  const [form, setForm]               = useState<FormData>({});
+
+  const queryKey = ["crm-contacts", { search, status: statusFilter, accountType: typeFilter, page }];
+
+  const { data: resp, isLoading } = useQuery({
+    queryKey,
+    queryFn: () => {
+      const p = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+      if (search)                      p.set("search", search);
+      if (statusFilter !== "all")      p.set("status", statusFilter);
+      if (typeFilter !== "all")        p.set("accountType", typeFilter);
+      return axios.get(`${BASE}/api/crm/contacts?${p}`).then(r => r.data);
+    },
+  });
+
+  const rows: Contact[]   = resp?.data ?? [];
+  const total: number     = resp?.meta?.total ?? rows.length;
+  const totalPages: number = resp?.meta?.totalPages ?? 1;
+
+  function openCreate() {
+    setEditContact(null);
+    setForm({ status: "Active", accountType: "Student" });
+    setSheetOpen(true);
+  }
+
+  function openEdit(c: Contact) {
+    setEditContact(c);
+    setForm({ ...c });
+    setSheetOpen(true);
+  }
+
+  function patch<K extends keyof FormData>(key: K, val: FormData[K]) {
+    setForm(prev => ({ ...prev, [key]: val }));
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: (payload: FormData) =>
+      editContact
+        ? axios.put(`${BASE}/api/crm/contacts/${editContact.id}`, payload).then(r => r.data)
+        : axios.post(`${BASE}/api/crm/contacts`, payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crm-contacts"] });
+      toast({ title: editContact ? "Contact updated" : "Contact created" });
+      setSheetOpen(false);
+    },
+    onError: () => toast({ title: "Save failed", variant: "destructive" }),
+  });
+
+  function handleSave() {
+    if (!form.firstName?.trim() || !form.lastName?.trim()) {
+      toast({ title: "First name and last name are required", variant: "destructive" });
+      return;
+    }
+    saveMutation.mutate(form);
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-stone-800">Contacts</h1>
+          <p className="text-sm text-stone-500 mt-1">Manage students, agents, and partners</p>
+        </div>
+        <Button
+          onClick={openCreate}
+          className="flex items-center gap-2 text-white rounded-lg px-4 py-2"
+          style={{ background: "#F5821F" }}
+        >
+          <Plus size={16} /> New Contact
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+          <Input
+            placeholder="Search by name or email…"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
+            className="pl-9 h-9 text-sm"
+          />
+        </div>
+
+        <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
+          <SelectTrigger className="w-36 h-9 text-sm">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="Active">Active</SelectItem>
+            <SelectItem value="Inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={typeFilter} onValueChange={v => { setTypeFilter(v); setPage(1); }}>
+          <SelectTrigger className="w-40 h-9 text-sm">
+            <SelectValue placeholder="Account Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            {ACCOUNT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="rounded-xl border border-stone-200 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-stone-50 border-b border-stone-200">
+            <tr>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-8">
+                <input type="checkbox" className="rounded" />
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Name</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Email</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Mobile</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Nationality</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Account</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-stone-100">
+            {isLoading && (
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+            )}
+            {!isLoading && rows.length === 0 && (
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
+            )}
+            {rows.map(c => {
+              const fullName = `${c.firstName} ${c.lastName}`;
+              return (
+                <tr key={c.id} className="hover:bg-stone-50 transition-colors">
+                  <td className="px-4 py-3">
+                    <input type="checkbox" className="rounded" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={fullName} />
+                      <button
+                        onClick={() => navigate(`/admin/crm/contacts/${c.id}`)}
+                        className="font-medium text-stone-800 hover:text-[#F5821F] transition-colors text-left"
+                      >
+                        {fullName}
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-stone-600">{c.email ?? "—"}</td>
+                  <td className="px-4 py-3 text-stone-600">{c.mobile ?? "—"}</td>
+                  <td className="px-4 py-3 text-stone-600">{c.nationality ?? "—"}</td>
+                  <td className="px-4 py-3 text-stone-600">{c.accountType}</td>
+                  <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => navigate(`/admin/crm/contacts/${c.id}`)}
+                        className="p-1.5 rounded hover:bg-stone-100 text-stone-500 hover:text-stone-800 transition-colors"
+                        title="View"
+                      >
+                        <Eye size={14} />
+                      </button>
+                      <button
+                        onClick={() => openEdit(c)}
+                        className="p-1.5 rounded hover:bg-stone-100 text-stone-500 hover:text-stone-800 transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        className="p-1.5 rounded hover:bg-stone-100 text-stone-500 hover:text-stone-800 transition-colors"
+                        title="More"
+                      >
+                        <MoreHorizontal size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-stone-500">
+          <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}</span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
+          </div>
+        </div>
+      )}
+
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{editContact ? "Edit Contact" : "New Contact"}</SheetTitle>
+            <SheetDescription>
+              {editContact ? "Update contact details below." : "Fill in the details to create a new contact."}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-6 space-y-4 pb-6">
+            <SectionHeading>Personal</SectionHeading>
+
+            <div className="grid grid-cols-3 gap-3">
+              <FormField label="Title">
+                <SelectField value={form.title} onChange={v => patch("title", v)} options={TITLES} placeholder="Title" />
+              </FormField>
+              <FormField label="First Name" required>
+                <Input value={form.firstName ?? ""} onChange={e => patch("firstName", e.target.value)} className="h-9 text-sm" placeholder="John" />
+              </FormField>
+              <FormField label="Last Name" required>
+                <Input value={form.lastName ?? ""} onChange={e => patch("lastName", e.target.value)} className="h-9 text-sm" placeholder="Doe" />
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Date of Birth">
+                <Input type="date" value={form.dob ?? ""} onChange={e => patch("dob", e.target.value)} className="h-9 text-sm" />
+              </FormField>
+              <FormField label="Gender">
+                <SelectField value={form.gender} onChange={v => patch("gender", v)} options={["Male", "Female", "Non-binary", "Prefer not to say"]} placeholder="Gender" />
+              </FormField>
+            </div>
+
+            <FormField label="Nationality">
+              <Input value={form.nationality ?? ""} onChange={e => patch("nationality", e.target.value)} className="h-9 text-sm" placeholder="e.g. Korean" />
+            </FormField>
+
+            <SectionHeading>Contact</SectionHeading>
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Email">
+                <Input type="email" value={form.email ?? ""} onChange={e => patch("email", e.target.value)} className="h-9 text-sm" placeholder="email@example.com" />
+              </FormField>
+              <FormField label="Mobile">
+                <Input value={form.mobile ?? ""} onChange={e => patch("mobile", e.target.value)} className="h-9 text-sm" placeholder="+82 10 0000 0000" />
+              </FormField>
+              <FormField label="Office Number">
+                <Input value={form.officeNumber ?? ""} onChange={e => patch("officeNumber", e.target.value)} className="h-9 text-sm" placeholder="+82 2 0000 0000" />
+              </FormField>
+              <FormField label="SNS Type">
+                <SelectField value={form.snsType} onChange={v => patch("snsType", v)} options={SNS_TYPES} placeholder="SNS Type" />
+              </FormField>
+            </div>
+
+            <FormField label="SNS ID">
+              <Input value={form.snsId ?? ""} onChange={e => patch("snsId", e.target.value)} className="h-9 text-sm" placeholder="@username or ID" />
+            </FormField>
+
+            <SectionHeading>Source</SectionHeading>
+
+            <FormField label="Influx Channel">
+              <SelectField value={form.influxChannel} onChange={v => patch("influxChannel", v)} options={CHANNELS} placeholder="How did they find us?" />
+            </FormField>
+
+            <SectionHeading>Dates</SectionHeading>
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Important Date 1">
+                <Input type="date" value={form.importantDate1 ?? ""} onChange={e => patch("importantDate1", e.target.value)} className="h-9 text-sm" />
+              </FormField>
+              <FormField label="Important Date 2">
+                <Input type="date" value={form.importantDate2 ?? ""} onChange={e => patch("importantDate2", e.target.value)} className="h-9 text-sm" />
+              </FormField>
+            </div>
+
+            <SectionHeading>Classification</SectionHeading>
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Account Type">
+                <SelectField value={form.accountType} onChange={v => patch("accountType", v)} options={ACCOUNT_TYPES} placeholder="Account Type" />
+              </FormField>
+              <FormField label="Status">
+                <SelectField value={form.status} onChange={v => patch("status", v)} options={["Active", "Inactive"]} placeholder="Status" />
+              </FormField>
+            </div>
+
+            <SectionHeading>Notes</SectionHeading>
+
+            <FormField label="Description">
+              <Textarea
+                value={form.description ?? ""}
+                onChange={e => patch("description", e.target.value)}
+                className="text-sm min-h-[80px] resize-none"
+                placeholder="Additional notes about this contact…"
+              />
+            </FormField>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                onClick={handleSave}
+                disabled={saveMutation.isPending}
+                className="flex-1 text-white"
+                style={{ background: "#F5821F" }}
+              >
+                {saveMutation.isPending ? "Saving…" : editContact ? "Save Changes" : "Create Contact"}
+              </Button>
+              <Button variant="outline" onClick={() => setSheetOpen(false)} className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
