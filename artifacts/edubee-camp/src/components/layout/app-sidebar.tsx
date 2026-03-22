@@ -76,6 +76,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
       { icon: Layers,    label: "Package Groups",   href: "/admin/package-groups"   },
       { icon: Package,   label: "Packages",         href: "/admin/packages"         },
       { icon: ListChecks,  label: "Enrollment Spots", href: "/admin/enrollment-spots" },
+      { icon: ClipboardList, label: "Camp Application", href: "/admin/camp-applications" },
       { icon: FileText,    label: "Camp Contract",  href: "/admin/camp-contracts"   },
     );
   }
