@@ -185,7 +185,7 @@ export default function Products() {
       </ListToolbar>
 
       {(() => {
-        const COLS = 8;
+        const COLS = 7;
         const TYPE_ICONS: Record<string, string> = {
           institute: "🏫", hotel: "🏨", pickup: "🚌", tour: "🗺️",
           settlement: "💼", program: "📚",
@@ -209,12 +209,6 @@ export default function Products() {
             {/* Product Name */}
             <td className="px-4 py-3">
               <div className="font-medium text-foreground">{p.productName}</div>
-            </td>
-            {/* Product Type */}
-            <td className="px-4 py-3">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted rounded text-xs capitalize">
-                {TYPE_ICONS[p.productType] ?? "📦"} {p.productType}
-              </span>
             </td>
             {/* Currency */}
             <td className="px-4 py-3 text-sm font-mono text-[#57534E]">
@@ -252,11 +246,7 @@ export default function Products() {
           </tr>
         );
 
-        const grouped = typeFilter === "all"
-          ? PRODUCT_TYPES
-              .map(t => ({ type: t, items: products.filter(p => p.productType === t) }))
-              .filter(g => g.items.length > 0)
-          : null;
+        const grouped = null;
 
         return (
           <div className="bg-card rounded-xl border border-border overflow-x-auto">
@@ -265,7 +255,6 @@ export default function Products() {
                 <tr className="border-b bg-muted/30">
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provider</th>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Name</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Type</th>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Currency</th>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Price</th>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Grade</th>
