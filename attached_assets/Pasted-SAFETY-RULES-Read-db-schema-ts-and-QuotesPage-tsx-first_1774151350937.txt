@@ -1,0 +1,80 @@
+SAFETY RULES:
+- Read /db/schema.ts and QuotesPage.tsx first
+- NEVER modify existing CAMP routes
+- Report file list first, wait for "진행해"
+- npx tsc --noEmit after every change
+
+Create /server/src/routes/crm-quotes.ts:
+  GET  /api/crm/quotes                         query: quoteStatus, isTemplate, page
+  GET  /api/crm/quotes/templates               is_template=true only
+  GET  /api/crm/quotes/:id                     include quote_products
+  POST /api/crm/quotes                         auto-generate quoteRefNumber QTE-XXXXXXXX
+  PUT  /api/crm/quotes/:id
+  POST /api/crm/quotes/:id/convert-to-contract
+  GET  /api/crm/quotes/:id/pdf
+
+convert-to-contract logic (wrap in db.transaction):
+  1. INSERT contracts { name: 'CT-{accountName}-{YYYY-MM-DD}' }
+  2. Copy quote_products → contract_products (preserve serviceModuleType)
+  3. For each unique serviceModuleType, auto-create _mgt record:
+       study_abroad  → INSERT study_abroad_mgt  { contractId }
+       pickup        → INSERT pickup_mgt         { contractId }
+       accommodation → INSERT accommodation_mgt  { contractId }
+       internship    → INSERT internship_mgt     { contractId }
+       settlement    → INSERT settlement_mgt     { contractId }
+       guardian      → INSERT guardian_mgt       { contractId }
+  4. UPDATE contracts SET service_modules_activated = [activated list]
+  5. UPDATE quotes SET quote_status = 'Accepted'
+  Return { contractId, activatedModules: string[] }
+
+Build /client/src/pages/crm/QuotesPage.tsx:
+
+List page:
+  tabs: [All Quotes] [Templates]
+  columns: Quote Ref | Customer | Items | Total(AUD) | Status | Expiry | Actions
+  status badges:
+    Draft    bg #F4F3F1 text #57534E
+    Sent     bg #FEF0E3 text #F5821F
+    Accepted bg #DCFCE7 text #16A34A
+    Declined bg #FEF2F2 text #DC2626
+    Expired  bg #F4F3F1 text #A8A29E
+
+Quote builder page (create/edit):
+  layout: 2 columns — form 70% | preview 30%
+
+  Left — Quote Info:
+    customer contact search, lead link, expiry date, status
+
+  Left — Line Items table:
+    columns: Product | Description | Qty | Unit Price | Module | GST | Total | [delete]
+    Product dropdown → auto-fill serviceModuleType on select
+    module type badge auto-display:
+      study_abroad → 🎓 Study | pickup → 🚗 Pickup
+      accommodation → 🏠 Stay | internship → 💼 Work
+      settlement → 🏙️ Settlement | guardian → 👨‍👩‍👧 Guardian
+    [+ Add Line Item] button
+    subtotal / GST / TOTAL auto-calculated
+
+  Load Template dropdown:
+    Study Abroad Full Package → study_abroad + pickup + accommodation + settlement
+    Guardian Package          → guardian + pickup
+    Internship Package        → internship + settlement
+    Camp Basic Package        → camp + pickup + accommodation
+
+  Bottom buttons: [Save Draft] [Send to Client] [Convert to Contract ▶]
+
+  Convert to Contract flow:
+    confirm modal → POST /api/crm/quotes/:id/convert-to-contract
+    success toast: "✅ Contract created + [N] service modules activated"
+    redirect to /admin/crm/contracts/:newContractId
+
+Verify:
+npx tsc --noEmit
+Load template → line items auto-populate
+Convert to Contract → check:
+  SELECT c.name, c.service_modules_activated,
+    (SELECT count(*) FROM contract_products WHERE contract_id = c.id) AS products,
+    (SELECT count(*) FROM study_abroad_mgt WHERE contract_id = c.id)  AS study,
+    (SELECT count(*) FROM pickup_mgt WHERE contract_id = c.id)        AS pickup,
+    (SELECT count(*) FROM accommodation_mgt WHERE contract_id = c.id) AS accom
+  FROM contracts c ORDER BY c.created_on DESC LIMIT 1;
