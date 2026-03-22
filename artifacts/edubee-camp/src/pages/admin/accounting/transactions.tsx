@@ -65,7 +65,7 @@ function SearchSelect({
     <div className="space-y-1.5">
       <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">{label}</Label>
       {selected ? (
-        <div className="flex items-center justify-between border border-[#E8E6E2] rounded-lg px-3 py-2.5 h-11 bg-white">
+        <div className="flex items-center justify-between border border-[#E8E6E2] rounded-lg px-3 py-2.5 h-10 bg-white">
           <span className="text-sm text-[#1C1917] truncate">{selected.name}</span>
           <button onClick={() => onChange("")} className="ml-2 text-[#A8A29E] hover:text-[#DC2626] shrink-0">
             <X className="w-4 h-4" />
@@ -78,13 +78,14 @@ function SearchSelect({
             placeholder={placeholder}
             value={q}
             onChange={e => setQ(e.target.value)}
-            className="pl-9 h-11 border-[#E8E6E2]"
+            className="pl-9 h-10 border-[#E8E6E2] focus:border-[#F5821F]"
           />
           {q && filtered.length > 0 && (
             <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-48 overflow-y-auto">
               {filtered.map(o => (
                 <button
                   key={o.id}
+                  type="button"
                   className="w-full text-left px-4 py-2 text-sm hover:bg-[#FEF0E3] text-[#1C1917]"
                   onClick={() => { onChange(o.id); setQ(""); }}
                 >
@@ -241,9 +242,9 @@ export default function Transactions() {
       <Dialog open={createOpen} onOpenChange={o => { if (!o) setCreateOpen(false); }}>
         <DialogContent className="max-w-lg rounded-2xl overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[#1557BF]">Create Transaction</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-[#1C1917]">Create Transaction</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-1">
+          <div className="space-y-4 pt-2">
             <SearchSelect label="Account"     value={form.accountId}      onChange={sf("accountId")}      options={accounts}    placeholder="Search accounts…" />
             <SearchSelect label="Contact"     value={form.contactId}      onChange={sf("contactId")}      options={contacts}    placeholder="Search contacts…" />
             <SearchSelect label="Invoice"     value={form.invoiceId}      onChange={sf("invoiceId")}      options={invoices}    placeholder="Search invoices…" />
@@ -251,9 +252,9 @@ export default function Transactions() {
             <SearchSelect label="Cost Center" value={form.costCenterCode} onChange={sf("costCenterCode")} options={costCenters} placeholder="Search cost centers…" />
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Credit Amount</Label>
+              <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Transaction Type</Label>
               <Select value={form.transactionType} onValueChange={sf("transactionType")}>
-                <SelectTrigger className="h-11 border-[#E8E6E2]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 border-[#E8E6E2] focus:border-[#F5821F]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="credit">Credit</SelectItem>
                   <SelectItem value="debit">Debit</SelectItem>
@@ -262,33 +263,40 @@ export default function Transactions() {
             </div>
 
             <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Amount</Label>
               <Input
                 type="number" min={0} step={0.01}
-                placeholder="Credit Amount"
+                placeholder="0.00"
                 value={form.creditAmount}
                 onChange={e => setForm(f => ({ ...f, creditAmount: e.target.value }))}
-                className="h-11 border-[#E8E6E2] focus:border-[#1557BF]"
+                className="h-10 border-[#E8E6E2] focus:border-[#F5821F]"
               />
             </div>
 
             <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Description</Label>
               <Textarea
-                placeholder="Description"
+                placeholder="Enter description…"
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 rows={3}
-                className="border-[#E8E6E2] focus:border-[#1557BF] resize-none text-sm"
+                className="border-[#E8E6E2] focus:border-[#F5821F] resize-none text-sm"
               />
             </div>
 
-            <Button
-              onClick={() => createTx.mutate()}
-              disabled={createTx.isPending}
-              className="w-full h-12 bg-[#1557BF] hover:bg-[#0E3D8A] text-white font-semibold text-base gap-2"
-            >
-              {createTx.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-              Create Transaction
-            </Button>
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E6E2]">
+              <Button variant="outline" onClick={() => setCreateOpen(false)} className="border-[#E8E6E2]">
+                Cancel
+              </Button>
+              <Button
+                onClick={() => createTx.mutate()}
+                disabled={createTx.isPending}
+                className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5"
+              >
+                {createTx.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Save Transaction
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
