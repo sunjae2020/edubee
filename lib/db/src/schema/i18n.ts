@@ -1,0 +1,52 @@
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  integer,
+  timestamp,
+  unique,
+} from "drizzle-orm/pg-core";
+
+export const systemLanguages = pgTable("system_languages", {
+  id:         uuid("id").primaryKey().defaultRandom(),
+  name:       varchar("name", { length: 100 }).notNull(),
+  locale:     varchar("locale", { length: 20 }).notNull().unique(),
+  code:       varchar("code", { length: 10 }).notNull().unique(),
+  direction:  varchar("direction", { length: 5 }).notNull().default("ltr"),
+  flag:       varchar("flag", { length: 10 }),
+  sortOrder:  integer("sort_order").notNull().default(0),
+  status:     varchar("status", { length: 20 }).notNull().default("Active"),
+  createdOn:  timestamp("created_on").notNull().defaultNow(),
+  modifiedOn: timestamp("modified_on").notNull().defaultNow(),
+});
+
+export const themeTranslations = pgTable("theme_translations", {
+  id:         uuid("id").primaryKey().defaultRandom(),
+  key:        varchar("key", { length: 500 }).notNull(),
+  language:   varchar("language", { length: 20 }).notNull(),
+  value:      text("value").notNull(),
+  status:     varchar("status", { length: 20 }).notNull().default("Active"),
+  createdOn:  timestamp("created_on").notNull().defaultNow(),
+  modifiedOn: timestamp("modified_on").notNull().defaultNow(),
+}, (t) => [unique().on(t.key, t.language)]);
+
+export const systemSettings = pgTable("system_settings", {
+  id:         uuid("id").primaryKey().defaultRandom(),
+  key:        varchar("key", { length: 255 }).notNull().unique(),
+  value:      text("value"),
+  groupName:  varchar("group_name", { length: 100 }),
+  status:     varchar("status", { length: 20 }).notNull().default("Active"),
+  createdOn:  timestamp("created_on").notNull().defaultNow(),
+  modifiedOn: timestamp("modified_on").notNull().defaultNow(),
+});
+
+export const themeOptions = pgTable("theme_options", {
+  id:         uuid("id").primaryKey().defaultRandom(),
+  key:        varchar("key", { length: 255 }).notNull().unique(),
+  value:      text("value"),
+  optionType: varchar("option_type", { length: 50 }),
+  status:     varchar("status", { length: 20 }).notNull().default("Active"),
+  createdOn:  timestamp("created_on").notNull().defaultNow(),
+  modifiedOn: timestamp("modified_on").notNull().defaultNow(),
+});

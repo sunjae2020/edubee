@@ -8,3 +8,4 @@ export * from "./reports";
 export * from "./notes";
 export * from "./settings";
 export * from "./chatDocuments";
+export * from "./i18n";
