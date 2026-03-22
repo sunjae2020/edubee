@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings } from "@workspace/db/schema";
+import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts } from "@workspace/db/schema";
 import { eq, and, count, asc, SQL, ilike, desc, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -487,6 +487,50 @@ router.delete("/packages/:id/products/:productId", authenticate, requireRole(...
 });
 
 // Products
+// ─── PRODUCT LOOKUP HELPERS ───────────────────────────────────────────────────
+
+router.get("/products-lookup/product-types", authenticate, async (_req, res) => {
+  try {
+    const rows = await db.select({ id: productTypes.id, name: productTypes.name })
+      .from(productTypes).where(eq(productTypes.status, "Active")).orderBy(asc(productTypes.name));
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: "Failed" }); }
+});
+
+router.get("/products-lookup/accounts", authenticate, async (_req, res) => {
+  try {
+    const rows = await db.select({ id: accounts.id, name: accounts.name })
+      .from(accounts).where(eq(accounts.status, "Active")).orderBy(asc(accounts.name)).limit(300);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: "Failed" }); }
+});
+
+router.get("/products-lookup/commissions", authenticate, async (_req, res) => {
+  try {
+    const rows = await db.select({ id: commissions.id, name: commissions.name })
+      .from(commissions).where(eq(commissions.status, "Active")).orderBy(asc(commissions.name));
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: "Failed" }); }
+});
+
+router.get("/products-lookup/promotions", authenticate, async (_req, res) => {
+  try {
+    const rows = await db.select({ id: promotions.id, name: promotions.name })
+      .from(promotions).where(eq(promotions.status, "Active")).orderBy(asc(promotions.name)).limit(200);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: "Failed" }); }
+});
+
+router.get("/products-lookup/tax-rates", authenticate, async (_req, res) => {
+  try {
+    const rows = await db.select({ id: taxRates.id, name: taxRates.name })
+      .from(taxRates).where(eq(taxRates.status, "Active")).orderBy(asc(taxRates.name));
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: "Failed" }); }
+});
+
+// ─── PRODUCTS ────────────────────────────────────────────────────────────────
+
 router.get("/products", authenticate, async (req, res) => {
   try {
     const { productType, status, page = "1", limit = "20" } = req.query as Record<string, string>;

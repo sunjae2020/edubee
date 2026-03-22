@@ -8,6 +8,8 @@ import {
   timestamp,
   boolean,
   jsonb,
+  date,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -82,6 +84,33 @@ export const products = pgTable("products", {
   serviceModuleType: varchar("service_module_type", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // Extended fields
+  manualInput:        boolean("manual_input").default(false),
+  fromDate:           date("from_date"),
+  toDate:             date("to_date"),
+  durationWeeks:      integer("duration_weeks"),
+  category1Id:        uuid("category_1_id"),
+  category2Id:        uuid("category_2_id"),
+  itemDescription:    text("item_description"),
+  price:              numeric("price", { precision: 12, scale: 2 }),
+  isGstIncluded:      boolean("is_gst_included").default(false),
+  installmentPlan:    varchar("installment_plan", { length: 50 }),
+  defaultPaymentTerm: varchar("default_payment_term", { length: 50 }),
+  numberOfPayments:   integer("number_of_payments"),
+  minimumPayment:     numeric("minimum_payment", { precision: 12, scale: 2 }),
+  productPriority:    integer("product_priority"),
+  avetmissProductId:  uuid("avetmiss_product_id"),
+  isVetInSchools:     boolean("is_vet_in_schools").default(false),
+  productGrade:       varchar("product_grade", { length: 50 }),
+  isRecommend:        boolean("is_recommend").default(false),
+  providerId:         uuid("provider_id"),
+  commissionId:       uuid("commission_id"),
+  promotionId:        uuid("promotion_id"),
+  displayOnQuote:     boolean("display_on_quote").default(true),
+  displayOnInvoice:   boolean("display_on_invoice").default(true),
+  taxRateId:          uuid("tax_rate_id"),
+  productTypeId:      uuid("product_type_id"),
+  modifiedOn:         timestamp("modified_on").defaultNow(),
 });
 
 export const packageGroupProducts = pgTable("package_group_products", {
