@@ -14,6 +14,7 @@ import {
   Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
   Ticket, FolderOpen, Bot,
   BookOpen, CreditCard, BookMarked, Briefcase, Shield,
+  Tag, Percent,
   LucideIcon,
 } from "lucide-react";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
@@ -74,7 +75,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
     campItems.push(
       { icon: Layers,    label: "Package Groups",   href: "/admin/package-groups"   },
       { icon: Package,   label: "Packages",         href: "/admin/packages"         },
-      { icon: ShoppingBag, label: "Products",       href: "/admin/products"         },
       { icon: ListChecks,  label: "Enrollment Spots", href: "/admin/enrollment-spots" },
       { icon: FileText,    label: "Camp Contract",  href: "/admin/camp-contracts"   },
     );
@@ -91,6 +91,19 @@ function buildNav(effectiveRole: string): NavGroup[] {
     campItems.push({ icon: CalendarCheck, label: "Interviews", href: "/admin/services/interviews" });
   if (campItems.length > 0)
     nav.push({ key: "camp", label: "Camp", catIcon: GraduationCap, items: campItems });
+
+  // ── 4.5 · Products Catalog ───────────────────────────────────────────────
+  if (isSAorAD || isCC) {
+    nav.push({
+      key: "products-catalog", label: "Products", catIcon: ShoppingBag,
+      items: [
+        { icon: Layers,     label: "Products Group", href: "/admin/product-groups" },
+        { icon: Tag,        label: "Products Type",  href: "/admin/product-types"  },
+        { icon: ShoppingBag,label: "Products",       href: "/admin/products"       },
+        { icon: Percent,    label: "Promotion",      href: "/admin/promotions"     },
+      ],
+    });
+  }
 
   // ── 5 · Services ─────────────────────────────────────────────────────────
   if (isSAorAD || isCC) {

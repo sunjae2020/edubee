@@ -74,6 +74,9 @@ import ImpersonationLogs from "@/pages/admin/settings/impersonation-logs";
 import DataManager from "@/pages/admin/settings/data-manager";
 import Products from "@/pages/admin/products";
 import ProductDetail from "@/pages/admin/product-detail";
+import ProductGroups from "@/pages/admin/product-groups";
+import ProductTypes from "@/pages/admin/product-types";
+import PromotionsPage from "@/pages/admin/promotions";
 
 // CRM
 import ContactsPage from "@/pages/admin/crm/ContactsPage";
@@ -176,6 +179,15 @@ function Router() {
       </Route>
       <Route path="/admin/camp-contracts">
         <AdminRoute title="Camp Contract"><CampContracts /></AdminRoute>
+      </Route>
+      <Route path="/admin/product-groups">
+        <AdminRoute title="Products Group"><ProductGroups /></AdminRoute>
+      </Route>
+      <Route path="/admin/product-types">
+        <AdminRoute title="Products Type"><ProductTypes /></AdminRoute>
+      </Route>
+      <Route path="/admin/promotions">
+        <AdminRoute title="Promotions"><PromotionsPage /></AdminRoute>
       </Route>
 
       {/* Service Pages */}
