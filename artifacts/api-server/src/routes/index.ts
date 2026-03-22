@@ -27,6 +27,7 @@ import crmLeadsRouter from "./crm-leads.js";
 import crmQuotesRouter from "./crm-quotes.js";
 import accountingCoaRouter from "./accounting-coa.js";
 import accountingArApRouter from "./accounting-arap.js";
+import accountingPaymentsRouter from "./accounting-payments.js";
 
 const router: IRouter = Router();
 
@@ -58,5 +59,6 @@ router.use(crmLeadsRouter);
 router.use(crmQuotesRouter);
 router.use(accountingCoaRouter);
 router.use(accountingArApRouter);
+router.use(accountingPaymentsRouter);
 
 export default router;
