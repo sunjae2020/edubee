@@ -20,7 +20,6 @@ import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const APP_STATUSES = ["pending", "submitted", "reviewing", "quoted", "converted", "cancelled"];
 const APPLICATION_STATUSES = ["submitted", "reviewing", "quoted", "converted", "cancelled"];
 
 const TABS = [
@@ -347,9 +346,10 @@ export default function ApplicationDetail() {
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
+            {/* ① Application Info */}
             <DetailSection title="Application Info">
               <DetailRow label="Application #" value={app.applicationNumber} />
-              <EditableField label="Application Status" isEditing={isEditing}
+              <EditableField label="Status" isEditing={isEditing}
                 value={(app.applicationStatus ?? "submitted").replace(/_/g, " ")}
                 editChildren={
                   <Select value={getValue("applicationStatus") ?? "submitted"} onValueChange={v => setField("applicationStatus", v)}>
@@ -358,43 +358,43 @@ export default function ApplicationDetail() {
                   </Select>
                 }
               />
-              <EditableField label="Status" isEditing={isEditing}
-                value={(app.status ?? "submitted").replace(/_/g, " ")}
-                editChildren={
-                  <Select value={getValue("status") ?? "submitted"} onValueChange={v => setField("status", v)}>
-                    <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
-                    <SelectContent>{APP_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
-                  </Select>
-                }
-              />
               <DetailRow label="Submitted" value={app.createdAt ? format(new Date(app.createdAt), "PPP") : "—"} />
-              <DetailRow label="Service Types" value={serviceTypes.map(s => s.replace(/_/g, " ")).join(", ") || "—"} />
+              {/* Service type tags */}
+              <div className="flex items-start gap-1.5 flex-wrap pt-0.5">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-full mb-0.5">Services</span>
+                {serviceTypes.length === 0
+                  ? <span className="text-sm text-muted-foreground">—</span>
+                  : serviceTypes.map(t => (
+                    <span key={t} className="px-2 py-0.5 rounded-full bg-[#FEF0E3] text-[#F5821F] text-xs font-medium border border-[#F5821F]/20">
+                      {SERVICE_META[t]?.icon} {SERVICE_META[t]?.label ?? t.replace(/_/g, " ")}
+                    </span>
+                  ))
+                }
+              </div>
             </DetailSection>
 
-            <DetailSection title="Applicant Info">
+            {/* ② Personal Information */}
+            <DetailSection title="Personal Information">
               <EditableField label="Full Name" isEditing={isEditing}
                 value={app.applicantName}
                 editChildren={<Input className="h-8 text-sm" value={getValue("applicantName") ?? ""} onChange={e => setField("applicantName", e.target.value)} />}
-              />
-              <EditableField label="Email" isEditing={isEditing}
-                value={app.applicantEmail}
-                editChildren={<Input className="h-8 text-sm" type="email" value={getValue("applicantEmail") ?? ""} onChange={e => setField("applicantEmail", e.target.value)} />}
-              />
-              <EditableField label="Phone" isEditing={isEditing}
-                value={app.applicantPhone}
-                editChildren={<Input className="h-8 text-sm" value={getValue("applicantPhone") ?? ""} onChange={e => setField("applicantPhone", e.target.value)} />}
               />
               <EditableField label="Nationality" isEditing={isEditing}
                 value={app.applicantNationality}
                 editChildren={<Input className="h-8 text-sm" value={getValue("applicantNationality") ?? ""} onChange={e => setField("applicantNationality", e.target.value)} />}
               />
-              <EditableField label="Date of Birth" isEditing={isEditing}
-                value={app.dateOfBirth ? format(new Date(app.dateOfBirth), "PPP") : null}
-                editChildren={<Input className="h-8 text-sm" type="date" value={getValue("dateOfBirth") ?? ""} onChange={e => setField("dateOfBirth", e.target.value)} />}
+              <EditableField label="Mobile Phone" isEditing={isEditing}
+                value={app.applicantPhone}
+                editChildren={<Input className="h-8 text-sm" value={getValue("applicantPhone") ?? ""} onChange={e => setField("applicantPhone", e.target.value)} />}
+              />
+              <EditableField label="Email" isEditing={isEditing}
+                value={app.applicantEmail}
+                editChildren={<Input className="h-8 text-sm" type="email" value={getValue("applicantEmail") ?? ""} onChange={e => setField("applicantEmail", e.target.value)} />}
               />
             </DetailSection>
 
-            <DetailSection title="School / Institution">
+            {/* ③ School Information */}
+            <DetailSection title="School Information">
               <EditableField label="Institution" isEditing={isEditing}
                 value={app.institutionName}
                 editChildren={<Input className="h-8 text-sm" value={getValue("institutionName") ?? ""} onChange={e => setField("institutionName", e.target.value)} />}
@@ -403,28 +403,35 @@ export default function ApplicationDetail() {
                 value={app.courseName}
                 editChildren={<Input className="h-8 text-sm" value={getValue("courseName") ?? ""} onChange={e => setField("courseName", e.target.value)} />}
               />
-              <EditableField label="Study Start" isEditing={isEditing}
+              <EditableField label="Enrollment From" isEditing={isEditing}
                 value={app.studyStartDate ? format(new Date(app.studyStartDate), "PPP") : null}
                 editChildren={<Input className="h-8 text-sm" type="date" value={getValue("studyStartDate") ?? ""} onChange={e => setField("studyStartDate", e.target.value)} />}
               />
-              <EditableField label="Study End" isEditing={isEditing}
+              <EditableField label="Enrollment To" isEditing={isEditing}
                 value={app.studyEndDate ? format(new Date(app.studyEndDate), "PPP") : null}
                 editChildren={<Input className="h-8 text-sm" type="date" value={getValue("studyEndDate") ?? ""} onChange={e => setField("studyEndDate", e.target.value)} />}
               />
             </DetailSection>
 
+            {/* ④ Agent */}
             <DetailSection title="Agent">
               <EditableField label="Agent Code" isEditing={isEditing}
                 value={app.referralAgentCode}
                 editChildren={<Input className="h-8 text-sm" value={getValue("referralAgentCode") ?? ""} onChange={e => setField("referralAgentCode", e.target.value)} />}
               />
-              <EditableField label="Special Requests" isEditing={isEditing}
-                value={app.specialRequests}
-                editChildren={<Input className="h-8 text-sm" value={getValue("specialRequests") ?? ""} onChange={e => setField("specialRequests", e.target.value)} />}
+              <EditableField label="Notes" isEditing={isEditing}
+                value={app.notes ? app.notes.slice(0, 120) + (app.notes.length > 120 ? "…" : "") : null}
+                editChildren={
+                  <textarea
+                    className="w-full rounded-md border border-[#F5821F] bg-background px-3 py-1.5 text-sm resize-y min-h-[80px] focus:outline-none"
+                    value={getValue("notes") ?? ""}
+                    onChange={e => setField("notes", e.target.value)}
+                  />
+                }
               />
             </DetailSection>
 
-            {/* Linked Records */}
+            {/* ⑤ Linked Records */}
             {app.quoteId && (
               <DetailSection title="Linked Records">
                 <div className="flex items-center justify-between">
