@@ -1,431 +1,604 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Check, Loader2, FileText } from "lucide-react";
+import { ChevronLeft, Loader2, Upload } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const APP_TYPES = [
-  { key: "service",    label: "Service Application",    desc: "Study abroad, pickup, accommodation, internship, settlement, guardian" },
-  { key: "camp",       label: "Camp Application",       desc: "Summer / winter language / academic camps" },
-  { key: "school",     label: "School Application",     desc: "Enrolment at partner schools" },
-  { key: "university", label: "University Application", desc: "Undergraduate / postgraduate / pathway" },
-];
-
-const SERVICE_OPTIONS = [
-  { key: "study_abroad",   label: "Study Abroad" },
-  { key: "pickup",         label: "Pickup / Airport Transfer" },
-  { key: "accommodation",  label: "Accommodation" },
-  { key: "internship",     label: "Internship" },
-  { key: "settlement",     label: "Settlement" },
-  { key: "guardian",       label: "Guardian" },
-];
-
-function StepIndicator({ step }: { step: number }) {
-  const steps = ["Service Selection", "Applicant Info", "Review & Submit"];
+// ── Design helpers ──────────────────────────────────────────────────────────
+function SectionHeader({ title }: { title: string }) {
   return (
-    <div className="flex items-center gap-2 mb-8">
-      {steps.map((s, i) => {
-        const num = i + 1;
-        const active = num === step;
-        const done = num < step;
-        return (
-          <div key={s} className="flex items-center gap-2">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
-              done ? "bg-[#F5821F] text-white" : active ? "bg-[#F5821F] text-white" : "bg-muted text-muted-foreground"
-            }`}>
-              {done ? <Check className="w-3.5 h-3.5" /> : num}
-            </div>
-            <span className={`text-sm font-medium ${active ? "text-[#1C1917]" : "text-muted-foreground"}`}>{s}</span>
-            {i < steps.length - 1 && <div className="w-8 h-px bg-border mx-1" />}
-          </div>
-        );
-      })}
+    <div className="bg-[#F5821F] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-t-xl">
+      {title}
     </div>
   );
 }
 
-function FieldRow({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">
+    <div className="rounded-xl border border-border overflow-hidden">
+      <SectionHeader title={title} />
+      <div className="bg-card p-5 space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function Field({ label, required, half, children }: { label: string; required?: boolean; half?: boolean; children: React.ReactNode }) {
+  return (
+    <div className={half ? "col-span-1" : ""}>
+      <label className="block text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-1">
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
-      </Label>
+      </label>
       {children}
     </div>
   );
 }
 
+function RadioGroup({ name, options, value, onChange }: {
+  name: string; options: { label: string; value: string }[];
+  value: string; onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex gap-2 flex-wrap">
+      {options.map(o => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(o.value)}
+          className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+            value === o.value
+              ? "bg-[#F5821F] text-white border-[#F5821F]"
+              : "border-border text-muted-foreground hover:border-[#F5821F]/50"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const inputCls = "h-9 text-sm border-border focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F]";
+
+// ── Available services ──────────────────────────────────────────────────────
+const SERVICES = [
+  { key: "study_abroad",  label: "Study Abroad" },
+  { key: "accommodation", label: "Accommodation / Homestay / Boarding" },
+  { key: "pickup",        label: "Airport Pickup by Edubee" },
+  { key: "settlement",    label: "Settlement Service by Edubee" },
+  { key: "guardian",      label: "Family / Nanny Guardian Service" },
+  { key: "internship",    label: "Internship Placement" },
+];
+
+const ENGLISH_LEVELS = ["Beginner", "Pre-Intermediate", "Intermediate", "Upper-Intermediate", "Advanced", "Proficient"];
+
+// ── Main component ──────────────────────────────────────────────────────────
 export default function ApplicationForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [step, setStep] = useState(1);
+  const passportRef  = useRef<HTMLInputElement>(null);
+  const enrolmentRef = useRef<HTMLInputElement>(null);
+  const signatureRef = useRef<HTMLInputElement>(null);
 
-  // Step 1: Service selection
-  const [appType, setAppType] = useState<string>("");
-  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
+  // ── Service checkboxes
+  const [services, setServices] = useState<string[]>([]);
+  const has = (k: string) => services.includes(k);
+  const toggle = (k: string) => setServices(p => p.includes(k) ? p.filter(s => s !== k) : [...p, k]);
 
-  // Step 2: Applicant info (shared)
-  const [applicantName, setApplicantName] = useState("");
-  const [applicantEmail, setApplicantEmail] = useState("");
-  const [applicantPhone, setApplicantPhone] = useState("");
-  const [applicantNationality, setApplicantNationality] = useState("");
-  const [notes, setNotes] = useState("");
+  // ── Personal Information
+  const [lastName,        setLastName]        = useState("");
+  const [firstName,       setFirstName]       = useState("");
+  const [nationality,     setNationality]     = useState("");
+  const [dob,             setDob]             = useState("");
+  const [sex,             setSex]             = useState("");
+  const [passportNo,      setPassportNo]      = useState("");
+  const [passportExpiry,  setPassportExpiry]  = useState("");
+  const [addlPassport,    setAddlPassport]    = useState("None");
+  const [firstYear,       setFirstYear]       = useState("");
+  const [address,         setAddress]         = useState("");
+  const [phoneMobile,     setPhoneMobile]     = useState("");
+  const [phoneHome,       setPhoneHome]       = useState("");
+  const [email,           setEmail]           = useState("");
+  const [schoolGradeYear, setSchoolGradeYear] = useState("");
 
-  // Pickup fields
-  const [flightNumber, setFlightNumber] = useState("");
-  const [flightDate, setFlightDate] = useState("");
-  const [arrivalTime, setArrivalTime] = useState("");
-  const [departureAirport, setDepartureAirport] = useState("");
-  const [arrivalAirport, setArrivalAirport] = useState("");
-  const [passengerCount, setPassengerCount] = useState("");
+  // ── Emergency Contact
+  const [ecName,         setEcName]         = useState("");
+  const [ecRelationship, setEcRelationship] = useState("");
+  const [ecPhone,        setEcPhone]        = useState("");
+  const [ecEmail,        setEcEmail]        = useState("");
 
-  // Accommodation fields
-  const [checkinDate, setCheckinDate] = useState("");
+  // ── School Information
+  const [institution,         setInstitution]         = useState("");
+  const [course,              setCourse]              = useState("");
+  const [enrollmentFrom,      setEnrollmentFrom]      = useState("");
+  const [enrollmentTo,        setEnrollmentTo]        = useState("");
+  const [schoolNote,          setSchoolNote]          = useState("");
+
+  // ── Airport Pickup
+  const [arrivalDate,     setArrivalDate]     = useState("");
+  const [flightNumber,    setFlightNumber]    = useState("");
+  const [numLuggage,      setNumLuggage]      = useState("");
+  const [pickupAddress,   setPickupAddress]   = useState("");
+  const [arrivalAirport,  setArrivalAirport]  = useState("");
+  const [departureAirport,setDepartureAirport]= useState("");
+  const [arrivalTime,     setArrivalTime]     = useState("");
+  const [passengerCount,  setPassengerCount]  = useState("");
+
+  // ── Homestay / Accommodation
+  const [checkinDate,  setCheckinDate]  = useState("");
   const [checkoutDate, setCheckoutDate] = useState("");
-  const [roomType, setRoomType] = useState("");
-  const [numRooms, setNumRooms] = useState("");
-  const [accommodationAddress, setAccommodationAddress] = useState("");
+  const [dietary,      setDietary]      = useState("");
+  const [allergies,    setAllergies]    = useState("");
+  const [pets,         setPets]         = useState("");
+  const [roomType,     setRoomType]     = useState("");
 
-  // Study Abroad fields
-  const [destinationCountry, setDestinationCountry] = useState("");
-  const [studyStartDate, setStudyStartDate] = useState("");
-  const [studyEndDate, setStudyEndDate] = useState("");
-  const [institutionName, setInstitutionName] = useState("");
-  const [courseName, setCourseName] = useState("");
+  // ── Homestay Information
+  const [englishLevel,     setEnglishLevel]     = useState("");
+  const [studyDuration,    setStudyDuration]    = useState("");
+  const [prevStay,         setPrevStay]         = useState("");
+  const [prefRoom,         setPrefRoom]         = useState("");
+  const [smoker,           setSmoker]           = useState("");
 
-  // Internship fields
-  const [internshipStartDate, setInternshipStartDate] = useState("");
-  const [internshipEndDate, setInternshipEndDate] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [companyPreference, setCompanyPreference] = useState("");
+  // ── Declaration checkboxes
+  const [declAgree, setDeclAgree] = useState(false);
 
-  // Settlement fields
-  const [settlementDate, setSettlementDate] = useState("");
-  const [suburb, setSuburb] = useState("");
+  // ── Files (display only — not uploaded to server in this version)
+  const [passportFile,  setPassportFile]  = useState<File | null>(null);
+  const [enrolmentFile, setEnrolmentFile] = useState<File | null>(null);
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
 
-  // Guardian fields
-  const [guardianStartDate, setGuardianStartDate] = useState("");
-  const [guardianEndDate, setGuardianEndDate] = useState("");
-  const [guardianType, setGuardianType] = useState("");
+  // ── Notes / Agent
+  const [notes, setNotes]   = useState("");
+  const [agent, setAgent]   = useState("");
 
-  const toggleService = (key: string) => {
-    setServiceTypes(prev =>
-      prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key]
-    );
-  };
+  const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ") || "";
 
   const submit = useMutation({
     mutationFn: () => {
-      const payload: Record<string, unknown> = {
-        applicationType: appType,
-        serviceTypes,
-        applicantName,
-        applicantEmail,
-        applicantPhone,
-        applicantNationality,
+      const extraNotes = [
+        ecName        ? `EC Name: ${ecName}`               : "",
+        ecRelationship? `EC Relationship: ${ecRelationship}` : "",
+        ecPhone       ? `EC Phone: ${ecPhone}`             : "",
+        ecEmail       ? `EC Email: ${ecEmail}`             : "",
+        passportNo    ? `Passport: ${passportNo} (exp ${passportExpiry})` : "",
+        numLuggage    ? `Luggage: ${numLuggage}`           : "",
+        pickupAddress ? `Pickup Address: ${pickupAddress}` : "",
+        dietary       ? `Dietary: ${dietary}`              : "",
+        allergies     ? `Allergies: ${allergies}`          : "",
+        pets          ? `Pets: ${pets}`                    : "",
+        englishLevel  ? `English Level: ${englishLevel}`   : "",
+        studyDuration ? `Study Duration: ${studyDuration}` : "",
+        prevStay      ? `Previous Australia Stay: ${prevStay}` : "",
+        prefRoom      ? `Preferred Room: ${prefRoom}`      : "",
+        smoker        ? `Smoker: ${smoker}`                : "",
+        schoolGradeYear ? `School/Grade/Year: ${schoolGradeYear}` : "",
+        agent         ? `Agent: ${agent}`                  : "",
+        schoolNote    ? `School Note: ${schoolNote}`       : "",
         notes,
-        applicationStatus: "submitted",
-        status: "submitted",
-        // service-specific
-        flightNumber, flightDate, arrivalTime, departureAirport, arrivalAirport, passengerCount: passengerCount ? Number(passengerCount) : null,
-        checkinDate, checkoutDate, roomType, numRooms: numRooms ? Number(numRooms) : null, accommodationAddress,
-        destinationCountry, studyStartDate, studyEndDate, institutionName, courseName,
-        internshipStartDate, internshipEndDate, industry, companyPreference,
-        settlementDate, suburb,
-        guardianStartDate, guardianEndDate, guardianType,
+      ].filter(Boolean).join("\n");
+
+      const payload: Record<string, unknown> = {
+        applicationType:    "service",
+        serviceTypes:       services,
+        applicantName:      fullName || undefined,
+        applicantEmail:     email    || undefined,
+        applicantPhone:     phoneMobile || undefined,
+        applicantNationality: nationality || undefined,
+        applicationStatus:  "submitted",
+        status:             "submitted",
+        // school
+        institutionName:    institution    || undefined,
+        courseName:         course         || undefined,
+        studyStartDate:     enrollmentFrom || undefined,
+        studyEndDate:       enrollmentTo   || undefined,
+        destinationCountry: nationality    || undefined,
+        // pickup
+        flightNumber:       flightNumber     || undefined,
+        flightDate:         arrivalDate      || undefined,
+        arrivalTime:        arrivalTime      || undefined,
+        departureAirport:   departureAirport || undefined,
+        arrivalAirport:     arrivalAirport   || undefined,
+        passengerCount:     passengerCount ? Number(passengerCount) : undefined,
+        // accommodation
+        checkinDate:        checkinDate  || undefined,
+        checkoutDate:       checkoutDate || undefined,
+        roomType:           roomType     || undefined,
+        accommodationAddress: address    || undefined,
+        // notes
+        notes: extraNotes || undefined,
       };
-      // strip nulls/empty strings for cleanliness
-      Object.keys(payload).forEach(k => {
-        if (payload[k] === "" || payload[k] === null) delete payload[k];
-      });
+      Object.keys(payload).forEach(k => { if (payload[k] === undefined) delete payload[k]; });
       return axios.post(`${BASE}/api/applications`, payload).then(r => r.data);
     },
     onSuccess: (data) => {
-      toast({ title: "Application created" });
+      toast({ title: "Application submitted successfully" });
       setLocation(`${BASE}/admin/applications/${data.id}`);
     },
-    onError: () => toast({ variant: "destructive", title: "Failed to create application" }),
+    onError: () => toast({ variant: "destructive", title: "Failed to submit application" }),
   });
 
-  const canGoToStep2 = !!appType && (appType !== "service" || serviceTypes.length > 0);
-  const canSubmit = !!applicantName;
-
-  const hasService = (key: string) => serviceTypes.includes(key);
+  const canSubmit = fullName.length > 0 && services.length > 0;
 
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+    <div className="max-w-3xl mx-auto py-8 px-4 space-y-5">
+      {/* Back nav */}
+      <div className="flex items-center gap-3">
         <button
-          onClick={() => step === 1 ? setLocation(`${BASE}/admin/applications`) : setStep(s => s - 1)}
+          type="button"
+          onClick={() => setLocation(`${BASE}/admin/applications`)}
           className="p-1.5 rounded-lg hover:bg-muted transition-colors"
         >
           <ChevronLeft className="w-5 h-5 text-muted-foreground" />
         </button>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#FEF0E3] flex items-center justify-center">
-            <FileText className="w-4 h-4 text-[#F5821F]" strokeWidth={1.5} />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-[#1C1917]">New Application</h1>
-            <p className="text-xs text-muted-foreground">Create a service or camp application</p>
-          </div>
+        <div>
+          <h1 className="text-base font-semibold text-[#1C1917]">Program & Service Application</h1>
+          <p className="text-xs text-muted-foreground">Fill in all required fields and submit</p>
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-6">
-        <StepIndicator step={step} />
+      {/* ── 1. AVAILABLE SERVICE LIST ──────────────────────────────── */}
+      <Section title="Available Service List">
+        <p className="text-xs text-muted-foreground -mt-1">Select all services that apply (multiple selections allowed)</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {SERVICES.map(s => (
+            <label
+              key={s.key}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
+                has(s.key)
+                  ? "border-[#F5821F] bg-[#FEF0E3]"
+                  : "border-border hover:border-[#F5821F]/40 hover:bg-muted/30"
+              }`}
+            >
+              <Checkbox
+                checked={has(s.key)}
+                onCheckedChange={() => toggle(s.key)}
+                className="data-[state=checked]:bg-[#F5821F] data-[state=checked]:border-[#F5821F] shrink-0"
+              />
+              <span className={`text-sm font-medium ${has(s.key) ? "text-[#F5821F]" : "text-[#1C1917]"}`}>
+                {s.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </Section>
 
-        {/* ── Step 1: Service Selection ── */}
-        {step === 1 && (
-          <div className="space-y-6">
-            <div>
-              <p className="text-xs font-medium text-[#57534E] uppercase tracking-wide mb-3">Application Type *</p>
-              <div className="grid grid-cols-1 gap-2">
-                {APP_TYPES.map(t => (
-                  <button
-                    key={t.key}
-                    onClick={() => { setAppType(t.key); if (t.key !== "service") setServiceTypes([]); }}
-                    className={`text-left px-4 py-3 rounded-lg border transition-colors ${
-                      appType === t.key ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-muted-foreground"
-                    }`}
-                  >
-                    <p className="font-medium text-sm text-[#1C1917]">{t.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
+      {/* ── 2. PERSONAL INFORMATION ────────────────────────────────── */}
+      <Section title="Personal Information">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Last Name" required>
+            <Input className={inputCls} value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Family name" />
+          </Field>
+          <Field label="First Name" required>
+            <Input className={inputCls} value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Given name" />
+          </Field>
+          <Field label="Nationality" required>
+            <Input className={inputCls} value={nationality} onChange={e => setNationality(e.target.value)} placeholder="e.g. Korean" />
+          </Field>
+          <Field label="Date of Birth (DD/MM/YYYY)" required>
+            <Input className={inputCls} type="date" value={dob} onChange={e => setDob(e.target.value)} />
+          </Field>
+        </div>
 
-            {appType === "service" && (
-              <div>
-                <p className="text-xs font-medium text-[#57534E] uppercase tracking-wide mb-3">Service Types * <span className="text-muted-foreground normal-case">(select all that apply)</span></p>
-                <div className="grid grid-cols-2 gap-2">
-                  {SERVICE_OPTIONS.map(s => (
-                    <label key={s.key} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border hover:border-muted-foreground cursor-pointer transition-colors">
-                      <Checkbox
-                        checked={serviceTypes.includes(s.key)}
-                        onCheckedChange={() => toggleService(s.key)}
-                        className="data-[state=checked]:bg-[#F5821F] data-[state=checked]:border-[#F5821F]"
-                      />
-                      <span className="text-sm font-medium">{s.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
+        <Field label="Sex" required>
+          <RadioGroup name="sex" value={sex} onChange={setSex}
+            options={[{ label: "Male", value: "male" }, { label: "Female", value: "female" }, { label: "Other", value: "other" }]}
+          />
+        </Field>
 
-            <div className="flex justify-end">
-              <Button
-                className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5"
-                onClick={() => setStep(2)}
-                disabled={!canGoToStep2}
-              >
-                Next <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="ID / Passport No." required>
+            <Input className={inputCls} value={passportNo} onChange={e => setPassportNo(e.target.value)} placeholder="Passport number" />
+          </Field>
+          <Field label="Passport Expiry Date">
+            <Input className={inputCls} type="date" value={passportExpiry} onChange={e => setPassportExpiry(e.target.value)} />
+          </Field>
+          <Field label="Additional Passport Country">
+            <Input className={inputCls} value={addlPassport} onChange={e => setAddlPassport(e.target.value)} placeholder="None (or country)" />
+          </Field>
+          <Field label="First Year in Australia?">
+            <RadioGroup name="firstYear" value={firstYear} onChange={setFirstYear}
+              options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+            />
+          </Field>
+        </div>
+
+        <Field label="Current Address" required>
+          <Input className={inputCls} value={address} onChange={e => setAddress(e.target.value)} placeholder="Full address" />
+        </Field>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Field label="Mobile Phone">
+            <Input className={inputCls} value={phoneMobile} onChange={e => setPhoneMobile(e.target.value)} placeholder="+82 10 xxxx xxxx" />
+          </Field>
+          <Field label="Home Phone">
+            <Input className={inputCls} value={phoneHome} onChange={e => setPhoneHome(e.target.value)} placeholder="Home number" />
+          </Field>
+          <Field label="Email Address">
+            <Input className={inputCls} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" />
+          </Field>
+        </div>
+
+        <Field label="School / Grade / Year">
+          <Input className={inputCls} value={schoolGradeYear} onChange={e => setSchoolGradeYear(e.target.value)} placeholder="e.g. Sydney High School / Year 10" />
+        </Field>
+      </Section>
+
+      {/* ── 3. EMERGENCY CONTACT DETAILS ───────────────────────────── */}
+      <Section title="Emergency Contact Details">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Contact Name">
+            <Input className={inputCls} value={ecName} onChange={e => setEcName(e.target.value)} placeholder="Full name" />
+          </Field>
+          <Field label="Relationship">
+            <Input className={inputCls} value={ecRelationship} onChange={e => setEcRelationship(e.target.value)} placeholder="e.g. Parent, Guardian" />
+          </Field>
+          <Field label="Contact Phone">
+            <Input className={inputCls} value={ecPhone} onChange={e => setEcPhone(e.target.value)} placeholder="Phone number" />
+          </Field>
+          <Field label="Contact Email">
+            <Input className={inputCls} type="email" value={ecEmail} onChange={e => setEcEmail(e.target.value)} placeholder="email@example.com" />
+          </Field>
+        </div>
+      </Section>
+
+      {/* ── 4. SCHOOL INFORMATION ──────────────────────────────────── */}
+      <Section title="School Information">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="School / Institution">
+            <Input className={inputCls} value={institution} onChange={e => setInstitution(e.target.value)} placeholder="School or university name" />
+          </Field>
+          <Field label="Course / Program" required={has("study_abroad")}>
+            <Input className={inputCls} value={course} onChange={e => setCourse(e.target.value)} placeholder="Course name" />
+          </Field>
+          <Field label="Enrollment From">
+            <Input className={inputCls} type="date" value={enrollmentFrom} onChange={e => setEnrollmentFrom(e.target.value)} />
+          </Field>
+          <Field label="Enrollment To">
+            <Input className={inputCls} type="date" value={enrollmentTo} onChange={e => setEnrollmentTo(e.target.value)} />
+          </Field>
+        </div>
+        <Field label="Note">
+          <Textarea className="text-sm min-h-[70px] border-border focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F]"
+            value={schoolNote} onChange={e => setSchoolNote(e.target.value)} placeholder="Any additional school information..." />
+        </Field>
+      </Section>
+
+      {/* ── 5. AIRPORT PICKUP (conditional) ───────────────────────── */}
+      {has("pickup") && (
+        <Section title="Airport Pickup">
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Arrival Date" required>
+              <Input className={inputCls} type="date" value={arrivalDate} onChange={e => setArrivalDate(e.target.value)} />
+            </Field>
+            <Field label="Arrival Time">
+              <Input className={inputCls} type="time" value={arrivalTime} onChange={e => setArrivalTime(e.target.value)} />
+            </Field>
+            <Field label="Flight Number">
+              <Input className={inputCls} value={flightNumber} onChange={e => setFlightNumber(e.target.value)} placeholder="e.g. QF123" />
+            </Field>
+            <Field label="Number of Luggage">
+              <Input className={inputCls} type="number" min={0} value={numLuggage} onChange={e => setNumLuggage(e.target.value)} placeholder="0" />
+            </Field>
+            <Field label="Departure Airport">
+              <Input className={inputCls} value={departureAirport} onChange={e => setDepartureAirport(e.target.value)} placeholder="City or IATA code" />
+            </Field>
+            <Field label="Arrival Airport">
+              <Input className={inputCls} value={arrivalAirport} onChange={e => setArrivalAirport(e.target.value)} placeholder="e.g. SYD" />
+            </Field>
+            <Field label="Number of Passengers">
+              <Input className={inputCls} type="number" min={1} value={passengerCount} onChange={e => setPassengerCount(e.target.value)} placeholder="1" />
+            </Field>
+            <Field label="Pickup / Drop-off Address">
+              <Input className={inputCls} value={pickupAddress} onChange={e => setPickupAddress(e.target.value)} placeholder="Destination address" />
+            </Field>
           </div>
-        )}
+        </Section>
+      )}
 
-        {/* ── Step 2: Applicant Info ── */}
-        {step === 2 && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-              <FieldRow label="Applicant Name" required>
-                <Input value={applicantName} onChange={e => setApplicantName(e.target.value)} placeholder="Full name" />
-              </FieldRow>
-              <FieldRow label="Email">
-                <Input type="email" value={applicantEmail} onChange={e => setApplicantEmail(e.target.value)} placeholder="email@example.com" />
-              </FieldRow>
-              <FieldRow label="Phone">
-                <Input value={applicantPhone} onChange={e => setApplicantPhone(e.target.value)} placeholder="+61 4xx xxx xxx" />
-              </FieldRow>
-              <FieldRow label="Nationality">
-                <Input value={applicantNationality} onChange={e => setApplicantNationality(e.target.value)} placeholder="Country" />
-              </FieldRow>
-            </div>
-
-            {/* Pickup fields */}
-            {hasService("pickup") && (
-              <div className="rounded-lg border border-border p-4 space-y-4">
-                <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Pickup / Airport Transfer</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <FieldRow label="Flight Number"><Input value={flightNumber} onChange={e => setFlightNumber(e.target.value)} placeholder="e.g. QF123" /></FieldRow>
-                  <FieldRow label="Flight Date"><Input type="date" value={flightDate} onChange={e => setFlightDate(e.target.value)} /></FieldRow>
-                  <FieldRow label="Arrival Time"><Input type="time" value={arrivalTime} onChange={e => setArrivalTime(e.target.value)} /></FieldRow>
-                  <FieldRow label="Passengers"><Input type="number" min={1} value={passengerCount} onChange={e => setPassengerCount(e.target.value)} placeholder="1" /></FieldRow>
-                  <FieldRow label="Departure Airport"><Input value={departureAirport} onChange={e => setDepartureAirport(e.target.value)} placeholder="City or IATA code" /></FieldRow>
-                  <FieldRow label="Arrival Airport"><Input value={arrivalAirport} onChange={e => setArrivalAirport(e.target.value)} placeholder="City or IATA code" /></FieldRow>
-                </div>
-              </div>
-            )}
-
-            {/* Accommodation fields */}
-            {hasService("accommodation") && (
-              <div className="rounded-lg border border-border p-4 space-y-4">
-                <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Accommodation</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <FieldRow label="Check-in Date"><Input type="date" value={checkinDate} onChange={e => setCheckinDate(e.target.value)} /></FieldRow>
-                  <FieldRow label="Check-out Date"><Input type="date" value={checkoutDate} onChange={e => setCheckoutDate(e.target.value)} /></FieldRow>
-                  <FieldRow label="Room Type">
-                    <Select value={roomType} onValueChange={setRoomType}>
-                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                      <SelectContent>
-                        {["Single", "Twin", "Double", "Family", "Studio"].map(r => (
-                          <SelectItem key={r} value={r.toLowerCase()}>{r}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FieldRow>
-                  <FieldRow label="Number of Rooms"><Input type="number" min={1} value={numRooms} onChange={e => setNumRooms(e.target.value)} placeholder="1" /></FieldRow>
-                </div>
-                <FieldRow label="Address"><Input value={accommodationAddress} onChange={e => setAccommodationAddress(e.target.value)} placeholder="Property name or address" /></FieldRow>
-              </div>
-            )}
-
-            {/* Study Abroad fields */}
-            {hasService("study_abroad") && (
-              <div className="rounded-lg border border-border p-4 space-y-4">
-                <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Study Abroad</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <FieldRow label="Destination Country"><Input value={destinationCountry} onChange={e => setDestinationCountry(e.target.value)} placeholder="e.g. Australia" /></FieldRow>
-                  <FieldRow label="Institution"><Input value={institutionName} onChange={e => setInstitutionName(e.target.value)} placeholder="School / University" /></FieldRow>
-                  <FieldRow label="Course"><Input value={courseName} onChange={e => setCourseName(e.target.value)} placeholder="Course name" /></FieldRow>
-                  <FieldRow label="Start Date"><Input type="date" value={studyStartDate} onChange={e => setStudyStartDate(e.target.value)} /></FieldRow>
-                  <FieldRow label="End Date"><Input type="date" value={studyEndDate} onChange={e => setStudyEndDate(e.target.value)} /></FieldRow>
-                </div>
-              </div>
-            )}
-
-            {/* Internship fields */}
-            {hasService("internship") && (
-              <div className="rounded-lg border border-border p-4 space-y-4">
-                <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Internship</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <FieldRow label="Start Date"><Input type="date" value={internshipStartDate} onChange={e => setInternshipStartDate(e.target.value)} /></FieldRow>
-                  <FieldRow label="End Date"><Input type="date" value={internshipEndDate} onChange={e => setInternshipEndDate(e.target.value)} /></FieldRow>
-                  <FieldRow label="Industry"><Input value={industry} onChange={e => setIndustry(e.target.value)} placeholder="e.g. Technology" /></FieldRow>
-                  <FieldRow label="Company Preference"><Input value={companyPreference} onChange={e => setCompanyPreference(e.target.value)} placeholder="Optional" /></FieldRow>
-                </div>
-              </div>
-            )}
-
-            {/* Settlement fields */}
-            {hasService("settlement") && (
-              <div className="rounded-lg border border-border p-4 space-y-4">
-                <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Settlement</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <FieldRow label="Settlement Date"><Input type="date" value={settlementDate} onChange={e => setSettlementDate(e.target.value)} /></FieldRow>
-                  <FieldRow label="Suburb / Area"><Input value={suburb} onChange={e => setSuburb(e.target.value)} placeholder="e.g. Parramatta" /></FieldRow>
-                </div>
-              </div>
-            )}
-
-            {/* Guardian fields */}
-            {hasService("guardian") && (
-              <div className="rounded-lg border border-border p-4 space-y-4">
-                <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Guardian</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <FieldRow label="Start Date"><Input type="date" value={guardianStartDate} onChange={e => setGuardianStartDate(e.target.value)} /></FieldRow>
-                  <FieldRow label="End Date"><Input type="date" value={guardianEndDate} onChange={e => setGuardianEndDate(e.target.value)} /></FieldRow>
-                  <FieldRow label="Guardian Type"><Input value={guardianType} onChange={e => setGuardianType(e.target.value)} placeholder="e.g. Educational" /></FieldRow>
-                </div>
-              </div>
-            )}
-
-            <FieldRow label="Notes">
-              <Textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any additional notes..." />
-            </FieldRow>
-
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep(1)} className="gap-1">
-                <ChevronLeft className="w-4 h-4" /> Back
-              </Button>
-              <Button
-                className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5"
-                onClick={() => setStep(3)}
-                disabled={!canSubmit}
-              >
-                Review <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
+      {/* ── 6. ACCOMMODATION / HOMESTAY (conditional) ─────────────── */}
+      {has("accommodation") && (
+        <Section title="Accommodation / Homestay">
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Date of Arrival" required>
+              <Input className={inputCls} type="date" value={checkinDate} onChange={e => setCheckinDate(e.target.value)} />
+            </Field>
+            <Field label="Date of Departure">
+              <Input className={inputCls} type="date" value={checkoutDate} onChange={e => setCheckoutDate(e.target.value)} />
+            </Field>
+            <Field label="Room Type">
+              <RadioGroup name="roomType" value={roomType} onChange={setRoomType}
+                options={[
+                  { label: "Single",  value: "single" },
+                  { label: "Twin",    value: "twin" },
+                  { label: "Double",  value: "double" },
+                  { label: "Family",  value: "family" },
+                ]}
+              />
+            </Field>
           </div>
-        )}
 
-        {/* ── Step 3: Review & Submit ── */}
-        {step === 3 && (
-          <div className="space-y-5">
-            <div className="rounded-lg bg-muted/40 p-4 space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Application Type</span>
-                <span className="font-medium">{APP_TYPES.find(t => t.key === appType)?.label}</span>
-              </div>
-              {serviceTypes.length > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Services</span>
-                  <span className="font-medium text-right">{serviceTypes.map(s => SERVICE_OPTIONS.find(o => o.key === s)?.label).join(", ")}</span>
-                </div>
+          <div className="grid grid-cols-2 gap-4 pt-2">
+            <Field label="Dietary Requirements">
+              <RadioGroup name="dietary" value={dietary} onChange={setDietary}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+              {dietary === "yes" && (
+                <Input className={`${inputCls} mt-2`} placeholder="Please describe..." />
               )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Applicant</span>
-                <span className="font-medium">{applicantName}</span>
-              </div>
-              {applicantEmail && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Email</span>
-                  <span className="font-medium">{applicantEmail}</span>
-                </div>
+            </Field>
+            <Field label="Allergies">
+              <RadioGroup name="allergies" value={allergies} onChange={setAllergies}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+              {allergies === "yes" && (
+                <Input className={`${inputCls} mt-2`} placeholder="Please describe..." />
               )}
-              {applicantPhone && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Phone</span>
-                  <span className="font-medium">{applicantPhone}</span>
-                </div>
-              )}
-              {applicantNationality && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Nationality</span>
-                  <span className="font-medium">{applicantNationality}</span>
-                </div>
-              )}
-              {notes && (
-                <div>
-                  <span className="text-muted-foreground block mb-1">Notes</span>
-                  <span className="text-sm">{notes}</span>
-                </div>
-              )}
-            </div>
-
-            <p className="text-xs text-muted-foreground">The application will be created with status <strong>Submitted</strong> and can be reviewed in the Applications list.</p>
-
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep(2)} className="gap-1">
-                <ChevronLeft className="w-4 h-4" /> Back
-              </Button>
-              <Button
-                className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5"
-                onClick={() => submit.mutate()}
-                disabled={submit.isPending}
-              >
-                {submit.isPending ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Creating...</>
-                ) : (
-                  <><Check className="w-4 h-4" /> Create Application</>
-                )}
-              </Button>
-            </div>
+            </Field>
+            <Field label="Pets (describe if any)">
+              <Input className={inputCls} value={pets} onChange={e => setPets(e.target.value)} placeholder="e.g. Has a dog allergy" />
+            </Field>
           </div>
-        )}
+        </Section>
+      )}
+
+      {/* ── 7. HOMESTAY INFORMATION (conditional) ─────────────────── */}
+      {has("accommodation") && (
+        <Section title="Homestay Information">
+          <Field label="Current English Level">
+            <div className="flex flex-wrap gap-2">
+              {ENGLISH_LEVELS.map(l => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => setEnglishLevel(l)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    englishLevel === l
+                      ? "bg-[#F5821F] text-white border-[#F5821F]"
+                      : "border-border text-muted-foreground hover:border-[#F5821F]/50"
+                  }`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Estimated Study Duration">
+              <Input className={inputCls} value={studyDuration} onChange={e => setStudyDuration(e.target.value)} placeholder="e.g. 6 months" />
+            </Field>
+            <Field label="Previous Stay in Australia?">
+              <RadioGroup name="prevStay" value={prevStay} onChange={setPrevStay}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+            </Field>
+            <Field label="Preferred Room (Gender)">
+              <RadioGroup name="prefRoom" value={prefRoom} onChange={setPrefRoom}
+                options={[{ label: "Male Host", value: "male" }, { label: "Female Host", value: "female" }, { label: "No Preference", value: "any" }]}
+              />
+            </Field>
+            <Field label="Smoker?">
+              <RadioGroup name="smoker" value={smoker} onChange={setSmoker}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+            </Field>
+          </div>
+        </Section>
+      )}
+
+      {/* ── 8. DOCUMENTS & SIGN ────────────────────────────────────── */}
+      <Section title="Documents & Sign">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Passport */}
+          <div>
+            <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-2">Passport Copy</p>
+            <div
+              onClick={() => passportRef.current?.click()}
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-[#F5821F]/60 cursor-pointer py-6 transition-colors bg-muted/20"
+            >
+              <Upload className="w-5 h-5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {passportFile ? passportFile.name : "Browse Files"}
+              </span>
+            </div>
+            <input ref={passportRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
+              onChange={e => setPassportFile(e.target.files?.[0] ?? null)} />
+          </div>
+
+          {/* Enrolment */}
+          <div>
+            <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-2">Enrolment / Application</p>
+            <div
+              onClick={() => enrolmentRef.current?.click()}
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-[#F5821F]/60 cursor-pointer py-6 transition-colors bg-muted/20"
+            >
+              <Upload className="w-5 h-5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {enrolmentFile ? enrolmentFile.name : "Browse Files"}
+              </span>
+            </div>
+            <input ref={enrolmentRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
+              onChange={e => setEnrolmentFile(e.target.files?.[0] ?? null)} />
+          </div>
+
+          {/* Signature */}
+          <div>
+            <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-2">Signature</p>
+            <div
+              onClick={() => signatureRef.current?.click()}
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-[#F5821F]/60 cursor-pointer py-6 transition-colors bg-muted/20"
+            >
+              <Upload className="w-5 h-5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {signatureFile ? signatureFile.name : "Browse Files"}
+              </span>
+            </div>
+            <input ref={signatureRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
+              onChange={e => setSignatureFile(e.target.files?.[0] ?? null)} />
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2.5 pt-2">
+          <Checkbox
+            id="decl"
+            checked={declAgree}
+            onCheckedChange={v => setDeclAgree(!!v)}
+            className="mt-0.5 data-[state=checked]:bg-[#F5821F] data-[state=checked]:border-[#F5821F]"
+          />
+          <label htmlFor="decl" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+            I confirm that all information provided in this application is true and correct. I agree to the{" "}
+            <span className="text-[#F5821F] underline cursor-pointer">terms and conditions</span>{" "}
+            of service.
+          </label>
+        </div>
+      </Section>
+
+      {/* ── 9. AGENT ───────────────────────────────────────────────── */}
+      <Section title="Agent">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Agent Name / Code">
+            <Input className={inputCls} value={agent} onChange={e => setAgent(e.target.value)} placeholder="Agent name or referral code" />
+          </Field>
+          <Field label="Additional Notes">
+            <Input className={inputCls} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any other information..." />
+          </Field>
+        </div>
+      </Section>
+
+      {/* ── Submit ─────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between pt-2 pb-8">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setLocation(`${BASE}/admin/applications`)}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          className="bg-[#F5821F] hover:bg-[#D96A0A] text-white px-8 gap-2"
+          onClick={() => submit.mutate()}
+          disabled={submit.isPending || !canSubmit}
+        >
+          {submit.isPending ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+          ) : (
+            "Submit Application"
+          )}
+        </Button>
       </div>
+
+      {!canSubmit && (
+        <p className="text-xs text-muted-foreground text-center -mt-4 pb-4">
+          Please select at least one service and enter applicant name to submit.
+        </p>
+      )}
     </div>
   );
 }
