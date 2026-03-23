@@ -38,29 +38,41 @@ function SearchSelect({
 
   useEffect(() => { if (!open) setQ(""); }, [open]);
 
+  // VIEW mode: show name badge or "—" placeholder
+  if (disabled) {
+    return (
+      <div className="space-y-1">
+        {label && <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">{label}</Label>}
+        <div className="flex items-center border border-[#E8E6E2] rounded-lg px-3 py-2 h-9 bg-white opacity-60">
+          <span className="text-sm text-[#1C1917] truncate">
+            {selected ? selected.name : <span className="text-[#A8A29E]">—</span>}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // EDIT mode: search + dropdown
   return (
     <div className="space-y-1">
       {label && <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">{label}</Label>}
       {selected ? (
-        <div className={`flex items-center justify-between border border-[#E8E6E2] rounded-lg px-3 py-2 h-9 bg-white ${disabled ? "opacity-60" : ""}`}>
+        <div className="flex items-center justify-between border border-[#F5821F] rounded-lg px-3 py-2 h-9 bg-white">
           <span className="text-sm text-[#1C1917] truncate">{selected.name}</span>
-          {!disabled && (
-            <button type="button" onClick={() => onChange("")} className="ml-2 text-[#A8A29E] hover:text-[#DC2626] shrink-0">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+          <button type="button" onClick={() => onChange("")} className="ml-2 text-[#A8A29E] hover:text-[#DC2626] shrink-0">
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       ) : (
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#A8A29E] pointer-events-none" />
           <input
-            disabled={disabled}
             placeholder={placeholder}
             value={q}
             onChange={e => { setQ(e.target.value); setOpen(true); }}
             onFocus={() => setOpen(true)}
             onBlur={() => setTimeout(() => setOpen(false), 150)}
-            className="w-full pl-8 pr-3 h-9 text-sm border border-[#E8E6E2] rounded-lg focus:outline-none focus:border-[#F5821F] disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full pl-8 pr-3 h-9 text-sm border border-[#E8E6E2] rounded-lg focus:outline-none focus:border-[#F5821F]"
           />
           {open && filtered.length > 0 && (
             <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-48 overflow-y-auto">
