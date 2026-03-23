@@ -76,8 +76,6 @@ const SERVICES = [
   { key: "internship",    label: "Internship Placement" },
 ];
 
-const ENGLISH_LEVELS = ["Beginner", "Pre-Intermediate", "Intermediate", "Upper-Intermediate", "Advanced", "Proficient"];
-
 // ── Main component ──────────────────────────────────────────────────────────
 export default function ApplicationForm() {
   const [, setLocation] = useLocation();
@@ -130,20 +128,27 @@ export default function ApplicationForm() {
   const [arrivalTime,     setArrivalTime]     = useState("");
   const [passengerCount,  setPassengerCount]  = useState("");
 
-  // ── Homestay / Accommodation
-  const [checkinDate,  setCheckinDate]  = useState("");
-  const [checkoutDate, setCheckoutDate] = useState("");
-  const [dietary,      setDietary]      = useState("");
-  const [allergies,    setAllergies]    = useState("");
-  const [pets,         setPets]         = useState("");
-  const [roomType,     setRoomType]     = useState("");
+  // ── Accommodation
+  const [checkinDate,        setCheckinDate]        = useState("");
+  const [checkoutDate,       setCheckoutDate]       = useState("");
+  const [roomType,           setRoomType]           = useState("");
+  const [accommodationOption,setAccommodationOption]= useState(""); // "student" | "homestay"
 
-  // ── Homestay Information
-  const [englishLevel,     setEnglishLevel]     = useState("");
-  const [studyDuration,    setStudyDuration]    = useState("");
-  const [prevStay,         setPrevStay]         = useState("");
-  const [prefRoom,         setPrefRoom]         = useState("");
-  const [smoker,           setSmoker]           = useState("");
+  // ── Homestay Details
+  const [homestayType,    setHomestayType]    = useState("");
+  const [allergicPets,    setAllergicPets]    = useState("");
+  const [canLivePets,     setCanLivePets]     = useState("");
+  const [doSmoke,         setDoSmoke]         = useState("");
+  const [canLiveSmokers,  setCanLiveSmokers]  = useState("");
+  const [canLiveStudents, setCanLiveStudents] = useState("");
+  const [canLiveChildren, setCanLiveChildren] = useState("");
+  const [religiousBelief, setReligiousBelief] = useState("");
+  const [specialDiet,     setSpecialDiet]     = useState("");
+  const [foodAvoid,       setFoodAvoid]       = useState("");
+  const [otherReqs,       setOtherReqs]       = useState("");
+  const [hobbies,         setHobbies]         = useState("");
+  const [selfIntro,       setSelfIntro]       = useState("");
+  const [declHomestay,    setDeclHomestay]    = useState(false);
 
   // ── Internship Information
   const [intEnglishLevel,    setIntEnglishLevel]    = useState("");
@@ -185,22 +190,28 @@ export default function ApplicationForm() {
         passportNo    ? `Passport: ${passportNo} (exp ${passportExpiry})` : "",
         numLuggage    ? `Luggage: ${numLuggage}`           : "",
         pickupAddress ? `Pickup Address: ${pickupAddress}` : "",
-        dietary       ? `Dietary: ${dietary}`              : "",
-        allergies     ? `Allergies: ${allergies}`          : "",
-        pets          ? `Pets: ${pets}`                    : "",
+        accommodationOption ? `Accommodation Option: ${accommodationOption}` : "",
+        homestayType    ? `Homestay Type: ${homestayType}`           : "",
+        allergicPets    ? `Allergic to Dogs/Cats: ${allergicPets}`   : "",
+        canLivePets     ? `Can Live With Pets: ${canLivePets}`       : "",
+        doSmoke         ? `Do Smoke: ${doSmoke}`                     : "",
+        canLiveSmokers  ? `Can Live With Smokers: ${canLiveSmokers}` : "",
+        canLiveStudents ? `Can Live With Students: ${canLiveStudents}` : "",
+        canLiveChildren ? `Can Live With Children: ${canLiveChildren}` : "",
+        religiousBelief ? `Religious/Cultural Beliefs: ${religiousBelief}` : "",
+        specialDiet     ? `Special Diet: ${specialDiet}`             : "",
+        foodAvoid       ? `Food to Avoid: ${foodAvoid}`              : "",
+        otherReqs       ? `Other Requirements: ${otherReqs}`         : "",
+        hobbies         ? `Hobbies: ${hobbies}`                      : "",
+        selfIntro       ? `Self Intro: ${selfIntro}`                 : "",
         intEnglishLevel  ? `Internship English Level: ${intEnglishLevel}` : "",
         intDriverLicense ? `Australian Driver License: ${intDriverLicense}` : "",
-        intProgram       ? `Placement Program: ${intProgram}`       : "",
-        intCity          ? `Preferred City: ${intCity}`             : "",
-        intPositionType  ? `Preferred Position: ${intPositionType}` : "",
-        intHealthIssue   ? `Health Issue: ${intHealthIssue}`        : "",
-        intMentalIssue   ? `Mental Issue: ${intMentalIssue}`        : "",
-        intMedication    ? `Medication: ${intMedication}`           : "",
-        englishLevel  ? `English Level: ${englishLevel}`   : "",
-        studyDuration ? `Study Duration: ${studyDuration}` : "",
-        prevStay      ? `Previous Australia Stay: ${prevStay}` : "",
-        prefRoom      ? `Preferred Room: ${prefRoom}`      : "",
-        smoker        ? `Smoker: ${smoker}`                : "",
+        intProgram       ? `Placement Program: ${intProgram}`        : "",
+        intCity          ? `Preferred City: ${intCity}`              : "",
+        intPositionType  ? `Preferred Position: ${intPositionType}`  : "",
+        intHealthIssue   ? `Health Issue: ${intHealthIssue}`         : "",
+        intMentalIssue   ? `Mental Issue: ${intMentalIssue}`         : "",
+        intMedication    ? `Medication: ${intMedication}`            : "",
         schoolGradeYear ? `School/Grade/Year: ${schoolGradeYear}` : "",
         agent         ? `Agent: ${agent}`                  : "",
         schoolNote    ? `School Note: ${schoolNote}`       : "",
@@ -433,92 +444,146 @@ export default function ApplicationForm() {
       )}
 
       {/* ── 6. ACCOMMODATION / HOMESTAY (conditional) ─────────────── */}
-      {has("accommodation") && (
-        <Section title="Accommodation / Homestay">
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Date of Arrival" required>
-              <Input className={inputCls} type="date" value={checkinDate} onChange={e => setCheckinDate(e.target.value)} />
-            </Field>
-            <Field label="Date of Departure">
-              <Input className={inputCls} type="date" value={checkoutDate} onChange={e => setCheckoutDate(e.target.value)} />
-            </Field>
-            <Field label="Room Type">
-              <RadioGroup name="roomType" value={roomType} onChange={setRoomType}
-                options={[
-                  { label: "Single",  value: "single" },
-                  { label: "Twin",    value: "twin" },
-                  { label: "Double",  value: "double" },
-                  { label: "Family",  value: "family" },
-                ]}
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <Field label="Dietary Requirements">
-              <RadioGroup name="dietary" value={dietary} onChange={setDietary}
-                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
-              />
-              {dietary === "yes" && (
-                <Input className={`${inputCls} mt-2`} placeholder="Please describe..." />
-              )}
-            </Field>
-            <Field label="Allergies">
-              <RadioGroup name="allergies" value={allergies} onChange={setAllergies}
-                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
-              />
-              {allergies === "yes" && (
-                <Input className={`${inputCls} mt-2`} placeholder="Please describe..." />
-              )}
-            </Field>
-            <Field label="Pets (describe if any)">
-              <Input className={inputCls} value={pets} onChange={e => setPets(e.target.value)} placeholder="e.g. Has a dog allergy" />
-            </Field>
-          </div>
-        </Section>
-      )}
-
-      {/* ── 7. HOMESTAY INFORMATION (conditional) ─────────────────── */}
-      {has("accommodation") && (
-        <Section title="Homestay Information">
-          <Field label="Current English Level">
-            <div className="flex flex-wrap gap-2">
-              {ENGLISH_LEVELS.map(l => (
-                <button
-                  key={l}
-                  type="button"
-                  onClick={() => setEnglishLevel(l)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                    englishLevel === l
-                      ? "bg-[#F5821F] text-white border-[#F5821F]"
-                      : "border-border text-muted-foreground hover:border-[#F5821F]/50"
-                  }`}
+      {has("accommodation") && (() => {
+        const nights = checkinDate && checkoutDate
+          ? Math.max(0, Math.round((new Date(checkoutDate).getTime() - new Date(checkinDate).getTime()) / 86400000))
+          : null;
+        return (
+          <Section title="Accommodation / Homestay">
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Check-in Date" required>
+                <Input className={inputCls} type="date" value={checkinDate} onChange={e => setCheckinDate(e.target.value)} />
+              </Field>
+              <Field label="Check-out Date">
+                <Input className={inputCls} type="date" value={checkoutDate} onChange={e => setCheckoutDate(e.target.value)} />
+              </Field>
+              <Field label="Duration">
+                <div className="h-9 px-3 flex items-center rounded-md border border-input bg-muted/40 text-sm text-stone-600">
+                  {nights !== null ? `${nights} night${nights !== 1 ? "s" : ""}` : "—"}
+                </div>
+              </Field>
+              <Field label="Room Type">
+                <select
+                  value={roomType}
+                  onChange={e => setRoomType(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#F5821F]/50"
                 >
-                  {l}
-                </button>
+                  <option value="">Please Select</option>
+                  {["Single", "Twin", "Double", "Family"].map(r => (
+                    <option key={r} value={r.toLowerCase()}>{r}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Accommodation Option" className="col-span-2">
+                <select
+                  value={accommodationOption}
+                  onChange={e => setAccommodationOption(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#F5821F]/50"
+                >
+                  <option value="">Please Select</option>
+                  <option value="student">Student Accommodation</option>
+                  <option value="homestay">Homestay</option>
+                </select>
+              </Field>
+            </div>
+          </Section>
+        );
+      })()}
+
+      {/* ── 7. HOMESTAY DETAILS (only when Homestay is selected) ──── */}
+      {has("accommodation") && accommodationOption === "homestay" && (
+        <Section title="Homestay Details">
+          {/* Homestay Type */}
+          <Field label="Homestay Type" className="mb-4">
+            <div className="flex flex-col gap-2">
+              {[
+                "1 Single (2 meals per/day)",
+                "2 Shared (2 meals per/day)",
+                "1 Single (Under 18)",
+                "2 Shared (Under 18)",
+              ].map(opt => (
+                <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="homestayType"
+                    value={opt}
+                    checked={homestayType === opt}
+                    onChange={() => setHomestayType(opt)}
+                    className="accent-[#F5821F] w-4 h-4"
+                  />
+                  <span className="text-sm text-stone-700">{opt}</span>
+                </label>
               ))}
             </div>
           </Field>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Estimated Study Duration">
-              <Input className={inputCls} value={studyDuration} onChange={e => setStudyDuration(e.target.value)} placeholder="e.g. 6 months" />
+          {/* Yes/No grid */}
+          <div className="grid grid-cols-2 gap-x-10 gap-y-5 mb-5">
+            <Field label="Are you allergic to dogs / cats?">
+              <RadioGroup name="allergicPets" value={allergicPets} onChange={setAllergicPets}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
             </Field>
-            <Field label="Previous Stay in Australia?">
-              <RadioGroup name="prevStay" value={prevStay} onChange={setPrevStay}
-                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+            <Field label="Can you live with pets?">
+              <RadioGroup name="canLivePets" value={canLivePets} onChange={setCanLivePets}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
+            </Field>
+            <Field label="Do you smoke?">
+              <RadioGroup name="doSmoke" value={doSmoke} onChange={setDoSmoke}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
+            </Field>
+            <Field label="Can you live with people who smoke?">
+              <RadioGroup name="canLiveSmokers" value={canLiveSmokers} onChange={setCanLiveSmokers}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
+            </Field>
+            <Field label="Can you live with other students?">
+              <RadioGroup name="canLiveStudents" value={canLiveStudents} onChange={setCanLiveStudents}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
+            </Field>
+            <Field label="Can you live with children in your homestay?">
+              <RadioGroup name="canLiveChildren" value={canLiveChildren} onChange={setCanLiveChildren}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
+            </Field>
+          </div>
+
+          {/* Text fields */}
+          <div className="grid grid-cols-1 gap-4">
+            <Field label="Do you have religious / cultural / personal beliefs that your homestay should know about?">
+              <Input className={inputCls} value={religiousBelief} onChange={e => setReligiousBelief(e.target.value)} />
+            </Field>
+            <Field label="Any known allergies, or special diet requirements:">
+              <Input className={inputCls} value={specialDiet} onChange={e => setSpecialDiet(e.target.value)} />
+            </Field>
+            <Field label="Any food that you do not eat:">
+              <Input className={inputCls} value={foodAvoid} onChange={e => setFoodAvoid(e.target.value)} />
+            </Field>
+            <Field label="Other requirements:">
+              <Input className={inputCls} value={otherReqs} onChange={e => setOtherReqs(e.target.value)} />
+            </Field>
+            <Field label="What are your hobbies?">
+              <Input className={inputCls} value={hobbies} onChange={e => setHobbies(e.target.value)} />
+            </Field>
+            <Field label="Briefly introduce yourself to your host family:">
+              <textarea
+                value={selfIntro}
+                onChange={e => setSelfIntro(e.target.value)}
+                rows={4}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-stone-700 resize-y focus:outline-none focus:ring-2 focus:ring-[#F5821F]/50"
               />
             </Field>
-            <Field label="Preferred Room (Gender)">
-              <RadioGroup name="prefRoom" value={prefRoom} onChange={setPrefRoom}
-                options={[{ label: "Male Host", value: "male" }, { label: "Female Host", value: "female" }, { label: "No Preference", value: "any" }]}
-              />
-            </Field>
-            <Field label="Smoker?">
-              <RadioGroup name="smoker" value={smoker} onChange={setSmoker}
-                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
-              />
-            </Field>
+          </div>
+
+          {/* T&C */}
+          <div className="flex items-start gap-3 pt-3">
+            <Checkbox
+              id="declHomestay"
+              checked={declHomestay}
+              onCheckedChange={v => setDeclHomestay(!!v)}
+              className="mt-0.5 data-[state=checked]:bg-[#F5821F] data-[state=checked]:border-[#F5821F]"
+            />
+            <label htmlFor="declHomestay" className="text-sm text-stone-700 leading-snug cursor-pointer">
+              I agree to{" "}
+              <span className="text-blue-600 underline cursor-pointer">terms & conditions of homestay</span>.
+            </label>
           </div>
         </Section>
       )}
