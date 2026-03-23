@@ -16,7 +16,7 @@ import { format } from "date-fns";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const CURRENCIES    = ["AUD","NZD","USD","GBP","EUR","CAD","KRW","JPY","THB","PHP","SGD"];
-const INSTALLMENTS  = ["None","Weekly","Monthly","Termly"];
+const INSTALLMENTS  = ["None","Weekly","Quarterly","Half Yearly","Annually"];
 const PAYMENT_TERMS = ["Once","Multiple Times","Monthly"];
 const STATUSES      = ["active","inactive","archived"];
 
@@ -320,8 +320,10 @@ export default function ProductDetail() {
           options={PAYMENT_TERMS.map(v => ({ value: v, label: v }))} />
         <TextField label="Number of Payments" type="number" value={String(g("numberOfPayments") ?? "")} onChange={v => sf("numberOfPayments")(v ? Number(v) : null)} disabled={disabled} placeholder="0" />
         <TextField label="Minimum Payment" type="number" value={String(g("minimumPayment") ?? "")} onChange={sf("minimumPayment")} disabled={disabled} placeholder="0.00" />
-        <TextField label="Product Priority" type="number" value={String(g("productPriority") ?? "")} onChange={v => sf("productPriority")(v ? Number(v) : null)} disabled={disabled} placeholder="0" />
-        <TextField label="Product Grade" value={g("productGrade")} onChange={sf("productGrade")} disabled={disabled} placeholder="e.g. Beginner" />
+        <SelectField label="Product Priority" value={String(g("productPriority") ?? "")} onChange={v => sf("productPriority")(v ? Number(v) : null)} disabled={disabled}
+          options={[10,9,8,7,6,5].map(n => ({ value: String(n), label: String(n) }))} />
+        <SelectField label="Product Grade" value={g("productGrade")} onChange={sf("productGrade")} disabled={disabled}
+          options={["A","B","C","D"].map(v => ({ value: v, label: v }))} />
         <FullRow>
           <RadioYesNo label="Recommend" value={gb("isRecommend")} onChange={sf("isRecommend")} disabled={disabled} />
         </FullRow>
