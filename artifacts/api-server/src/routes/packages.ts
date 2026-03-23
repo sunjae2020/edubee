@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts } from "@workspace/db/schema";
-import { eq, and, count, asc, SQL, ilike, desc, sql } from "drizzle-orm";
+import { eq, and, count, asc, SQL, ilike, desc, sql, or } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -533,39 +533,64 @@ router.get("/products-lookup/tax-rates", authenticate, async (_req, res) => {
 
 router.get("/products", authenticate, async (req, res) => {
   try {
-    const { productType, status, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const {
+      productType, status, page = "1", limit = "20",
+      search, productPriority, productGrade, productTypeId, productGroup,
+      searchCategory,
+    } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
 
     const conditions: SQL[] = [];
     if (productType) conditions.push(eq(products.productType, productType));
-    if (status) conditions.push(eq(products.status, status));
+    if (status)      conditions.push(eq(products.status, status));
+    if (productPriority) conditions.push(eq(products.productPriority, parseInt(productPriority)));
+    if (productGrade)    conditions.push(eq(products.productGrade, productGrade));
+    if (productTypeId)   conditions.push(eq(products.productTypeId, productTypeId));
+    if (productGroup)    conditions.push(eq(productTypes.productGroupId, productGroup));
+    if (search) {
+      const q = `%${search}%`;
+      if (searchCategory === "provider") {
+        conditions.push(ilike(accounts.name, q));
+      } else if (searchCategory === "name") {
+        conditions.push(ilike(products.productName, q));
+      } else {
+        conditions.push(or(ilike(products.productName, q), ilike(accounts.name, q)) as SQL);
+      }
+    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    const [totalResult] = await db.select({ count: count() }).from(products).where(whereClause);
+
+    const baseFrom = db.select({
+      id:              products.id,
+      productName:     products.productName,
+      productType:     products.productType,
+      description:     products.description,
+      cost:            products.cost,
+      currency:        products.currency,
+      price:           products.price,
+      productGrade:    products.productGrade,
+      productPriority: products.productPriority,
+      status:          products.status,
+      providerId:      products.providerId,
+      providerName:    accounts.name,
+      createdAt:       products.createdAt,
+      updatedAt:       products.updatedAt,
+    })
+      .from(products)
+      .leftJoin(accounts, eq(products.providerId, accounts.id))
+      .leftJoin(productTypes, eq(products.productTypeId, productTypes.id));
+
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(products)
+      .leftJoin(accounts, eq(products.providerId, accounts.id))
+      .leftJoin(productTypes, eq(products.productTypeId, productTypes.id))
+      .where(whereClause);
+
     const [data, allRates] = await Promise.all([
-      db.select({
-        id:              products.id,
-        productName:     products.productName,
-        productType:     products.productType,
-        description:     products.description,
-        cost:            products.cost,
-        currency:        products.currency,
-        price:           products.price,
-        productGrade:    products.productGrade,
-        productPriority: products.productPriority,
-        status:          products.status,
-        providerId:      products.providerId,
-        providerName:    accounts.name,
-        createdAt:       products.createdAt,
-        updatedAt:       products.updatedAt,
-      })
-        .from(products)
-        .leftJoin(accounts, eq(products.providerId, accounts.id))
-        .where(whereClause)
-        .limit(limitNum)
-        .offset(offset),
+      baseFrom.where(whereClause).limit(limitNum).offset(offset),
       db.select().from(exchangeRates).orderBy(desc(exchangeRates.effectiveDate)),
     ]);
 

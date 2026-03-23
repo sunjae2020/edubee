@@ -10,12 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Package, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { Package, Pencil, Trash2, RefreshCw, Plus } from "lucide-react";
 import ProductDrawer from "@/components/shared/ProductDrawer";
+import ProductAdvancedSearch, { type ProductSearchFilters } from "@/components/shared/ProductAdvancedSearch";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
@@ -55,7 +55,12 @@ const emptyForm = {
   cost: "", currency: "AUD", status: "active",
 };
 
-// ── LinkedGroupsCell ────────────────────────────────────────────
+const emptyFilters: ProductSearchFilters = {
+  searchCategory: "", searchText: "", productGroup: "",
+  productType: "", productPriority: "", productGrade: "", status: "",
+};
+
+// ── LinkedGroupsCell ─────────────────────────────────────────────────────────
 function LinkedGroupsCell({ productId }: { productId: string }) {
   const { data = [], isLoading } = useQuery<{ nameEn: string }[]>({
     queryKey: ["product-linked-groups", productId],
@@ -85,6 +90,7 @@ function LinkedGroupsCell({ productId }: { productId: string }) {
   );
 }
 
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function Products() {
   const [, setLocation] = useLocation();
   const qc = useQueryClient();
@@ -92,34 +98,58 @@ export default function Products() {
   const { user } = useAuth();
   const canEdit = ["super_admin", "admin"].includes(user?.role ?? "");
 
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [filters, setFilters] = useState<ProductSearchFilters>(emptyFilters);
   const [page, setPage] = useState(1);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [displayCurrency, setDisplayCurrency] = useState("AUD");
 
-  // ProductDrawer state (PART 2)
+  // ProductDrawer
   const [drawerProductId, setDrawerProductId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  const openDrawer = (id: string) => { setDrawerProductId(id); setDrawerOpen(true); };
+  const openDrawer  = (id: string) => { setDrawerProductId(id); setDrawerOpen(true); };
   const closeDrawer = () => { setDrawerOpen(false); setDrawerProductId(null); };
 
-  const queryKey = ["products", { search, typeFilter, page }];
+  // ── Lookup queries for dropdowns ─────────────────────────────────────────
+  const { data: productGroupOpts = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ["lookup-product-groups"],
+    queryFn: () => axios.get(`${BASE}/api/product-groups`).then(r =>
+      (r.data as { id: string; name: string }[]).map(g => ({ id: g.id, name: g.name }))
+    ),
+    staleTime: 60_000,
+  });
+  const { data: productTypeOpts = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ["lookup-product-types"],
+    queryFn: () => axios.get(`${BASE}/api/products-lookup/product-types`).then(r => r.data),
+    staleTime: 60_000,
+  });
+
+  // ── Products query ────────────────────────────────────────────────────────
+  const queryKey = ["products", { filters, page }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
       const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
-      if (typeFilter !== "all") params.set("productType", typeFilter);
-      if (search) params.set("search", search);
+      if (filters.searchText)     params.set("search",          filters.searchText);
+      if (filters.searchCategory) params.set("searchCategory",  filters.searchCategory);
+      if (filters.productGroup)   params.set("productGroup",    filters.productGroup);
+      if (filters.productType)    params.set("productTypeId",   filters.productType);
+      if (filters.productPriority) params.set("productPriority", filters.productPriority);
+      if (filters.productGrade)   params.set("productGrade",    filters.productGrade);
+      if (filters.status)         params.set("status",          filters.status);
       return axios.get(`${BASE}/api/products?${params}`).then(r => r.data);
     },
   });
 
   const products: Product[] = resp?.data ?? [];
-  const total: number = resp?.meta?.total ?? 0;
+  const total: number       = resp?.meta?.total ?? 0;
 
+  const handleSearch = (f: ProductSearchFilters) => {
+    setFilters(f);
+    setPage(1);
+  };
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
   const createProduct = useMutation({
     mutationFn: (data: any) => axios.post(`${BASE}/api/products`, data).then(r => r.data),
     onSuccess: () => {
@@ -147,27 +177,23 @@ export default function Products() {
     if (confirm(`Archive "${p.productName}"?`)) deleteProduct.mutate(p.id);
   };
 
+  const fmtPrice = (p: Product) => {
+    if (!p.price) return "—";
+    return `${p.currency ?? "AUD"} ${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const COLS = 8;
+
   return (
     <div className="space-y-4">
-      <ListToolbar
-        search={search}
-        onSearch={v => { setSearch(v); setPage(1); }}
-        total={total}
-        addLabel="New Product"
-        onAdd={canEdit ? () => setShowCreateDialog(true) : undefined}
-        csvExportTable="products"
-      >
+      {/* ── Top Bar ── */}
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-lg font-semibold text-[#1C1917]">Products</h1>
+          <p className="text-sm text-muted-foreground">{total} product{total !== 1 ? "s" : ""}</p>
+        </div>
         <div className="flex items-center gap-2">
-          <Select value={typeFilter} onValueChange={v => { setTypeFilter(v); setPage(1); }}>
-            <SelectTrigger className="h-8 text-xs w-40">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {PRODUCT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
+          {/* Currency selector */}
           <div className="flex items-center gap-1 border rounded-lg h-8 px-2 bg-muted/30">
             <RefreshCw className="w-3 h-3 text-muted-foreground shrink-0" />
             <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
@@ -181,130 +207,107 @@ export default function Products() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* New Product */}
+          {canEdit && (
+            <Button size="sm" className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5 h-8"
+              onClick={() => setShowCreateDialog(true)}>
+              <Plus className="w-3.5 h-3.5" /> New Product
+            </Button>
+          )}
         </div>
-      </ListToolbar>
+      </div>
 
-      {(() => {
-        const COLS = 7;
-        const TYPE_ICONS: Record<string, string> = {
-          institute: "🏫", hotel: "🏨", pickup: "🚌", tour: "🗺️",
-          settlement: "💼", program: "📚",
-        };
+      {/* ── Advanced Search ── */}
+      <ProductAdvancedSearch
+        onSearch={handleSearch}
+        options={{
+          productGroups: productGroupOpts.map(g => ({ value: g.id, label: g.name })),
+          productTypes:  productTypeOpts.map(t => ({ value: t.id, label: t.name })),
+        }}
+      />
 
-        const fmtPrice = (p: Product) => {
-          if (!p.price) return "—";
-          return `${p.currency ?? "AUD"} ${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        };
-
-        const renderRow = (p: Product) => (
-          <tr
-            key={p.id}
-            className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
-            onClick={() => setLocation(`${BASE}/admin/products/${p.id}`)}
-          >
-            {/* Provider */}
-            <td className="px-4 py-3 text-sm text-[#57534E]">
-              {p.providerName ?? <span className="text-muted-foreground">—</span>}
-            </td>
-            {/* Product Name */}
-            <td className="px-4 py-3">
-              <div className="font-medium text-foreground">{p.productName}</div>
-            </td>
-            {/* Currency */}
-            <td className="px-4 py-3 text-sm font-mono text-[#57534E]">
-              {p.currency ?? "—"}
-            </td>
-            {/* Price */}
-            <td className="px-4 py-3 text-sm font-mono font-semibold text-[#1C1917]">
-              {fmtPrice(p)}
-            </td>
-            {/* Grade */}
-            <td className="px-4 py-3 text-sm text-[#57534E]">
-              {p.productGrade ?? <span className="text-muted-foreground">—</span>}
-            </td>
-            {/* Priority */}
-            <td className="px-4 py-3 text-sm text-center text-[#57534E]">
-              {p.productPriority != null ? (
-                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#F4F3F1] text-xs font-semibold text-[#1C1917]">
-                  {p.productPriority}
-                </span>
-              ) : <span className="text-muted-foreground">—</span>}
-            </td>
-            {/* Actions */}
-            <td className="px-4 py-3">
-              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openDrawer(p.id)}>
-                  <Pencil className="h-3 w-3" />
-                </Button>
-                {canEdit && (
-                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:text-red-600" onClick={() => handleDelete(p)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-            </td>
-          </tr>
-        );
-
-        const grouped = null;
-
-        return (
-          <div className="bg-card rounded-xl border border-border overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provider</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Name</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Currency</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Price</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Grade</th>
-                  <th className="px-4 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Priority</th>
-                  <th className="px-4 py-2.5 w-20" />
+      {/* ── Table ── */}
+      <div className="bg-card rounded-xl border border-border overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/30">
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provider</th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Name</th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Currency</th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Price</th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Grade</th>
+              <th className="px-4 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Priority</th>
+              <th className="px-4 py-2.5 w-20" />
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              [...Array(6)].map((_, i) => (
+                <tr key={i} className="border-b">
+                  {[...Array(COLS)].map((_, j) => <td key={j} className="px-4 py-3"><Skeleton className="h-4" /></td>)}
                 </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  [...Array(6)].map((_, i) => (
-                    <tr key={i} className="border-b">
-                      {[...Array(COLS)].map((_, j) => (
-                        <td key={j} className="px-4 py-3"><Skeleton className="h-4" /></td>
-                      ))}
-                    </tr>
-                  ))
-                ) : products.length === 0 ? (
-                  <tr>
-                    <td colSpan={COLS} className="px-4 py-16 text-center text-muted-foreground text-sm">
-                      <Package className="w-8 h-8 mx-auto mb-3 opacity-30" />
-                      No products found
-                    </td>
-                  </tr>
-                ) : grouped ? (
-                  grouped.map(({ type, items }) => (
-                    <Fragment key={type}>
-                      <tr className="bg-muted/20 border-b border-border">
-                        <td colSpan={COLS} className="px-4 py-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base leading-none">{TYPE_ICONS[type] ?? "📦"}</span>
-                            <span className="text-xs font-semibold text-foreground capitalize">{type}</span>
-                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{items.length}</span>
-                          </div>
-                        </td>
-                      </tr>
-                      {items.map(p => renderRow(p))}
-                    </Fragment>
-                  ))
-                ) : (
-                  products.map(p => renderRow(p))
-                )}
-              </tbody>
-            </table>
-          </div>
-        );
-      })()}
+              ))
+            ) : products.length === 0 ? (
+              <tr>
+                <td colSpan={COLS} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                  <Package className="w-8 h-8 mx-auto mb-3 opacity-30" />
+                  No products found
+                </td>
+              </tr>
+            ) : (
+              products.map(p => (
+                <tr key={p.id}
+                  className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
+                  onClick={() => setLocation(`${BASE}/admin/products/${p.id}`)}>
+                  <td className="px-4 py-3 text-sm text-[#57534E]">
+                    {p.providerName ?? <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-foreground">{p.productName}</div>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[#57534E] capitalize">
+                    {p.productType ?? <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-mono text-[#57534E]">
+                    {p.currency ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-mono font-semibold text-[#1C1917]">
+                    {fmtPrice(p)}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[#57534E]">
+                    {p.productGrade ?? <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-center text-[#57534E]">
+                    {p.productPriority != null ? (
+                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#F4F3F1] text-xs font-semibold text-[#1C1917]">
+                        {p.productPriority}
+                      </span>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openDrawer(p.id)}>
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      {canEdit && (
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:text-red-600" onClick={() => handleDelete(p)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
 
-      {/* ProductDrawer for Edit/View (PART 2) */}
+      {/* ProductDrawer */}
       <ProductDrawer
         open={drawerOpen}
         onClose={closeDrawer}
@@ -350,7 +353,7 @@ export default function Products() {
                 <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
                   <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {["AUD", "USD", "KRW", "JPY", "THB", "PHP", "SGD", "GBP"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {["AUD","USD","KRW","JPY","THB","PHP","SGD","GBP"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
