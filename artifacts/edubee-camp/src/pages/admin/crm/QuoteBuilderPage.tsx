@@ -24,6 +24,12 @@ import { useToast } from "@/hooks/use-toast";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PRIMARY = "#F5821F";
 
+// Stable empty array — must be outside component to avoid re-creating on every render
+const EMPTY_LINES: QuoteProduct[] = [];
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isValidUuid = (s?: string | null) => !!s && UUID_RE.test(s);
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface Quote {
@@ -612,12 +618,14 @@ export default function QuoteBuilderPage() {
   const [studentAccountId, setStudentAccountId] = useState<string | null>(null);
   const [studentAccountName, setStudentAccountName] = useState<string | null>(null);
 
+  const validId = isValidUuid(quoteId);
+
   // ── Fetch Quote ─────────────────────────────────────────────────────────────
   const { data: quote, isLoading: quoteLoading } = useQuery<Quote>({
     queryKey: ["quote", quoteId],
     queryFn: () =>
       axios.get(`${BASE}/api/crm/quotes/${quoteId}`).then((r) => r.data),
-    enabled: !!quoteId,
+    enabled: validId,
   });
 
   useEffect(() => {
@@ -631,11 +639,13 @@ export default function QuoteBuilderPage() {
   }, [quote]);
 
   // ── Fetch Quote Products ────────────────────────────────────────────────────
-  const { data: serverLines = [] } = useQuery<QuoteProduct[]>({
+  // Use a stable module-level constant as default — an inline [] creates a new
+  // reference every render, causing this useEffect to fire in an infinite loop.
+  const { data: serverLines = EMPTY_LINES } = useQuery<QuoteProduct[]>({
     queryKey: ["quote-products", quoteId],
     queryFn: () =>
       axios.get(`${BASE}/api/quote-products?quoteId=${quoteId}`).then((r) => r.data),
-    enabled: !!quoteId,
+    enabled: validId,
   });
 
   useEffect(() => {
@@ -770,6 +780,22 @@ export default function QuoteBuilderPage() {
       }),
   });
 
+  if (!validId) {
+    return (
+      <div className="p-8 text-center text-gray-400">
+        Invalid quote ID.
+        <br />
+        <button
+          onClick={() => navigate("/admin/crm/quotes")}
+          className="underline mt-2 block mx-auto"
+          style={{ color: PRIMARY }}
+        >
+          Back to Quotes
+        </button>
+      </div>
+    );
+  }
+
   if (quoteLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -785,7 +811,8 @@ export default function QuoteBuilderPage() {
         <br />
         <button
           onClick={() => navigate("/admin/crm/quotes")}
-          className="text-orange-500 underline mt-2 block mx-auto"
+          className="underline mt-2 block mx-auto"
+          style={{ color: PRIMARY }}
         >
           Back to Quotes
         </button>
@@ -952,30 +979,30 @@ export default function QuoteBuilderPage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-xs text-gray-400 font-medium bg-gray-50">
-                      <th className="px-2 py-2 w-8" />
-                      <th className="px-2 py-2 text-left">Item</th>
-                      <th className="px-2 py-2 text-left w-28">Provider</th>
-                      <th className="px-2 py-2 text-center w-20">Qty</th>
-                      <th className="px-2 py-2 text-left w-28">Price</th>
-                      <th className="px-2 py-2 text-left w-32">Due Date</th>
-                      <th className="px-2 py-2 text-center w-20">Initial?</th>
-                      <th className="px-2 py-2 text-right w-24">Subtotal</th>
-                      <th className="px-2 py-2 w-10" />
-                    </tr>
-                  </thead>
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={activeLines.map((l) => l.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={activeLines.map((l) => l.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-100 text-xs text-gray-400 font-medium bg-gray-50">
+                          <th className="px-2 py-2 w-8" />
+                          <th className="px-2 py-2 text-left">Item</th>
+                          <th className="px-2 py-2 text-left w-28">Provider</th>
+                          <th className="px-2 py-2 text-center w-20">Qty</th>
+                          <th className="px-2 py-2 text-left w-28">Price</th>
+                          <th className="px-2 py-2 text-left w-32">Due Date</th>
+                          <th className="px-2 py-2 text-center w-20">Initial?</th>
+                          <th className="px-2 py-2 text-right w-24">Subtotal</th>
+                          <th className="px-2 py-2 w-10" />
+                        </tr>
+                      </thead>
                       <tbody>
                         {activeLines.map((item) => (
                           <SortableRow
@@ -986,10 +1013,10 @@ export default function QuoteBuilderPage() {
                           />
                         ))}
                       </tbody>
-                    </SortableContext>
-                  </DndContext>
-                </table>
-              </div>
+                    </table>
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
           </div>
         </div>
