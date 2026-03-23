@@ -251,7 +251,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     const { id } = req.params;
     const r = (x: any) => x.rows ?? (x as any[]);
 
-    const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, clRes] = await Promise.all([
+    const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, clRes] = await Promise.all([
       db.execute(sql`
         SELECT c.*, a.name AS account_name, u.full_name AS owner_name, q.quote_ref_number
         FROM contracts c
@@ -277,6 +277,8 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       db.execute(sql`SELECT * FROM study_abroad_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
       db.execute(sql`SELECT * FROM pickup_mgt WHERE contract_id = ${id}::uuid`),
       db.execute(sql`SELECT * FROM accommodation_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
+      db.execute(sql`SELECT id, status, position_title, hourly_rate, employment_type FROM internship_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
+      db.execute(sql`SELECT id, status, service_fee, billing_cycle FROM guardian_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
       db.execute(sql`
         SELECT pcl.*, acc.name AS partner_name
         FROM product_cost_lines pcl
@@ -341,6 +343,8 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     const saArr = r(saRes); const sa = saArr[0] ?? null;
     const pkArr = r(pkRes);
     const acArr = r(acRes); const ac = acArr[0] ?? null;
+    const inArr = r(inRes); const intern = inArr[0] ?? null;
+    const gdArr = r(gdRes); const gd = gdArr[0] ?? null;
 
     return res.json({
       id: c.id,
@@ -365,7 +369,9 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
         studyAbroad:   sa ? { id: sa.id, status: sa.status, visaType: sa.visa_type, departureDate: sa.departure_date, coeNumber: sa.coe_number, targetSchools: sa.target_schools } : null,
         pickup:        pkArr.length ? pkArr.map((p: any) => ({ id: p.id, status: p.status, pickupType: p.pickup_type, from: p.from_location, to: p.to_location, datetime: p.pickup_datetime })) : null,
         accommodation: ac ? { id: ac.id, status: ac.status, type: ac.accommodation_type, checkin: ac.checkin_date, checkout: ac.checkout_date, hostName: ac.host_name, hostAddress: ac.host_address } : null,
-        internship: null, settlement: null, guardian: null,
+        internship:    intern ? { id: intern.id, status: intern.status, positionTitle: intern.position_title, hourlyRate: intern.hourly_rate, employmentType: intern.employment_type } : null,
+        guardian:      gd ? { id: gd.id, status: gd.status, serviceFee: gd.service_fee, billingCycle: gd.billing_cycle } : null,
+        settlement:    null,
       },
       documents: [],
     });

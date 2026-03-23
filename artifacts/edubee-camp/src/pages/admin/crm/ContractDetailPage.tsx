@@ -499,11 +499,21 @@ function CommissionTab({ contract }: { contract: any }) {
 }
 
 // ── Services Tab ───────────────────────────────────────────────────────────
+const SERVICE_ROUTES: Record<string, string> = {
+  studyAbroad:   "/admin/services/study-abroad",
+  pickup:        "/admin/services/pickup",
+  accommodation: "/admin/services/accommodation",
+  internship:    "/admin/services/internship",
+  settlement:    "/admin/services/settlement",
+  guardian:      "/admin/services/guardian",
+};
+
 function ServicesTab({ contract, primaryServiceType, setPrimaryServiceType }: {
   contract: any;
   primaryServiceType: string;
   setPrimaryServiceType: (s: string) => void;
 }) {
+  const [, navigate] = useLocation();
   const svcs = contract.services ?? {};
   const SERVICE_DEFS = [
     { key: "studyAbroad",   label: "Study Abroad",   icon: GraduationCap, data: svcs.studyAbroad   },
@@ -531,6 +541,15 @@ function ServicesTab({ contract, primaryServiceType, setPrimaryServiceType }: {
       data.hostName ? `Host: ${data.hostName}` : null,
       data.checkin ? `Check-in: ${fmtDate(data.checkin)}` : null,
     ].filter(Boolean) as string[];
+    if (key === "internship") return [
+      data.positionTitle ? `Position: ${data.positionTitle}` : null,
+      data.employmentType ? `Type: ${data.employmentType}` : null,
+      data.hourlyRate ? `Rate: $${parseFloat(data.hourlyRate).toFixed(2)}/hr` : null,
+    ].filter(Boolean) as string[];
+    if (key === "guardian") return [
+      data.billingCycle ? `Billing: ${data.billingCycle}` : null,
+      data.serviceFee ? `Fee: $${parseFloat(data.serviceFee).toFixed(2)}/mo` : null,
+    ].filter(Boolean) as string[];
     return [];
   }
 
@@ -539,14 +558,19 @@ function ServicesTab({ contract, primaryServiceType, setPrimaryServiceType }: {
       {SERVICE_DEFS.map(({ key, label, icon: Icon, data }) => {
         const active = !!data;
         const isPrimary = primaryServiceType === key;
+        const routePath = SERVICE_ROUTES[key];
+        const serviceId = data?.id;
+        const canNavigate = active && routePath && serviceId;
+
         return (
           <div key={key}
-            className="bg-white rounded-xl border overflow-hidden transition-all"
+            className={`bg-white rounded-xl border overflow-hidden transition-all ${canNavigate ? "cursor-pointer hover:shadow-md" : ""}`}
             style={{
               opacity: active ? 1 : 0.4,
               borderColor: isPrimary ? "#F5821F" : "#E8E6E2",
               borderWidth: isPrimary ? 2 : 1,
             }}
+            onClick={canNavigate ? () => navigate(`${routePath}/${serviceId}`) : undefined}
           >
             <div className="p-4">
               <div className="flex items-start justify-between mb-3">
@@ -559,20 +583,25 @@ function ServicesTab({ contract, primaryServiceType, setPrimaryServiceType }: {
                     {isPrimary && <div className="text-[10px] text-[#F5821F] font-medium">★ Primary</div>}
                   </div>
                 </div>
-                <Badge s={data?.status ?? "Inactive"} map={{
-                  confirmed: "bg-[#DCFCE7] text-[#16A34A]",
-                  active:    "bg-[#DCFCE7] text-[#16A34A]",
-                  scheduled: "bg-[#FEF0E3] text-[#F5821F]",
-                  pending:   "bg-[#F4F3F1] text-[#57534E]",
-                  Inactive:  "bg-[#F4F3F1] text-[#A8A29E]",
-                }} />
+                <div className="flex items-center gap-1.5">
+                  <Badge s={data?.status ?? "Inactive"} map={{
+                    confirmed: "bg-[#DCFCE7] text-[#16A34A]",
+                    active:    "bg-[#DCFCE7] text-[#16A34A]",
+                    scheduled: "bg-[#FEF0E3] text-[#F5821F]",
+                    pending:   "bg-[#F4F3F1] text-[#57534E]",
+                    Inactive:  "bg-[#F4F3F1] text-[#A8A29E]",
+                  }} />
+                  {canNavigate && (
+                    <ExternalLink size={12} className="text-[#A8A29E]" />
+                  )}
+                </div>
               </div>
               {active && serviceDetails(key, data).map((line, i) => (
                 <p key={i} className="text-[12px] text-[#57534E] mt-0.5">{line}</p>
               ))}
               {active && !isPrimary && (
                 <button
-                  onClick={() => setPrimaryServiceType(key)}
+                  onClick={(e) => { e.stopPropagation(); setPrimaryServiceType(key); }}
                   className="mt-3 text-[11px] font-medium hover:underline"
                   style={{ color:"#F5821F" }}
                 >☆ Set as Primary</button>
