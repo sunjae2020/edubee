@@ -16,10 +16,9 @@ import fs from "fs";
 
 // ── Invoice reference generator ─────────────────────────────────────────────
 export async function buildInvoiceRef(): Promise<string> {
-  const [{ n }] = await db.execute(
-    sql<{ n: number }>`SELECT COUNT(*)::int AS n FROM tax_invoices`
-  ) as any;
-  const seq = String((Number(n ?? 0) + 1)).padStart(6, "0");
+  const result = await db.execute(sql`SELECT COUNT(*)::int AS n FROM tax_invoices`);
+  const n = Number((result.rows[0] as any)?.n ?? 0);
+  const seq = String(n + 1).padStart(6, "0");
   return `TINV-${seq}`;
 }
 

@@ -151,6 +151,7 @@ router.post(
         paymentDate, paymentMethod, paymentType,
         bankReference, notes,
         receivedFromName, paidToName,
+        receivedFromId, paidToId,
         lines: lineItems = [],
       } = req.body;
 
@@ -184,6 +185,8 @@ router.post(
           currency:      "AUD",
           paymentMethod: paymentMethod ?? null,
           paymentType,
+          receivedFrom:  receivedFromId ?? null,
+          paidTo:        paidToId ?? null,
           bankReference: bankReference ?? null,
           notes:         notesPayload,
           createdBy:     userId(req),
