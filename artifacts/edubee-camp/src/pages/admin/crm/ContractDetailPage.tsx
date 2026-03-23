@@ -777,6 +777,88 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }
   );
 }
 
+// ── Edit Student Modal ───────────────────────────────────────────────────────
+function EditStudentModal({ contract, onClose }: { contract: any; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({
+    clientCountry: contract.account?.nationality ?? "",
+    ownerId:       contract.owner?.id            ?? "",
+  });
+
+  const { data: usersData } = useQuery({
+    queryKey: ["users-list"],
+    queryFn:  () => axios.get(`${BASE}/api/users`).then(r => r.data?.data ?? r.data ?? []),
+  });
+  const users: { id: string; fullName: string }[] = usersData ?? [];
+
+  const mut = useMutation({
+    mutationFn: (data: typeof form) =>
+      axios.patch(`${BASE}/api/crm/contracts/${contract.id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] });
+      onClose();
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.45)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
+          <h2 className="text-base font-semibold text-[#1C1917]">Edit Student Info</h2>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] text-[#A8A29E]">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] mb-1">Student Name</label>
+            <div className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#A8A29E] bg-[#FAFAF9]">
+              {contract.account?.name ?? "—"}
+            </div>
+            <p className="text-[11px] text-[#A8A29E] mt-1">Name is managed on the student account page.</p>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] mb-1">Nationality</label>
+            <input
+              type="text"
+              value={form.clientCountry}
+              onChange={e => setForm(p => ({ ...p, clientCountry: e.target.value }))}
+              placeholder="e.g. Korean, Japanese..."
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#F5821F]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] mb-1">Owner (EC)</label>
+            <select
+              value={form.ownerId}
+              onChange={e => setForm(p => ({ ...p, ownerId: e.target.value }))}
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#F5821F] bg-white">
+              <option value="">— Select EC —</option>
+              {users.map((u: any) => (
+                <option key={u.id} value={u.id}>{u.fullName ?? u.full_name ?? u.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 px-6 pb-5">
+          <button onClick={onClose}
+            className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">
+            Cancel
+          </button>
+          <button
+            onClick={() => mut.mutate(form)}
+            disabled={mut.isPending}
+            className="h-9 px-4 rounded-lg text-sm font-semibold text-white disabled:opacity-60 transition-opacity hover:opacity-90"
+            style={{ background: "#F5821F" }}>
+            {mut.isPending ? "Saving…" : "Save"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Edit Contract Modal ─────────────────────────────────────────────────────
 function EditContractModal({ contract, onClose }: { contract: any; onClose: () => void }) {
   const qc = useQueryClient();
@@ -989,6 +1071,7 @@ export default function ContractDetailPage() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [editingContract, setEditingContract] = useState(false);
+  const [editingStudent,  setEditingStudent]  = useState(false);
 
   const { data: contract, isLoading } = useQuery({
     queryKey: ["crm-contract", id],
@@ -1087,12 +1170,18 @@ export default function ContractDetailPage() {
           <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Student</p>
-              {contract.account?.id && (
-                <button onClick={() => navigate(`/admin/crm/accounts/${contract.account.id}`)}
+              <div className="flex items-center gap-1">
+                <button onClick={() => setEditingStudent(true)}
                   className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#57534E]">
-                  <ExternalLink size={13} />
+                  <Pencil size={13} />
                 </button>
-              )}
+                {contract.account?.id && (
+                  <button onClick={() => navigate(`/admin/crm/accounts/${contract.account.id}`)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#57534E]">
+                    <ExternalLink size={13} />
+                  </button>
+                )}
+              </div>
             </div>
             <InfoRow label="Name"        value={contract.account?.name} />
             <InfoRow label="Nationality" value={contract.account?.nationality} />
@@ -1123,7 +1212,13 @@ export default function ContractDetailPage() {
 
           {/* Financial Summary */}
           <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] mb-3">Financial Summary</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Financial Summary</p>
+              <button onClick={() => setEditingContract(true)}
+                className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#57534E]">
+                <Pencil size={13} />
+              </button>
+            </div>
             <InfoRow label="Contract Value" value={fmtMoney(contract.contractAmount)} />
             <InfoRow label="Total AR"       value={<span className="font-semibold" style={{ color:"#F5821F" }}>{fmtMoney(contract.totalArAmount)}</span>} />
             <InfoRow label="Total AP"       value={<span className="font-semibold" style={{ color:"#DC2626" }}>{fmtMoney(contract.totalApAmount)}</span>} />
@@ -1183,6 +1278,12 @@ export default function ContractDetailPage() {
 
       </div>
 
+      {editingStudent && (
+        <EditStudentModal
+          contract={contract}
+          onClose={() => setEditingStudent(false)}
+        />
+      )}
       {editingContract && (
         <EditContractModal
           contract={contract}
