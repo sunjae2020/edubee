@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -11,16 +11,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { NotePanel } from "@/components/shared/NotePanel";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ParticipantEditDialog, ParticipantAddDialog } from "@/components/shared/ParticipantDialogs";
 import { Pencil, Plus, ClipboardList, Loader2, ExternalLink, FileText } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const APP_STATUSES = ["pending", "reviewing", "approved", "rejected", "cancelled", "converted"];
-const GENDERS = ["male", "female", "other", "prefer_not_to_say"];
-const ENGLISH_LEVELS = ["beginner", "elementary", "pre_intermediate", "intermediate", "upper_intermediate", "advanced", "proficient"];
+const APP_STATUSES = ["pending", "submitted", "reviewing", "quoted", "converted", "cancelled"];
+const APPLICATION_STATUSES = ["submitted", "reviewing", "quoted", "converted", "cancelled"];
 
 const TABS = [
   { key: "overview",     label: "Overview" },
@@ -32,13 +33,110 @@ const TABS = [
 
 const STATUS_COLORS: Record<string, string> = {
   pending:   "bg-yellow-100 text-yellow-700",
-  reviewing: "bg-blue-100 text-blue-700",
+  submitted: "bg-blue-100 text-blue-700",
+  reviewing: "bg-amber-100 text-amber-700",
   approved:  "bg-green-100 text-green-700",
   rejected:  "bg-red-100 text-red-700",
   cancelled: "bg-gray-100 text-gray-600",
   converted: "bg-teal-100 text-teal-700",
   quoted:    "bg-[#E0F2FE] text-[#0369A1]",
 };
+
+// ── Service type definitions (same fields as application form) ───────────────
+type SvcFieldDef = {
+  label: string;
+  key: string;
+  type?: "text" | "date" | "time" | "number" | "select";
+  options?: string[];
+};
+
+const SERVICE_META: Record<string, {
+  label: string; icon: string; color: string; fields: SvcFieldDef[];
+}> = {
+  pickup: {
+    label: "Airport Pickup", icon: "🚌", color: "bg-[#FEF9C3] border-yellow-200",
+    fields: [
+      { label: "Flight Number",     key: "flightNumber" },
+      { label: "Flight Date",       key: "flightDate",       type: "date" },
+      { label: "Arrival Time",      key: "arrivalTime",      type: "time" },
+      { label: "Departure Airport", key: "departureAirport" },
+      { label: "Arrival Airport",   key: "arrivalAirport" },
+      { label: "Passengers",        key: "passengerCount",   type: "number" },
+    ],
+  },
+  accommodation: {
+    label: "Accommodation / Homestay", icon: "🏨", color: "bg-[#EFF6FF] border-blue-200",
+    fields: [
+      { label: "Check-in Date",  key: "checkinDate",         type: "date" },
+      { label: "Check-out Date", key: "checkoutDate",        type: "date" },
+      { label: "Room Type",      key: "roomType",            type: "select", options: ["single","twin","double","family"] },
+      { label: "Number of Rooms",key: "numRooms",            type: "number" },
+      { label: "Address",        key: "accommodationAddress" },
+    ],
+  },
+  study_abroad: {
+    label: "Study Abroad", icon: "🎓", color: "bg-[#F0FDF4] border-green-200",
+    fields: [
+      { label: "Destination Country", key: "destinationCountry" },
+      { label: "Institution Name",    key: "institutionName" },
+      { label: "Course Name",         key: "courseName" },
+      { label: "Study Start Date",    key: "studyStartDate",  type: "date" },
+      { label: "Study End Date",      key: "studyEndDate",    type: "date" },
+    ],
+  },
+  internship: {
+    label: "Internship Placement", icon: "💼", color: "bg-[#FDF4FF] border-purple-200",
+    fields: [
+      { label: "Start Date",         key: "internshipStartDate", type: "date" },
+      { label: "End Date",           key: "internshipEndDate",   type: "date" },
+      { label: "Industry / Program", key: "industry" },
+      { label: "Preferred City",     key: "companyPreference" },
+    ],
+  },
+  settlement: {
+    label: "Settlement Service", icon: "🏠", color: "bg-[#FFF7ED] border-orange-200",
+    fields: [
+      { label: "Settlement Date", key: "settlementDate", type: "date" },
+      { label: "Suburb / Area",   key: "suburb" },
+    ],
+  },
+  guardian: {
+    label: "Guardian Service", icon: "🛡️", color: "bg-[#F0F9FF] border-sky-200",
+    fields: [
+      { label: "Start Date",    key: "guardianStartDate", type: "date" },
+      { label: "End Date",      key: "guardianEndDate",   type: "date" },
+      { label: "Guardian Type", key: "guardianType" },
+    ],
+  },
+};
+
+const ALL_SERVICE_TYPES = Object.keys(SERVICE_META);
+
+// ── Helper: labelled input row ───────────────────────────────────────────────
+function SvcField({ def, value, onChange }: { def: SvcFieldDef; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">{def.label}</Label>
+      {def.type === "select" ? (
+        <select
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#F5821F]/50"
+        >
+          <option value="">Please Select</option>
+          {(def.options ?? []).map(o => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
+        </select>
+      ) : (
+        <Input
+          type={def.type ?? "text"}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="h-9 text-sm"
+        />
+      )}
+    </div>
+  );
+}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ApplicationDetail() {
@@ -48,10 +146,21 @@ export default function ApplicationDetail() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Edit dialogs state
+  // Participant dialogs
   const [editParticipant, setEditParticipant] = useState<any | null>(null);
   const [addParticipant, setAddParticipant] = useState(false);
+
+  // Convert to quote dialog
   const [convertQuoteDialog, setConvertQuoteDialog] = useState(false);
+
+  // Service edit dialog
+  const [editingSvc, setEditingSvc]   = useState<string | null>(null);
+  const [svcForm, setSvcForm]         = useState<Record<string, string>>({});
+
+  // Add service dialog
+  const [addSvcDialog, setAddSvcDialog] = useState(false);
+  const [newSvcType, setNewSvcType]     = useState("");
+  const [newSvcForm, setNewSvcForm]     = useState<Record<string, string>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ["application-detail-page", id],
@@ -64,9 +173,10 @@ export default function ApplicationDetail() {
   const isContracted = app?.status === "contracted";
   const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "") && !isContracted;
 
+  // ── Mutations ──────────────────────────────────────────────────────────────
   const updateApp = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
-      axios.put(`${BASE}/api/applications/${id}`, payload).then(r => r.data),
+      axios.patch(`${BASE}/api/applications/${id}`, payload).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["application-detail-page", id] });
       qc.invalidateQueries({ queryKey: ["applications"] });
@@ -112,15 +222,84 @@ export default function ApplicationDetail() {
     onError: () => toast({ variant: "destructive", title: "Failed to add participant" }),
   });
 
+  // ── Service edit / add mutations ──────────────────────────────────────────
+  const saveSvcEdit = useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      axios.patch(`${BASE}/api/applications/${id}`, payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["application-detail-page", id] });
+      toast({ title: "Service details updated" });
+      setEditingSvc(null);
+      setSvcForm({});
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to update service" }),
+  });
+
+  const saveAddSvc = useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      axios.patch(`${BASE}/api/applications/${id}`, payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["application-detail-page", id] });
+      toast({ title: "Service added" });
+      setAddSvcDialog(false);
+      setNewSvcType("");
+      setNewSvcForm({});
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to add service" }),
+  });
+
+  // ── Overview edit ─────────────────────────────────────────────────────────
   const { isEditing, isSaving, startEdit, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
     initialData: app ?? {},
     onSave: async (data) => { await updateApp.mutateAsync(data); },
   });
 
+  // ── Open service edit dialog ───────────────────────────────────────────────
+  function openEditSvc(type: string) {
+    const meta = SERVICE_META[type];
+    if (!meta || !app) return;
+    const initial: Record<string, string> = {};
+    meta.fields.forEach(f => { initial[f.key] = app[f.key] ? String(app[f.key]) : ""; });
+    setSvcForm(initial);
+    setEditingSvc(type);
+  }
+
+  // ── Reset add-service form when type changes ───────────────────────────────
+  useEffect(() => {
+    if (newSvcType) {
+      const meta = SERVICE_META[newSvcType];
+      if (meta) {
+        const init: Record<string, string> = {};
+        meta.fields.forEach(f => { init[f.key] = ""; });
+        setNewSvcForm(init);
+      }
+    }
+  }, [newSvcType]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  function handleSaveSvc() {
+    if (!editingSvc) return;
+    const payload: Record<string, unknown> = {};
+    Object.entries(svcForm).forEach(([k, v]) => { payload[k] = v || null; });
+    saveSvcEdit.mutate(payload);
+  }
+
+  function handleAddSvc() {
+    if (!newSvcType) { toast({ variant: "destructive", title: "Please select a service type" }); return; }
+    const currentTypes: string[] = Array.isArray(app?.serviceTypes) ? app.serviceTypes : [];
+    const updatedTypes = [...new Set([...currentTypes, newSvcType])];
+    const payload: Record<string, unknown> = { serviceTypes: updatedTypes };
+    Object.entries(newSvcForm).forEach(([k, v]) => { payload[k] = v || null; });
+    saveAddSvc.mutate(payload);
+  }
+
+  // ── Loading / not found ───────────────────────────────────────────────────
   if (isLoading) return <div className="p-6 space-y-4">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-12" />)}</div>;
   if (!app) return <div className="p-6 text-muted-foreground">Application not found.</div>;
 
-  const statusColor = STATUS_COLORS[app.status ?? "pending"] ?? "bg-gray-100 text-gray-600";
+  const statusColor = STATUS_COLORS[app.applicationStatus ?? app.status ?? "pending"] ?? "bg-gray-100 text-gray-600";
+  const serviceTypes: string[] = Array.isArray(app.serviceTypes) ? app.serviceTypes : [];
+  const availableToAdd = ALL_SERVICE_TYPES.filter(t => !serviceTypes.includes(t));
 
   return (
     <>
@@ -164,86 +343,86 @@ export default function ApplicationDetail() {
         }
       >
 
-        {/* ── Overview ── */}
+        {/* ── Overview ─────────────────────────────────────────────────── */}
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
             <DetailSection title="Application Info">
               <DetailRow label="Application #" value={app.applicationNumber} />
-              <EditableField label="Status" isEditing={isEditing} value={app.status?.replace(/_/g, " ")}
+              <EditableField label="Application Status" isEditing={isEditing}
+                value={(app.applicationStatus ?? "submitted").replace(/_/g, " ")}
                 editChildren={
-                  <Select value={getValue("status")} onValueChange={v => setField("status", v)}>
+                  <Select value={getValue("applicationStatus") ?? "submitted"} onValueChange={v => setField("applicationStatus", v)}>
                     <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {APP_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}
-                    </SelectContent>
+                    <SelectContent>{APPLICATION_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
                   </Select>
-                } />
-              <DetailRow label="Primary Language" value={app.primaryLanguage} />
-              <DetailRow label="Referral Source" value={app.referralSource} />
-              <DetailRow label="Total Children" value={app.totalChildren} />
-              <DetailRow label="Total Adults" value={app.totalAdults} />
+                }
+              />
+              <EditableField label="Status" isEditing={isEditing}
+                value={(app.status ?? "submitted").replace(/_/g, " ")}
+                editChildren={
+                  <Select value={getValue("status") ?? "submitted"} onValueChange={v => setField("status", v)}>
+                    <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{APP_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
+                  </Select>
+                }
+              />
               <DetailRow label="Submitted" value={app.createdAt ? format(new Date(app.createdAt), "PPP") : "—"} />
+              <DetailRow label="Service Types" value={serviceTypes.map(s => s.replace(/_/g, " ")).join(", ") || "—"} />
             </DetailSection>
 
-            <DetailSection title="Package Info">
-              <DetailRow label="Package Group" value={app.packageGroupName ?? app.packageGroupId} />
-              <DetailRow label="Package" value={app.packageName ?? app.packageId} />
-              <DetailRow label="Preferred Start" value={app.preferredStartDate ? format(new Date(app.preferredStartDate), "PPP") : "—"} />
-              <DetailRow label="Currency" value={app.currency} />
-              <DetailRow label="Total Amount" value={app.totalAmount ? `${app.currency ?? ""} ${Number(app.totalAmount).toLocaleString()}` : "—"} />
+            <DetailSection title="Applicant Info">
+              <EditableField label="Full Name" isEditing={isEditing}
+                value={app.applicantName}
+                editChildren={<Input className="h-8 text-sm" value={getValue("applicantName") ?? ""} onChange={e => setField("applicantName", e.target.value)} />}
+              />
+              <EditableField label="Email" isEditing={isEditing}
+                value={app.applicantEmail}
+                editChildren={<Input className="h-8 text-sm" type="email" value={getValue("applicantEmail") ?? ""} onChange={e => setField("applicantEmail", e.target.value)} />}
+              />
+              <EditableField label="Phone" isEditing={isEditing}
+                value={app.applicantPhone}
+                editChildren={<Input className="h-8 text-sm" value={getValue("applicantPhone") ?? ""} onChange={e => setField("applicantPhone", e.target.value)} />}
+              />
+              <EditableField label="Nationality" isEditing={isEditing}
+                value={app.applicantNationality}
+                editChildren={<Input className="h-8 text-sm" value={getValue("applicantNationality") ?? ""} onChange={e => setField("applicantNationality", e.target.value)} />}
+              />
+              <EditableField label="Date of Birth" isEditing={isEditing}
+                value={app.dateOfBirth ? format(new Date(app.dateOfBirth), "PPP") : null}
+                editChildren={<Input className="h-8 text-sm" type="date" value={getValue("dateOfBirth") ?? ""} onChange={e => setField("dateOfBirth", e.target.value)} />}
+              />
             </DetailSection>
 
-            <DetailSection title="Student Info">
-              <DetailRow label="Student Name" value={app.studentName} />
-              <DetailRow label="Email" value={app.clientEmail} />
-              <DetailRow label="Phone" value={app.clientPhone} />
-              <DetailRow label="Country" value={app.clientCountry} />
+            <DetailSection title="School / Institution">
+              <EditableField label="Institution" isEditing={isEditing}
+                value={app.institutionName}
+                editChildren={<Input className="h-8 text-sm" value={getValue("institutionName") ?? ""} onChange={e => setField("institutionName", e.target.value)} />}
+              />
+              <EditableField label="Course" isEditing={isEditing}
+                value={app.courseName}
+                editChildren={<Input className="h-8 text-sm" value={getValue("courseName") ?? ""} onChange={e => setField("courseName", e.target.value)} />}
+              />
+              <EditableField label="Study Start" isEditing={isEditing}
+                value={app.studyStartDate ? format(new Date(app.studyStartDate), "PPP") : null}
+                editChildren={<Input className="h-8 text-sm" type="date" value={getValue("studyStartDate") ?? ""} onChange={e => setField("studyStartDate", e.target.value)} />}
+              />
+              <EditableField label="Study End" isEditing={isEditing}
+                value={app.studyEndDate ? format(new Date(app.studyEndDate), "PPP") : null}
+                editChildren={<Input className="h-8 text-sm" type="date" value={getValue("studyEndDate") ?? ""} onChange={e => setField("studyEndDate", e.target.value)} />}
+              />
             </DetailSection>
 
-            <DetailSection title="Agent Info">
-              <DetailRow label="Agent" value={app.agentName ?? app.agentId} />
-              <DetailRow label="Referral Code" value={app.referralAgentCode} />
-              <DetailRow label="Special Requests" value={app.specialRequests} />
+            <DetailSection title="Agent">
+              <EditableField label="Agent Code" isEditing={isEditing}
+                value={app.referralAgentCode}
+                editChildren={<Input className="h-8 text-sm" value={getValue("referralAgentCode") ?? ""} onChange={e => setField("referralAgentCode", e.target.value)} />}
+              />
+              <EditableField label="Special Requests" isEditing={isEditing}
+                value={app.specialRequests}
+                editChildren={<Input className="h-8 text-sm" value={getValue("specialRequests") ?? ""} onChange={e => setField("specialRequests", e.target.value)} />}
+              />
             </DetailSection>
-
-            {/* Service Details */}
-            {(app.serviceTypes || app.applicationType) && (
-              <DetailSection title="Service Details">
-                <DetailRow label="Application Type" value={app.applicationType?.replace(/_/g, " ")} />
-                <DetailRow label="Service Types" value={
-                  Array.isArray(app.serviceTypes) ? (app.serviceTypes as string[]).map((s: string) => s.replace(/_/g, " ")).join(", ") : null
-                } />
-                {app.applicantName && <DetailRow label="Applicant" value={app.applicantName} />}
-                {app.applicantEmail && <DetailRow label="Email" value={app.applicantEmail} />}
-                {app.applicantPhone && <DetailRow label="Phone" value={app.applicantPhone} />}
-                {app.applicantNationality && <DetailRow label="Nationality" value={app.applicantNationality} />}
-                {app.flightNumber && <DetailRow label="Flight #" value={app.flightNumber} />}
-                {app.flightDate && <DetailRow label="Flight Date" value={app.flightDate ? format(new Date(app.flightDate), "PPP") : null} />}
-                {app.arrivalTime && <DetailRow label="Arrival Time" value={app.arrivalTime} />}
-                {app.departureAirport && <DetailRow label="Departure Airport" value={app.departureAirport} />}
-                {app.arrivalAirport && <DetailRow label="Arrival Airport" value={app.arrivalAirport} />}
-                {app.passengerCount && <DetailRow label="Passengers" value={app.passengerCount} />}
-                {app.checkinDate && <DetailRow label="Check-in" value={app.checkinDate ? format(new Date(app.checkinDate), "PPP") : null} />}
-                {app.checkoutDate && <DetailRow label="Check-out" value={app.checkoutDate ? format(new Date(app.checkoutDate), "PPP") : null} />}
-                {app.roomType && <DetailRow label="Room Type" value={app.roomType} />}
-                {app.numRooms && <DetailRow label="Rooms" value={app.numRooms} />}
-                {app.accommodationAddress && <DetailRow label="Address" value={app.accommodationAddress} />}
-                {app.destinationCountry && <DetailRow label="Destination" value={app.destinationCountry} />}
-                {app.studyStartDate && <DetailRow label="Study Start" value={app.studyStartDate ? format(new Date(app.studyStartDate), "PPP") : null} />}
-                {app.studyEndDate && <DetailRow label="Study End" value={app.studyEndDate ? format(new Date(app.studyEndDate), "PPP") : null} />}
-                {app.institutionName && <DetailRow label="Institution" value={app.institutionName} />}
-                {app.courseName && <DetailRow label="Course" value={app.courseName} />}
-                {app.internshipStartDate && <DetailRow label="Internship Start" value={app.internshipStartDate ? format(new Date(app.internshipStartDate), "PPP") : null} />}
-                {app.internshipEndDate && <DetailRow label="Internship End" value={app.internshipEndDate ? format(new Date(app.internshipEndDate), "PPP") : null} />}
-                {app.industry && <DetailRow label="Industry" value={app.industry} />}
-                {app.companyPreference && <DetailRow label="Company Preference" value={app.companyPreference} />}
-                {app.settlementDate && <DetailRow label="Settlement Date" value={app.settlementDate ? format(new Date(app.settlementDate), "PPP") : null} />}
-                {app.suburb && <DetailRow label="Suburb" value={app.suburb} />}
-                {app.guardianStartDate && <DetailRow label="Guardian Start" value={app.guardianStartDate ? format(new Date(app.guardianStartDate), "PPP") : null} />}
-                {app.guardianEndDate && <DetailRow label="Guardian End" value={app.guardianEndDate ? format(new Date(app.guardianEndDate), "PPP") : null} />}
-                {app.guardianType && <DetailRow label="Guardian Type" value={app.guardianType} />}
-              </DetailSection>
-            )}
 
             {/* Linked Records */}
             {app.quoteId && (
@@ -257,151 +436,33 @@ export default function ApplicationDetail() {
                 </div>
               </DetailSection>
             )}
+
           </div>
         )}
 
-        {/* ── Participants ── */}
-        {activeTab === "participants" && (
-          <div className="space-y-3">
-            {canEdit ? (
+        {/* ── Services ─────────────────────────────────────────────────── */}
+        {activeTab === "services" && (
+          <div className="space-y-4">
+            {/* Toolbar */}
+            {canEdit && (
               <div className="flex justify-end">
-                <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setAddParticipant(true)}>
-                  <Plus className="w-3.5 h-3.5" /> Add Participant
+                <Button size="sm" className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5"
+                  onClick={() => { setNewSvcType(""); setNewSvcForm({}); setAddSvcDialog(true); }}
+                  disabled={availableToAdd.length === 0}
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Service
                 </Button>
               </div>
-            ) : isContracted ? (
-              <p className="text-xs text-muted-foreground text-right">Participants are read-only after contract conversion.</p>
-            ) : null}
-          <div className="bg-card rounded-xl border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30 text-xs text-muted-foreground">
-                  <th className="px-4 py-2.5 text-left w-8">#</th>
-                  <th className="px-4 py-2.5 text-left">Name</th>
-                  <th className="px-4 py-2.5 text-left">Type</th>
-                  <th className="px-4 py-2.5 text-left">DOB</th>
-                  <th className="px-4 py-2.5 text-left">Gender</th>
-                  <th className="px-4 py-2.5 text-left">Nationality</th>
-                  <th className="px-4 py-2.5 text-left">Grade</th>
-                  <th className="px-4 py-2.5 text-left">Passport #</th>
-                  {canEdit && <th className="px-4 py-2.5 w-10" />}
-                </tr>
-              </thead>
-              <tbody>
-                {participants.length === 0 ? (
-                  <tr>
-                    <td colSpan={canEdit ? 9 : 8} className="px-4 py-8 text-center text-muted-foreground text-xs">
-                      No participants on this application.
-                    </td>
-                  </tr>
-                ) : participants.map((p: any, i: number) => (
-                  <tr key={p.id} className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors">
-                    <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{p.fullName ?? "—"}</div>
-                      {p.fullNameNative && <div className="text-xs text-muted-foreground">{p.fullNameNative}</div>}
-                    </td>
-                    <td className="px-4 py-3 capitalize">
-                      <span className="px-1.5 py-0.5 bg-muted rounded text-xs">{p.participantType ?? "child"}</span>
-                    </td>
-                    <td className="px-4 py-3 text-sm">{p.dateOfBirth ? format(new Date(p.dateOfBirth), "MMM d, yyyy") : "—"}</td>
-                    <td className="px-4 py-3 capitalize text-sm">{p.gender ?? "—"}</td>
-                    <td className="px-4 py-3 text-sm">{p.nationality ?? "—"}</td>
-                    <td className="px-4 py-3 text-sm">{p.grade ?? "—"}</td>
-                    <td className="px-4 py-3 text-sm font-mono text-xs text-muted-foreground">{p.passportNumber ?? "—"}</td>
-                    {canEdit && (
-                      <td className="px-4 py-3">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditParticipant(p)} title="Edit participant">
-                          <Pencil className="w-3 h-3" />
-                        </Button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          </div>
-        )}
+            )}
 
-        {/* ── Services ── */}
-        {activeTab === "services" && (() => {
-          const types: string[] = Array.isArray(app.serviceTypes) ? app.serviceTypes : [];
-
-          if (types.length === 0) {
-            return (
+            {serviceTypes.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <ClipboardList className="w-8 h-8 mb-3 opacity-20" />
                 <p className="text-sm">No services selected for this application.</p>
-                <p className="text-xs mt-1">Edit the application to add service types.</p>
+                {canEdit && <p className="text-xs mt-1">Click "Add Service" to add service types.</p>}
               </div>
-            );
-          }
-
-          const SERVICE_META: Record<string, {
-            label: string; color: string; icon: string;
-            fields: { label: string; key: string; type?: "date" }[];
-          }> = {
-            pickup: {
-              label: "Pickup / Airport Transfer", icon: "🚌", color: "bg-[#FEF9C3] border-yellow-200",
-              fields: [
-                { label: "Flight Number",      key: "flightNumber" },
-                { label: "Flight Date",        key: "flightDate",        type: "date" },
-                { label: "Arrival Time",       key: "arrivalTime" },
-                { label: "Departure Airport",  key: "departureAirport" },
-                { label: "Arrival Airport",    key: "arrivalAirport" },
-                { label: "Passengers",         key: "passengerCount" },
-              ],
-            },
-            accommodation: {
-              label: "Accommodation", icon: "🏨", color: "bg-[#EFF6FF] border-blue-200",
-              fields: [
-                { label: "Check-in",  key: "checkinDate",         type: "date" },
-                { label: "Check-out", key: "checkoutDate",        type: "date" },
-                { label: "Room Type", key: "roomType" },
-                { label: "Rooms",     key: "numRooms" },
-                { label: "Address",   key: "accommodationAddress" },
-              ],
-            },
-            study_abroad: {
-              label: "Study Abroad", icon: "🎓", color: "bg-[#F0FDF4] border-green-200",
-              fields: [
-                { label: "Destination",  key: "destinationCountry" },
-                { label: "Institution",  key: "institutionName" },
-                { label: "Course",       key: "courseName" },
-                { label: "Start Date",   key: "studyStartDate", type: "date" },
-                { label: "End Date",     key: "studyEndDate",   type: "date" },
-              ],
-            },
-            internship: {
-              label: "Internship", icon: "💼", color: "bg-[#FDF4FF] border-purple-200",
-              fields: [
-                { label: "Start Date",         key: "internshipStartDate", type: "date" },
-                { label: "End Date",           key: "internshipEndDate",   type: "date" },
-                { label: "Industry",           key: "industry" },
-                { label: "Company Preference", key: "companyPreference" },
-              ],
-            },
-            settlement: {
-              label: "Settlement", icon: "🏠", color: "bg-[#FFF7ED] border-orange-200",
-              fields: [
-                { label: "Settlement Date", key: "settlementDate", type: "date" },
-                { label: "Suburb / Area",   key: "suburb" },
-              ],
-            },
-            guardian: {
-              label: "Guardian", icon: "🛡️", color: "bg-[#F0F9FF] border-sky-200",
-              fields: [
-                { label: "Start Date",    key: "guardianStartDate", type: "date" },
-                { label: "End Date",      key: "guardianEndDate",   type: "date" },
-                { label: "Guardian Type", key: "guardianType" },
-              ],
-            },
-          };
-
-          return (
-            <div className="space-y-4">
-              {types.map(t => {
+            ) : (
+              serviceTypes.map(t => {
                 const meta = SERVICE_META[t];
                 if (!meta) return (
                   <div key={t} className="rounded-xl border p-4 bg-muted/30">
@@ -409,76 +470,224 @@ export default function ApplicationDetail() {
                     <p className="text-xs text-muted-foreground mt-1">No configuration available for this service type.</p>
                   </div>
                 );
-                const hasData = meta.fields.some(f => app[f.key]);
+
                 return (
                   <div key={t} className={`rounded-xl border p-5 ${meta.color}`}>
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-xl">{meta.icon}</span>
-                      <h3 className="font-semibold text-sm text-[#1C1917]">{meta.label}</h3>
-                    </div>
-                    {!hasData ? (
-                      <p className="text-xs text-muted-foreground italic">No details entered yet. Edit the application to add information.</p>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-3">
-                        {meta.fields.map(f => {
-                          const val = app[f.key];
-                          if (!val) return null;
-                          const display = f.type === "date"
-                            ? (() => { try { return format(new Date(val), "MMM d, yyyy"); } catch { return val; } })()
-                            : String(val);
-                          return (
-                            <div key={f.key}>
-                              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">{f.label}</p>
-                              <p className="text-sm text-[#1C1917]">{display}</p>
-                            </div>
-                          );
-                        })}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{meta.icon}</span>
+                        <h3 className="font-semibold text-sm text-[#1C1917]">{meta.label}</h3>
                       </div>
-                    )}
+                      {canEdit && (
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs border-stone-300 bg-white hover:bg-muted"
+                          onClick={() => openEditSvc(t)}
+                        >
+                          <Pencil className="w-3 h-3" /> Edit
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-3">
+                      {meta.fields.map(f => {
+                        const val = app[f.key];
+                        if (!val) return (
+                          <div key={f.key}>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">{f.label}</p>
+                            <p className="text-xs text-muted-foreground italic">—</p>
+                          </div>
+                        );
+                        let display = String(val);
+                        if (f.type === "date") {
+                          try { display = format(new Date(val), "MMM d, yyyy"); } catch {}
+                        }
+                        return (
+                          <div key={f.key}>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">{f.label}</p>
+                            <p className="text-sm text-[#1C1917]">{display}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
-              })}
-            </div>
-          );
-        })()}
+              })
+            )}
+          </div>
+        )}
 
-        {/* ── Documents ── */}
+        {/* ── Participants ──────────────────────────────────────────────── */}
+        {activeTab === "participants" && (
+          <div className="space-y-3">
+            {canEdit && (
+              <div className="flex justify-end">
+                <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setAddParticipant(true)}>
+                  <Plus className="w-3.5 h-3.5" /> Add Participant
+                </Button>
+              </div>
+            )}
+            <div className="bg-card rounded-xl border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30 text-xs text-muted-foreground">
+                    <th className="px-4 py-2.5 text-left w-8">#</th>
+                    <th className="px-4 py-2.5 text-left">Name</th>
+                    <th className="px-4 py-2.5 text-left">Type</th>
+                    <th className="px-4 py-2.5 text-left">DOB</th>
+                    <th className="px-4 py-2.5 text-left">Gender</th>
+                    <th className="px-4 py-2.5 text-left">Nationality</th>
+                    <th className="px-4 py-2.5 text-left">Grade</th>
+                    <th className="px-4 py-2.5 text-left">Passport #</th>
+                    {canEdit && <th className="px-4 py-2.5 w-10" />}
+                  </tr>
+                </thead>
+                <tbody>
+                  {participants.length === 0 ? (
+                    <tr>
+                      <td colSpan={canEdit ? 9 : 8} className="px-4 py-8 text-center text-muted-foreground text-xs">
+                        No participants on this application.
+                      </td>
+                    </tr>
+                  ) : participants.map((p: any, i: number) => (
+                    <tr key={p.id} className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors">
+                      <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{p.fullName ?? "—"}</div>
+                        {p.fullNameNative && <div className="text-xs text-muted-foreground">{p.fullNameNative}</div>}
+                      </td>
+                      <td className="px-4 py-3 capitalize">
+                        <span className="px-1.5 py-0.5 bg-muted rounded text-xs">{p.participantType ?? "child"}</span>
+                      </td>
+                      <td className="px-4 py-3 text-sm">{p.dateOfBirth ? format(new Date(p.dateOfBirth), "MMM d, yyyy") : "—"}</td>
+                      <td className="px-4 py-3 capitalize text-sm">{p.gender ?? "—"}</td>
+                      <td className="px-4 py-3 text-sm">{p.nationality ?? "—"}</td>
+                      <td className="px-4 py-3 text-sm">{p.grade ?? "—"}</td>
+                      <td className="px-4 py-3 text-sm font-mono text-xs text-muted-foreground">{p.passportNumber ?? "—"}</td>
+                      {canEdit && (
+                        <td className="px-4 py-3">
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditParticipant(p)}>
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── Documents ────────────────────────────────────────────────── */}
         {activeTab === "documents" && (
           <EntityDocumentsTab entityType="application" entityId={id!} mode="full" />
         )}
 
-        {/* ── Notes ── */}
+        {/* ── Notes ────────────────────────────────────────────────────── */}
         {activeTab === "notes" && (
           <NotePanel entityType="application" entityId={id!} />
         )}
+
       </DetailPageLayout>
 
-      {/* ── Participant Edit Dialog ── */}
-      {/* Convert to Quote Dialog */}
+      {/* ── Convert to Quote Dialog ────────────────────────────────────── */}
       <Dialog open={convertQuoteDialog} onOpenChange={setConvertQuoteDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Convert to Quote?</DialogTitle>
-            <DialogDescription>
+            <p className="text-sm text-muted-foreground mt-1">
               This will create a new draft Quote in the CRM from this application's data. The application status will be updated to <strong>Quoted</strong>. This action cannot be undone.
-            </DialogDescription>
+            </p>
           </DialogHeader>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" size="sm" onClick={() => setConvertQuoteDialog(false)}>
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              className="bg-[#F5821F] hover:bg-[#D96A0A] text-white"
-              onClick={() => convertToQuote.mutate()}
-              disabled={convertToQuote.isPending}
-            >
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" size="sm" onClick={() => setConvertQuoteDialog(false)}>Cancel</Button>
+            <Button size="sm" className="bg-[#F5821F] hover:bg-[#D96A0A] text-white"
+              onClick={() => convertToQuote.mutate()} disabled={convertToQuote.isPending}>
               {convertToQuote.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Convert to Quote"}
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* ── Edit Service Dialog ────────────────────────────────────────── */}
+      <Dialog open={!!editingSvc} onOpenChange={open => { if (!open) { setEditingSvc(null); setSvcForm({}); } }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {editingSvc && SERVICE_META[editingSvc] && (
+                <>
+                  <span>{SERVICE_META[editingSvc].icon}</span>
+                  <span>Edit — {SERVICE_META[editingSvc].label}</span>
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {editingSvc && SERVICE_META[editingSvc]?.fields.map(f => (
+              <SvcField
+                key={f.key}
+                def={f}
+                value={svcForm[f.key] ?? ""}
+                onChange={v => setSvcForm(prev => ({ ...prev, [f.key]: v }))}
+              />
+            ))}
+          </div>
+
+          <DialogFooter className="gap-2 mt-2">
+            <Button variant="outline" size="sm" onClick={() => { setEditingSvc(null); setSvcForm({}); }}>Cancel</Button>
+            <Button size="sm" className="bg-[#F5821F] hover:bg-[#D96A0A] text-white"
+              onClick={handleSaveSvc} disabled={saveSvcEdit.isPending}>
+              {saveSvcEdit.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Add Service Dialog ─────────────────────────────────────────── */}
+      <Dialog open={addSvcDialog} onOpenChange={open => { if (!open) { setAddSvcDialog(false); setNewSvcType(""); setNewSvcForm({}); } }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Service</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Service type selector */}
+            <div className="space-y-1">
+              <Label className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Service Type</Label>
+              <select
+                value={newSvcType}
+                onChange={e => setNewSvcType(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#F5821F]/50"
+              >
+                <option value="">Please Select</option>
+                {availableToAdd.map(t => (
+                  <option key={t} value={t}>{SERVICE_META[t]?.label ?? t.replace(/_/g, " ")}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Dynamic fields for selected type */}
+            {newSvcType && SERVICE_META[newSvcType]?.fields.map(f => (
+              <SvcField
+                key={f.key}
+                def={f}
+                value={newSvcForm[f.key] ?? ""}
+                onChange={v => setNewSvcForm(prev => ({ ...prev, [f.key]: v }))}
+              />
+            ))}
+          </div>
+
+          <DialogFooter className="gap-2 mt-2">
+            <Button variant="outline" size="sm" onClick={() => { setAddSvcDialog(false); setNewSvcType(""); setNewSvcForm({}); }}>Cancel</Button>
+            <Button size="sm" className="bg-[#F5821F] hover:bg-[#D96A0A] text-white"
+              onClick={handleAddSvc} disabled={saveAddSvc.isPending || !newSvcType}>
+              {saveAddSvc.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Service"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Participant Dialogs ────────────────────────────────────────── */}
       {editParticipant && (
         <ParticipantEditDialog
           participant={editParticipant}
@@ -489,7 +698,6 @@ export default function ApplicationDetail() {
         />
       )}
 
-      {/* ── Add Participant Dialog ── */}
       <ParticipantAddDialog
         applicationId={id!}
         open={addParticipant}
@@ -497,7 +705,6 @@ export default function ApplicationDetail() {
         onSave={(data) => createParticipant.mutate(data)}
         saving={createParticipant.isPending}
       />
-
     </>
   );
 }
