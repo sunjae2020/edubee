@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import PaymentScheduleTab from "./PaymentScheduleTab";
 import { useLocation } from "wouter";
 import axios from "axios";
 import {
@@ -275,7 +276,7 @@ function FilterBar({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ArApTrackerPage() {
-  const [tab, setTab]                   = useState<"ar" | "ap">("ar");
+  const [tab, setTab]                   = useState<"ar" | "ap" | "schedule">("ar");
   const [search, setSearch]             = useState("");
   const [dateFrom, setDateFrom]         = useState("");
   const [dateTo, setDateTo]             = useState("");
@@ -319,7 +320,7 @@ export default function ArApTrackerPage() {
   const apRows: ApRow[] = apData?.data ?? [];
   const totalPages = (tab === "ar" ? arData?.meta?.totalPages : apData?.meta?.totalPages) ?? 1;
 
-  function handleTabChange(t: "ar" | "ap") {
+  function handleTabChange(t: "ar" | "ap" | "schedule") {
     setTab(t);
     setStatusFilter([]);
     setPage(1);
@@ -404,7 +405,13 @@ export default function ArApTrackerPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-stone-200">
-        {([["ar", "Accounts Receivable"], ["ap", "Accounts Payable"]] as const).map(([key, label]) => (
+        {(
+          [
+            ["ar",       "Accounts Receivable"],
+            ["ap",       "Accounts Payable"],
+            ["schedule", "Payment Schedule"],
+          ] as const
+        ).map(([key, label]) => (
           <button
             key={key}
             onClick={() => handleTabChange(key)}
@@ -419,15 +426,17 @@ export default function ArApTrackerPage() {
         ))}
       </div>
 
-      {/* Filter Bar */}
-      <FilterBar
-        tab={tab}
-        search={search} onSearch={v => { setSearch(v); setPage(1); }}
-        dateFrom={dateFrom} onDateFrom={v => { setDateFrom(v); setPage(1); }}
-        dateTo={dateTo} onDateTo={v => { setDateTo(v); setPage(1); }}
-        statusFilter={statusFilter} onStatusFilter={v => { setStatusFilter(v); setPage(1); }}
-        onExport={exportCsv}
-      />
+      {/* Filter Bar — hidden for Payment Schedule tab (has its own filters) */}
+      {tab !== "schedule" && (
+        <FilterBar
+          tab={tab as "ar" | "ap"}
+          search={search} onSearch={v => { setSearch(v); setPage(1); }}
+          dateFrom={dateFrom} onDateFrom={v => { setDateFrom(v); setPage(1); }}
+          dateTo={dateTo} onDateTo={v => { setDateTo(v); setPage(1); }}
+          statusFilter={statusFilter} onStatusFilter={v => { setStatusFilter(v); setPage(1); }}
+          onExport={exportCsv}
+        />
+      )}
 
       {/* AR Table */}
       {tab === "ar" && (
@@ -542,8 +551,11 @@ export default function ArApTrackerPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
+      {/* Payment Schedule Tab */}
+      {tab === "schedule" && <PaymentScheduleTab />}
+
+      {/* Pagination — hidden for Payment Schedule tab */}
+      {tab !== "schedule" && totalPages > 1 && (
         <div className="flex items-center justify-end gap-2">
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
           <span className="text-sm text-stone-500">Page {page} / {totalPages}</span>

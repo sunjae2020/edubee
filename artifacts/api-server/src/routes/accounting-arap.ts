@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { contractProducts, contracts } from "@workspace/db/schema";
+import { contractProducts, contracts, contacts, accounts } from "@workspace/db/schema";
 import { eq, and, or, ilike, gte, lte, inArray, sql, count, sum, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -238,6 +238,59 @@ router.patch(
     } catch (err) {
       console.error("[PATCH /api/accounting/ap/:id/status]", err);
       return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── GET /api/accounting/payment-schedule ───────────────────────────────────
+router.get(
+  "/accounting/payment-schedule",
+  authenticate,
+  requireRole(...STAFF_ROLES),
+  async (req, res) => {
+    try {
+      const { contractId, arStatus, apStatus, dueDateFrom, dueDateTo } = req.query as Record<string, string | undefined>;
+
+      const conds: SQL[] = [];
+      if (contractId)  conds.push(eq(contractProducts.contractId, contractId));
+      if (arStatus)    conds.push(eq(contractProducts.arStatus,   arStatus));
+      if (apStatus)    conds.push(eq(contractProducts.apStatus,   apStatus));
+      if (dueDateFrom) conds.push(gte(contractProducts.arDueDate, dueDateFrom));
+      if (dueDateTo)   conds.push(lte(contractProducts.arDueDate, dueDateTo));
+
+      const where = conds.length ? and(...conds) : undefined;
+
+      const rows = await db
+        .select({
+          id:                contractProducts.id,
+          contractId:        contractProducts.contractId,
+          contractNumber:    contracts.contractNumber,
+          studentName:       contacts.name,
+          accountName:       accounts.name,
+          name:              contractProducts.name,
+          sortIndex:         contractProducts.sortIndex,
+          arAmount:          contractProducts.arAmount,
+          arDueDate:         contractProducts.arDueDate,
+          arStatus:          contractProducts.arStatus,
+          apAmount:          contractProducts.apAmount,
+          apDueDate:         contractProducts.apDueDate,
+          apStatus:          contractProducts.apStatus,
+          coaArCode:         contractProducts.coaArCode,
+          coaApCode:         contractProducts.coaApCode,
+          serviceModuleType: contractProducts.serviceModuleType,
+          createdAt:         contractProducts.createdAt,
+        })
+        .from(contractProducts)
+        .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
+        .leftJoin(contacts,  eq(contracts.customerContactId, contacts.id))
+        .leftJoin(accounts,  eq(contracts.accountId,         accounts.id))
+        .where(where)
+        .orderBy(contractProducts.arDueDate);
+
+      return res.json({ success: true, data: rows });
+    } catch (err) {
+      console.error("[GET /api/accounting/payment-schedule]", err);
+      return res.status(500).json({ success: false, message: "Failed to fetch payment schedule" });
     }
   }
 );
