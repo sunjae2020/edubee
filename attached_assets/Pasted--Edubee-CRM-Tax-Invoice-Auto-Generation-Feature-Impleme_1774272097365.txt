@@ -1,0 +1,373 @@
+# 📋 Edubee CRM — Tax Invoice Auto-Generation Feature Implementation Prompt
+
+---
+
+## 🎯 Overview
+
+Add a **Tax Invoice PDF auto-generation feature** to the AP school remittance flow.
+
+The Invoice generation timing and GST handling differ depending on whether the remittance method is **NET (Pre-deduct)** or **GROSS (Full Remit)**.
+
+---
+
+## Mandatory Pre-Work (Before Any Changes)
+
+```
+1. Read all files listed below in full
+2. Confirm actual field names directly from the schema
+3. Report the list of files to be modified and the planned changes
+4. Do NOT modify any code until explicitly told "Go ahead"
+```
+
+### Files to Read First
+
+```
+DB Schema:
+  /db/schema.ts
+  → Confirm all fields for: contract_products, payment_headers,
+    payment_lines, journal_entries, contracts, accounts, organisations
+
+Related Routes:
+  /server/src/routes/payments.ts (or AP-related route file)
+  /server/src/routes/contracts.ts
+  → Confirm AP processing logic and ap_status transition logic
+
+Existing PDF Generation (if any):
+  /server/src/services/ (PDFService, invoiceService, etc.)
+  /client/src/pages/finance/ (related screens)
+```
+
+---
+
+## 📐 Business Logic — Core Requirements
+
+### 1. Remittance Method Classification (NET vs GROSS)
+
+Based on the `payment_method` field in `contract_products` or `agent_commission_configs`:
+
+```
+payment_method = 'pre_deduct'  → NET Remittance
+payment_method = 'invoice'     → GROSS Remittance (Full Remit)
+```
+
+---
+
+### 2. NET Remittance (Pre-deduct) Flow
+
+```
+ap_status: 'ready' → Manager executes remittance
+    │
+    ├── Remit to school: (Total AR - Commission - GST*)
+    │     * GST inclusion: branch by account type (see below)
+    │
+    ├── ap_status → 'paid'
+    │
+    └── [Triggered immediately & automatically]
+          Generate Tax Invoice PDF
+          → Send remittance confirmation + Tax Invoice to school email simultaneously
+```
+
+**GST Calculation Branch:**
+
+```
+School account type = 'domestic_aud' (Australian bank account)
+  → Agency has ABN (organisations.has_abn = true)
+  → GST = commission × 10%
+  → School remittance = AR - commission - GST
+  → Tax Invoice: itemise commission + GST
+
+School account type = 'overseas_fx' (Overseas bank account)
+  → GST-free (overseas transaction = Export)
+  → GST = $0
+  → School remittance = AR - commission
+  → Tax Invoice: commission + "GST-free" notation
+```
+
+---
+
+### 3. GROSS Remittance (Full Remit) Flow
+
+```
+ap_status: 'ready' → Manager executes remittance
+    │
+    ├── Remit full amount to school (commission NOT deducted)
+    │
+    ├── ap_status → 'paid'
+    │
+    ├── Commission → transferred to AR (Receivable)
+    │     → contract_products.commission_ar_status = 'pending'
+    │     → journal_entry: DR 1300 (AR—Commission Receivable) / CR 3100 (Commission—Tuition)
+    │
+    └── On course_start_date (scheduler)
+          → Create notification for the assigned consultant:
+            "Tax Invoice required: [Student Name] / [School Name] / Commission $XXX"
+          → Consultant reviews and manually sends Tax Invoice
+```
+
+---
+
+### 4. Tax Invoice Content Specification
+
+```
+┌──────────────────────────────────────────────────────┐
+│                    TAX INVOICE                        │
+│                                                       │
+│  From: [Agency Name]                                  │
+│        ABN: [organisations.abn]                       │
+│        [Agency Address]                               │
+│                                                       │
+│  To:   [School Name]                                  │
+│        [School Address]                               │
+│                                                       │
+│  Invoice No:    TINV-XXXXXXXX                         │
+│  Invoice Date:  [Issue Date]                          │
+│  Payment Terms: 30 days                               │
+│                                                       │
+├──────────────────────────────────────────────────────┤
+│  Description                              Amount      │
+│                                                       │
+│  [Program Name] — [Student Full Name]                 │
+│  Recruitment / Marketing Service                      │
+│  Course Period: [start_date] ~ [end_date]             │
+│                                                       │
+│  Commission                             $XXX.XX       │
+│  GST (10%)          [or: GST-free]       $XX.XX      │
+│  ─────────────────────────────────────────────────   │
+│  Total                                  $XXX.XX       │
+│                                                       │
+│  [NET only]                                           │
+│  * This amount has been deducted from remittance      │
+│  * Remittance Date:  [ap_paid_date]                   │
+│  * Bank Reference:   [bank_reference]                 │
+│                                                       │
+│  [GROSS only]                                         │
+│  * Please remit commission to:                        │
+│    [Agency Bank Account Details]                      │
+│  * Due Date: [Invoice Date + 30 days]                 │
+└──────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🗂️ DB Schema Changes
+
+### New Table: `tax_invoices`
+
+```sql
+CREATE TABLE IF NOT EXISTS tax_invoices (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  invoice_ref           VARCHAR(50)   UNIQUE NOT NULL,  -- TINV-XXXXXXXX
+  invoice_date          DATE          NOT NULL,
+  invoice_type          VARCHAR(20)   NOT NULL,          -- 'net' | 'gross'
+  contract_product_id   UUID          NOT NULL REFERENCES contract_products(id),
+  contract_id           UUID          NOT NULL REFERENCES contracts(id),
+  school_account_id     UUID          NOT NULL REFERENCES accounts(id),
+  student_account_id    UUID          NOT NULL REFERENCES accounts(id),
+  program_name          VARCHAR(255)  NOT NULL,
+  student_name          VARCHAR(255)  NOT NULL,
+  course_start_date     DATE,
+  course_end_date       DATE,
+  commission_amount     DECIMAL(12,2) NOT NULL DEFAULT 0,
+  gst_amount            DECIMAL(12,2) NOT NULL DEFAULT 0,  -- 0 when GST-free
+  total_amount          DECIMAL(12,2) NOT NULL DEFAULT 0,
+  is_gst_free           BOOLEAN       NOT NULL DEFAULT FALSE,
+  payment_header_id     UUID          REFERENCES payment_headers(id), -- linked AP remittance
+  pdf_url               VARCHAR(500),
+  sent_at               TIMESTAMP,
+  sent_to_email         VARCHAR(255),
+  status                VARCHAR(20)   NOT NULL DEFAULT 'draft',
+  -- 'draft' | 'sent' | 'paid'  (GROSS: updated when commission received)
+  due_date              DATE,         -- applicable for GROSS invoices
+  paid_at               TIMESTAMP,    -- date commission received (GROSS)
+  created_by            UUID          NOT NULL REFERENCES users(id),
+  created_on            TIMESTAMP     NOT NULL DEFAULT NOW(),
+  modified_on           TIMESTAMP     NOT NULL DEFAULT NOW()
+);
+```
+
+### Existing Table Field Additions
+
+```sql
+-- contract_products: track GROSS commission AR
+ALTER TABLE contract_products ADD COLUMN IF NOT EXISTS
+  remittance_method    VARCHAR(20),   -- 'net' | 'gross'
+  commission_ar_status VARCHAR(20),   -- NULL | 'pending' | 'invoiced' | 'received'
+  commission_amount    DECIMAL(12,2),
+  gst_amount           DECIMAL(12,2),
+  is_gst_free          BOOLEAN DEFAULT FALSE;
+
+-- organisations (agency tenant): add ABN fields
+ALTER TABLE organisations ADD COLUMN IF NOT EXISTS
+  has_abn     BOOLEAN       DEFAULT FALSE,
+  abn         VARCHAR(20),
+  abn_name    VARCHAR(255); -- Registered business name for ABN
+
+-- accounts (add school bank account type)
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS
+  bank_account_type  VARCHAR(20);
+  -- 'domestic_aud' | 'overseas_fx'
+```
+
+---
+
+## 🔧 Implementation File List
+
+### Backend
+
+```
+/db/schema.ts
+  → Add tax_invoices table
+  → Add fields to contract_products (remittance_method, commission_ar_status, etc.)
+  → Add fields to organisations (has_abn, abn)
+  → Add fields to accounts (bank_account_type)
+
+/server/src/services/taxInvoiceService.ts  [NEW]
+  → generateTaxInvoice(contractProductId, paymentHeaderId): TaxInvoice
+  → calculateGST(commissionAmount, isGstFree): number
+  → buildInvoiceRef(): string  -- TINV-XXXXXXXX sequential reference
+
+/server/src/services/pdfService.ts  [NEW or extend existing]
+  → renderTaxInvoicePDF(taxInvoice: TaxInvoice): Buffer
+  → Library: use puppeteer or pdfmake
+
+/server/src/services/notificationService.ts  [extend existing]
+  → sendTaxInvoiceNotification(contractProductId): void
+  → GROSS: create consultant notification when course_start_date is reached
+
+/server/src/routes/ap.ts  [extend existing or NEW]
+  → PATCH /ap/:contractProductId/paid
+      Add the following to the existing ap_status → 'paid' logic:
+        if (remittance_method === 'net')   → call taxInvoiceService.generateTaxInvoice() immediately
+        if (remittance_method === 'gross') → transfer commission to AR + schedule notification
+
+  → GET  /tax-invoices/:contractProductId    -- retrieve invoice
+  → POST /tax-invoices/:id/send              -- resend by email
+  → POST /tax-invoices/:id/mark-paid         -- mark GROSS commission as received
+
+/server/src/jobs/taxInvoiceScheduler.ts  [NEW]
+  → Runs daily at 9:00 AM
+  → Query: tax_invoices WHERE invoice_type = 'gross'
+               AND status = 'draft'
+               AND course_start_date <= TODAY
+  → Create notification for the assigned consultant
+```
+
+### Frontend
+
+```
+/client/src/pages/finance/ApPaymentModal.tsx  [extend existing]
+  → Add remittance_method selection UI to the AP remittance screen:
+    ┌─────────────────────────────────┐
+    │  Remittance Method              │
+    │  ○ NET Remittance               │
+    │  ● GROSS Remittance             │
+    └─────────────────────────────────┘
+  → NET selected:   display "Tax Invoice will be auto-generated upon remittance completion"
+  → GROSS selected: display "A Tax Invoice notification will be sent after the course start date"
+
+/client/src/pages/finance/TaxInvoiceList.tsx  [NEW]
+  → Sub-tab under Finance menu: Tax Invoices
+  → Filters: All | NET | GROSS | Draft | Sent | Paid
+  → Per-item actions: Download PDF | Resend Email | Mark as Received (GROSS)
+
+/client/src/components/finance/TaxInvoiceBadge.tsx  [NEW]
+  → Display Tax Invoice status badge on the AP line item within Contract Detail:
+    [TINV-00123 · Sent]  or  [Invoice Pending]
+```
+
+---
+
+## 📊 Journal Entry Handling
+
+### NET Remittance — Journal Entries
+
+```
+Remittance execution (existing):
+  DR  2100  AP — Student Tuition Payable    $2,000
+  CR  1200  Trust Account                   $2,000
+
+Commission separation (NEW addition):
+  DR  1200  Trust Account                     $200   (commission retained in Trust)
+  CR  3100  Commission — Tuition              $200
+  ── If GST applies ──
+  DR  1200  Trust Account                      $20   (GST retained in Trust)
+  CR  GST Collected  (confirm CoA code)         $20
+```
+
+### GROSS Remittance — Commission AR Transfer (NEW)
+
+```
+After full remittance to school:
+  DR  1300  AR — Commission Receivable        $200
+  CR  3100  Commission — Tuition              $200
+  ── If GST applies ──
+  DR  1300  AR — Commission Receivable         $20
+  CR  GST Collected                            $20
+
+When commission is actually received from school:
+  DR  1100  Cash & Bank — Operating           $220
+  CR  1300  AR — Commission Receivable        $220
+```
+
+---
+
+## ✅ Verification Checklist
+
+After implementation is complete, verify in this order:
+
+```
+□ 1. npx tsc --noEmit → 0 TypeScript errors
+□ 2. Server starts successfully → no import or runtime errors
+
+□ 3. NET remittance test:
+     - ap_status transitions to 'paid'
+     - tax_invoices record created
+     - invoice_type = 'net' confirmed
+     - GST calculation: domestic_aud → gst_amount > 0 / overseas_fx → gst_amount = 0
+     - pdf_url generated and accessible
+
+□ 4. GROSS remittance test:
+     - ap_status transitions to 'paid'
+     - contract_products.commission_ar_status = 'pending' confirmed
+     - journal_entry with DR 1300 created
+     - tax_invoices record created with status = 'draft'
+     - Scheduler: confirms notification generated when course_start_date is reached
+
+□ 5. PDF content verification:
+     - TINV-XXXXXXXX reference generated correctly
+     - Program Name — Student Name displayed correctly
+     - GST line shown when GST applies
+     - "GST-free" notation shown when GST-free
+     - NET / GROSS distinction text displayed correctly
+
+□ 6. Confirm existing AP-related API behaviour is unaffected
+     (existing ap_status transition logic must not be broken)
+```
+
+---
+
+## ⚠️ Strictly Prohibited
+
+```
+✗ Modifying existing ap_status transition logic without explicit instruction
+✗ Renaming any existing columns in contract_products
+✗ Altering the existing structure of payment_headers or journal_entries
+✗ Guessing field names without reading the schema
+✗ Modifying multiple files in bulk at once
+```
+
+---
+
+## Completion Report Format
+
+```
+✅ Files modified:   [list]
+✅ Changes made:     [description]
+✅ Verification results:
+   - tsc:                   [result]
+   - Server:                [result]
+   - NET remittance test:   [result]
+   - GROSS remittance test: [result]
+   - PDF generation:        [result]
+⚠️  Next steps (if any):   [description]
+```
