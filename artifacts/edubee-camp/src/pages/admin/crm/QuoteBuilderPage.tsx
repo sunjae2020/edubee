@@ -829,11 +829,7 @@ export default function QuoteBuilderPage() {
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-3">
           <button
-            onClick={() =>
-              navigate(
-                quote.leadId ? `/admin/crm/leads/${quote.leadId}` : "/admin/crm/quotes",
-              )
-            }
+            onClick={() => navigate("/admin/crm/quotes")}
             className="text-gray-500 hover:text-gray-800 flex items-center gap-1 text-sm"
           >
             <ArrowLeft size={16} /> Back
