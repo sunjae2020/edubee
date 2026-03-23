@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { Plus, Eye, Pencil, FileText } from "lucide-react";
@@ -42,6 +42,12 @@ export default function QuotesPage() {
   const [tab, setTab] = useState<"quotes" | "templates">("quotes");
   const [page, setPage] = useState(1);
 
+  const createMutation = useMutation({
+    mutationFn: () =>
+      axios.post(`${BASE}/api/crm/quotes`, { quoteStatus: "Draft" }).then(r => r.data),
+    onSuccess: (created) => navigate(`/admin/crm/quotes/${created.id}`),
+  });
+
   const { data: resp, isLoading } = useQuery({
     queryKey: ["crm-quotes", tab, page],
     queryFn: () => {
@@ -63,11 +69,12 @@ export default function QuotesPage() {
           <p className="text-sm text-stone-500 mt-1">Create and manage client quotations</p>
         </div>
         <Button
-          onClick={() => navigate("/admin/crm/quotes/new")}
+          onClick={() => createMutation.mutate()}
+          disabled={createMutation.isPending}
           className="flex items-center gap-2 text-white rounded-lg"
           style={{ background: "#F5821F" }}
         >
-          <Plus size={16} /> New Quote
+          <Plus size={16} /> {createMutation.isPending ? "Creating…" : "New Quote"}
         </Button>
       </div>
 
