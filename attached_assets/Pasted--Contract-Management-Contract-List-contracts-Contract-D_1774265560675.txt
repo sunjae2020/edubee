@@ -1,0 +1,628 @@
+## 작업 개요
+
+Contract Management 페이지를 새로 구현한다.
+- Contract List 페이지 (`/contracts`)
+- Contract Detail 페이지 (`/contracts/:id`)
+
+---
+
+## 사전 분석 (코딩 전 필수)
+
+아래 파일들을 먼저 전부 읽어라. 읽기 전에 코드를 한 줄도 작성하지 마라.
+
+1. `/db/schema.ts` — 전체 읽기 (contracts, contract_products, invoices,
+   invoice_products, transactions, credits, debits, receipts,
+   payment_headers, payment_lines, product_cost_lines, journal_entries,
+   study_abroad_mgt, pickup_mgt, accommodation_mgt,
+   internship_mgt, settlement_mgt, guardian_mgt, files, accounts, users, tasks 테이블 필드 확인)
+2. `/server/src/routes/` — 폴더 내 파일 목록 확인 후 기존 라우트 패턴 파악
+3. `/client/src/pages/` — 기존 페이지 구조 파악 (라우팅 방식 확인)
+4. `/client/src/components/` — 재사용 가능한 공통 컴포넌트 확인
+5. `App.tsx` 또는 `router.tsx` — 라우팅 설정 파일 확인
+
+분석 완료 후 수정할 파일 목록과 변경 내용을 먼저 보고하라.
+내가 "진행해"라고 할 때까지 코드를 작성하지 마라.
+
+---
+
+## 안전 규칙
+
+- DB 컬럼 삭제·이름 변경 절대 금지
+- 기존 작동 코드 수정 금지
+- 파일 하나씩 수정 후 TypeScript 오류 확인
+- 스키마를 읽지 않고 필드명 추측 금지
+- 여러 파일 동시 대량 수정 금지
+
+---
+
+## 디자인 시스템 (엄격히 준수)
+Font: "Inter", system-ui, sans-serif
+Colors:
+Primary:      #F5821F  (버튼, 링크, 강조, active)
+Accent Dark:  #D96A0A  (hover)
+Accent Light: #FEF0E3  (선택 배경, 태그)
+Neutral 50:   #FAFAF9  (페이지 배경)
+Neutral 100:  #F4F3F1  (카드 배경, 비활성)
+Neutral 200:  #E8E6E2  (테두리, 구분선)
+Neutral 400:  #A8A29E  (placeholder, 비활성 텍스트)
+Neutral 600:  #57534E  (보조 텍스트)
+Neutral 900:  #1C1917  (기본 텍스트)
+Success:      #16A34A
+Warning:      #CA8A04
+Danger:       #DC2626
+Background:   #FFFFFF  (카드, 콘텐츠 영역)
+아이콘: Lucide React (stroke-width: 1.5, size: 16px 또는 20px)
+그라디언트 금지 / 블루·퍼플을 accent으로 사용 금지
+
+---
+
+## 구현 범위
+
+### PART 1 — Backend API
+
+#### 1-1. GET `/api/contracts`
+**Query Parameters:**
+- `search` — string (contracts.name, account.name, quote.name에서 ILIKE 검색)
+- `status` — string (contracts.contract_status 필터)
+- `dateFrom` / `dateTo` — date (contracts.from_date 기준 범위 필터)
+- `ownerId` — UUID (contracts.owner_id 필터)
+- `schoolId` — UUID (contract_products → product → provider_id 필터)
+- `arStatus` — string (contract_products.ar_status 중 하나라도 일치)
+- `apStatus` — string (contract_products.ap_status 중 하나라도 일치)
+- `paymentFrequency` — string (contracts.payment_frequency 필터)
+- `page` — number (default: 1)
+- `pageSize` — number (10 | 20 | 50 | 100, default: 10)
+
+**Response 구조:**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "CT-KimMinjae-2026-03-20",
+      "contractRefDisplay": "CTR-K240001",
+      "contractStatus": "Active",
+      "fromDate": "2026-04-01",
+      "toDate": "2026-07-25",
+      "contractAmount": 4800.00,
+      "paymentFrequency": "termly",
+      "account": {
+        "id": "uuid",
+        "name": "Kim Minjae",
+        "nationality": "Korean"
+      },
+      "quote": {
+        "id": "uuid",
+        "quoteRefNumber": "QTE-MN1E1A35"
+      },
+      "owner": {
+        "id": "uuid",
+        "name": "Sarah K."
+      },
+      "primaryService": {
+        "type": "study_abroad",
+        "providerName": "ABC Language School",
+        "programName": "General English",
+        "duration": "16 weeks"
+      },
+      "arSummary": {
+        "totalAr": 4800.00,
+        "collectedAr": 2400.00,
+        "statusList": ["paid", "due"]
+      },
+      "apSummary": {
+        "totalAp": 4000.00,
+        "remittedAp": 2000.00,
+        "statusList": ["sent", "ready"]
+      },
+      "collectionRate": 50
+    }
+  ],
+  "pagination": {
+    "total": 24,
+    "page": 1,
+    "pageSize": 10,
+    "totalPages": 3
+  },
+  "summary": {
+    "activeCount": 24,
+    "arOutstanding": 12450.00,
+    "apPayable": 8200.00,
+    "commissionEstimate": 1840.00
+  }
+}
+```
+
+**JOIN 구조:**
+- contracts LEFT JOIN accounts (student)
+- contracts LEFT JOIN quotes
+- contracts LEFT JOIN users (owner)
+- contracts LEFT JOIN contract_products → LEFT JOIN products → LEFT JOIN accounts (provider)
+- contract_products 기준으로 ar/ap summary 집계
+
+**primaryService 계산 로직:**
+contracts.service_modules_activated JSONB 배열의 첫 번째 항목(또는 'study_abroad' 우선)을
+기준으로, 해당 서비스 모듈 테이블(study_abroad_mgt)에서 school/provider 정보를 가져온다.
+service_modules_activated가 없으면 contract_products → products → provider_id로 폴백.
+
+---
+
+#### 1-2. GET `/api/contracts/:id`
+**Response 구조 (상세):**
+```json
+{
+  "id": "uuid",
+  "name": "CT-KimMinjae-2026-03-20",
+  "contractRefDisplay": "CTR-K240001",
+  "contractStatus": "Active",
+  "fromDate": "2026-04-01",
+  "toDate": "2026-07-25",
+  "contractAmount": 4800.00,
+  "paymentFrequency": "termly",
+  "totalArAmount": 4800.00,
+  "totalApAmount": 4000.00,
+  "serviceModulesActivated": ["study_abroad", "pickup", "accommodation"],
+  "account": { "id": "uuid", "name": "Kim Minjae", "nationality": "Korean" },
+  "quote": { "id": "uuid", "quoteRefNumber": "QTE-MN1E1A35" },
+  "owner": { "id": "uuid", "name": "Sarah K." },
+  "contractProducts": [
+    {
+      "id": "uuid",
+      "name": "Term 1",
+      "sortIndex": 1,
+      "isInitialPayment": true,
+      "arDueDate": "2026-03-25",
+      "arAmount": 2400.00,
+      "arStatus": "paid",
+      "apDueDate": "2026-04-01",
+      "apAmount": 2000.00,
+      "apStatus": "paid",
+      "invoiceId": "uuid",
+      "invoiceRefNumber": "INV-K240001-001",
+      "costLines": [
+        {
+          "id": "uuid",
+          "costType": "sub_agent",
+          "partnerName": "Edu Partners Co.",
+          "calcType": "percentage",
+          "rate": 0.30,
+          "baseAmount": 400.00,
+          "calculatedAmount": 120.00,
+          "status": "paid"
+        }
+      ]
+    }
+  ],
+  "invoices": [
+    {
+      "id": "uuid",
+      "invoiceRefNumber": "INV-K240001-001",
+      "createdOn": "2026-03-15",
+      "dueDate": "2026-03-25",
+      "totalPrice": 2400.00,
+      "paidAmount": 2400.00,
+      "balance": 0.00,
+      "status": "Paid"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "uuid",
+      "referenceNumber": "TXN-0234",
+      "transactionDate": "2026-03-24",
+      "transactionType": "Credit",
+      "accountName": "Kim Minjae",
+      "invoiceRefNumber": "INV-K240001-001",
+      "creditAmount": 2400.00,
+      "debitAmount": null,
+      "coaCode": "1100",
+      "coaName": "AR",
+      "status": "Active"
+    }
+  ],
+  "commissionSummary": {
+    "subAgent": 240.00,
+    "superAgent": 0.00,
+    "referral": 0.00,
+    "staffIncentive": 56.00
+  },
+  "services": {
+    "studyAbroad": { "id": "uuid", "status": "confirmed", ... },
+    "pickup": { "id": "uuid", "status": "scheduled", ... },
+    "accommodation": { "id": "uuid", "status": "confirmed", ... },
+    "internship": null,
+    "settlement": null,
+    "guardian": null
+  },
+  "documents": [
+    {
+      "id": "uuid",
+      "fileName": "Contract_CTR-K240001.pdf",
+      "fileType": "pdf",
+      "fileSize": 245000,
+      "createdOn": "2026-03-20"
+    }
+  ]
+}
+```
+
+**JOIN 구조:**
+- contracts + accounts + quotes + users
+- contract_products LEFT JOIN invoices (invoice_ref_number)
+- contract_products LEFT JOIN product_cost_lines LEFT JOIN accounts(partner) LEFT JOIN users(staff)
+- invoices + invoice_products + transactions
+- transactions (WHERE contract_id 또는 invoice_id IN contract's invoices)
+- study_abroad_mgt, pickup_mgt, accommodation_mgt, internship_mgt, settlement_mgt, guardian_mgt (각각 WHERE contract_id = :id)
+- files (contract_document_1_id, contract_document_2_id, agreement_document_id)
+
+---
+
+#### 1-3. GET `/api/contracts/:id/activity`
+계약과 연결된 모든 활동을 통합 피드로 반환.
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "unique-key",
+      "type": "finance",
+      "subType": "ar_payment",
+      "icon": "credit-card",
+      "title": "AR Term 1 payment received — $2,400.00",
+      "detail": "Kim Minjae → TXN-0234 generated. AP auto-transitioned to Ready.",
+      "actorName": "System (Auto)",
+      "actorRole": "system",
+      "occurredAt": "2026-03-24T09:14:00Z",
+      "sourceTable": "transactions",
+      "sourceId": "uuid"
+    }
+  ]
+}
+```
+
+**소스 테이블별 activity 생성 규칙:**
+- `transactions` WHERE contract_id OR invoice_id IN (contract's invoices)
+  → type: "finance", subType: "ar_payment" | "ap_payment"
+- `tasks` WHERE contract_id = :id (tasks 테이블에 contract_id FK가 있으면)
+  → type: "task"
+- `study_abroad_mgt` WHERE contract_id = :id (updated_at 변경 기준)
+  → type: "service", subType: "study_abroad"
+- `pickup_mgt` WHERE contract_id = :id
+  → type: "service", subType: "pickup"
+- `accommodation_mgt` WHERE contract_id = :id
+  → type: "service", subType: "accommodation"
+- `contracts` 자체 created_on / status 변경
+  → type: "system"
+
+모든 소스를 UNION ALL + ORDER BY occurredAt DESC 처리.
+
+---
+
+#### 1-4. GET `/api/contracts/filter-options`
+Advanced Filter 드롭다운에 필요한 옵션 목록 반환.
+```json
+{
+  "owners": [{ "id": "uuid", "name": "Sarah K." }],
+  "schools": [{ "id": "uuid", "name": "ABC Language School" }],
+  "subAgents": [{ "id": "uuid", "name": "Edu Partners Co." }],
+  "nationalities": ["Korean", "Japanese", "Chinese"]
+}
+```
+
+---
+
+### PART 2 — Frontend
+
+#### 파일 구조
+/client/src/pages/contracts/
+ContractListPage.tsx      ← List 페이지
+ContractDetailPage.tsx    ← Detail 페이지
+/client/src/pages/contracts/components/
+ContractFilterBar.tsx     ← 필터 바 (Quick Period + Advanced Panel)
+ContractTable.tsx         ← 테이블 + 페이지네이션
+ContractStatCards.tsx     ← 상단 KPI 4개
+ContractDetailHeader.tsx  ← 상세 헤더 (Back + ref + status + actions)
+ContractInfoCards.tsx     ← 상단 3개 info 카드 (Student / Primary Service / Finance)
+ContractTabBar.tsx        ← 탭 네비게이션
+tabs/
+OverviewTab.tsx
+PaymentScheduleTab.tsx
+InvoicesTab.tsx
+TransactionsTab.tsx
+CommissionTab.tsx
+ServicesTab.tsx
+DocumentsTab.tsx
+ActivityTab.tsx
+
+라우팅: 기존 App.tsx(또는 router 파일)에 아래 두 경로 추가
+/contracts          → ContractListPage
+/contracts/:id      → ContractDetailPage
+기존 라우트는 절대 변경하지 않는다.
+
+---
+
+#### ContractListPage.tsx 구현 상세
+
+**상단 KPI 카드 4개 (ContractStatCards):**
+- Active Contracts (count)
+- AR Outstanding (sum, 주황색)
+- AP Payable (sum, 빨간색)
+- Commission Est. (sum, 초록색)
+
+**ContractFilterBar 구성:**
+
+*[기본 표시 항목]*
+1. 검색창 (search-box) — `placeholder="Search student, school, ref..."`
+2. Quick Period 탭 그룹 (버튼 방식):
+   - Today / This Month / Last Month / This Term / Last Term / This Year
+   - 선택 시 dateFrom/dateTo 자동 계산하여 state 업데이트
+   - "This Term" = 현재 분기(1~3월, 4~6월, 7~9월, 10~12월) 자동 계산
+3. Custom Date Range: From 날짜 input → To 날짜 input
+   - Quick Period 탭 클릭 시 날짜 input에도 값 반영
+4. Status 드롭다운: All / Active / In Progress / Overdue / Completed / Draft
+5. `⚙ Advanced` 토글 버튼
+   - 적용된 필터 수 주황색 뱃지로 표시
+
+*[Advanced Panel — 기본 숨김, 토글로 펼침]*
+패널 열림 시 filter-bar 카드 안에 아래로 펼쳐짐 (animation: max-height transition)
+
+Advanced 필터 항목:
+- Provider / School — select (filter-options API)
+- Staff (Owner) — select (filter-options API)
+- Sub-Agent — select (filter-options API)
+- Payment Type — select (Once / Per Term / Monthly / Custom)
+- AR Status — 다중 선택 체크칩:
+  Scheduled / Invoiced / Overdue / Partial / Paid
+- AP Status — 다중 선택 체크칩:
+  Pending / Ready / Paid / Overdue
+- Contract Value Min / Max — number input
+- Visa Status — select (All / Granted / Applied / Pending / Refused)
+- Nationality — select (filter-options API)
+
+[Clear All] [Apply Filters] 버튼
+Apply 시 패널 닫힘 + 활성 필터 태그(✕ 삭제 가능) 기본 필터 바 아래에 표시
+
+*[활성 필터 태그 row]*
+적용된 각 필터를 `Provider: ABC Language ✕` 형태의 오렌지 pill로 표시.
+✕ 클릭 시 해당 필터만 제거 후 재조회.
+
+**ContractTable 컬럼:**
+| # | 컬럼명 | 데이터 소스 |
+|---|--------|------------|
+| — | checkbox | bulk select용 |
+| 1 | Contract Ref | contractRefDisplay (monospace, #F5821F) |
+| 2 | Student | account.name + avatar + quote ref (보조) |
+| 3 | School / Program | primaryService.providerName + programName |
+| 4 | From | fromDate (YYYY-MM-DD) |
+| 5 | To | toDate (YYYY-MM-DD) |
+| 6 | Duration | 자동 계산 (주/월/년 단위) |
+| 7 | Value | contractAmount ($형식) |
+| 8 | AR Status | arSummary.statusList → mini-badge 스택 |
+| 9 | AP Status | apSummary.statusList → mini-badge 스택 |
+| 10 | Collected | collectionRate % (progress bar + 숫자) |
+| 11 | Status | contractStatus badge |
+| 12 | — | ··· 메뉴 버튼 |
+
+Row 클릭 → `/contracts/:id` 이동
+··· 버튼 → dropdown: View Detail / Generate Invoice / Record Payment / Cancel Contract
+
+**테이블 하단 footer:**
+- 왼쪽: "Showing 1–10 of 24 contracts"
+- 오른쪽: Rows per page 드롭다운 (10/20/50/100) + 페이지네이션
+
+**Loading state:** 테이블 영역 skeleton shimmer (#F4F3F1 → #E8E6E2)
+**Empty state:** 중앙 정렬, "No contracts found" + 조건 초기화 버튼
+
+---
+
+#### ContractDetailPage.tsx 구현 상세
+
+**URL 파라미터:** `/contracts/:id`
+**데이터 페칭:** `/api/contracts/:id` + `/api/contracts/:id/activity`
+
+**DetailHeader:**
+- `← Back` 버튼 → `/contracts` 이동 (또는 browser history.back)
+- Contract Ref (monospace, 18px/700)
+- Status badge
+- 오른쪽 액션 버튼:
+  - `View Quote` → `/quotes/:quoteId`
+  - `Generate Invoice` → 인보이스 생성 모달
+  - `Record Payment` → 트랜잭션 생성 모달
+
+**상단 Info 카드 3개 (grid: 1fr 1fr 1fr):**
+
+1. Student 카드:
+   - Name (link → /accounts/:id)
+   - Account (link)
+   - Nationality
+   - Visa Status (badge)
+   - Owner (EC)
+
+2. Primary Service 카드 (오렌지 테두리 강조):
+   - 헤더에 "Primary Service" 라벨 + 서비스 타입 뱃지
+   - services 탭에서 ★ Set as Primary 클릭한 서비스가 반영됨
+   - 기본값: service_modules_activated[0] 또는 study_abroad
+   - primaryServiceType state를 ContractDetailPage에서 관리
+   - 카드 내용: Provider(link), Program, Duration, Start, End
+   - 서비스 타입별 표시 내용 다름:
+     - study_abroad → School, Program, Duration
+     - pickup → Flight, Arrival, Airport
+     - accommodation → Type, Check-in, Host
+     - etc.
+
+3. Financial Summary 카드:
+   - Contract Value
+   - AR Collected (초록)
+   - AR Outstanding (주황)
+   - AP Remitted (빨강)
+   - Est. Net Revenue (오렌지, bold)
+
+**탭 바 (8개 탭):**
+Overview | Payment Schedule (N) | Invoices (N) | Transactions (N) |
+Commission / Cost | Services (N) | Documents (N) | Activity (N)
+N = 각 탭의 아이템 수 (badge로 표시)
+URL hash 또는 query param으로 탭 상태 유지 (예: `?tab=schedule`)
+
+---
+
+#### 탭별 구현 상세
+
+**[Overview 탭]**
+2열 그리드:
+- 좌: Contract Timeline (created → course_start → mid-points → end)
+  + Quote Ref / Payment Frequency / Active Services 목록
+- 우: AR/AP Progress bar 카드
+  + ⚡ Action Required 알림 (ap_status = 'ready'인 항목 있을 시)
+
+---
+
+**[Payment Schedule 탭]**
+contract_products 테이블 기반 표
+
+컬럼: #, Label, AR Due Date, AR Amount, AR Paid, AR Status, AP Due Date, AP Amount, AP Paid, AP Status, Invoice
+- AR 컬럼 헤더: 파란색 계열 (#0369A1)
+- AP 컬럼 헤더: 주황-갈색 계열 (#9A3412)
+- is_initial_payment = true → "★ Initial" 표시
+- ap_status = 'ready' 행 → 배경 #FFFCF9 + 아이콘 표시
+- 하단 Summary: 총 계약금액 (오렌지 배경 pill)
+- [Add Instalment] 버튼 (향후 기능, 현재 disabled OK)
+
+---
+
+**[Invoices 탭]**
+invoices 테이블 기반 표
+
+컬럼: Invoice Ref, Issued, Due Date, Amount, Paid, Balance, Status, PDF
+- PDF 버튼 → 향후 연동 (현재 ghost button)
+- [+ Generate Invoice] 버튼
+- balance = totalPrice - paidAmount 계산
+- status 별 badge 색상: Paid(초록), Active/Draft(회색), Overdue(빨강)
+
+---
+
+**[Transactions 탭]**
+transactions 테이블 기반 표 (WHERE contract_id = :id OR invoice_id IN (...))
+
+컬럼: Txn Ref, Date, Type (CR/DB), Account, Invoice, Credit, Debit, CoA, Status, Receipt
+- Credit → 초록 텍스트 / Debit → 빨강 텍스트
+- 하단 Summary: Total Credits / Total Debits / Net Position
+- [+ Record Payment] 버튼
+
+---
+
+**[Commission / Cost 탭]**
+product_cost_lines 기반
+
+상단 4개 summary 카드: Sub-Agent / Super-Agent / Referral / Staff Incentive 총합
+
+테이블 컬럼: Instalment, Cost Type (mini-badge), Partner/Staff, Method, Rate, Base Amount, Calculated, Status
+- cost_type 별 badge 색상:
+  sub_agent → 주황 / super_agent → 주황 / referral → 파랑 / incentive → 회색
+
+---
+
+**[Services 탭]**
+6개 서비스 모듈 카드 그리드 (3열)
+
+서비스 타입: study_abroad / visa (study_abroad_mgt.visa_type) / pickup / accommodation / internship / guardian
+(settlement은 독립 서비스로 표시 또는 study_abroad 안에 포함)
+
+각 카드:
+- 아이콘 + 서비스 이름 + 상태 badge
+- 핵심 정보 2~3줄 (서비스 타입별 다름)
+- "☆ Set as Primary" 링크 → 클릭 시 해당 카드가 ★ Primary 로 전환
+  + ContractDetailPage의 primaryServiceType state 업데이트
+  → 상단 "Primary Service" info 카드 자동 갱신
+- 비활성 서비스 카드 → opacity 0.4, "Inactive" badge
+- 카드 클릭 → 해당 서비스 상세 모달 or 페이지 (향후 연동, 현재 toast "Coming soon" OK)
+
+**Primary 상태 관리:**
+```typescript
+const [primaryServiceType, setPrimaryServiceType] =
+  useState<string>(contract.serviceModulesActivated?.[0] ?? 'study_abroad');
+```
+Set as Primary 클릭 시 setPrimaryServiceType 호출.
+(백엔드 저장은 향후 PATCH /api/contracts/:id 로 추가, 지금은 로컬 state)
+
+---
+
+**[Documents 탭]**
+files 테이블 기반 (contract_document_1_id, contract_document_2_id, agreement_document_id + 향후 관련 파일)
+
+3열 그리드 카드:
+- 파일 아이콘 (pdf→빨강 배경, jpg/png→파랑 배경, doc→파랑 배경)
+- 파일명 + 날짜 + 크기
+- 카드 hover → 오렌지 테두리
+- [+ Upload] 버튼 (향후 기능, 현재 disabled OK)
+
+---
+
+**[Activity 탭]**
+`/api/contracts/:id/activity` 기반
+
+*상단 필터 체크칩:*
+All / Finance / Task / Service / System / Notes
+체크칩 toggle → 해당 type의 activity 항목 show/hide (클라이언트 사이드 필터)
+
+*Activity 피드 (카드 내부):*
+각 항목:
+- 아이콘 컨테이너 (28x28px, border-radius 8px):
+  - finance → 주황 배경 💳
+  - task → 파랑 배경 ✅
+  - service → 초록 배경 (서비스 타입별 아이콘)
+  - system → 회색 배경 🤖
+  - note → 흰색+테두리 📝
+- 본문: title + detail 텍스트
+- 메타: 시간 + source-tag badge + 담당자
+
+*하단 노트 입력:*
+- textarea + [Post Note] 버튼
+- Post Note → `POST /api/contracts/:id/notes` (향후 기능, 현재 console.log OK)
+
+---
+
+### PART 3 — 라우터 등록
+
+기존 라우터 파일을 읽어 기존 구조를 유지하면서 아래만 추가:
+```typescript
+// Contracts
+{ path: '/contracts', element: <ContractListPage /> }
+{ path: '/contracts/:id', element: <ContractDetailPage /> }
+```
+기존 라우트는 한 줄도 수정하지 않는다.
+
+사이드바가 있다면, 기존 사이드바 컴포넌트에 "Contracts" 항목 추가.
+(사이드바 파일을 먼저 읽고, 기존 항목 목록 패턴을 그대로 따를 것)
+
+---
+
+## 구현 순서 (파일별 순서 준수)
+
+1. Backend: `contractsRouter.ts` 생성
+   → GET /api/contracts, /api/contracts/:id, /api/contracts/:id/activity, /api/contracts/filter-options
+
+2. 라우터 등록: 기존 서버 라우터 파일에 contractsRouter import 추가
+
+3. TypeScript 확인: `npx tsc --noEmit`
+
+4. Frontend: `ContractListPage.tsx` + 하위 컴포넌트
+
+5. Frontend: `ContractDetailPage.tsx` + 8개 탭 컴포넌트
+
+6. 라우터 등록: App.tsx(또는 router) + 사이드바
+
+7. TypeScript 최종 확인: `npx tsc --noEmit`
+
+---
+
+## 완료 보고 형식
+✅ 수정된 파일: [목록]
+✅ 수정 내용: [설명]
+✅ 검증 결과:
+
+tsc: [결과]
+서버 기동: [결과]
+DB: SELECT * FROM contracts LIMIT 3 → [결과]
+API: GET /api/contracts 응답 [결과]
+⚠️  다음에 할 작업: [있는 경우]
