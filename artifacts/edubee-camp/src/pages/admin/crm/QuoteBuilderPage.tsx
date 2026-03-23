@@ -1,467 +1,1047 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Plus, Trash2, ArrowLeft, FileDown, ChevronRight, X, Check } from "lucide-react";
+import {
+  DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter,
+} from "@dnd-kit/core";
+import {
+  SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  Plus, Trash2, ArrowLeft, GripVertical, Search, X, Check, ChevronDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const PRIMARY = "#F5821F";
 
-const MODULE_LABELS: Record<string, string> = {
-  study_abroad:  "🎓 Study",
-  pickup:        "🚗 Pickup",
-  accommodation: "🏠 Stay",
-  internship:    "💼 Work",
-  settlement:    "🏙️ Settlement",
-  guardian:      "👨‍👩‍👧 Guardian",
-  camp:          "🏕️ Camp",
-};
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-const MODULE_OPTIONS = Object.keys(MODULE_LABELS);
+interface Quote {
+  id: string;
+  quoteRefNumber?: string;
+  quoteStatus: string;
+  expiryDate?: string;
+  notes?: string;
+  accountName?: string;
+  customerName?: string;
+  studentAccountId?: string;
+  leadId?: string;
+}
 
-const TEMPLATES: Record<string, Array<{ productName: string; serviceModuleType: string; qty: number; unitPrice: string; gstRate: string }>> = {
-  "Study Abroad Full Package": [
-    { productName: "Study Abroad Program",     serviceModuleType: "study_abroad",  qty: 1, unitPrice: "8000", gstRate: "0" },
-    { productName: "Airport Pickup",           serviceModuleType: "pickup",        qty: 1, unitPrice: "150",  gstRate: "10" },
-    { productName: "Accommodation (4 weeks)",  serviceModuleType: "accommodation", qty: 4, unitPrice: "350",  gstRate: "0" },
-    { productName: "Settlement Support",       serviceModuleType: "settlement",    qty: 1, unitPrice: "500",  gstRate: "10" },
-  ],
-  "Guardian Package": [
-    { productName: "Guardian Service",         serviceModuleType: "guardian",      qty: 1, unitPrice: "2500", gstRate: "10" },
-    { productName: "Airport Pickup",           serviceModuleType: "pickup",        qty: 1, unitPrice: "150",  gstRate: "10" },
-  ],
-  "Internship Package": [
-    { productName: "Internship Placement",     serviceModuleType: "internship",    qty: 1, unitPrice: "3000", gstRate: "0" },
-    { productName: "Settlement Support",       serviceModuleType: "settlement",    qty: 1, unitPrice: "500",  gstRate: "10" },
-  ],
-  "Camp Basic Package": [
-    { productName: "Camp Program",             serviceModuleType: "camp",          qty: 1, unitPrice: "5000", gstRate: "0" },
-    { productName: "Airport Pickup",           serviceModuleType: "pickup",        qty: 1, unitPrice: "150",  gstRate: "10" },
-    { productName: "Accommodation (2 weeks)",  serviceModuleType: "accommodation", qty: 2, unitPrice: "350",  gstRate: "0" },
-  ],
-};
+interface QuoteProduct {
+  id: string;
+  quoteId: string;
+  productId?: string;
+  manualInput: boolean;
+  name?: string;
+  itemDescription?: string;
+  price?: string;
+  quantity: number;
+  isInitialPayment: boolean;
+  dueDate?: string;
+  sortIndex: number;
+  isGstIncluded: boolean;
+  status: string;
+  providerName?: string;
+}
 
-interface LineItem {
+interface Product {
   id: string;
   productName: string;
-  description: string;
-  qty: number;
-  unitPrice: string;
-  gstRate: string;
-  serviceModuleType: string;
+  productType?: string;
+  description?: string;
+  itemDescription?: string;
+  price?: string;
+  isGstIncluded?: boolean;
+  numberOfPayments?: number;
+  minimumPayment?: string;
+  providerId?: string;
+  providerName?: string;
 }
 
-function calcTotal(item: LineItem): number {
-  const base = Number(item.qty) * Number(item.unitPrice);
-  return base * (1 + Number(item.gstRate) / 100);
+interface Account {
+  id: string;
+  name: string;
+  accountType?: string;
 }
 
-function newItem(): LineItem {
-  return { id: crypto.randomUUID(), productName: "", description: "", qty: 1, unitPrice: "0", gstRate: "0", serviceModuleType: "" };
-}
+// ─── Account Lookup Field ─────────────────────────────────────────────────────
 
-const STATUS_OPTIONS = ["Draft", "Sent", "Accepted", "Declined", "Expired"];
-
-export default function QuoteBuilderPage() {
-  const [, params] = useRoute("/admin/crm/quotes/:id");
-  const [, navigate] = useLocation();
-  const { toast } = useToast();
-  const qc = useQueryClient();
-
-  const quoteId = params?.id && params.id !== "new" ? params.id : null;
-
-  const [accountName, setAccountName]   = useState("");
-  const [expiryDate, setExpiryDate]     = useState("");
-  const [quoteStatus, setQuoteStatus]   = useState("Draft");
-  const [notes, setNotes]               = useState("");
-  const [isTemplate, setIsTemplate]     = useState(false);
-  const [items, setItems]               = useState<LineItem[]>([newItem()]);
-  const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [convertModal, setConvertModal] = useState(false);
-
-  const { data: existing } = useQuery({
-    queryKey: ["crm-quote", quoteId],
-    queryFn: () => axios.get(`${BASE}/api/crm/quotes/${quoteId}`).then(r => r.data),
-    enabled: !!quoteId,
-  });
+function AccountLookupField({
+  currentId,
+  currentName,
+  onSelect,
+}: {
+  currentId?: string | null;
+  currentName?: string | null;
+  onSelect: (id: string | null, name: string | null) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<Account | null>(
+    currentId && currentName ? { id: currentId, name: currentName } : null,
+  );
+  const [pending, setPending] = useState<Account | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!existing) return;
-    setAccountName(existing.accountName ?? "");
-    setExpiryDate(existing.expiryDate ?? "");
-    setQuoteStatus(existing.quoteStatus ?? "Draft");
-    setNotes(existing.notes ?? "");
-    setIsTemplate(existing.isTemplate ?? false);
-    if (existing.products?.length) {
-      setItems(existing.products.map((p: any) => ({
-        id: p.id ?? crypto.randomUUID(),
-        productName:       p.productName ?? "",
-        description:       p.description ?? "",
-        qty:               p.qty ?? 1,
-        unitPrice:         String(p.unitPrice ?? "0"),
-        gstRate:           String(p.gstRate ?? "0"),
-        serviceModuleType: p.serviceModuleType ?? "",
-      })));
-    }
-  }, [existing]);
+    setSelected(currentId && currentName ? { id: currentId, name: currentName } : null);
+  }, [currentId, currentName]);
 
-  function applyTemplate(name: string) {
-    if (!name || !TEMPLATES[name]) return;
-    setItems(TEMPLATES[name].map(t => ({ ...t, id: crypto.randomUUID(), description: "" })));
-    setSelectedTemplate(name);
-  }
-
-  function updateItem<K extends keyof LineItem>(id: string, key: K, val: LineItem[K]) {
-    setItems(prev => prev.map(it => it.id === id ? { ...it, [key]: val } : it));
-  }
-
-  function removeItem(id: string) {
-    setItems(prev => prev.filter(it => it.id !== id));
-  }
-
-  const subtotal  = items.reduce((s, it) => s + Number(it.qty) * Number(it.unitPrice), 0);
-  const gstTotal  = items.reduce((s, it) => s + Number(it.qty) * Number(it.unitPrice) * (Number(it.gstRate) / 100), 0);
-  const grandTotal = subtotal + gstTotal;
-
-  function buildPayload(status: string) {
-    return {
-      accountName, expiryDate: expiryDate || null, quoteStatus: status, notes, isTemplate,
-      products: items.map(it => ({
-        productName:       it.productName || "Item",
-        description:       it.description,
-        qty:               it.qty,
-        unitPrice:         it.unitPrice,
-        gstRate:           it.gstRate,
-        total:             String(calcTotal(it).toFixed(2)),
-        serviceModuleType: it.serviceModuleType || null,
-      })),
-    };
-  }
-
-  const saveMutation = useMutation({
-    mutationFn: (status: string) => quoteId
-      ? axios.put(`${BASE}/api/crm/quotes/${quoteId}`, buildPayload(status)).then(r => r.data)
-      : axios.post(`${BASE}/api/crm/quotes`, buildPayload(status)).then(r => r.data),
-    onSuccess: (data, status) => {
-      qc.invalidateQueries({ queryKey: ["crm-quotes"] });
-      toast({ title: status === "Sent" ? "Quote sent to client" : "Quote saved as draft" });
-      if (!quoteId) navigate(`/admin/crm/quotes/${data.id}`);
-    },
-    onError: () => toast({ title: "Save failed", variant: "destructive" }),
+  const { data: results = [] } = useQuery<Account[]>({
+    queryKey: ["account-search-qb", query],
+    queryFn: () =>
+      axios
+        .get(`${BASE}/api/crm/accounts?search=${encodeURIComponent(query)}&limit=20`)
+        .then((r) => r.data.data ?? []),
+    enabled: editing && query.length >= 1,
+    staleTime: 10_000,
   });
 
-  const convertMutation = useMutation({
-    mutationFn: () => {
-      const id = quoteId!;
-      return axios.post(`${BASE}/api/crm/quotes/${id}/convert-to-contract`).then(r => r.data);
-    },
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ["crm-quotes"] });
-      setConvertModal(false);
-      toast({ title: `✅ Contract created + ${data.activatedModules.length} service modules activated` });
-      navigate(`/admin/contracts/${data.contractId}`);
-    },
-    onError: () => toast({ title: "Conversion failed", variant: "destructive" }),
-  });
+  const startEdit = () => {
+    setPending(selected);
+    setQuery(selected?.name ?? "");
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
 
-  const isNew = !quoteId;
-  const title = isNew ? "New Quote" : `Edit Quote${existing?.quoteRefNumber ? ` — ${existing.quoteRefNumber}` : ""}`;
+  const cancel = () => {
+    setPending(null);
+    setQuery("");
+    setEditing(false);
+  };
 
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate("/admin/crm/quotes")}
-          className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800 transition-colors">
-          <ArrowLeft size={16} /> Back to Quotes
-        </button>
-      </div>
+  const pick = (acc: Account) => {
+    setPending(acc);
+    setQuery(acc.name);
+  };
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-stone-800">{title}</h1>
-        {existing?.quoteStatus && (
-          <span className="px-3 py-1 rounded-full text-sm font-medium bg-[#F4F3F1] text-[#57534E]">
-            {existing.quoteStatus}
-          </span>
+  const save = () => {
+    setSelected(pending);
+    onSelect(pending?.id ?? null, pending?.name ?? null);
+    setEditing(false);
+    setQuery("");
+    setPending(null);
+  };
+
+  const clear = () => {
+    setSelected(null);
+    onSelect(null, null);
+    setEditing(false);
+    setQuery("");
+    setPending(null);
+  };
+
+  if (!editing) {
+    return (
+      <div className="flex items-center gap-2 min-h-8">
+        {selected ? (
+          <>
+            <span className="text-sm font-medium text-gray-800">{selected.name}</span>
+            <button
+              onClick={startEdit}
+              className="text-xs underline"
+              style={{ color: PRIMARY }}
+            >
+              Change
+            </button>
+            <button onClick={clear} className="text-gray-400 hover:text-red-500">
+              <X size={14} />
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={startEdit}
+            className="text-sm underline flex items-center gap-1"
+            style={{ color: PRIMARY }}
+          >
+            <Search size={13} /> Select Account
+          </button>
         )}
       </div>
+    );
+  }
 
-      <div className="flex gap-6 items-start">
-        {/* Left panel — 70% */}
-        <div className="flex-1 space-y-6 min-w-0">
+  return (
+    <div className="relative">
+      <div className="flex gap-2">
+        <Input
+          ref={inputRef}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search account name…"
+          className="h-8 text-sm"
+        />
+        <button onClick={save} className="text-green-600 hover:text-green-800">
+          <Check size={16} />
+        </button>
+        <button onClick={cancel} className="text-gray-400 hover:text-gray-600">
+          <X size={16} />
+        </button>
+      </div>
+      {results.length > 0 && (
+        <div className="absolute top-9 left-0 z-50 bg-white border border-gray-200 rounded shadow-md w-80 max-h-52 overflow-y-auto">
+          {results.map((acc) => (
+            <button
+              key={acc.id}
+              onClick={() => pick(acc)}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-orange-50 ${
+                pending?.id === acc.id ? "bg-orange-100 font-medium" : ""
+              }`}
+            >
+              {acc.name}
+              {acc.accountType && (
+                <span className="ml-2 text-xs text-gray-400">({acc.accountType})</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
-          {/* Quote Info */}
-          <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Quote Info</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-stone-600">Customer / Account Name</Label>
-                <Input value={accountName} onChange={e => setAccountName(e.target.value)} className="h-9 text-sm" placeholder="e.g. Kim Minjun" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-stone-600">Status</Label>
-                <Select value={quoteStatus} onValueChange={setQuoteStatus}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-stone-600">Expiry Date</Label>
-                <Input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} className="h-9 text-sm" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-stone-600">Save as Template</Label>
-                <div className="flex items-center gap-2 h-9">
-                  <input type="checkbox" id="is-template" checked={isTemplate}
-                    onChange={e => setIsTemplate(e.target.checked)} className="rounded" />
-                  <label htmlFor="is-template" className="text-sm text-stone-600">Yes, save as template</label>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-stone-600">Notes</Label>
-              <Textarea value={notes} onChange={e => setNotes(e.target.value)}
-                className="text-sm min-h-[60px] resize-none" placeholder="Internal notes or terms…" />
-            </div>
-          </div>
+// ─── Product Search Panel ─────────────────────────────────────────────────────
 
-          {/* Load Template */}
-          <div className="flex items-center gap-3">
-            <Label className="text-xs font-medium text-stone-600 shrink-0">Load Template:</Label>
-            <Select value={selectedTemplate} onValueChange={applyTemplate}>
-              <SelectTrigger className="h-9 text-sm w-72">
-                <SelectValue placeholder="Select a template…" />
+function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
+  const [search, setSearch] = useState("");
+  const [provider, setProvider] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const { data: productData } = useQuery<{ data: Product[]; total: number }>({
+    queryKey: ["products-quote-search", search, provider],
+    queryFn: () => {
+      const params = new URLSearchParams({ display_on_quote: "true", status: "Active", limit: "50" });
+      if (search) params.set("search", search);
+      if (provider) params.set("provider", provider);
+      return axios.get(`${BASE}/api/products?${params}`).then((r) => r.data);
+    },
+    enabled: open,
+    staleTime: 30_000,
+  });
+
+  const { data: formData } = useQuery<{ providers?: Account[] }>({
+    queryKey: ["product-form-data"],
+    queryFn: () => axios.get(`${BASE}/api/product-form-data`).then((r) => r.data),
+    staleTime: 60_000,
+  });
+
+  const providers: Account[] = formData?.providers ?? [];
+  const products = productData?.data ?? [];
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700"
+      >
+        <span className="flex items-center gap-2">
+          <Plus size={15} style={{ color: PRIMARY }} />
+          Add Products from Catalog
+        </span>
+        <ChevronDown
+          size={15}
+          className={`transition-transform text-gray-400 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="p-4 space-y-3">
+          <div className="flex gap-2 flex-wrap">
+            <Input
+              placeholder="Search products…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-8 text-sm flex-1 min-w-36"
+            />
+            <Select
+              value={provider || "_all"}
+              onValueChange={(v) => setProvider(v === "_all" ? "" : v)}
+            >
+              <SelectTrigger className="h-8 text-sm w-44">
+                <SelectValue placeholder="All Providers" />
               </SelectTrigger>
               <SelectContent>
-                {Object.keys(TEMPLATES).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                <SelectItem value="_all">All Providers</SelectItem>
+                {providers.map((p: any) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Line Items */}
-          <div className="bg-white border border-stone-200 rounded-xl overflow-hidden">
-            <div className="bg-stone-50 border-b border-stone-200 px-4 py-3">
-              <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Line Items</h2>
+          {products.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">
+              {search || provider ? "No products match your filters" : "Search to find products"}
+            </p>
+          ) : (
+            <div className="space-y-1 max-h-72 overflow-y-auto">
+              {products.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between px-3 py-2 rounded border border-gray-100 hover:border-orange-200 hover:bg-orange-50 group"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{p.productName}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {p.providerName && <span>{p.providerName} · </span>}
+                      {p.productType}
+                      {p.isGstIncluded ? " · GST incl." : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 ml-3 shrink-0">
+                    <span className="text-sm font-semibold text-gray-700">
+                      {p.price
+                        ? `$${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 2 })}`
+                        : "—"}
+                    </span>
+                    <button
+                      onClick={() => onAdd(p)}
+                      className="opacity-0 group-hover:opacity-100 text-white text-xs px-2 py-1 rounded transition-all"
+                      style={{ backgroundColor: PRIMARY }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b border-stone-100">
-                  <tr>
-                    <th className="text-left px-3 py-2 text-xs text-stone-400 font-medium w-36">Product</th>
-                    <th className="text-left px-3 py-2 text-xs text-stone-400 font-medium">Description</th>
-                    <th className="text-left px-3 py-2 text-xs text-stone-400 font-medium w-16">Qty</th>
-                    <th className="text-left px-3 py-2 text-xs text-stone-400 font-medium w-24">Unit Price</th>
-                    <th className="text-left px-3 py-2 text-xs text-stone-400 font-medium w-28">Module</th>
-                    <th className="text-left px-3 py-2 text-xs text-stone-400 font-medium w-16">GST %</th>
-                    <th className="text-right px-3 py-2 text-xs text-stone-400 font-medium w-24">Total</th>
-                    <th className="w-8" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-50">
-                  {items.map(item => (
-                    <tr key={item.id}>
-                      <td className="px-3 py-2">
-                        <Input value={item.productName}
-                          onChange={e => updateItem(item.id, "productName", e.target.value)}
-                          className="h-8 text-xs border-stone-200" placeholder="Product name" />
-                      </td>
-                      <td className="px-3 py-2">
-                        <Input value={item.description}
-                          onChange={e => updateItem(item.id, "description", e.target.value)}
-                          className="h-8 text-xs border-stone-200" placeholder="Optional" />
-                      </td>
-                      <td className="px-3 py-2">
-                        <Input type="number" min={1} value={item.qty}
-                          onChange={e => updateItem(item.id, "qty", Number(e.target.value))}
-                          className="h-8 text-xs border-stone-200 w-14" />
-                      </td>
-                      <td className="px-3 py-2">
-                        <Input type="number" min={0} step="0.01" value={item.unitPrice}
-                          onChange={e => updateItem(item.id, "unitPrice", e.target.value)}
-                          className="h-8 text-xs border-stone-200" />
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="space-y-1">
-                          <Select value={item.serviceModuleType || "__none"}
-                            onValueChange={v => updateItem(item.id, "serviceModuleType", v === "__none" ? "" : v)}>
-                            <SelectTrigger className="h-8 text-xs border-stone-200">
-                              <SelectValue placeholder="—" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none">—</SelectItem>
-                              {MODULE_OPTIONS.map(m => (
-                                <SelectItem key={m} value={m}>{MODULE_LABELS[m]}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {item.serviceModuleType && (
-                            <span className="text-[10px] font-medium text-[#F5821F]">
-                              {MODULE_LABELS[item.serviceModuleType]}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2">
-                        <Input type="number" min={0} max={100} value={item.gstRate}
-                          onChange={e => updateItem(item.id, "gstRate", e.target.value)}
-                          className="h-8 text-xs border-stone-200 w-14" />
-                      </td>
-                      <td className="px-3 py-2 text-right font-medium text-stone-700 text-xs">
-                        A${calcTotal(item).toLocaleString("en-AU", { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="px-3 py-2">
-                        <button onClick={() => removeItem(item.id)}
-                          className="p-1 rounded hover:bg-red-50 text-stone-300 hover:text-red-500 transition-colors">
-                          <Trash2 size={13} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Sortable Row ─────────────────────────────────────────────────────────────
+
+function SortableRow({
+  item,
+  onDelete,
+  onChange,
+}: {
+  item: QuoteProduct;
+  onDelete: (id: string) => void;
+  onChange: (id: string, field: string, value: unknown) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    background: isDragging ? "#fff7f0" : undefined,
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style} className="border-b border-gray-100 hover:bg-gray-50">
+      <td className="px-2 py-2 w-8">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab text-gray-300 hover:text-gray-500 touch-none"
+        >
+          <GripVertical size={15} />
+        </button>
+      </td>
+      <td className="px-2 py-2">
+        <input
+          className="w-full text-sm border border-transparent rounded px-1 py-0.5 focus:border-orange-300 focus:outline-none bg-transparent hover:bg-white"
+          value={item.name ?? ""}
+          onChange={(e) => onChange(item.id, "name", e.target.value)}
+        />
+        <input
+          className="w-full text-xs border border-transparent rounded px-1 py-0.5 focus:border-orange-300 focus:outline-none bg-transparent hover:bg-white text-gray-400 mt-0.5"
+          value={item.itemDescription ?? ""}
+          placeholder="Description…"
+          onChange={(e) => onChange(item.id, "itemDescription", e.target.value)}
+        />
+      </td>
+      <td className="px-2 py-2 w-28 text-xs text-gray-500 truncate max-w-[7rem]">
+        {item.providerName ?? "—"}
+      </td>
+      <td className="px-2 py-2 w-20">
+        <input
+          type="number"
+          min={1}
+          className="w-full text-sm text-center border border-transparent rounded px-1 py-0.5 focus:border-orange-300 focus:outline-none bg-transparent hover:bg-white"
+          value={item.quantity}
+          onChange={(e) => onChange(item.id, "quantity", Number(e.target.value))}
+        />
+      </td>
+      <td className="px-2 py-2 w-28">
+        <div className="flex items-center gap-1">
+          <span className="text-gray-400 text-xs">$</span>
+          <input
+            type="number"
+            min={0}
+            step={0.01}
+            className="w-full text-sm border border-transparent rounded px-1 py-0.5 focus:border-orange-300 focus:outline-none bg-transparent hover:bg-white"
+            value={item.price ?? ""}
+            onChange={(e) => onChange(item.id, "price", e.target.value)}
+          />
+        </div>
+      </td>
+      <td className="px-2 py-2 w-32">
+        <input
+          type="date"
+          className="w-full text-xs border border-transparent rounded px-1 py-0.5 focus:border-orange-300 focus:outline-none bg-transparent hover:bg-white"
+          value={item.dueDate ? item.dueDate.split("T")[0] : ""}
+          onChange={(e) => onChange(item.id, "dueDate", e.target.value)}
+        />
+      </td>
+      <td className="px-2 py-2 w-20 text-center">
+        <input
+          type="checkbox"
+          checked={item.isInitialPayment}
+          onChange={(e) => onChange(item.id, "isInitialPayment", e.target.checked)}
+          className="accent-orange-500"
+        />
+      </td>
+      <td className="px-2 py-2 w-24 text-right text-sm font-medium text-gray-700 tabular-nums">
+        {item.price
+          ? `$${(Number(item.price) * item.quantity).toLocaleString("en-AU", {
+              minimumFractionDigits: 2,
+            })}`
+          : "—"}
+      </td>
+      <td className="px-2 py-2 w-10 text-center">
+        <button
+          onClick={() => onDelete(item.id)}
+          className="text-gray-300 hover:text-red-500 transition-colors"
+        >
+          <Trash2 size={14} />
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+// ─── Manual Line Form ─────────────────────────────────────────────────────────
+
+function ManualLineForm({ onAdd }: { onAdd: (line: Partial<QuoteProduct>) => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [quantity, setQuantity] = useState(1);
+
+  const handleAdd = () => {
+    if (!name.trim()) return;
+    onAdd({ name, itemDescription: description, price, quantity, manualInput: true });
+    setName("");
+    setDescription("");
+    setPrice("");
+    setQuantity(1);
+    setOpen(false);
+  };
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700"
+      >
+        <span className="flex items-center gap-2">
+          <Plus size={15} style={{ color: PRIMARY }} />
+          Add Manual Line Item
+        </span>
+        <ChevronDown
+          size={15}
+          className={`transition-transform text-gray-400 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="p-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-gray-500">Item Name *</Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Airport Transfer"
+                className="h-8 text-sm mt-1"
+              />
             </div>
-            <div className="px-4 py-3 border-t border-stone-100">
-              <button onClick={() => setItems(prev => [...prev, newItem()])}
-                className="flex items-center gap-1.5 text-sm text-[#F5821F] hover:underline font-medium">
-                <Plus size={14} /> Add Line Item
-              </button>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs text-gray-500">Price (AUD)</Label>
+                <Input
+                  type="number"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="0.00"
+                  className="h-8 text-sm mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500">Qty</Label>
+                <Input
+                  type="number"
+                  value={quantity}
+                  min={1}
+                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  className="h-8 text-sm mt-1"
+                />
+              </div>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs text-gray-500">Description</Label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Optional description…"
+              className="h-8 text-sm mt-1"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={!name.trim()}
+              onClick={handleAdd}
+              style={{ backgroundColor: PRIMARY }}
+              className="text-white hover:opacity-90"
+            >
+              Add Line
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Quote Summary ────────────────────────────────────────────────────────────
+
+function QuoteSummary({ items }: { items: QuoteProduct[] }) {
+  const grouped: Record<string, QuoteProduct[]> = {};
+  for (const item of items) {
+    const key = item.providerName ?? "Manual / Other";
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(item);
+  }
+  const grandTotal = items.reduce(
+    (sum, item) => sum + Number(item.price ?? 0) * item.quantity,
+    0,
+  );
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+        <h3 className="text-sm font-semibold text-gray-700">Quote Summary</h3>
+      </div>
+      <div className="p-4 space-y-4">
+        {Object.keys(grouped).length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-2">No items</p>
+        ) : (
+          Object.entries(grouped).map(([providerKey, rows]) => {
+            const subtotal = rows.reduce(
+              (sum, r) => sum + Number(r.price ?? 0) * r.quantity,
+              0,
+            );
+            return (
+              <div key={providerKey}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    {providerKey}
+                  </span>
+                  <span className="text-xs font-semibold text-gray-600 tabular-nums">
+                    ${subtotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                {rows.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between text-sm py-0.5 pl-2">
+                    <span className="text-gray-700 truncate flex-1">{r.name ?? "Item"}</span>
+                    <span className="text-gray-400 text-xs ml-2 shrink-0">×{r.quantity}</span>
+                    <span className="text-gray-700 ml-4 tabular-nums shrink-0">
+                      $
+                      {(Number(r.price ?? 0) * r.quantity).toLocaleString("en-AU", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          })
+        )}
+        <div className="border-t border-gray-200 pt-3 flex items-center justify-between">
+          <span className="text-sm font-bold text-gray-800">Total</span>
+          <span className="text-base font-bold tabular-nums" style={{ color: PRIMARY }}>
+            ${grandTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function QuoteBuilderPage() {
+  const [match, params] = useRoute("/admin/crm/quotes/:id");
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const quoteId = params?.id;
+
+  const [lines, setLines] = useState<QuoteProduct[]>([]);
+  const [dirtyLines, setDirtyLines] = useState<Set<string>>(new Set());
+
+  const [quoteStatus, setQuoteStatus] = useState("Draft");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [studentAccountId, setStudentAccountId] = useState<string | null>(null);
+  const [studentAccountName, setStudentAccountName] = useState<string | null>(null);
+
+  // ── Fetch Quote ─────────────────────────────────────────────────────────────
+  const { data: quote, isLoading: quoteLoading } = useQuery<Quote>({
+    queryKey: ["quote", quoteId],
+    queryFn: () =>
+      axios.get(`${BASE}/api/crm/quotes/${quoteId}`).then((r) => r.data),
+    enabled: !!quoteId,
+  });
+
+  useEffect(() => {
+    if (!quote) return;
+    setQuoteStatus(quote.quoteStatus ?? "Draft");
+    setExpiryDate(quote.expiryDate ?? "");
+    setNotes(quote.notes ?? "");
+    setCustomerName(quote.customerName ?? "");
+    setStudentAccountId(quote.studentAccountId ?? null);
+    setStudentAccountName(quote.accountName ?? null);
+  }, [quote]);
+
+  // ── Fetch Quote Products ────────────────────────────────────────────────────
+  const { data: serverLines = [] } = useQuery<QuoteProduct[]>({
+    queryKey: ["quote-products", quoteId],
+    queryFn: () =>
+      axios.get(`${BASE}/api/quote-products?quoteId=${quoteId}`).then((r) => r.data),
+    enabled: !!quoteId,
+  });
+
+  useEffect(() => {
+    setLines([...serverLines].sort((a, b) => a.sortIndex - b.sortIndex));
+    setDirtyLines(new Set());
+  }, [serverLines]);
+
+  // ── DnD ─────────────────────────────────────────────────────────────────────
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setLines((prev) => {
+      const oldIdx = prev.findIndex((l) => l.id === active.id);
+      const newIdx = prev.findIndex((l) => l.id === over.id);
+      return arrayMove(prev, oldIdx, newIdx).map((l, i) => ({ ...l, sortIndex: i }));
+    });
+  };
+
+  // ── Line Change ─────────────────────────────────────────────────────────────
+  const handleLineChange = useCallback((id: string, field: string, value: unknown) => {
+    setLines((prev) => prev.map((l) => (l.id === id ? { ...l, [field]: value } : l)));
+    setDirtyLines((prev) => new Set(prev).add(id));
+  }, []);
+
+  // ── Add Product from Catalog ─────────────────────────────────────────────────
+  const addProductMutation = useMutation({
+    mutationFn: (p: Product) =>
+      axios.post(`${BASE}/api/quote-products`, {
+        quote_id: quoteId,
+        product_id: p.id,
+        name: p.productName,
+        item_description: p.itemDescription ?? p.description,
+        price: p.price ?? "0",
+        quantity: 1,
+        is_gst_included: p.isGstIncluded ?? false,
+        sort_index: lines.length,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["quote-products", quoteId] }),
+    onError: () => toast({ title: "Failed to add product", variant: "destructive" }),
+  });
+
+  // ── Add Manual Line ─────────────────────────────────────────────────────────
+  const addManualMutation = useMutation({
+    mutationFn: (line: Partial<QuoteProduct>) =>
+      axios.post(`${BASE}/api/quote-products`, {
+        quote_id: quoteId,
+        name: line.name,
+        item_description: line.itemDescription,
+        price: line.price ?? "0",
+        quantity: line.quantity ?? 1,
+        manual_input: true,
+        sort_index: lines.length,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["quote-products", quoteId] }),
+    onError: () => toast({ title: "Failed to add line item", variant: "destructive" }),
+  });
+
+  // ── Delete Line ─────────────────────────────────────────────────────────────
+  const deleteLine = async (id: string) => {
+    setLines((prev) => prev.filter((l) => l.id !== id));
+    setDirtyLines((prev) => {
+      const s = new Set(prev);
+      s.delete(id);
+      return s;
+    });
+    try {
+      await axios.delete(`${BASE}/api/quote-products/${id}`);
+      qc.invalidateQueries({ queryKey: ["quote-products", quoteId] });
+    } catch {
+      toast({ title: "Failed to delete item", variant: "destructive" });
+    }
+  };
+
+  // ── Save ─────────────────────────────────────────────────────────────────────
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      await axios.put(`${BASE}/api/crm/quotes/${quoteId}`, {
+        quoteStatus,
+        expiryDate: expiryDate || null,
+        notes,
+        customerName,
+        studentAccountId,
+        accountName: studentAccountName,
+      });
+
+      const dirtyArr = Array.from(dirtyLines);
+      await Promise.all(
+        dirtyArr.map((id) => {
+          const line = lines.find((l) => l.id === id);
+          if (!line) return Promise.resolve();
+          return axios.patch(`${BASE}/api/quote-products/${id}`, {
+            name: line.name,
+            item_description: line.itemDescription,
+            price: line.price,
+            quantity: line.quantity,
+            is_initial_payment: line.isInitialPayment,
+            due_date: line.dueDate || null,
+          });
+        }),
+      );
+
+      await axios.patch(`${BASE}/api/quote-products/reorder`, {
+        quoteId,
+        items: lines.map((l, i) => ({ id: l.id, sort_index: i })),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Quote saved" });
+      setDirtyLines(new Set());
+      qc.invalidateQueries({ queryKey: ["quote", quoteId] });
+      qc.invalidateQueries({ queryKey: ["quote-products", quoteId] });
+    },
+    onError: () => toast({ title: "Failed to save quote", variant: "destructive" }),
+  });
+
+  // ── Convert to Contract ─────────────────────────────────────────────────────
+  const convertMutation = useMutation({
+    mutationFn: () =>
+      axios.post(`${BASE}/api/crm/quotes/${quoteId}/convert-to-contract`),
+    onSuccess: () => {
+      toast({ title: "Quote converted to contract" });
+      qc.invalidateQueries({ queryKey: ["quote", quoteId] });
+    },
+    onError: (err: any) =>
+      toast({
+        title: err?.response?.data?.error ?? "Failed to convert",
+        variant: "destructive",
+      }),
+  });
+
+  if (quoteLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-orange-500" />
+      </div>
+    );
+  }
+
+  if (!quote) {
+    return (
+      <div className="p-8 text-center text-gray-400">
+        Quote not found.
+        <br />
+        <button
+          onClick={() => navigate("/admin/crm/quotes")}
+          className="text-orange-500 underline mt-2 block mx-auto"
+        >
+          Back to Quotes
+        </button>
+      </div>
+    );
+  }
+
+  const isSaving = saveMutation.isPending;
+  const activeLines = lines.filter((l) => !l.status || l.status === "Active");
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Bar */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() =>
+              navigate(
+                quote.leadId ? `/admin/crm/leads/${quote.leadId}` : "/admin/crm/quotes",
+              )
+            }
+            className="text-gray-500 hover:text-gray-800 flex items-center gap-1 text-sm"
+          >
+            <ArrowLeft size={16} /> Back
+          </button>
+          <div className="w-px h-5 bg-gray-200" />
+          <div className="flex items-center gap-2">
+            <span className="text-base font-semibold text-gray-800">
+              {quote.quoteRefNumber ?? "Quote Builder"}
+            </span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                quoteStatus === "Accepted"
+                  ? "bg-green-100 text-green-700"
+                  : quoteStatus === "Sent"
+                    ? "bg-blue-100 text-blue-700"
+                    : quoteStatus === "Declined"
+                      ? "bg-red-100 text-red-700"
+                      : quoteStatus === "Expired"
+                        ? "bg-gray-200 text-gray-600"
+                        : "bg-yellow-100 text-yellow-700"
+              }`}
+            >
+              {quoteStatus}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {quoteStatus !== "Accepted" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => convertMutation.mutate()}
+              disabled={convertMutation.isPending || activeLines.length === 0}
+              className="text-sm"
+            >
+              Convert to Contract
+            </Button>
+          )}
+          <Button
+            size="sm"
+            disabled={isSaving}
+            onClick={() => saveMutation.mutate()}
+            style={{ backgroundColor: PRIMARY }}
+            className="text-white hover:opacity-90 text-sm"
+          >
+            {isSaving ? "Saving…" : "Save Quote"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-3 gap-6">
+        {/* Left column: 2/3 */}
+        <div className="col-span-2 space-y-5">
+          {/* Quote Header Card */}
+          <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-gray-700 border-b border-gray-100 pb-2">
+              Quote Details
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-gray-500">Customer Name</Label>
+                <Input
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="e.g. John Smith"
+                  className="h-8 text-sm mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500">Status</Label>
+                <Select value={quoteStatus} onValueChange={setQuoteStatus}>
+                  <SelectTrigger className="h-8 text-sm mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Draft", "Sent", "Accepted", "Declined", "Expired"].map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-gray-500">Student Account</Label>
+                <div className="mt-1">
+                  <AccountLookupField
+                    currentId={studentAccountId}
+                    currentName={studentAccountName}
+                    onSelect={(id, name) => {
+                      setStudentAccountId(id);
+                      setStudentAccountName(name);
+                    }}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500">Expiry Date</Label>
+                <Input
+                  type="date"
+                  value={expiryDate}
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                  className="h-8 text-sm mt-1"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">Notes</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Internal notes…"
+                rows={2}
+                className="text-sm mt-1 resize-none"
+              />
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3">
-            <Button onClick={() => saveMutation.mutate("Draft")} disabled={saveMutation.isPending}
-              variant="outline" className="flex-1">
-              {saveMutation.isPending ? "Saving…" : "Save Draft"}
-            </Button>
-            <Button onClick={() => saveMutation.mutate("Sent")} disabled={saveMutation.isPending}
-              variant="outline" className="flex-1" style={{ borderColor: "#F5821F", color: "#F5821F" }}>
-              Send to Client
-            </Button>
-            {quoteId && (
-              <Button onClick={() => setConvertModal(true)}
-                className="flex-1 text-white flex items-center gap-2"
-                style={{ background: "#16A34A" }}>
-                Convert to Contract <ChevronRight size={14} />
-              </Button>
+          {/* Product Search */}
+          <ProductSearchPanel onAdd={(p) => addProductMutation.mutate(p)} />
+
+          {/* Manual Line */}
+          <ManualLineForm onAdd={(line) => addManualMutation.mutate(line as any)} />
+
+          {/* Payment Plan Table */}
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-700">Payment Plan</h3>
+              <span className="text-xs text-gray-400">
+                {activeLines.length} item{activeLines.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+
+            {activeLines.length === 0 ? (
+              <div className="text-center py-12 text-gray-400 text-sm">
+                <p>No items yet.</p>
+                <p className="text-xs mt-1">
+                  Add products from the catalog or create a manual line above.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-xs text-gray-400 font-medium bg-gray-50">
+                      <th className="px-2 py-2 w-8" />
+                      <th className="px-2 py-2 text-left">Item</th>
+                      <th className="px-2 py-2 text-left w-28">Provider</th>
+                      <th className="px-2 py-2 text-center w-20">Qty</th>
+                      <th className="px-2 py-2 text-left w-28">Price</th>
+                      <th className="px-2 py-2 text-left w-32">Due Date</th>
+                      <th className="px-2 py-2 text-center w-20">Initial?</th>
+                      <th className="px-2 py-2 text-right w-24">Subtotal</th>
+                      <th className="px-2 py-2 w-10" />
+                    </tr>
+                  </thead>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={activeLines.map((l) => l.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <tbody>
+                        {activeLines.map((item) => (
+                          <SortableRow
+                            key={item.id}
+                            item={item}
+                            onDelete={deleteLine}
+                            onChange={handleLineChange}
+                          />
+                        ))}
+                      </tbody>
+                    </SortableContext>
+                  </DndContext>
+                </table>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Right panel — 30% preview */}
-        <div className="w-72 shrink-0 space-y-4 sticky top-6">
-          <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-stone-700">Quote Summary</h2>
-              <FileDown size={14} className="text-stone-400" />
-            </div>
+        {/* Right column: 1/3 */}
+        <div className="col-span-1 space-y-4">
+          <QuoteSummary items={activeLines} />
 
-            {accountName && (
-              <div>
-                <p className="text-xs text-stone-400">Customer</p>
-                <p className="text-sm font-semibold text-stone-800">{accountName}</p>
+          {/* Quick Info */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2 text-sm">
+            <div className="flex justify-between text-gray-500">
+              <span>Quote Ref</span>
+              <span className="font-mono text-gray-700 text-xs">
+                {quote.quoteRefNumber ?? "—"}
+              </span>
+            </div>
+            {quote.leadId && (
+              <div className="flex justify-between text-gray-500">
+                <span>Lead</span>
+                <button
+                  onClick={() => navigate(`/admin/crm/leads/${quote.leadId}`)}
+                  className="text-xs underline"
+                  style={{ color: PRIMARY }}
+                >
+                  View Lead
+                </button>
               </div>
             )}
-            {expiryDate && (
-              <div>
-                <p className="text-xs text-stone-400">Expires</p>
-                <p className="text-sm text-stone-700">{format(new Date(expiryDate), "MMM d, yyyy")}</p>
+            <div className="flex justify-between text-gray-500">
+              <span>Line Items</span>
+              <span className="text-gray-700">{activeLines.length}</span>
+            </div>
+            {activeLines.some((l) => l.isInitialPayment) && (
+              <div className="flex justify-between text-gray-500">
+                <span>Initial Payment</span>
+                <span className="text-gray-700 font-medium tabular-nums">
+                  $
+                  {activeLines
+                    .filter((l) => l.isInitialPayment)
+                    .reduce((s, l) => s + Number(l.price ?? 0) * l.quantity, 0)
+                    .toLocaleString("en-AU", { minimumFractionDigits: 2 })}
+                </span>
               </div>
             )}
-
-            <div className="border-t border-stone-100 pt-3 space-y-2">
-              {items.filter(it => it.productName).map(it => (
-                <div key={it.id} className="flex justify-between items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-stone-700 truncate">{it.productName}</p>
-                    {it.serviceModuleType && (
-                      <p className="text-[10px] text-[#F5821F]">{MODULE_LABELS[it.serviceModuleType]}</p>
-                    )}
-                  </div>
-                  <p className="text-xs font-medium text-stone-700 shrink-0">
-                    A${calcTotal(it).toLocaleString("en-AU", { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t border-stone-200 pt-3 space-y-1.5 text-sm">
-              <div className="flex justify-between text-stone-500">
-                <span>Subtotal</span>
-                <span>A${subtotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between text-stone-500">
-                <span>GST</span>
-                <span>A${gstTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between font-bold text-stone-800 text-base border-t border-stone-200 pt-2">
-                <span>TOTAL</span>
-                <span>A${grandTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</span>
-              </div>
-            </div>
-
-            {items.some(it => it.serviceModuleType) && (
-              <div className="border-t border-stone-100 pt-3">
-                <p className="text-xs text-stone-400 mb-2">Service Modules</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {[...new Set(items.map(it => it.serviceModuleType).filter(Boolean))].map(mod => (
-                    <span key={mod} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#FEF0E3] text-[#F5821F]">
-                      {MODULE_LABELS[mod!]}
-                    </span>
-                  ))}
-                </div>
-              </div>
+            {dirtyLines.size > 0 && (
+              <p className="text-xs text-amber-600 pt-1">
+                Unsaved changes — click Save Quote to apply.
+              </p>
             )}
           </div>
         </div>
       </div>
-
-      {/* Convert to Contract Modal */}
-      {convertModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-stone-800">Convert to Contract</h3>
-              <button onClick={() => setConvertModal(false)} className="p-1 rounded hover:bg-stone-100">
-                <X size={16} className="text-stone-400" />
-              </button>
-            </div>
-            <p className="text-sm text-stone-600">
-              This will create a new contract and automatically activate service modules for:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {[...new Set(items.map(it => it.serviceModuleType).filter(Boolean))].map(mod => (
-                <span key={mod} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-[#DCFCE7] text-[#16A34A]">
-                  <Check size={11} /> {MODULE_LABELS[mod!]}
-                </span>
-              ))}
-            </div>
-            <p className="text-sm text-stone-500 bg-stone-50 rounded-lg p-3">
-              The quote status will be updated to <strong>Accepted</strong>. This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => convertMutation.mutate()}
-                disabled={convertMutation.isPending}
-                className="flex-1 text-white"
-                style={{ background: "#16A34A" }}
-              >
-                {convertMutation.isPending ? "Converting…" : "Confirm & Convert"}
-              </Button>
-              <Button variant="outline" onClick={() => setConvertModal(false)} className="flex-1">
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

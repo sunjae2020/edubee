@@ -536,19 +536,22 @@ router.get("/products", authenticate, async (req, res) => {
     const {
       productType, status, page = "1", limit = "20",
       search, productPriority, productGrade, productTypeId, productGroup,
-      searchCategory,
+      searchCategory, display_on_quote, provider,
     } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
 
     const conditions: SQL[] = [];
-    if (productType) conditions.push(eq(products.productType, productType));
-    if (status)      conditions.push(eq(products.status, status));
-    if (productPriority) conditions.push(eq(products.productPriority, parseInt(productPriority)));
-    if (productGrade)    conditions.push(eq(products.productGrade, productGrade));
-    if (productTypeId)   conditions.push(eq(products.productTypeId, productTypeId));
-    if (productGroup)    conditions.push(eq(productTypes.productGroupId, productGroup));
+    if (productType)      conditions.push(eq(products.productType, productType));
+    if (status)           conditions.push(eq(products.status, status));
+    if (productPriority)  conditions.push(eq(products.productPriority, parseInt(productPriority)));
+    if (productGrade)     conditions.push(eq(products.productGrade, productGrade));
+    if (productTypeId)    conditions.push(eq(products.productTypeId, productTypeId));
+    if (productGroup)     conditions.push(eq(productTypes.productGroupId, productGroup));
+    if (display_on_quote === "true")  conditions.push(eq(products.displayOnQuote, true));
+    if (display_on_quote === "false") conditions.push(eq(products.displayOnQuote, false));
+    if (provider)         conditions.push(eq(products.providerId, provider));
     if (search) {
       const q = `%${search}%`;
       if (searchCategory === "provider") {
@@ -563,20 +566,30 @@ router.get("/products", authenticate, async (req, res) => {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     const baseFrom = db.select({
-      id:              products.id,
-      productName:     products.productName,
-      productType:     products.productType,
-      description:     products.description,
-      cost:            products.cost,
-      currency:        products.currency,
-      price:           products.price,
-      productGrade:    products.productGrade,
-      productPriority: products.productPriority,
-      status:          products.status,
-      providerId:      products.providerId,
-      providerName:    accounts.name,
-      createdAt:       products.createdAt,
-      updatedAt:       products.updatedAt,
+      id:                products.id,
+      productName:       products.productName,
+      productType:       products.productType,
+      description:       products.description,
+      itemDescription:   products.itemDescription,
+      cost:              products.cost,
+      currency:          products.currency,
+      price:             products.price,
+      productGrade:      products.productGrade,
+      productPriority:   products.productPriority,
+      status:            products.status,
+      providerId:        products.providerId,
+      providerName:      accounts.name,
+      numberOfPayments:  products.numberOfPayments,
+      minimumPayment:    products.minimumPayment,
+      isRecommend:       products.isRecommend,
+      isGstIncluded:     products.isGstIncluded,
+      displayOnQuote:    products.displayOnQuote,
+      displayOnInvoice:  products.displayOnInvoice,
+      defaultPaymentTerm: products.defaultPaymentTerm,
+      installmentPlan:   products.installmentPlan,
+      promotionId:       products.promotionId,
+      createdAt:         products.createdAt,
+      updatedAt:         products.updatedAt,
     })
       .from(products)
       .leftJoin(accounts, eq(products.providerId, accounts.id))

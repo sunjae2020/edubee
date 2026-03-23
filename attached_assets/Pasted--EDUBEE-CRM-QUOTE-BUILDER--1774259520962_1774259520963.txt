@@ -1,0 +1,764 @@
+================================================================
+EDUBEE CRM — QUOTE BUILDER 통합 개발 프롬프트 v1.0
+================================================================
+
+## 전문가 역할 정의
+
+너는 아래 두 가지 전문성을 겸비한 시니어 전문가로 행동한다:
+
+- 유학원 전문가: 유학원 직원 운영 20년 경력. 학비 견적, 분납 설계,
+  학교/학생 관계 관리의 실제 워크플로우와 Pain Point를 이해함
+- IT 시니어 전문가: 풀스택 개발 + BA + 아키텍트 역량 보유.
+  MVP 구현과 SaaS 확장성을 동시에 고려한 의사결정
+
+---
+
+## 프로젝트 개요
+
+| 항목 | 내용 |
+|------|------|
+| 프로젝트명 | Edubee CRM — 유학원 전용 통합 관리 SaaS |
+| 현재 단계 | Replit 기반 Beta/MVP |
+| 기술 스택 | React + TypeScript + Vite / Node.js + Express + Drizzle ORM + PostgreSQL |
+| 핵심 원칙 | 기존 작동 코드를 절대 깨지 않는다 |
+
+---
+
+## 작업 범위
+
+Quote(견적서) 신규 생성(New Quote) 및 수정(Quote Builder) 화면을
+아래 명세에 따라 구현/개선한다.
+
+---
+
+## 모든 작업 전 필수 분석 단계
+
+코드를 수정하기 전에 반드시 아래를 먼저 수행한다:
+
+1. 아래 파일 전체를 읽는다
+   - /db/schema.ts
+     → quotes, quote_products, products, accounts, contacts 테이블 확인
+   - /server/src/routes/
+     → quote, quote-products, accounts, products 관련 라우트 전체 확인
+   - /client/src/pages/
+     → Quote 생성/수정 페이지 파일 확인
+   - /client/src/components/
+     → Quote 관련 컴포넌트 확인
+   - package.json
+     → @dnd-kit 또는 react-beautiful-dnd 설치 여부 확인
+
+2. 실제로 무엇이 없거나 문제인지 확인한다
+
+3. 수정/생성할 파일 목록과 변경 내용을 나에게 먼저 보고한다
+
+4. 내가 명시적으로 "진행해" 라고 하기 전까지 수정하지 않는다
+   (단, 내가 "바로 해줘" 라고 요청한 경우는 즉시 진행)
+
+---
+
+## DB 스키마 참조 (읽기 전용 — 컬럼 삭제·이름 변경 절대 금지)
+
+### quotes 테이블
+  id                    UUID PK
+  quote_ref_number      VARCHAR(50) UNIQUE  -- QTE-XXXXXXXX 자동생성
+  quote_status          VARCHAR(50)         -- Draft|Sent|Accepted|Declined|Expired
+  customer_name         VARCHAR(255)
+  customer_contact_id   UUID FK → contacts.id
+  student_account_id    UUID FK → accounts.id   ← Account 룩업 필드
+  lead_id               UUID FK → leads.id
+  expiry_date           DATE
+  note                  TEXT
+  is_template           BOOLEAN DEFAULT false
+  owner_id              UUID FK → users.id
+  status                VARCHAR(20) DEFAULT 'Active'
+  created_on / modified_on TIMESTAMP
+
+### quote_products 테이블
+  id                    UUID PK
+  quote_id              UUID NOT NULL FK → quotes.id
+  product_id            UUID FK → products.id   -- manual이면 NULL
+  manual_input          BOOLEAN DEFAULT false
+  name                  VARCHAR(255)
+  item_description      TEXT
+  price                 DECIMAL(12,2) NOT NULL
+  quantity              INTEGER DEFAULT 1
+  is_initial_payment    BOOLEAN DEFAULT false   -- Initial Payment 체크박스
+  due_date              TIMESTAMP
+  sort_index            INTEGER                 -- 정렬 순서
+  is_gst_included       BOOLEAN DEFAULT false
+  status                VARCHAR(20) DEFAULT 'Active'
+  created_on / modified_on TIMESTAMP
+
+### products 테이블 (Quote 검색용)
+  id                    UUID PK
+  name                  VARCHAR(255) NOT NULL
+  price                 DECIMAL(12,2) NOT NULL
+  item_description      TEXT
+  provider_id           UUID FK → accounts.id   -- Provider 이름 표시
+  number_of_payments    INTEGER                 -- 분납 횟수
+  minimum_payment       DECIMAL(12,2)           -- 최소 납부 금액 (NULL 가능)
+  default_payment_term  VARCHAR(50)
+  installment_plan      VARCHAR(50)
+  display_on_quote      BOOLEAN DEFAULT true    -- true만 검색 가능
+  display_on_invoice    BOOLEAN DEFAULT true
+  is_gst_included       BOOLEAN DEFAULT false
+  is_recommend          BOOLEAN DEFAULT false
+  product_grade         VARCHAR(50)
+  category_1_id         UUID FK → product_groups.id
+  product_type_id       UUID FK → product_types.id
+  promotion_id          UUID FK → promotions.id
+  tax_rate_id           UUID FK → tax_rates.id
+  status                VARCHAR(20) DEFAULT 'Active'
+
+### accounts 테이블
+  id                    UUID PK
+  name                  VARCHAR(255) NOT NULL
+  account_type          VARCHAR(50)
+  status                VARCHAR(20) DEFAULT 'Active'
+
+---
+
+## 기능 요구사항 상세 명세
+
+================================================================
+[REQ-1] Account 필드 — 룩업(Lookup) + 빠른 생성
+================================================================
+
+위치: Quote 헤더 영역 "Account" 필드
+DB 저장: quotes.student_account_id
+
+동작:
+1. Account 필드 클릭 → 모달 팝업(새창 형태)으로 Account 검색
+2. 검색어 입력 → accounts.name ILIKE '%검색어%' AND status='Active' 필터
+3. 결과 리스트 선택 → student_account_id 저장, X 버튼으로 선택 해제
+4. 검색 결과 없을 경우 → "＋ 새 Account 생성" 버튼 표시
+5. "새 Account 생성" 클릭 → 동일 모달 내 간단 생성 폼 표시
+   - 필수 입력: Name (VARCHAR 255)
+   - 선택 입력: Account Type
+   - [저장] → POST /api/accounts 생성 후 즉시 해당 Account 선택 상태로 반환
+   - 생성 완료 후 모달 닫고 Quote 헤더에 선택된 Account 표시
+
+API:
+  GET  /api/accounts?search={keyword}&status=Active
+  POST /api/accounts   body: { name, account_type? }
+
+================================================================
+[REQ-2, 3] Product 검색 및 Quote Line 추가
+================================================================
+
+위치: "Select Quote Products" 섹션
+
+검색 조건 (반드시 준수):
+  - products.display_on_quote = TRUE 인 것만 검색 가능 ← 핵심
+  - products.status = 'Active' 인 것만 표시
+  - 필터: 텍스트(name), Group Category(category_1_id),
+          Product Type(product_type_id), Provider(provider_id)
+
+검색 결과 테이블 컬럼:
+  PRODUCT PROVIDER | NAME | GRADE | RECOMMENDED | DEFAULT PAYMENT TERM
+  | NUMBER OF PAYMENTS | PRICE | GST | TOTAL PAYMENT | PROMOTION | QUANTITY
+
+  - PRODUCT PROVIDER: products.provider_id → JOIN accounts.name
+  - RECOMMENDED: products.is_recommend (아이콘 또는 뱃지 표시)
+  - 각 행 우측에 [Add Quote Item] 버튼
+
+[Add Quote Item] 클릭 시:
+  - REQ-4~6 분납 로직에 따라 quote_products 행 자동 생성
+  - Payment Plan 섹션 즉시 갱신
+
+API:
+  GET /api/products
+    ?display_on_quote=true
+    &status=Active
+    &search=
+    &category1=
+    &productType=
+    &provider=
+  → products
+    JOIN accounts AS provider ON products.provider_id = accounts.id
+    JOIN product_groups ON products.category_1_id = product_groups.id
+    JOIN product_types ON products.product_type_id = product_types.id
+
+================================================================
+[REQ-4, 5, 6] 분납(Payment Split) 자동 계산 로직
+================================================================
+
+Product를 Quote에 추가할 때 number_of_payments 값에 따라
+quote_products 행을 자동 생성한다.
+
+─── CASE A: minimum_payment = NULL 또는 0 ───────────────────
+
+  균등 분할: 각 회차 금액 = price ÷ number_of_payments
+  마지막 회차는 나머지 금액으로 반올림 오차 처리
+
+  예) price=1000, number_of_payments=4
+    → 회차 1: $250.00  is_initial_payment=true
+    → 회차 2: $250.00
+    → 회차 3: $250.00
+    → 회차 4: $250.00
+    → 합계: $1,000.00 ✓
+
+─── CASE B: minimum_payment 값이 있는 경우 ──────────────────
+
+  첫 번째 납부 = minimum_payment  (is_initial_payment=true)
+  나머지 = (price - minimum_payment) ÷ (number_of_payments - 1)
+  마지막 회차는 나머지 금액으로 반올림 오차 처리
+
+  예) price=1000, minimum_payment=100, number_of_payments=4
+    → 회차 1: $100.00  is_initial_payment=true
+    → 회차 2: $300.00
+    → 회차 3: $300.00
+    → 회차 4: $300.00
+    → 합계: $1,000.00 ✓
+
+─── CASE C: number_of_payments = 1 ──────────────────────────
+
+  단일 행 1개만 생성
+  is_initial_payment = true, price = 전체 금액
+
+─── sort_index 부여 규칙 ─────────────────────────────────────
+
+  기존 quote_products 중 가장 큰 sort_index + 1부터 순서대로 부여
+
+─── 헬퍼 함수 (프론트엔드 또는 백엔드 공통 사용) ────────────
+```typescript
+function generatePaymentSplits(
+  product: {
+    price: number;
+    number_of_payments: number;
+    minimum_payment: number | null;
+    name: string;
+    provider_id: string | null;
+  },
+  baseIndex: number
+): Omit<QuoteProduct, 'id' | 'quote_id'>[] {
+  const n = product.number_of_payments || 1;
+  const price = Math.round(product.price * 100) / 100;
+  const minPay = product.minimum_payment;
+  const splits = [];
+
+  if (!minPay || minPay === 0) {
+    // CASE A: 균등 분할
+    const each = Math.round((price / n) * 100) / 100;
+    for (let i = 0; i < n; i++) {
+      const isLast = i === n - 1;
+      splits.push({
+        name: product.name,
+        price: isLast
+          ? Math.round((price - each * (n - 1)) * 100) / 100
+          : each,
+        quantity: 1,
+        is_initial_payment: i === 0,
+        due_date: null,
+        sort_index: baseIndex + i,
+        manual_input: false,
+        item_description: null,
+        product_id: product.id ?? null,
+      });
+    }
+  } else {
+    // CASE B: 최소 납부 + 균등 분할
+    const remaining = Math.round((price - minPay) * 100) / 100;
+    const eachRest = n > 1
+      ? Math.round((remaining / (n - 1)) * 100) / 100
+      : 0;
+    for (let i = 0; i < n; i++) {
+      const isFirst = i === 0;
+      const isLast  = i === n - 1;
+      splits.push({
+        name: product.name,
+        price: isFirst
+          ? minPay
+          : isLast
+            ? Math.round((remaining - eachRest * (n - 2)) * 100) / 100
+            : eachRest,
+        quantity: 1,
+        is_initial_payment: isFirst,
+        due_date: null,
+        sort_index: baseIndex + i,
+        manual_input: false,
+        item_description: null,
+        product_id: product.id ?? null,
+      });
+    }
+  }
+  return splits;
+}
+```
+
+================================================================
+[REQ-7] Payment Plan — 금액 및 날짜 인라인 편집
+================================================================
+
+- PAYMENT(price) 컬럼: 숫자 인풋으로 인라인 편집 가능
+- DUE DATE 컬럼: 날짜 피커로 인라인 편집 가능
+- QUANTITY 컬럼: 숫자 인풋으로 인라인 편집 가능
+- INITIAL PAYMENT 컬럼: 체크박스 클릭으로 토글
+- 각 필드 변경 시 → 즉시 PATCH /api/quote-products/:id 호출로 저장
+  (onBlur 또는 onChange debounce 500ms 적용)
+
+API:
+  PATCH /api/quote-products/:id
+  body: {
+    price?: number,
+    due_date?: string | null,
+    quantity?: number,
+    is_initial_payment?: boolean
+  }
+
+================================================================
+[REQ-8] Payment Plan 테이블 컬럼 구성
+================================================================
+
+Payment Plan 섹션의 테이블은 아래 컬럼만 표시한다:
+
+  [핸들]│ORDER│PRODUCT PROVIDER│NAME│QTY│# PAYMENTS│PAYMENT│INITIAL PAYMENT│DUE DATE│[삭제]
+
+  컬럼 상세:
+  ┌─────────────────────┬──────────────────────────────────────────────┐
+  │ 컬럼                │ 상세                                          │
+  ├─────────────────────┼──────────────────────────────────────────────┤
+  │ [핸들]              │ 드래그 핸들 아이콘 (⠿), cursor:grab          │
+  │ ORDER               │ sort_index 기반 번호 표시                     │
+  │ PRODUCT PROVIDER    │ product.provider_id → accounts.name JOIN      │
+  │ NAME                │ quote_products.name                           │
+  │ QTY                 │ quantity — 인라인 숫자 입력                   │
+  │ # PAYMENTS          │ 해당 product_id 그룹의 행 수 — 숫자 입력      │
+  │                     │ (manual 행은 비활성화)                        │
+  │ PAYMENT             │ price — 인라인 숫자 입력                      │
+  │ INITIAL PAYMENT     │ is_initial_payment — 체크박스                 │
+  │ DUE DATE            │ due_date — 날짜 피커                          │
+  │ [삭제]              │ 휴지통 아이콘 → DELETE /api/quote-products/:id│
+  └─────────────────────┴──────────────────────────────────────────────┘
+
+================================================================
+[REQ-9] Manual Quote Line — "Adding Manual Quote Products"
+================================================================
+
+위치: Payment Plan 섹션 하단 별도 섹션
+
+입력 필드:
+  - Name (텍스트)
+  - Description (텍스트)
+  - Price (숫자, 기본값 0)
+  - [Add] 버튼
+
+[Add] 클릭 시 quote_products 신규 생성:
+  manual_input    = true
+  product_id      = NULL
+  name            = 입력값
+  item_description= Description 입력값
+  price           = 입력값
+  quantity        = 1
+  is_initial_payment = false
+  sort_index      = 현재 최대 sort_index + 1
+
+입력 완료 후 필드 초기화, Payment Plan 테이블 즉시 갱신
+
+API:
+  POST /api/quote-products
+  body: { quote_id, name, item_description, price, quantity,
+          is_initial_payment, sort_index, manual_input: true }
+
+================================================================
+[REQ-10] 두 개 섹션으로 화면 구성
+================================================================
+
+─── 섹션 1: "Payment Plan" ──────────────────────────────────
+
+  - 모든 quote_products 행을 sort_index 순으로 표시
+  - REQ-8 컬럼 구성 적용
+  - 하단에 전체 납부 금액 합계(Total Amount) 표시
+  - 하단에 "Adding Manual Quote Products" 서브섹션
+
+─── 섹션 2: "Quote Products" ────────────────────────────────
+
+  - quote_products를 product_id 기준으로 그룹화하여 요약 표시
+  - 컬럼:
+    PRODUCT PROVIDER │ NAME │ DESCRIPTION │ PRICE │ GST │ TOTAL PAYMENT │ QUANTITY │ ACTION
+  - ACTION 컬럼: 삭제(휴지통) 아이콘
+    → 해당 product_id의 모든 quote_products 행 일괄 삭제
+  - 하단 버튼 4개:
+    [New Quote]  [Update Quote]  [View Quote]  [Create Contract]
+
+================================================================
+[REQ-11] # PAYMENTS 인라인 수정 — 분납 횟수 변경 및 재계산
+================================================================
+
+Payment Plan 테이블의 # PAYMENTS 컬럼 숫자를 직접 수정하면
+해당 Product의 quote_products 행 전체를 재계산하여 갱신한다.
+
+동작 Flow:
+  1. 사용자가 # PAYMENTS 값 변경 (예: 4 → 2)
+  2. 확인 모달 표시:
+     "납부 횟수를 {기존}회에서 {새값}회로 변경합니다.
+      기존 납부 일정이 초기화됩니다. 계속하시겠습니까?"
+     [취소] [확인]
+  3. [확인] 클릭 →
+     a. 해당 product_id의 기존 quote_products 행 전체 삭제
+        → DELETE /api/quote-products/bulk
+          body: { quoteId, productId }
+     b. 재계산 기준 금액 결정:
+        - 기존 행들의 price 합계 = 사용자 수정 여부 반영
+        - 합계가 원본 products.price와 같으면 원본 사용
+        - 다르면 현재 합계 사용 (사용자가 이미 수정한 경우)
+     c. generatePaymentSplits() 호출하여 새 행 생성
+        - number_of_payments = 새로 입력한 값
+        - minimum_payment = products.minimum_payment 원본값 유지
+     d. POST /api/quote-products/bulk 로 일괄 생성
+  4. Payment Plan 테이블 즉시 갱신
+
+Edge Cases:
+  - # PAYMENTS = 0 또는 음수 → 입력 차단 (min=1)
+  - minimum_payment > price / new_n →
+    경고: "최소 납부 금액이 분납 금액보다 큽니다. 최소 납부 금액을 확인하세요."
+  - due_date는 재계산 시 null로 초기화 (사용자가 다시 입력)
+  - manual_input = true 행은 # PAYMENTS 컬럼 비활성화(disabled)
+
+API:
+  DELETE /api/quote-products/bulk
+  body: { quoteId: string, productId: string }
+  → DELETE FROM quote_products
+    WHERE quote_id = :quoteId AND product_id = :productId AND status = 'Active'
+
+  POST /api/quote-products/bulk
+  body: {
+    quoteId: string,
+    items: Array<{
+      name, product_id, price, quantity,
+      is_initial_payment, due_date, sort_index,
+      manual_input, item_description
+    }>
+  }
+  → 다건 INSERT
+
+================================================================
+[REQ-12] 마우스 드래그 앤 드롭으로 행 순서 변경
+================================================================
+
+Payment Plan 테이블의 각 행을 마우스 드래그로 순서 변경 가능.
+변경된 순서는 즉시 DB의 sort_index에 반영.
+
+─── 라이브러리 선택 규칙 ────────────────────────────────────
+
+  package.json 확인 후:
+  - @dnd-kit/core 설치되어 있으면 → @dnd-kit 사용
+  - react-beautiful-dnd 설치되어 있으면 → react-beautiful-dnd 사용
+  - 둘 다 없으면 → @dnd-kit 설치 후 사용
+    (react-beautiful-dnd는 React 18 StrictMode 호환 이슈로 비권장)
+
+  설치 명령어 (필요시에만):
+  npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+
+─── UI 동작 ─────────────────────────────────────────────────
+
+  드래그 핸들:
+  - 각 행 맨 왼쪽에 ⠿ 아이콘 표시
+  - 핸들 hover: cursor: grab
+  - 드래그 중: cursor: grabbing
+  - 핸들 영역만 드래그 가능 (행 전체 X)
+  - activationConstraint: { distance: 5 }
+    (5px 이상 움직여야 드래그 시작 — 클릭과 구분)
+
+  드래그 시각 효과:
+  - 드래그 중인 행: opacity 0.5 + border: 2px solid #F5821F
+  - 드롭 위치: 행 사이에 2px solid #F5821F 구분선
+  - Ghost 요소가 커서를 따라 이동
+
+─── 동작 Flow ───────────────────────────────────────────────
+
+  1. 드래그 완료 → 프론트엔드 즉시 리스트 재정렬 (낙관적 업데이트)
+  2. 새 sort_index 계산 → 0부터 순차 재부여
+  3. PATCH /api/quote-products/reorder 호출
+  4. API 실패 시 → 원래 순서로 롤백 + 에러 토스트 표시
+
+─── 구현 코드 가이드 (@dnd-kit 기준) ───────────────────────
+```typescript
+import {
+  DndContext, closestCenter,
+  KeyboardSensor, PointerSensor,
+  useSensor, useSensors, DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext, sortableKeyboardCoordinates,
+  verticalListSortingStrategy, useSortable, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// 각 행 컴포넌트
+function SortableQuoteRow({ row }: { row: QuoteProduct }) {
+  const {
+    attributes, listeners, setNodeRef,
+    transform, transition, isDragging,
+  } = useSortable({ id: row.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    border: isDragging ? '2px solid #F5821F' : undefined,
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style}>
+      <td>
+        <span
+          {...attributes}
+          {...listeners}
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        >⠿</span>
+      </td>
+      {/* 나머지 컬럼 */}
+    </tr>
+  );
+}
+
+// Payment Plan 테이블
+function PaymentPlanTable({ quoteId, rows }) {
+  const [items, setItems] = useState(rows);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = items.findIndex(i => i.id === active.id);
+    const newIndex  = items.findIndex(i => i.id === over.id);
+    const reordered = arrayMove(items, oldIndex, newIndex);
+
+    setItems(reordered); // 낙관적 업데이트
+
+    const payload = reordered.map((item, idx) => ({
+      id: item.id, sort_index: idx,
+    }));
+
+    try {
+      await fetch('/api/quote-products/reorder', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quoteId, items: payload }),
+      });
+    } catch {
+      setItems(items); // 롤백
+      // 에러 토스트 표시
+    }
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={items.map(i => i.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <table>
+          {/* 헤더 + 바디 */}
+          <tbody>
+            {items.map(row => (
+              <SortableQuoteRow key={row.id} row={row} />
+            ))}
+          </tbody>
+        </table>
+      </SortableContext>
+    </DndContext>
+  );
+}
+```
+
+─── 기존 ↑↓ 버튼과의 통합 ──────────────────────────────────
+
+  - 기존 ↑↓ 버튼 유지 (드래그와 병행)
+  - ↑↓ 버튼도 동일한 PATCH /api/quote-products/reorder API 사용
+  - 두 방법 모두 동일한 로직으로 통일
+
+─── Drag & Drop Edge Cases ──────────────────────────────────
+
+  | 상황                       | 처리                                  |
+  |---------------------------|---------------------------------------|
+  | 같은 위치에 드롭           | API 호출 없이 무시                     |
+  | 단일 행(1개)               | DndContext 유지, 드래그 동작 없음      |
+  | 드래그 중 스크롤 필요      | @dnd-kit auto-scroll 기본 활성화      |
+  | ESC 키                     | 드래그 취소, 원위치 복원               |
+  | 네트워크 오류              | 낙관적 업데이트 롤백 + 에러 토스트     |
+  | 모바일 터치                | PointerSensor가 터치 이벤트 자동 처리  |
+
+---
+
+## API 엔드포인트 전체 명세
+
+### Accounts
+  GET  /api/accounts?search=&status=Active
+  POST /api/accounts          body: { name, account_type? }
+
+### Products
+  GET  /api/products
+    ?display_on_quote=true&status=Active
+    &search=&category1=&productType=&provider=
+
+### Quotes
+  POST  /api/quotes            신규 생성
+  GET   /api/quotes/:id        조회
+  PATCH /api/quotes/:id        수정
+
+### Quote Products (라우트 등록 순서 엄수)
+  ⚠️ Express 라우트는 반드시 아래 순서로 등록할 것:
+     구체적 경로 먼저, 파라미터 경로 나중
+
+  POST  /api/quote-products            단건 생성
+  POST  /api/quote-products/bulk       일괄 생성
+  PATCH /api/quote-products/reorder    순서 일괄 업데이트  ← 반드시 /:id 보다 먼저
+  PATCH /api/quote-products/:id        단건 수정
+  DELETE /api/quote-products/bulk      product 그룹 일괄 삭제  ← 반드시 /:id 보다 먼저
+  DELETE /api/quote-products/:id       단건 삭제
+
+  ─── PATCH /api/quote-products/reorder ───────────────────
+  body: {
+    quoteId: string,
+    items: Array<{ id: string, sort_index: number }>
+  }
+  동작: 전달된 id들이 모두 해당 quoteId 소속인지 검증 후
+        UPDATE quote_products
+        SET sort_index = :newIndex, modified_on = NOW()
+        WHERE id = :id AND quote_id = :quoteId
+  response: { success: true, updated: number }
+
+  ─── DELETE /api/quote-products/bulk ─────────────────────
+  body: { quoteId: string, productId: string }
+  동작: DELETE FROM quote_products
+        WHERE quote_id = :quoteId
+          AND product_id = :productId
+          AND status = 'Active'
+
+  ─── POST /api/quote-products/bulk ───────────────────────
+  body: {
+    quoteId: string,
+    items: Array<{
+      name, product_id, price, quantity,
+      is_initial_payment, due_date, sort_index,
+      manual_input, item_description
+    }>
+  }
+  동작: 다건 INSERT
+
+---
+
+## 디자인 시스템 (Edubee CRM 브랜드 — 반드시 준수)
+
+### 색상 (이 외 색상 추가 금지)
+  Primary Accent:  #F5821F  (버튼, 링크, 활성 상태, 드래그 강조)
+  Accent Dark:     #D96A0A  (hover/pressed)
+  Accent Light:    #FEF0E3  (선택 상태 배경, 태그)
+
+  Neutral 50:      #FAFAF9  (페이지 배경)
+  Neutral 100:     #F4F3F1  (카드 배경, 사이드바)
+  Neutral 200:     #E8E6E2  (구분선, 테두리)
+  Neutral 400:     #A8A29E  (placeholder, 비활성)
+  Neutral 600:     #57534E  (보조 텍스트, 라벨)
+  Neutral 900:     #1C1917  (본문 텍스트, 제목)
+
+  Success:         #16A34A  (Active, Confirmed)
+  Warning:         #CA8A04  (Pending)
+  Danger:          #DC2626  (Error, Cancelled)
+
+  ⚠️ 그라디언트 사용 금지. 파랑/보라/초록 액센트 사용 금지.
+     오렌지(#F5821F)가 유일한 브랜드 컬러.
+
+### 컴포넌트 스펙
+  버튼 Primary:
+    bg #F5821F / color #FFFFFF / border-radius 8px
+    padding 10px 20px / font-weight 600 / font-size 14px
+    hover: bg #D96A0A, translateY(-1px),
+           box-shadow 0 4px 12px rgba(245,130,31,0.25)
+
+  버튼 Secondary:
+    bg #FFFFFF / color #1C1917
+    border 1.5px solid #E8E6E2 / border-radius 8px
+    hover: border-color #A8A29E, bg #FAFAF9
+
+  Input Fields:
+    height 40px / border 1.5px solid #E8E6E2 / border-radius 8px
+    padding 0 12px / font-size 14px
+    focus: border-color #F5821F,
+           box-shadow 0 0 0 3px rgba(245,130,31,0.15)
+
+  Cards:
+    bg #FFFFFF / border 1px solid #E8E6E2 / border-radius 12px
+    padding 20px 24px
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06)
+
+  Modal:
+    border-radius 16px
+    open animation: scale(0.97→1) + opacity(0→1), 200ms
+
+  Data Table:
+    header: bg #FAFAF9 / font 12px/500/uppercase / color #57534E
+    body row: height 48px / border-bottom 1px solid #F4F3F1
+    row hover: bg #FAFAF9
+    selected row: bg #FEF0E3
+
+  Status Badge:
+    font 12px/500 / border-radius 999px / padding 3px 10px
+    Draft:   bg #F4F3F1, text #57534E
+    Active:  bg #DCFCE7, text #16A34A
+    Pending: bg #FEF9C3, text #CA8A04
+    Error:   bg #FEF2F2, text #DC2626
+
+  Icon Library: Lucide React (stroke-width 1.5, size 16px/20px)
+  Font: Inter (Google Fonts, weights 400/500/600/700)
+  Transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1)
+
+---
+
+## 수정 시 안전 규칙
+
+반드시 지킬 것:
+  - 분석에서 확인된 문제만 수정한다
+  - 파일 하나씩 수정 후 TypeScript 오류 확인
+  - 이미 정상 작동하는 코드는 건드리지 않는다
+  - SaaS 멀티테넌트 확장성을 고려한 구조로 설계
+
+절대 하지 말 것:
+  - DB 컬럼 삭제 또는 이름 변경
+  - 현재 작업과 무관한 파일 수정
+  - 인증/권한 관련 코드 임의 수정
+  - 스키마를 읽지 않고 필드명 추측
+  - 여러 파일을 한 번에 대량 수정
+  - Express 라우트 순서를 어겨 /:id 가 /bulk, /reorder 를 가로채는 것
+
+---
+
+## 수정 후 필수 검증
+
+모든 변경 완료 후 아래 순서로 반드시 확인:
+
+1. npx tsc --noEmit → TypeScript 오류 0개 확인
+2. 서버 정상 기동 확인 → import 오류, 런타임 오류 없음
+3. DB 쿼리로 데이터 저장 확인
+   → 변경된 테이블의 최신 3개 레코드 SELECT
+4. 관련 API 엔드포인트 응답 확인
+   → 예상 필드와 값이 정상 반환되는지 확인
+
+각 단계 결과를 보고한다. 검증 실패 시 완료 처리하지 말고 즉시 수정한다.
+
+---
+
+## 작업 완료 보고 형식
+
+✅ 수정된 파일: [목록]
+✅ 수정 내용: [설명]
+✅ 검증 결과: [tsc / 서버 / DB / API 각각 결과]
+⚠️ 다음에 할 작업: [있는 경우]
+
+================================================================
+END OF PROMPT
+================================================================

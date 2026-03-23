@@ -85,13 +85,16 @@ router.get("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (
 // ─── POST /api/crm/quotes ───────────────────────────────────────────
 router.post("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { leadId, contactId, accountName, quoteStatus, expiryDate, isTemplate, notes,
+    const { leadId, contactId, accountName, customerName, studentAccountId,
+            quoteStatus, expiryDate, isTemplate, notes,
             products: lineItems = [] } = req.body;
     const user = (req as any).user;
     const quoteRefNumber = genQuoteRef();
 
     const [created] = await db.insert(quotes).values({
       quoteRefNumber, leadId, contactId, accountName,
+      customerName:      customerName ?? null,
+      studentAccountId:  studentAccountId ?? null,
       quoteStatus: quoteStatus ?? "Draft",
       expiryDate: expiryDate ?? null,
       isTemplate: isTemplate ?? false,
@@ -129,11 +132,15 @@ router.put("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (
     const [existing] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
     if (!existing) return res.status(404).json({ error: "Quote not found" });
 
-    const { leadId, contactId, accountName, quoteStatus, expiryDate, isTemplate, notes,
+    const { leadId, contactId, accountName, customerName, studentAccountId,
+            quoteStatus, expiryDate, isTemplate, notes,
             products: lineItems } = req.body;
 
     const [updated] = await db.update(quotes)
-      .set({ leadId, contactId, accountName, quoteStatus, expiryDate, isTemplate, notes,
+      .set({ leadId, contactId, accountName,
+             customerName:     customerName ?? existing.customerName,
+             studentAccountId: studentAccountId ?? existing.studentAccountId,
+             quoteStatus, expiryDate, isTemplate, notes,
              modifiedOn: new Date() })
       .where(eq(quotes.id, req.params.id))
       .returning();

@@ -83,24 +83,42 @@ export const lead_activities = pgTable("lead_activities", {
 });
 
 export const quotes = pgTable("quotes", {
-  id:             uuid("id").primaryKey().defaultRandom(),
-  quoteRefNumber: varchar("quote_ref_number", { length: 30 }).unique(),
-  leadId:         uuid("lead_id").references(() => leads.id),
-  contactId:      uuid("contact_id"),
-  accountName:    varchar("account_name",     { length: 255 }),
-  quoteStatus:    varchar("quote_status",     { length: 30 }).notNull().default("Draft"),
-  expiryDate:     date("expiry_date"),
-  isTemplate:     boolean("is_template").notNull().default(false),
-  notes:          text("notes"),
-  createdBy:      uuid("created_by").references(() => users.id),
-  createdOn:      timestamp("created_on").notNull().defaultNow(),
-  modifiedOn:     timestamp("modified_on").notNull().defaultNow(),
+  id:                  uuid("id").primaryKey().defaultRandom(),
+  quoteRefNumber:      varchar("quote_ref_number",    { length: 30  }).unique(),
+  leadId:              uuid("lead_id").references(() => leads.id),
+  contactId:           uuid("contact_id"),
+  customerContactId:   uuid("customer_contact_id"),
+  studentAccountId:    uuid("student_account_id"),
+  accountName:         varchar("account_name",        { length: 255 }),
+  customerName:        varchar("customer_name",       { length: 255 }),
+  quoteStatus:         varchar("quote_status",        { length: 30  }).notNull().default("Draft"),
+  expiryDate:          date("expiry_date"),
+  isTemplate:          boolean("is_template").notNull().default(false),
+  notes:               text("notes"),
+  ownerId:             uuid("owner_id"),
+  createdBy:           uuid("created_by").references(() => users.id),
+  createdOn:           timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:          timestamp("modified_on").notNull().defaultNow(),
 });
 
 export const quote_products = pgTable("quote_products", {
   id:                uuid("id").primaryKey().defaultRandom(),
   quoteId:           uuid("quote_id").references(() => quotes.id).notNull(),
-  productName:       varchar("product_name",   { length: 255 }).notNull(),
+  productId:         uuid("product_id"),
+  manualInput:       boolean("manual_input").notNull().default(false),
+  name:              varchar("name",            { length: 255 }),
+  itemDescription:   text("item_description"),
+  price:             decimal("price",           { precision: 12, scale: 2 }),
+  quantity:          integer("quantity").notNull().default(1),
+  isInitialPayment:  boolean("is_initial_payment").notNull().default(false),
+  dueDate:           timestamp("due_date"),
+  sortIndex:         integer("sort_index").notNull().default(0),
+  isGstIncluded:     boolean("is_gst_included").notNull().default(false),
+  status:            varchar("status",          { length: 20  }).notNull().default("Active"),
+  modifiedOn:        timestamp("modified_on").notNull().defaultNow(),
+  createdOn:         timestamp("created_on").notNull().defaultNow(),
+  // Legacy columns kept for backward compatibility
+  productName:       varchar("product_name",   { length: 255 }),
   description:       text("description"),
   qty:               integer("qty").notNull().default(1),
   unitPrice:         decimal("unit_price",  { precision: 12, scale: 2 }).notNull().default("0"),
@@ -108,7 +126,6 @@ export const quote_products = pgTable("quote_products", {
   total:             decimal("total",       { precision: 12, scale: 2 }).notNull().default("0"),
   serviceModuleType: varchar("service_module_type", { length: 50 }),
   sortOrder:         integer("sort_order").notNull().default(0),
-  createdOn:         timestamp("created_on").notNull().defaultNow(),
 });
 
 export type Contact         = typeof contacts.$inferSelect;
