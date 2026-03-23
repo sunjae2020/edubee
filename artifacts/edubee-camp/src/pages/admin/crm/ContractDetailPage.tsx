@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   ArrowLeft, ExternalLink, FileText, CreditCard, GraduationCap,
   Car, Building2, Briefcase, Shield, CheckCircle2, Clock,
   AlertCircle, ChevronRight, Star, TrendingUp, TrendingDown,
-  UploadCloud, MessageSquare, Send,
+  UploadCloud, MessageSquare, Send, Download,
 } from "lucide-react";
 import { format } from "date-fns";
+import PaymentStatementModal from "../../../components/finance/PaymentStatementModal";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -140,72 +141,175 @@ function OverviewTab({ contract }: { contract: any }) {
   );
 }
 
+// ── Statement History Section ───────────────────────────────────────────────
+function StatementHistorySection({ contractId, onGenerate }: { contractId: string; onGenerate: () => void }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["payment-statements", contractId],
+    queryFn: () =>
+      axios.get(`${BASE}/api/statements/by-contract/${contractId}`).then(r => r.data.data ?? []),
+    enabled: !!contractId,
+  });
+  const rows: any[] = data ?? [];
+
+  const STMT_BADGE: Record<string, string> = {
+    issued: "bg-[#F4F3F1] text-[#57534E]",
+    sent:   "bg-[#DCFCE7] text-[#16A34A]",
+    voided: "bg-[#FEF2F2] text-[#DC2626]",
+  };
+
+  return (
+    <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileText size={14} className="text-[#F5821F]" />
+          <h3 className="text-sm font-semibold text-[#1C1917]">Payment Statements ({rows.length})</h3>
+        </div>
+        <button
+          onClick={onGenerate}
+          className="h-8 px-3 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90"
+          style={{ background:"#F5821F" }}>
+          <FileText size={12} /> Generate Payment Statement
+        </button>
+      </div>
+      {isLoading ? (
+        <div className="px-5 py-6 text-center text-sm text-[#A8A29E]">Loading…</div>
+      ) : rows.length === 0 ? (
+        <div className="px-5 py-8 text-center">
+          <FileText size={24} className="mx-auto mb-2 text-[#E8E6E2]" />
+          <p className="text-sm text-[#A8A29E]">No statements issued yet</p>
+          <p className="text-[11px] text-[#A8A29E] mt-1">Generate one for visa submissions or parent requests</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
+                {["Ref","Date","Scope","Reason","Paid","Outstanding","Status","Issued By","PDF"].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((s: any) => (
+                <tr key={s.id} className="border-b border-[#E8E6E2] hover:bg-[#FAFAF9] transition-colors">
+                  <td className="px-4 py-3 font-mono text-[12px] font-semibold" style={{ color:"#F5821F" }}>{s.statementRef}</td>
+                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(s.statementDate)}</td>
+                  <td className="px-4 py-3">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#F4F3F1] text-[#57534E]">
+                      {s.statementScope}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{s.issueReason ?? "—"}</td>
+                  <td className="px-4 py-3 text-[12px] font-semibold text-[#16A34A]">{fmtMoney(s.totalPaidAmount)}</td>
+                  <td className="px-4 py-3 text-[12px] font-semibold text-[#DC2626]">{fmtMoney(s.totalOutstanding)}</td>
+                  <td className="px-4 py-3"><Badge s={s.status} map={STMT_BADGE} /></td>
+                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{s.issuedByName ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => window.open(`${BASE}/api/statements/${s.id}/pdf`, "_blank")}
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-[#F4F3F1] transition-colors">
+                      <Download size={11} /> PDF
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Payment Schedule Tab ───────────────────────────────────────────────────
 function PaymentScheduleTab({ contract }: { contract: any }) {
   const products: any[] = contract.contractProducts ?? [];
   const totalAr = products.reduce((s: number, p: any) => s + (p.arAmount ?? 0), 0);
   const totalAp = products.reduce((s: number, p: any) => s + (p.apAmount ?? 0), 0);
+  const [showModal, setShowModal] = useState(false);
+  const queryClient = useQueryClient();
 
   return (
-    <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
-      <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#1C1917]">Payment Schedule ({products.length})</h3>
-        <button disabled className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs text-[#A8A29E] cursor-not-allowed">+ Add Instalment</button>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
-              <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">#</th>
-              <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Label</th>
-              <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1]">AR Due Date</th>
-              <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1]">AR Amount</th>
-              <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1]">AR Status</th>
-              <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Due Date</th>
-              <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Amount</th>
-              <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((cp: any, i: number) => (
-              <tr key={cp.id}
-                className="border-b border-[#E8E6E2] transition-colors"
-                style={cp.apStatus === "ready" ? { background:"#FFFCF9" } : {}}>
-                <td className="px-4 py-3 text-xs text-[#A8A29E]">{i + 1}</td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1.5">
-                    {cp.isInitialPayment && <span className="text-[#CA8A04] text-xs">★ Initial</span>}
-                    {cp.apStatus === "ready" && <AlertCircle size={12} style={{ color:"#F5821F" }} />}
-                    <span className="text-[13px] text-[#1C1917] font-medium">{cp.name ?? `Instalment ${i + 1}`}</span>
-                  </div>
-                  {cp.serviceModuleType && (
-                    <div className="text-[11px] text-[#A8A29E] mt-0.5">{cp.serviceModuleType}</div>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.arDueDate)}</td>
-                <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.arAmount)}</td>
-                <td className="px-4 py-3"><Badge s={cp.arStatus} map={AR_BADGE} /></td>
-                <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.apDueDate)}</td>
-                <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.apAmount)}</td>
-                <td className="px-4 py-3"><Badge s={cp.apStatus} map={AP_BADGE} /></td>
+    <div className="space-y-4">
+      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[#1C1917]">Payment Schedule ({products.length})</h3>
+          <button disabled className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs text-[#A8A29E] cursor-not-allowed">+ Add Instalment</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">#</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Label</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1]">AR Due Date</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1]">AR Amount</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1]">AR Status</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Due Date</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Amount</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Status</th>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr style={{ background:"#FAFAF9" }}>
-              <td colSpan={3} className="px-4 py-3 text-right text-xs font-semibold text-[#57534E]">Total</td>
-              <td className="px-4 py-3 text-right">
-                <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background:"#F5821F" }}>{fmtMoney(totalAr)}</span>
-              </td>
-              <td colSpan={2} className="px-4 py-3 text-right text-xs font-semibold text-[#57534E]">Total AP</td>
-              <td className="px-4 py-3 text-right">
-                <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background:"#9A3412" }}>{fmtMoney(totalAp)}</span>
-              </td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
+            </thead>
+            <tbody>
+              {products.map((cp: any, i: number) => (
+                <tr key={cp.id}
+                  className="border-b border-[#E8E6E2] transition-colors"
+                  style={cp.apStatus === "ready" ? { background:"#FFFCF9" } : {}}>
+                  <td className="px-4 py-3 text-xs text-[#A8A29E]">{i + 1}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      {cp.isInitialPayment && <span className="text-[#CA8A04] text-xs">★ Initial</span>}
+                      {cp.apStatus === "ready" && <AlertCircle size={12} style={{ color:"#F5821F" }} />}
+                      <span className="text-[13px] text-[#1C1917] font-medium">{cp.name ?? `Instalment ${i + 1}`}</span>
+                    </div>
+                    {cp.serviceModuleType && (
+                      <div className="text-[11px] text-[#A8A29E] mt-0.5">{cp.serviceModuleType}</div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.arDueDate)}</td>
+                  <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.arAmount)}</td>
+                  <td className="px-4 py-3"><Badge s={cp.arStatus} map={AR_BADGE} /></td>
+                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.apDueDate)}</td>
+                  <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.apAmount)}</td>
+                  <td className="px-4 py-3"><Badge s={cp.apStatus} map={AP_BADGE} /></td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ background:"#FAFAF9" }}>
+                <td colSpan={3} className="px-4 py-3 text-right text-xs font-semibold text-[#57534E]">Total</td>
+                <td className="px-4 py-3 text-right">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background:"#F5821F" }}>{fmtMoney(totalAr)}</span>
+                </td>
+                <td colSpan={2} className="px-4 py-3 text-right text-xs font-semibold text-[#57534E]">Total AP</td>
+                <td className="px-4 py-3 text-right">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background:"#9A3412" }}>{fmtMoney(totalAp)}</span>
+                </td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
+
+      {/* Statement History Section */}
+      <StatementHistorySection
+        contractId={contract.id}
+        onGenerate={() => setShowModal(true)}
+      />
+
+      {/* Modal */}
+      {showModal && (
+        <PaymentStatementModal
+          contractId={contract.id}
+          studentName={contract.studentName ?? contract.account?.name ?? "Student"}
+          studentEmail={contract.clientEmail ?? contract.account?.email ?? null}
+          onClose={() => setShowModal(false)}
+          onGenerated={() => {
+            queryClient.invalidateQueries({ queryKey: ["payment-statements", contract.id] });
+          }}
+        />
+      )}
     </div>
   );
 }

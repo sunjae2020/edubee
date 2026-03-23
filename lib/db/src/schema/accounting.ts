@@ -186,3 +186,29 @@ export const taxInvoices = pgTable("tax_invoices", {
 
 export type TaxInvoice    = typeof taxInvoices.$inferSelect;
 export type NewTaxInvoice = typeof taxInvoices.$inferInsert;
+
+// ── Payment Statements ──────────────────────────────────────────────────────
+export const paymentStatements = pgTable("payment_statements", {
+  id:                   uuid("id").primaryKey().defaultRandom(),
+  statementRef:         varchar("statement_ref",         { length: 50  }).unique().notNull(),
+  statementDate:        date("statement_date").notNull(),
+  statementScope:       varchar("statement_scope",       { length: 20  }).notNull(),
+  contractId:           uuid("contract_id").references(() => contracts.id),
+  studentAccountId:     uuid("student_account_id").references(() => accounts.id),
+  totalPaidAmount:      decimal("total_paid_amount",     { precision: 12, scale: 2 }).notNull().default("0"),
+  totalOutstanding:     decimal("total_outstanding",     { precision: 12, scale: 2 }).notNull().default("0"),
+  totalContractAmount:  decimal("total_contract_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  lineItemCount:        integer("line_item_count").notNull().default(0),
+  pdfUrl:               varchar("pdf_url",               { length: 500 }),
+  issuedBy:             uuid("issued_by").notNull().references(() => users.id),
+  sentToEmail:          varchar("sent_to_email",         { length: 255 }),
+  sentAt:               timestamp("sent_at"),
+  issueReason:          varchar("issue_reason",          { length: 100 }),
+  notes:                text("notes"),
+  status:               varchar("status",                { length: 20  }).notNull().default("issued"),
+  createdOn:            timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:           timestamp("modified_on").notNull().defaultNow(),
+});
+
+export type PaymentStatement    = typeof paymentStatements.$inferSelect;
+export type NewPaymentStatement = typeof paymentStatements.$inferInsert;
