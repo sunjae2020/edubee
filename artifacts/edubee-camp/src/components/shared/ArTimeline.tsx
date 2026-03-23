@@ -167,7 +167,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
         {showContractLink && (
           <div className="mt-3">
             <button
-              onClick={() => navigate(`/admin/contracts/${contractId}`)}
+              onClick={() => navigate(`/admin/crm/contracts/${contractId}`)}
               className="text-[#F5821F] text-xs font-medium hover:underline flex items-center gap-1 mx-auto"
             >
               View Contract <ArrowUpRight className="w-3 h-3" />
@@ -201,7 +201,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
       {/* Contract shortcut link */}
       {showContractLink && (
         <button
-          onClick={() => navigate(`/admin/contracts/${contractId}`)}
+          onClick={() => navigate(`/admin/crm/contracts/${contractId}`)}
           className="flex items-center gap-1.5 text-xs text-[#F5821F] font-medium hover:underline"
         >
           <ExternalLink className="w-3 h-3" />

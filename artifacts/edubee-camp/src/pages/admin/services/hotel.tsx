@@ -183,7 +183,7 @@ export default function HotelManagement() {
           </SheetHeader>
           {selected && (
             <div className="mt-4 space-y-4">
-              <ContractCard rec={selected} onViewContract={() => { const id = selected.contractId; setSelected(null); navigate(`${BASE}/admin/contracts${id ? `?contractId=${id}` : ""}`); }} />
+              <ContractCard rec={selected} onViewContract={() => { const id = selected.contractId; setSelected(null); navigate(`${BASE}/admin/crm/contracts${id ? `?contractId=${id}` : ""}`); }} />
               <div className="flex items-center justify-between">
                 <StatusBadge status={selected.status} />
                 {!editing && isAdmin && (

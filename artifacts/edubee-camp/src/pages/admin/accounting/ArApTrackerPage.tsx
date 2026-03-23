@@ -147,7 +147,7 @@ function ArActions({ row }: { row: ArRow }) {
             </button>
             {row.contractId && (
               <button
-                onClick={() => { setOpen(false); navigate(`/admin/contracts/${row.contractId}`); }}
+                onClick={() => { setOpen(false); navigate(`/admin/crm/contracts/${row.contractId}`); }}
                 className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 flex items-center gap-2"
               >
                 <Eye size={12} /> View Contract
@@ -202,7 +202,7 @@ function ApActions({ row }: { row: ApRow }) {
             </button>
             {row.contractId && (
               <button
-                onClick={() => { setOpen(false); navigate(`/admin/contracts/${row.contractId}`); }}
+                onClick={() => { setOpen(false); navigate(`/admin/crm/contracts/${row.contractId}`); }}
                 className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 flex items-center gap-2">
                 <Eye size={12} /> View Contract
               </button>

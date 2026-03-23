@@ -264,7 +264,7 @@ export default function Settlement() {
           </SheetHeader>
           {selected && (
             <div className="mt-4 space-y-4">
-              <ContractCard rec={selected} onViewContract={() => { setSelected(null); navigate(`${BASE}/admin/contracts`); }} />
+              <ContractCard rec={selected} onViewContract={() => { setSelected(null); navigate(`${BASE}/admin/crm/contracts`); }} />
               <div className="flex items-center justify-between">
                 <StatusBadge status={selected.status} />
                 <div className="flex gap-2">

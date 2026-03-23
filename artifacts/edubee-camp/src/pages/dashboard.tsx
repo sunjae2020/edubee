@@ -82,7 +82,7 @@ const QUICK_ACTIONS = {
   sales: [
     { icon: Target, label: "Leads CRM", href: "/admin/leads" },
     { icon: ClipboardList, label: "Applications", href: "/admin/applications" },
-    { icon: FileText, label: "Contracts", href: "/admin/contracts" },
+    { icon: FileText, label: "Contracts", href: "/admin/crm/contracts" },
     { icon: CalendarCheck, label: "Interviews", href: "/admin/services/interviews" },
   ],
   partner: [
@@ -94,7 +94,7 @@ const QUICK_ACTIONS = {
   ],
   parent: [
     { icon: ClipboardList, label: "My Programs", href: "/admin/my-programs" },
-    { icon: FileText, label: "My Contracts", href: "/admin/contracts" },
+    { icon: FileText, label: "My Contracts", href: "/admin/crm/contracts" },
   ],
 };
 

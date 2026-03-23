@@ -896,7 +896,7 @@ export default function PackageDetail() {
                       <tr
                         key={c.id as string}
                         className={`border-b last:border-0 hover:bg-[#FEF0E3] cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}
-                        onClick={() => setLocation(`${BASE}/admin/contracts/${c.id}`)}
+                        onClick={() => setLocation(`${BASE}/admin/crm/contracts/${c.id}`)}
                       >
                         <td className="px-3 py-2 font-mono text-xs font-medium text-[#F5821F]">
                           {c.contractNumber as string ?? "—"}

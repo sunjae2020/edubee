@@ -308,7 +308,7 @@ export default function CampApplicationDetail() {
               </span>
             </div>
             <a
-              href={`${BASE}/admin/contracts/${app.contractId}`}
+              href={`${BASE}/admin/crm/contracts/${app.contractId}`}
               className="flex items-center gap-1 rounded-md border border-green-300 bg-white px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-50 transition-colors"
             >
               View Contract <ExternalLink className="w-3 h-3" />
