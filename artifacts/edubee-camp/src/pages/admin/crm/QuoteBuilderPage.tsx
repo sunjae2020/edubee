@@ -885,189 +885,187 @@ export default function QuoteBuilderPage() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-3 gap-6">
-        {/* Left column: 2/3 */}
-        <div className="col-span-2 space-y-5">
-          {/* Quote Header Card */}
-          <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-gray-700 border-b border-gray-100 pb-2">
-              Quote Details
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs text-gray-500">Customer Name</Label>
-                <Input
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="e.g. John Smith"
-                  className="h-8 text-sm mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-gray-500">Status</Label>
-                <Select value={quoteStatus} onValueChange={setQuoteStatus}>
-                  <SelectTrigger className="h-8 text-sm mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["Draft", "Sent", "Accepted", "Declined", "Expired"].map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      {/* Content — single column, sections in order */}
+      <div className="max-w-5xl mx-auto px-6 py-6 space-y-5">
+
+        {/* 1. Quote Details */}
+        <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-gray-700 border-b border-gray-100 pb-2">
+            Quote Details
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs text-gray-500">Customer Name</Label>
+              <Input
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="e.g. John Smith"
+                className="h-8 text-sm mt-1"
+              />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs text-gray-500">Student Account</Label>
-                <div className="mt-1">
-                  <AccountLookupField
-                    currentId={studentAccountId}
-                    currentName={studentAccountName}
-                    onSelect={(id, name) => {
-                      setStudentAccountId(id);
-                      setStudentAccountName(name);
-                    }}
-                  />
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs text-gray-500">Expiry Date</Label>
-                <Input
-                  type="date"
-                  value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value)}
-                  className="h-8 text-sm mt-1"
+            <div>
+              <Label className="text-xs text-gray-500">Status</Label>
+              <Select value={quoteStatus} onValueChange={setQuoteStatus}>
+                <SelectTrigger className="h-8 text-sm mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Draft", "Sent", "Accepted", "Declined", "Expired"].map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs text-gray-500">Student Account</Label>
+              <div className="mt-1">
+                <AccountLookupField
+                  currentId={studentAccountId}
+                  currentName={studentAccountName}
+                  onSelect={(id, name) => {
+                    setStudentAccountId(id);
+                    setStudentAccountName(name);
+                  }}
                 />
               </div>
             </div>
             <div>
-              <Label className="text-xs text-gray-500">Notes</Label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Internal notes…"
-                rows={2}
-                className="text-sm mt-1 resize-none"
+              <Label className="text-xs text-gray-500">Expiry Date</Label>
+              <Input
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                className="h-8 text-sm mt-1"
               />
             </div>
           </div>
-
-          {/* Product Search */}
-          <ProductSearchPanel onAdd={(p) => addProductMutation.mutate(p)} />
-
-          {/* Manual Line */}
-          <ManualLineForm onAdd={(line) => addManualMutation.mutate(line as any)} />
-
-          {/* Payment Plan Table */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-700">Payment Plan</h3>
-              <span className="text-xs text-gray-400">
-                {activeLines.length} item{activeLines.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-
-            {activeLines.length === 0 ? (
-              <div className="text-center py-12 text-gray-400 text-sm">
-                <p>No items yet.</p>
-                <p className="text-xs mt-1">
-                  Add products from the catalog or create a manual line above.
-                </p>
-              </div>
-            ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={activeLines.map((l) => l.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-100 text-xs text-gray-400 font-medium bg-gray-50">
-                          <th className="px-2 py-2 w-8" />
-                          <th className="px-2 py-2 text-left">Item</th>
-                          <th className="px-2 py-2 text-left w-28">Provider</th>
-                          <th className="px-2 py-2 text-center w-20">Qty</th>
-                          <th className="px-2 py-2 text-left w-28">Price</th>
-                          <th className="px-2 py-2 text-left w-32">Due Date</th>
-                          <th className="px-2 py-2 text-center w-20">Initial?</th>
-                          <th className="px-2 py-2 text-right w-24">Subtotal</th>
-                          <th className="px-2 py-2 w-10" />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activeLines.map((item) => (
-                          <SortableRow
-                            key={item.id}
-                            item={item}
-                            onDelete={deleteLine}
-                            onChange={handleLineChange}
-                          />
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </SortableContext>
-              </DndContext>
-            )}
+          <div>
+            <Label className="text-xs text-gray-500">Notes</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Internal notes…"
+              rows={2}
+              className="text-sm mt-1 resize-none"
+            />
           </div>
         </div>
 
-        {/* Right column: 1/3 */}
-        <div className="col-span-1 space-y-4">
-          <QuoteSummary items={activeLines} />
+        {/* 2. Add Products from Catalog */}
+        <ProductSearchPanel onAdd={(p) => addProductMutation.mutate(p)} />
 
-          {/* Quick Info */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2 text-sm">
-            <div className="flex justify-between text-gray-500">
-              <span>Quote Ref</span>
-              <span className="font-mono text-gray-700 text-xs">
-                {quote.quoteRefNumber ?? "—"}
-              </span>
-            </div>
-            {quote.leadId && (
-              <div className="flex justify-between text-gray-500">
-                <span>Lead</span>
-                <button
-                  onClick={() => navigate(`/admin/crm/leads/${quote.leadId}`)}
-                  className="text-xs underline"
-                  style={{ color: PRIMARY }}
-                >
-                  View Lead
-                </button>
-              </div>
-            )}
-            <div className="flex justify-between text-gray-500">
-              <span>Line Items</span>
-              <span className="text-gray-700">{activeLines.length}</span>
-            </div>
-            {activeLines.some((l) => l.isInitialPayment) && (
-              <div className="flex justify-between text-gray-500">
-                <span>Initial Payment</span>
-                <span className="text-gray-700 font-medium tabular-nums">
-                  $
-                  {activeLines
-                    .filter((l) => l.isInitialPayment)
-                    .reduce((s, l) => s + Number(l.price ?? 0) * l.quantity, 0)
-                    .toLocaleString("en-AU", { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-            )}
-            {dirtyLines.size > 0 && (
-              <p className="text-xs text-amber-600 pt-1">
-                Unsaved changes — click Save Quote to apply.
+        {/* 3. Add Manual Line Item */}
+        <ManualLineForm onAdd={(line) => addManualMutation.mutate(line as any)} />
+
+        {/* 4. Payment Plan */}
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-700">Payment Plan</h3>
+            <span className="text-xs text-gray-400">
+              {activeLines.length} item{activeLines.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {activeLines.length === 0 ? (
+            <div className="text-center py-12 text-gray-400 text-sm">
+              <p>No items yet.</p>
+              <p className="text-xs mt-1">
+                Add products from the catalog or create a manual line above.
               </p>
-            )}
-          </div>
+            </div>
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={activeLines.map((l) => l.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-xs text-gray-400 font-medium bg-gray-50">
+                        <th className="px-2 py-2 w-8" />
+                        <th className="px-2 py-2 text-left">Item</th>
+                        <th className="px-2 py-2 text-left w-28">Provider</th>
+                        <th className="px-2 py-2 text-center w-20">Qty</th>
+                        <th className="px-2 py-2 text-left w-28">Price</th>
+                        <th className="px-2 py-2 text-left w-32">Due Date</th>
+                        <th className="px-2 py-2 text-center w-20">Initial?</th>
+                        <th className="px-2 py-2 text-right w-24">Subtotal</th>
+                        <th className="px-2 py-2 w-10" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeLines.map((item) => (
+                        <SortableRow
+                          key={item.id}
+                          item={item}
+                          onDelete={deleteLine}
+                          onChange={handleLineChange}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
         </div>
+
+        {/* 5. Quote Summary */}
+        <QuoteSummary items={activeLines} />
+
+        {/* 6. Quote Ref */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2 text-sm">
+          <h3 className="text-sm font-semibold text-gray-700 border-b border-gray-100 pb-2">Quote Info</h3>
+          <div className="flex justify-between text-gray-500">
+            <span>Quote Ref</span>
+            <span className="font-mono text-gray-700 text-xs">
+              {quote.quoteRefNumber ?? "—"}
+            </span>
+          </div>
+          {quote.leadId && (
+            <div className="flex justify-between text-gray-500">
+              <span>Lead</span>
+              <button
+                onClick={() => navigate(`/admin/crm/leads/${quote.leadId}`)}
+                className="text-xs underline"
+                style={{ color: PRIMARY }}
+              >
+                View Lead
+              </button>
+            </div>
+          )}
+          <div className="flex justify-between text-gray-500">
+            <span>Line Items</span>
+            <span className="text-gray-700">{activeLines.length}</span>
+          </div>
+          {activeLines.some((l) => l.isInitialPayment) && (
+            <div className="flex justify-between text-gray-500">
+              <span>Initial Payment</span>
+              <span className="text-gray-700 font-medium tabular-nums">
+                $
+                {activeLines
+                  .filter((l) => l.isInitialPayment)
+                  .reduce((s, l) => s + Number(l.price ?? 0) * l.quantity, 0)
+                  .toLocaleString("en-AU", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          )}
+          {dirtyLines.size > 0 && (
+            <p className="text-xs text-amber-600 pt-1">
+              Unsaved changes — click Save Quote to apply.
+            </p>
+          )}
+        </div>
+
       </div>
     </div>
   );
