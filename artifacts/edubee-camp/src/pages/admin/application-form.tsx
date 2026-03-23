@@ -157,6 +157,10 @@ export default function ApplicationForm() {
   const [intMedication,      setIntMedication]      = useState("");
   const [declInternship,     setDeclInternship]     = useState(false);
 
+  // ── Signature & Date
+  const [signatureName, setSignatureName] = useState("");
+  const [signDate,      setSignDate]      = useState("");
+
   // ── Declaration checkboxes
   const [declAgree, setDeclAgree] = useState(false);
 
@@ -234,6 +238,9 @@ export default function ApplicationForm() {
         internshipStartDate: intStartDate    || undefined,
         industry:            intProgram      || undefined,
         companyPreference:   intCity         || undefined,
+        // signature
+        signatureName:       signatureName || undefined,
+        signatureDate:       signDate      || undefined,
         // notes
         notes: extraNotes || undefined,
       };
@@ -667,7 +674,29 @@ export default function ApplicationForm() {
           </div>
         </div>
 
-        <div className="flex items-start gap-2.5 pt-2">
+        {/* Signature text + Date */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+          <div>
+            <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Signature</p>
+            <Input
+              value={signatureName}
+              onChange={e => setSignatureName(e.target.value)}
+              placeholder="Type your full name as signature"
+              className="h-9 text-sm italic"
+            />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Date</p>
+            <Input
+              type="date"
+              value={signDate}
+              onChange={e => setSignDate(e.target.value)}
+              className="h-9 text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2.5 pt-4">
           <Checkbox
             id="decl"
             checked={declAgree}
