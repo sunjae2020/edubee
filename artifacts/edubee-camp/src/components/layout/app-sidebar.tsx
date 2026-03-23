@@ -63,7 +63,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
   if (isSAorAD || isCC || isEA) {
     const salesItems: NavItem[] = [
       { icon: ClipboardList, label: "Applications", href: "/admin/applications" },
-      { icon: FileText,      label: "Contracts",    href: "/admin/contracts"    },
     ];
     if (isSAorAD)
       salesItems.push({ icon: FolderOpen, label: "Documents", href: "/admin/documents" });

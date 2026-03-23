@@ -19,7 +19,6 @@ import PackageGroups from "@/pages/admin/package-groups";
 import Packages from "@/pages/packages";
 import PackageDetail from "@/pages/admin/package-detail";
 import Leads from "@/pages/admin/leads";
-import Contracts from "@/pages/admin/contracts";
 import CampContracts from "@/pages/admin/camp-contracts";
 import CampContractDetail from "@/pages/admin/camp-contract-detail";
 import AdminStub from "@/pages/admin/stub";
@@ -30,7 +29,6 @@ import PackageGroupDetail from "@/pages/admin/package-group-detail";
 import NewPackageGroup from "@/pages/admin/new-package-group";
 import ApplicationDetail from "@/pages/admin/application-detail";
 import ApplicationForm from "@/pages/admin/application-form";
-import ContractDetail from "@/pages/admin/contract-detail";
 import InstituteMgtDetail from "@/pages/admin/services/institute-detail";
 import HotelMgtDetail from "@/pages/admin/services/hotel-detail";
 import PickupMgtDetail from "@/pages/admin/services/pickup-detail";
@@ -184,12 +182,6 @@ function Router() {
       </Route>
       <Route path="/admin/camp-applications">
         <AdminRoute title="Camp Applications"><CampApplications /></AdminRoute>
-      </Route>
-      <Route path="/admin/contracts/:id">
-        <AdminRoute title="Contract Detail"><ContractDetail /></AdminRoute>
-      </Route>
-      <Route path="/admin/contracts">
-        <AdminRoute title="Contracts"><Contracts /></AdminRoute>
       </Route>
       <Route path="/admin/camp-contracts/:id">
         <AdminRoute title="Camp Contract Detail"><CampContractDetail /></AdminRoute>
