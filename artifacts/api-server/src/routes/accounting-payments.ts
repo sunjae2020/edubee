@@ -5,6 +5,7 @@ import {
   chartOfAccounts, contractProducts, contracts,
 } from "@workspace/db/schema";
 import { eq, and, gte, lte, inArray, asc, desc, SQL } from "drizzle-orm";
+import { generateTaxInvoice } from "../services/taxInvoiceService.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -238,6 +239,27 @@ router.post(
 
         return { header, lines: insertedLines, journalEntry: je };
       });
+
+      // ── Tax Invoice auto-generation (post-transaction, non-blocking) ──────
+      if (paymentType === "trust_transfer") {
+        const cpIds = (lineItems as any[])
+          .map((l: any) => l.contractProductId)
+          .filter(Boolean) as string[];
+
+        if (cpIds.length > 0) {
+          const cpRows = await db
+            .select({ id: contractProducts.id, remittanceMethod: contractProducts.remittanceMethod })
+            .from(contractProducts)
+            .where(inArray(contractProducts.id, cpIds));
+
+          for (const cp of cpRows) {
+            if (!cp.remittanceMethod) continue;
+            generateTaxInvoice(cp.id, result.header.id, userId(req)).catch((err) => {
+              console.error(`[TaxInvoice] Generation failed for CP ${cp.id}:`, String(err));
+            });
+          }
+        }
+      }
 
       return res.status(201).json(result);
     } catch (err) {

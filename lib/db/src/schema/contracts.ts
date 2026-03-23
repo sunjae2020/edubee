@@ -71,8 +71,12 @@ export const contractProducts = pgTable("contract_products", {
   isInitialPayment: boolean("is_initial_payment").default(false),
   grossAmount: decimal("gross_amount", { precision: 12, scale: 2 }),
   schoolAmount: decimal("school_amount", { precision: 12, scale: 2 }),
-  commissionAmount: decimal("commission_amount", { precision: 12, scale: 2 }),
-  netRevenue: decimal("net_revenue", { precision: 12, scale: 2 }),
+  commissionAmount:   decimal("commission_amount",    { precision: 12, scale: 2 }),
+  netRevenue:         decimal("net_revenue",           { precision: 12, scale: 2 }),
+  remittanceMethod:   varchar("remittance_method",     { length: 20 }),
+  commissionArStatus: varchar("commission_ar_status",  { length: 20 }),
+  gstAmount:          decimal("gst_amount",            { precision: 12, scale: 2 }),
+  isGstFree:          boolean("is_gst_free").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

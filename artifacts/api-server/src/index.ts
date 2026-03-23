@@ -4,6 +4,7 @@ import { syncExchangeRates } from "./services/exchangeRateSync.js";
 import { seedChartOfAccounts } from "./seeds/coa-seed.js";
 import { markOverdueArItems } from "./seeds/arap-overdue.js";
 import { seedUsersIfEmpty } from "./seeds/seed-users.js";
+import { startTaxInvoiceScheduler } from "./jobs/taxInvoiceScheduler.js";
 
 const rawPort = process.env["PORT"];
 
@@ -24,6 +25,7 @@ const server = app.listen(port, () => {
   seedUsersIfEmpty();
   seedChartOfAccounts();
   markOverdueArItems();
+  startTaxInvoiceScheduler();
 });
 
 // CHECK 1.3 — Replit: prevent 120s reverse-proxy hard-cut

@@ -43,6 +43,7 @@ import crmContractsRouter from "./crm-contracts.js";
 import paymentHeadersRouter from "./payment-headers.js";
 import paymentLinesRouter from "./payment-lines.js";
 import journalEntriesRouter from "./journal-entries.js";
+import taxInvoicesRouter from "./tax-invoices.js";
 
 const router: IRouter = Router();
 
@@ -90,5 +91,6 @@ router.use(crmContractsRouter);
 router.use(paymentHeadersRouter);
 router.use(paymentLinesRouter);
 router.use(journalEntriesRouter);
+router.use(taxInvoicesRouter);
 
 export default router;

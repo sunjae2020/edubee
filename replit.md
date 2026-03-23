@@ -64,6 +64,16 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 -   **Package Group Extended Fields**: `packageGroups` now includes `inclusionsEn`/`inclusionsKo` (포함내역), `exclusionsEn`/`exclusionsKo` (비포함 내역), `durationText` (기간), `startDate`, `endDate`.
 -   **Package Capacity Fields**: `packages` table includes `maxAdults` (어른 인원), `maxStudents` (학생 인원) alongside `maxParticipants`.
 -   **Per-Package Products**: New `package_products` table links individual packages to products (with `isOptional`, `quantity`, `unitPrice`). API routes at `/api/packages/:id/products` (GET/POST/PATCH/DELETE). UI in Package dialog when editing.
+-   **Tax Invoice Auto-Generation**: Automated commission tax invoice system for AP school remittances.
+    -   **New DB tables**: `tax_invoices` (full invoice record), `organisations` (agency ABN/bank info).
+    -   **New DB columns**: `contract_products` (remittance_method, commission_ar_status, gst_amount, is_gst_free), `accounts` (bank_account_type).
+    -   **NET remittance flow**: On `ap_status → paid` with `remittance_method = 'net'`, tax invoice is auto-generated and emailed to school. GST calculated if domestic (AUD) account; GST-free if overseas (FX).
+    -   **GROSS remittance flow**: On `ap_status → paid` with `remittance_method = 'gross'`, commission transferred to AR (DR 1300 / CR 3100), tax invoice created as draft. Scheduler fires notification to consultant on `course_start_date`.
+    -   **PDF service**: `taxInvoicePdfService.ts` uses `@react-pdf/renderer` with `React.createElement` pattern (no JSX).
+    -   **Backend service**: `taxInvoiceService.ts` — `generateTaxInvoice()`, `buildInvoiceRef()`, `sendTaxInvoiceByEmail()`.
+    -   **Scheduler**: `taxInvoiceScheduler.ts` — runs daily at 9AM, notifies consultant for GROSS invoices past course start date.
+    -   **API routes**: `GET /api/tax-invoices`, `GET /api/tax-invoices/by-contract-product/:cpId`, `GET /api/tax-invoices/:id/pdf`, `POST /api/tax-invoices/:id/send`, `POST /api/tax-invoices/:id/mark-paid`.
+    -   **Frontend**: `TaxInvoiceListPage` at `/admin/accounting/tax-invoices` with type/status filters, KPI cards, PDF download, email resend, mark-paid actions. `TaxInvoiceBadge` component shows invoice status on contract product lines.
 
 ## External Dependencies
 

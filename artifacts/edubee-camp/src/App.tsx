@@ -99,6 +99,7 @@ import ChartOfAccountsPage from "@/pages/admin/accounting/ChartOfAccountsPage";
 import ArApTrackerPage from "@/pages/admin/accounting/ArApTrackerPage";
 import PaymentsPage from "@/pages/admin/accounting/PaymentsPage";
 import JournalEntriesPage from "@/pages/admin/accounting/JournalEntriesPage";
+import TaxInvoiceListPage from "@/pages/admin/accounting/TaxInvoiceListPage";
 
 // Services (new)
 import StudyAbroadPage from "@/pages/admin/services/StudyAbroadPage";
@@ -348,6 +349,9 @@ function Router() {
       </Route>
       <Route path="/admin/accounting/journal">
         <AdminRoute title="Journal Entries"><JournalEntriesPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/accounting/tax-invoices">
+        <AdminRoute title="Tax Invoices"><TaxInvoiceListPage /></AdminRoute>
       </Route>
 
       {/* My Accounting */}

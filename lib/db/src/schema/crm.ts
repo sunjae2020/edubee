@@ -66,6 +66,7 @@ export const accounts = pgTable("accounts", {
   agreementId:                uuid("agreement_id"),
   avetmissDeliveryLocationId: varchar("avetmiss_delivery_location_id", { length: 100 }),
   description:                text("description"),
+  bankAccountType:            varchar("bank_account_type", { length: 20 }),
   ownerId:                    uuid("owner_id").notNull().references(() => users.id),
   status:                     varchar("status",        { length: 20  }).notNull().default("Active"),
   createdOn:                  timestamp("created_on").notNull().defaultNow(),

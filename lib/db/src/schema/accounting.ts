@@ -14,6 +14,7 @@ import { users } from "./users";
 import { contracts } from "./contracts";
 import { contractProducts } from "./contracts";
 import { invoices } from "./finance";
+import { accounts } from "./crm";
 
 // ── Chart of Accounts ──────────────────────────────────────────────────────
 export const chartOfAccounts = pgTable("chart_of_accounts", {
@@ -152,3 +153,36 @@ export const staffKpiPeriods = pgTable("staff_kpi_periods", {
   createdOn:             timestamp("created_on").notNull().defaultNow(),
   modifiedOn:            timestamp("modified_on").notNull().defaultNow(),
 }, (t) => [unique().on(t.staffId, t.periodType, t.periodStart)]);
+
+// ── Tax Invoices ───────────────────────────────────────────────────────────
+export const taxInvoices = pgTable("tax_invoices", {
+  id:                uuid("id").primaryKey().defaultRandom(),
+  invoiceRef:        varchar("invoice_ref",        { length: 50  }).unique().notNull(),
+  invoiceDate:       date("invoice_date").notNull(),
+  invoiceType:       varchar("invoice_type",        { length: 20  }).notNull(),
+  contractProductId: uuid("contract_product_id").notNull().references(() => contractProducts.id),
+  contractId:        uuid("contract_id").notNull().references(() => contracts.id),
+  schoolAccountId:   uuid("school_account_id").notNull().references(() => accounts.id),
+  studentAccountId:  uuid("student_account_id").references(() => accounts.id),
+  programName:       varchar("program_name",        { length: 255 }).notNull(),
+  studentName:       varchar("student_name",        { length: 255 }).notNull(),
+  courseStartDate:   date("course_start_date"),
+  courseEndDate:     date("course_end_date"),
+  commissionAmount:  decimal("commission_amount",   { precision: 12, scale: 2 }).notNull().default("0"),
+  gstAmount:         decimal("gst_amount",          { precision: 12, scale: 2 }).notNull().default("0"),
+  totalAmount:       decimal("total_amount",        { precision: 12, scale: 2 }).notNull().default("0"),
+  isGstFree:         boolean("is_gst_free").notNull().default(false),
+  paymentHeaderId:   uuid("payment_header_id").references(() => paymentHeaders.id),
+  pdfUrl:            varchar("pdf_url",             { length: 500 }),
+  sentAt:            timestamp("sent_at"),
+  sentToEmail:       varchar("sent_to_email",       { length: 255 }),
+  status:            varchar("status",              { length: 20  }).notNull().default("draft"),
+  dueDate:           date("due_date"),
+  paidAt:            timestamp("paid_at"),
+  createdBy:         uuid("created_by").notNull().references(() => users.id),
+  createdOn:         timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:        timestamp("modified_on").notNull().defaultNow(),
+});
+
+export type TaxInvoice    = typeof taxInvoices.$inferSelect;
+export type NewTaxInvoice = typeof taxInvoices.$inferInsert;
