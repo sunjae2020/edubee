@@ -145,6 +145,18 @@ export default function ApplicationForm() {
   const [prefRoom,         setPrefRoom]         = useState("");
   const [smoker,           setSmoker]           = useState("");
 
+  // ── Internship Information
+  const [intEnglishLevel,    setIntEnglishLevel]    = useState("");
+  const [intDriverLicense,   setIntDriverLicense]   = useState("");
+  const [intStartDate,       setIntStartDate]       = useState("");
+  const [intProgram,         setIntProgram]         = useState("");
+  const [intCity,            setIntCity]            = useState("");
+  const [intPositionType,    setIntPositionType]    = useState("");
+  const [intHealthIssue,     setIntHealthIssue]     = useState("");
+  const [intMentalIssue,     setIntMentalIssue]     = useState("");
+  const [intMedication,      setIntMedication]      = useState("");
+  const [declInternship,     setDeclInternship]     = useState(false);
+
   // ── Declaration checkboxes
   const [declAgree, setDeclAgree] = useState(false);
 
@@ -172,6 +184,14 @@ export default function ApplicationForm() {
         dietary       ? `Dietary: ${dietary}`              : "",
         allergies     ? `Allergies: ${allergies}`          : "",
         pets          ? `Pets: ${pets}`                    : "",
+        intEnglishLevel  ? `Internship English Level: ${intEnglishLevel}` : "",
+        intDriverLicense ? `Australian Driver License: ${intDriverLicense}` : "",
+        intProgram       ? `Placement Program: ${intProgram}`       : "",
+        intCity          ? `Preferred City: ${intCity}`             : "",
+        intPositionType  ? `Preferred Position: ${intPositionType}` : "",
+        intHealthIssue   ? `Health Issue: ${intHealthIssue}`        : "",
+        intMentalIssue   ? `Mental Issue: ${intMentalIssue}`        : "",
+        intMedication    ? `Medication: ${intMedication}`           : "",
         englishLevel  ? `English Level: ${englishLevel}`   : "",
         studyDuration ? `Study Duration: ${studyDuration}` : "",
         prevStay      ? `Previous Australia Stay: ${prevStay}` : "",
@@ -210,6 +230,10 @@ export default function ApplicationForm() {
         checkoutDate:       checkoutDate || undefined,
         roomType:           roomType     || undefined,
         accommodationAddress: address    || undefined,
+        // internship
+        internshipStartDate: intStartDate    || undefined,
+        industry:            intProgram      || undefined,
+        companyPreference:   intCity         || undefined,
         // notes
         notes: extraNotes || undefined,
       };
@@ -488,6 +512,105 @@ export default function ApplicationForm() {
                 options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
               />
             </Field>
+          </div>
+        </Section>
+      )}
+
+      {/* ── 7b. INTERNSHIP INFORMATION ──────────────────────────────── */}
+      {has("internship") && (
+        <Section title="Internship Information">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+
+            {/* Current English Level */}
+            <Field label="Current English Level" className="sm:col-span-2">
+              <div className="flex flex-wrap gap-3">
+                {["Elementary", "Pre-Inter", "Intermediate", "Upper Inter", "Advanced", "Other"].map(opt => (
+                  <button key={opt} type="button"
+                    onClick={() => setIntEnglishLevel(opt)}
+                    className={`px-4 py-1.5 rounded-full border text-sm font-medium transition-colors ${
+                      intEnglishLevel === opt
+                        ? "bg-[#F5821F] border-[#F5821F] text-white"
+                        : "border-border text-stone-600 hover:border-[#F5821F]/60"
+                    }`}
+                  >{opt}</button>
+                ))}
+              </div>
+            </Field>
+
+            {/* Australian Driver License */}
+            <Field label="Do you have an Australian Driver License?">
+              <RadioGroup name="intDriverLicense" value={intDriverLicense} onChange={setIntDriverLicense}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+            </Field>
+
+            {/* Preferred Starting Date */}
+            <Field label="Preferred Starting Date">
+              <Input type="date" value={intStartDate} onChange={e => setIntStartDate(e.target.value)}
+                className="h-9 text-sm" />
+            </Field>
+
+            {/* Placement Program */}
+            <Field label="Placement Program">
+              <select
+                value={intProgram}
+                onChange={e => setIntProgram(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#F5821F]/50"
+              >
+                <option value="">Please Select</option>
+                {["Hospitality & Tourism", "Business Administration", "IT & Technology",
+                  "Healthcare & Nursing", "Engineering", "Marketing & Media",
+                  "Education", "Finance & Accounting", "Retail & Customer Service", "Other"
+                ].map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </Field>
+
+            {/* Preferred City */}
+            <Field label="Preferred City">
+              <Input value={intCity} onChange={e => setIntCity(e.target.value)}
+                placeholder="e.g. Sydney" className="h-9 text-sm" />
+            </Field>
+
+            {/* Preferred Type of Position */}
+            <Field label="Preferred Type of Position" className="sm:col-span-2">
+              <Input value={intPositionType} onChange={e => setIntPositionType(e.target.value)}
+                placeholder="e.g. Front Desk, Barista, Marketing Assistant"
+                className="h-9 text-sm" />
+            </Field>
+
+            {/* Health Issue */}
+            <Field label="Do you have any health problem you might think that will be affected your ability working during your employment?" className="sm:col-span-2">
+              <RadioGroup name="intHealthIssue" value={intHealthIssue} onChange={setIntHealthIssue}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+            </Field>
+
+            {/* Mental Issue */}
+            <Field label="Do you or have you ever been suffering from any mental problem or illness?" className="sm:col-span-2">
+              <RadioGroup name="intMentalIssue" value={intMentalIssue} onChange={setIntMentalIssue}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+            </Field>
+
+            {/* Medication */}
+            <Field label="Are you currently taking any medication or drug which could affect to perform your duties when you work?" className="sm:col-span-2">
+              <RadioGroup name="intMedication" value={intMedication} onChange={setIntMedication}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+            </Field>
+
+            {/* T&C Agreement */}
+            <div className="sm:col-span-2 flex items-start gap-3 pt-1">
+              <Checkbox id="declInternship" checked={declInternship}
+                onCheckedChange={v => setDeclInternship(!!v)}
+                className="mt-0.5 data-[state=checked]:bg-[#F5821F] data-[state=checked]:border-[#F5821F]"
+              />
+              <label htmlFor="declInternship" className="text-sm text-stone-700 leading-snug cursor-pointer">
+                I agree to{" "}
+                <span className="text-blue-600 underline cursor-pointer">terms & conditions of internship</span>.
+              </label>
+            </div>
+
           </div>
         </Section>
       )}
