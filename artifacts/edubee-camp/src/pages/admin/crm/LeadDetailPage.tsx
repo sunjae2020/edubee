@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Folder, Activity, CheckSquare, ExternalLink } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Folder, Activity, CheckSquare, ExternalLink, Building2, Search, X, Check, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,17 +30,16 @@ const CHANNEL_ICONS: Record<string, React.ElementType> = {
   LINE:      MessageSquare,
   KakaoTalk: MessageSquare,
 };
-
 const CHANNELS = ["Call", "Email", "SMS", "Meeting", "WhatsApp", "LINE", "KakaoTalk"];
 
 const TABS = [
-  { key: "details",   label: "Details",           icon: FileText },
-  { key: "activity",  label: "Activity Timeline", icon: Activity },
-  { key: "tasks",     label: "Tasks",             icon: CheckSquare },
-  { key: "files",     label: "Files",             icon: Folder },
+  { key: "details",  label: "Details",           icon: FileText },
+  { key: "activity", label: "Activity Timeline", icon: Activity },
+  { key: "tasks",    label: "Tasks",             icon: CheckSquare },
+  { key: "files",    label: "Files",             icon: Folder },
 ];
 
-interface Activity {
+interface ActivityRecord {
   id: string;
   channel: string;
   scheduledAt?: string | null;
@@ -56,6 +55,12 @@ interface CampApplicationSnippet {
   applicationStatus?: string | null;
 }
 
+interface AccountOption {
+  id: string;
+  name: string;
+  accountType?: string | null;
+}
+
 interface Lead {
   id: string;
   leadRefNumber?: string | null;
@@ -69,7 +74,9 @@ interface Lead {
   status?: string | null;
   source?: string | null;
   notes?: string | null;
-  activities?: Activity[];
+  accountId?: string | null;
+  accountName?: string | null;
+  activities?: ActivityRecord[];
   campApplication?: CampApplicationSnippet | null;
 }
 
@@ -91,11 +98,187 @@ function ChannelIcon({ channel }: { channel: string }) {
   );
 }
 
+// ── Account Lookup Field ──────────────────────────────────────────────────────
+function AccountLookupField({
+  currentId,
+  currentName,
+  onSave,
+  isSaving,
+}: {
+  currentId?: string | null;
+  currentName?: string | null;
+  onSave: (accountId: string | null, accountName: string | null) => void;
+  isSaving: boolean;
+}) {
+  const [editing, setEditing]         = useState(false);
+  const [query, setQuery]             = useState("");
+  const [selected, setSelected]       = useState<AccountOption | null>(
+    currentId && currentName ? { id: currentId, name: currentName } : null
+  );
+  const [pending, setPending]         = useState<AccountOption | null>(null);
+  const inputRef                      = useRef<HTMLInputElement>(null);
+
+  // Sync when parent data changes
+  useEffect(() => {
+    setSelected(currentId && currentName ? { id: currentId, name: currentName } : null);
+  }, [currentId, currentName]);
+
+  const { data: results = [], isFetching } = useQuery<AccountOption[]>({
+    queryKey: ["account-search", query],
+    queryFn: () =>
+      axios.get(`${BASE}/api/crm/accounts?search=${encodeURIComponent(query)}&limit=20`)
+        .then(r => r.data.data ?? []),
+    enabled: editing && query.length >= 1,
+    staleTime: 10_000,
+  });
+
+  const startEdit = () => {
+    setPending(selected);
+    setQuery(selected?.name ?? "");
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const cancel = () => {
+    setPending(null);
+    setQuery("");
+    setEditing(false);
+  };
+
+  const pick = (acc: AccountOption) => {
+    setPending(acc);
+    setQuery(acc.name);
+  };
+
+  const save = () => {
+    setSelected(pending);
+    onSave(pending?.id ?? null, pending?.name ?? null);
+    setEditing(false);
+    setQuery("");
+    setPending(null);
+  };
+
+  const clear = () => {
+    setPending(null);
+    setQuery("");
+  };
+
+  // ── View mode ──
+  if (!editing) {
+    return (
+      <div>
+        <p className="text-xs text-stone-400 mb-1">Account</p>
+        <div className="flex items-center gap-2">
+          {selected ? (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/30">
+              <Building2 size={12} className="text-[#F5821F] shrink-0" />
+              <span className="text-sm font-medium text-[#1C1917]">{selected.name}</span>
+            </div>
+          ) : (
+            <span className="text-sm text-stone-400">—</span>
+          )}
+          <button
+            onClick={startEdit}
+            className="p-1 rounded hover:bg-[#F4F3F1] text-stone-400 hover:text-stone-700 transition-colors"
+            title="Change account"
+          >
+            <Pencil size={13} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Edit mode ──
+  const showDropdown = editing && query.length >= 1 && (isFetching || results.length > 0);
+
+  return (
+    <div className="col-span-full">
+      <p className="text-xs text-stone-400 mb-1">Account</p>
+      <div className="flex flex-col gap-2">
+        <div className="relative max-w-md">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => { setQuery(e.target.value); if (pending?.name !== e.target.value) setPending(null); }}
+            placeholder="Search accounts by name…"
+            className="w-full pl-8 pr-8 h-9 text-sm border border-[#F5821F] rounded-lg outline-none shadow-[0_0_0_3px_rgba(245,130,31,0.15)] bg-white text-[#1C1917]"
+          />
+          {query && (
+            <button onClick={clear} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+              <X size={13} />
+            </button>
+          )}
+
+          {/* Dropdown */}
+          {showDropdown && (
+            <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-white border border-[#E8E6E2] rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+              {isFetching && !results.length ? (
+                <div className="px-4 py-3 text-sm text-stone-400">Searching…</div>
+              ) : results.length === 0 ? (
+                <div className="px-4 py-3 text-sm text-stone-400">No accounts found</div>
+              ) : (
+                results.map(acc => {
+                  const isSelected = pending?.id === acc.id;
+                  return (
+                    <button
+                      key={acc.id}
+                      onClick={() => pick(acc)}
+                      className={`w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-[#FEF0E3] transition-colors ${isSelected ? "bg-[#FEF0E3]" : ""}`}
+                    >
+                      <Building2 size={13} className="text-[#F5821F] shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#1C1917] truncate">{acc.name}</p>
+                        {acc.accountType && (
+                          <p className="text-xs text-stone-400">{acc.accountType}</p>
+                        )}
+                      </div>
+                      {isSelected && <Check size={13} className="text-[#F5821F] shrink-0" />}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Pending selection preview */}
+        {pending && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/30 w-fit">
+            <Building2 size={12} className="text-[#F5821F]" />
+            <span className="text-sm font-medium text-[#1C1917]">{pending.name}</span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          <Button size="sm" className="h-7 px-3 bg-[#F5821F] hover:bg-[#D96A0A] text-white text-xs"
+            onClick={save} disabled={isSaving}>
+            {isSaving ? "Saving…" : "Save"}
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 px-3 text-xs" onClick={cancel}>
+            Cancel
+          </Button>
+          {(selected || pending) && (
+            <button
+              onClick={() => { setPending(null); setQuery(""); }}
+              className="text-xs text-stone-400 hover:text-red-500 transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function LeadDetailPage() {
-  const [, params] = useRoute("/admin/crm/leads/:id");
+  const [, params]   = useRoute("/admin/crm/leads/:id");
   const [, navigate] = useLocation();
-  const { toast } = useToast();
-  const qc = useQueryClient();
+  const { toast }    = useToast();
+  const qc           = useQueryClient();
   const [tab, setTab] = useState("details");
   const [activityForm, setActivityForm] = useState({ channel: "Call", scheduledAt: "", description: "" });
   const id = params?.id ?? "";
@@ -106,6 +289,35 @@ export default function LeadDetailPage() {
     enabled: !!id,
   });
 
+  // ── Save Account ────────────────────────────────────────────────────────────
+  const [savingAccount, setSavingAccount] = useState(false);
+  const saveAccount = async (accountId: string | null, _name: string | null) => {
+    if (!lead) return;
+    setSavingAccount(true);
+    try {
+      await axios.put(`${BASE}/api/crm/leads/${id}`, {
+        fullName:          lead.fullName,
+        email:             lead.email,
+        phone:             lead.phone,
+        nationality:       lead.nationality,
+        source:            lead.source,
+        inquiryType:       lead.inquiryType,
+        budget:            lead.budget,
+        expectedStartDate: lead.expectedStartDate,
+        notes:             lead.notes,
+        status:            lead.status,
+        accountId:         accountId,
+      });
+      qc.invalidateQueries({ queryKey: ["crm-lead", id] });
+      toast({ title: accountId ? "Account linked" : "Account removed" });
+    } catch {
+      toast({ title: "Failed to save", variant: "destructive" });
+    } finally {
+      setSavingAccount(false);
+    }
+  };
+
+  // ── Activity ────────────────────────────────────────────────────────────────
   const activityMutation = useMutation({
     mutationFn: (payload: typeof activityForm) =>
       axios.post(`${BASE}/api/crm/leads/${id}/activities`, payload).then(r => r.data),
@@ -117,6 +329,7 @@ export default function LeadDetailPage() {
     onError: () => toast({ title: "Failed to log activity", variant: "destructive" }),
   });
 
+  // ── Convert to Quote ────────────────────────────────────────────────────────
   const convertMutation = useMutation({
     mutationFn: () => axios.post(`${BASE}/api/crm/leads/${id}/convert-to-quote`).then(r => r.data),
     onSuccess: (data) => {
@@ -134,24 +347,19 @@ export default function LeadDetailPage() {
     activityMutation.mutate(activityForm);
   }
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-64 text-stone-400 text-sm">Loading lead…</div>;
-  }
-  if (!lead) {
-    return <div className="flex items-center justify-center h-64 text-stone-400 text-sm">Lead not found.</div>;
-  }
+  if (isLoading) return <div className="flex items-center justify-center h-64 text-stone-400 text-sm">Loading lead…</div>;
+  if (!lead)     return <div className="flex items-center justify-center h-64 text-stone-400 text-sm">Lead not found.</div>;
 
   const status = lead.status ?? "new";
 
   return (
     <div className="p-6 space-y-6">
-      <button
-        onClick={() => navigate("/admin/crm/leads")}
-        className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800 transition-colors"
-      >
+      <button onClick={() => navigate("/admin/crm/leads")}
+        className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800 transition-colors">
         <ArrowLeft size={16} /> Back to Leads
       </button>
 
+      {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
@@ -163,32 +371,33 @@ export default function LeadDetailPage() {
           {lead.leadRefNumber && (
             <p className="font-mono text-sm text-stone-400">{lead.leadRefNumber}</p>
           )}
+          {/* Account badge under the name */}
+          {lead.accountName && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <Building2 size={13} className="text-[#F5821F]" />
+              <span className="text-sm text-[#57534E]">{lead.accountName}</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button
-            onClick={() => convertMutation.mutate()}
-            disabled={convertMutation.isPending}
-            className="text-white"
-            style={{ background: "#F5821F" }}
-          >
+          <Button onClick={() => convertMutation.mutate()} disabled={convertMutation.isPending}
+            className="text-white" style={{ background: "#F5821F" }}>
             {convertMutation.isPending ? "Converting…" : "Convert to Quote"}
           </Button>
           <Button variant="outline">Edit</Button>
         </div>
       </div>
 
+      {/* ── Tabs ── */}
       <div className="flex gap-1 border-b border-stone-200">
         {TABS.map(t => {
           const Icon = t.icon;
           const active = tab === t.key;
           return (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
+            <button key={t.key} onClick={() => setTab(t.key)}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
                 active ? "border-[#F5821F] text-[#F5821F]" : "border-transparent text-stone-500 hover:text-stone-800"
-              }`}
-            >
+              }`}>
               <Icon size={14} />
               {t.label}
             </button>
@@ -196,17 +405,32 @@ export default function LeadDetailPage() {
         })}
       </div>
 
+      {/* ── Details Tab ── */}
       {tab === "details" && (
         <div className="space-y-6">
+          {/* Account Lookup - full width row */}
+          <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
+            <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide mb-3 flex items-center gap-1.5">
+              <Building2 size={12} /> Account
+            </p>
+            <AccountLookupField
+              currentId={lead.accountId}
+              currentName={lead.accountName}
+              onSave={saveAccount}
+              isSaving={savingAccount}
+            />
+          </div>
+
+          {/* Info Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <DetailField label="Full Name"       value={lead.fullName} />
-            <DetailField label="Email"           value={lead.email} />
-            <DetailField label="Phone"           value={lead.phone} />
-            <DetailField label="Nationality"     value={lead.nationality} />
-            <DetailField label="Inquiry Type"    value={lead.inquiryType} />
-            <DetailField label="Budget"          value={lead.budget ? `A$${Number(lead.budget).toLocaleString("en-AU")}` : null} />
-            <DetailField label="Expected Start"  value={lead.expectedStartDate ? format(new Date(lead.expectedStartDate), "MMM d, yyyy") : null} />
-            <DetailField label="Source"          value={lead.source} />
+            <DetailField label="Full Name"      value={lead.fullName} />
+            <DetailField label="Email"          value={lead.email} />
+            <DetailField label="Phone"          value={lead.phone} />
+            <DetailField label="Nationality"    value={lead.nationality} />
+            <DetailField label="Inquiry Type"   value={lead.inquiryType} />
+            <DetailField label="Budget"         value={lead.budget ? `A$${Number(lead.budget).toLocaleString("en-AU")}` : null} />
+            <DetailField label="Expected Start" value={lead.expectedStartDate ? format(new Date(lead.expectedStartDate), "MMM d, yyyy") : null} />
+            <DetailField label="Source"         value={lead.source} />
             {lead.notes && (
               <div className="col-span-full">
                 <p className="text-xs text-stone-400 mb-0.5">Notes</p>
@@ -215,6 +439,7 @@ export default function LeadDetailPage() {
             )}
           </div>
 
+          {/* Linked Camp Application */}
           {lead.source === "Camp Application" && lead.campApplication && (
             <div className="border border-[#F5821F]/30 rounded-xl p-4 bg-[#FEF0E3]/40">
               <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide mb-3">Linked Camp Application</p>
@@ -238,10 +463,8 @@ export default function LeadDetailPage() {
                   </span>
                 </div>
               </div>
-              <a
-                href={`/admin/camp-applications/${lead.campApplication.id}`}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#F5821F] hover:underline"
-              >
+              <a href={`/admin/camp-applications/${lead.campApplication.id}`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#F5821F] hover:underline">
                 View Application <ExternalLink size={13} />
               </a>
             </div>
@@ -249,6 +472,7 @@ export default function LeadDetailPage() {
         </div>
       )}
 
+      {/* ── Activity Tab ── */}
       {tab === "activity" && (
         <div className="space-y-6">
           <div className="space-y-0">
@@ -263,7 +487,7 @@ export default function LeadDetailPage() {
                     <ChannelIcon channel={a.channel} />
                     {!isLast && <div className="w-px flex-1 bg-stone-200 mt-2" />}
                   </div>
-                  <div className={`pb-6 flex-1 ${isLast ? "" : ""}`}>
+                  <div className={`pb-6 flex-1`}>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-semibold text-stone-600">{a.channel}</span>
                       <span className="text-[11px] text-stone-400">
@@ -290,36 +514,25 @@ export default function LeadDetailPage() {
                 <Label className="text-xs font-medium text-stone-600">Channel</Label>
                 <Select value={activityForm.channel} onValueChange={v => setActivityForm(f => ({ ...f, channel: v }))}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CHANNELS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
+                  <SelectContent>{CHANNELS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Scheduled At</Label>
-                <Input
-                  type="datetime-local"
-                  value={activityForm.scheduledAt}
+                <Input type="datetime-local" value={activityForm.scheduledAt}
                   onChange={e => setActivityForm(f => ({ ...f, scheduledAt: e.target.value }))}
-                  className="h-9 text-sm"
-                />
+                  className="h-9 text-sm" />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-stone-600">Description <span className="text-red-500">*</span></Label>
-              <Textarea
-                value={activityForm.description}
+              <Textarea value={activityForm.description}
                 onChange={e => setActivityForm(f => ({ ...f, description: e.target.value }))}
                 className="text-sm min-h-[70px] resize-none bg-white"
-                placeholder="Describe the activity…"
-              />
+                placeholder="Describe the activity…" />
             </div>
-            <Button
-              onClick={handleLogActivity}
-              disabled={activityMutation.isPending}
-              className="text-white"
-              style={{ background: "#F5821F" }}
-            >
+            <Button onClick={handleLogActivity} disabled={activityMutation.isPending}
+              className="text-white" style={{ background: "#F5821F" }}>
               {activityMutation.isPending ? "Saving…" : "Save Activity"}
             </Button>
           </div>

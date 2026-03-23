@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leads, lead_activities, quotes, campApplications } from "@workspace/db/schema";
+import { leads, lead_activities, quotes, campApplications, accounts } from "@workspace/db/schema";
 import { eq, ilike, and, or, count, SQL, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -80,8 +80,18 @@ router.get("/crm/leads/kanban", authenticate, requireRole(...ADMIN_ROLES), async
 
 router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id));
-    if (!lead) return res.status(404).json({ error: "Lead not found" });
+    const rows = await db
+      .select({
+        lead: leads,
+        accountName: accounts.name,
+      })
+      .from(leads)
+      .leftJoin(accounts, eq(leads.accountId, accounts.id))
+      .where(eq(leads.id, req.params.id))
+      .limit(1);
+
+    if (!rows.length) return res.status(404).json({ error: "Lead not found" });
+    const { lead, accountName } = rows[0];
 
     const activities = await db.select().from(lead_activities)
       .where(eq(lead_activities.leadId, req.params.id))
@@ -101,7 +111,7 @@ router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
       campApplication = ca ?? null;
     }
 
-    return res.json({ ...lead, activities, campApplication });
+    return res.json({ ...lead, accountName: accountName ?? null, activities, campApplication });
   } catch (err) {
     console.error("[GET /api/crm/leads/:id]", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -112,7 +122,7 @@ router.post("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req,
   try {
     const { fullName, email, phone, nationality, source, interestedIn, notes,
             assignedStaffId, inquiryType, budget, expectedStartDate, contactId,
-            status } = req.body;
+            accountId, status } = req.body;
 
     if (!fullName) return res.status(400).json({ error: "fullName is required" });
 
@@ -121,6 +131,7 @@ router.post("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req,
     const [created] = await db.insert(leads).values({
       leadRefNumber, fullName, email, phone, nationality, source, interestedIn, notes,
       assignedStaffId, inquiryType, budget, expectedStartDate, contactId,
+      accountId: accountId || null,
       status: status ?? "new",
     }).returning();
 
@@ -137,11 +148,13 @@ router.put("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
     if (!existing) return res.status(404).json({ error: "Lead not found" });
 
     const { fullName, email, phone, nationality, source, interestedIn, notes,
-            assignedStaffId, inquiryType, budget, expectedStartDate, contactId, status } = req.body;
+            assignedStaffId, inquiryType, budget, expectedStartDate, contactId,
+            accountId, status } = req.body;
 
     const [updated] = await db.update(leads)
       .set({ fullName, email, phone, nationality, source, interestedIn, notes,
-             assignedStaffId, inquiryType, budget, expectedStartDate, contactId, status,
+             assignedStaffId, inquiryType, budget, expectedStartDate, contactId,
+             accountId: accountId || null, status,
              updatedAt: new Date() })
       .where(eq(leads.id, req.params.id))
       .returning();

@@ -32,6 +32,7 @@ export const leads = pgTable("leads", {
   budget:            decimal("budget",              { precision: 12, scale: 2 }),
   expectedStartDate: date("expected_start_date"),
   contactId:         uuid("contact_id"),
+  accountId:         uuid("account_id"),
   createdAt:         timestamp("created_at").defaultNow(),
   updatedAt:         timestamp("updated_at").defaultNow(),
 });
