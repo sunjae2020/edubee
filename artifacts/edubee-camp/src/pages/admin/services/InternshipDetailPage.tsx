@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { ArrowLeft, Check, FileText, Briefcase, User, ChevronRight } from "lucide-react";
+import { ArrowLeft, Check, FileText, Briefcase, User, ChevronRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
+import { NotePanel } from "@/components/shared/NotePanel";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -312,7 +313,7 @@ export default function InternshipDetailPage() {
   const [, navigate] = useLocation();
   const { toast }    = useToast();
   const qc           = useQueryClient();
-  const [tab, setTab] = useState<"profile" | "company" | "progress" | "docs">("profile");
+  const [tab, setTab] = useState<"profile" | "company" | "progress" | "docs" | "notes">("profile");
 
   const id = params?.id;
 
@@ -338,10 +339,11 @@ export default function InternshipDetailPage() {
   if (!record)  return <div className="p-6 text-stone-500">Record not found.</div>;
 
   const TABS = [
-    { key: "profile",  label: "Student Profile" },
-    { key: "company",  label: "Company Match"   },
-    { key: "progress", label: "Progress"        },
-    { key: "docs",     label: "Documents"       },
+    { key: "profile",  label: "Student Profile"  },
+    { key: "company",  label: "Host Company"      },
+    { key: "progress", label: "Progress"          },
+    { key: "docs",     label: "Documents"         },
+    { key: "notes",    label: "Notes"             },
   ] as const;
 
   const currentStage = record.status ?? "profile_review";
@@ -398,6 +400,17 @@ export default function InternshipDetailPage() {
       {tab === "docs"     && (
         <div className="flex items-center justify-center h-40 text-stone-400 text-sm gap-2">
           <FileText size={20} /> Document management coming soon
+        </div>
+      )}
+      {tab === "notes" && id && (
+        <div className="bg-white border border-stone-200 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-stone-800 mb-4">Activity Notes</h3>
+          <NotePanel
+            entityType="internship_mgt"
+            entityId={id}
+            allowedNoteTypes={["internal"]}
+            defaultVisibility="internal"
+          />
         </div>
       )}
     </div>

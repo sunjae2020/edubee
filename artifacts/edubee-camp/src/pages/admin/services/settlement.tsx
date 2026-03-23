@@ -1,253 +1,219 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import axios from "axios";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { NotePanel } from "@/components/shared/NotePanel";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
-import { DollarSign, Pencil, TrendingDown, Plus, FileText, ArrowUpRight, CalendarRange, Download } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
+import { Search, Plus, MapPin, Calendar, User, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  AUD: "A$", USD: "$", SGD: "S$", PHP: "₱", THB: "฿", KRW: "₩", JPY: "¥", GBP: "£",
+interface Rec {
+  id: string;
+  contractId?: string | null;
+  contractNumber?: string | null;
+  studentName?: string | null;
+  clientEmail?: string | null;
+  arrivalDate?: string | null;
+  overallStatus?: string | null;
+  assignedConsultantId?: string | null;
+  consultantName?: string | null;
+  grossAmount?: string | null;
+  notes?: string | null;
+  createdAt?: string;
+}
+
+function fmtDate(d?: string | null) {
+  if (!d) return "—";
+  try { return format(parseISO(d), "dd MMM yyyy"); } catch { return d; }
+}
+function fmtMoney(n?: string | number | null) {
+  if (n == null || n === "") return "—";
+  return `A$${Number(n).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+const STATUS_MAP: Record<string, { label: string; bg: string; text: string; icon: typeof Clock }> = {
+  pending:     { label: "Pending",     bg: "#F4F3F1", text: "#57534E", icon: Clock        },
+  in_progress: { label: "In Progress", bg: "#FEF0E3", text: "#F5821F", icon: AlertCircle  },
+  completed:   { label: "Completed",   bg: "#DCFCE7", text: "#16A34A", icon: CheckCircle2 },
 };
 
-function DualAmount({ amount, currency, audEquivalent }: { amount?: string | number | null; currency?: string | null; audEquivalent?: string | number | null }) {
-  if (!amount) return <span className="text-muted-foreground">—</span>;
-  const sym = CURRENCY_SYMBOLS[currency ?? "AUD"] ?? (currency ?? "AUD");
-  const num = Number(amount);
-  const aud = Number(audEquivalent);
+function StatusBadge({ s }: { s?: string | null }) {
+  const cfg = STATUS_MAP[s ?? "pending"] ?? STATUS_MAP.pending;
   return (
-    <span>
-      <span className="font-medium">{sym}{num.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-      {currency && currency !== "AUD" && aud > 0 && (
-        <span className="ml-1.5 text-[11px] text-muted-foreground">≈ A${aud.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-      )}
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+      style={{ background: cfg.bg, color: cfg.text }}>
+      {cfg.label}
     </span>
   );
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-[#FEF9C3] text-[#CA8A04] border-[#CA8A04]/20",
-  processing: "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F]/20",
-  settled: "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20",
-  disputed: "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
-  cancelled: "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
-};
-
-function StatusBadge({ status }: { status?: string | null }) {
-  const s = (status ?? "pending").toLowerCase();
-  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[s] ?? "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]"}`}>{s}</span>;
-}
-
-const ROLE_LABELS: Record<string, string> = {
-  partner_institute: "Institute", partner_hotel: "Hotel", partner_pickup: "Pickup",
-  partner_tour: "Tour", camp_coordinator: "Camp Coordinator", education_agent: "Education Agent",
-};
-
-const CONTRACT_STATUS_COLORS: Record<string, string> = {
-  draft: "bg-[#F4F3F1] text-[#57534E]", active: "bg-[#DCFCE7] text-[#16A34A]",
-  signed: "bg-[#FEF0E3] text-[#F5821F]", completed: "bg-[#DCFCE7] text-[#16A34A]",
-  cancelled: "bg-[#FEF2F2] text-[#DC2626]", suspended: "bg-[#FEF9C3] text-[#CA8A04]",
-};
-
-interface Rec {
-  id: string; contractId?: string | null; providerUserId?: string | null; providerRole?: string | null;
-  serviceDescription?: string | null; grossAmount?: string | null; commissionRate?: string | null;
-  commissionAmount?: string | null; netAmount?: string | null; currency?: string | null;
-  originalCurrency?: string | null; originalNetAmount?: string | null; audEquivalent?: string | null;
-  status?: string | null; settlementDate?: string | null; notes?: string | null;
-  studentName?: string | null; clientEmail?: string | null;
-  contractNumber?: string | null; contractStatus?: string | null;
-  contractStartDate?: string | null; contractEndDate?: string | null;
-  totalAmount?: string | null;
-}
-
-function ContractCard({ rec, onViewContract }: { rec: Rec; onViewContract: () => void }) {
-  if (!rec.contractId) return null;
-  const cs = (rec.contractStatus ?? "draft").toLowerCase();
-  const ccls = CONTRACT_STATUS_COLORS[cs] ?? "bg-[#F4F3F1] text-[#57534E]";
+function Initials({ name }: { name?: string | null }) {
+  const parts = (name ?? "?").split(" ").filter(Boolean);
+  const ini = parts.length >= 2 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0]?.[0] ?? "?");
   return (
-    <div className="rounded-lg border border-[#F5821F]/30 bg-[#F5821F]/5 p-3 space-y-2.5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="w-3.5 h-3.5 text-[#F5821F]" />
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Contract</span>
-          {rec.contractNumber && <span className="font-mono text-xs font-bold text-[#F5821F]">{rec.contractNumber}</span>}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${ccls}`}>{cs}</span>
-          <button onClick={onViewContract} className="flex items-center gap-0.5 text-[11px] text-[#F5821F] hover:underline font-medium">
-            View <ArrowUpRight className="w-3 h-3" />
-          </button>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div>
-          <span className="text-muted-foreground">Student</span>
-          <p className="font-medium text-foreground truncate">{rec.studentName ?? "—"}</p>
-        </div>
-        <div>
-          <span className="text-muted-foreground">Client Email</span>
-          <p className="font-medium text-foreground truncate">{rec.clientEmail ?? "—"}</p>
-        </div>
-        {(rec.contractStartDate || rec.contractEndDate) && (
-          <div className="flex items-start gap-1 col-span-2">
-            <CalendarRange className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
-            <span className="text-muted-foreground">
-              {rec.contractStartDate ? format(new Date(rec.contractStartDate), "MMM d, yyyy") : "—"}
-              {" · "}
-              {rec.contractEndDate ? format(new Date(rec.contractEndDate), "MMM d, yyyy") : "—"}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
+    <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+      style={{ background: "#F5821F" }}>{ini.toUpperCase()}</span>
   );
 }
 
 export default function Settlement() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const { toast } = useToast();
   const [, navigate] = useLocation();
-  const [selected, setSelected] = useState<Rec | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<Partial<Rec>>({});
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState<Partial<Rec>>({});
 
   const role = user?.role ?? "";
-  const isAdmin = ["super_admin", "admin"].includes(role);
-  const isCC = role === "camp_coordinator";
-  const isPartner = role.startsWith("partner_");
-  const canCreate = isAdmin || isCC;
+  const canCreate = ["super_admin", "admin", "camp_coordinator"].includes(role);
 
   const { data, isLoading } = useQuery({
     queryKey: ["services-settlement", statusFilter],
-    queryFn: () => axios.get(`${BASE}/api/services/settlement${statusFilter !== "all" ? `?status=${statusFilter}` : ""}`).then(r => r.data),
+    queryFn: () =>
+      axios.get(`${BASE}/api/services/settlement`, {
+        params: statusFilter !== "all" ? { overallStatus: statusFilter } : {},
+      }).then(r => r.data.data ?? []),
   });
-  const rows: Rec[] = data?.data ?? [];
-
-  // Summary stats
-  const totalGross = rows.reduce((s, r) => s + Number(r.grossAmount ?? 0), 0);
-  const totalNet = rows.reduce((s, r) => s + Number(r.netAmount ?? 0), 0);
-  const totalCommission = rows.reduce((s, r) => s + Number(r.commissionAmount ?? 0), 0);
-  const pending = rows.filter(r => r.status === "pending").length;
-
-  const saveMutation = useMutation({
-    mutationFn: (payload: Partial<Rec>) => axios.put(`${BASE}/api/services/settlement/${selected!.id}`, payload).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["services-settlement"] }); toast({ title: "Settlement updated" }); setEditing(false); },
-    onError: () => toast({ title: "Save failed", variant: "destructive" }),
+  const rows: Rec[] = (data ?? []).filter((r: Rec) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (r.studentName ?? "").toLowerCase().includes(q)
+        || (r.contractNumber ?? "").toLowerCase().includes(q);
   });
 
-  const approveMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      axios.patch(`${BASE}/api/services/settlement/${id}/status`, { status, settlementDate: new Date().toISOString().slice(0, 10) }).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["services-settlement"] }); toast({ title: "Status updated" }); setSelected(null); },
-  });
+  const totalByStatus = (s: string) => (data ?? []).filter((r: Rec) => (r.overallStatus ?? "pending") === s).length;
 
   const createMutation = useMutation({
-    mutationFn: (payload: Partial<Rec>) => axios.post(`${BASE}/api/services/settlement`, payload).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["services-settlement"] }); toast({ title: "Settlement created" }); setShowCreate(false); setForm({}); },
+    mutationFn: (payload: Partial<Rec>) =>
+      axios.post(`${BASE}/api/services/settlement`, {
+        ...payload,
+        overallStatus: "pending",
+        checklist: [],
+      }).then(r => r.data),
+    onSuccess: (created) => {
+      qc.invalidateQueries({ queryKey: ["services-settlement"] });
+      setShowCreate(false);
+      setForm({});
+      navigate(`${BASE}/admin/services/settlement/${created.id}`);
+    },
   });
 
-  function openSheet(r: Rec) { setSelected(r); setForm({ ...r }); setEditing(false); }
-  const fld = (k: keyof Rec) => (v: string) => setForm(f => ({ ...f, [k]: v }));
-
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between mb-2">
+    <div className="p-6 space-y-5">
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-[#F5821F]" /></div>
-          <div><h1 className="text-lg font-bold">Settlement</h1><p className="text-xs text-muted-foreground">Provider payouts & commission management</p></div>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background:"#FEF0E3" }}>
+            <MapPin className="w-5 h-5" style={{ color:"#F5821F" }} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-[#1C1917]">Settlement</h1>
+            <p className="text-xs text-[#A8A29E]">Student arrival & settling-in service management</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={async () => {
-            try {
-              const axios = (await import("axios")).default;
-              const resp = await axios.post(`${BASE}/api/data-manager/export/settlement_mgt`, {}, { responseType: "blob" });
-              const url = URL.createObjectURL(resp.data);
-              const a = document.createElement("a"); a.href = url;
-              a.download = `settlement_mgt_${new Date().toISOString().slice(0, 10)}.csv`;
-              document.body.appendChild(a); a.click();
-              setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
-            } catch { alert("Export failed"); }
-          }}>
-            <Download className="w-3.5 h-3.5" /> CSV
-          </Button>
+        {canCreate && (
+          <button
+            onClick={() => { setForm({}); setShowCreate(true); }}
+            className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-white"
+            style={{ background:"#F5821F" }}>
+            <Plus size={15} /> New Settlement
+          </button>
+        )}
+      </div>
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {(["pending","in_progress","completed"] as const).map(s => {
+          const cfg = STATUS_MAP[s];
+          const count = totalByStatus(s);
+          return (
+            <button key={s}
+              onClick={() => setStatusFilter(statusFilter === s ? "all" : s)}
+              className="bg-white border rounded-xl p-4 text-left hover:shadow-sm transition-shadow"
+              style={{ borderColor: statusFilter === s ? cfg.text : "#E8E6E2" }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: cfg.text }}>{cfg.label}</p>
+              <p className="text-2xl font-bold text-[#1C1917]">{count}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
+        <input
+          type="text"
+          placeholder="Search by student name or contract number…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full h-9 pl-9 pr-3 rounded-lg border border-[#E8E6E2] text-sm bg-white focus:outline-none focus:border-[#F5821F]"
+        />
+      </div>
+
+      {/* Table */}
+      {isLoading ? (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-14 rounded-lg bg-[#F4F3F1] animate-pulse" />
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="bg-white border border-[#E8E6E2] rounded-xl p-16 text-center">
+          <MapPin size={32} className="mx-auto mb-3 text-[#E8E6E2]" />
+          <p className="text-sm text-[#A8A29E]">No settlement records found</p>
           {canCreate && (
-            <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => { setForm({}); setShowCreate(true); }}>
-              <Plus className="w-3.5 h-3.5" /> New Settlement
-            </Button>
+            <button onClick={() => { setForm({}); setShowCreate(true); }}
+              className="mt-3 text-sm underline" style={{ color:"#F5821F" }}>
+              Create your first settlement
+            </button>
           )}
         </div>
-      </div>
-
-      {/* Summary KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "Total Gross", value: `A$${totalGross.toLocaleString("en-AU", { minimumFractionDigits: 2 })}` },
-          { label: "Platform Commission", value: `A$${totalCommission.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, sub: isCC ? "Deducted from revenue" : undefined, color: "text-[#DC2626]" },
-          { label: "Net to Providers", value: `A$${totalNet.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, color: "text-[#16A34A]" },
-          { label: "Pending", value: `${pending} record${pending !== 1 ? "s" : ""}`, color: pending > 0 ? "text-[#CA8A04]" : "" },
-        ].map(k => (
-          <div key={k.label} className="bg-white rounded-lg border p-3">
-            <div className="text-xs text-muted-foreground font-medium mb-1">{k.label}</div>
-            <div className={`text-base font-bold ${k.color ?? ""}`}>{k.value}</div>
-            {k.sub && <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-0.5"><TrendingDown className="w-3 h-3" />{k.sub}</div>}
-          </div>
-        ))}
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-2">
-        {["all","pending","processing","settled","disputed"].map(s => (
-          <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${statusFilter === s ? "bg-[#F5821F] text-white border-[#F5821F]" : "border-muted-foreground/30 text-muted-foreground hover:border-[#F5821F]/50"}`}>
-            {s}
-          </button>
-        ))}
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-2">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-      ) : rows.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground"><DollarSign className="w-10 h-10 mx-auto mb-3 opacity-30" /><p className="text-sm">No settlement records found</p></div>
       ) : (
-        <div className="rounded-lg border overflow-x-auto bg-white">
-          <table className="w-full min-w-[860px] text-sm">
-            <thead><tr className="border-b bg-muted/30">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contract</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provider Role</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Description</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Gross</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Comm %</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Net</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Settlement Date</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
-            </tr></thead>
+        <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
+                {["Student","Arrival Date","Assigned Consultant","Service Fee","Status","Created"].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">{h}</th>
+                ))}
+              </tr>
+            </thead>
             <tbody>
               {rows.map(r => (
-                <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3] cursor-pointer transition-colors" onClick={() => navigate(`${BASE}/admin/services/settlement/${r.id}`)}>
-                  <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F5821F]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
-                  <td className="px-4 py-3"><span className="px-1.5 py-0.5 bg-muted rounded text-xs">{ROLE_LABELS[r.providerRole ?? ""] ?? r.providerRole ?? "—"}</span></td>
-                  <td className="px-4 py-3 text-xs max-w-[160px] truncate">{r.serviceDescription ?? "—"}</td>
-                  <td className="px-4 py-3 text-right"><DualAmount amount={r.grossAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
-                  <td className="px-4 py-3 text-right text-sm">{r.commissionRate ? `${r.commissionRate}%` : "—"}</td>
-                  <td className="px-4 py-3 text-right font-medium text-[#16A34A]"><DualAmount amount={r.netAmount} currency={r.currency} /></td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{r.settlementDate ?? "—"}</td>
-                  <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                <tr key={r.id}
+                  onClick={() => navigate(`${BASE}/admin/services/settlement/${r.id}`)}
+                  className="border-b border-[#E8E6E2] cursor-pointer transition-colors hover:bg-[#FAFAF9]">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <Initials name={r.studentName} />
+                      <div>
+                        <p className="text-[13px] font-semibold text-[#1C1917]">{r.studentName ?? "—"}</p>
+                        {r.contractNumber && (
+                          <p className="text-[11px] font-mono text-[#A8A29E]">{r.contractNumber}</p>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5 text-[12px] text-[#57534E]">
+                      <Calendar size={12} className="text-[#A8A29E]" />
+                      {fmtDate(r.arrivalDate)}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5 text-[12px] text-[#57534E]">
+                      <User size={12} className="text-[#A8A29E]" />
+                      {r.consultantName ?? "—"}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-[13px] font-semibold text-[#1C1917]">
+                    {fmtMoney(r.grossAmount)}
+                  </td>
+                  <td className="px-4 py-3"><StatusBadge s={r.overallStatus} /></td>
+                  <td className="px-4 py-3 text-[12px] text-[#A8A29E]">{fmtDate(r.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -255,121 +221,59 @@ export default function Settlement() {
         </div>
       )}
 
-      {/* Detail/Edit Sheet */}
-      <Sheet open={!!selected} onOpenChange={o => { if (!o) { setSelected(null); setEditing(false); } }}>
-        <SheetContent className="w-[560px] sm:max-w-[560px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-[#F5821F]" /> Settlement Detail</SheetTitle>
-            <SheetDescription className="text-xs">{selected?.serviceDescription ?? "Provider payout record"}</SheetDescription>
-          </SheetHeader>
-          {selected && (
-            <div className="mt-4 space-y-4">
-              <ContractCard rec={selected} onViewContract={() => { setSelected(null); navigate(`${BASE}/admin/crm/contracts`); }} />
-              <div className="flex items-center justify-between">
-                <StatusBadge status={selected.status} />
-                <div className="flex gap-2">
-                  {isAdmin && selected.status === "pending" && (
-                    <Button size="sm" className="h-7 text-xs bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={() => approveMutation.mutate({ id: selected.id, status: "processing" })}>Mark Processing</Button>
-                  )}
-                  {isAdmin && selected.status === "processing" && (
-                    <Button size="sm" className="h-7 text-xs bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={() => approveMutation.mutate({ id: selected.id, status: "settled" })}>Mark Settled</Button>
-                  )}
-                  {!editing && isAdmin && (
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => { setForm({ ...selected }); setEditing(true); }}>
-                      <Pencil className="w-3 h-3" /> Edit
-                    </Button>
-                  )}
-                </div>
+      {/* Create Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={e => { if (e.target === e.currentTarget) setShowCreate(false); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
+              <h2 className="text-sm font-bold text-[#1C1917]">New Settlement Service</h2>
+              <button onClick={() => setShowCreate(false)} className="text-[#A8A29E] hover:text-[#1C1917]">✕</button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Contract ID</label>
+                <input type="text" value={form.contractId ?? ""}
+                  onChange={e => setForm(f => ({ ...f, contractId: e.target.value }))}
+                  placeholder="Paste contract UUID…"
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]" />
               </div>
-
-              {/* Amount breakdown */}
-              <div className="bg-muted/30 rounded-lg p-3 space-y-2">
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Gross Amount</span><DualAmount amount={selected.grossAmount} currency={selected.originalCurrency ?? selected.currency} audEquivalent={selected.audEquivalent} /></div>
-                <div className="flex justify-between text-sm text-[#DC2626]"><span>Commission ({selected.commissionRate}%)</span><span>- A${Number(selected.commissionAmount ?? 0).toFixed(2)}</span></div>
-                <div className="border-t pt-2 flex justify-between font-bold"><span>Net Amount</span><span className="text-[#16A34A]">A${Number(selected.netAmount ?? 0).toFixed(2)}</span></div>
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Arrival Date</label>
+                <input type="date" value={form.arrivalDate ?? ""}
+                  onChange={e => setForm(f => ({ ...f, arrivalDate: e.target.value }))}
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]" />
               </div>
-
-              {!editing ? (
-                <dl className="space-y-3">
-                  {[
-                    ["Provider Role", ROLE_LABELS[selected.providerRole ?? ""] ?? selected.providerRole],
-                    ["Description", selected.serviceDescription],
-                    ["Currency", selected.originalCurrency ?? selected.currency],
-                    ["Settlement Date", selected.settlementDate],
-                    ["Notes", selected.notes],
-                  ].map(([label, val]) => val && (
-                    <div key={String(label)}><dt className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">{label}</dt><dd className="text-sm">{String(val)}</dd></div>
-                  ))}
-                </dl>
-              ) : (
-                <div className="space-y-3">
-                  <div><Label className="text-xs">Description</Label><Textarea value={form.serviceDescription ?? ""} onChange={e => fld("serviceDescription")(e.target.value)} className="mt-1 text-sm" rows={2} /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Gross Amount</Label><Input type="number" value={form.grossAmount ?? ""} onChange={e => fld("grossAmount")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
-                    <div><Label className="text-xs">Commission Rate (%)</Label><Input type="number" value={form.commissionRate ?? ""} onChange={e => fld("commissionRate")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
-                  </div>
-                  <div><Label className="text-xs">Settlement Date</Label><Input type="date" value={form.settlementDate ?? ""} onChange={e => fld("settlementDate")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
-                  <div><Label className="text-xs">Notes</Label><Textarea value={form.notes ?? ""} onChange={e => fld("notes")(e.target.value)} className="mt-1 text-sm" rows={2} /></div>
-                  <div><Label className="text-xs">Status</Label>
-                    <Select value={form.status ?? "pending"} onValueChange={v => fld("status")(v)}>
-                      <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
-                      <SelectContent>{["pending","processing","settled","disputed","cancelled"].map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending}>
-                      {saveMutation.isPending ? "Saving…" : "Save Changes"}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
-                  </div>
-                </div>
-              )}
-              <div className="border-t border-border pt-4">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Notes</h4>
-                <NotePanel
-                  entityType="settlement_mgt"
-                  entityId={selected.id}
-                  allowedNoteTypes={["internal"]}
-                  defaultVisibility="internal"
-                />
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Service Fee (A$)</label>
+                <input type="number" value={form.grossAmount ?? ""}
+                  onChange={e => setForm(f => ({ ...f, grossAmount: e.target.value }))}
+                  placeholder="0.00"
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]" />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Notes</label>
+                <textarea rows={2} value={form.notes ?? ""}
+                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F] resize-none" />
               </div>
             </div>
-          )}
-        </SheetContent>
-      </Sheet>
-
-      {/* Create Dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>New Settlement Record</DialogTitle></DialogHeader>
-          <div className="space-y-3 mt-2">
-            <div><Label className="text-xs">Contract ID</Label><Input value={form.contractId ?? ""} onChange={e => fld("contractId")(e.target.value)} className="mt-1 h-8 text-sm" placeholder="Contract UUID" /></div>
-            <div><Label className="text-xs">Provider Role</Label>
-              <Select value={form.providerRole ?? ""} onValueChange={v => fld("providerRole")(v)}>
-                <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue placeholder="Select role…" /></SelectTrigger>
-                <SelectContent>{Object.entries(ROLE_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div><Label className="text-xs">Description</Label><Input value={form.serviceDescription ?? ""} onChange={e => fld("serviceDescription")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
-            <div className="grid grid-cols-3 gap-2">
-              <div><Label className="text-xs">Gross</Label><Input type="number" value={form.grossAmount ?? ""} onChange={e => fld("grossAmount")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
-              <div><Label className="text-xs">Comm %</Label><Input type="number" value={form.commissionRate ?? "10"} onChange={e => fld("commissionRate")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
-              <div><Label className="text-xs">Currency</Label>
-                <Select value={form.currency ?? "AUD"} onValueChange={v => fld("currency")(v)}>
-                  <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>{["AUD","USD","SGD","PHP","THB","KRW","JPY","GBP"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Creating…" : "Create"}
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+            <div className="px-6 py-4 border-t border-[#E8E6E2] flex justify-end gap-2">
+              <button onClick={() => setShowCreate(false)}
+                className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">
+                Cancel
+              </button>
+              <button
+                onClick={() => createMutation.mutate(form)}
+                disabled={createMutation.isPending || !form.contractId}
+                className="h-9 px-4 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+                style={{ background:"#F5821F" }}>
+                {createMutation.isPending ? "Creating…" : "Create & Open"}
+              </button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 }

@@ -19,6 +19,7 @@ interface GuardianRow {
   status?: string | null;
   staffFirstName?: string | null;
   staffLastName?: string | null;
+  serviceFee?: string | null;
 }
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
@@ -116,17 +117,17 @@ export default function GuardianPage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              {["Student", "Guardian Staff", "Billing Cycle", "Service Period", "Status"].map(h => (
+              {["Student", "Guardian Staff", "Billing Cycle", "Service Period", "Fee (A$)", "Status"].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={5} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={6} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={5} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
+              <tr><td colSpan={6} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
             )}
             {rows.map(row => {
               const badge = STATUS_STYLE[row.status ?? "pending"] ?? STATUS_STYLE.pending;
@@ -145,6 +146,9 @@ export default function GuardianPage() {
                   <td className="px-4 py-3 text-stone-500 text-xs capitalize">{row.billingCycle?.replace(/_/g, " ") ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600 text-xs whitespace-nowrap">
                     {fmtDate(row.serviceStartDate)} → {fmtDate(row.serviceEndDate)}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-semibold text-stone-700">
+                    {row.serviceFee ? `$${Number(row.serviceFee).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"

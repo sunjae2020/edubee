@@ -96,6 +96,7 @@ export const guardianMgt = pgTable("guardian_mgt", {
   medicalEmergencies:             jsonb("medical_emergencies"),
   welfareInterventions:           jsonb("welfare_interventions"),
   status:                         varchar("status", { length: 50 }).notNull().default("pending"),
+  serviceFee:                     decimal("service_fee", { precision: 12, scale: 2 }),
   notes:                          text("notes"),
   createdAt:                      timestamp("created_at").notNull().defaultNow(),
   updatedAt:                      timestamp("updated_at").notNull().defaultNow(),

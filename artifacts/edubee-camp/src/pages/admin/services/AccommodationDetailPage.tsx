@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { ArrowLeft, Plus, HeartPulse, DollarSign, Home } from "lucide-react";
+import { ArrowLeft, Plus, HeartPulse, DollarSign, Home, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, differenceInCalendarDays } from "date-fns";
+import { NotePanel } from "@/components/shared/NotePanel";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -360,7 +361,7 @@ export default function AccommodationDetailPage() {
   const [, navigate] = useLocation();
   const { toast }    = useToast();
   const qc           = useQueryClient();
-  const [tab, setTab] = useState<"details" | "welfare" | "billing">("details");
+  const [tab, setTab] = useState<"details" | "welfare" | "billing" | "host" | "notes">("details");
 
   const id = params?.id;
 
@@ -387,8 +388,10 @@ export default function AccommodationDetailPage() {
 
   const TABS = [
     { key: "details", label: "Details"        },
+    { key: "host",    label: "Host Family"    },
     { key: "welfare", label: "Welfare Checks" },
     { key: "billing", label: "Billing"        },
+    { key: "notes",   label: "Notes"          },
   ] as const;
 
   return (
@@ -424,8 +427,59 @@ export default function AccommodationDetailPage() {
       </div>
 
       {tab === "details" && <DetailsTab record={record} onSave={p => patchMutation.mutate(p)} />}
+      {tab === "host" && (
+        <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Home size={16} style={{ color: "#F5821F" }} />
+            <h3 className="text-sm font-bold text-stone-800">Host Family Information</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Host Name</p>
+              <p className="text-sm text-stone-800">{record.hostName ?? <span className="text-stone-400 italic">Not assigned</span>}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1 flex items-center gap-1"><Phone size={10} /> Contact</p>
+              <p className="text-sm text-stone-800">{record.hostContact ?? "—"}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1 flex items-center gap-1"><MapPin size={10} /> Address</p>
+              <p className="text-sm text-stone-800">{record.hostAddress ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Distance to School</p>
+              <p className="text-sm text-stone-800">{record.distanceToSchool ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Meal Included</p>
+              <p className="text-sm text-stone-800 capitalize">{record.mealIncluded?.replace(/_/g, " ") ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Room Type</p>
+              <p className="text-sm text-stone-800 capitalize">{record.roomType?.replace(/_/g, " ") ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Weekly Rate</p>
+              <p className="text-sm font-semibold" style={{ color: "#F5821F" }}>
+                {record.weeklyRate ? `A$${Number(record.weeklyRate).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       {tab === "welfare" && <WelfareTab record={record} id={id!} />}
       {tab === "billing" && <BillingTab record={record} />}
+      {tab === "notes" && id && (
+        <div className="bg-white border border-stone-200 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-stone-800 mb-4">Activity Notes</h3>
+          <NotePanel
+            entityType="accommodation_mgt"
+            entityId={id}
+            allowedNoteTypes={["internal"]}
+            defaultVisibility="internal"
+          />
+        </div>
+      )}
     </div>
   );
 }

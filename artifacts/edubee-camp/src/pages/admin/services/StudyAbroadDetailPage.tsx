@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays, parseISO } from "date-fns";
+import { NotePanel } from "@/components/shared/NotePanel";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -406,7 +407,7 @@ export default function StudyAbroadDetailPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"overview" | "schools" | "visa" | "docs">("overview");
+  const [tab, setTab] = useState<"overview" | "schools" | "visa" | "docs" | "notes">("overview");
 
   const id = params?.id;
 
@@ -444,6 +445,7 @@ export default function StudyAbroadDetailPage() {
     { key: "schools",  label: "School Applications" },
     { key: "visa",     label: "Visa"                },
     { key: "docs",     label: "Documents"           },
+    { key: "notes",    label: "Notes"               },
   ] as const;
 
   return (
@@ -509,6 +511,17 @@ export default function StudyAbroadDetailPage() {
         {tab === "docs" && (
           <div className="flex items-center justify-center h-40 text-stone-400 text-sm gap-2">
             <FileText size={20} /> Document management coming soon
+          </div>
+        )}
+        {tab === "notes" && id && (
+          <div className="bg-white border border-stone-200 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-stone-800 mb-4">Activity Notes</h3>
+            <NotePanel
+              entityType="study_abroad_mgt"
+              entityId={id}
+              allowedNoteTypes={["internal"]}
+              defaultVisibility="internal"
+            />
           </div>
         )}
       </div>

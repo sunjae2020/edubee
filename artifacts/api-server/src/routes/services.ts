@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import {
-  instituteMgt, hotelMgt, pickupMgt, tourMgt, settlementMgt, contracts, applications, users
+  instituteMgt, hotelMgt, pickupMgt, tourMgt, settlementMgt,
+  settlementChecklistTemplates, contracts, applications, users
 } from "@workspace/db/schema";
-import { eq, and, inArray, sql, SQL } from "drizzle-orm";
+import { eq, and, inArray, sql, SQL, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 
 const router = Router();
@@ -51,6 +52,15 @@ async function enrichWithContractInfo(rows: any[]): Promise<any[]> {
     const info = contractMap.get(r.contractId) ?? {};
     return { ...r, ...info };
   });
+}
+
+async function enrichSettlementConsultants(rows: any[]): Promise<any[]> {
+  const consultantIds = [...new Set(rows.map(r => r.assignedConsultantId).filter(Boolean))];
+  if (consultantIds.length === 0) return rows;
+  const consultantRows = await db.select({ id: users.id, fullName: users.fullName })
+    .from(users).where(inArray(users.id, consultantIds));
+  const map = new Map(consultantRows.map(u => [u.id, u.fullName]));
+  return rows.map(r => ({ ...r, consultantName: map.get(r.assignedConsultantId) ?? null }));
 }
 
 // ── Institute Management ─────────────────────────────────────────────
@@ -309,11 +319,12 @@ router.get("/services/settlement", authenticate, async (req, res) => {
 
     if (role === "parent_client") return res.status(403).json({ error: "Forbidden" });
 
-    const { contractId, providerId, status } = req.query as Record<string, string>;
+    const { contractId, providerId, status, overallStatus } = req.query as Record<string, string>;
     const conditions: SQL[] = [];
-    if (contractId) conditions.push(eq(settlementMgt.contractId, contractId));
-    if (providerId) conditions.push(eq(settlementMgt.providerUserId, providerId));
-    if (status) conditions.push(eq(settlementMgt.status, status));
+    if (contractId)   conditions.push(eq(settlementMgt.contractId, contractId));
+    if (providerId)   conditions.push(eq(settlementMgt.providerUserId, providerId));
+    if (status)       conditions.push(eq(settlementMgt.status, status));
+    if (overallStatus) conditions.push(eq(settlementMgt.overallStatus, overallStatus));
 
     if (role.startsWith("partner_")) {
       conditions.push(eq(settlementMgt.providerUserId, uid));
@@ -323,7 +334,8 @@ router.get("/services/settlement", authenticate, async (req, res) => {
       if (contractIds.length === 0) return res.json({ data: [] });
       const rawData = await db.select().from(settlementMgt);
       const data = rawData.filter(s => s.contractId && contractIds.includes(s.contractId));
-      return res.json({ data: await enrichWithContractInfo(data) });
+      const enriched = await enrichWithContractInfo(data);
+      return res.json({ data: await enrichSettlementConsultants(enriched) });
     } else if (role === "education_agent") {
       conditions.push(eq(settlementMgt.providerUserId, uid));
     }
@@ -332,7 +344,8 @@ router.get("/services/settlement", authenticate, async (req, res) => {
       ? await db.select().from(settlementMgt).where(conditions.length === 1 ? conditions[0] : and(...conditions))
       : await db.select().from(settlementMgt);
 
-    return res.json({ data: await enrichWithContractInfo(data) });
+    const enriched = await enrichWithContractInfo(data);
+    return res.json({ data: await enrichSettlementConsultants(enriched) });
   } catch (err) {
     console.error("Settlement list error:", err);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -378,6 +391,109 @@ router.patch("/services/settlement/:id/status", authenticate, async (req, res) =
       .where(eq(settlementMgt.id, req.params.id)).returning();
     if (!updated) return res.status(404).json({ error: "Not Found" });
     return res.json(updated);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET settlement detail
+router.get("/services/settlement/:id", authenticate, async (req, res) => {
+  try {
+    const role = req.user!.role;
+    const uid  = req.user!.id;
+    if (role === "parent_client") return res.status(403).json({ error: "Forbidden" });
+
+    const [rec] = await db.select().from(settlementMgt)
+      .where(eq(settlementMgt.id, req.params.id)).limit(1);
+    if (!rec) return res.status(404).json({ error: "Not Found" });
+    if (role.startsWith("partner_") && rec.providerUserId !== uid)
+      return res.status(403).json({ error: "Forbidden" });
+
+    // Enrich with consultant name
+    let consultantName: string | null = null;
+    if (rec.assignedConsultantId) {
+      const [u] = await db.select({ fullName: users.fullName })
+        .from(users).where(eq(users.id, rec.assignedConsultantId)).limit(1);
+      consultantName = u?.fullName ?? null;
+    }
+
+    const [enriched] = await enrichWithContractInfo([rec]);
+    return res.json({ ...enriched, consultantName });
+  } catch (err) {
+    console.error("Settlement detail error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PATCH settlement checklist item
+router.patch("/services/settlement/:id/checklist", authenticate, async (req, res) => {
+  try {
+    const role = req.user!.role;
+    if (!isAdminOrCC(role)) return res.status(403).json({ error: "Forbidden" });
+
+    const { key, updates: itemUpdates } = req.body as { key: string; updates: Record<string, any> };
+    const [rec] = await db.select({ checklist: settlementMgt.checklist })
+      .from(settlementMgt).where(eq(settlementMgt.id, req.params.id)).limit(1);
+    if (!rec) return res.status(404).json({ error: "Not Found" });
+
+    const items: any[] = (rec.checklist as any[]) ?? [];
+    const idx = items.findIndex((i: any) => i.key === key);
+    if (idx === -1) return res.status(404).json({ error: "Checklist item not found" });
+    items[idx] = { ...items[idx], ...itemUpdates };
+
+    const [updated] = await db.update(settlementMgt).set({ checklist: items, updatedAt: new Date() })
+      .where(eq(settlementMgt.id, req.params.id)).returning();
+    return res.json(updated);
+  } catch (err) {
+    console.error("Checklist update error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── Settlement Checklist Templates ──────────────────────────────────────────
+
+router.get("/services/settlement-templates", authenticate, async (req, res) => {
+  try {
+    const templates = await db.select().from(settlementChecklistTemplates)
+      .orderBy(desc(settlementChecklistTemplates.isDefault), settlementChecklistTemplates.name);
+    return res.json({ data: templates });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/services/settlement-templates", authenticate, async (req, res) => {
+  try {
+    if (!isAdminOrCC(req.user!.role)) return res.status(403).json({ error: "Forbidden" });
+    const [tmpl] = await db.insert(settlementChecklistTemplates).values({
+      ...req.body,
+      createdBy: req.user!.id,
+      createdAt: new Date(), updatedAt: new Date(),
+    }).returning();
+    return res.status(201).json(tmpl);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.put("/services/settlement-templates/:id", authenticate, async (req, res) => {
+  try {
+    if (!isAdminOrCC(req.user!.role)) return res.status(403).json({ error: "Forbidden" });
+    const [updated] = await db.update(settlementChecklistTemplates)
+      .set({ ...req.body, updatedAt: new Date() })
+      .where(eq(settlementChecklistTemplates.id, req.params.id)).returning();
+    if (!updated) return res.status(404).json({ error: "Not Found" });
+    return res.json(updated);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/services/settlement-templates/:id", authenticate, async (req, res) => {
+  try {
+    if (!isAdminOrCC(req.user!.role)) return res.status(403).json({ error: "Forbidden" });
+    await db.delete(settlementChecklistTemplates).where(eq(settlementChecklistTemplates.id, req.params.id));
+    return res.json({ ok: true });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }

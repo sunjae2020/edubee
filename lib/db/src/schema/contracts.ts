@@ -175,6 +175,25 @@ export const settlementMgt = pgTable("settlement_mgt", {
   ledgerEntryId: uuid("ledger_entry_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // ── Arrival Settlement Service fields (added) ──────────────────────────
+  studentAccountId:      uuid("student_account_id"),
+  assignedConsultantId:  uuid("assigned_consultant_id").references(() => users.id),
+  arrivalDate:           date("arrival_date"),
+  overallStatus:         varchar("overall_status", { length: 50 }).default("pending"),
+  checklist:             jsonb("checklist"),
+  checklistTemplateId:   uuid("checklist_template_id"),
+});
+
+// ── Settlement Checklist Templates ─────────────────────────────────────────
+export const settlementChecklistTemplates = pgTable("settlement_checklist_templates", {
+  id:          uuid("id").primaryKey().defaultRandom(),
+  name:        varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  items:       jsonb("items").notNull(),
+  isDefault:   boolean("is_default").notNull().default(false),
+  createdBy:   uuid("created_by").references(() => users.id),
+  createdAt:   timestamp("created_at").defaultNow(),
+  updatedAt:   timestamp("updated_at").defaultNow(),
 });
 
 export const insertContractSchema = createInsertSchema(contracts).omit({
