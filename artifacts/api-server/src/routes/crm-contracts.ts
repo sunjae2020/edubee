@@ -381,4 +381,25 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
   }
 });
 
+// ─── PATCH /crm/contracts/:id ──────────────────────────────────────────────
+router.patch("/crm/contracts/:id", authenticate, async (req, res) => {
+  try {
+    const { contractStatus, fromDate, toDate, paymentFrequency, notes, contractAmount } = req.body;
+    const parts: ReturnType<typeof sql>[] = [];
+    if (contractStatus    !== undefined) parts.push(sql`status             = ${contractStatus}`);
+    if (fromDate          !== undefined) parts.push(sql`from_date          = ${fromDate || null}`);
+    if (toDate            !== undefined) parts.push(sql`to_date            = ${toDate || null}`);
+    if (paymentFrequency  !== undefined) parts.push(sql`payment_frequency  = ${paymentFrequency}`);
+    if (notes             !== undefined) parts.push(sql`notes              = ${notes || null}`);
+    if (contractAmount    !== undefined) parts.push(sql`contract_amount    = ${Number(contractAmount)}`);
+    if (parts.length === 0) return res.status(400).json({ error: "No fields provided" });
+    const setSql = sql.join(parts, sql.raw(", "));
+    await db.execute(sql`UPDATE crm_contracts SET ${setSql} WHERE id = ${req.params.id}`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("PATCH /crm/contracts/:id error:", err);
+    return res.status(500).json({ error: "Update failed" });
+  }
+});
+
 export default router;

@@ -38,8 +38,9 @@ type TaskDetail = TaskRec & { comments: Comment[]; attachments: unknown[] };
 
 const STATUSES = ["open", "in_progress", "pending_response", "resolved", "closed"] as const;
 const PRIORITIES = ["low", "normal", "high", "urgent"] as const;
-const CATEGORIES = ["complaint", "inquiry", "request", "document", "payment", "service", "other"] as const;
-const TASK_TYPES = ["internal", "partner_work", "cs_request"] as const;
+const CATEGORIES = ["complaint", "inquiry", "request", "document", "payment", "service", "support", "other"] as const;
+const TASK_TYPES = ["internal", "cs"] as const;
+type TaskTypeTab = "internal" | "cs";
 
 const STATUS_LABELS: Record<string, string> = {
   open: "Open", in_progress: "In Progress", pending_response: "Pending Response", resolved: "Resolved", closed: "Closed",
@@ -59,8 +60,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 const TYPE_COLORS: Record<string, string> = {
   internal: "bg-[#E7E5E4] text-[#57534E]",
-  partner_work: "bg-purple-100 text-purple-700",
-  cs_request: "bg-[#F5821F]/10 text-[#F5821F]",
+  cs:       "bg-[#F5821F]/10 text-[#F5821F]",
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -70,7 +70,7 @@ function PriorityBadge({ priority }: { priority: string }) {
   return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${PRIORITY_COLORS[priority] ?? "bg-muted text-muted-foreground"}`}>{priority}</span>;
 }
 function TypeBadge({ type }: { type: string }) {
-  const label = type === "cs_request" ? "CS Request" : type === "partner_work" ? "Partner Work" : "Internal";
+  const label = type === "cs" ? "CS" : "Internal";
   return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${TYPE_COLORS[type] ?? "bg-muted text-muted-foreground"}`}>{label}</span>;
 }
 
@@ -82,6 +82,7 @@ export default function TasksPage() {
   const isParent = role === "parent_client";
   const isAdmin = ["super_admin", "admin"].includes(role);
 
+  const [taskTypeTab, setTaskTypeTab] = useState<TaskTypeTab>("internal");
   const [view, setView] = useState<"list" | "kanban">("list");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -95,9 +96,10 @@ export default function TasksPage() {
   const [editingAssignee, setEditingAssignee] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["tasks", statusFilter, priorityFilter, search],
+    queryKey: ["tasks", taskTypeTab, statusFilter, priorityFilter, search],
     queryFn: () => {
       const params = new URLSearchParams();
+      params.set("task_type", taskTypeTab);
       if (statusFilter !== "all") params.set("status", statusFilter);
       if (priorityFilter !== "all") params.set("priority", priorityFilter);
       if (search) params.set("search", search);
@@ -150,7 +152,7 @@ export default function TasksPage() {
   });
 
   const [createForm, setCreateForm] = useState({
-    title: "", description: "", taskType: "internal", category: "inquiry",
+    title: "", description: "", taskType: taskTypeTab, category: "inquiry",
     priority: "normal", assignedTo: "", visibility: "internal",
   });
 
@@ -159,7 +161,7 @@ export default function TasksPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
       setShowCreate(false);
-      setCreateForm({ title: "", description: "", taskType: "internal", category: "inquiry", priority: "normal", assignedTo: "", visibility: "internal" });
+      setCreateForm({ title: "", description: "", taskType: taskTypeTab, category: "inquiry", priority: "normal", assignedTo: "", visibility: "internal" });
     },
   });
 
@@ -181,8 +183,8 @@ export default function TasksPage() {
             <Ticket className="w-5 h-5 text-[#F5821F]" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-[#1C1917]">Tasks / CS</h1>
-            <p className="text-xs text-[#A8A29E]">Customer support & internal task management</p>
+            <h1 className="text-xl font-bold text-[#1C1917]">Tasks</h1>
+            <p className="text-xs text-[#A8A29E]">Internal task & customer support management</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -195,11 +197,31 @@ export default function TasksPage() {
             className={`p-1.5 rounded-md ${view === "kanban" ? "bg-[#F5821F] text-white" : "text-[#78716C] hover:bg-[#F4F3F1]"}`}
           ><LayoutGrid className="w-4 h-4" /></button>
           {!isParent && (
-            <Button className="h-8 gap-1.5 text-xs" onClick={() => setShowCreate(true)}>
-              <Plus className="w-3.5 h-3.5" /> New Task
+            <Button className="h-8 gap-1.5 text-xs" onClick={() => {
+              setCreateForm(f => ({ ...f, taskType: taskTypeTab as TaskTypeTab }));
+              setShowCreate(true);
+            }}>
+              <Plus className="w-3.5 h-3.5" /> New {taskTypeTab === "cs" ? "CS Ticket" : "Task"}
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Tab bar: Tasks | CS */}
+      <div className="flex gap-0 border-b border-[#E8E6E2]">
+        {([
+          { key: "internal" as TaskTypeTab, label: "Tasks",      icon: List   },
+          { key: "cs"       as TaskTypeTab, label: "CS Tickets", icon: Ticket },
+        ]).map(({ key, label, icon: Icon }) => (
+          <button key={key}
+            onClick={() => { setTaskTypeTab(key); setStatusFilter("all"); setSearch(""); }}
+            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
+            style={taskTypeTab === key
+              ? { borderColor: "#F5821F", color: "#F5821F" }
+              : { borderColor: "transparent", color: "#57534E" }}>
+            <Icon className="w-3.5 h-3.5" /> {label}
+          </button>
+        ))}
       </div>
 
       {/* Filters */}
@@ -550,7 +572,7 @@ export default function TasksPage() {
                 <Select value={createForm.taskType} onValueChange={v => setCreateForm(f => ({ ...f, taskType: v }))}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {TASK_TYPES.map(t => <SelectItem key={t} value={t} className="capitalize">{t === "cs_request" ? "CS Request" : t === "partner_work" ? "Partner Work" : "Internal"}</SelectItem>)}
+                    {TASK_TYPES.map(t => <SelectItem key={t} value={t} className="capitalize">{t === "cs" ? "CS Ticket" : "Internal Task"}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

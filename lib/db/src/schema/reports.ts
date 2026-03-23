@@ -68,7 +68,7 @@ export const notifications = pgTable("notifications", {
 export const tasks = pgTable("tasks", {
   id: uuid("id").primaryKey().defaultRandom(),
   taskNumber: varchar("task_number", { length: 30 }),
-  taskType: varchar("task_type", { length: 30 }).default("cs_request"),
+  taskType: varchar("task_type", { length: 30 }).notNull().default("internal"),
   category: varchar("category", { length: 30 }).default("inquiry"),
   source: varchar("source", { length: 30 }).default("portal"),
   submittedBy: uuid("submitted_by").references(() => users.id),
