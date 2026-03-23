@@ -99,7 +99,7 @@ export default function TasksPage() {
     queryKey: ["tasks", taskTypeTab, statusFilter, priorityFilter, search],
     queryFn: () => {
       const params = new URLSearchParams();
-      params.set("task_type", taskTypeTab);
+      params.set("taskType", taskTypeTab);
       if (statusFilter !== "all") params.set("status", statusFilter);
       if (priorityFilter !== "all") params.set("priority", priorityFilter);
       if (search) params.set("search", search);
