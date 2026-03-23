@@ -39,6 +39,7 @@ import crmAccountsRouter from "./crm-accounts.js";
 import productCatalogRouter from "./product-catalog.js";
 import accountingTransactionsRouter from "./accounting-transactions.js";
 import quoteProductsRouter from "./quote-products.js";
+import crmContractsRouter from "./crm-contracts.js";
 
 const router: IRouter = Router();
 
@@ -82,5 +83,6 @@ router.use(crmAccountsRouter);
 router.use(productCatalogRouter);
 router.use(accountingTransactionsRouter);
 router.use(quoteProductsRouter);
+router.use(crmContractsRouter);
 
 export default router;

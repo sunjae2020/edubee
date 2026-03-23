@@ -51,7 +51,8 @@ function buildNav(effectiveRole: string): NavGroup[] {
       { icon: Users,     label: "Contacts", href: "/admin/crm/contacts" },
       { icon: Building2, label: "Accounts", href: "/admin/crm/accounts" },
       { icon: Target,    label: "Leads",    href: "/admin/crm/leads"    },
-      { icon: FileText,  label: "Quotes",   href: "/admin/crm/quotes"   },
+      { icon: FileText,  label: "Quotes",     href: "/admin/crm/quotes"     },
+      { icon: FileCheck, label: "Contracts",  href: "/admin/crm/contracts"  },
     );
   }
   // Tasks & CS is visible to all roles
