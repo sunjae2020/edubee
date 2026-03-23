@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Search, Plus, Download } from "lucide-react";
 import { Input } from "./input";
 import { Button } from "./button";
@@ -28,11 +28,12 @@ interface ListToolbarProps {
   onAdd?: () => void;
   filterLabel?: string;
   csvExportTable?: string;
+  children?: ReactNode;
 }
 
 export function ListToolbar({
   search, onSearch, statuses = [], statusLabels, activeStatus = "all", onStatusChange,
-  total, addLabel, onAdd, filterLabel, csvExportTable,
+  total, addLabel, onAdd, filterLabel, csvExportTable, children,
 }: ListToolbarProps) {
   const [exporting, setExporting] = useState(false);
 
@@ -61,6 +62,8 @@ export function ListToolbar({
           className="pl-9 h-9 text-sm bg-background"
         />
       </div>
+
+      {children}
 
       {statuses.length > 0 && (
         <div className="flex items-center gap-1 flex-wrap">
