@@ -163,23 +163,6 @@ export default function ApplicationDetail() {
           ) : null
         }
       >
-        {/* ── Contracted Banner ── */}
-        {app.status === "contracted" && app.contractId && (
-          <div className="mb-4 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-            <div className="flex items-center gap-2 text-sm text-green-800">
-              <ClipboardList className="w-4 h-4 flex-shrink-0" />
-              <span>
-                Converted to Contract <strong>{app.contractNumber}</strong> — manage services in Contracts.
-              </span>
-            </div>
-            <a
-              href={`${BASE}/admin/contracts/${app.contractId}`}
-              className="flex items-center gap-1 rounded-md border border-green-300 bg-white px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-50 transition-colors"
-            >
-              View Contract <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-        )}
 
         {/* ── Overview ── */}
         {activeTab === "overview" && (
@@ -263,26 +246,15 @@ export default function ApplicationDetail() {
             )}
 
             {/* Linked Records */}
-            {(app.quoteId || app.contractId) && (
+            {app.quoteId && (
               <DetailSection title="Linked Records">
-                {app.quoteId && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Quote</span>
-                    <a href={`${BASE}/admin/crm/quotes/${app.quoteId}`}
-                      className="flex items-center gap-1 text-sm text-[#F5821F] hover:underline">
-                      View Quote <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                )}
-                {app.contractId && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Contract</span>
-                    <a href={`${BASE}/admin/contracts/${app.contractId}`}
-                      className="flex items-center gap-1 text-sm text-[#F5821F] hover:underline">
-                      {app.contractNumber ?? "View Contract"} <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Quote</span>
+                  <a href={`${BASE}/admin/crm/quotes/${app.quoteId}`}
+                    className="flex items-center gap-1 text-sm text-[#F5821F] hover:underline">
+                    View Quote <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
               </DetailSection>
             )}
           </div>
