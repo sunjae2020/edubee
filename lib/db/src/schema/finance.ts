@@ -150,6 +150,9 @@ export const invoices = pgTable("invoices", {
   isRecurring: boolean("is_recurring").default(false).notNull(),
   recurringCycle: varchar("recurring_cycle", { length: 20 }),
   recurringSeq: integer("recurring_seq"),
+  contractProductId: uuid("contract_product_id"),
+  balanceDue: decimal("balance_due", { precision: 12, scale: 2 }),
+  arStatus: varchar("ar_status", { length: 20 }).default("invoiced"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

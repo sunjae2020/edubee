@@ -40,6 +40,9 @@ import productCatalogRouter from "./product-catalog.js";
 import accountingTransactionsRouter from "./accounting-transactions.js";
 import quoteProductsRouter from "./quote-products.js";
 import crmContractsRouter from "./crm-contracts.js";
+import paymentHeadersRouter from "./payment-headers.js";
+import paymentLinesRouter from "./payment-lines.js";
+import journalEntriesRouter from "./journal-entries.js";
 
 const router: IRouter = Router();
 
@@ -84,5 +87,8 @@ router.use(productCatalogRouter);
 router.use(accountingTransactionsRouter);
 router.use(quoteProductsRouter);
 router.use(crmContractsRouter);
+router.use(paymentHeadersRouter);
+router.use(paymentLinesRouter);
+router.use(journalEntriesRouter);
 
 export default router;

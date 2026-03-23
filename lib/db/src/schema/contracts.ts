@@ -8,6 +8,7 @@ import {
   timestamp,
   jsonb,
   date,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -38,6 +39,7 @@ export const contracts = pgTable("contracts", {
   agentName: varchar("agent_name", { length: 255 }),
   notes: text("notes"),
   paymentFrequency: varchar("payment_frequency", { length: 50 }),
+  commissionType: varchar("commission_type", { length: 20 }),
   courseStartDate: date("course_start_date"),
   courseEndDate: date("course_end_date"),
   totalArAmount: decimal("total_ar_amount", { precision: 12, scale: 2 }),
@@ -64,6 +66,13 @@ export const contractProducts = pgTable("contract_products", {
   coaArCode: varchar("coa_ar_code", { length: 10 }),
   coaApCode: varchar("coa_ap_code", { length: 10 }),
   serviceModuleType: varchar("service_module_type", { length: 50 }),
+  name: varchar("name", { length: 255 }),
+  sortIndex: integer("sort_index").default(0),
+  isInitialPayment: boolean("is_initial_payment").default(false),
+  grossAmount: decimal("gross_amount", { precision: 12, scale: 2 }),
+  schoolAmount: decimal("school_amount", { precision: 12, scale: 2 }),
+  commissionAmount: decimal("commission_amount", { precision: 12, scale: 2 }),
+  netRevenue: decimal("net_revenue", { precision: 12, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

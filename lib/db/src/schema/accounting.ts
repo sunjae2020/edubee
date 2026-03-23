@@ -92,6 +92,7 @@ export const journalEntries = pgTable("journal_entries", {
   id:               uuid("id").primaryKey().defaultRandom(),
   entryDate:        date("entry_date").notNull(),
   paymentHeaderId:  uuid("payment_header_id").references(() => paymentHeaders.id),
+  paymentLineId:    uuid("payment_line_id").references(() => paymentLines.id),
   debitCoa:         varchar("debit_coa", { length: 10 }).notNull().references(() => chartOfAccounts.code),
   creditCoa:        varchar("credit_coa", { length: 10 }).notNull().references(() => chartOfAccounts.code),
   amount:           decimal("amount", { precision: 12, scale: 2 }).notNull().default("0"),
