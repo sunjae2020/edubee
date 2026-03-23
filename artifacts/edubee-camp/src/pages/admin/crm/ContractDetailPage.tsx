@@ -6,7 +6,7 @@ import {
   ArrowLeft, ExternalLink, FileText, CreditCard, GraduationCap,
   Car, Building2, Briefcase, Shield, CheckCircle2, Clock,
   AlertCircle, ChevronRight, Star, TrendingUp, TrendingDown,
-  UploadCloud, MessageSquare, Send, Download, Pencil, Plus, X,
+  UploadCloud, MessageSquare, Send, Download, Pencil, Plus, X, Wrench,
 } from "lucide-react";
 import { format } from "date-fns";
 import PaymentStatementModal from "../../../components/finance/PaymentStatementModal";
@@ -520,6 +520,7 @@ const SERVICE_ROUTES: Record<string, string> = {
   internship:    "/admin/services/internship",
   settlement:    "/admin/services/settlement",
   guardian:      "/admin/services/guardian",
+  other:         "/admin/services/other",
 };
 
 const SVC_STATUS_BADGE: Record<string, string> = {
@@ -533,12 +534,13 @@ const SVC_STATUS_BADGE: Record<string, string> = {
 };
 
 const ALL_SVC_DEFS = [
-  { key: "studyAbroad",   label: "Study Abroad",  icon: GraduationCap },
-  { key: "pickup",        label: "Pickup",         icon: Car           },
-  { key: "accommodation", label: "Accommodation",  icon: Building2     },
-  { key: "internship",    label: "Internship",     icon: Briefcase     },
-  { key: "settlement",    label: "Settlement",     icon: CheckCircle2  },
-  { key: "guardian",      label: "Guardian",       icon: Shield        },
+  { key: "studyAbroad",   label: "Study Abroad",   icon: GraduationCap },
+  { key: "pickup",        label: "Pickup",          icon: Car           },
+  { key: "accommodation", label: "Accommodation",   icon: Building2     },
+  { key: "internship",    label: "Internship",      icon: Briefcase     },
+  { key: "settlement",    label: "Settlement",      icon: CheckCircle2  },
+  { key: "guardian",      label: "Guardian",        icon: Shield        },
+  { key: "other",         label: "Other Service",   icon: Wrench        },
 ];
 
 function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType }: {
@@ -552,7 +554,9 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType }: 
 
   const withData = ALL_SVC_DEFS.map(d => ({
     ...d,
-    data: d.key === "pickup" ? (svcs.pickup?.[0] ?? null) : (svcs[d.key] ?? null),
+    data: (d.key === "pickup" || d.key === "other")
+      ? (Array.isArray(svcs[d.key]) ? svcs[d.key][0] ?? null : svcs[d.key] ?? null)
+      : (svcs[d.key] ?? null),
   }));
   const active   = withData.filter(d => !!d.data);
   const inactive = withData.filter(d => !d.data);
@@ -643,12 +647,12 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }
   const [showAdd, setShowAdd] = useState(false);
   const svcs = contract.services ?? {};
 
-  // Flatten all services into rows (supports multiple of same type, e.g. multiple pickups)
+  // Flatten all services into rows (supports multiple of same type, e.g. multiple pickups, other services)
   type SvcRow = { key: string; label: string; Icon: any; data: any };
   const rows: SvcRow[] = [];
   for (const def of ALL_SVC_DEFS) {
-    if (def.key === "pickup") {
-      const arr: any[] = Array.isArray(svcs.pickup) ? svcs.pickup : svcs.pickup ? [svcs.pickup] : [];
+    if (def.key === "pickup" || def.key === "other") {
+      const arr: any[] = Array.isArray(svcs[def.key]) ? svcs[def.key] : svcs[def.key] ? [svcs[def.key]] : [];
       arr.forEach(d => rows.push({ key: def.key, label: def.label, Icon: def.icon, data: d }));
     } else {
       const d = svcs[def.key];
@@ -664,6 +668,7 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }
     if (key === "internship")    return [data.companyName, data.position].filter(Boolean).join(" · ") || "—";
     if (key === "settlement")    return data.settlementDate ?? "—";
     if (key === "guardian")      return [data.guardianName, data.relationship].filter(Boolean).join(" · ") || "—";
+    if (key === "other")         return [data.serviceType, data.title].filter(Boolean).join(" · ") || "—";
     return "—";
   };
 

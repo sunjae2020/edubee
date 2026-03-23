@@ -24,7 +24,8 @@ export type EntityType =
   | "hotel_mgt"
   | "pickup_mgt"
   | "tour_mgt"
-  | "user";
+  | "user"
+  | "other_services_mgt";
 
 interface Props {
   entityType: EntityType;
@@ -178,7 +179,7 @@ function UploadModal({ open, onClose, entityType, entityId, availableCategories,
   const [extraName, setExtraName] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const referenceType = ["application", "contract", "user"].includes(entityType) ? entityType : "contract";
+  const referenceType = ["application", "contract", "user", "other_services_mgt"].includes(entityType) ? entityType : "contract";
   const referenceId = entityId;
 
   async function handleUpload() {

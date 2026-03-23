@@ -251,7 +251,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     const { id } = req.params;
     const r = (x: any) => x.rows ?? (x as any[]);
 
-    const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, clRes] = await Promise.all([
+    const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, otRes, clRes] = await Promise.all([
       db.execute(sql`
         SELECT c.*, a.name AS account_name, u.full_name AS owner_name, q.quote_ref_number
         FROM contracts c
@@ -279,6 +279,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       db.execute(sql`SELECT * FROM accommodation_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
       db.execute(sql`SELECT id, status, position_title, hourly_rate, employment_type FROM internship_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
       db.execute(sql`SELECT id, status, service_fee, billing_cycle FROM guardian_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
+      db.execute(sql`SELECT id, status, service_type, title, start_date, end_date, service_fee, ap_cost FROM other_services_mgt WHERE contract_id = ${id}::uuid ORDER BY created_at`),
       db.execute(sql`
         SELECT pcl.*, acc.name AS partner_name
         FROM product_cost_lines pcl
@@ -345,6 +346,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     const acArr = r(acRes); const ac = acArr[0] ?? null;
     const inArr = r(inRes); const intern = inArr[0] ?? null;
     const gdArr = r(gdRes); const gd = gdArr[0] ?? null;
+    const otArr = r(otRes);
 
     return res.json({
       id: c.id,
@@ -371,6 +373,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
         accommodation: ac ? { id: ac.id, status: ac.status, type: ac.accommodation_type, checkin: ac.checkin_date, checkout: ac.checkout_date, hostName: ac.host_name, hostAddress: ac.host_address } : null,
         internship:    intern ? { id: intern.id, status: intern.status, positionTitle: intern.position_title, hourlyRate: intern.hourly_rate, employmentType: intern.employment_type } : null,
         guardian:      gd ? { id: gd.id, status: gd.status, serviceFee: gd.service_fee, billingCycle: gd.billing_cycle } : null,
+        other:         otArr.length ? otArr.map((o: any) => ({ id: o.id, status: o.status, serviceType: o.service_type, title: o.title, startDate: o.start_date, endDate: o.end_date, serviceFee: o.service_fee })) : null,
         settlement:    null,
       },
       documents: [],

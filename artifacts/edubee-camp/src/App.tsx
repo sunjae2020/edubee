@@ -110,6 +110,8 @@ import InternshipPage from "@/pages/admin/services/InternshipPage";
 import InternshipDetailPage from "@/pages/admin/services/InternshipDetailPage";
 import GuardianPage from "@/pages/admin/services/GuardianPage";
 import GuardianDetailPage from "@/pages/admin/services/GuardianDetailPage";
+import OtherServicePage from "@/pages/admin/services/OtherServicePage";
+import OtherServiceDetailPage from "@/pages/admin/services/OtherServiceDetailPage";
 
 // My Programs
 import MyPrograms from "@/pages/admin/my-programs";
@@ -276,6 +278,12 @@ function Router() {
       </Route>
       <Route path="/admin/services/guardian/:id">
         <AdminRoute title="Guardian Detail"><GuardianDetailPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/services/other">
+        <AdminRoute title="Other Services"><OtherServicePage /></AdminRoute>
+      </Route>
+      <Route path="/admin/services/other/:id">
+        <AdminRoute title="Other Service Detail"><OtherServiceDetailPage /></AdminRoute>
       </Route>
 
       {/* CRM Pages */}
