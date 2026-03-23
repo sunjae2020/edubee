@@ -131,6 +131,7 @@ export default function ApplicationForm() {
   // ── Accommodation
   const [checkinDate,        setCheckinDate]        = useState("");
   const [checkoutDate,       setCheckoutDate]       = useState("");
+  const [stayDuration,       setStayDuration]       = useState("");
   const [roomType,           setRoomType]           = useState("");
   const [accommodationOption,setAccommodationOption]= useState(""); // "student" | "homestay"
 
@@ -190,6 +191,7 @@ export default function ApplicationForm() {
         passportNo    ? `Passport: ${passportNo} (exp ${passportExpiry})` : "",
         numLuggage    ? `Luggage: ${numLuggage}`           : "",
         pickupAddress ? `Pickup Address: ${pickupAddress}` : "",
+        stayDuration        ? `Duration: ${stayDuration}`                    : "",
         accommodationOption ? `Accommodation Option: ${accommodationOption}` : "",
         homestayType    ? `Homestay Type: ${homestayType}`           : "",
         allergicPets    ? `Allergic to Dogs/Cats: ${allergicPets}`   : "",
@@ -444,12 +446,8 @@ export default function ApplicationForm() {
       )}
 
       {/* ── 6. ACCOMMODATION / HOMESTAY (conditional) ─────────────── */}
-      {has("accommodation") && (() => {
-        const nights = checkinDate && checkoutDate
-          ? Math.max(0, Math.round((new Date(checkoutDate).getTime() - new Date(checkinDate).getTime()) / 86400000))
-          : null;
-        return (
-          <Section title="Accommodation / Homestay">
+      {has("accommodation") && (
+        <Section title="Accommodation / Homestay">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Check-in Date" required>
                 <Input className={inputCls} type="date" value={checkinDate} onChange={e => setCheckinDate(e.target.value)} />
@@ -458,9 +456,7 @@ export default function ApplicationForm() {
                 <Input className={inputCls} type="date" value={checkoutDate} onChange={e => setCheckoutDate(e.target.value)} />
               </Field>
               <Field label="Duration">
-                <div className="h-9 px-3 flex items-center rounded-md border border-input bg-muted/40 text-sm text-stone-600">
-                  {nights !== null ? `${nights} night${nights !== 1 ? "s" : ""}` : "—"}
-                </div>
+                <Input className={inputCls} value={stayDuration} onChange={e => setStayDuration(e.target.value)} placeholder="e.g. 4 weeks, 3 months" />
               </Field>
               <Field label="Room Type">
                 <select
@@ -486,9 +482,8 @@ export default function ApplicationForm() {
                 </select>
               </Field>
             </div>
-          </Section>
-        );
-      })()}
+        </Section>
+      )}
 
       {/* ── 7. HOMESTAY DETAILS (only when Homestay is selected) ──── */}
       {has("accommodation") && accommodationOption === "homestay" && (
