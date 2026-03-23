@@ -38,6 +38,13 @@ const SELECT_COLS = {
   studentName:           contracts.studentName,
   agentName:             contracts.agentName,
   staffFirstName:        users.fullName,
+  contractStatus:        contracts.status,
+  contractStartDate:     contracts.startDate,
+  contractEndDate:       contracts.endDate,
+  contractTotalAmount:   contracts.totalAmount,
+  contractCurrency:      contracts.currency,
+  contractPaidAmount:    contracts.paidAmount,
+  contractBalanceAmount: contracts.balanceAmount,
 };
 
 // ─── GET /api/services/internship ─────────────────────────────────────────────
@@ -176,6 +183,34 @@ router.patch(
       return res.json(updated);
     } catch (err) {
       console.error("[PATCH /api/services/internship/:id]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── POST /api/services/internship ────────────────────────────────────────────
+router.post(
+  "/services/internship",
+  authenticate,
+  requireRole(...STAFF_ROLES),
+  async (req, res) => {
+    try {
+      const { contractId, status, assignedStaffId, notes } = req.body;
+      if (!contractId) return res.status(400).json({ error: "contractId is required" });
+
+      const [record] = await db
+        .insert(internshipMgt)
+        .values({
+          contractId,
+          status: status ?? "profile_review",
+          ...(assignedStaffId && { assignedStaffId }),
+          ...(notes          && { notes }),
+        })
+        .returning({ id: internshipMgt.id });
+
+      return res.status(201).json(record);
+    } catch (err) {
+      console.error("[POST /api/services/internship]", err);
       return res.status(500).json({ error: "Internal server error" });
     }
   }

@@ -32,10 +32,17 @@ const SELECT_COLS = {
   notes:             accommodationMgt.notes,
   createdAt:         accommodationMgt.createdAt,
   updatedAt:         accommodationMgt.updatedAt,
-  contractNumber:    contracts.contractNumber,
-  studentName:       contracts.studentName,
-  agentName:         contracts.agentName,
-  staffFirstName:    users.fullName,
+  contractNumber:       contracts.contractNumber,
+  studentName:          contracts.studentName,
+  agentName:            contracts.agentName,
+  staffFirstName:       users.fullName,
+  contractStatus:       contracts.status,
+  contractStartDate:    contracts.startDate,
+  contractEndDate:      contracts.endDate,
+  contractTotalAmount:  contracts.totalAmount,
+  contractCurrency:     contracts.currency,
+  contractPaidAmount:   contracts.paidAmount,
+  contractBalanceAmount: contracts.balanceAmount,
 };
 
 // ─── GET /api/services/accommodation ─────────────────────────────────────────
@@ -169,6 +176,35 @@ router.patch(
       return res.json(updated);
     } catch (err) {
       console.error("[PATCH /api/services/accommodation/:id]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── POST /api/services/accommodation ────────────────────────────────────────
+router.post(
+  "/services/accommodation",
+  authenticate,
+  requireRole(...STAFF_ROLES),
+  async (req, res) => {
+    try {
+      const { contractId, accommodationType, status, assignedStaffId, notes } = req.body;
+      if (!contractId) return res.status(400).json({ error: "contractId is required" });
+
+      const [record] = await db
+        .insert(accommodationMgt)
+        .values({
+          contractId,
+          status: status ?? "searching",
+          ...(accommodationType && { accommodationType }),
+          ...(assignedStaffId   && { assignedStaffId }),
+          ...(notes             && { notes }),
+        })
+        .returning({ id: accommodationMgt.id });
+
+      return res.status(201).json(record);
+    } catch (err) {
+      console.error("[POST /api/services/accommodation]", err);
       return res.status(500).json({ error: "Internal server error" });
     }
   }

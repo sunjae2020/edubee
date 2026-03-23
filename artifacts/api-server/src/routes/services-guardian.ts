@@ -33,10 +33,18 @@ const SELECT_COLS = {
   notes:                          guardianMgt.notes,
   createdAt:                      guardianMgt.createdAt,
   updatedAt:                      guardianMgt.updatedAt,
+  serviceFee:                     guardianMgt.serviceFee,
   contractNumber:                 contracts.contractNumber,
   studentName:                    contracts.studentName,
   agentName:                      contracts.agentName,
   staffFirstName:                 users.fullName,
+  contractStatus:                 contracts.status,
+  contractStartDate:              contracts.startDate,
+  contractEndDate:                contracts.endDate,
+  contractTotalAmount:            contracts.totalAmount,
+  contractCurrency:               contracts.currency,
+  contractPaidAmount:             contracts.paidAmount,
+  contractBalanceAmount:          contracts.balanceAmount,
 };
 
 // ─── GET /api/services/guardian/billing-due ───────────────────────────────────
@@ -332,6 +340,35 @@ router.post(
       return res.status(201).json(inserted);
     } catch (err) {
       console.error("[POST /api/accounting/invoices/recurring]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── POST /api/services/guardian ─────────────────────────────────────────────
+router.post(
+  "/services/guardian",
+  authenticate,
+  requireRole(...STAFF_ROLES),
+  async (req, res) => {
+    try {
+      const { contractId, status, assignedStaffId, serviceFee, notes } = req.body;
+      if (!contractId) return res.status(400).json({ error: "contractId is required" });
+
+      const [record] = await db
+        .insert(guardianMgt)
+        .values({
+          contractId,
+          status: status ?? "active",
+          ...(assignedStaffId && { assignedStaffId }),
+          ...(serviceFee      && { serviceFee }),
+          ...(notes           && { notes }),
+        })
+        .returning({ id: guardianMgt.id });
+
+      return res.status(201).json(record);
+    } catch (err) {
+      console.error("[POST /api/services/guardian]", err);
       return res.status(500).json({ error: "Internal server error" });
     }
   }

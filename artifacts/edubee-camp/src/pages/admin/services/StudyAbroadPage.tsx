@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
-import { AlertTriangle, ChevronRight, Search } from "lucide-react";
+import { AlertTriangle, ChevronRight, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format, differenceInDays, parseISO } from "date-fns";
 
@@ -100,10 +100,13 @@ function PipelineStepper({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function StudyAbroadPage() {
-  const [, navigate]   = useLocation();
+  const qc                            = useQueryClient();
+  const [, navigate]                  = useLocation();
   const [activeStage, setActiveStage] = useState("");
   const [search, setSearch]           = useState("");
   const [page, setPage]               = useState(1);
+  const [showCreate, setShowCreate]   = useState(false);
+  const [createForm, setCreateForm]   = useState<{ contractId: string; notes: string }>({ contractId: "", notes: "" });
 
   const { data: alertsData } = useQuery({
     queryKey: ["study-abroad-visa-alerts"],
@@ -138,12 +141,32 @@ export default function StudyAbroadPage() {
     stageCounts[s] = (stageCounts[s] ?? 0) + 1;
   }
 
+  const createMutation = useMutation({
+    mutationFn: (payload: { contractId: string; notes: string }) =>
+      axios.post(`${BASE}/api/services/study-abroad`, payload).then(r => r.data),
+    onSuccess: (created) => {
+      qc.invalidateQueries({ queryKey: ["study-abroad"] });
+      setShowCreate(false);
+      setCreateForm({ contractId: "", notes: "" });
+      navigate(`${BASE}/admin/services/study-abroad/${created.id}`);
+    },
+  });
+
   return (
     <div className="p-6 space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-stone-800">Study Abroad</h1>
-        <p className="text-sm text-stone-500 mt-1">Manage student study abroad applications and visas</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-stone-800">Study Abroad</h1>
+          <p className="text-sm text-stone-500 mt-1">Manage student study abroad applications and visas</p>
+        </div>
+        <button
+          onClick={() => { setCreateForm({ contractId: "", notes: "" }); setShowCreate(true); }}
+          className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-white shrink-0"
+          style={{ background: "#F5821F" }}
+        >
+          <Plus size={15} /> New Study Abroad
+        </button>
       </div>
 
       {/* Visa expiry alert banner */}
@@ -297,6 +320,45 @@ export default function StudyAbroadPage() {
           >
             Next
           </button>
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={e => { if (e.target === e.currentTarget) setShowCreate(false); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
+              <h2 className="text-sm font-bold text-[#1C1917]">New Study Abroad Record</h2>
+              <button onClick={() => setShowCreate(false)} className="text-[#A8A29E] hover:text-[#1C1917]">✕</button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Contract ID <span className="text-red-500">*</span></label>
+                <input type="text" value={createForm.contractId}
+                  onChange={e => setCreateForm(f => ({ ...f, contractId: e.target.value }))}
+                  placeholder="Paste contract UUID…"
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]" />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Notes</label>
+                <textarea rows={2} value={createForm.notes}
+                  onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F] resize-none" />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-[#E8E6E2] flex justify-end gap-2">
+              <button onClick={() => setShowCreate(false)}
+                className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
+              <button
+                onClick={() => createMutation.mutate(createForm)}
+                disabled={createMutation.isPending || !createForm.contractId.trim()}
+                className="h-9 px-4 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+                style={{ background: "#F5821F" }}>
+                {createMutation.isPending ? "Creating…" : "Create & Open"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

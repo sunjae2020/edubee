@@ -33,6 +33,13 @@ const SELECT_COLS = {
   studentName:         contracts.studentName,
   agentName:           contracts.agentName,
   staffFirstName:      users.fullName,
+  contractStatus:      contracts.status,
+  contractStartDate:   contracts.startDate,
+  contractEndDate:     contracts.endDate,
+  contractTotalAmount: contracts.totalAmount,
+  contractCurrency:    contracts.currency,
+  contractPaidAmount:  contracts.paidAmount,
+  contractBalanceAmount: contracts.balanceAmount,
 };
 
 // ─── GET /api/services/study-abroad/visa-alerts ──────────────────────────────
@@ -186,6 +193,34 @@ router.patch(
       return res.json(updated);
     } catch (err) {
       console.error("[PATCH /api/services/study-abroad/:id]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── POST /api/services/study-abroad ─────────────────────────────────────────
+router.post(
+  "/services/study-abroad",
+  authenticate,
+  requireRole(...STAFF_ROLES),
+  async (req, res) => {
+    try {
+      const { contractId, applicationStage, assignedStaffId, notes } = req.body;
+      if (!contractId) return res.status(400).json({ error: "contractId is required" });
+
+      const [record] = await db
+        .insert(studyAbroadMgt)
+        .values({
+          contractId,
+          applicationStage: applicationStage ?? "counseling",
+          ...(assignedStaffId && { assignedStaffId }),
+          ...(notes          && { notes }),
+        })
+        .returning({ id: studyAbroadMgt.id });
+
+      return res.status(201).json(record);
+    } catch (err) {
+      console.error("[POST /api/services/study-abroad]", err);
       return res.status(500).json({ error: "Internal server error" });
     }
   }

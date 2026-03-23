@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   ArrowLeft, Plus, Pencil, Check, AlertTriangle,
-  ChevronRight, FileText,
+  ChevronRight, FileText, ExternalLink, DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,13 @@ interface SARecord {
   notes?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  contractStatus?: string | null;
+  contractStartDate?: string | null;
+  contractEndDate?: string | null;
+  contractTotalAmount?: string | null;
+  contractCurrency?: string | null;
+  contractPaidAmount?: string | null;
+  contractBalanceAmount?: string | null;
 }
 
 // ─── Pipeline stages ─────────────────────────────────────────────────────────
@@ -470,6 +477,66 @@ export default function StudyAbroadDetailPage() {
           {record.status ?? "—"}
         </span>
       </div>
+
+      {/* Related Contract + Financial Summary */}
+      {record.contractId && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <FileText size={14} style={{ color: "#F5821F" }} />
+              <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Related Contract</h3>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-stone-400">Contract #</span>
+                <button
+                  onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
+                  className="flex items-center gap-1 font-mono text-xs text-[#F5821F] hover:underline font-semibold"
+                >
+                  {record.contractNumber ?? "View"} <ExternalLink size={10} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-stone-400">Status</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize"
+                  style={{ background: "#F4F3F1", color: "#57534E" }}>
+                  {record.contractStatus ?? "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-stone-400">Period</span>
+                <span className="text-stone-600 text-xs">{fmtDate(record.contractStartDate)} → {fmtDate(record.contractEndDate)}</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <DollarSign size={14} style={{ color: "#F5821F" }} />
+              <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Financial Summary</h3>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-stone-400">Contract Value</span>
+                <span className="font-semibold text-stone-800">
+                  {record.contractTotalAmount ? `${record.contractCurrency ?? "AUD"} ${Number(record.contractTotalAmount).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-stone-400">Paid</span>
+                <span className="text-[#16A34A] font-medium">
+                  {record.contractPaidAmount ? `${record.contractCurrency ?? "AUD"} ${Number(record.contractPaidAmount).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-stone-400">Balance</span>
+                <span className="text-[#DC2626] font-medium">
+                  {record.contractBalanceAmount ? `${record.contractCurrency ?? "AUD"} ${Number(record.contractBalanceAmount).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-stone-200">
