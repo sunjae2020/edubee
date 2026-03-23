@@ -62,6 +62,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null | Reac
 // ── Tabs ───────────────────────────────────────────────────────────────────
 const TABS = [
   { key: "overview",     label: "Overview"          },
+  { key: "services",     label: "Services"          },
   { key: "schedule",     label: "Payment Schedule"  },
   { key: "invoices",     label: "Invoices"          },
   { key: "transactions", label: "Transactions"      },
@@ -632,6 +633,124 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType }: 
   );
 }
 
+// ── Services Grid Tab ────────────────────────────────────────────────────────
+function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }: {
+  contract: any;
+  primaryServiceType: string;
+  setPrimaryServiceType: (s: string) => void;
+}) {
+  const [, navigate] = useLocation();
+  const [showAdd, setShowAdd] = useState(false);
+  const svcs = contract.services ?? {};
+
+  const withData = ALL_SVC_DEFS.map(d => ({
+    ...d,
+    data: d.key === "pickup" ? (svcs.pickup?.[0] ?? null) : (svcs[d.key] ?? null),
+  }));
+  const active   = withData.filter(d => !!d.data);
+  const inactive = withData.filter(d => !d.data);
+
+  const getDetails = (key: string, data: any): string[] => {
+    if (!data) return [];
+    const lines: string[] = [];
+    if (key === "pickup")        { lines.push(`Type: ${data.pickupType ?? "—"}`); if (data.airportName) lines.push(`From: ${data.airportName}`); if (data.pickupDate) lines.push(`When: ${data.pickupDate}`); }
+    if (key === "accommodation") { lines.push(`Type: ${data.accommodationType ?? "—"}`); if (data.hostName) lines.push(`Host: ${data.hostName}`); }
+    if (key === "studyAbroad")   { if (data.schoolName) lines.push(`School: ${data.schoolName}`); if (data.courseName) lines.push(`Course: ${data.courseName}`); }
+    if (key === "internship")    { if (data.companyName) lines.push(`Company: ${data.companyName}`); if (data.position) lines.push(`Role: ${data.position}`); }
+    if (key === "settlement")    { if (data.settlementDate) lines.push(`Date: ${data.settlementDate}`); }
+    if (key === "guardian")      { if (data.guardianName) lines.push(`Name: ${data.guardianName}`); if (data.relationship) lines.push(`Relation: ${data.relationship}`); }
+    return lines;
+  };
+
+  return (
+    <div className="mt-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-[#1C1917]">Services</h2>
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF0E3] text-[#F5821F]">{active.length} active</span>
+        </div>
+        <div className="relative">
+          <button
+            onClick={() => setShowAdd(v => !v)}
+            className="h-8 px-3 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90"
+            style={{ background: "#F5821F" }}>
+            <Plus size={13} /> Add Service
+          </button>
+          {showAdd && inactive.length > 0 && (
+            <div className="absolute right-0 top-9 bg-white border border-[#E8E6E2] rounded-lg shadow-lg py-1 z-20 w-48">
+              {inactive.map(({ key, label, icon: Icon }) => (
+                <button key={key}
+                  onClick={() => { setShowAdd(false); navigate(`${SERVICE_ROUTES[key]}?contractId=${contract.id}`); }}
+                  className="w-full text-left px-4 py-2 text-sm text-[#1C1917] hover:bg-[#FAFAF9] flex items-center gap-2">
+                  <Icon size={13} style={{ color: "#F5821F" }} /> {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {showAdd && inactive.length === 0 && (
+            <div className="absolute right-0 top-9 bg-white border border-[#E8E6E2] rounded-lg shadow-lg p-3 z-20 w-44">
+              <p className="text-xs text-[#A8A29E]">All services are activated.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        {withData.map(({ key, label, icon: Icon, data }) => {
+          const isPrimary = primaryServiceType === key;
+          const isActive  = !!data;
+          const status    = data?.status ?? null;
+          const statusCls = status ? (SVC_STATUS_BADGE[status] ?? "bg-[#F4F3F1] text-[#57534E]") : "";
+          const details   = getDetails(key, data);
+          return (
+            <div key={key}
+              className={`bg-white border rounded-xl p-4 ${isActive ? "border-[#E8E6E2] cursor-pointer hover:shadow-sm transition-shadow" : "border-[#E8E6E2] opacity-60"}`}
+              onClick={() => isActive && data?.id && navigate(`${SERVICE_ROUTES[key]}/${data.id}`)}>
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ background: isPrimary ? "#FEF0E3" : "#F4F3F1" }}>
+                    <Icon size={15} style={{ color: isPrimary ? "#F5821F" : isActive ? "#78716C" : "#D6D3D1" }} />
+                  </div>
+                  <span className={`text-sm font-semibold ${isActive ? "text-[#1C1917]" : "text-[#A8A29E]"}`}>{label}</span>
+                </div>
+                {status ? (
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${statusCls}`}>{status.replace(/_/g, " ")}</span>
+                ) : (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F4F3F1] text-[#A8A29E]">Inactive</span>
+                )}
+              </div>
+
+              {isActive ? (
+                <>
+                  {details.length > 0 ? (
+                    <ul className="space-y-0.5 mb-3">
+                      {details.map((line, i) => (
+                        <li key={i} className="text-xs text-[#57534E]">{line}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {!isPrimary ? (
+                    <button
+                      onClick={e => { e.stopPropagation(); setPrimaryServiceType(key); }}
+                      className="text-xs text-[#A8A29E] hover:text-[#F5821F] flex items-center gap-1 mt-1">
+                      ☆ Set as Primary
+                    </button>
+                  ) : (
+                    <p className="text-xs font-semibold mt-1" style={{ color: "#F5821F" }}>★ Primary</p>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-[#A8A29E]">Not activated</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Edit Contract Modal ─────────────────────────────────────────────────────
 function EditContractModal({ contract, onClose }: { contract: any; onClose: () => void }) {
   const qc = useQueryClient();
@@ -1018,6 +1137,13 @@ export default function ContractDetailPage() {
           <OverviewTab
             contract={contract}
             onEditContract={() => setEditingContract(true)}
+            primaryServiceType={primaryServiceType}
+            setPrimaryServiceType={setPrimaryServiceType}
+          />
+        )}
+        {activeTab === "services"     && (
+          <ServicesGridTab
+            contract={contract}
             primaryServiceType={primaryServiceType}
             setPrimaryServiceType={setPrimaryServiceType}
           />
