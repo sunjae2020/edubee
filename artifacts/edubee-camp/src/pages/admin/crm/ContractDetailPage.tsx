@@ -633,7 +633,7 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType }: 
   );
 }
 
-// ── Services Grid Tab ────────────────────────────────────────────────────────
+// ── Services List Tab ────────────────────────────────────────────────────────
 function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }: {
   contract: any;
   primaryServiceType: string;
@@ -643,31 +643,42 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }
   const [showAdd, setShowAdd] = useState(false);
   const svcs = contract.services ?? {};
 
-  const withData = ALL_SVC_DEFS.map(d => ({
-    ...d,
-    data: d.key === "pickup" ? (svcs.pickup?.[0] ?? null) : (svcs[d.key] ?? null),
-  }));
-  const active   = withData.filter(d => !!d.data);
-  const inactive = withData.filter(d => !d.data);
+  // Flatten all services into rows (supports multiple of same type, e.g. multiple pickups)
+  type SvcRow = { key: string; label: string; Icon: any; data: any };
+  const rows: SvcRow[] = [];
+  for (const def of ALL_SVC_DEFS) {
+    if (def.key === "pickup") {
+      const arr: any[] = Array.isArray(svcs.pickup) ? svcs.pickup : svcs.pickup ? [svcs.pickup] : [];
+      arr.forEach(d => rows.push({ key: def.key, label: def.label, Icon: def.icon, data: d }));
+    } else {
+      const d = svcs[def.key];
+      if (d) rows.push({ key: def.key, label: def.label, Icon: def.icon, data: d });
+    }
+  }
 
-  const getDetails = (key: string, data: any): string[] => {
-    if (!data) return [];
-    const lines: string[] = [];
-    if (key === "pickup")        { lines.push(`Type: ${data.pickupType ?? "—"}`); if (data.airportName) lines.push(`From: ${data.airportName}`); if (data.pickupDate) lines.push(`When: ${data.pickupDate}`); }
-    if (key === "accommodation") { lines.push(`Type: ${data.accommodationType ?? "—"}`); if (data.hostName) lines.push(`Host: ${data.hostName}`); }
-    if (key === "studyAbroad")   { if (data.schoolName) lines.push(`School: ${data.schoolName}`); if (data.courseName) lines.push(`Course: ${data.courseName}`); }
-    if (key === "internship")    { if (data.companyName) lines.push(`Company: ${data.companyName}`); if (data.position) lines.push(`Role: ${data.position}`); }
-    if (key === "settlement")    { if (data.settlementDate) lines.push(`Date: ${data.settlementDate}`); }
-    if (key === "guardian")      { if (data.guardianName) lines.push(`Name: ${data.guardianName}`); if (data.relationship) lines.push(`Relation: ${data.relationship}`); }
-    return lines;
+  const getInfo = (key: string, data: any): string => {
+    if (!data) return "—";
+    if (key === "pickup")        return [data.pickupType, data.airportName, data.pickupDate].filter(Boolean).join(" · ") || "—";
+    if (key === "accommodation") return [data.accommodationType, data.hostName].filter(Boolean).join(" · ") || "—";
+    if (key === "studyAbroad")   return [data.schoolName, data.courseName].filter(Boolean).join(" · ") || "—";
+    if (key === "internship")    return [data.companyName, data.position].filter(Boolean).join(" · ") || "—";
+    if (key === "settlement")    return data.settlementDate ?? "—";
+    if (key === "guardian")      return [data.guardianName, data.relationship].filter(Boolean).join(" · ") || "—";
+    return "—";
+  };
+
+  const fmtDate = (raw: string | null | undefined) => {
+    if (!raw) return "—";
+    return new Date(raw).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
   };
 
   return (
     <div className="mt-6">
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-[#1C1917]">Services</h2>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF0E3] text-[#F5821F]">{active.length} active</span>
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF0E3] text-[#F5821F]">{rows.length}</span>
         </div>
         <div className="relative">
           <button
@@ -676,9 +687,9 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }
             style={{ background: "#F5821F" }}>
             <Plus size={13} /> Add Service
           </button>
-          {showAdd && inactive.length > 0 && (
+          {showAdd && (
             <div className="absolute right-0 top-9 bg-white border border-[#E8E6E2] rounded-lg shadow-lg py-1 z-20 w-48">
-              {inactive.map(({ key, label, icon: Icon }) => (
+              {ALL_SVC_DEFS.map(({ key, label, icon: Icon }) => (
                 <button key={key}
                   onClick={() => { setShowAdd(false); navigate(`${SERVICE_ROUTES[key]}?contractId=${contract.id}`); }}
                   className="w-full text-left px-4 py-2 text-sm text-[#1C1917] hover:bg-[#FAFAF9] flex items-center gap-2">
@@ -687,66 +698,81 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }
               ))}
             </div>
           )}
-          {showAdd && inactive.length === 0 && (
-            <div className="absolute right-0 top-9 bg-white border border-[#E8E6E2] rounded-lg shadow-lg p-3 z-20 w-44">
-              <p className="text-xs text-[#A8A29E]">All services are activated.</p>
-            </div>
-          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        {withData.map(({ key, label, icon: Icon, data }) => {
-          const isPrimary = primaryServiceType === key;
-          const isActive  = !!data;
-          const status    = data?.status ?? null;
-          const statusCls = status ? (SVC_STATUS_BADGE[status] ?? "bg-[#F4F3F1] text-[#57534E]") : "";
-          const details   = getDetails(key, data);
-          return (
-            <div key={key}
-              className={`bg-white border rounded-xl p-4 ${isActive ? "border-[#E8E6E2] cursor-pointer hover:shadow-sm transition-shadow" : "border-[#E8E6E2] opacity-60"}`}
-              onClick={() => isActive && data?.id && navigate(`${SERVICE_ROUTES[key]}/${data.id}`)}>
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ background: isPrimary ? "#FEF0E3" : "#F4F3F1" }}>
-                    <Icon size={15} style={{ color: isPrimary ? "#F5821F" : isActive ? "#78716C" : "#D6D3D1" }} />
-                  </div>
-                  <span className={`text-sm font-semibold ${isActive ? "text-[#1C1917]" : "text-[#A8A29E]"}`}>{label}</span>
-                </div>
-                {status ? (
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${statusCls}`}>{status.replace(/_/g, " ")}</span>
-                ) : (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F4F3F1] text-[#A8A29E]">Inactive</span>
-                )}
-              </div>
+      {/* List */}
+      {rows.length === 0 ? (
+        <div className="bg-white border border-[#E8E6E2] rounded-xl py-14 text-center">
+          <Shield size={28} className="mx-auto mb-2 text-[#D6D3D1]" />
+          <p className="text-sm text-[#A8A29E]">No services have been added yet.</p>
+          <p className="text-xs text-[#D6D3D1] mt-1">Use the "Add Service" button above to get started.</p>
+        </div>
+      ) : (
+        <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+          {/* Table header */}
+          <div className="grid grid-cols-[2fr_3fr_1.5fr_1.5fr_32px] gap-0 border-b border-[#E8E6E2] px-5 py-2.5">
+            {["Service", "Details", "Status", "Applied", ""].map((h, i) => (
+              <span key={i} className="text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide">{h}</span>
+            ))}
+          </div>
 
-              {isActive ? (
-                <>
-                  {details.length > 0 ? (
-                    <ul className="space-y-0.5 mb-3">
-                      {details.map((line, i) => (
-                        <li key={i} className="text-xs text-[#57534E]">{line}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {!isPrimary ? (
-                    <button
-                      onClick={e => { e.stopPropagation(); setPrimaryServiceType(key); }}
-                      className="text-xs text-[#A8A29E] hover:text-[#F5821F] flex items-center gap-1 mt-1">
-                      ☆ Set as Primary
-                    </button>
-                  ) : (
-                    <p className="text-xs font-semibold mt-1" style={{ color: "#F5821F" }}>★ Primary</p>
-                  )}
-                </>
-              ) : (
-                <p className="text-xs text-[#A8A29E]">Not activated</p>
-              )}
-            </div>
-          );
-        })}
-      </div>
+          {/* Rows */}
+          <div className="divide-y divide-[#F4F3F1]">
+            {rows.map(({ key, label, Icon, data }, idx) => {
+              const isPrimary = primaryServiceType === key && rows.filter(r => r.key === key).length === 1;
+              const status    = data?.status ?? null;
+              const statusCls = status ? (SVC_STATUS_BADGE[status] ?? "bg-[#F4F3F1] text-[#57534E]") : "bg-[#F4F3F1] text-[#A8A29E]";
+              const info      = getInfo(key, data);
+              const applied   = fmtDate(data?.createdAt);
+
+              return (
+                <div key={`${key}-${idx}`}
+                  className="grid grid-cols-[2fr_3fr_1.5fr_1.5fr_32px] gap-0 px-5 py-3.5 items-center hover:bg-[#FAFAF9] cursor-pointer group transition-colors"
+                  onClick={() => data?.id && navigate(`${SERVICE_ROUTES[key]}/${data.id}`)}>
+
+                  {/* Service name */}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: isPrimary ? "#FEF0E3" : "#F4F3F1" }}>
+                      <Icon size={13} style={{ color: isPrimary ? "#F5821F" : "#78716C" }} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-medium text-[#1C1917] truncate">{label}</span>
+                        {isPrimary && <span className="text-[10px] font-bold flex-shrink-0" style={{ color: "#F5821F" }}>★</span>}
+                      </div>
+                      {!isPrimary && (
+                        <button
+                          onClick={e => { e.stopPropagation(); setPrimaryServiceType(key); }}
+                          className="text-[10px] text-[#A8A29E] hover:text-[#F5821F] hidden group-hover:block leading-tight">
+                          Set as primary
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Details */}
+                  <span className="text-xs text-[#57534E] truncate pr-4">{info}</span>
+
+                  {/* Status */}
+                  <div>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${statusCls}`}>
+                      {status ? status.replace(/_/g, " ") : "—"}
+                    </span>
+                  </div>
+
+                  {/* Applied date */}
+                  <span className="text-xs text-[#A8A29E]">{applied}</span>
+
+                  {/* Arrow */}
+                  <ChevronRight size={14} className="text-[#D6D3D1] group-hover:text-[#A8A29E] transition-colors" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
