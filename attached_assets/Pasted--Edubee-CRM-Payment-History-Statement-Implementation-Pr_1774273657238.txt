@@ -1,0 +1,409 @@
+# 📋 Edubee CRM — Payment History Statement Implementation Prompt
+
+---
+
+## 🎯 Overview
+
+Implement a feature that compiles **all payments made by a student to the agency into a single PDF document**.
+
+Where an individual Receipt serves as proof of a single transaction, the Payment History Statement is an **official document that consolidates the full payment history across the entire contract period**.
+
+Primary use cases:
+- Proof of payment submitted to the DHA for student visa applications or renewals
+- Responding to parent requests for confirmation of total amounts paid
+- Verifying payment history during refund or dispute resolution
+- Providing a payment summary at the student's own request
+
+---
+
+## Mandatory Pre-Work (Before Any Changes)
+
+```
+1. Read all files listed below in full
+2. Confirm actual field names directly from the schema
+3. Report the list of files to be modified and the planned changes
+4. Do NOT modify any code until explicitly told "Go ahead"
+```
+
+### Files to Read First
+
+```
+DB Schema:
+  /db/schema.ts
+  → Confirm all fields for: contracts, contract_products, invoices,
+    invoice_products, payment_headers, payment_lines, receipts,
+    accounts, contacts, organisations
+
+Related Routes:
+  /server/src/routes/contracts.ts
+  /server/src/routes/payments.ts (or finance-related route file)
+  → Confirm existing payment retrieval logic
+
+Existing PDF Service (if any):
+  Files under /server/src/services/ related to PDF or document generation
+  → Confirm existing PDF generation approach and library
+    (puppeteer / pdfmake / jspdf, etc.)
+
+Related Screens (if any):
+  /client/src/pages/finance/
+  /client/src/pages/contracts/
+```
+
+---
+
+## 📐 Business Logic — Core Requirements
+
+### 1. Document Scope
+
+A Payment History Statement can be issued either at the **Contract level** or at the **Student (Account) level**:
+
+```
+Contract level (default):
+  All payment history linked to a specific Contract
+  → Issued per school + per course
+  → Most commonly used for visa submission
+
+Student level (full history):
+  All Contracts for the student consolidated into one document
+  → For students who have attended multiple courses or schools
+  → Used when requested by parents or for multi-contract students
+```
+
+---
+
+### 2. Line Items to Include
+
+```
+Items included in the payment history:
+  ① Tuition Fee          → payment_lines.split_type = 'tuition'
+  ② Service Fee          → payment_lines.split_type = 'service_fee'
+  ③ Visa Fee             → payment_lines.split_type = 'visa_fee'
+  ④ Accommodation        → payment_lines.split_type = 'accommodation'
+  ⑤ Airport Pickup       → payment_lines.split_type = 'pickup'
+  ⑥ Insurance / OSHC     → payment_lines.split_type = 'insurance'
+  ⑦ Other                → payment_lines.split_type = 'other'
+
+Status filter:
+  Include ONLY items where ar_status = 'paid'
+  (Scheduled / unpaid items are displayed separately in an "Outstanding Balance" section)
+```
+
+---
+
+### 3. Document Layout Specification
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  [Agency Logo]              PAYMENT HISTORY STATEMENT         │
+│                                                               │
+│  [Agency Name]                      Issued by: [Staff Name]  │
+│  [Address]                          Issue Date: 2026-03-21   │
+│  ABN: XX XXX XXX XXX               Statement Ref: PHS-XXXXXX │
+│  [Phone] / [Email]                                            │
+├──────────────────────────────────────────────────────────────┤
+│  STUDENT INFORMATION                                          │
+│  Name:     [Student Full Name]      Student ID: [account.id] │
+│  Email:    [Email Address]          Phone: [Phone Number]     │
+│  Passport: [Passport No. if available]                        │
+├──────────────────────────────────────────────────────────────┤
+│  CONTRACT INFORMATION               (when issued at contract  │
+│  Contract No:  CT-XXXXXXXXXX         level)                   │
+│  School:       ABC Language School                            │
+│  Program:      General English                                │
+│  Course Period: 2026-04-01 ~ 2026-07-31  (16 weeks)          │
+│  Total Contract Amount: $4,800.00                             │
+├──────────────────────────────────────────────────────────────┤
+│  PAYMENT HISTORY                                              │
+│                                                               │
+│  #   Date         Description              Receipt    Amount  │
+│  ─── ──────────   ────────────────────── ──────────  ──────  │
+│  1   2026-02-10   Consultation Fee        RCP-0001   $500.00  │
+│  2   2026-03-01   Term 1 Tuition          RCP-0002  $2,400.00 │
+│  3   2026-03-15   OSHC Premium (12 mths)  RCP-0003   $800.00  │
+│  4   2026-03-20   Student Visa Fee        RCP-0004   $650.00  │
+│  ─── ──────────   ────────────────────── ──────────  ──────  │
+│                              Total Paid to Date:    $4,350.00 │
+├──────────────────────────────────────────────────────────────┤
+│  OUTSTANDING BALANCE                                          │
+│                                                               │
+│  #   Due Date    Description              Status      Amount  │
+│  ─── ──────────  ────────────────────── ──────────   ──────  │
+│  1   2026-05-25  Term 2 Tuition           Scheduled $2,400.00 │
+│  ─── ──────────  ────────────────────── ──────────   ──────  │
+│                              Total Outstanding:     $2,400.00 │
+├──────────────────────────────────────────────────────────────┤
+│  SUMMARY                                                      │
+│  Total Contract Amount:      $6,750.00                        │
+│  Total Paid to Date:         $4,350.00                        │
+│  Total Outstanding:          $2,400.00                        │
+│  ──────────────────────────────────────────────────────────  │
+│  This statement is issued by [Agency Name] as an official     │
+│  record of payments received. For enquiries please contact    │
+│  [Email] / [Phone].                                           │
+│                                                               │
+│  Authorised by: [Issuing Staff Signature Line]  Date: 2026-03-21 │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🗂️ DB Schema Changes
+
+### New Table: `payment_statements`
+
+Stores issuance records for history tracking and reissuance management.
+
+```sql
+CREATE TABLE IF NOT EXISTS payment_statements (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  statement_ref         VARCHAR(50)   UNIQUE NOT NULL,  -- PHS-XXXXXXXX
+  statement_date        DATE          NOT NULL,
+  statement_scope       VARCHAR(20)   NOT NULL,          -- 'contract' | 'student'
+  contract_id           UUID          REFERENCES contracts(id),  -- for contract-level scope
+  student_account_id    UUID          NOT NULL REFERENCES accounts(id),
+  -- Snapshot at time of issuance (prevents amount discrepancies on reissue)
+  total_paid_amount     DECIMAL(12,2) NOT NULL DEFAULT 0,
+  total_outstanding     DECIMAL(12,2) NOT NULL DEFAULT 0,
+  total_contract_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  line_item_count       INTEGER       NOT NULL DEFAULT 0,
+  -- PDF storage
+  pdf_url               VARCHAR(500),
+  -- Issuance / delivery info
+  issued_by             UUID          NOT NULL REFERENCES users(id),
+  sent_to_email         VARCHAR(255),
+  sent_at               TIMESTAMP,
+  -- Reason for issuance (visa submission / parent request / refund processing / etc.)
+  issue_reason          VARCHAR(100),
+  notes                 TEXT,
+  status                VARCHAR(20)   NOT NULL DEFAULT 'issued',  -- issued | sent | voided
+  created_on            TIMESTAMP     NOT NULL DEFAULT NOW(),
+  modified_on           TIMESTAMP     NOT NULL DEFAULT NOW()
+);
+```
+
+---
+
+## 🔧 Implementation File List
+
+### Backend
+
+```
+/db/schema.ts
+  → Add payment_statements table
+
+/server/src/services/paymentStatementService.ts  [NEW]
+  → getPaymentHistory(contractId | studentAccountId, scope): PaymentHistoryData
+      Query structure:
+        payment_headers
+          JOIN payment_lines       ON payment_header_id
+          JOIN invoices            ON invoice_id  (for receipt reference lookup)
+          JOIN contract_products   ON contract_product_id
+          JOIN contracts           ON contract_id
+        WHERE ar_status = 'paid'
+        ORDER BY payment_date ASC
+
+  → getOutstandingBalance(contractId | studentAccountId): OutstandingData
+      Query structure:
+        contract_products
+        WHERE ar_status IN ('scheduled', 'invoiced', 'overdue')
+        ORDER BY ar_due_date ASC
+
+  → buildStatementRef(): string   -- PHS-XXXXXXXX sequential reference
+
+  → generateStatement(params): PaymentStatement
+      → call getPaymentHistory
+      → call getOutstandingBalance
+      → calculate totals / summary
+      → save payment_statements record
+      → call renderStatementPDF
+
+/server/src/services/pdfService.ts  [extend existing or NEW]
+  → renderStatementPDF(data: PaymentStatementData): Buffer
+      Library priority:
+        If an existing PDF library is already in use → use the same library (consistency)
+        If none exists → recommend pdfmake
+        (stable for server-side rendering, handles Unicode / special characters well)
+
+/server/src/routes/statements.ts  [NEW]
+  → POST /statements/generate
+      Body: { scope: 'contract' | 'student', contractId?, studentAccountId?, issueReason? }
+      → call paymentStatementService.generateStatement()
+      → return PDF Buffer (or pdf_url)
+
+  → GET  /statements/:studentAccountId
+      → return list of statement issuance history for the student
+
+  → GET  /statements/:id/pdf
+      → download stored PDF
+
+  → POST /statements/:id/send
+      Body: { email: string }
+      → resend by email
+      → update sent_at and sent_to_email
+```
+
+### Frontend
+
+```
+/client/src/components/finance/PaymentStatementButton.tsx  [NEW]
+  → Place in Contract Detail page > Payments section
+  → Button label: [Generate Payment Statement]
+  → Opens modal on click
+
+/client/src/components/finance/PaymentStatementModal.tsx  [NEW]
+  → Issuance options UI:
+
+    ┌─────────────────────────────────────────────┐
+    │  Generate Payment Statement                  │
+    │                                              │
+    │  Scope                                       │
+    │  ● This contract only                        │
+    │  ○ All contracts for this student            │
+    │                                              │
+    │  Reason for Issuance (optional)              │
+    │  [Visa Submission ▼]                         │
+    │  Visa Submission / Parent Request /          │
+    │  Refund Processing / Student Request / Other │
+    │                                              │
+    │  Email Delivery (optional)                   │
+    │  □ Send automatically to student email       │
+    │    [student@email.com]                       │
+    │                                              │
+    │          [Cancel]  [Generate & Download PDF] │
+    └─────────────────────────────────────────────┘
+
+/client/src/pages/contracts/ContractDetailPage.tsx  [extend existing]
+  → Add PaymentStatementButton at the bottom of the Payments section
+  → Display list of previously issued statements (most recent 3):
+    [PHS-000123 · 2026-03-21 · Visa Submission · PDF↓ · Resend Email]
+
+/client/src/pages/finance/StatementHistoryPage.tsx  [NEW — optional]
+  → Sub-tab under Finance menu: Statements
+  → View / search / filter full issuance history
+```
+
+---
+
+## 📊 Query Design (Server Reference)
+
+### Payment History Query
+
+```sql
+-- Contract-level payment history
+SELECT
+  ph.payment_date,
+  pl.split_type,
+  pl.description,
+  pl.amount,
+  -- Receipt reference: from receipts table or payment_headers.payment_ref
+  ph.payment_ref           AS receipt_ref,
+  ph.bank_reference,
+  cp.name                  AS product_name,
+  cp.ar_due_date,
+  cp.service_module_type
+FROM payment_headers ph
+JOIN payment_lines    pl  ON pl.payment_header_id    = ph.id
+JOIN contract_products cp ON pl.contract_product_id  = cp.id
+JOIN contracts         c  ON cp.contract_id           = c.id
+WHERE c.id = :contractId
+  AND cp.ar_status = 'paid'
+ORDER BY ph.payment_date ASC;
+```
+
+### Outstanding Balance Query
+
+```sql
+-- Unpaid / scheduled items
+SELECT
+  cp.ar_due_date,
+  cp.name            AS product_name,
+  cp.ar_amount,
+  cp.ar_status,
+  cp.service_module_type
+FROM contract_products cp
+WHERE cp.contract_id = :contractId
+  AND cp.ar_status IN ('scheduled', 'invoiced', 'overdue')
+ORDER BY cp.ar_due_date ASC;
+```
+
+### Summary Totals
+
+```sql
+-- Total paid to date
+SELECT SUM(cp.ar_amount)
+FROM contract_products cp
+WHERE cp.contract_id = :contractId
+  AND cp.ar_status = 'paid';
+
+-- Total outstanding
+SELECT SUM(cp.ar_amount)
+FROM contract_products cp
+WHERE cp.contract_id = :contractId
+  AND cp.ar_status IN ('scheduled', 'invoiced', 'overdue');
+
+-- Total contract amount
+SELECT total_ar_amount
+FROM contracts
+WHERE id = :contractId;
+```
+
+---
+
+## ✅ Verification Checklist
+
+After implementation is complete, verify in this order:
+
+```
+□ 1. npx tsc --noEmit → 0 TypeScript errors
+□ 2. Server starts successfully → no import or runtime errors
+
+□ 3. Data verification:
+     - Confirm ONLY ar_status = 'paid' items appear in the Payment History section
+     - Confirm ar_status = 'scheduled' / 'invoiced' / 'overdue' items
+       appear ONLY in the Outstanding Balance section
+     - Confirm: Total Paid + Total Outstanding = Total Contract Amount
+
+□ 4. PDF content verification:
+     - PHS-XXXXXXXX reference generated correctly
+     - Student name / contract number / school name / course period displayed correctly
+     - Payment history items sorted in ascending date order
+     - Each line item description matches its split_type correctly
+     - Summary section amounts are accurate
+     - Agency ABN / address / contact details displayed correctly
+
+□ 5. Confirm payment_statements record saved to DB
+     → Verify statement_ref, total_paid_amount, total_outstanding values
+
+□ 6. When email delivery option is selected, confirm sent_at and sent_to_email are updated
+
+□ 7. Confirm existing Contract and Payment-related APIs are unaffected
+     (existing logic must not be broken)
+```
+
+---
+
+## ⚠️ Strictly Prohibited
+
+```
+✗ Modifying existing columns in payment_headers or payment_lines
+✗ Modifying the ar_status transition logic in contract_products without explicit instruction
+✗ Altering the structure of the receipts table
+✗ Guessing field names without reading the schema
+✗ Modifying multiple files in bulk at once
+```
+
+---
+
+## Completion Report Format
+
+```
+✅ Files modified:        [list]
+✅ Changes made:          [description]
+✅ Verification results:
+   - tsc:                        [result]
+   - Server:                     [result]
+   - Data totals verification:   [result]
+   - PDF content:                [result]
+   - payment_statements saved:   [result]
+⚠️  Next steps (if any):  [description]
+```
