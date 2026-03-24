@@ -15,10 +15,13 @@ const ADMIN_ROLES  = ["super_admin", "admin"];
 
 // ─── JE mapping ─────────────────────────────────────────────────────────────
 const JE_MAP: Record<string, { debit: string; credit: string }> = {
-  trust_receipt:  { debit: "1200", credit: "1300" },
-  trust_transfer: { debit: "2100", credit: "1200" },
-  commission:     { debit: "1100", credit: "3100" },
-  direct:         { debit: "4700", credit: "1100" },
+  trust_receipt:      { debit: "1200", credit: "1300" },
+  trust_transfer:     { debit: "2100", credit: "1200" },
+  commission:         { debit: "1100", credit: "3100" },
+  direct:             { debit: "4700", credit: "1100" },
+  service_fee_camp:   { debit: "1100", credit: "3500" },
+  camp_tour_ap:       { debit: "4600", credit: "1100" },
+  camp_institute_ap:  { debit: "4700", credit: "1100" },
 };
 
 function genPayRef(): string {

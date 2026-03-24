@@ -21,6 +21,8 @@ import PackageDetail from "@/pages/admin/package-detail";
 import Leads from "@/pages/admin/leads";
 import CampContracts from "@/pages/admin/camp-contracts";
 import CampContractDetail from "@/pages/admin/camp-contract-detail";
+import CampInstituteDetail from "@/pages/admin/camp-institute-detail";
+import CampTourDetail from "@/pages/admin/camp-tour-detail";
 import AdminStub from "@/pages/admin/stub";
 import NotFound from "@/pages/not-found";
 
@@ -198,6 +200,12 @@ function Router() {
       </Route>
       <Route path="/admin/camp-contracts">
         <AdminRoute title="Camp Contract"><CampContracts /></AdminRoute>
+      </Route>
+      <Route path="/admin/camp-services/institutes/:id">
+        <AdminRoute title="Camp Institute Detail"><CampInstituteDetail /></AdminRoute>
+      </Route>
+      <Route path="/admin/camp-services/tours/:id">
+        <AdminRoute title="Camp Tour Detail"><CampTourDetail /></AdminRoute>
       </Route>
       <Route path="/admin/product-groups/:id">
         <AdminRoute title="Product Group Detail"><ProductGroupDetail /></AdminRoute>

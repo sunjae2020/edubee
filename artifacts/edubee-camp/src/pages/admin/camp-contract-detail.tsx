@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Pencil, Plus, Loader2, School, Hotel, Car, Map } from "lucide-react";
+import { Pencil, Plus, Loader2, School, Map, ChevronRight, Building2, DollarSign, Hotel, Car } from "lucide-react";
 import { ContractReportTab } from "@/components/contracts/ContractReportTab";
 import { ContractFinanceTab } from "@/components/contracts/ContractFinanceTab";
 import { format } from "date-fns";
@@ -50,8 +50,117 @@ const STATUS_COLORS: Record<string, string> = {
   confirmed: "bg-blue-100 text-blue-700", in_progress: "bg-purple-100 text-purple-700",
 };
 
-// ─── Service Edit Dialogs ─────────────────────────────────────────────────────
-function InstituteEditDialog({ data, contractId, open, onClose, onSave, saving }: {
+// ─── Camp Service Status Badge ────────────────────────────────────────────────
+const SVC_STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+  pending:     { bg: "#FEF9C3", color: "#854D0E" },
+  confirmed:   { bg: "#FEF0E3", color: "#F5821F" },
+  in_progress: { bg: "#DBEAFE", color: "#1D4ED8" },
+  completed:   { bg: "#DCFCE7", color: "#16A34A" },
+  cancelled:   { bg: "#FEE2E2", color: "#DC2626" },
+};
+
+function SvcStatusBadge({ status }: { status?: string }) {
+  const s = SVC_STATUS_COLORS[status ?? "pending"] ?? { bg: "#F4F3F1", color: "#57534E" };
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: s.bg, color: s.color }}>
+      {(status ?? "pending").replace(/_/g, " ")}
+    </span>
+  );
+}
+
+function fmtMoney(v?: string | null, currency = "AUD") {
+  if (!v) return "—";
+  return `${currency} ${parseFloat(v).toLocaleString("en-AU", { minimumFractionDigits: 2 })}`;
+}
+
+// ─── Add Institute Modal ──────────────────────────────────────────────────────
+function AddInstituteModal({ contractId, open, onClose, onCreated }: {
+  contractId: string; open: boolean; onClose: () => void; onCreated: () => void;
+}) {
+  const { toast } = useToast();
+  const [form, setForm] = useState({ className: "", classLevel: "", teacherName: "", status: "pending", notes: "" });
+  const f = (k: string) => (v: string) => setForm(p => ({ ...p, [k]: v }));
+  const [saving, setSaving] = useState(false);
+
+  const handleCreate = async () => {
+    setSaving(true);
+    try {
+      await axios.post(`${BASE}/api/camp-services/institutes`, { contractId, ...form });
+      toast({ title: "Institute service created" });
+      onCreated();
+      onClose();
+    } catch {
+      toast({ variant: "destructive", title: "Failed to create" });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle className="flex items-center gap-2"><School className="w-4 h-4 text-[#F5821F]" /> Add Language School Service</DialogTitle></DialogHeader>
+        <div className="grid gap-3 pt-2">
+          <div className="space-y-1"><Label className="text-xs">Class Name</Label><Input value={form.className} onChange={e => f("className")(e.target.value)} className="h-8 text-sm" /></div>
+          <div className="space-y-1"><Label className="text-xs">Class Level</Label><Input value={form.classLevel} onChange={e => f("classLevel")(e.target.value)} className="h-8 text-sm" /></div>
+          <div className="space-y-1"><Label className="text-xs">Teacher Name</Label><Input value={form.teacherName} onChange={e => f("teacherName")(e.target.value)} className="h-8 text-sm" /></div>
+          <div className="space-y-1"><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => f("notes")(e.target.value)} className="text-sm min-h-[60px]" /></div>
+        </div>
+        <div className="flex justify-end gap-2 pt-4 border-t mt-2">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleCreate} disabled={saving}>
+            {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Create
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Add Tour Modal ───────────────────────────────────────────────────────────
+function AddTourModal({ contractId, open, onClose, onCreated }: {
+  contractId: string; open: boolean; onClose: () => void; onCreated: () => void;
+}) {
+  const { toast } = useToast();
+  const [form, setForm] = useState({ tourName: "", tourType: "", tourDate: "", notes: "", status: "pending" });
+  const f = (k: string) => (v: string) => setForm(p => ({ ...p, [k]: v }));
+  const [saving, setSaving] = useState(false);
+
+  const handleCreate = async () => {
+    setSaving(true);
+    try {
+      await axios.post(`${BASE}/api/camp-services/tours`, { contractId, ...form, tourDate: form.tourDate || null });
+      toast({ title: "Tour service created" });
+      onCreated();
+      onClose();
+    } catch {
+      toast({ variant: "destructive", title: "Failed to create" });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle className="flex items-center gap-2"><Map className="w-4 h-4 text-[#F5821F]" /> Add Tour / Activity</DialogTitle></DialogHeader>
+        <div className="grid gap-3 pt-2">
+          <div className="space-y-1"><Label className="text-xs">Tour Name</Label><Input value={form.tourName} onChange={e => f("tourName")(e.target.value)} className="h-8 text-sm" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1"><Label className="text-xs">Tour Type</Label><Input value={form.tourType} onChange={e => f("tourType")(e.target.value)} className="h-8 text-sm" placeholder="e.g. day_trip" /></div>
+            <div className="space-y-1"><Label className="text-xs">Date</Label><Input type="date" value={form.tourDate} onChange={e => f("tourDate")(e.target.value)} className="h-8 text-sm" /></div>
+          </div>
+          <div className="space-y-1"><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => f("notes")(e.target.value)} className="text-sm min-h-[60px]" /></div>
+        </div>
+        <div className="flex justify-end gap-2 pt-4 border-t mt-2">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleCreate} disabled={saving}>
+            {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Create
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── _Removed old edit dialogs (InstituteEdit/HotelEdit/PickupEdit/TourEdit/ServiceSectionHeader) ───
+function _UnusedDialog({ data, contractId, open, onClose, onSave, saving }: {
   data: any; contractId: string; open: boolean; onClose: () => void;
   onSave: (d: Record<string, any>) => void; saving: boolean;
 }) {
@@ -521,37 +630,34 @@ function ParticipantsTab({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CampContractDetail() {
   const { id } = useParams<{ id: string }>();
+  const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
-
-  // Service edit state
-  const [editInstitute, setEditInstitute] = useState(false);
-  const [editHotel, setEditHotel] = useState(false);
-  const [editPickup, setEditPickup] = useState(false);
-  const [editTour, setEditTour] = useState(false);
+  const [addInstituteOpen, setAddInstituteOpen] = useState(false);
+  const [addTourOpen, setAddTourOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["camp-contract-detail-page", id],
     queryFn: () => axios.get(`${BASE}/api/contracts/${id}`).then(r => r.data),
   });
 
-  const { data: servicesData, refetch: refetchServices } = useQuery({
-    queryKey: ["camp-contract-services-page", id],
-    queryFn: () => axios.get(`${BASE}/api/contracts/${id}/services`).then(r => r.data),
+  const { data: institutesData, refetch: refetchInstitutes } = useQuery({
+    queryKey: ["camp-institutes", id],
+    queryFn: () => axios.get(`${BASE}/api/camp-services/institutes?contractId=${id}`).then(r => r.data),
     enabled: activeTab === "services",
   });
 
-  const { data: accountingData } = useQuery({
-    queryKey: ["camp-contract-accounting-page", id],
-    queryFn: () => axios.get(`${BASE}/api/contracts/${id}/accounting`).then(r => r.data),
-    enabled: activeTab === "accounting",
+  const { data: toursData, refetch: refetchTours } = useQuery({
+    queryKey: ["camp-tours", id],
+    queryFn: () => axios.get(`${BASE}/api/camp-services/tours?contractId=${id}`).then(r => r.data),
+    enabled: activeTab === "services",
   });
 
   const contract = data?.data ?? data;
-  const servicesObj = servicesData ?? null;
-  const accounting = accountingData?.data ?? accountingData;
+  const institutes: any[] = institutesData?.data ?? [];
+  const tours: any[] = toursData?.data ?? [];
 
   const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
 
@@ -564,50 +670,6 @@ export default function CampContractDetail() {
       toast({ title: "Contract updated" });
     },
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
-  });
-
-  const updateInstitute = useMutation({
-    mutationFn: (payload: Record<string, any>) =>
-      axios.patch(`${BASE}/api/contracts/${id}/services/institute`, payload).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["camp-contract-services-page", id] });
-      toast({ title: "Language school service updated" });
-      setEditInstitute(false);
-    },
-    onError: () => toast({ variant: "destructive", title: "Failed to update service" }),
-  });
-
-  const updateHotel = useMutation({
-    mutationFn: (payload: Record<string, any>) =>
-      axios.patch(`${BASE}/api/contracts/${id}/services/hotel`, payload).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["camp-contract-services-page", id] });
-      toast({ title: "Accommodation service updated" });
-      setEditHotel(false);
-    },
-    onError: () => toast({ variant: "destructive", title: "Failed to update service" }),
-  });
-
-  const updatePickup = useMutation({
-    mutationFn: (payload: Record<string, any>) =>
-      axios.patch(`${BASE}/api/contracts/${id}/services/pickup`, payload).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["camp-contract-services-page", id] });
-      toast({ title: "Airport transfer service updated" });
-      setEditPickup(false);
-    },
-    onError: () => toast({ variant: "destructive", title: "Failed to update service" }),
-  });
-
-  const updateTour = useMutation({
-    mutationFn: (payload: Record<string, any>) =>
-      axios.patch(`${BASE}/api/contracts/${id}/services/tour`, payload).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["camp-contract-services-page", id] });
-      toast({ title: "Tour / activity service updated" });
-      setEditTour(false);
-    },
-    onError: () => toast({ variant: "destructive", title: "Failed to update service" }),
   });
 
   const { isEditing, isSaving, startEdit, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
@@ -734,102 +796,92 @@ export default function CampContractDetail() {
 
         {/* ── Services ── */}
         {activeTab === "services" && (
-          <div className="space-y-4">
-            {!servicesObj ? (
-              <div className="space-y-3">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-32" />)}</div>
-            ) : (
-              <>
-                {servicesObj.institute && (
-                  <div className="border rounded-xl p-4">
-                    <ServiceSectionHeader title="Language School / Institute" icon={<School className="w-4 h-4 text-[#F5821F]" />} canEdit={canEdit} onEdit={() => setEditInstitute(true)} />
-                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                      <DetailRow label="Program" value={servicesObj.institute.programDetails} />
-                      <DetailRow label="Start Date" value={servicesObj.institute.startDate ? format(new Date(servicesObj.institute.startDate), "PPP") : "—"} />
-                      <DetailRow label="End Date" value={servicesObj.institute.endDate ? format(new Date(servicesObj.institute.endDate), "PPP") : "—"} />
-                      <DetailRow label="Total Hours" value={servicesObj.institute.totalHours ? `${servicesObj.institute.totalHours} hrs` : "—"} />
-                      <DetailRow label="English Level" value={servicesObj.institute.englishLevelStart ? `${servicesObj.institute.englishLevelStart} → ${servicesObj.institute.englishLevelEnd ?? "?"}` : "—"} />
-                      <DetailRow label="Status">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[servicesObj.institute.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{servicesObj.institute.status ?? "—"}</span>
-                      </DetailRow>
-                      {servicesObj.institute.progressNotes && <DetailRow label="Progress Notes" value={servicesObj.institute.progressNotes} />}
-                      {servicesObj.institute.teacherComments && <DetailRow label="Teacher Comments" value={servicesObj.institute.teacherComments} />}
-                    </div>
-                  </div>
+          <div className="space-y-5">
+            {/* Language School / Institute section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <School className="w-4 h-4 text-[#F5821F]" />
+                  <span className="text-sm font-semibold text-[#1C1917]">Language School / Institute</span>
+                  <span className="text-xs text-[#A8A29E] bg-[#F4F3F1] rounded-full px-2 py-0.5">{institutes.length}</span>
+                </div>
+                {canEdit && (
+                  <Button size="sm" variant="outline" className="h-7 px-2.5 text-xs gap-1" onClick={() => setAddInstituteOpen(true)}>
+                    <Plus className="w-3 h-3" /> Add
+                  </Button>
                 )}
-
-                {servicesObj.hotel && (
-                  <div className="border rounded-xl p-4">
-                    <ServiceSectionHeader title="Accommodation" icon={<Hotel className="w-4 h-4 text-[#F5821F]" />} canEdit={canEdit} onEdit={() => setEditHotel(true)} />
-                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                      <DetailRow label="Room Type" value={servicesObj.hotel.roomType} />
-                      <DetailRow label="Check-in" value={servicesObj.hotel.checkinDate ? `${format(new Date(servicesObj.hotel.checkinDate), "PPP")} ${servicesObj.hotel.checkinTime ?? ""}`.trim() : "—"} />
-                      <DetailRow label="Check-out" value={servicesObj.hotel.checkoutDate ? `${format(new Date(servicesObj.hotel.checkoutDate), "PPP")} ${servicesObj.hotel.checkoutTime ?? ""}`.trim() : "—"} />
-                      <DetailRow label="Confirmation #" value={servicesObj.hotel.confirmationNo ?? "—"} />
-                      <DetailRow label="Status">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[servicesObj.hotel.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{servicesObj.hotel.status ?? "—"}</span>
-                      </DetailRow>
-                      {servicesObj.hotel.guestNotes && <DetailRow label="Guest Notes" value={servicesObj.hotel.guestNotes} />}
-                    </div>
-                  </div>
-                )}
-
-                {servicesObj.pickup && (
-                  <div className="border rounded-xl p-4">
-                    <ServiceSectionHeader title="Airport Pickup / Transfer" icon={<Car className="w-4 h-4 text-[#F5821F]" />} canEdit={canEdit} onEdit={() => setEditPickup(true)} />
-                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                      <DetailRow label="Type" value={servicesObj.pickup.pickupType?.replace(/_/g, " ") ?? "—"} />
-                      <DetailRow label="Date & Time" value={servicesObj.pickup.pickupDatetime ? format(new Date(servicesObj.pickup.pickupDatetime), "PPP HH:mm") : "—"} />
-                      <DetailRow label="From" value={servicesObj.pickup.fromLocation} />
-                      <DetailRow label="To" value={servicesObj.pickup.toLocation} />
-                      <DetailRow label="Vehicle" value={servicesObj.pickup.vehicleInfo} />
-                      <DetailRow label="Status">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[servicesObj.pickup.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{servicesObj.pickup.status ?? "—"}</span>
-                      </DetailRow>
-                      {servicesObj.pickup.driverNotes && <DetailRow label="Driver Notes" value={servicesObj.pickup.driverNotes} />}
-                    </div>
-                  </div>
-                )}
-
-                {servicesObj.tour && (
-                  <div className="border rounded-xl p-4">
-                    <ServiceSectionHeader title="Tour / Activity" icon={<Map className="w-4 h-4 text-[#F5821F]" />} canEdit={canEdit} onEdit={() => setEditTour(true)} />
-                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                      <DetailRow label="Tour Name" value={servicesObj.tour.tourName} />
-                      <DetailRow label="Date" value={servicesObj.tour.tourDate ? format(new Date(servicesObj.tour.tourDate), "PPP") : "—"} />
-                      <DetailRow label="Time" value={servicesObj.tour.startTime ? `${servicesObj.tour.startTime} – ${servicesObj.tour.endTime ?? "?"}` : "—"} />
-                      <DetailRow label="Meeting Point" value={servicesObj.tour.meetingPoint} />
-                      <DetailRow label="Highlights" value={servicesObj.tour.highlights} />
-                      <DetailRow label="Guide Info" value={servicesObj.tour.guideInfo} />
-                      <DetailRow label="Status">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[servicesObj.tour.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{servicesObj.tour.status ?? "—"}</span>
-                      </DetailRow>
-                      {servicesObj.tour.tourNotes && <DetailRow label="Notes" value={servicesObj.tour.tourNotes} />}
-                    </div>
-                  </div>
-                )}
-
-                {Array.isArray(servicesObj.settlements) && servicesObj.settlements.length > 0 && (
-                  <div className="border rounded-xl p-4">
-                    <div className="text-sm font-semibold mb-3">Settlements</div>
-                    <div className="space-y-2">
-                      {servicesObj.settlements.map((s: any) => (
-                        <div key={s.id} className="border rounded-lg p-3 text-sm grid grid-cols-2 gap-1">
-                          <div className="col-span-2 font-medium text-xs text-muted-foreground uppercase mb-1">{s.providerRole?.replace(/_/g, " ")} — {s.providerName ?? "—"}</div>
-                          <div><span className="text-muted-foreground">Gross:</span> {CURRENCY_SYMBOLS[s.currency ?? "AUD"] ?? s.currency}{Number(s.grossAmount ?? 0).toLocaleString()}</div>
-                          <div><span className="text-muted-foreground">Commission:</span> {s.commissionRate}%</div>
-                          <div><span className="text-muted-foreground">Net:</span> {CURRENCY_SYMBOLS[s.currency ?? "AUD"] ?? s.currency}{Number(s.netAmount ?? 0).toLocaleString()}</div>
-                          <div><span className={`px-1.5 py-0.5 rounded text-xs ${STATUS_COLORS[s.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{s.status ?? "—"}</span></div>
+              </div>
+              {institutes.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-[#E8E6E2] py-8 text-center text-sm text-[#A8A29E]">No institute services yet</div>
+              ) : (
+                <div className="space-y-2">
+                  {institutes.map((inst: any) => (
+                    <button
+                      key={inst.id}
+                      className="w-full text-left rounded-xl border border-[#E8E6E2] bg-white p-4 hover:bg-[#FAFAF9] transition-colors flex items-center gap-4"
+                      onClick={() => navigate(`/admin/camp-services/institutes/${inst.id}`)}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-[#FEF0E3] flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-4 h-4 text-[#F5821F]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-[#1C1917]">{inst.className ?? "Language School Service"}</div>
+                        <div className="text-xs text-[#57534E] mt-0.5 flex items-center gap-2">
+                          {inst.classLevel && <span>{inst.classLevel}</span>}
+                          {inst.teacherName && <span>· {inst.teacherName}</span>}
+                          {inst.retailPrice && <span className="flex items-center gap-0.5"><DollarSign className="w-3 h-3" />{fmtMoney(inst.retailPrice, contract?.currency)}</span>}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      </div>
+                      <SvcStatusBadge status={inst.status} />
+                      <ChevronRight className="w-4 h-4 text-[#A8A29E] flex-shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                {!servicesObj.institute && !servicesObj.hotel && !servicesObj.pickup && !servicesObj.tour && (
-                  <div className="text-sm text-muted-foreground text-center py-8">No services linked to this contract yet.</div>
+            {/* Tour / Activity section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Map className="w-4 h-4 text-[#F5821F]" />
+                  <span className="text-sm font-semibold text-[#1C1917]">Tour / Activity</span>
+                  <span className="text-xs text-[#A8A29E] bg-[#F4F3F1] rounded-full px-2 py-0.5">{tours.length}</span>
+                </div>
+                {canEdit && (
+                  <Button size="sm" variant="outline" className="h-7 px-2.5 text-xs gap-1" onClick={() => setAddTourOpen(true)}>
+                    <Plus className="w-3 h-3" /> Add
+                  </Button>
                 )}
-              </>
-            )}
+              </div>
+              {tours.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-[#E8E6E2] py-8 text-center text-sm text-[#A8A29E]">No tour / activity services yet</div>
+              ) : (
+                <div className="space-y-2">
+                  {tours.map((tour: any) => (
+                    <button
+                      key={tour.id}
+                      className="w-full text-left rounded-xl border border-[#E8E6E2] bg-white p-4 hover:bg-[#FAFAF9] transition-colors flex items-center gap-4"
+                      onClick={() => navigate(`/admin/camp-services/tours/${tour.id}`)}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-[#FEF0E3] flex items-center justify-center flex-shrink-0">
+                        <Map className="w-4 h-4 text-[#F5821F]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-[#1C1917]">{tour.tourName ?? "Tour Service"}</div>
+                        <div className="text-xs text-[#57534E] mt-0.5 flex items-center gap-2">
+                          {tour.tourType && <span>{tour.tourType.replace(/_/g, " ")}</span>}
+                          {tour.tourDate && <span>· {format(new Date(tour.tourDate), "d MMM yyyy")}</span>}
+                          {tour.retailPrice && <span className="flex items-center gap-0.5"><DollarSign className="w-3 h-3" />{fmtMoney(tour.retailPrice, contract?.currency)}</span>}
+                        </div>
+                      </div>
+                      <SvcStatusBadge status={tour.status} />
+                      <ChevronRight className="w-4 h-4 text-[#A8A29E] flex-shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -859,47 +911,25 @@ export default function CampContractDetail() {
         )}
       </DetailPageLayout>
 
-      {/* ── Service Edit Dialogs ── */}
-      {servicesObj?.institute && (
-        <InstituteEditDialog
-          data={servicesObj.institute}
-          contractId={id!}
-          open={editInstitute}
-          onClose={() => setEditInstitute(false)}
-          onSave={(d) => updateInstitute.mutate(d)}
-          saving={updateInstitute.isPending}
-        />
-      )}
-      {servicesObj?.hotel && (
-        <HotelEditDialog
-          data={servicesObj.hotel}
-          contractId={id!}
-          open={editHotel}
-          onClose={() => setEditHotel(false)}
-          onSave={(d) => updateHotel.mutate(d)}
-          saving={updateHotel.isPending}
-        />
-      )}
-      {servicesObj?.pickup && (
-        <PickupEditDialog
-          data={servicesObj.pickup}
-          contractId={id!}
-          open={editPickup}
-          onClose={() => setEditPickup(false)}
-          onSave={(d) => updatePickup.mutate(d)}
-          saving={updatePickup.isPending}
-        />
-      )}
-      {servicesObj?.tour && (
-        <TourEditDialog
-          data={servicesObj.tour}
-          contractId={id!}
-          open={editTour}
-          onClose={() => setEditTour(false)}
-          onSave={(d) => updateTour.mutate(d)}
-          saving={updateTour.isPending}
-        />
-      )}
+      {/* ── Camp Service Modals ── */}
+      <AddInstituteModal
+        contractId={id!}
+        open={addInstituteOpen}
+        onClose={() => setAddInstituteOpen(false)}
+        onCreated={() => {
+          qc.invalidateQueries({ queryKey: ["camp-institutes", id] });
+          refetchInstitutes();
+        }}
+      />
+      <AddTourModal
+        contractId={id!}
+        open={addTourOpen}
+        onClose={() => setAddTourOpen(false)}
+        onCreated={() => {
+          qc.invalidateQueries({ queryKey: ["camp-tours", id] });
+          refetchTours();
+        }}
+      />
     </>
   );
 }

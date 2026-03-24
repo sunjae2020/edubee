@@ -125,6 +125,12 @@ export const campInstituteMgt = pgTable("camp_institute_mgt", {
   certificateIssuedAt: timestamp("certificate_issued_at"),
   status:              varchar("status", { length: 50 }).notNull().default("pending"),
   notes:               text("notes"),
+  retailPrice:         decimal("retail_price",  { precision: 12, scale: 2 }),
+  partnerCost:         decimal("partner_cost",  { precision: 12, scale: 2 }),
+  arStatus:            varchar("ar_status",     { length: 20 }).default("scheduled"),
+  apStatus:            varchar("ap_status",     { length: 20 }).default("pending"),
+  coaArCode:           varchar("coa_ar_code",   { length: 10 }),
+  coaApCode:           varchar("coa_ap_code",   { length: 10 }),
   createdAt:           timestamp("created_at").notNull().defaultNow(),
   updatedAt:           timestamp("updated_at").notNull().defaultNow(),
 });
@@ -146,6 +152,10 @@ export const campTourMgt = pgTable("camp_tour_mgt", {
   retailPrice:           decimal("retail_price", { precision: 12, scale: 2 }),
   status:                varchar("status", { length: 50 }).notNull().default("pending"),
   notes:                 text("notes"),
+  arStatus:              varchar("ar_status",   { length: 20 }).default("scheduled"),
+  apStatus:              varchar("ap_status",   { length: 20 }).default("pending"),
+  coaArCode:             varchar("coa_ar_code", { length: 10 }),
+  coaApCode:             varchar("coa_ap_code", { length: 10 }),
   createdAt:             timestamp("created_at").notNull().defaultNow(),
   updatedAt:             timestamp("updated_at").notNull().defaultNow(),
 });
