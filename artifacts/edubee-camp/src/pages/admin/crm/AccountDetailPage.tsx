@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   ArrowLeft, Save, Building2, Users, FileText, Briefcase,
-  Plus, Loader2,
+  Plus, Loader2, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -235,6 +235,18 @@ export default function AccountDetailPage() {
   const { data: account, isLoading } = useQuery({
     queryKey: ["crm-account", id],
     queryFn: () => axios.get(`${BASE}/api/crm/accounts/${id}`).then(r => r.data),
+    enabled: !!id,
+  });
+
+  const { data: accountContracts = [], isLoading: contractsLoading } = useQuery<any[]>({
+    queryKey: ["crm-account-contracts", id],
+    queryFn: () => axios.get(`${BASE}/api/crm/accounts/${id}/contracts`).then(r => r.data),
+    enabled: !!id,
+  });
+
+  const { data: accountLeads = [], isLoading: leadsLoading } = useQuery<any[]>({
+    queryKey: ["crm-account-leads", id],
+    queryFn: () => axios.get(`${BASE}/api/crm/accounts/${id}/leads`).then(r => r.data),
     enabled: !!id,
   });
 
@@ -609,16 +621,122 @@ export default function AccountDetailPage() {
           )}
 
           {tab === "leads" && (
-            <div className="bg-white rounded-xl border border-[#E8E6E2] p-8 text-center text-stone-400">
-              <Briefcase size={32} strokeWidth={1.5} className="mx-auto mb-3" />
-              <p className="text-sm">No leads linked to this account yet.</p>
+            <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden">
+              {leadsLoading ? (
+                <div className="p-8 flex justify-center">
+                  <Loader2 size={20} className="animate-spin text-stone-400" />
+                </div>
+              ) : accountLeads.length === 0 ? (
+                <div className="p-8 text-center text-stone-400">
+                  <Briefcase size={32} strokeWidth={1.5} className="mx-auto mb-3" />
+                  <p className="text-sm">No leads linked to this account yet.</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#E8E6E2] bg-[#FAFAF9]">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Ref #</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Inquiry</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Nationality</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Owner</th>
+                      <th className="w-8" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E8E6E2]">
+                    {accountLeads.map((lead: any) => (
+                      <tr
+                        key={lead.id}
+                        className="hover:bg-[#FAFAF9] cursor-pointer transition-colors"
+                        onClick={() => navigate(`/admin/crm/leads/${lead.id}`)}
+                      >
+                        <td className="px-4 py-3 font-mono text-xs text-stone-500">{lead.lead_ref_number || "—"}</td>
+                        <td className="px-4 py-3 font-medium text-stone-800">{lead.full_name || "—"}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            lead.lead_status === "Won"      ? "bg-green-100 text-green-700" :
+                            lead.lead_status === "Lost"     ? "bg-red-100 text-red-700" :
+                            lead.lead_status === "New"      ? "bg-blue-100 text-blue-700" :
+                            lead.lead_status === "Contacted"? "bg-yellow-100 text-yellow-700" :
+                            "bg-stone-100 text-stone-600"
+                          }`}>
+                            {lead.lead_status || "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-stone-600">{lead.inquiry_type || "—"}</td>
+                        <td className="px-4 py-3 text-stone-600">{lead.nationality || "—"}</td>
+                        <td className="px-4 py-3 text-stone-500">{lead.owner_name || "—"}</td>
+                        <td className="px-4 py-3"><ChevronRight size={14} className="text-stone-300" /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
 
           {tab === "contracts" && (
-            <div className="bg-white rounded-xl border border-[#E8E6E2] p-8 text-center text-stone-400">
-              <FileText size={32} strokeWidth={1.5} className="mx-auto mb-3" />
-              <p className="text-sm">No contracts linked to this account yet.</p>
+            <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden">
+              {contractsLoading ? (
+                <div className="p-8 flex justify-center">
+                  <Loader2 size={20} className="animate-spin text-stone-400" />
+                </div>
+              ) : accountContracts.length === 0 ? (
+                <div className="p-8 text-center text-stone-400">
+                  <FileText size={32} strokeWidth={1.5} className="mx-auto mb-3" />
+                  <p className="text-sm">No contracts linked to this account yet.</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#E8E6E2] bg-[#FAFAF9]">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Contract #</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Student</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Period</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Owner</th>
+                      <th className="w-8" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E8E6E2]">
+                    {accountContracts.map((c: any) => (
+                      <tr
+                        key={c.id}
+                        className="hover:bg-[#FAFAF9] cursor-pointer transition-colors"
+                        onClick={() => navigate(`/admin/crm/contracts/${c.id}`)}
+                      >
+                        <td className="px-4 py-3 font-mono text-xs text-stone-500">{c.contract_number || "—"}</td>
+                        <td className="px-4 py-3 font-medium text-stone-800">{c.student_name || "—"}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            c.contract_status === "Active"    ? "bg-green-100 text-green-700" :
+                            c.contract_status === "Completed" ? "bg-blue-100 text-blue-700" :
+                            c.contract_status === "Cancelled" ? "bg-red-100 text-red-700" :
+                            c.contract_status === "Draft"     ? "bg-stone-100 text-stone-600" :
+                            "bg-stone-100 text-stone-600"
+                          }`}>
+                            {c.contract_status
+                              ? c.contract_status.charAt(0).toUpperCase() + c.contract_status.slice(1)
+                              : "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-stone-700">
+                          {c.contract_amount ? `$${Number(c.contract_amount).toLocaleString()}` : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-stone-500 text-xs">
+                          {c.from_date || c.to_date
+                            ? `${c.from_date ? new Date(c.from_date).toLocaleDateString() : "?"} – ${c.to_date ? new Date(c.to_date).toLocaleDateString() : "?"}`
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-stone-500">{c.owner_name || "—"}</td>
+                        <td className="px-4 py-3"><ChevronRight size={14} className="text-stone-300" /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
         </div>
@@ -628,22 +746,26 @@ export default function AccountDetailPage() {
           <div className="w-64 shrink-0 space-y-3">
             <div className="bg-white rounded-xl border border-[#E8E6E2] p-4">
               <p className="text-xs text-stone-400 mb-1">Leads</p>
-              <p className="text-2xl font-bold text-stone-800">—</p>
+              <p className="text-2xl font-bold text-stone-800">
+                {leadsLoading ? "—" : accountLeads.length}
+              </p>
               <button
-                onClick={() => navigate("/admin/crm/leads")}
+                onClick={() => { setTab("leads"); }}
                 className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:opacity-80"
               >
-                <Plus size={12} /> New Lead
+                <ChevronRight size={12} /> View Leads
               </button>
             </div>
             <div className="bg-white rounded-xl border border-[#E8E6E2] p-4">
               <p className="text-xs text-stone-400 mb-1">Contracts</p>
-              <p className="text-2xl font-bold text-stone-800">—</p>
+              <p className="text-2xl font-bold text-stone-800">
+                {contractsLoading ? "—" : accountContracts.length}
+              </p>
               <button
-                onClick={() => navigate("/admin/crm/quotes/new")}
+                onClick={() => { setTab("contracts"); }}
                 className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:opacity-80"
               >
-                <Plus size={12} /> New Quote
+                <ChevronRight size={12} /> View Contracts
               </button>
             </div>
             <div className="bg-white rounded-xl border border-[#E8E6E2] p-4 space-y-2">

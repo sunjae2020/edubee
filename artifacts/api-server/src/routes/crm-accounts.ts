@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { accounts, contacts } from "@workspace/db/schema";
-import { eq, ilike, and, or, count, ne, SQL } from "drizzle-orm";
+import { eq, ilike, and, or, count, ne, SQL, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -218,6 +218,63 @@ router.delete("/crm/accounts/:id", authenticate, requireRole(...ADMIN_ROLES), as
     return res.json({ message: "Account deactivated" });
   } catch (err) {
     console.error("[DELETE /crm/accounts/:id]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /crm/accounts/:id/contracts
+router.get("/crm/accounts/:id/contracts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const r = (x: any) => x.rows ?? (x as any[]);
+    const rows = await db.execute(sql`
+      SELECT
+        c.id,
+        c.contract_number,
+        c.status                AS contract_status,
+        c.total_amount          AS contract_amount,
+        c.start_date            AS from_date,
+        c.end_date              AS to_date,
+        c.student_name,
+        c.created_at            AS created_on,
+        u.full_name             AS owner_name
+      FROM contracts c
+      LEFT JOIN users u ON u.id = c.owner_id
+      WHERE c.account_id = ${id}::uuid
+      ORDER BY c.created_at DESC
+    `);
+    return res.json(r(rows));
+  } catch (err) {
+    console.error("[GET /crm/accounts/:id/contracts]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /crm/accounts/:id/leads
+router.get("/crm/accounts/:id/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const r = (x: any) => x.rows ?? (x as any[]);
+    const rows = await db.execute(sql`
+      SELECT
+        l.id,
+        l.lead_ref_number,
+        l.full_name,
+        l.status                AS lead_status,
+        l.inquiry_type,
+        l.interested_in,
+        l.nationality,
+        l.source,
+        l.created_at            AS created_on,
+        u.full_name             AS owner_name
+      FROM leads l
+      LEFT JOIN users u ON u.id = l.assigned_staff_id
+      WHERE l.account_id = ${id}::uuid
+      ORDER BY l.created_at DESC
+    `);
+    return res.json(r(rows));
+  } catch (err) {
+    console.error("[GET /crm/accounts/:id/leads]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
