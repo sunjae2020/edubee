@@ -523,8 +523,41 @@ router.get("/products-lookup/promotions", authenticate, async (_req, res) => {
 
 router.get("/products-lookup/tax-rates", authenticate, async (_req, res) => {
   try {
-    const rows = await db.select({ id: taxRates.id, name: taxRates.name })
+    const rows = await db.select({ id: taxRates.id, name: taxRates.name, rate: taxRates.rate })
       .from(taxRates).where(eq(taxRates.status, "Active")).orderBy(asc(taxRates.name));
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: "Failed" }); }
+});
+
+router.get("/products-lookup/package-groups", authenticate, async (req, res) => {
+  try {
+    const { search } = req.query as Record<string, string>;
+    const conditions: SQL[] = [eq(packageGroups.status, "active")];
+    if (search) conditions.push(ilike(packageGroups.nameEn, `%${search}%`));
+    const rows = await db
+      .select({ id: packageGroups.id, name: packageGroups.nameEn, countryCode: packageGroups.countryCode })
+      .from(packageGroups)
+      .where(and(...conditions))
+      .orderBy(asc(packageGroups.nameEn))
+      .limit(100);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: "Failed" }); }
+});
+
+router.get("/products-lookup/commissions-detail", authenticate, async (_req, res) => {
+  try {
+    const rows = await db
+      .select({ id: commissions.id, name: commissions.name, commissionType: commissions.commissionType, rateValue: commissions.rateValue })
+      .from(commissions).where(eq(commissions.status, "Active")).orderBy(asc(commissions.name));
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: "Failed" }); }
+});
+
+router.get("/products-lookup/promotions-detail", authenticate, async (_req, res) => {
+  try {
+    const rows = await db
+      .select({ id: promotions.id, name: promotions.name, fromDate: promotions.fromDate, toDate: promotions.toDate })
+      .from(promotions).where(eq(promotions.status, "Active")).orderBy(asc(promotions.name)).limit(200);
     res.json(rows);
   } catch (err) { res.status(500).json({ error: "Failed" }); }
 });
@@ -672,6 +705,52 @@ router.get("/products/:id/linked-groups", authenticate, async (req, res) => {
     return res.json(rows);
   } catch (err) {
     console.error("[GET /products/:id/linked-groups]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.put("/products/:id/linked-groups", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const { packageGroupIds }: { packageGroupIds: string[] } = req.body;
+    if (!Array.isArray(packageGroupIds)) {
+      return res.status(400).json({ error: "packageGroupIds must be an array" });
+    }
+
+    const existing = await db
+      .select({ id: packageGroupProducts.id, packageGroupId: packageGroupProducts.packageGroupId })
+      .from(packageGroupProducts)
+      .where(eq(packageGroupProducts.productId, productId));
+
+    const existingIds = existing.map(r => r.packageGroupId!);
+    const toAdd    = packageGroupIds.filter(id => !existingIds.includes(id));
+    const toRemove = existing.filter(r => !packageGroupIds.includes(r.packageGroupId!)).map(r => r.id);
+
+    if (toRemove.length > 0) {
+      for (const linkId of toRemove) {
+        await db.delete(packageGroupProducts).where(eq(packageGroupProducts.id, linkId));
+      }
+    }
+    if (toAdd.length > 0) {
+      await db.insert(packageGroupProducts).values(
+        toAdd.map(packageGroupId => ({ productId, packageGroupId, quantity: 1 }))
+      );
+    }
+
+    const updated = await db
+      .select({
+        linkId:         packageGroupProducts.id,
+        packageGroupId: packageGroups.id,
+        nameEn:         packageGroups.nameEn,
+      })
+      .from(packageGroupProducts)
+      .innerJoin(packageGroups, eq(packageGroupProducts.packageGroupId, packageGroups.id))
+      .where(eq(packageGroupProducts.productId, productId))
+      .orderBy(asc(packageGroups.nameEn));
+
+    return res.json(updated);
+  } catch (err) {
+    console.error("[PUT /products/:id/linked-groups]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

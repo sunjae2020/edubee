@@ -1,92 +1,266 @@
-import { useState, useEffect } from "react";
+import {
+  useState, useEffect, useRef, useCallback,
+} from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, ChevronLeft, Save, X, Search, Pencil } from "lucide-react";
+import {
+  ChevronLeft, Save, X, Search, Copy, Check, Loader2,
+  Package, ExternalLink,
+} from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const CURRENCIES    = ["AUD","NZD","USD","GBP","EUR","CAD","KRW","JPY","THB","PHP","SGD"];
-const INSTALLMENTS  = ["None","Weekly","Quarterly","Half Yearly","Annually"];
-const PAYMENT_TERMS = ["Once","Multiple Times","Monthly"];
-const STATUSES      = ["active","inactive","archived"];
+const CURRENCIES = ["AUD", "USD", "NZD", "GBP", "EUR", "SGD", "CAD"];
+const INSTALLMENTS = [
+  { value: "", label: "— None —" },
+  { value: "Weekly", label: "Weekly" },
+  { value: "Quarterly", label: "Quarterly" },
+  { value: "Half Yearly", label: "Half Yearly" },
+  { value: "Annually", label: "Annually" },
+];
+const PAYMENT_TERMS = [
+  { value: "", label: "— None —" },
+  { value: "Once", label: "Once" },
+  { value: "Multiple Times", label: "Multiple Times" },
+  { value: "Monthly", label: "Monthly" },
+];
+const PRIORITIES = [
+  { value: "", label: "— None —" },
+  { value: "1", label: "Low" },
+  { value: "2", label: "Normal" },
+  { value: "3", label: "High" },
+  { value: "4", label: "Featured" },
+];
+const GRADES = [
+  { value: "", label: "— None —" },
+  { value: "Beginner", label: "Beginner" },
+  { value: "Elementary", label: "Elementary" },
+  { value: "Intermediate", label: "Intermediate" },
+  { value: "Upper-Intermediate", label: "Upper-Intermediate" },
+  { value: "Advanced", label: "Advanced" },
+  { value: "Professional", label: "Professional" },
+  { value: "All Levels", label: "All Levels" },
+];
 
-interface LookupItem { id: string; name: string }
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+function getAuthHeaders() {
+  const t = localStorage.getItem("accessToken") ?? sessionStorage.getItem("accessToken") ?? "";
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+function api(path: string) {
+  return axios.get(`${BASE}${path}`, { headers: getAuthHeaders() });
+}
 
-// ── Inline SearchSelect ────────────────────────────────────────────────────
-function SearchSelect({
-  label, value, onChange, options, placeholder, disabled = false,
+// ─── FieldLabel ────────────────────────────────────────────────────────────────
+function FL({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-[#57534E] mb-1.5">
+      {children}
+    </label>
+  );
+}
+
+// ─── TextInput ─────────────────────────────────────────────────────────────────
+function TextInput({
+  value, onChange, placeholder, type = "text", prefix, suffix, readOnly,
 }: {
-  label?: string; value: string; onChange: (v: string) => void;
-  options: LookupItem[]; placeholder: string; disabled?: boolean;
+  value: string; onChange?: (v: string) => void; placeholder?: string;
+  type?: string; prefix?: string; suffix?: string; readOnly?: boolean;
+}) {
+  return (
+    <div className="relative flex items-center">
+      {prefix && (
+        <span className="absolute left-3 text-sm text-[#57534E] pointer-events-none select-none">{prefix}</span>
+      )}
+      <input
+        type={type}
+        readOnly={readOnly}
+        value={value}
+        onChange={e => onChange?.(e.target.value)}
+        placeholder={placeholder}
+        className={`w-full h-10 border border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white
+          placeholder:text-[#A8A29E] transition-colors
+          focus:outline-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]
+          disabled:opacity-60 disabled:cursor-not-allowed
+          ${readOnly ? "bg-[#FAFAF9] text-[#57534E] cursor-default" : ""}
+          ${prefix ? "pl-8" : "px-3"} ${suffix ? "pr-10" : "pr-3"}`}
+      />
+      {suffix && (
+        <span className="absolute right-3 text-sm text-[#57534E] pointer-events-none select-none">{suffix}</span>
+      )}
+    </div>
+  );
+}
+
+// ─── SelectField ───────────────────────────────────────────────────────────────
+function SelectField({
+  value, onChange, options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <Select value={value || ""} onValueChange={onChange}>
+      <SelectTrigger className="h-10 border-[#E8E6E2] text-sm focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]">
+        <SelectValue placeholder="Select…" />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map(o => (
+          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+// ─── RadioYesNo ────────────────────────────────────────────────────────────────
+function RadioYesNo({
+  value, onChange,
+}: {
+  value: boolean; onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center gap-5 h-10">
+      {[{ v: true, l: "Yes" }, { v: false, l: "No" }].map(({ v, l }) => (
+        <label key={String(v)} className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            checked={value === v}
+            onChange={() => onChange(v)}
+            className="w-4 h-4 accent-[#F5821F]"
+          />
+          <span className="text-sm text-[#1C1917]">{l}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
+// ─── ToggleSwitch ──────────────────────────────────────────────────────────────
+function ToggleSwitch({
+  value, onChange, label, helperText,
+}: {
+  value: boolean; onChange: (v: boolean) => void; label: string; helperText?: string;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <FL>{label}</FL>
+        {helperText && <p className="text-xs text-[#A8A29E] mt-0.5">{helperText}</p>}
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!value)}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent
+          transition-colors duration-200 ease-in-out focus:outline-none
+          ${value ? "bg-[#F5821F]" : "bg-[#E8E6E2]"}`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md
+            transform transition duration-200 ease-in-out
+            ${value ? "translate-x-5" : "translate-x-0"}`}
+        />
+      </button>
+    </div>
+  );
+}
+
+// ─── SearchSelect (pre-loaded, in-memory filter) ───────────────────────────────
+interface SelectOption { id: string; name: string; sub?: string }
+
+function SearchSelect({
+  value, onChange, options, placeholder, loading = false,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: SelectOption[];
+  placeholder?: string;
+  loading?: boolean;
 }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const selected = options.find(o => o.id === value);
+
   const filtered = q
-    ? options.filter(o => o.name.toLowerCase().includes(q.toLowerCase())).slice(0, 30)
-    : options.slice(0, 30);
+    ? options.filter(o => o.name.toLowerCase().includes(q.toLowerCase())).slice(0, 40)
+    : options.slice(0, 40);
 
-  useEffect(() => { if (!open) setQ(""); }, [open]);
+  useEffect(() => {
+    if (!open) setQ("");
+  }, [open]);
 
-  // VIEW mode: show name badge or "—" placeholder
-  if (disabled) {
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  if (selected) {
     return (
-      <div className="space-y-1">
-        {label && <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">{label}</Label>}
-        <div className="flex items-center border border-[#E8E6E2] rounded-lg px-3 py-2 h-9 bg-white opacity-60">
-          <span className="text-sm text-[#1C1917] truncate">
-            {selected ? selected.name : <span className="text-[#A8A29E]">—</span>}
-          </span>
-        </div>
+      <div className="flex items-center h-10 border border-[#F5821F] rounded-lg px-3 bg-white gap-2">
+        <span className="flex-1 text-sm text-[#1C1917] truncate">{selected.name}</span>
+        {selected.sub && (
+          <span className="text-xs text-[#A8A29E] shrink-0">{selected.sub}</span>
+        )}
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          className="shrink-0 text-[#A8A29E] hover:text-[#DC2626] transition-colors"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
       </div>
     );
   }
 
-  // EDIT mode: search + dropdown
   return (
-    <div className="space-y-1">
-      {label && <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">{label}</Label>}
-      {selected ? (
-        <div className="flex items-center justify-between border border-[#F5821F] rounded-lg px-3 py-2 h-9 bg-white">
-          <span className="text-sm text-[#1C1917] truncate">{selected.name}</span>
-          <button type="button" onClick={() => onChange("")} className="ml-2 text-[#A8A29E] hover:text-[#DC2626] shrink-0">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      ) : (
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#A8A29E] pointer-events-none" />
-          <input
-            placeholder={placeholder}
-            value={q}
-            onChange={e => { setQ(e.target.value); setOpen(true); }}
-            onFocus={() => setOpen(true)}
-            onBlur={() => setTimeout(() => setOpen(false), 150)}
-            className="w-full pl-8 pr-3 h-9 text-sm border border-[#E8E6E2] rounded-lg focus:outline-none focus:border-[#F5821F]"
-          />
-          {open && filtered.length > 0 && (
-            <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-              {filtered.map(o => (
-                <button key={o.id} type="button"
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-[#FEF0E3] text-[#1C1917]"
-                  onMouseDown={() => { onChange(o.id); setOpen(false); setQ(""); }}>
-                  {o.name}
-                </button>
-              ))}
-            </div>
-          )}
-          {open && q && filtered.length === 0 && (
-            <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg px-3 py-2 text-sm text-[#A8A29E]">No results</div>
+    <div className="relative" ref={containerRef}>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E] pointer-events-none" />
+        {loading ? (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E] animate-spin" />
+        ) : null}
+        <input
+          value={q}
+          onChange={e => { setQ(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          placeholder={loading ? "Loading…" : (placeholder ?? "Search…")}
+          className="w-full h-10 pl-9 pr-3 border border-[#E8E6E2] rounded-lg text-sm text-[#1C1917]
+            placeholder:text-[#A8A29E] focus:outline-none focus:border-[#F5821F]
+            focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]"
+        />
+      </div>
+      {open && (
+        <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-52 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <p className="px-3 py-2.5 text-sm text-[#A8A29E]">No results found</p>
+          ) : (
+            filtered.map(o => (
+              <button
+                key={o.id}
+                type="button"
+                onMouseDown={() => { onChange(o.id); setOpen(false); }}
+                className="w-full text-left px-3 py-2 flex items-center justify-between gap-3 hover:bg-[#FEF0E3] transition-colors"
+              >
+                <span className="text-sm text-[#1C1917] truncate">{o.name}</span>
+                {o.sub && <span className="text-xs text-[#A8A29E] shrink-0">{o.sub}</span>}
+              </button>
+            ))
           )}
         </div>
       )}
@@ -94,354 +268,852 @@ function SearchSelect({
   );
 }
 
-// ── Radio Yes/No ────────────────────────────────────────────────────────────
-function RadioYesNo({ label, value, onChange, disabled }: {
-  label: string; value: boolean; onChange: (v: boolean) => void; disabled?: boolean;
+// ─── AsyncSearchSelect (server-side, for package groups) ──────────────────────
+function AsyncSearchSelect({
+  selectedIds, onToggle, fetchFn, placeholder,
+}: {
+  selectedIds: string[];
+  onToggle: (id: string, name: string) => void;
+  fetchFn: (q: string) => Promise<SelectOption[]>;
+  placeholder?: string;
 }) {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const [results, setResults] = useState<SelectOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const doFetch = useCallback(async (query: string) => {
+    setLoading(true);
+    try {
+      const data = await fetchFn(query);
+      setResults(data);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchFn]);
+
+  useEffect(() => {
+    if (open) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => doFetch(q), 300);
+    }
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [q, open, doFetch]);
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
   return (
-    <div className="space-y-1">
-      <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">{label}</Label>
-      <div className="flex gap-4">
-        {[{ v: true, l: "Yes" }, { v: false, l: "No" }].map(({ v, l }) => (
-          <label key={String(v)} className={`flex items-center gap-1.5 cursor-pointer ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}>
-            <input type="radio" disabled={disabled} checked={value === v}
-              onChange={() => onChange(v)}
-              className="accent-[#F5821F]" />
-            <span className="text-sm text-[#1C1917]">{l}</span>
-          </label>
-        ))}
+    <div className="relative" ref={containerRef}>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E] pointer-events-none" />
+        {loading && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E] animate-spin" />
+        )}
+        <input
+          value={q}
+          onChange={e => setQ(e.target.value)}
+          onFocus={() => { setOpen(true); if (results.length === 0) doFetch(""); }}
+          placeholder={placeholder ?? "Search…"}
+          className="w-full h-10 pl-9 pr-3 border border-[#E8E6E2] rounded-lg text-sm text-[#1C1917]
+            placeholder:text-[#A8A29E] focus:outline-none focus:border-[#F5821F]
+            focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]"
+        />
       </div>
+      {open && (
+        <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-52 overflow-y-auto">
+          {loading && results.length === 0 ? (
+            <p className="px-3 py-2.5 text-sm text-[#A8A29E]">Loading…</p>
+          ) : results.length === 0 ? (
+            <p className="px-3 py-2.5 text-sm text-[#A8A29E]">No results found</p>
+          ) : (
+            results.map(o => {
+              const isSelected = selectedIds.includes(o.id);
+              return (
+                <button
+                  key={o.id}
+                  type="button"
+                  onMouseDown={() => { onToggle(o.id, o.name); }}
+                  className={`w-full text-left px-3 py-2 flex items-center justify-between gap-3 transition-colors
+                    ${isSelected ? "bg-[#FEF0E3]" : "hover:bg-[#FEF0E3]"}`}
+                >
+                  <span className="text-sm text-[#1C1917] truncate">{o.name}</span>
+                  <span className={`text-xs shrink-0 ${isSelected ? "text-[#F5821F] font-semibold" : "text-[#A8A29E]"}`}>
+                    {isSelected ? "Added ✓" : (o.sub ?? "")}
+                  </span>
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Section wrapper ──────────────────────────────────────────────────────────
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+// ─── Section card ─────────────────────────────────────────────────────────────
+function Section({ title, children, description }: {
+  title: string; children: React.ReactNode; description?: string;
+}) {
   return (
-    <div className="bg-white rounded-xl border border-[#E8E6E2] shadow-[0_1px_3px_rgba(0,0,0,0.06)] overflow-hidden">
-      <div className="px-5 py-3 border-b border-[#F4F3F1] bg-[#FAFAF9]">
-        <h3 className="text-xs font-semibold text-[#57534E] uppercase tracking-widest">{title}</h3>
+    <div className="bg-white rounded-xl border border-[#E8E6E2] shadow-[0_1px_3px_rgba(0,0,0,0.06)] overflow-hidden mb-6">
+      <div className="px-5 py-3 border-b border-[#E8E6E2] bg-[#FAFAF9]">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#57534E]">{title}</h3>
       </div>
-      <div className="px-5 py-4 grid grid-cols-1 gap-4 md:grid-cols-2">{children}</div>
+      {description && (
+        <p className="px-5 pt-3 text-xs text-[#57534E]">{description}</p>
+      )}
+      <div className="p-5">{children}</div>
     </div>
   );
 }
-function FullRow({ children }: { children: React.ReactNode }) {
-  return <div className="md:col-span-2">{children}</div>;
-}
 
-function TextField({ label, value, onChange, disabled, placeholder, type = "text" }: {
-  label: string; value: string; onChange: (v: string) => void;
-  disabled?: boolean; placeholder?: string; type?: string;
+// ─── Btn ──────────────────────────────────────────────────────────────────────
+function Btn({
+  onClick, disabled, loading, children, variant = "primary", size = "md",
+}: {
+  onClick?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  children: React.ReactNode;
+  variant?: "primary" | "outline";
+  size?: "sm" | "md";
 }) {
+  const base = "inline-flex items-center gap-1.5 font-semibold rounded-lg transition-all focus:outline-none";
+  const sizes = size === "sm" ? "h-8 px-3 text-xs" : "h-10 px-5 text-sm";
+  const variants = {
+    primary: "bg-[#F5821F] text-white hover:bg-[#D96A0A] disabled:opacity-60 disabled:cursor-not-allowed",
+    outline: "bg-white text-[#1C1917] border border-[#E8E6E2] hover:border-[#A8A29E] disabled:opacity-60",
+  };
   return (
-    <div className="space-y-1">
-      <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">{label}</Label>
-      <Input type={type} disabled={disabled} value={value} onChange={e => onChange(e.target.value)}
-        placeholder={placeholder} className="h-9 border-[#E8E6E2] focus:border-[#F5821F] disabled:opacity-60 text-sm" />
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={`${base} ${sizes} ${variants[variant]}`}
+    >
+      {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+      {children}
+    </button>
   );
 }
 
-function SelectField({ label, value, onChange, options, disabled }: {
-  label: string; value: string; onChange: (v: string) => void;
-  options: { value: string; label: string }[]; disabled?: boolean;
-}) {
-  return (
-    <div className="space-y-1">
-      <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">{label}</Label>
-      <Select disabled={disabled} value={value || "__none__"} onValueChange={v => onChange(v === "__none__" ? "" : v)}>
-        <SelectTrigger className="h-9 border-[#E8E6E2] focus:border-[#F5821F] text-sm">
-          <SelectValue placeholder="Select…" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__none__">— None —</SelectItem>
-          {options.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
-// ── Main Component ───────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
+  const isNew = id === "new";
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
   const canEdit = ["super_admin", "admin"].includes(user?.role ?? "");
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [form, setForm] = useState<Record<string, any>>({});
+  const [form, setForm] = useState<Record<string, any>>({
+    productName: "", fromDate: "", toDate: "", durationWeeks: "",
+    productTypeId: "", currency: "AUD", isGstIncluded: false,
+    displayOnQuote: true, displayOnInvoice: true,
+    isRecommend: false, status: "active",
+  });
+  const [originalForm, setOriginalForm] = useState<Record<string, any>>({});
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  const [linkedGroupIds, setLinkedGroupIds] = useState<string[]>([]);
+  const [linkedGroupNames, setLinkedGroupNames] = useState<Record<string, string>>({});
+  const [copiedId, setCopiedId] = useState(false);
+  const [topBarVisible, setTopBarVisible] = useState(true);
+  const topBarRef = useRef<HTMLDivElement>(null);
+
   const sf = (k: string) => (v: any) => setForm(f => ({ ...f, [k]: v }));
 
-  // ── Queries ──────────────────────────────────────────────────────────────
+  // ── IntersectionObserver for sticky bar ───────────────────────────────────
+  useEffect(() => {
+    const el = topBarRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setTopBarVisible(entry.isIntersecting),
+      { threshold: 0 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // ── Queries ───────────────────────────────────────────────────────────────
   const { data: rec, isLoading } = useQuery({
     queryKey: ["product-detail", id],
-    queryFn: () => axios.get(`${BASE}/api/products/${id}`).then(r => r.data),
+    queryFn: () => api(`/api/products/${id}`).then(r => r.data),
+    enabled: !isNew,
   });
 
   const { data: linkedGroupsData = [] } = useQuery({
     queryKey: ["product-linked-groups", id],
-    queryFn: () => axios.get(`${BASE}/api/products/${id}/linked-groups`).then(r => r.data),
-    enabled: !!id,
+    queryFn: () => api(`/api/products/${id}/linked-groups`).then(r => r.data),
+    enabled: !isNew,
   });
 
-  const { data: productTypeOpts = [] } = useQuery<LookupItem[]>({
-    queryKey: ["lookup-product-types"],
-    queryFn: () => axios.get(`${BASE}/api/products-lookup/product-types`).then(r => r.data),
+  const { data: productGroups = [], isLoading: groupsLoading } = useQuery({
+    queryKey: ["lookup-product-groups"],
+    queryFn: () => api(`/api/product-groups`).then(r => r.data),
     staleTime: 60000,
   });
-  const { data: accountOpts = [] } = useQuery<LookupItem[]>({
+
+  const { data: allProductTypes = [], isLoading: typesLoading } = useQuery({
+    queryKey: ["lookup-all-product-types"],
+    queryFn: () => api(`/api/product-types`).then(r => r.data),
+    staleTime: 60000,
+  });
+
+  const { data: accountOpts = [], isLoading: acctLoading } = useQuery<SelectOption[]>({
     queryKey: ["lookup-accounts"],
-    queryFn: () => axios.get(`${BASE}/api/products-lookup/accounts`).then(r => r.data),
+    queryFn: () => api(`/api/products-lookup/accounts`).then(r => r.data),
     staleTime: 60000,
   });
-  const { data: commissionOpts = [] } = useQuery<LookupItem[]>({
-    queryKey: ["lookup-commissions"],
-    queryFn: () => axios.get(`${BASE}/api/products-lookup/commissions`).then(r => r.data),
+
+  const { data: commissionOpts = [], isLoading: commLoading } = useQuery({
+    queryKey: ["lookup-commissions-detail"],
+    queryFn: () => api(`/api/products-lookup/commissions-detail`).then(r => r.data),
     staleTime: 60000,
   });
-  const { data: promotionOpts = [] } = useQuery<LookupItem[]>({
-    queryKey: ["lookup-promotions"],
-    queryFn: () => axios.get(`${BASE}/api/products-lookup/promotions`).then(r => r.data),
+
+  const { data: promotionOpts = [], isLoading: promoLoading } = useQuery({
+    queryKey: ["lookup-promotions-detail"],
+    queryFn: () => api(`/api/products-lookup/promotions-detail`).then(r => r.data),
     staleTime: 60000,
   });
-  const { data: taxRateOpts = [] } = useQuery<LookupItem[]>({
+
+  const { data: taxRateOpts = [], isLoading: taxLoading } = useQuery({
     queryKey: ["lookup-tax-rates"],
-    queryFn: () => axios.get(`${BASE}/api/products-lookup/tax-rates`).then(r => r.data),
+    queryFn: () => api(`/api/products-lookup/tax-rates`).then(r => r.data),
     staleTime: 60000,
   });
+
+  // ── Derived: product types filtered by selected group ─────────────────────
+  const filteredTypes: SelectOption[] = selectedGroupId
+    ? allProductTypes
+        .filter((t: any) => t.productGroupId === selectedGroupId)
+        .map((t: any) => ({ id: t.id, name: t.name, sub: t.productGroupName }))
+    : allProductTypes.map((t: any) => ({ id: t.id, name: t.name, sub: t.productGroupName }));
+
+  const groupSelectOpts: SelectOption[] = productGroups.map((g: any) => ({ id: g.id, name: g.name }));
+
+  const commSelectOpts: SelectOption[] = commissionOpts.map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    sub: c.commissionType === "rate" ? `${c.rateValue ?? 0}%` : `$${c.rateValue ?? 0}`,
+  }));
+
+  const promoSelectOpts: SelectOption[] = promotionOpts.map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    sub: p.fromDate && p.toDate
+      ? `${p.fromDate} → ${p.toDate}`
+      : undefined,
+  }));
+
+  const taxSelectOpts: SelectOption[] = taxRateOpts.map((t: any) => ({
+    id: t.id,
+    name: t.name,
+    sub: `${t.rate ?? 0}%`,
+  }));
 
   // ── Init form when data loads ─────────────────────────────────────────────
   useEffect(() => {
-    if (rec) setForm(rec);
+    if (rec) {
+      const init = { ...rec };
+      setForm(init);
+      setOriginalForm(init);
+    }
   }, [rec]);
 
-  // ── Auto-fill name from product type ─────────────────────────────────────
   useEffect(() => {
-    if (!form.manualInput && form.productTypeId) {
-      const pt = productTypeOpts.find(o => o.id === form.productTypeId);
-      if (pt) setForm(f => ({ ...f, productName: pt.name }));
+    if (rec?.productTypeId && allProductTypes.length > 0) {
+      const found = allProductTypes.find((t: any) => t.id === rec.productTypeId);
+      if (found?.productGroupId) setSelectedGroupId(found.productGroupId);
     }
-  }, [form.productTypeId, form.manualInput]);
+  }, [rec, allProductTypes]);
 
-  // ── Save mutation ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (linkedGroupsData.length > 0) {
+      const ids = linkedGroupsData.map((g: any) => g.packageGroupId);
+      const names: Record<string, string> = {};
+      linkedGroupsData.forEach((g: any) => { names[g.packageGroupId] = g.nameEn; });
+      setLinkedGroupIds(ids);
+      setLinkedGroupNames(names);
+    }
+  }, [linkedGroupsData]);
+
+  // ── Duration auto-calc ────────────────────────────────────────────────────
+  useEffect(() => {
+    const from = form.fromDate;
+    const to = form.toDate;
+    if (from && to) {
+      const diff = new Date(to).getTime() - new Date(from).getTime();
+      if (diff > 0) {
+        const weeks = Math.ceil(diff / (7 * 24 * 60 * 60 * 1000));
+        setForm(f => ({ ...f, durationWeeks: weeks }));
+      }
+    }
+  }, [form.fromDate, form.toDate]);
+
+  // ── Dirty state ───────────────────────────────────────────────────────────
+  const isDirty = JSON.stringify(form) !== JSON.stringify(originalForm);
+
+  // ── Save mutations ────────────────────────────────────────────────────────
   const saveMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const { id: _id, createdAt: _ca, updatedAt: _ua, convertedCost: _cc, ...body } = form;
-      return axios.put(`${BASE}/api/products/${id}`, body).then(r => r.data);
+      if (isNew) {
+        return axios.post(`${BASE}/api/products`, body, { headers: getAuthHeaders() }).then(r => r.data);
+      }
+      return axios.put(`${BASE}/api/products/${id}`, body, { headers: getAuthHeaders() }).then(r => r.data);
     },
-    onSuccess: () => {
+    onSuccess: async (saved) => {
+      const savedId = saved.id ?? id;
+      if (linkedGroupIds.length >= 0 && !isNew) {
+        try {
+          await axios.put(
+            `${BASE}/api/products/${savedId}/linked-groups`,
+            { packageGroupIds: linkedGroupIds },
+            { headers: getAuthHeaders() }
+          );
+        } catch {
+          // non-fatal
+        }
+      }
       qc.invalidateQueries({ queryKey: ["product-detail", id] });
+      qc.invalidateQueries({ queryKey: ["product-linked-groups", id] });
       qc.invalidateQueries({ queryKey: ["products"] });
-      setIsEditing(false);
-      toast({ title: "Product saved" });
+      setOriginalForm(form);
+      toast({
+        title: "Product saved successfully",
+        className: "border-[#16A34A] bg-[#DCFCE7] text-[#16A34A]",
+      });
+      if (isNew) navigate(`${BASE}/admin/products/${savedId}`);
     },
-    onError: () => toast({ variant: "destructive", title: "Failed to save product" }),
+    onError: (err: any) => {
+      const msg = err?.response?.data?.error ?? err.message ?? "Unknown error";
+      toast({
+        title: `Failed to save product: ${msg}`,
+        className: "border-[#DC2626] bg-[#FEF2F2] text-[#DC2626]",
+      });
+    },
   });
 
-  const startEdit = () => { setForm(rec ?? {}); setIsEditing(true); };
-  const cancelEdit = () => { setForm(rec ?? {}); setIsEditing(false); };
+  const handleCancel = () => {
+    if (isDirty) {
+      if (!window.confirm("You have unsaved changes. Are you sure you want to leave?")) return;
+    }
+    navigate(`${BASE}/admin/products`);
+  };
 
-  const disabled = !isEditing;
+  const handleGroupChange = (groupId: string) => {
+    setSelectedGroupId(groupId);
+    setForm(f => ({ ...f, productTypeId: "" }));
+  };
+
+  const handleLinkedGroupToggle = (id: string, name: string) => {
+    setLinkedGroupIds(prev => {
+      if (prev.includes(id)) return prev.filter(x => x !== id);
+      setLinkedGroupNames(n => ({ ...n, [id]: name }));
+      return [...prev, id];
+    });
+  };
+
+  const copyId = () => {
+    if (rec?.id) {
+      navigator.clipboard.writeText(rec.id);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    }
+  };
+
+  const fetchPackageGroups = useCallback(async (q: string): Promise<SelectOption[]> => {
+    const r = await api(`/api/products-lookup/package-groups${q ? `?search=${encodeURIComponent(q)}` : ""}`);
+    return r.data.map((g: any) => ({ id: g.id, name: g.name ?? "", sub: g.countryCode }));
+  }, []);
 
   // ── Loading ───────────────────────────────────────────────────────────────
-  if (isLoading) {
+  if (!isNew && isLoading) {
     return (
-      <div className="p-6 space-y-4 max-w-4xl mx-auto">
-        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32" />)}
+      <div className="max-w-[960px] mx-auto px-6 py-8 space-y-4">
+        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-40 rounded-xl" />)}
       </div>
     );
   }
-  if (!rec) return <div className="p-6 text-[#57534E]">Product not found.</div>;
+  if (!isNew && !rec) {
+    return <div className="p-8 text-[#57534E]">Product not found.</div>;
+  }
 
-  const g = (k: string, fallback: any = "") => (isEditing ? (form[k] ?? fallback) : (rec[k] ?? fallback));
-  const gb = (k: string, fallback = false): boolean => Boolean(isEditing ? (form[k] ?? fallback) : (rec[k] ?? fallback));
+  const g = (k: string, fallback: any = "") => form[k] ?? fallback;
+  const gb = (k: string, fallback = false): boolean => Boolean(form[k] ?? fallback);
+
+  const topBarBtns = (
+    <>
+      <Btn variant="outline" onClick={handleCancel}>
+        <X className="w-3.5 h-3.5" /> Cancel
+      </Btn>
+      {canEdit && (
+        <Btn
+          onClick={() => saveMutation.mutate()}
+          loading={saveMutation.isPending}
+          disabled={saveMutation.isPending}
+        >
+          <Save className="w-3.5 h-3.5" />
+          {saveMutation.isPending ? "Saving…" : "Save"}
+        </Btn>
+      )}
+    </>
+  );
+
+  const nameForBreadcrumb = isNew ? "New Product" : (rec?.productName ?? "Product");
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5 pb-10">
-      {/* ── Top bar ── */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-sm text-[#57534E]">
-          <button onClick={() => navigate(`${BASE}/admin/products`)}
-            className="flex items-center gap-1 hover:text-[#F5821F] transition-colors">
-            <ChevronLeft className="w-4 h-4" /> Products
-          </button>
-          <span>/</span>
-          <span className="text-[#1C1917] font-medium truncate max-w-[240px]">{rec.productName}</span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {isEditing ? (
-            <>
-              <Button variant="outline" size="sm" onClick={cancelEdit} className="gap-1.5 border-[#E8E6E2]">
-                <X className="w-3.5 h-3.5" /> Cancel
-              </Button>
-              <Button size="sm" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}
-                className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5">
-                <Save className="w-3.5 h-3.5" />
-                {saveMutation.isPending ? "Saving…" : "Save"}
-              </Button>
-            </>
-          ) : canEdit ? (
-            <Button size="sm" onClick={startEdit} className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5">
-              <Pencil className="w-3.5 h-3.5" /> Edit
-            </Button>
-          ) : null}
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#FAFAF9]">
+      <div className="max-w-[960px] mx-auto px-6 py-8 pb-32">
 
-      {/* ── General ── */}
-      <Section title="General">
-        <FullRow>
-          <TextField label="Product Name *" value={g("productName")} onChange={sf("productName")}
-            disabled={disabled} placeholder="Enter product name" />
-        </FullRow>
-      </Section>
-
-      {/* ── Summary ── */}
-      <Section title="Summary">
-        <TextField label="From Date" type="date" value={g("fromDate")} onChange={sf("fromDate")} disabled={disabled} />
-        <TextField label="To Date"   type="date" value={g("toDate")}   onChange={sf("toDate")}   disabled={disabled} />
-        <TextField label="Duration (weeks)" type="number" value={String(g("durationWeeks") ?? "")} onChange={v => sf("durationWeeks")(v ? Number(v) : null)} disabled={disabled} placeholder="0" />
-      </Section>
-
-      {/* ── Categories ── */}
-      <Section title="Categories">
-        <SearchSelect label="Product Type" value={g("productTypeId")} onChange={sf("productTypeId")}
-          options={productTypeOpts} placeholder="Search product types…" disabled={disabled} />
-        <SearchSelect label="Product Provider (Account)" value={g("category2Id")} onChange={sf("category2Id")}
-          options={accountOpts} placeholder="Search accounts…" disabled={disabled} />
-      </Section>
-
-      {/* ── Main ── */}
-      <Section title="Main">
-        <FullRow>
-          <TextField label="Item Description" value={g("itemDescription")} onChange={sf("itemDescription")} disabled={disabled} placeholder="Item description…" />
-        </FullRow>
-        <TextField label="Price" type="number" value={String(g("price") ?? "")} onChange={sf("price")} disabled={disabled} placeholder="0.00" />
-        <SelectField label="Currency" value={g("currency") || "AUD"} onChange={sf("currency")} disabled={disabled}
-          options={CURRENCIES.map(c => ({ value: c, label: c }))} />
-        <FullRow>
-          <RadioYesNo label="GST Included" value={gb("isGstIncluded")} onChange={sf("isGstIncluded")} disabled={disabled} />
-        </FullRow>
-        <SelectField label="Installment Plan" value={g("installmentPlan")} onChange={sf("installmentPlan")} disabled={disabled}
-          options={INSTALLMENTS.map(v => ({ value: v, label: v }))} />
-        <SelectField label="Default Payment Term" value={g("defaultPaymentTerm")} onChange={sf("defaultPaymentTerm")} disabled={disabled}
-          options={PAYMENT_TERMS.map(v => ({ value: v, label: v }))} />
-        <TextField label="Number of Payments" type="number" value={String(g("numberOfPayments") ?? "")} onChange={v => sf("numberOfPayments")(v ? Number(v) : null)} disabled={disabled} placeholder="0" />
-        <TextField label="Minimum Payment" type="number" value={String(g("minimumPayment") ?? "")} onChange={sf("minimumPayment")} disabled={disabled} placeholder="0.00" />
-        <SelectField label="Product Priority" value={String(g("productPriority") ?? "")} onChange={v => sf("productPriority")(v ? Number(v) : null)} disabled={disabled}
-          options={[10,9,8,7,6,5].map(n => ({ value: String(n), label: String(n) }))} />
-        <SelectField label="Product Grade" value={g("productGrade")} onChange={sf("productGrade")} disabled={disabled}
-          options={["A","B","C","D"].map(v => ({ value: v, label: v }))} />
-        <FullRow>
-          <RadioYesNo label="Recommend" value={gb("isRecommend")} onChange={sf("isRecommend")} disabled={disabled} />
-        </FullRow>
-      </Section>
-
-      {/* ── Promotion ── */}
-      <Section title="Promotion">
-        <SearchSelect label="Product Source (Provider)" value={g("providerId")} onChange={sf("providerId")}
-          options={accountOpts} placeholder="Search accounts…" disabled={disabled} />
-        <SearchSelect label="Commission" value={g("commissionId")} onChange={sf("commissionId")}
-          options={commissionOpts} placeholder="Search commissions…" disabled={disabled} />
-        <FullRow>
-          <SearchSelect label="Promotion" value={g("promotionId")} onChange={sf("promotionId")}
-            options={promotionOpts} placeholder="Search promotions…" disabled={disabled} />
-        </FullRow>
-      </Section>
-
-      {/* ── Setup ── */}
-      <Section title="Setup">
-        <RadioYesNo label="Display on Quote" value={gb("displayOnQuote", true)} onChange={sf("displayOnQuote")} disabled={disabled} />
-        <RadioYesNo label="Display on Invoice" value={gb("displayOnInvoice", true)} onChange={sf("displayOnInvoice")} disabled={disabled} />
-        <FullRow>
-          <SearchSelect label="Tax Rate" value={g("taxRateId")} onChange={sf("taxRateId")}
-            options={taxRateOpts} placeholder="Search tax rates…" disabled={disabled} />
-        </FullRow>
-      </Section>
-
-      {/* ── Description & Notes ── */}
-      <div className="bg-white rounded-xl border border-[#E8E6E2] shadow-[0_1px_3px_rgba(0,0,0,0.06)] overflow-hidden">
-        <div className="px-5 py-3 border-b border-[#F4F3F1] bg-[#FAFAF9]">
-          <h3 className="text-xs font-semibold text-[#57534E] uppercase tracking-widest">Description &amp; Notes</h3>
-        </div>
-        <div className="px-5 py-4 space-y-1">
-          <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Description</Label>
-          <Textarea disabled={disabled} rows={4} value={g("description")} onChange={e => sf("description")(e.target.value)}
-            placeholder="Enter product description…"
-            className="border-[#E8E6E2] focus:border-[#F5821F] resize-none text-sm disabled:opacity-60" />
-        </div>
-      </div>
-
-      {/* ── Linked Package Groups ── */}
-      {linkedGroupsData.length > 0 && (
-        <div className="bg-white rounded-xl border border-[#E8E6E2] shadow-[0_1px_3px_rgba(0,0,0,0.06)] overflow-hidden">
-          <div className="px-5 py-3 border-b border-[#F4F3F1] bg-[#FAFAF9]">
-            <h3 className="text-xs font-semibold text-[#57534E] uppercase tracking-widest">Linked Package Groups</h3>
+        {/* ── Top Bar ── */}
+        <div ref={topBarRef} className="flex items-center justify-between gap-4 mb-7">
+          <div className="flex items-center gap-2 text-sm text-[#57534E]">
+            <button
+              onClick={handleCancel}
+              className="flex items-center gap-1 hover:text-[#F5821F] transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" /> Products
+            </button>
+            <span className="text-[#E8E6E2]">/</span>
+            <span className="text-[#1C1917] font-semibold truncate max-w-[280px]">
+              {nameForBreadcrumb}
+            </span>
           </div>
-          <div className="px-5 py-4 flex flex-wrap gap-2">
-            {linkedGroupsData.map((g: any) => (
-              <button key={g.linkId} onClick={() => navigate(`${BASE}/admin/package-groups/${g.packageGroupId}`)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F33] hover:bg-[#f5821f1a] transition-colors">
-                {g.nameEn} <ExternalLink className="w-2.5 h-2.5 opacity-60" />
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            {topBarBtns}
           </div>
         </div>
-      )}
 
-      {/* ── Admin ── */}
-      <div className="bg-white rounded-xl border border-[#E8E6E2] shadow-[0_1px_3px_rgba(0,0,0,0.06)] overflow-hidden">
-        <div className="px-5 py-3 border-b border-[#F4F3F1] bg-[#FAFAF9]">
-          <h3 className="text-xs font-semibold text-[#57534E] uppercase tracking-widest">Admin</h3>
-        </div>
-        <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Created On</Label>
-            <p className="text-sm text-[#1C1917]">{rec.createdAt ? format(new Date(rec.createdAt), "PPP p") : "—"}</p>
+        {/* ── Two-Column Grid ── */}
+        <div className="grid gap-6" style={{ gridTemplateColumns: "2fr 1fr" }}>
+
+          {/* ════ LEFT COLUMN ════ */}
+          <div>
+
+            {/* [1] GENERAL */}
+            <Section title="General">
+              <div className="space-y-4">
+                <div>
+                  <FL>Product Name *</FL>
+                  <TextInput
+                    value={g("productName")}
+                    onChange={sf("productName")}
+                    placeholder="Enter product name"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <FL>From Date</FL>
+                    <TextInput type="date" value={g("fromDate")} onChange={sf("fromDate")} />
+                  </div>
+                  <div>
+                    <FL>To Date</FL>
+                    <TextInput type="date" value={g("toDate")} onChange={sf("toDate")} />
+                  </div>
+                  <div>
+                    <FL>Duration (Weeks)</FL>
+                    <TextInput
+                      type="number"
+                      value={String(g("durationWeeks") ?? "")}
+                      onChange={v => sf("durationWeeks")(v ? Number(v) : "")}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            {/* [2] CLASSIFICATION */}
+            <Section title="Classification">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <FL>Product Group</FL>
+                    <SearchSelect
+                      value={selectedGroupId}
+                      onChange={handleGroupChange}
+                      options={groupSelectOpts}
+                      placeholder="Search product groups…"
+                      loading={groupsLoading}
+                    />
+                  </div>
+                  <div>
+                    <FL>Product Type</FL>
+                    <SearchSelect
+                      value={g("productTypeId")}
+                      onChange={sf("productTypeId")}
+                      options={filteredTypes}
+                      placeholder={selectedGroupId ? "Search product types…" : "Select a Product Group first"}
+                      loading={typesLoading}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <FL>Product Priority</FL>
+                    <SelectField
+                      value={String(g("productPriority") ?? "")}
+                      onChange={v => sf("productPriority")(v ? Number(v) : null)}
+                      options={PRIORITIES}
+                    />
+                  </div>
+                  <div>
+                    <FL>Product Grade</FL>
+                    <SelectField
+                      value={g("productGrade")}
+                      onChange={sf("productGrade")}
+                      options={GRADES}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <FL>Recommend</FL>
+                    <RadioYesNo value={gb("isRecommend")} onChange={sf("isRecommend")} />
+                  </div>
+                  <div>
+                    <FL>Status</FL>
+                    <SelectField
+                      value={g("status") || "active"}
+                      onChange={sf("status")}
+                      options={[
+                        { value: "active", label: "Active" },
+                        { value: "inactive", label: "Inactive" },
+                        { value: "archived", label: "Archived" },
+                      ]}
+                    />
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            {/* [3] COMMISSION STRUCTURE */}
+            <Section title="Commission Structure">
+              <div className="space-y-4">
+                <div>
+                  <FL>Product Provider (Institute) *</FL>
+                  <SearchSelect
+                    value={g("providerId")}
+                    onChange={sf("providerId")}
+                    options={accountOpts}
+                    placeholder="Search accounts…"
+                    loading={acctLoading}
+                  />
+                  <p className="text-xs text-[#A8A29E] mt-1">
+                    The institute or organization that provides this product
+                  </p>
+                </div>
+                <div>
+                  <FL>Commission *</FL>
+                  <SearchSelect
+                    value={g("commissionId")}
+                    onChange={sf("commissionId")}
+                    options={commSelectOpts}
+                    placeholder="Search commissions…"
+                    loading={commLoading}
+                  />
+                  <p className="text-xs text-[#A8A29E] mt-1">
+                    Commission rate received from the institute for this product
+                  </p>
+                </div>
+              </div>
+            </Section>
+
+            {/* [4] PROMOTION */}
+            <Section title="Promotion">
+              <div>
+                <FL>Promotion</FL>
+                <SearchSelect
+                  value={g("promotionId")}
+                  onChange={sf("promotionId")}
+                  options={promoSelectOpts}
+                  placeholder="Search promotions…"
+                  loading={promoLoading}
+                />
+                <p className="text-xs text-[#A8A29E] mt-1">
+                  Apply a time-limited promotion to this product
+                </p>
+              </div>
+            </Section>
+
+            {/* [5] PAYMENT SETTINGS */}
+            <Section title="Payment Settings">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <FL>Installment Plan</FL>
+                    <SelectField
+                      value={g("installmentPlan")}
+                      onChange={sf("installmentPlan")}
+                      options={INSTALLMENTS}
+                    />
+                  </div>
+                  <div>
+                    <FL>Default Payment Term</FL>
+                    <SelectField
+                      value={g("defaultPaymentTerm")}
+                      onChange={sf("defaultPaymentTerm")}
+                      options={PAYMENT_TERMS}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <FL>Number of Payments</FL>
+                    <TextInput
+                      type="number"
+                      value={String(g("numberOfPayments") ?? "")}
+                      onChange={v => sf("numberOfPayments")(v ? Number(v) : null)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <FL>Minimum Payment</FL>
+                    <TextInput
+                      type="number"
+                      value={String(g("minimumPayment") ?? "")}
+                      onChange={sf("minimumPayment")}
+                      placeholder="0.00"
+                      prefix="$"
+                    />
+                  </div>
+                </div>
+                {(() => {
+                  const nop = Number(form.numberOfPayments ?? 0);
+                  const mp  = Number(form.minimumPayment ?? 0);
+                  const price = Number(form.price ?? 0);
+                  if (nop > 0 && mp > 0 && price > 0 && nop * mp > price) {
+                    return (
+                      <p className="text-xs text-[#CA8A04] bg-[#FEF9C3] rounded-lg px-3 py-2">
+                        ⚠️ Number of payments × minimum payment cannot exceed the product price
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            </Section>
+
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Modified On</Label>
-            <p className="text-sm text-[#1C1917]">{rec.modifiedOn ? format(new Date(rec.modifiedOn), "PPP p") : rec.updatedAt ? format(new Date(rec.updatedAt), "PPP p") : "—"}</p>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Status</Label>
-            {isEditing ? (
-              <Select value={form.status || "active"} onValueChange={sf("status")}>
-                <SelectTrigger className="h-9 w-40 border-[#E8E6E2] text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            ) : (
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-                rec.status === "active" ? "bg-[#DCFCE7] text-[#16A34A]" :
-                rec.status === "archived" ? "bg-[#FEE2E2] text-[#DC2626]" :
-                "bg-[#F4F3F1] text-[#57534E]"
-              }`}>{rec.status ?? "active"}</span>
+
+          {/* ════ RIGHT COLUMN ════ */}
+          <div>
+
+            {/* [6] PRICING & TAX */}
+            <Section title="Pricing & Tax">
+              <div className="space-y-4">
+                <div>
+                  <FL>Item Description</FL>
+                  <Textarea
+                    rows={3}
+                    value={g("itemDescription")}
+                    onChange={e => sf("itemDescription")(e.target.value)}
+                    placeholder="Brief description shown on quote/invoice line item"
+                    className="border-[#E8E6E2] text-sm resize-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <FL>Price</FL>
+                    <TextInput
+                      type="number"
+                      value={String(g("price") ?? "")}
+                      onChange={sf("price")}
+                      placeholder="0.00"
+                      prefix="$"
+                    />
+                  </div>
+                  <div>
+                    <FL>Currency</FL>
+                    <SelectField
+                      value={g("currency") || "AUD"}
+                      onChange={sf("currency")}
+                      options={CURRENCIES.map(c => ({ value: c, label: c }))}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <FL>GST Included</FL>
+                  <RadioYesNo value={gb("isGstIncluded")} onChange={sf("isGstIncluded")} />
+                </div>
+                <div>
+                  <FL>Tax Rate</FL>
+                  <SearchSelect
+                    value={g("taxRateId")}
+                    onChange={sf("taxRateId")}
+                    options={taxSelectOpts}
+                    placeholder="Search tax rates…"
+                    loading={taxLoading}
+                  />
+                </div>
+              </div>
+            </Section>
+
+            {/* [7] DISPLAY & SETUP */}
+            <Section title="Display & Setup">
+              <div className="space-y-4">
+                <ToggleSwitch
+                  value={gb("displayOnQuote", true)}
+                  onChange={sf("displayOnQuote")}
+                  label="Display on Quote"
+                  helperText="Show this product line on the Quote PDF"
+                />
+                <ToggleSwitch
+                  value={gb("displayOnInvoice", true)}
+                  onChange={sf("displayOnInvoice")}
+                  label="Display on Invoice"
+                  helperText="Show this product line on the Invoice PDF"
+                />
+              </div>
+            </Section>
+
+            {/* [8] LINKED PACKAGE GROUPS */}
+            <Section
+              title="Linked Package Groups"
+              description="This product can belong to multiple package groups. It will appear as an included item or optional add-on within those groups."
+            >
+              <div className="space-y-3">
+                {linkedGroupIds.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {linkedGroupIds.map(gid => (
+                      <span
+                        key={gid}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+                          bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F]/30"
+                      >
+                        <Package className="w-3 h-3" />
+                        {linkedGroupNames[gid] ?? gid}
+                        <button
+                          type="button"
+                          onClick={() => setLinkedGroupIds(prev => prev.filter(x => x !== gid))}
+                          className="ml-0.5 hover:text-[#DC2626] transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-[#A8A29E]">No package groups linked. Search to add.</p>
+                )}
+                <AsyncSearchSelect
+                  selectedIds={linkedGroupIds}
+                  onToggle={handleLinkedGroupToggle}
+                  fetchFn={fetchPackageGroups}
+                  placeholder="Search package groups…"
+                />
+              </div>
+            </Section>
+
+            {/* [9] DESCRIPTION & NOTES */}
+            <Section title="Description & Notes">
+              <div>
+                <FL>Description</FL>
+                <Textarea
+                  rows={6}
+                  value={g("description")}
+                  onChange={e => sf("description")(e.target.value)}
+                  placeholder="Detailed product description for website, catalog, or internal notes"
+                  className="border-[#E8E6E2] text-sm resize-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]"
+                />
+              </div>
+            </Section>
+
+            {/* [10] ADMIN INFO */}
+            {!isNew && rec && (
+              <Section title="Admin Info">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <FL>Created On</FL>
+                      <p className="text-sm text-[#1C1917]">
+                        {rec.createdAt ? format(new Date(rec.createdAt), "PPP p") : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <FL>Modified On</FL>
+                      <p className="text-sm text-[#1C1917]">
+                        {(rec.modifiedOn ?? rec.updatedAt)
+                          ? format(new Date(rec.modifiedOn ?? rec.updatedAt), "PPP p")
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <FL>Status</FL>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                        rec.status === "active" ? "bg-[#DCFCE7] text-[#16A34A]" :
+                        rec.status === "archived" ? "bg-[#FEF2F2] text-[#DC2626]" :
+                        "bg-[#F4F3F1] text-[#57534E]"
+                      }`}>{rec.status ?? "active"}</span>
+                    </div>
+                    <div>
+                      <FL>Product ID</FL>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-mono text-[#A8A29E] truncate">{rec.id}</p>
+                        <button
+                          type="button"
+                          onClick={copyId}
+                          className="shrink-0 text-[#A8A29E] hover:text-[#F5821F] transition-colors"
+                          title="Copy ID"
+                        >
+                          {copiedId ? (
+                            <Check className="w-3.5 h-3.5 text-[#16A34A]" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {linkedGroupsData.length > 0 && (
+                    <div>
+                      <FL>Linked To</FL>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {linkedGroupsData.map((lg: any) => (
+                          <button
+                            key={lg.linkId}
+                            type="button"
+                            onClick={() => navigate(`${BASE}/admin/package-groups/${lg.packageGroupId}`)}
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs
+                              bg-[#F4F3F1] text-[#57534E] hover:bg-[#FEF0E3] hover:text-[#F5821F] transition-colors"
+                          >
+                            {lg.nameEn} <ExternalLink className="w-2.5 h-2.5" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Section>
             )}
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Product ID</Label>
-            <p className="text-xs font-mono text-[#A8A29E]">{rec.id}</p>
+
           </div>
         </div>
       </div>
 
-      {/* ── Bottom Buttons ── */}
-      {isEditing && (
-        <div className="flex items-center gap-3 pt-2">
-          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}
-            className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5">
-            <Save className="w-4 h-4" />
-            {saveMutation.isPending ? "Saving…" : "Submit"}
-          </Button>
-          <Button variant="outline" onClick={cancelEdit} className="border-[#E8E6E2] gap-1.5">
-            <X className="w-4 h-4" /> Cancel
-          </Button>
+      {/* ── Sticky Bottom Bar ── */}
+      {!topBarVisible && canEdit && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E8E6E2] px-6 py-3
+          flex items-center justify-end gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+          <span className="flex-1 text-sm font-medium text-[#1C1917] truncate">
+            {nameForBreadcrumb}
+          </span>
+          {topBarBtns}
         </div>
       )}
     </div>
