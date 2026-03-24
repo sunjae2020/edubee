@@ -24,24 +24,24 @@ export type EntityType =
 
 // ─── Document category definitions ───────────────────────────────────────────
 export const STUDENT_DOC_CATEGORIES = [
-  { code: "PASSPORT",     label: "여권 (Passport)",                group: "student" },
-  { code: "PHOTO_ID",     label: "사진 / 신분증 (Photo ID)",         group: "student" },
-  { code: "ACADEMIC",     label: "성적 / 졸업증명서 (Academic)",       group: "student" },
+  { code: "PASSPORT",     label: "Passport",                        group: "student" },
+  { code: "PHOTO_ID",     label: "Photo ID",                        group: "student" },
+  { code: "ACADEMIC",     label: "Academic Certificate",            group: "student" },
   { code: "ENGLISH_TEST", label: "IELTS / TOEFL / PTE",            group: "student" },
-  { code: "FINANCIAL",    label: "은행잔고 / 재정보증 (Financial)",     group: "student" },
-  { code: "VISA_DOC",     label: "비자 서류 (Visa)",                  group: "student" },
+  { code: "FINANCIAL",    label: "Financial Proof",                 group: "student" },
+  { code: "VISA_DOC",     label: "Visa Documents",                  group: "student" },
   { code: "COE",          label: "Confirmation of Enrolment (COE)", group: "student" },
   { code: "OFFER_LETTER", label: "LOO / Offer Letter",             group: "student" },
-  { code: "INSURANCE",    label: "유학생 보험 (Insurance)",            group: "student" },
+  { code: "INSURANCE",    label: "Student Insurance",               group: "student" },
 ] as const;
 
 export const CONSULTATION_DOC_CATEGORIES = [
-  { code: "CONSULTATION",  label: "상담신청서 (Consultation)",    group: "consultation" },
-  { code: "QUOTATION",     label: "견적서 (Quotation)",           group: "consultation" },
-  { code: "CONTRACT_DOC",  label: "계약서 (Contract Doc)",       group: "consultation" },
-  { code: "CORRESPONDENCE",label: "이메일 / 메모 / 공문",           group: "consultation" },
-  { code: "SCHOOL_INFO",   label: "학교 브로셔 / 안내자료",           group: "consultation" },
-  { code: "OTHER",         label: "기타 (Other)",                group: "consultation" },
+  { code: "CONSULTATION",  label: "Consultation Form",            group: "consultation" },
+  { code: "QUOTATION",     label: "Quotation",                    group: "consultation" },
+  { code: "CONTRACT_DOC",  label: "Contract Document",            group: "consultation" },
+  { code: "CORRESPONDENCE",label: "Email / Memo / Official Letter", group: "consultation" },
+  { code: "SCHOOL_INFO",   label: "School Brochure / Info Material", group: "consultation" },
+  { code: "OTHER",         label: "Other",                        group: "consultation" },
 ] as const;
 
 const EXPIRY_CATS = ["PASSPORT", "FINANCIAL", "ENGLISH_TEST", "VISA_DOC"];
@@ -116,7 +116,7 @@ function ExpiryBadge({ expiryDate }: { expiryDate: string | null }) {
   const days = differenceInDays(dt, new Date());
 
   if (isPast(dt) && days < 0) {
-    return <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-red-100 text-red-700">만료됨</span>;
+    return <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-red-100 text-red-700">Expired</span>;
   }
   if (days <= 30) {
     return <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-orange-100 text-orange-700">D-{days}</span>;
@@ -164,7 +164,7 @@ function DocRow({ doc, onDelete, showExpiry = false }: { doc: DocRecord; onDelet
           {showExpiry && <ExpiryBadge expiryDate={doc.expiryDate} />}
           {doc.isSubmitted && doc.submittedTo && (
             <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700">
-              제출: {doc.submittedTo}
+              Submitted to: {doc.submittedTo}
             </span>
           )}
         </div>
@@ -238,9 +238,9 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
   }
 
   async function handleUpload() {
-    if (!file) return toast({ variant: "destructive", title: "파일을 선택하세요" });
-    if (!isExtra && !docCategory) return toast({ variant: "destructive", title: "카테고리를 선택하세요" });
-    if (isExtra && !extraName.trim()) return toast({ variant: "destructive", title: "문서 이름을 입력하세요" });
+    if (!file) return toast({ variant: "destructive", title: "Please select a file" });
+    if (!isExtra && !docCategory) return toast({ variant: "destructive", title: "Please select a category" });
+    if (isExtra && !extraName.trim()) return toast({ variant: "destructive", title: "Please enter a document name" });
 
     const fd = new FormData();
     fd.append("file", file);
@@ -261,12 +261,12 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
     setUploading(true);
     try {
       await axios.post(`${BASE}/api/documents`, fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast({ title: "문서가 업로드되었습니다" });
+      toast({ title: "Document uploaded successfully" });
       onSuccess();
       onClose();
       reset();
     } catch {
-      toast({ variant: "destructive", title: "업로드 실패" });
+      toast({ variant: "destructive", title: "Upload failed" });
     } finally {
       setUploading(false);
     }
@@ -278,14 +278,14 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {activeTab === "student" ? <GraduationCap className="w-4 h-4 text-[#F5821F]" /> : <Briefcase className="w-4 h-4 text-[#F5821F]" />}
-            {activeTab === "student" ? "학생 서류 업로드" : "상담·계약 파일 업로드"}
+            {activeTab === "student" ? "Upload Student Document" : "Upload Consultation & Contract File"}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {/* File picker */}
           <div>
-            <Label className="text-xs font-semibold mb-1.5 block">파일 선택 *</Label>
+            <Label className="text-xs font-semibold mb-1.5 block">Select File *</Label>
             <input ref={fileRef} type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] ?? null)} />
             <div
               className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-[#F5821F] transition-colors"
@@ -302,7 +302,7 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
               ) : (
                 <div className="text-muted-foreground text-sm">
                   <Upload className="w-5 h-5 mx-auto mb-1 opacity-50" />
-                  클릭하여 파일 선택
+                  Click to select a file
                 </div>
               )}
             </div>
@@ -310,8 +310,8 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
 
           {/* Document name */}
           <div>
-            <Label className="text-xs font-semibold mb-1.5 block">문서 이름 (선택)</Label>
-            <Input value={docName} onChange={e => setDocName(e.target.value)} placeholder={file?.name ?? "문서 이름 입력"} className="text-sm" />
+            <Label className="text-xs font-semibold mb-1.5 block">Document Name (optional)</Label>
+            <Input value={docName} onChange={e => setDocName(e.target.value)} placeholder={file?.name ?? "Enter document name"} className="text-sm" />
           </div>
 
           {/* Extra category toggle */}
@@ -320,21 +320,21 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
               <button
                 onClick={() => setIsExtra(false)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!isExtra ? "bg-[#F5821F] text-white" : "bg-muted text-muted-foreground"}`}
-              >표준 카테고리</button>
+              >Standard Category</button>
               <button
                 onClick={() => setIsExtra(true)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isExtra ? "bg-[#F5821F] text-white" : "bg-muted text-muted-foreground"}`}
-              >기타 (커스텀)</button>
+              >Other (Custom)</button>
             </div>
           )}
 
           {/* Category selection */}
           {!isExtra ? (
             <div>
-              <Label className="text-xs font-semibold mb-1.5 block">카테고리 *</Label>
+              <Label className="text-xs font-semibold mb-1.5 block">Category *</Label>
               <Select value={docCategory} onValueChange={v => { setDocCategory(v); setExpiryDate(""); setIsSubmitted(false); setSubmittedTo(""); }}>
                 <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="카테고리 선택..." />
+                  <SelectValue placeholder="Select category..." />
                 </SelectTrigger>
                 <SelectContent>
                   {cats.map(c => (
@@ -346,18 +346,18 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
           ) : (
             <div className="space-y-2">
               <div>
-                <Label className="text-xs font-semibold mb-1.5 block">문서 유형 이름</Label>
+                <Label className="text-xs font-semibold mb-1.5 block">Document Type Name</Label>
                 <Input
                   value={extraName}
                   onChange={e => setExtraName(e.target.value)}
-                  placeholder="예: 보험 면제 확인서, 진단서"
+                  placeholder="e.g. Insurance Waiver, Medical Certificate"
                   maxLength={100}
                   className="text-sm"
                 />
               </div>
               <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 flex items-start gap-2">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />
-                <p className="text-[11px] text-amber-700">기타 카테고리로 저장됩니다.</p>
+                <p className="text-[11px] text-amber-700">Will be saved as a custom category.</p>
               </div>
             </div>
           )}
@@ -366,7 +366,7 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
           {!isExtra && showExpiry && (
             <div>
               <Label className="text-xs font-semibold mb-1.5 block flex items-center gap-1">
-                <Clock className="w-3 h-3" /> 만료일 (Expiry Date)
+                <Clock className="w-3 h-3" /> Expiry Date
               </Label>
               <Input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} className="text-sm" />
             </div>
@@ -383,13 +383,13 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
                   onChange={e => setIsSubmitted(e.target.checked)}
                   className="rounded"
                 />
-                <Label htmlFor="isSubmitted" className="text-xs font-semibold cursor-pointer">학교/기관 제출 완료</Label>
+                <Label htmlFor="isSubmitted" className="text-xs font-semibold cursor-pointer">Submitted to school / institution</Label>
               </div>
               {isSubmitted && (
                 <Input
                   value={submittedTo}
                   onChange={e => setSubmittedTo(e.target.value)}
-                  placeholder="제출 대상 (예: 이민성, University of Sydney)"
+                  placeholder="e.g. Home Affairs, University of Sydney"
                   className="text-sm"
                 />
               )}
@@ -398,14 +398,14 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
         </div>
 
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => { onClose(); reset(); }} disabled={uploading}>취소</Button>
+          <Button variant="outline" size="sm" onClick={() => { onClose(); reset(); }} disabled={uploading}>Cancel</Button>
           <Button
             size="sm"
             className="bg-[#F5821F] hover:bg-[#d97706] text-white"
             onClick={handleUpload}
             disabled={uploading}
           >
-            {uploading ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> 업로드 중…</> : <><Upload className="w-3.5 h-3.5 mr-1.5" /> 업로드</>}
+            {uploading ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Uploading…</> : <><Upload className="w-3.5 h-3.5 mr-1.5" /> Upload</>}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -456,7 +456,7 @@ function GroupedDocList({ groups, activeTab, onDelete, permCheck, isAdmin, onUpl
     return (
       <div className="text-center py-12 text-muted-foreground">
         <FileText className="w-8 h-8 mx-auto mb-3 opacity-20" />
-        <p className="text-sm">이 탭에 문서가 없습니다.</p>
+        <p className="text-sm">No documents in this tab.</p>
       </div>
     );
   }
@@ -482,7 +482,7 @@ function GroupedDocList({ groups, activeTab, onDelete, permCheck, isAdmin, onUpl
                       onClick={e => { e.stopPropagation(); onUpload(grp.group); }}
                       onKeyDown={e => { if (e.key === "Enter") { e.stopPropagation(); onUpload(grp.group); } }}
                       className="text-[10px] text-[#F5821F] hover:underline font-medium cursor-pointer"
-                    >+ 추가</span>
+                    >+ Add</span>
                   )}
                 </div>
               </CollapsibleTrigger>
@@ -535,9 +535,9 @@ export default function EntityDocumentsTab({ entityType, entityId, mode = "full"
     mutationFn: (id: string) => axios.delete(`${BASE}/api/documents/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["entity-documents", entityType, entityId] });
-      toast({ title: "문서가 삭제되었습니다" });
+      toast({ title: "Document deleted" });
     },
-    onError: () => toast({ variant: "destructive", title: "삭제 실패" }),
+    onError: () => toast({ variant: "destructive", title: "Delete failed" }),
   });
 
   const studentCount = studentGroups.reduce((s, g) => s + g.documents.length, 0);
@@ -553,7 +553,7 @@ export default function EntityDocumentsTab({ entityType, entityId, mode = "full"
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        <span className="text-sm">문서 불러오는 중…</span>
+        <span className="text-sm">Loading documents…</span>
       </div>
     );
   }
@@ -567,14 +567,14 @@ export default function EntityDocumentsTab({ entityType, entityId, mode = "full"
             active={activeTab === "student"}
             onClick={() => setActiveTab("student")}
             icon={GraduationCap}
-            label="학생 서류"
+            label="Student Documents"
             count={studentCount}
           />
           <TabBtn
             active={activeTab === "consultation"}
             onClick={() => setActiveTab("consultation")}
             icon={Briefcase}
-            label="상담·계약 파일"
+            label="Consultation & Contract Files"
             count={consultCount}
           />
         </div>
@@ -584,7 +584,7 @@ export default function EntityDocumentsTab({ entityType, entityId, mode = "full"
             className="bg-[#F5821F] hover:bg-[#d97706] text-white h-7 text-xs px-2.5 shrink-0"
             onClick={() => setUploadOpen(true)}
           >
-            <Upload className="w-3 h-3 mr-1" /> 업로드
+            <Upload className="w-3 h-3 mr-1" /> Upload
           </Button>
         )}
       </div>
