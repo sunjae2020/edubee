@@ -191,20 +191,7 @@ router.put("/services/hotel/:id", authenticate, async (req, res) => {
 });
 
 // ── Pickup Management ────────────────────────────────────────────────
-
-router.get("/services/pickup", authenticate, async (req, res) => {
-  try {
-    const role = req.user!.role;
-    const uid = req.user!.id;
-    let query = db.select().from(pickupMgt);
-    const data = role === "partner_pickup"
-      ? await query.where(eq(pickupMgt.driverId, uid))
-      : await query;
-    return res.json({ data: await enrichWithContractInfo(data) });
-  } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
+// NOTE: GET /services/pickup list is handled by services-pickup.ts (supports source/search/pagination filters)
 
 router.get("/services/pickup/:id", authenticate, async (req, res) => {
   try {

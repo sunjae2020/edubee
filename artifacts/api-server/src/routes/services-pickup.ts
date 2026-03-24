@@ -7,6 +7,7 @@ import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router();
 const STAFF_ROLES = ["super_admin", "admin", "camp_coordinator"];
+const ALL_PICKUP_ROLES = [...STAFF_ROLES, "partner_pickup"];
 
 const SELECT_COLS = {
   id:             pickupMgt.id,
@@ -32,7 +33,7 @@ const SELECT_COLS = {
 router.get(
   "/services/pickup",
   authenticate,
-  requireRole(...STAFF_ROLES),
+  requireRole(...ALL_PICKUP_ROLES),
   async (req, res) => {
     try {
       const {
@@ -43,8 +44,15 @@ router.get(
       const pageNum  = Math.max(1, parseInt(page));
       const limitNum = Math.min(100, parseInt(limit));
       const offset   = (pageNum - 1) * limitNum;
+      const role     = (req.user as any)?.role;
+      const uid      = (req.user as any)?.id;
 
       const conds: SQL[] = [];
+
+      // Drivers (partner_pickup) only see their own assigned pickups
+      if (role === "partner_pickup") {
+        conds.push(eq(pickupMgt.driverId, uid));
+      }
 
       if (today === "true") {
         conds.push(
