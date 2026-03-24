@@ -86,15 +86,12 @@ export default function ExchangeRates() {
   const [syncResult, setSyncResult] = useState<{ updated: string[]; skipped: string[]; date: string } | null>(null);
   const [previewCurrencies, setPreviewCurrencies] = useState<string[]>(loadPreviewCurrencies);
   const [showAddPreview, setShowAddPreview] = useState(false);
-  const [addPreviewCcy, setAddPreviewCcy] = useState("");
 
   function addToPreview(ccy: string) {
     if (!ccy || previewCurrencies.includes(ccy)) return;
     const next = [...previewCurrencies, ccy];
     setPreviewCurrencies(next);
     savePreviewCurrencies(next);
-    setAddPreviewCcy("");
-    setShowAddPreview(false);
   }
 
   function removeFromPreview(ccy: string) {
@@ -268,32 +265,6 @@ export default function ExchangeRates() {
             <Plus className="w-3 h-3" /> 추가
           </button>
         </div>
-
-        {showAddPreview && (
-          <div className="mb-3 flex items-center gap-2">
-            <Select value={addPreviewCcy} onValueChange={setAddPreviewCcy}>
-              <SelectTrigger className="h-8 text-sm w-40 bg-white">
-                <SelectValue placeholder="통화 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {ALL_CURRENCIES.filter(c => !previewCurrencies.includes(c)).map(c => (
-                  <SelectItem key={c} value={c}>{FLAG[c] ?? "🏳️"} {c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              size="sm"
-              className="h-8 bg-[#F5821F] hover:bg-[#d97706] text-white text-xs"
-              disabled={!addPreviewCcy}
-              onClick={() => addToPreview(addPreviewCcy)}
-            >
-              추가
-            </Button>
-            <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setShowAddPreview(false); setAddPreviewCcy(""); }}>
-              취소
-            </Button>
-          </div>
-        )}
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
           {previewCurrencies.map(ccy => {
@@ -515,6 +486,94 @@ export default function ExchangeRates() {
                 {createMutation.isPending ? "Saving…" : "Save Rate"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => { setShowCreate(false); setForm(defaultForm); }}>Cancel</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add to Preview Dialog */}
+      <Dialog open={showAddPreview} onOpenChange={v => { if (!v) setShowAddPreview(false); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span>Live Preview 통화 선택</span>
+              <span className="text-xs font-normal text-muted-foreground">— 1 AUD 기준 실시간 환율</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-2 space-y-4">
+            {/* Currently shown */}
+            {previewCurrencies.length > 0 && (
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">표시 중 (클릭하여 제거)</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {previewCurrencies.map(ccy => {
+                    const rate = audToX[ccy];
+                    const hasRate = rate != null;
+                    const display = hasRate
+                      ? rate >= 100
+                        ? rate.toLocaleString("en-AU", { maximumFractionDigits: 0 })
+                        : rate.toFixed(4)
+                      : null;
+                    return (
+                      <button
+                        key={ccy}
+                        onClick={() => removeFromPreview(ccy)}
+                        className="relative flex flex-col items-center bg-[#F5821F]/10 border border-[#F5821F]/40 rounded-lg px-2 py-2.5 hover:bg-red-50 hover:border-red-300 transition-colors group"
+                        title={`${ccy} 제거`}
+                      >
+                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <X className="w-3 h-3 text-red-400" />
+                        </div>
+                        <span className="text-xl leading-none">{FLAG[ccy] ?? "🏳️"}</span>
+                        <span className="text-[11px] font-semibold mt-1">{ccy}</span>
+                        {hasRate ? (
+                          <span className="text-[10px] text-[#F5821F] font-mono mt-0.5">{display}</span>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground mt-0.5">—</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Available to add */}
+            {ALL_CURRENCIES.filter(c => !previewCurrencies.includes(c)).length > 0 && (
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">추가 가능한 통화 (클릭하여 추가)</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {ALL_CURRENCIES.filter(c => !previewCurrencies.includes(c)).map(ccy => {
+                    const rate = audToX[ccy];
+                    const hasRate = rate != null;
+                    const display = hasRate
+                      ? rate >= 100
+                        ? rate.toLocaleString("en-AU", { maximumFractionDigits: 0 })
+                        : rate.toFixed(4)
+                      : null;
+                    return (
+                      <button
+                        key={ccy}
+                        onClick={() => addToPreview(ccy)}
+                        className="flex flex-col items-center bg-white border border-border rounded-lg px-2 py-2.5 hover:border-[#F5821F] hover:bg-[#FEF0E3] transition-colors"
+                        title={`${ccy} 추가`}
+                      >
+                        <span className="text-xl leading-none">{FLAG[ccy] ?? "🏳️"}</span>
+                        <span className="text-[11px] font-semibold mt-1">{ccy}</span>
+                        {hasRate ? (
+                          <span className="text-[10px] text-muted-foreground font-mono mt-0.5">{display}</span>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground mt-0.5">—</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-1">
+              <Button size="sm" variant="outline" onClick={() => setShowAddPreview(false)}>닫기</Button>
             </div>
           </div>
         </DialogContent>
