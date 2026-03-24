@@ -117,6 +117,9 @@ export const products = pgTable("products", {
   campPackageId:      uuid("camp_package_id"),
 });
 
+// ── Phase 1 Type Definitions ──────────────────────────────────────────────
+export type ProductContext = "general" | "camp_package" | "camp_addon";
+
 export const packageGroupProducts = pgTable("package_group_products", {
   id: uuid("id").primaryKey().defaultRandom(),
   packageGroupId: uuid("package_group_id").references(() => packageGroups.id),

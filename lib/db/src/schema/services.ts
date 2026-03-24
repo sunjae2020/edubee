@@ -145,6 +145,11 @@ export const studyAbroadMgt = pgTable("study_abroad_mgt", {
   partnerCost:             decimal("partner_cost", { precision: 12, scale: 2 }),
 });
 
+// ── Phase 1 Type Definitions ──────────────────────────────────────────────
+export type ProgramContext  = "study_abroad" | "camp";
+export type CampProgramType = "english" | "academic" | "holiday" | "mixed" | "stem" | "arts";
+export type CampAgeGroup    = "adult" | "junior" | "mixed";
+
 // ── Other Service Management ────────────────────────────────────────────────
 // Note: partnerId references future 'accounts' table — plain uuid
 export const otherServicesMgt = pgTable("other_services_mgt", {
