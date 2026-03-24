@@ -22,7 +22,7 @@ import {
 } from "@workspace/db/schema";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
-import { eq, and, or, isNull, isNotNull, inArray, SQL } from "drizzle-orm";
+import { eq, and, or, isNull, isNotNull, inArray, SQL, lte } from "drizzle-orm";
 
 const router = Router();
 
@@ -53,6 +53,42 @@ const GROUP_LABELS: Record<string, string> = {
 };
 
 const GROUP_ORDER = ["personal", "school", "financial", "travel", "contract", "internal", "other"];
+
+// ─── Document Category constants ─────────────────────────────────────────────
+export const STUDENT_DOC_CATEGORIES = [
+  "PASSPORT", "PHOTO_ID", "ACADEMIC", "ENGLISH_TEST", "FINANCIAL",
+  "VISA_DOC", "COE", "OFFER_LETTER", "INSURANCE",
+] as const;
+
+export const CONSULTATION_DOC_CATEGORIES = [
+  "CONSULTATION", "QUOTATION", "CONTRACT_DOC", "CORRESPONDENCE", "SCHOOL_INFO", "OTHER",
+] as const;
+
+export const ALL_DOC_CATEGORIES = [...STUDENT_DOC_CATEGORIES, ...CONSULTATION_DOC_CATEGORIES] as const;
+export type DocCategory = typeof ALL_DOC_CATEGORIES[number];
+
+export const DOC_CATEGORY_LABELS: Record<DocCategory, string> = {
+  PASSPORT:      "여권 (Passport)",
+  PHOTO_ID:      "사진 / 신분증 (Photo ID)",
+  ACADEMIC:      "성적 / 졸업증명서 (Academic)",
+  ENGLISH_TEST:  "IELTS / TOEFL / PTE",
+  FINANCIAL:     "은행잔고 / 재정보증 (Financial)",
+  VISA_DOC:      "비자 서류 (Visa)",
+  COE:           "Confirmation of Enrolment (COE)",
+  OFFER_LETTER:  "LOO / Offer Letter",
+  INSURANCE:     "유학생 보험 (Insurance)",
+  CONSULTATION:  "상담신청서 (Consultation)",
+  QUOTATION:     "견적서 (Quotation)",
+  CONTRACT_DOC:  "계약서 (Contract Doc)",
+  CORRESPONDENCE: "이메일 / 메모 / 공문",
+  SCHOOL_INFO:   "학교 브로셔 / 안내자료",
+  OTHER:         "기타 (Other)",
+};
+
+// Categories that require expiry date input
+const EXPIRY_REQUIRED_CATS = ["PASSPORT", "FINANCIAL", "ENGLISH_TEST", "VISA_DOC"] as const;
+// Categories that support submitted_to
+const SUBMITTED_TO_CATS = ["VISA_DOC", "COE", "OFFER_LETTER"] as const;
 
 async function getPermissionsForRole(role: string, group: string): Promise<{ canView: boolean; canDownload: boolean; canUploadExtra: boolean }> {
   const [perm] = await db
@@ -147,6 +183,9 @@ async function enrichDocuments(rawDocs: any[], role: string): Promise<any[]> {
       serviceType: doc.serviceType ?? null,
       uploadedByName: doc.uploadedBy ? (uploaderMap.get(doc.uploadedBy) ?? null) : null,
       permissions: { canView, canDownload, canDelete },
+      documentCategory: doc.documentCategory ?? null,
+      isSubmitted: doc.isSubmitted ?? false,
+      submittedTo: doc.submittedTo ?? null,
     });
   }
   return result;
@@ -171,6 +210,9 @@ router.post("/documents", upload.single("file"), async (req, res) => {
       extraCategoryName,
       serviceType,
       serviceId,
+      documentCategory,
+      isSubmitted,
+      submittedTo,
     } = req.body;
 
     if (!req.file) return res.status(400).json({ error: "File is required" });
@@ -217,6 +259,9 @@ router.post("/documents", upload.single("file"), async (req, res) => {
       expiryDate: expiryDate ?? null,
       notes: notes ?? null,
       uploadedBy: req.user!.id,
+      documentCategory: documentCategory ?? null,
+      isSubmitted: isSubmitted === "true" || isSubmitted === true ? true : false,
+      submittedTo: submittedTo ?? null,
     }).returning();
 
     return res.status(201).json(doc);
@@ -285,11 +330,63 @@ router.get("/documents/permissions-check", async (req, res) => {
   }
 });
 
+// GET /api/documents/expiring
+router.get("/documents/expiring", async (req, res) => {
+  try {
+    const { days = "30" } = req.query as Record<string, string>;
+    const daysNum = Math.max(1, Math.min(365, parseInt(days) || 30));
+
+    // Compute the target date in JS to avoid SQL injection risk
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + daysNum);
+    const targetDateStr = targetDate.toISOString().split("T")[0]; // YYYY-MM-DD
+
+    const rawDocs = await db
+      .select({
+        id: documents.id,
+        documentName: documents.documentName,
+        documentCategory: documents.documentCategory,
+        expiryDate: documents.expiryDate,
+        referenceType: documents.referenceType,
+        referenceId: documents.referenceId,
+      })
+      .from(documents)
+      .where(
+        and(
+          isNull(documents.deletedAt),
+          isNotNull(documents.expiryDate),
+          lte(documents.expiryDate, targetDateStr)
+        )
+      )
+      .orderBy(documents.expiryDate);
+
+    return res.json({ data: rawDocs, days: daysNum });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/documents/categories — return the category list for the frontend
+router.get("/documents/categories", async (req, res) => {
+  const { group } = req.query as Record<string, string>;
+  const cats = group === "student"
+    ? STUDENT_DOC_CATEGORIES.map(c => ({ code: c, label: DOC_CATEGORY_LABELS[c], group: "student" }))
+    : group === "consultation"
+    ? CONSULTATION_DOC_CATEGORIES.map(c => ({ code: c, label: DOC_CATEGORY_LABELS[c], group: "consultation" }))
+    : ALL_DOC_CATEGORIES.map(c => ({
+        code: c,
+        label: DOC_CATEGORY_LABELS[c],
+        group: (STUDENT_DOC_CATEGORIES as readonly string[]).includes(c) ? "student" : "consultation",
+      }));
+  return res.json({ data: cats });
+});
+
 // GET /api/documents/by-entity
 router.get("/documents/by-entity", async (req, res) => {
   try {
     const role = req.user!.role;
-    const { entityType, entityId } = req.query as Record<string, string>;
+    const { entityType, entityId, group: tabGroup } = req.query as Record<string, string>;
 
     if (!entityType || !entityId) return res.status(400).json({ error: "entityType and entityId are required" });
 
@@ -376,7 +473,18 @@ router.get("/documents/by-entity", async (req, res) => {
       return res.status(400).json({ error: "Invalid entityType" });
     }
 
-    const enriched = await enrichDocuments(rawDocs, role);
+    let enriched = await enrichDocuments(rawDocs, role);
+
+    // Filter by tabGroup if provided (student / consultation)
+    if (tabGroup === "student") {
+      enriched = enriched.filter(d =>
+        d.documentCategory && (STUDENT_DOC_CATEGORIES as readonly string[]).includes(d.documentCategory)
+      );
+    } else if (tabGroup === "consultation") {
+      enriched = enriched.filter(d =>
+        !d.documentCategory || (CONSULTATION_DOC_CATEGORIES as readonly string[]).includes(d.documentCategory)
+      );
+    }
 
     const grouped: Record<string, any[]> = {};
     for (const group of GROUP_ORDER) grouped[group] = [];
