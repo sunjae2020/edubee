@@ -19,6 +19,12 @@ function genQuoteRef() {
   return "QTE-" + Date.now().toString(36).toUpperCase().padStart(8, "0");
 }
 
+function genContractNumber(): string {
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const rand = Math.random().toString(36).slice(2, 7).toUpperCase();
+  return `CT-${date}-${rand}`;
+}
+
 // ─── GET /api/crm/quotes ────────────────────────────────────────────
 router.get("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
@@ -181,9 +187,7 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
     const products = await db.select().from(quote_products)
       .where(eq(quote_products.quoteId, req.params.id));
 
-    const today   = fmtDate(new Date());
-    const accName = quote.accountName ?? "Client";
-    const contractNumber = `CT-${accName}-${today}`;
+    const contractNumber = genContractNumber();
 
     const result = await db.transaction(async (tx) => {
       // 1. Create contract

@@ -75,6 +75,14 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
     -   **API routes**: `GET /api/tax-invoices`, `GET /api/tax-invoices/by-contract-product/:cpId`, `GET /api/tax-invoices/:id/pdf`, `POST /api/tax-invoices/:id/send`, `POST /api/tax-invoices/:id/mark-paid`.
     -   **Frontend**: `TaxInvoiceListPage` at `/admin/accounting/tax-invoices` with type/status filters, KPI cards, PDF download, email resend, mark-paid actions. `TaxInvoiceBadge` component shows invoice status on contract product lines.
 
+## Recent Changes (2026-03-24)
+
+- **Camp Contract Services Tab**: `camp-contract-detail.tsx` Services tab replaced with clickable institute/tour card layout → dedicated detail pages. Added `AddInstituteModal` / `AddTourModal`; removed old 4-dialog components.
+- **Navigation Reorder**: App sidebar category order updated: Camp → Services → Products → Finance.
+- **Pickup Redesign**: `pickup.tsx` uses `ListToolbar`/`ListPagination`/clickable rows + Today's Pickups banner; `pickup-detail.tsx` fixed field names, statuses, 4-tab layout.
+- **Bug Fix — Contract Number Generation**: `genContractNumber()` introduced in `crm-quotes.ts` to replace `CT-{accountName}-{date}` format. New format: `CT-YYYYMMDD-XXXXX` (max 18 chars, unique). Fixes both duplicate key and varchar(50) overflow errors.
+- **10-Case E2E CRM Test**: Full end-to-end workflow created for 10 students (5 general CRM + 5 camp CRM). Each case covers: Contact → Lead → Consultation → Quote → Contract → Services → AR Payment → AP Payment → Journal Entries. Total: 10 contacts, 10 leads, 10 quotes, 10 contracts, 15 service records, 25 payment headers, 25 journal entries automatically generated.
+
 ## External Dependencies
 
 -   **Replit Gemini**: AI integration (`gemini-2.5-flash`) for the chatbot.
