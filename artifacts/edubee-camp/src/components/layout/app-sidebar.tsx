@@ -172,7 +172,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
     nav.push({ key: "admin", label: "Admin", catIcon: Grid2x2, items: adminItems });
 
   // ── 10 · Settings ────────────────────────────────────────────────────────
-  if (isSA) {
+  if (isSAorAD) {
     nav.push({
       key: "settings", label: "Settings", catIcon: Settings,
       items: [

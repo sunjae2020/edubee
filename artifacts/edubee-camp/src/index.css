@@ -142,6 +142,68 @@
   --shadow-2xl: 0px 24px 64px rgba(0,0,0,0.10);
 }
 
+.dark {
+  /* Dark backgrounds — warm neutrals */
+  --background: 20 14% 5%;          /* #0F0E0D — page bg */
+  --foreground: 30 50% 93%;         /* #F5F0EB — primary text */
+
+  --card: 20 14% 9%;                /* #1A1917 — cards/modals */
+  --card-foreground: 30 50% 93%;
+  --card-border: 20 8% 17%;         /* #2E2B28 */
+
+  --popover: 20 14% 9%;
+  --popover-foreground: 30 50% 93%;
+  --popover-border: 20 8% 17%;
+
+  --border: 20 8% 17%;              /* #2E2B28 */
+  --input: 20 8% 14%;               /* #242220 */
+  --ring: 28 91% 54%;               /* Orange stays same */
+
+  --sidebar: 20 12% 8%;             /* #161513 — sidebar */
+  --sidebar-foreground: 25 6% 64%;  /* #A8A29E */
+  --sidebar-border: 20 8% 17%;
+  --sidebar-primary: 28 91% 54%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-primary-border: 28 91% 47%;
+  --sidebar-accent: 28 91% 15%;
+  --sidebar-accent-foreground: 28 91% 54%;
+  --sidebar-accent-border: 28 91% 20%;
+  --sidebar-ring: 28 91% 54%;
+
+  --muted: 20 8% 14%;               /* #242220 */
+  --muted-foreground: 25 6% 64%;    /* #A8A29E */
+  --muted-border: 20 8% 17%;
+
+  --secondary: 28 91% 15%;
+  --secondary-foreground: 28 91% 54%;
+  --secondary-border: 28 91% 20%;
+
+  --accent: 28 91% 15%;
+  --accent-foreground: 28 91% 54%;
+  --accent-border: 28 91% 20%;
+
+  --primary: 28 91% 54%;
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 28 91% 47%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --destructive-border: 0 72% 44%;
+
+  /* Charts */
+  --chart-1: 28 91% 54%;
+  --chart-2: 28 91% 43%;
+  --chart-3: 28 91% 65%;
+  --chart-4: 28 91% 76%;
+  --chart-5: 28 91% 87%;
+
+  /* Shadows — stronger in dark mode */
+  --shadow-sm:  0px 2px 4px rgba(0,0,0,0.40);
+  --shadow-md:  0px 4px 16px rgba(0,0,0,0.50);
+  --shadow-lg:  0px 8px 24px rgba(0,0,0,0.60);
+  --shadow-xl:  0px 16px 40px rgba(0,0,0,0.70);
+}
+
 @layer base {
   * { @apply border-border; }
   body { @apply font-sans antialiased bg-background text-foreground; }

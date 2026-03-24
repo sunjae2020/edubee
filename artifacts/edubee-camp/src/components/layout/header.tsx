@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs, ROLE_HIERARCHY, ROLE_LABELS, ROLE_EMOJIS } from "@/hooks/use-view-as";
+import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Clock, ClipboardList, RefreshCw, CalendarCheck, FileText, AlertTriangle, BarChart3, Receipt, LucideIcon, Layers } from "lucide-react";
+import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Clock, ClipboardList, RefreshCw, CalendarCheck, FileText, AlertTriangle, BarChart3, Receipt, LucideIcon, Layers, Sun, Moon } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import axios from "axios";
@@ -74,6 +75,7 @@ type Props = { collapsed: boolean; onToggle: () => void; title?: string };
 export function Header({ collapsed, onToggle, title }: Props) {
   const { user, logout } = useAuth();
   const { viewAsUser, setViewAs, clearViewAs, isImpersonating } = useViewAs();
+  const { theme, toggleTheme } = useTheme();
   const [location, navigate] = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
   const qc = useQueryClient();
@@ -210,6 +212,15 @@ export function Header({ collapsed, onToggle, title }: Props) {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+
+          {/* Dark mode toggle */}
+          <button
+            onClick={toggleTheme}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#57534E] hover:bg-[#F4F3F1] dark:text-[#A8A29E] dark:hover:bg-[#242220] transition-colors"
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
 
           {/* Notifications Bell */}
           <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
