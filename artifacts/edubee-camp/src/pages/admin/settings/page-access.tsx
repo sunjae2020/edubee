@@ -5,60 +5,112 @@ import { Lock, Save, Menu } from "lucide-react";
 import MenuAllocationTab from "@/components/shared/MenuAllocationTab";
 
 const ROLES = [
-  { key: "super_admin", label: "Super Admin", locked: true },
-  { key: "admin", label: "Admin" },
-  { key: "camp_coordinator", label: "Camp Coord." },
-  { key: "education_agent", label: "Education Agent" },
-  { key: "partner_institute", label: "Institute" },
-  { key: "partner_hotel", label: "Hotel" },
-  { key: "partner_pickup", label: "Pickup" },
-  { key: "partner_tour", label: "Tour" },
-  { key: "parent_client", label: "Parent/Client" },
+  { key: "super_admin",       label: "Super Admin",   locked: true  },
+  { key: "admin",             label: "Admin"                        },
+  { key: "camp_coordinator",  label: "Camp Coord."                  },
+  { key: "education_agent",   label: "Edu. Agent"                   },
+  { key: "partner_institute", label: "Institute"                    },
+  { key: "partner_hotel",     label: "Hotel"                        },
+  { key: "partner_pickup",    label: "Pickup"                       },
+  { key: "partner_tour",      label: "Tour"                         },
+  { key: "parent_client",     label: "Parent"                       },
 ];
 
 const PAGES = [
-  { slug: "dashboard", label: "Dashboard", group: "Core" },
-  { slug: "leads", label: "Leads", group: "Core" },
-  { slug: "applications", label: "Applications", group: "Core" },
-  { slug: "contracts", label: "Contracts", group: "Core" },
-  { slug: "package-groups", label: "Package Groups", group: "Core" },
-  { slug: "users", label: "Users", group: "Core" },
-  { slug: "services/institute", label: "Institute Mgmt", group: "Services" },
-  { slug: "services/hotel", label: "Hotel Mgmt", group: "Services" },
-  { slug: "services/pickup", label: "Pickup Mgmt", group: "Services" },
-  { slug: "services/tour", label: "Tour Mgmt", group: "Services" },
-  { slug: "services/interviews", label: "Interviews", group: "Services" },
-  { slug: "services/settlement", label: "Settlement", group: "Services" },
-  { slug: "accounting/client-invoices", label: "Client Invoices", group: "Accounting" },
-  { slug: "accounting/agent-invoices", label: "Agent Invoices", group: "Accounting" },
-  { slug: "accounting/partner-invoices", label: "Partner Invoices", group: "Accounting" },
-  { slug: "accounting/receipts", label: "Receipts", group: "Accounting" },
-  { slug: "accounting/transactions", label: "Transactions", group: "Accounting" },
-  { slug: "accounting/exchange-rates", label: "Exchange Rates", group: "Accounting" },
-  { slug: "my-accounting/settlements", label: "My Settlements", group: "My Accounting" },
-  { slug: "my-accounting/invoices", label: "My Invoices", group: "My Accounting" },
-  { slug: "my-accounting/revenue", label: "My Revenue", group: "My Accounting" },
-  { slug: "reports", label: "Program Reports", group: "Other" },
-  { slug: "my-programs", label: "My Programs", group: "Other" },
-  { slug: "settings/general", label: "General Settings", group: "Settings" },
-  { slug: "settings/page-access", label: "Page Access", group: "Settings" },
-  { slug: "settings/field-permissions", label: "Field Permissions", group: "Settings" },
-  { slug: "settings/doc-permissions", label: "Doc Permissions", group: "Settings" },
-  { slug: "settings/impersonation-logs", label: "Impersonation Logs", group: "Settings" },
+  // ── Dashboard ──────────────────────────────────────────────────────────
+  { slug: "dashboard",              label: "Dashboard",           group: "Dashboard"  },
+  // ── CRM ───────────────────────────────────────────────────────────────
+  { slug: "crm/contacts",           label: "Contacts",            group: "CRM"        },
+  { slug: "crm/accounts",           label: "Accounts",            group: "CRM"        },
+  { slug: "crm/leads",              label: "Leads",               group: "CRM"        },
+  { slug: "crm/quotes",             label: "Quotes",              group: "CRM"        },
+  { slug: "crm/contracts",          label: "Contracts",           group: "CRM"        },
+  { slug: "services/tasks",         label: "Tasks & CS",          group: "CRM"        },
+  // ── Sales ─────────────────────────────────────────────────────────────
+  { slug: "applications",           label: "Applications",        group: "Sales"      },
+  { slug: "documents",              label: "Documents",           group: "Sales"      },
+  // ── Camp ──────────────────────────────────────────────────────────────
+  { slug: "package-groups",         label: "Package Groups",      group: "Camp"       },
+  { slug: "packages",               label: "Packages",            group: "Camp"       },
+  { slug: "enrollment-spots",       label: "Enrollment Spots",    group: "Camp"       },
+  { slug: "camp-applications",      label: "Camp Application",    group: "Camp"       },
+  { slug: "camp-contracts",         label: "Camp Contract",       group: "Camp"       },
+  { slug: "services/institute",     label: "Institute / Study",   group: "Camp"       },
+  { slug: "services/hotel",         label: "Hotel",               group: "Camp"       },
+  { slug: "services/pickup",        label: "Pickup / Transfer",   group: "Camp"       },
+  { slug: "services/tour",          label: "Tour",                group: "Camp"       },
+  { slug: "services/interviews",    label: "Interviews",          group: "Camp"       },
+  // ── Services ──────────────────────────────────────────────────────────
+  { slug: "services/study-abroad",  label: "Study Abroad",        group: "Services"   },
+  { slug: "services/accommodation", label: "Accommodation",       group: "Services"   },
+  { slug: "services/internship",    label: "Internship",          group: "Services"   },
+  { slug: "services/guardian",      label: "Guardian",            group: "Services"   },
+  { slug: "services/settlement",    label: "Settlement",          group: "Services"   },
+  { slug: "services/other",         label: "Other Services",      group: "Services"   },
+  // ── Products ──────────────────────────────────────────────────────────
+  { slug: "product-groups",         label: "Products Group",      group: "Products"   },
+  { slug: "product-types",          label: "Products Type",       group: "Products"   },
+  { slug: "products",               label: "Products",            group: "Products"   },
+  { slug: "promotions",             label: "Promotion",           group: "Products"   },
+  { slug: "commissions",            label: "Commission",          group: "Products"   },
+  // ── Finance ───────────────────────────────────────────────────────────
+  { slug: "accounting/invoices",        label: "Invoices",            group: "Finance"    },
+  { slug: "accounting/receipts",        label: "Receipts",            group: "Finance"    },
+  { slug: "accounting/payments",        label: "Payments",            group: "Finance"    },
+  { slug: "accounting/transactions",    label: "Transactions",        group: "Finance"    },
+  { slug: "accounting/ar-ap",           label: "AR / AP Tracker",     group: "Finance"    },
+  { slug: "accounting/journal",         label: "Journal Entries",     group: "Finance"    },
+  { slug: "accounting/tax-invoices",    label: "Tax Invoices",        group: "Finance"    },
+  { slug: "accounting/coa",             label: "Chart of Accounts",   group: "Finance"    },
+  { slug: "accounting/exchange-rates",  label: "Exchange Rates",      group: "Finance"    },
+  { slug: "my-accounting/settlements",  label: "My Settlements",      group: "Finance"    },
+  { slug: "my-accounting/invoices",     label: "My Invoices",         group: "Finance"    },
+  { slug: "my-accounting/revenue",      label: "My Revenue",          group: "Finance"    },
+  // ── Reports ───────────────────────────────────────────────────────────
+  { slug: "reports",                label: "Program Reports",     group: "Reports"    },
+  // ── AI Assistant ──────────────────────────────────────────────────────
+  { slug: "chatbot",                label: "AI Chatbot",          group: "AI"         },
+  // ── Admin ─────────────────────────────────────────────────────────────
+  { slug: "users",                  label: "Users",               group: "Admin"      },
+  { slug: "my-programs",            label: "My Programs",         group: "Admin"      },
+  // ── Settings ──────────────────────────────────────────────────────────
+  { slug: "settings/general",            label: "General",             group: "Settings"   },
+  { slug: "settings/page-access",        label: "Page Access",         group: "Settings"   },
+  { slug: "settings/field-permissions",  label: "Field Permissions",   group: "Settings"   },
+  { slug: "settings/doc-permissions",    label: "Doc Permissions",     group: "Settings"   },
+  { slug: "settings/impersonation-logs", label: "Impersonation Logs",  group: "Settings"   },
+  { slug: "settings/data-manager",       label: "Data Manager",        group: "Settings"   },
 ];
+
+const CC_PAGES = [
+  "dashboard","crm/contacts","crm/accounts","crm/leads","crm/quotes","crm/contracts","services/tasks",
+  "applications","documents",
+  "package-groups","packages","enrollment-spots","camp-applications","camp-contracts",
+  "services/institute","services/hotel","services/pickup","services/tour","services/interviews",
+  "services/study-abroad","services/accommodation","services/internship","services/guardian","services/settlement","services/other",
+  "my-accounting/settlements","my-accounting/invoices","my-accounting/revenue",
+  "reports",
+];
+
+const EA_PAGES = [
+  "dashboard","services/tasks","applications",
+  "my-accounting/settlements","my-accounting/invoices","my-accounting/revenue","reports",
+];
+
+const MY_ACCOUNTING = ["my-accounting/settlements","my-accounting/invoices","my-accounting/revenue"];
 
 const defaultMatrix: Record<string, Record<string, boolean>> = {};
 PAGES.forEach(p => {
   defaultMatrix[p.slug] = {
-    super_admin: true,
-    admin: !p.slug.startsWith("settings"),
-    camp_coordinator: ["dashboard","applications","contracts","package-groups","services/institute","services/hotel","services/pickup","services/tour","services/interviews","services/settlement","my-accounting/settlements","my-accounting/invoices","my-accounting/revenue","reports"].includes(p.slug),
-    education_agent: ["dashboard","applications","my-accounting/settlements","my-accounting/invoices","my-accounting/revenue","reports","my-programs"].includes(p.slug),
-    partner_institute: ["dashboard","services/institute","my-accounting/settlements","my-accounting/invoices","my-accounting/revenue"].includes(p.slug),
-    partner_hotel: ["dashboard","services/hotel","my-accounting/settlements","my-accounting/invoices","my-accounting/revenue"].includes(p.slug),
-    partner_pickup: ["dashboard","services/pickup","my-accounting/settlements","my-accounting/invoices","my-accounting/revenue"].includes(p.slug),
-    partner_tour: ["dashboard","services/tour","my-accounting/settlements","my-accounting/invoices","my-accounting/revenue"].includes(p.slug),
-    parent_client: ["dashboard","my-programs","reports"].includes(p.slug),
+    super_admin:       true,
+    admin:             !p.slug.startsWith("settings"),
+    camp_coordinator:  CC_PAGES.includes(p.slug),
+    education_agent:   EA_PAGES.includes(p.slug),
+    partner_institute: ["dashboard","services/institute","services/tasks",...MY_ACCOUNTING].includes(p.slug),
+    partner_hotel:     ["dashboard","services/hotel","services/tasks",...MY_ACCOUNTING].includes(p.slug),
+    partner_pickup:    ["dashboard","services/pickup","services/tasks",...MY_ACCOUNTING].includes(p.slug),
+    partner_tour:      ["dashboard","services/tour","services/tasks",...MY_ACCOUNTING].includes(p.slug),
+    parent_client:     ["dashboard","my-programs","reports"].includes(p.slug),
   };
 });
 
@@ -91,7 +143,6 @@ export default function PageAccess() {
 
   return (
     <div className="p-6 space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center">
@@ -109,7 +160,6 @@ export default function PageAccess() {
         )}
       </div>
 
-      {/* Tab bar */}
       <div style={{ display: "flex", borderBottom: "1px solid #E8E6E2", marginBottom: 24 }}>
         <button style={tabBtnStyle(activeTab === "access")} onClick={() => setActiveTab("access")}>
           <Lock size={14} /> Access Control
@@ -119,7 +169,6 @@ export default function PageAccess() {
         </button>
       </div>
 
-      {/* Access Control tab */}
       {activeTab === "access" && (
         <>
           <div className="text-xs text-muted-foreground flex items-center gap-1.5 mb-4">
@@ -127,13 +176,13 @@ export default function PageAccess() {
           </div>
 
           <div className="rounded-xl border bg-white overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full text-sm" style={{ minWidth: 820 }}>
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide sticky left-0 bg-muted/30 min-w-[180px]">Page</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide sticky left-0 bg-muted/30" style={{ minWidth: 180 }}>Page</th>
                   {ROLES.map(r => (
-                    <th key={r.key} className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wide min-w-[70px]">
-                      <div>{r.label}</div>
+                    <th key={r.key} className="px-2 py-3 text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wide" style={{ minWidth: 72 }}>
+                      <div className="leading-tight">{r.label}</div>
                       {r.locked && <Lock className="w-3 h-3 mx-auto mt-0.5 text-[#F5821F]" />}
                     </th>
                   ))}
@@ -147,9 +196,9 @@ export default function PageAccess() {
                     </tr>
                     {PAGES.filter(p => p.group === group).map(p => (
                       <tr key={p.slug} className="border-t hover:bg-[#FEF0E3]">
-                        <td className="px-4 py-2 text-xs sticky left-0 bg-white">{p.label}</td>
+                        <td className="px-4 py-2 text-xs sticky left-0 bg-white font-medium text-stone-700">{p.label}</td>
                         {ROLES.map(r => (
-                          <td key={r.key} className="px-3 py-2 text-center">
+                          <td key={r.key} className="px-2 py-2 text-center">
                             <button
                               onClick={() => toggle(p.slug, r.key)}
                               disabled={r.locked}
@@ -185,7 +234,6 @@ export default function PageAccess() {
         </>
       )}
 
-      {/* Menu Allocation tab */}
       {activeTab === "allocation" && <MenuAllocationTab />}
     </div>
   );

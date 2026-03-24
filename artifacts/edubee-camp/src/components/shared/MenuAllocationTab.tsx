@@ -28,8 +28,13 @@ type DragPayload =
   | { type: "category"; catIndex: number }
   | { type: "item"; catIndex: number; itemIndex: number };
 
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem("accessToken") ?? sessionStorage.getItem("accessToken") ?? "";
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function fetchMenuAllocation(): Promise<MenuCategory[]> {
-  const res = await fetch(API_BASE, { credentials: "include" });
+  const res = await fetch(API_BASE, { headers: getAuthHeaders() });
   const json = await res.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
