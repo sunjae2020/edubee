@@ -135,11 +135,32 @@ function RenameModal({ open, title, initialValue, onConfirm, onClose }: RenameMo
 
 function iconEmoji(iconName: string | null): string {
   const map: Record<string, string> = {
-    LayoutDashboard: "🏠", Users: "👥", ClipboardList: "📋", FileText: "📝",
-    Package: "📦", UserCog: "👤", School: "🏫", Hotel: "🏨", Bus: "🚐",
-    Map: "🗺", Mic: "🎤", BarChart2: "📊", CreditCard: "💳", Receipt: "🧾",
-    DollarSign: "💰", TrendingUp: "📈", Settings: "⚙️", Lock: "🔐",
-    FileSearch: "📜",
+    // Core
+    LayoutDashboard: "🏠",
+    // CRM
+    Users: "👥", Building2: "🏢", Target: "🎯", FileText: "📝",
+    FileCheck: "✅", Ticket: "🎫",
+    // Sales
+    ClipboardList: "📋", FolderOpen: "📂",
+    // Camp
+    Layers: "🗂", Package: "📦", ListChecks: "☑️",
+    GraduationCap: "🎓", Hotel: "🏨", Car: "🚗", Map: "🗺", CalendarCheck: "📅",
+    // Services
+    Briefcase: "💼", Shield: "🛡", Wrench: "🔧",
+    // Products
+    ShoppingBag: "🛍", Tag: "🏷", Percent: "％", BadgeDollarSign: "💲",
+    // Finance
+    Receipt: "🧾", CreditCard: "💳", ArrowLeftRight: "↔️",
+    BookMarked: "📑", BookOpen: "📖", RefreshCw: "🔄",
+    // Reports
+    BarChart2: "📊",
+    // AI
+    Bot: "🤖",
+    // Admin
+    UserCog: "👤",
+    // Settings
+    Settings: "⚙️", Lock: "🔐", Grid2x2: "⊞", FileSearch: "📜",
+    UserSearch: "🔍",
   };
   return iconName ? (map[iconName] ?? "📄") : "📄";
 }
