@@ -1190,6 +1190,8 @@ export default function ContractDetailPage() {
             </div>
             <InfoRow label="Name"        value={contract.account?.name} />
             <InfoRow label="Nationality" value={contract.account?.nationality} />
+            <InfoRow label="Email"       value={contract.account?.email} />
+            <InfoRow label="Phone"       value={contract.account?.phone} />
             <InfoRow label="Owner (EC)"  value={contract.owner?.name} />
           </div>
 

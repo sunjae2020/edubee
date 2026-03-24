@@ -253,9 +253,19 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
 
     const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, otRes, clRes] = await Promise.all([
       db.execute(sql`
-        SELECT c.*, a.name AS account_name, u.full_name AS owner_name, q.quote_ref_number
+        SELECT c.*,
+               a.name AS account_name,
+               u.full_name AS owner_name,
+               q.quote_ref_number,
+               COALESCE(ct1.nationality, ct2.nationality)    AS contact_nationality,
+               COALESCE(ct1.email,       ct2.email,       c.client_email) AS contact_email,
+               COALESCE(ct1.mobile,      ct2.mobile)          AS contact_phone,
+               CONCAT_WS(' ', ct1.first_name, ct1.last_name)  AS contact_name_primary,
+               CONCAT_WS(' ', ct2.first_name, ct2.last_name)  AS contact_name_fallback
         FROM contracts c
-        LEFT JOIN accounts a ON a.id = c.account_id
+        LEFT JOIN accounts a  ON a.id  = c.account_id
+        LEFT JOIN contacts ct1 ON ct1.id = a.primary_contact_id
+        LEFT JOIN contacts ct2 ON ct2.id = c.customer_contact_id
         LEFT JOIN users   u ON u.id = c.owner_id
         LEFT JOIN quotes  q ON q.id = c.quote_id
         WHERE c.id = ${id}::uuid
@@ -360,7 +370,15 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       totalApAmount:           parseFloat(c.total_ap_amount ?? "0"),
       serviceModulesActivated: c.service_modules_activated ?? [],
       notes:                   c.notes,
-      account: { id: c.account_id, name: c.account_name ?? c.student_name, nationality: c.client_country },
+      account: {
+        id:          c.account_id,
+        name:        c.account_name ?? c.student_name,
+        nationality: c.contact_nationality ?? c.client_country,
+        email:       c.contact_email ?? null,
+        phone:       c.contact_phone ?? null,
+      },
+      studentName: c.student_name,
+      clientEmail: c.contact_email ?? c.client_email ?? null,
       quote:   c.quote_id  ? { id: c.quote_id,  quoteRefNumber: c.quote_ref_number } : null,
       owner:   c.owner_id  ? { id: c.owner_id,  name: c.owner_name }               : null,
       contractProducts,
