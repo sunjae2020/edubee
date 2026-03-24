@@ -107,7 +107,7 @@ router.post("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (r
 
     if (!body.manualInput && body.accountType === "Student" && body.primaryContactId) {
       const [c] = await db.select().from(contacts).where(eq(contacts.id, body.primaryContactId as string));
-      if (c) name = `${c.firstName} ${c.lastName}`.trim();
+      if (c) name = `Student_${c.firstName} ${c.lastName}`.trim();
     }
 
     if (!name) return res.status(400).json({ error: "name is required" });

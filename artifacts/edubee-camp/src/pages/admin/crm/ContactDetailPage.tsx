@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { ArrowLeft, User, FileText, Briefcase, Folder, Activity } from "lucide-react";
+import { ArrowLeft, User, FileText, Briefcase, Folder, Activity, UserPlus, ChevronDown, ExternalLink } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -43,17 +43,55 @@ function StatusBadge({ status }: { status?: string | null }) {
   );
 }
 
+const CREATE_ACCOUNT_TYPES = [
+  { label: "Student",      value: "Student" },
+  { label: "Organisation", value: "Organisation" },
+  { label: "Agent",        value: "Agent" },
+  { label: "School",       value: "School" },
+  { label: "Staff",        value: "Staff" },
+];
+
 export default function ContactDetailPage() {
   const [, params] = useRoute("/admin/crm/contacts/:id");
   const [, navigate] = useLocation();
   const [tab, setTab] = useState("details");
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const createMenuRef = useRef<HTMLDivElement>(null);
   const id = params?.id ?? "";
+  const qc = useQueryClient();
 
   const { data: contact, isLoading } = useQuery({
     queryKey: ["crm-contact", id],
     queryFn: () => axios.get(`${BASE}/api/crm/contacts/${id}`).then(r => r.data),
     enabled: !!id,
   });
+
+  const createAccountMut = useMutation({
+    mutationFn: async (accountType: string) => {
+      const fullName = `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.trim();
+      const r = await axios.post(`${BASE}/api/crm/accounts`, {
+        accountType,
+        primaryContactId: id,
+        ownerId: contact.assignedStaffId ?? undefined,
+        name: fullName,
+      });
+      return r.data;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["crm-contact", id] });
+      if (data?.id) navigate(`/admin/crm/accounts/${data.id}`);
+    },
+  });
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (createMenuRef.current && !createMenuRef.current.contains(e.target as Node)) {
+        setShowCreateMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (isLoading) {
     return (
@@ -82,15 +120,61 @@ export default function ContactDetailPage() {
         <ArrowLeft size={16} /> Back to Contacts
       </button>
 
-      <div className="flex items-center gap-4">
-        <Avatar name={fullName || "?"} />
-        <div>
-          <h1 className="text-2xl font-bold text-stone-800">{fullName || "—"}</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm text-stone-500">{contact.accountType}</span>
-            <span className="text-stone-300">·</span>
-            <StatusBadge status={contact.status} />
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Avatar name={fullName || "?"} />
+          <div>
+            <h1 className="text-2xl font-bold text-stone-800">{fullName || "—"}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm text-stone-500">{contact.accountType}</span>
+              <span className="text-stone-300">·</span>
+              <StatusBadge status={contact.status} />
+            </div>
           </div>
+        </div>
+
+        {/* Linked account badge OR Create Account button */}
+        <div className="flex-shrink-0 mt-1">
+          {contact.linkedAccount ? (
+            <button
+              onClick={() => navigate(`/admin/crm/accounts/${contact.linkedAccount.id}`)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors hover:bg-[#FEF0E3]"
+              style={{ borderColor: "#F5821F", color: "#F5821F" }}
+            >
+              <ExternalLink size={13} />
+              {contact.linkedAccount.name}
+            </button>
+          ) : (
+            <div className="relative" ref={createMenuRef}>
+              <button
+                onClick={() => setShowCreateMenu(v => !v)}
+                disabled={createAccountMut.isPending}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
+                style={{ background: "#F5821F" }}
+              >
+                <UserPlus size={13} />
+                Create Account
+                <ChevronDown size={13} />
+              </button>
+              {showCreateMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg z-50 py-1 min-w-[160px]"
+                  style={{ border: "1px solid #E8E6E2" }}>
+                  {CREATE_ACCOUNT_TYPES.map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => {
+                        setShowCreateMenu(false);
+                        createAccountMut.mutate(opt.value);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-[#1C1917] hover:bg-[#FAFAF9] transition-colors"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

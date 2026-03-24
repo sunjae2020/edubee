@@ -436,7 +436,19 @@ router.patch("/crm/contracts/:id", authenticate, async (req, res) => {
     if (contractAmount    !== undefined) parts.push(sql`total_amount       = ${Number(contractAmount)}`);
     if (clientCountry     !== undefined) parts.push(sql`client_country     = ${clientCountry || null}`);
     if (ownerId           !== undefined) parts.push(sql`owner_id           = ${ownerId || null}`);
-    if (accountId         !== undefined) parts.push(sql`account_id         = ${accountId || null}`);
+    if (accountId         !== undefined) {
+      parts.push(sql`account_id = ${accountId || null}`);
+      // Auto-regenerate contract name when account changes
+      if (accountId) {
+        const r = (x: any) => x.rows ?? (x as any[]);
+        const rows = await db.execute(sql`SELECT name FROM accounts WHERE id = ${accountId}::uuid LIMIT 1`);
+        const accRow = r(rows)[0] as { name?: string } | undefined;
+        if (accRow?.name) {
+          const dateStr = new Date().toISOString().split("T")[0];
+          parts.push(sql`name = ${"CT-" + accRow.name + "-" + dateStr}`);
+        }
+      }
+    }
     if (parts.length === 0) return res.status(400).json({ error: "No fields provided" });
     const setSql = sql.join(parts, sql.raw(", "));
     await db.execute(sql`UPDATE contracts SET ${setSql} WHERE id = ${req.params.id}`);

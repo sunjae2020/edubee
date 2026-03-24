@@ -801,22 +801,39 @@ function getAccountTypeBadge(accountType: string | null | undefined) {
 }
 
 // ── Edit Student Modal ───────────────────────────────────────────────────────
-function EditStudentModal({ contract, onClose }: { contract: any; onClose: () => void }) {
+const ACCT_TYPE_FILTERS = [
+  { label: "All",          value: "" },
+  { label: "Student",      value: "Student" },
+  { label: "Organisation", value: "Organisation" },
+  { label: "Agent",        value: "Agent" },
+  { label: "School",       value: "School" },
+  { label: "Other",        value: "__other__" },
+];
+const OTHER_TYPES = ["Sub_Agency","Super_Agency","Supplier","Staff","Branch","Provider","Partner"];
+
+function EditAccountModal({ contract, onClose }: { contract: any; onClose: () => void }) {
   const qc = useQueryClient();
   const [search, setSearch]       = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [selected, setSelected]   = useState<any>(
     contract.studentAccount ?? (contract.account?.id ? contract.account : null)
   );
 
+  const params: Record<string, string> = { limit: "20" };
+  if (search) params.search = search;
+  if (typeFilter && typeFilter !== "__other__") params.account_type = typeFilter;
+
   const { data: searchData, isFetching } = useQuery({
-    queryKey: ["account-search", search],
+    queryKey: ["account-search", search, typeFilter],
     queryFn:  () =>
-      axios.get(`${BASE}/api/crm/accounts`, {
-        params: { search, limit: 20 },
-      }).then(r => r.data?.data ?? []),
+      axios.get(`${BASE}/api/crm/accounts`, { params }).then(r => r.data?.data ?? []),
     placeholderData: (prev) => prev,
   });
-  const results: any[] = searchData ?? [];
+
+  const results: any[] = (searchData ?? []).filter((acc: any) => {
+    if (typeFilter === "__other__") return OTHER_TYPES.includes(acc.accountType ?? "");
+    return true;
+  });
 
   const mut = useMutation({
     mutationFn: (accountId: string) =>
@@ -855,6 +872,22 @@ function EditStudentModal({ contract, onClose }: { contract: any; onClose: () =>
               </button>
             </div>
           )}
+
+          {/* Type filter tabs */}
+          <div className="flex flex-wrap gap-1.5">
+            {ACCT_TYPE_FILTERS.map(f => (
+              <button
+                key={f.value}
+                onClick={() => setTypeFilter(f.value)}
+                className="px-2.5 py-1 text-xs rounded-full border transition-colors"
+                style={typeFilter === f.value
+                  ? { background: "#F5821F", color: "#fff", borderColor: "#F5821F" }
+                  : { background: "#fff", color: "#57534E", borderColor: "#E8E6E2" }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
 
           {/* Search */}
           <div className="relative">
@@ -1141,7 +1174,7 @@ export default function ContractDetailPage() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [editingContract, setEditingContract] = useState(false);
-  const [editingStudent,  setEditingStudent]  = useState(false);
+  const [editingAccount,  setEditingAccount]  = useState(false);
 
   const { data: contract, isLoading } = useQuery({
     queryKey: ["crm-contract", id],
@@ -1244,7 +1277,7 @@ export default function ContractDetailPage() {
                   style={{ background: b.bg, color: b.color }}>{b.label}</span>
               ); })()}
               <div className="flex items-center gap-1">
-                <button onClick={() => setEditingStudent(true)}
+                <button onClick={() => setEditingAccount(true)}
                   className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#57534E]">
                   <Pencil size={13} />
                 </button>
@@ -1256,10 +1289,38 @@ export default function ContractDetailPage() {
                 )}
               </div>
             </div>
-            <InfoRow label="Name"        value={contract.studentAccount?.name ?? contract.account?.name} />
-            <InfoRow label="Nationality" value={contract.studentContact?.nationality ?? contract.account?.nationality} />
-            <InfoRow label="Email"       value={contract.studentContact?.email ?? contract.studentAccount?.email ?? contract.account?.email} />
-            <InfoRow label="Phone"       value={contract.studentContact?.phone ?? contract.studentAccount?.phone ?? contract.account?.phone} />
+            {/* Name — always */}
+            <InfoRow label="Name" value={contract.studentAccount?.name ?? contract.account?.name} />
+            {/* Type-specific middle rows */}
+            {(() => {
+              const aType = contract.studentAccount?.accountType ?? contract.account?.accountType;
+              if (aType === "Student") {
+                return (
+                  <>
+                    <InfoRow label="Nationality" value={contract.studentContact?.nationality} />
+                    <InfoRow label="Email"        value={contract.studentContact?.email ?? contract.studentAccount?.email} />
+                    <InfoRow label="Phone"        value={contract.studentContact?.phone ?? contract.studentAccount?.phone} />
+                  </>
+                );
+              }
+              if (["Organisation","Branch","Sub_Agency","Super_Agency","Agent"].includes(aType ?? "")) {
+                return (
+                  <>
+                    <InfoRow label="Country" value={contract.studentAccount?.country ?? contract.account?.country} />
+                    <InfoRow label="Email"   value={contract.studentAccount?.email ?? contract.account?.email} />
+                    <InfoRow label="Phone"   value={contract.studentAccount?.phone ?? contract.account?.phone} />
+                  </>
+                );
+              }
+              // Default: School, Supplier, Staff, Provider, Partner, etc.
+              return (
+                <>
+                  <InfoRow label="Email" value={contract.studentAccount?.email ?? contract.account?.email} />
+                  <InfoRow label="Phone" value={contract.studentAccount?.phone ?? contract.account?.phone} />
+                </>
+              );
+            })()}
+            {/* Owner — always */}
             <InfoRow label="Owner (EC)"  value={contract.studentOwner?.name ?? contract.owner?.name} />
           </div>
 
@@ -1353,10 +1414,10 @@ export default function ContractDetailPage() {
 
       </div>
 
-      {editingStudent && (
-        <EditStudentModal
+      {editingAccount && (
+        <EditAccountModal
           contract={contract}
-          onClose={() => setEditingStudent(false)}
+          onClose={() => setEditingAccount(false)}
         />
       )}
       {editingContract && (

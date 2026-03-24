@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { contacts } from "@workspace/db/schema";
+import { contacts, accounts } from "@workspace/db/schema";
 import { eq, ilike, and, or, count, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -51,7 +51,13 @@ router.get("/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async
   try {
     const [row] = await db.select().from(contacts).where(eq(contacts.id, req.params.id));
     if (!row) return res.status(404).json({ error: "Contact not found" });
-    return res.json(row);
+    // Check if this contact is already a primary contact of any account
+    const [linkedAccount] = await db
+      .select({ id: accounts.id, name: accounts.name, accountType: accounts.accountType })
+      .from(accounts)
+      .where(eq(accounts.primaryContactId, req.params.id))
+      .limit(1);
+    return res.json({ ...row, linkedAccount: linkedAccount ?? null });
   } catch (err) {
     console.error("[GET /api/crm/contacts/:id]", err);
     return res.status(500).json({ error: "Internal server error" });
