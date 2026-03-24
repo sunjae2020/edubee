@@ -47,6 +47,7 @@ import paymentLinesRouter from "./payment-lines.js";
 import journalEntriesRouter from "./journal-entries.js";
 import taxInvoicesRouter from "./tax-invoices.js";
 import statementsRouter from "./statements.js";
+import menuAllocationRouter from "./menu-allocation.js";
 
 const router: IRouter = Router();
 
@@ -98,5 +99,6 @@ router.use(paymentLinesRouter);
 router.use(journalEntriesRouter);
 router.use(taxInvoicesRouter);
 router.use(statementsRouter);
+router.use(menuAllocationRouter);
 
 export default router;
