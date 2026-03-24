@@ -4,8 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   ArrowLeft, Save, Building2, Users, FileText, Briefcase,
-  Plus, Loader2, ChevronRight, ExternalLink, Package, DollarSign,
+  Plus, Loader2, ChevronRight, ExternalLink, Package, DollarSign, Shield,
 } from "lucide-react";
+import { PortalAccessPanel } from "@/components/crm/PortalAccessPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,21 +100,24 @@ function getTabs(accountType?: string | null) {
     { key: "overview",  label: "Overview",  icon: Building2 },
     { key: "contacts",  label: "Contacts",  icon: Users     },
   ];
-  const leads     = { key: "leads",      label: "Leads",      icon: Briefcase   };
-  const contracts = { key: "contracts",  label: "Contracts",  icon: FileText    };
-  const products  = { key: "products",   label: "Products",   icon: Package     };
-  const commission = { key: "commission", label: "Commission", icon: DollarSign  };
+  const leads      = { key: "leads",      label: "Leads",          icon: Briefcase  };
+  const contracts  = { key: "contracts",  label: "Contracts",      icon: FileText   };
+  const products   = { key: "products",   label: "Products",       icon: Package    };
+  const commission = { key: "commission", label: "Commission",     icon: DollarSign };
+  const portal     = { key: "portal",     label: "Portal Access",  icon: Shield     };
 
   switch (accountType) {
+    case "Student":
+      return [...base, leads, contracts];
     case "Supplier":
-      return [...base, products];
+      return [...base, products, portal];
     case "School":
-      return [...base, leads, contracts, products];
+      return [...base, leads, contracts, products, portal];
     case "Sub_Agency":
     case "Super_Agency":
-      return [...base, leads, contracts, commission];
+      return [...base, leads, contracts, commission, portal];
     default:
-      return [...base, leads, contracts];
+      return [...base, leads, contracts, portal];
   }
 }
 
@@ -822,6 +826,10 @@ export default function AccountDetailPage() {
               <p className="text-sm font-medium text-stone-600 mb-1">Commission</p>
               <p className="text-sm">Commission records for this agency will appear here.</p>
             </div>
+          )}
+
+          {tab === "portal" && account && (
+            <PortalAccessPanel accountId={account.id} accountType={account.accountType} />
           )}
         </div>
 

@@ -5,6 +5,7 @@ import {
   timestamp,
   boolean,
   decimal,
+  integer,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -29,6 +30,13 @@ export const users = pgTable("users", {
   lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  staffRole: varchar("staff_role", { length: 50 }).default("education_agent"),
+  failedLoginAttempts: integer("failed_login_attempts").notNull().default(0),
+  lockedUntil: timestamp("locked_until"),
+  passwordResetToken: varchar("password_reset_token", { length: 255 }),
+  passwordResetExpires: timestamp("password_reset_expires"),
+  invitedAt: timestamp("invited_at"),
+  inviteToken: varchar("invite_token", { length: 255 }),
 });
 
 export const refreshTokens = pgTable("refresh_tokens", {
@@ -54,6 +62,17 @@ export const impersonationLogs = pgTable("impersonation_logs", {
   startedAt: timestamp("started_at").defaultNow(),
   endedAt: timestamp("ended_at"),
   ipAddress: varchar("ip_address", { length: 50 }),
+});
+
+export const authLogs = pgTable("auth_logs", {
+  id:        uuid("id").primaryKey().defaultRandom(),
+  userType:  varchar("user_type",  { length: 10  }).notNull(),
+  userId:    uuid("user_id"),
+  email:     varchar("email",      { length: 255 }),
+  action:    varchar("action",     { length: 50  }).notNull(),
+  ipAddress: varchar("ip_address", { length: 45  }),
+  userAgent: varchar("user_agent", { length: 500 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({

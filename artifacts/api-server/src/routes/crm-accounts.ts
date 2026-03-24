@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { accounts, contacts } from "@workspace/db/schema";
+import { accounts, contacts, authLogs } from "@workspace/db/schema";
 import { eq, ilike, and, or, count, ne, SQL, sql } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -275,6 +276,138 @@ router.get("/crm/accounts/:id/leads", authenticate, requireRole(...ADMIN_ROLES),
     return res.json(r(rows));
   } catch (err) {
     console.error("[GET /crm/accounts/:id/leads]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// PORTAL ACCESS MANAGEMENT
+// ─────────────────────────────────────────────────────────────
+
+// GET /crm/accounts/:id/portal
+router.get("/crm/accounts/:id/portal", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
+  try {
+    const [row] = await db.select({
+      portalAccess:        accounts.portalAccess,
+      portalRole:          accounts.portalRole,
+      portalEmail:         accounts.portalEmail,
+      portalLastLoginAt:   accounts.portalLastLoginAt,
+      portalMustChangePw:  accounts.portalMustChangePw,
+      portalLockedUntil:   accounts.portalLockedUntil,
+      portalFailedAttempts:accounts.portalFailedAttempts,
+      portalInvitedAt:     accounts.portalInvitedAt,
+      portalTempPwExpires: accounts.portalTempPwExpires,
+    }).from(accounts).where(eq(accounts.id, req.params.id));
+
+    if (!row) return res.status(404).json({ error: "Account not found" });
+
+    return res.json({
+      success: true,
+      data: {
+        ...row,
+        hasTempPassword: !!(row.portalTempPwExpires && new Date(row.portalTempPwExpires) > new Date()),
+      },
+    });
+  } catch (err) {
+    console.error("[GET /crm/accounts/:id/portal]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PATCH /crm/accounts/:id/portal — update portal access settings
+router.patch("/crm/accounts/:id/portal", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { portalAccess, portalRole, portalEmail } = req.body as {
+      portalAccess?: boolean; portalRole?: string; portalEmail?: string;
+    };
+
+    if (portalEmail) {
+      const [existing] = await db.select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.portalEmail as any, portalEmail.toLowerCase().trim()))
+        .limit(1);
+      if (existing && existing.id !== id) {
+        return res.status(400).json({ success: false, error: "This email is already used by another portal account." });
+      }
+    }
+
+    const updates: Record<string, unknown> = { modifiedOn: new Date() };
+    if (portalAccess !== undefined) updates.portalAccess = portalAccess;
+    if (portalRole !== undefined)  updates.portalRole = portalRole;
+    if (portalEmail !== undefined) updates.portalEmail = portalEmail.toLowerCase().trim();
+
+    await db.update(accounts).set(updates as any).where(eq(accounts.id, id));
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("[PATCH /crm/accounts/:id/portal]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// POST /crm/accounts/:id/portal/temp-password — generate one-time temp password
+router.post("/crm/accounts/:id/portal/temp-password", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
+  try {
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    const tempPw = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    const expires = new Date(Date.now() + 72 * 60 * 60 * 1000);
+
+    await db.update(accounts).set({
+      portalTempPassword:  tempPw,
+      portalTempPwExpires: expires,
+      portalMustChangePw:  true,
+      modifiedOn:          new Date(),
+    } as any).where(eq(accounts.id, req.params.id));
+
+    return res.json({
+      success: true,
+      tempPassword: tempPw,
+      expiresAt: expires,
+      message: "Copy this password and share it with the portal user. It expires in 72 hours.",
+    });
+  } catch (err) {
+    console.error("[POST /crm/accounts/:id/portal/temp-password]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// POST /crm/accounts/:id/portal/set-password — super admin direct password set
+router.post("/crm/accounts/:id/portal/set-password", authenticate, requireRole("super_admin"), async (req, res) => {
+  try {
+    const { newPassword } = req.body as { newPassword: string };
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ success: false, error: "Password must be at least 8 characters." });
+    }
+
+    const hash = await bcrypt.hash(newPassword, 12);
+    await db.update(accounts).set({
+      portalPasswordHash:  hash,
+      portalTempPassword:  null,
+      portalTempPwExpires: null,
+      portalMustChangePw:  false,
+      portalFailedAttempts: 0,
+      portalLockedUntil:   null,
+      modifiedOn:          new Date(),
+    } as any).where(eq(accounts.id, req.params.id));
+
+    return res.json({ success: true, message: "Portal password set successfully." });
+  } catch (err) {
+    console.error("[POST /crm/accounts/:id/portal/set-password]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// POST /crm/accounts/:id/portal/unlock — unlock a locked portal account
+router.post("/crm/accounts/:id/portal/unlock", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
+  try {
+    await db.update(accounts).set({
+      portalFailedAttempts: 0,
+      portalLockedUntil:    null,
+      modifiedOn:           new Date(),
+    } as any).where(eq(accounts.id, req.params.id));
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("[POST /crm/accounts/:id/portal/unlock]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

@@ -71,6 +71,17 @@ export const accounts = pgTable("accounts", {
   status:                     varchar("status",        { length: 20  }).notNull().default("Active"),
   createdOn:                  timestamp("created_on").notNull().defaultNow(),
   modifiedOn:                 timestamp("modified_on").notNull().defaultNow(),
+  portalAccess:               boolean("portal_access").notNull().default(false),
+  portalRole:                 varchar("portal_role",          { length: 50  }),
+  portalEmail:                varchar("portal_email",         { length: 255 }),
+  portalPasswordHash:         varchar("portal_password_hash", { length: 500 }),
+  portalTempPassword:         varchar("portal_temp_password", { length: 100 }),
+  portalTempPwExpires:        timestamp("portal_temp_pw_expires"),
+  portalMustChangePw:         boolean("portal_must_change_pw").notNull().default(false),
+  portalLastLoginAt:          timestamp("portal_last_login_at"),
+  portalFailedAttempts:       integer("portal_failed_attempts").notNull().default(0),
+  portalLockedUntil:          timestamp("portal_locked_until"),
+  portalInvitedAt:            timestamp("portal_invited_at"),
 });
 
 export const lead_activities = pgTable("lead_activities", {
