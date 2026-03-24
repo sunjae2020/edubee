@@ -1,0 +1,763 @@
+## 🛑 BEFORE STARTING — MANDATORY READ
+
+This task proceeds in two stages:
+**Phase 1 (Code Review & Report)** → **Phase 2 (Implementation)**.
+Do NOT modify a single line of code until Phase 1 is complete
+and I explicitly say "Proceed".
+
+---
+
+## Role Definition
+
+You are a senior full-stack IT architect with deep domain expertise
+in study abroad agency operations, including:
+- Multi-tier agent commission structures
+  (sub-agent, super-agent, referral fee, staff incentive)
+- Double-entry accounting with trust account management
+- AR/AP lifecycle tracking integrated with contract products
+
+The most critical principle is: never break existing working code.
+
+---
+
+## Project Context
+
+**Edubee CRM** — Integrated SaaS platform for study abroad agencies (MVP stage)
+- Stack: React + TypeScript + Vite / Node.js + Express + Drizzle ORM + PostgreSQL
+- Platform: Replit
+
+**Key File Locations:**
+| Category | Path |
+|----------|------|
+| DB Schema | `/db/schema.ts` |
+| Backend Routes | `/server/src/routes/` |
+| Frontend Pages | `/client/src/pages/` |
+| Shared Components | `/client/src/components/` |
+
+---
+
+## ⚠️ CRITICAL CONSTRAINT — EXTERNAL PORTAL PROTECTION
+
+The following Camp module features are directly connected to an
+**external-facing portal (landing page)** and must remain fully
+functional throughout all phases of this work:
+
+- **camp_package_groups** — Package group listings displayed on the
+  public landing page
+- **camp_packages** — Individual package details and availability
+  shown to external visitors
+- **camp_applications** — Public application form submitted by
+  prospective students/parents
+
+**Any API endpoint, data structure, or logic that serves content
+to the external portal must NOT be modified, renamed, removed,
+or broken under any circumstances.**
+
+Before touching any camp-related file, always ask:
+> "Does this endpoint or field serve the external portal or
+> landing page?"
+> If yes → read-only. Do not touch.
+
+This constraint takes equal priority to
+"never break existing working code."
+
+---
+
+## System Architecture Context (Must Understand Before Proceeding)
+
+### Core Accounting Engine (already implemented)
+
+The accounting system operates as follows:
+payment_headers (PAY-XXXXXXXX)
+└── payment_lines (split by line_type)
+└── journal_entries (auto-generated double-entry)
+└── chart_of_accounts (CoA master)
+
+**Journal Entry Auto-Generation Rules by line_type:**
+
+| line_type | DR (Debit) | CR (Credit) | Description |
+|-----------|-----------|------------|-------------|
+| trust_receipt | 1200 Trust Account | 2100 AP — Tuition Payable | Student payment into trust |
+| service_fee | 1100 Cash & Bank | 3400/3500/3900 Service Fee | Direct revenue recognition |
+| trust_disbursement | 2100 AP — Tuition | 1200 Trust Account | School remittance from trust |
+| commission_transfer | 1200 Trust Account | 3100/3200 Commission | Pre-deduct commission split |
+| commission_receipt | 1100 Cash & Bank | 1300 AR — Commission | Full remit commission receipt |
+| sub_agent | 4100 Sub-agent Comm | 1100 Cash & Bank | Sub-agent payout |
+| super_agent | 4200 Super-agent Comm | 1100 Cash & Bank | Super-agent payout |
+| referral_fee | 4300 Referral Fee | 1100 Cash & Bank | Referral partner payout |
+| incentive | 5300 Incentive | 1100 Cash & Bank | Staff incentive payout |
+| salary | 5200 Salary | 1100 Cash & Bank | Staff salary |
+
+DR total must always equal CR total — server blocks save if mismatched.
+All operations must be executed as a single atomic DB transaction.
+
+**Camp-specific CoA codes:**
+| Code | Name | Used For |
+|------|------|---------|
+| 3500 | Service Fee — Camp | Camp AR revenue |
+| 4600 | Direct — Tour Cost | camp_tour_mgt AP |
+| 4700 | Direct — Other | camp_institute_mgt AP |
+
+### contract_products = Payment Schedule
+
+`contract_products` is the single source of truth for the payment
+schedule. No separate payment schedule table exists or is needed.
+contract_products (1 row = 1 payment instalment)
+├── AR Side: ar_amount, ar_due_date, ar_status, coa_ar_code
+│            (scheduled → invoiced → partial → paid → overdue)
+└── AP Side: ap_amount, ap_due_date, ap_status, coa_ap_code
+(pending → ready → paid → overdue)
+
+The AR/AP Tracker page manages this via three tabs:
+- Tab 1: AR Tracker (ar_status-based)
+- Tab 2: AP Tracker (ap_status-based)
+- Tab 3: Payment Schedule (contract_products read-only view)
+
+### Multi-Cost Commission Structure
+
+For each contract_products line, multiple cost obligations can exist
+simultaneously via product_cost_lines:
+contract_products (1 line = 1 revenue line)
+└── product_cost_lines (1..N cost obligations per line)
+├── sub_agent commission  (cost_type: sub_agent)
+├── super_agent commission (cost_type: super_agent)
+├── referral fee          (cost_type: referral)
+├── staff incentive       (cost_type: incentive)
+└── discount              (cost_type: discount)
+
+Sub-agent: partner using main agency's school contract
+  → main agency takes 10–90% of total revenue
+Super-agent: main agency using another agency's school contract
+  → license/referral fee = 10–90% of revenue
+All cost obligations link to chart_of_accounts via coa_code field.
+
+### Account Types (Extended)
+
+| DB Value | Role | Ledger Connection |
+|----------|------|------------------|
+| student | Student (service recipient) | AR (tuition collection) |
+| school | Partner school | AP (remittance) + AR (commission) |
+| sub_agency | Sub-agent partner | AP (sub commission) |
+| super_agency | Super-agent partner | AP (super commission) |
+| supplier | Homestay/pickup/insurance provider | AP (service cost) |
+| staff | Internal staff | AP (salary + incentive) |
+| branch | Branch office | Independent branch accounting |
+| organisation | Other organisations | Context-dependent |
+
+### Services Module — Others Category
+
+The Services page has been extended with an "Others" category
+beyond the original 6 modules (study_abroad, pickup, accommodation,
+internship, settlement, guardian).
+
+Others service type is determined by Product Group.
+Tab structure for Others service detail:
+- Overview (service type via Product Group, title, period,
+  assigned staff, partner account, status)
+- Documents (linked to files table)
+- Bill (billing and cost info, partner cost AP, Invoice linkage)
+- Notes (memo and comment history)
+
+All services share the same pattern:
+- No separate billing per service
+- All AR/AP managed through Contract
+- Contract detail page → Services tab → individual service panels
+
+---
+
+## Task Objectives (Summary)
+
+The Camp module was developed independently and its accounting and
+operations are currently isolated from the rest of the system.
+Integrate it across three areas:
+
+**① Camp Accounting Integration**
+All Camp AR/AP transactions must be processed through the existing
+accounting system (payment_headers, payment_lines, journal_entries,
+chart_of_accounts) using the same rules as other modules.
+Camp line_type mapping:
+  - Camp service fee AR → line_type: service_fee → CoA: 3500
+  - Camp tour AP → line_type: trust_disbursement → CoA: 4600
+  - Camp institute AP → line_type: trust_disbursement → CoA: 4700
+If Camp-specific accounting logic (e.g. direct transactions/receipts
+table usage) exists separately, absorb it into the core engine.
+
+**② Camp Contract UI/UX Unification**
+The camp_applications → contracts confirmation flow must be preserved.
+Redesign the Camp Contract detail screen to match the same UI patterns
+as the Contracts detail page.
+(No changes to business logic or DB structure — UI only.)
+
+Tab structure to match:
+- Overview (contract info + camp_application reference)
+- Products (contract_products — reuse Contracts table components)
+- Payments (payment_headers/lines — reuse after accounting integration)
+- Services (camp_institute_mgt + camp_tour_mgt panels)
+- Notes
+
+**③ Camp Service UI/UX Unification**
+camp_institute_mgt and camp_tour_mgt remain as separate tables.
+Redesign their management screens to match the Services module pages
+(same pattern as study_abroad_mgt, pickup_mgt, etc., and the
+new Others service pattern).
+(No changes to table structure or FK relationships — UI only.)
+
+---
+
+## ═══ PHASE 1: CODE REVIEW & REPORT ═══
+
+### What To Do Right Now
+
+Read all files listed below and analyze the current state.
+**Write the report only — do not modify any code.**
+
+---
+
+### Step 1. Understand the Current Camp Module
+
+Read all of the following files:
+
+**DB Schema (`/db/schema.ts`):**
+- Confirm table definitions for `camp_package_groups`,
+  `camp_packages`, `camp_package_products`
+- Confirm `camp_applications` table definition
+  (including lead_id, contract_id FK)
+- Confirm `camp_institute_mgt`, `camp_tour_mgt` table definitions
+- Check whether `contracts` and `contract_products` contain fields:
+  ar_amount, ap_amount, ar_status, ap_status,
+  coa_ar_code, coa_ap_code, service_module_type
+- Check whether `payment_headers`, `payment_lines`,
+  `journal_entries`, `chart_of_accounts` tables exist
+- Check whether `product_cost_lines` table exists and has
+  camp-related records
+
+**Backend Routes (`/server/src/routes/`):**
+- Read all camp-related route files
+  (camp.ts, campPackage.ts, campApplication.ts, etc.)
+- For each route, confirm how AR/AP is handled:
+  Does it use payment_headers / payment_lines /
+  journal_entries, or separate legacy logic?
+- Identify any direct use of `transactions` or `receipts`
+  tables in camp routes (legacy accounting)
+- List all camp accounting-related endpoints
+- **Identify and list all endpoints that serve data to the
+  external portal / landing page (public package listing,
+  package detail, application submission).
+  Flag these as PROTECTED — excluded from any modification.**
+
+**Frontend Pages (`/client/src/pages/`):**
+- List all camp-related page files
+- Read the Camp Contract detail page code
+- Read the Camp Service (institute, tour) management page code
+
+**Reference Files for Comparison:**
+- Read the Contracts detail page
+  (contracts or contractDetail page)
+- Read one Services module page
+  (study_abroad or pickup page, or Others if implemented)
+- Read the accounting route that handles payment_headers
+  or journal_entries
+
+---
+
+### Step 2. Inspect Each Analysis Item
+
+**[Accounting Integration Check]**
+
+A1. Camp AR Processing
+- Does Camp AR (camp_package_products.unit_price /
+  camp_tour_mgt.retail_price) flow through
+  payment_headers → payment_lines → journal_entries?
+- If not, is it using the legacy `transactions` or
+  `receipts` table directly?
+- Are CoA codes (3500, 4600, 4700) mapped to
+  coa_ar_code / coa_ap_code fields?
+- Are journal entries being auto-generated with the correct
+  DR/CR pair on payment save?
+
+A2. Camp AP Processing
+- Does AP (camp_institute_mgt.partner_cost /
+  camp_tour_mgt.partner_cost) follow the AP flow
+  (ap_status: pending → ready → paid)?
+- Are product_cost_lines records being created for
+  camp cost obligations?
+- If sub_agent or super_agent relationships exist in
+  camp contracts, are they linked to product_cost_lines?
+
+A3. Journal Entry Creation
+- When a Camp payment is processed, are double-entry
+  records automatically created in journal_entries?
+- Are debit_coa_code / credit_coa_code using the
+  correct CoA codes?
+- Is the save blocked when DR ≠ CR?
+
+A4. Legacy Accounting Isolation
+- Does camp currently use a separate accounting table
+  (transactions, receipts, camp-specific settlement)?
+- If yes, list all legacy accounting tables and routes
+  used exclusively by Camp — these are candidates for
+  absorption into the core engine.
+
+**[UI/UX Unification Check]**
+
+B1. Camp Contract Page vs Contracts Page — Differences
+- Tab structure comparison
+- Are Contracts' shared components (payment table,
+  product table, service panels) reusable?
+- Edubee Design System compliance
+  (Primary: #F5821F, Inter font, 8pt grid,
+  border-radius 12px cards)?
+
+B2. Camp Service Pages (institute/tour) vs
+    Services Pages — Differences
+- Layout, tab structure, and section comparison
+- Does the camp service page match the
+  Others service pattern
+  (Overview / Documents / Bill / Notes)?
+- Status Badge consistency
+  (Active: #16A34A, Pending: #CA8A04,
+  In Progress: #F5821F)
+
+**[Risk Assessment]**
+
+C1. Schema Mismatch Risk
+- Do camp-related table fields in `/db/schema.ts` match
+  the FINAL v4.0 schema design?
+- Missing fields (especially in contract_products:
+  ar_status, ap_status, coa_ar_code, coa_ap_code,
+  service_module_type)
+- Missing fields in camp_institute_mgt:
+  ar_amount, ap_status, coa_ap_code
+- Missing fields in camp_tour_mgt:
+  ar_status, ap_status, coa_ar_code, coa_ap_code
+
+C2. FK Referential Integrity Risk
+- When camp_applications.contract_id → contracts is linked,
+  are contract_products created correctly?
+- Are camp_institute_mgt.contract_id and
+  camp_tour_mgt.contract_id FKs correctly declared
+  in Drizzle ORM?
+
+C3. Risk of Breaking Existing Code
+- When integrating Camp accounting into the core engine,
+  are there shared functions or middleware that could affect
+  the existing Contracts payment flow?
+- Will aligning Camp Contract page UI to Contracts break
+  the application → contract link, or
+  camp_institute_mgt/tour_mgt auto-creation hooks?
+- If the legacy camp accounting tables (transactions,
+  receipts) are absorbed, do any other non-camp modules
+  reference them?
+
+C4. External Portal Connection Risk
+- List every API endpoint consumed by the external portal:
+  - Public package group listing endpoint
+  - Public package detail endpoint
+  - Camp application submission endpoint (POST)
+  - Any other public-facing endpoints
+- For each endpoint confirm:
+  - URL and HTTP method
+  - DB tables and fields it reads/writes
+  - Whether any Phase 2 change could alter response shape
+- Flag each as:
+  ✅ SAFE — Phase 2 does not touch this endpoint
+  ⚠️ CAUTION — related files touched but endpoint intact
+  🔴 RISK — Phase 2 may alter behavior or data shape
+- For ⚠️ or 🔴 items, provide a specific mitigation plan
+  before Phase 2 proceeds.
+
+---
+
+### Step 3. Write the Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 CAMP MODULE INTEGRATION — CODE REVIEW REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+▶ Files Analyzed
+[List all files read]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[A. Accounting Integration Status]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+A1. Camp AR Processing
+Current State: [How the current code handles it]
+Legacy tables used: [transactions / receipts / other]
+CoA mapping present: [yes / no / partial]
+Auto journal entry: [yes / no]
+Gap from core engine: [description]
+Risk Level: 🔴 High / 🟡 Medium / 🟢 Low
+A2. Camp AP Processing
+Current State: [...]
+product_cost_lines linked: [yes / no]
+Sub/Super agent costs handled: [yes / no]
+Risk Level: [...]
+A3. Journal Entry Creation
+Current State: [...]
+DR = CR enforcement: [yes / no]
+Atomic DB transaction: [yes / no]
+Risk Level: [...]
+A4. Legacy Accounting Isolation
+Legacy tables found: [list]
+Modules affected: [list]
+Absorption complexity: [...]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[B. UI/UX Unification Status]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+B1. Camp Contract vs Contracts
+Tab structure differences: [list]
+Reusable components: [list]
+Design System violations: [list]
+B2. Camp Service vs Services
+Layout differences: [list]
+Others pattern compliance: [Overview/Docs/Bill/Notes]
+Reusable components: [list]
+Design System violations: [list]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[C. Risk Items]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+C1. Schema Mismatch
+Missing fields in contract_products: [list]
+Missing fields in camp_institute_mgt: [list]
+Missing fields in camp_tour_mgt: [list]
+Risk Level: [...]
+C2. FK Referential Integrity
+Problem items: [...]
+Risk Level: [...]
+C3. Risk of Breaking Existing Code
+Risk items: [list]
+Existing logic to protect: [list]
+Legacy table impact: [list]
+C4. External Portal Connection Risk
+┌─────────────────────────────────────────────────┐
+│ PROTECTED ENDPOINTS — DO NOT MODIFY             │
+├──────────────────┬────────┬──────────┬──────────┤
+│ Endpoint         │ Method │ Tables   │ Status   │
+├──────────────────┼────────┼──────────┼──────────┤
+│ [endpoint path]  │ GET    │ [tables] │ ✅/⚠️/🔴 │
+│ ...              │ ...    │ ...      │ ...      │
+└──────────────────┴────────┴──────────┴──────────┘
+Mitigation for ⚠️ / 🔴 items: [plan per endpoint]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[D. Implementation Plan (Execute After Approval)]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Phase 2-A: Safe Schema Patch
+Work: [ADD COLUMN only — no existing column changes]
+Files to modify: [list]
+Expected risk: [...]
+Phase 2-B: Camp Accounting → Core Engine Integration
+Work: [absorb camp AR/AP/Journal into core accounting]
+Legacy tables to handle: [list]
+Files to modify: [list]
+Logic to preserve: [list]
+Portal-safe confirmation: [confirm portal unaffected]
+Expected risk: [...]
+Phase 2-C: Camp Contract → Contracts UI Unification
+Work: [UI layout and component alignment]
+Files to modify: [list]
+Logic to preserve: [application→contract hooks]
+Portal-safe confirmation: [confirm portal unaffected]
+Expected risk: [...]
+Phase 2-D: Camp Service → Services UI Unification
+Work: [camp_institute_mgt / camp_tour_mgt redesign]
+Files to modify: [list]
+Logic to preserve: [...]
+Portal-safe confirmation: [confirm portal unaffected]
+Expected risk: [...]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Report complete.
+Phase 2 will NOT begin until you type "Proceed".
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+---
+
+## ═══ PHASE 2: IMPLEMENTATION (AFTER APPROVAL ONLY) ═══
+
+**Execute only after I explicitly say "Proceed".**
+
+### Phase 2 Global Safety Rules
+
+**Never do the following:**
+- Delete or rename existing columns in
+  `camp_package_groups`, `camp_packages`,
+  `camp_package_products`, `camp_applications`,
+  `camp_institute_mgt`, or `camp_tour_mgt`
+- Delete or rename existing columns in
+  `contracts`, `contract_products`, `payment_headers`,
+  `payment_lines`, `journal_entries`
+- Modify the camp_applications → contract linking logic
+  (auto lead creation, contract_id assignment)
+- Modify any authentication or authorization code
+- Modify multiple files simultaneously
+  (always one file at a time, then run tsc)
+- Modify, rename, restructure, or remove any API endpoint
+  consumed by the external portal or landing page,
+  including public package listing, package detail, and
+  application submission endpoints
+
+**Always do the following:**
+- Use ADD COLUMN only when adding fields
+- Re-read the target file immediately before modifying it
+  (prior context may be stale)
+- Run `npx tsc --noEmit` after completing each Phase step
+- Before modifying any camp route file, re-confirm it
+  contains no portal-facing endpoints. If it does,
+  extract them into a dedicated public route file
+  (e.g. campPublic.ts) before proceeding.
+
+---
+
+### Phase 2-A: Safe Schema Patch
+
+In `/db/schema.ts`, perform only the following:
+
+1. Add to `contract_products` if missing (skip if present):
+   - `ar_amount DECIMAL(12,2)`
+   - `ap_amount DECIMAL(12,2)`
+   - `ar_due_date DATE`
+   - `ap_due_date DATE`
+   - `ar_status VARCHAR(20)` default: 'scheduled'
+   - `ap_status VARCHAR(20)` default: 'pending'
+   - `coa_ar_code VARCHAR(10)` FK → chart_of_accounts
+   - `coa_ap_code VARCHAR(10)` FK → chart_of_accounts
+   - `service_module_type VARCHAR(50)`
+
+2. Add to `camp_institute_mgt` if missing:
+   - `ar_amount DECIMAL(12,2)`
+   - `ap_status VARCHAR(20)` default: 'pending'
+   - `coa_ap_code VARCHAR(10)` default: '4700'
+
+3. Add to `camp_tour_mgt` if missing:
+   - `ar_status VARCHAR(20)` default: 'scheduled'
+   - `ap_status VARCHAR(20)` default: 'pending'
+   - `coa_ar_code VARCHAR(10)` default: '3500'
+   - `coa_ap_code VARCHAR(10)` default: '4600'
+
+After completion:
+`npx tsc --noEmit` → confirm 0 errors → report
+
+---
+
+### Phase 2-B: Camp Accounting → Core Engine Integration
+
+**Goal:** Camp payment processing must flow through the same
+pipeline as Contracts:
+payment_headers → payment_lines → journal_entries
+
+**Camp line_type mappings to enforce:**
+- Camp service fee (AR) → line_type: service_fee
+  → CoA: DR 1200 / CR 3500
+- Camp tour AP payout → line_type: trust_disbursement
+  → CoA: DR 4600 (tour cost) / CR 1200
+- Camp institute AP payout → line_type: trust_disbursement
+  → CoA: DR 4700 (other direct) / CR 1200
+- Camp sub/super agent costs → product_cost_lines records
+  → line_type: sub_agent / super_agent → CoA: 4100 / 4200
+
+**Steps:**
+
+B-1. Identify all camp-specific accounting routes
+  - Locate any camp routes using `transactions`,
+    `receipts`, or other legacy accounting tables
+  - Before modifying any route file, verify it contains
+    no portal-facing endpoints. If it does, extract
+    portal endpoints into campPublic.ts first.
+
+B-2. Integrate Camp AR Collection Flow
+  - Verify camp contract invoice creation reuses the
+    existing invoice creation function
+  - If not → connect using camp_applications.contract_id
+  - Ensure journal_entry auto-generation fires on save:
+    DR 1200 (Trust Account) / CR 3500 (Service Fee — Camp)
+  - Ensure DB transaction wraps header + lines + journals
+  - Enforce DR = CR check before commit
+
+B-3. Integrate Camp AP Payment Flow
+  - Confirm camp_institute_mgt.partner_cost creates
+    product_cost_lines records with coa_code: 4700
+  - Confirm camp_tour_mgt.partner_cost creates
+    product_cost_lines records with coa_code: 4600
+  - On AP payment: journal_entry
+    DR 2100 (AP Payable) / CR 1100 (Cash & Bank)
+  - If sub/super agent cost exists in camp contract,
+    also create: DR 4100 or 4200 / CR 1100
+
+B-4. Protect Existing Contracts Payment Flow
+  - If adding camp branch to shared function, use
+    `contract_type` or `source_module` parameter
+  - Verify existing Contracts payment flow is unchanged
+
+After completion:
+`npx tsc --noEmit`
+→ SELECT latest 3 from journal_entries
+→ confirm DR = CR for each
+→ confirm API response
+
+---
+
+### Phase 2-C: Camp Contract Page UI Unification
+
+**Goal:** Redesign Camp Contract detail page to match
+Contracts detail page patterns.
+**Constraint:** No DB structure or business logic changes.
+No changes to camp_applications linking hooks.
+
+**Design System (strictly enforce):**
+Primary: #F5821F | Font: Inter | Card border-radius: 12px
+Card padding: 20px 24px
+Card shadow: 0 1px 3px rgba(0,0,0,0.06)
+Status Badge — Active:      bg #DCFCE7 text #16A34A
+Status Badge — Pending:     bg #FEF9C3 text #CA8A04
+Status Badge — In Progress: bg #FEF0E3 text #F5821F
+Primary Button: bg #F5821F hover: #D96A0A
+Table header: bg #FAFAF9 font 12px/500/uppercase
+
+**Steps:**
+
+C-1. Read Contracts detail page section structure
+  Expect: [Header] → [Tabs: Overview / Products /
+  Payments / Services / Notes]
+
+C-2. Reconstruct Camp Contract detail with same structure
+  - Overview tab: contract info + camp_application info
+    (Application Ref, Package name, applicant details)
+  - Products tab: contract_products from
+    camp_package_products (reuse Contracts table component)
+  - Payments tab: reuse payment_headers/lines components
+    (available after Phase 2-B)
+  - Services tab: camp_institute_mgt + camp_tour_mgt panels
+  - Notes tab: same as Contracts
+
+C-3. Camp-specific fields in Overview "Camp Info" section:
+  applicant_nationality, dietary_requirements,
+  medical_conditions, emergency_contact_name/phone
+
+After completion:
+`npx tsc --noEmit`
+→ confirm Camp Contract detail page loads in browser
+
+---
+
+### Phase 2-D: Camp Service Pages UI Unification
+
+**Goal:** Redesign camp_institute_mgt and camp_tour_mgt
+management screens to match Services module pages,
+following the same pattern as the Others service category
+(Overview / Documents / Bill / Notes tabs).
+**Constraint:** No table structure, FK, or business logic
+changes.
+
+**Steps:**
+
+D-1. Read a Services module page (study_abroad_mgt or
+     Others service detail) for reference structure
+  - Summary card at top + detailed form sections below
+  - Shared components to reuse:
+    StatusBadge, InfoCard, SectionHeader, EditableField
+
+D-2. Redesign camp_institute_mgt page
+  Tab structure (match Others service pattern):
+  - Overview:
+    [Program Info] name, type, age_group, weekly_hours
+    [Institute] institute_account_id (Account lookup)
+    [Schedule] start ~ end date, level_assessment_date,
+               assigned_class
+    [Status] Badge + dropdown
+             (pending→confirmed→in_progress→completed)
+    [Notes inline]
+  - Documents: files table linked records
+  - Bill:
+    [Financials] partner_cost (AP), ar_amount (AR)
+    coa_ap_code (4700), linked invoice display
+    ap_status badge (pending → ready → paid)
+    Reuse Services FinancialSummaryRow component
+  - Notes: memo and comment history log
+
+D-3. Redesign camp_tour_mgt page
+  Tab structure (match Others service pattern):
+  - Overview:
+    [Tour Info] name, type, duration_hours
+    [Provider] tour_provider_account_id (Account lookup)
+    [Schedule] tour_date, pickup_location,
+               max_participants, booking_reference
+    [Status] Badge + dropdown
+             (pending→booked→confirmed→completed)
+    [Notes inline]
+  - Documents: files table linked records
+  - Bill:
+    [Financials] partner_cost (AP) coa_ap_code: 4600,
+    retail_price (AR) coa_ar_code: 3500
+    ar_status / ap_status badges
+    Reuse Services FinancialSummaryRow component
+  - Notes: memo and comment history log
+
+D-4. Shared component reuse
+  - Import StatusBadge, SectionCard, FinancialSummaryRow
+    from Services — do not create duplicates
+  - If a camp-specific component is needed,
+    extend the Services component — never rewrite
+
+After completion:
+`npx tsc --noEmit`
+→ confirm both camp service pages load in browser
+
+---
+
+## Final Verification Checklist (After All Phase 2)
+□ npx tsc --noEmit → 0 errors
+□ Server starts cleanly → no import or runtime errors
+□ CORE ACCOUNTING INTEGRITY:
+□ Existing Contracts payment flow still works correctly
+(create payment → journal entries auto-generated,
+DR = CR enforced)
+□ Journal entry table: DR total = CR total for all
+new camp records
+□ CAMP FUNCTIONAL CHECKS:
+□ Camp Application → Contract confirmation flow works
+□ Camp Contract detail page loads correctly with all tabs
+□ camp_institute_mgt page loads with 4 tabs
+□ camp_tour_mgt page loads with 4 tabs
+□ Camp AR payment → journal_entries record created
+(DR 1200 / CR 3500)
+□ Camp AP payment → journal_entries record created
+(DR 4600 or 4700 / CR 1100)
+□ product_cost_lines records exist for camp AP costs
+□ DESIGN SYSTEM COMPLIANCE:
+□ Primary #F5821F buttons and active states
+□ Status Badge colors match spec
+□ Card border-radius 12px, padding 20px 24px
+□ Inter font, 8pt spacing grid
+□ PORTAL INTEGRITY — ALL MUST PASS:
+□ Public camp package group listing: response shape
+unchanged
+□ Public camp package detail: response shape unchanged
+□ Camp application submission (POST): succeeds,
+lead record created correctly
+□ No existing portal URL paths changed
+□ No portal-facing API field names renamed or removed
+□ End-to-end portal test:
+browse packages → view detail → submit application
+
+---
+
+## Completion Report Format
+✅ Modified Files: [list]
+✅ Phase 2-A (Schema Patch): [result]
+✅ Phase 2-B (Accounting Integration):
+Legacy tables handled: [list]
+Journal entry verification: [DR=CR confirmed]
+[result]
+✅ Phase 2-C (Camp Contract → Contracts UI): [result]
+✅ Phase 2-D (Camp Service → Services UI): [result]
+✅ Verification:
+tsc: [result]
+server: [result]
+DB journal_entries: [result]
+DB product_cost_lines: [result]
+UI: [result]
+✅ Portal Integrity: [all portal endpoints verified
+and untouched]
+⚠️  Preserved Existing Features: [logic not modified]
+⚠️  Next Steps: [if any]
+
+---
+
+**Execute Phase 1 only right now.
+Do not modify any code — write the report only.**
