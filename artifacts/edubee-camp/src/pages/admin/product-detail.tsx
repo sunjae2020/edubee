@@ -985,39 +985,58 @@ export default function ProductDetail() {
             </Section>
 
             {/* [8] LINKED PACKAGE GROUPS */}
-            <Section
-              title="Linked Package Groups"
-              description="This product can belong to multiple package groups. It will appear as an included item or optional add-on within those groups."
-            >
+            <Section title="Linked Package Groups">
               <div className="space-y-3">
+                <p className="text-xs text-[#57534E]">
+                  This product can belong to multiple package groups. It will appear as an included item or optional add-on within those groups.
+                </p>
                 {linkedGroupIds.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {linkedGroupIds.map(gid => (
-                      <span
-                        key={gid}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
-                          bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F]/30"
-                      >
-                        <Package className="w-3 h-3" />
-                        {linkedGroupNames[gid] ?? gid}
-                        <button
-                          type="button"
-                          onClick={() => setLinkedGroupIds(prev => prev.filter(x => x !== gid))}
-                          className="ml-0.5 hover:text-[#DC2626] transition-colors"
+                  <div className="flex flex-col gap-2">
+                    {linkedGroupIds.map(gid => {
+                      const name = linkedGroupNames[gid] ?? gid;
+                      const linkData = linkedGroupsData.find((lg: any) => lg.packageGroupId === gid);
+                      return (
+                        <div
+                          key={gid}
+                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg
+                            bg-[#FEF0E3] border border-[#F5821F]/20"
                         >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Package className="w-3.5 h-3.5 text-[#F5821F] shrink-0" />
+                            <span className="text-sm font-medium text-[#1C1917] truncate">{name}</span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {linkData?.packageGroupId && (
+                              <button
+                                type="button"
+                                onClick={() => navigate(`${BASE}/admin/package-groups/${linkData.packageGroupId}`)}
+                                className="w-6 h-6 flex items-center justify-center rounded text-[#A8A29E] hover:text-[#F5821F] transition-colors"
+                                title="Open package group"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setLinkedGroupIds(prev => prev.filter(x => x !== gid))}
+                              className="w-6 h-6 flex items-center justify-center rounded text-[#A8A29E] hover:text-[#DC2626] transition-colors"
+                              title="Remove link"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <p className="text-xs text-[#A8A29E]">No package groups linked. Search to add.</p>
+                  <p className="text-xs text-[#A8A29E] py-1">No package groups linked. Search to add.</p>
                 )}
                 <AsyncSearchSelect
                   selectedIds={linkedGroupIds}
                   onToggle={handleLinkedGroupToggle}
                   fetchFn={fetchPackageGroups}
-                  placeholder="Search package groups…"
+                  placeholder="Search package groups to link…"
                 />
               </div>
             </Section>
@@ -1084,24 +1103,6 @@ export default function ProductDetail() {
                       </div>
                     </div>
                   </div>
-                  {linkedGroupsData.length > 0 && (
-                    <div>
-                      <FL>Linked To</FL>
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        {linkedGroupsData.map((lg: any) => (
-                          <button
-                            key={lg.linkId}
-                            type="button"
-                            onClick={() => navigate(`${BASE}/admin/package-groups/${lg.packageGroupId}`)}
-                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs
-                              bg-[#F4F3F1] text-[#57534E] hover:bg-[#FEF0E3] hover:text-[#F5821F] transition-colors"
-                          >
-                            {lg.nameEn} <ExternalLink className="w-2.5 h-2.5" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </Section>
             )}
