@@ -956,7 +956,7 @@ export default function ProductDetail() {
                     onChange={sf("unit")}
                     options={[
                       { value: NONE, label: "— No unit —" },
-                      ...["per person","per night","per day","per session","per trip","per group","per week","per transfer","per meal","flat fee"]
+                      ...["per person","per night","per day","per session","per trip","per group","per week","per transfer","per meal","per semester","per annual","per course","flat fee"]
                         .map(u => ({ value: u, label: u }))
                     ]}
                   />
