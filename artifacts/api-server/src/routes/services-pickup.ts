@@ -96,6 +96,37 @@ router.get(
   }
 );
 
+// ─── POST /api/services/pickup ───────────────────────────────────────────────
+router.post(
+  "/services/pickup",
+  authenticate,
+  requireRole(...STAFF_ROLES),
+  async (req, res) => {
+    try {
+      const { contractId, pickupType, fromLocation, toLocation, pickupDatetime, notes } = req.body;
+      if (!contractId) return res.status(400).json({ error: "contractId is required" });
+
+      const [record] = await db
+        .insert(pickupMgt)
+        .values({
+          contractId,
+          pickupType:     pickupType     || "arrival",
+          fromLocation:   fromLocation   || null,
+          toLocation:     toLocation     || null,
+          pickupDatetime: pickupDatetime ? new Date(pickupDatetime) : null,
+          driverNotes:    notes          || null,
+          status:         "pending",
+        })
+        .returning({ id: pickupMgt.id });
+
+      return res.status(201).json(record);
+    } catch (err) {
+      console.error("[POST /api/services/pickup]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 // ─── GET /api/services/pickup/:id ────────────────────────────────────────────
 router.get(
   "/services/pickup/:id",

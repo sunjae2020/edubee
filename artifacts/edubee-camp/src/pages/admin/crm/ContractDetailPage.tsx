@@ -73,11 +73,12 @@ const TABS = [
 type TabKey = (typeof TABS)[number]["key"];
 
 // ── Overview Tab ───────────────────────────────────────────────────────────
-function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryServiceType }: {
+function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryServiceType, onAddService }: {
   contract: any;
   onEditContract: () => void;
   primaryServiceType: string;
   setPrimaryServiceType: (s: string) => void;
+  onAddService: (defaultType?: string) => void;
 }) {
   const arPct = contract.totalArAmount > 0
     ? Math.round((((contract.totalArAmount - (contract.arOutstanding ?? 0)) / contract.totalArAmount) * 100))
@@ -149,6 +150,7 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
           contract={contract}
           primaryServiceType={primaryServiceType}
           setPrimaryServiceType={setPrimaryServiceType}
+          onAddService={onAddService}
         />
       </div>
     </div>
@@ -512,6 +514,285 @@ function CommissionTab({ contract }: { contract: any }) {
   );
 }
 
+// ── Add Service Modal ─────────────────────────────────────────────────────────
+const SVC_API: Record<string, string> = {
+  studyAbroad:   "/api/services/study-abroad",
+  pickup:        "/api/services/pickup",
+  accommodation: "/api/services/accommodation",
+  internship:    "/api/services/internship",
+  settlement:    "/api/services/settlement",
+  guardian:      "/api/services/guardian",
+  other:         "/api/services/other",
+};
+const SVC_DETAIL_ROUTE: Record<string, string> = {
+  studyAbroad:   "/admin/services/study-abroad",
+  pickup:        "/admin/services/pickup",
+  accommodation: "/admin/services/accommodation",
+  internship:    "/admin/services/internship",
+  settlement:    "/admin/services/settlement",
+  guardian:      "/admin/services/guardian",
+  other:         "/admin/services/other",
+};
+const SVC_DEFS_MODAL = [
+  { key: "studyAbroad",   label: "Study Abroad",   icon: GraduationCap, desc: "School application, visa & enrolment"  },
+  { key: "pickup",        label: "Pickup",          icon: Car,           desc: "Airport or station transfer"            },
+  { key: "accommodation", label: "Accommodation",   icon: Building2,     desc: "Homestay, residence or rental"         },
+  { key: "internship",    label: "Internship",      icon: Briefcase,     desc: "Work placement management"             },
+  { key: "settlement",    label: "Settlement",      icon: CheckCircle2,  desc: "Arrival & settlement support"          },
+  { key: "guardian",      label: "Guardian",        icon: Shield,        desc: "Guardian / welfare management"        },
+  { key: "other",         label: "Other Service",   icon: Wrench,        desc: "Custom or miscellaneous service"       },
+];
+const APPL_STAGES   = ["counseling","application","visa_applied","visa_granted","enrolled"];
+const PICKUP_TYPES  = ["arrival","departure","custom"];
+const ACCOM_TYPES   = ["homestay","student_residence","private_rental","hotel","other"];
+const OTHER_SVC_TYPES = ["visa","tax","health_insurance","bank","sim_card","translation","other_legal","other"];
+
+function AddServiceModal({ contract, defaultType, onClose }: {
+  contract: any;
+  defaultType?: string;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [, navigate] = useLocation();
+  const [selectedType, setSelectedType] = useState<string>(defaultType ?? "");
+
+  const ownerIdFromContract = contract.studentOwner?.id ?? contract.owner?.id ?? "";
+
+  const initForm = () => ({
+    assignedStaffId:  ownerIdFromContract,
+    notes:            "",
+    applicationStage: "counseling",
+    pickupType:       "arrival",
+    fromLocation:     "",
+    toLocation:       "",
+    pickupDatetime:   "",
+    accommodationType:"homestay",
+    status:           "pending",
+    serviceFee:       "",
+    serviceType:      "other",
+    title:            "",
+    startDate:        contract.fromDate?.split("T")[0] ?? "",
+    endDate:          contract.toDate?.split("T")[0]   ?? "",
+  });
+  const [form, setForm] = useState(initForm);
+  const set = (k: string, v: string) => setForm(prev => ({ ...prev, [k]: v }));
+
+  const { data: staffList } = useQuery({
+    queryKey: ["users-staff"],
+    queryFn:  () => axios.get(`${BASE}/api/users?limit=100`).then(r => r.data?.data ?? []),
+  });
+
+  const mut = useMutation({
+    mutationFn: async () => {
+      const base  = { contractId: contract.id };
+      const staff = form.assignedStaffId ? { assignedStaffId: form.assignedStaffId } : {};
+      const notes = form.notes ? { notes: form.notes } : {};
+
+      let body: Record<string, any> = {};
+      if (selectedType === "studyAbroad") {
+        body = { ...base, applicationStage: form.applicationStage, ...staff, ...notes };
+      } else if (selectedType === "pickup") {
+        body = { ...base, pickupType: form.pickupType,
+          fromLocation: form.fromLocation || null, toLocation: form.toLocation || null,
+          pickupDatetime: form.pickupDatetime || null, ...notes };
+      } else if (selectedType === "accommodation") {
+        body = { ...base, accommodationType: form.accommodationType, status: form.status, ...staff, ...notes };
+      } else if (selectedType === "internship") {
+        body = { ...base, status: form.status, ...staff, ...notes };
+      } else if (selectedType === "settlement") {
+        body = { ...base, ...staff, ...notes };
+      } else if (selectedType === "guardian") {
+        body = { ...base, status: form.status, ...staff,
+          ...(form.serviceFee ? { serviceFee: parseFloat(form.serviceFee) } : {}), ...notes };
+      } else if (selectedType === "other") {
+        body = { ...base, serviceType: form.serviceType, title: form.title || null,
+          startDate: form.startDate || null, endDate: form.endDate || null,
+          ...(form.serviceFee ? { serviceFee: parseFloat(form.serviceFee) } : {}), ...staff, ...notes };
+      }
+
+      const r = await axios.post(`${BASE}${SVC_API[selectedType]}`, body);
+      return r.data;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["crm-contract"] });
+      onClose();
+      if (data?.id) navigate(`${SVC_DETAIL_ROUTE[selectedType]}/${data.id}`);
+    },
+  });
+
+  const svcDef = SVC_DEFS_MODAL.find(d => d.key === selectedType);
+  const SvcIcon = svcDef?.icon ?? Plus;
+
+  const LabelInput = ({ label, field, type = "text", placeholder = "" }: { label: string; field: string; type?: string; placeholder?: string }) => (
+    <div>
+      <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">{label}</label>
+      <input type={type} value={(form as any)[field]} onChange={e => set(field, e.target.value)}
+        placeholder={placeholder}
+        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[#F5821F]" />
+    </div>
+  );
+  const LabelSelect = ({ label, field, options }: { label: string; field: string; options: { value: string; label: string }[] }) => (
+    <div>
+      <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">{label}</label>
+      <select value={(form as any)[field]} onChange={e => set(field, e.target.value)}
+        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[#F5821F] bg-white">
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+  );
+  const toLabel = (s: string) => s.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+
+  const contractName = contract.studentAccount?.name ?? contract.account?.name ?? contract.studentName ?? "—";
+  const contractNum  = contract.contractNumber ?? "—";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.45)" }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
+          <div className="flex items-center gap-2">
+            {selectedType && (
+              <button onClick={() => setSelectedType("")} className="w-7 h-7 rounded-lg hover:bg-[#F4F3F1] flex items-center justify-center transition-colors text-[#A8A29E]">
+                <ArrowLeft size={15} />
+              </button>
+            )}
+            <h2 className="text-base font-bold text-[#1C1917]">
+              {selectedType ? `Create ${svcDef?.label}` : "Add Service"}
+            </h2>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg hover:bg-[#F4F3F1] flex items-center justify-center transition-colors text-[#A8A29E]">
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {/* Contract context pill */}
+          <div className="flex items-center gap-2 mb-5 p-3 rounded-xl" style={{ background: "#FEF0E3" }}>
+            <FileText size={14} style={{ color: "#F5821F" }} />
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide">Contract</p>
+              <p className="text-sm font-semibold text-[#1C1917] truncate">{contractNum} · {contractName}</p>
+            </div>
+          </div>
+
+          {/* Step 1: Type selection */}
+          {!selectedType && (
+            <div className="grid grid-cols-2 gap-3">
+              {SVC_DEFS_MODAL.map(({ key, label, icon: Icon, desc }) => (
+                <button key={key}
+                  onClick={() => { setSelectedType(key); setForm(initForm()); }}
+                  className="flex items-start gap-3 p-4 rounded-xl border border-[#E8E6E2] hover:border-[#F5821F] hover:bg-[#FEF0E3] transition-colors text-left group">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
+                    style={{ background: "#F4F3F1" }}>
+                    <Icon size={16} style={{ color: "#F5821F" }} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#1C1917]">{label}</p>
+                    <p className="text-xs text-[#A8A29E] mt-0.5 leading-snug">{desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Step 2: Type-specific form */}
+          {selectedType && (
+            <div className="space-y-4">
+              {/* Study Abroad */}
+              {selectedType === "studyAbroad" && (
+                <LabelSelect label="Application Stage" field="applicationStage"
+                  options={APPL_STAGES.map(s => ({ value: s, label: toLabel(s) }))} />
+              )}
+
+              {/* Pickup */}
+              {selectedType === "pickup" && (<>
+                <LabelSelect label="Pickup Type" field="pickupType"
+                  options={PICKUP_TYPES.map(s => ({ value: s, label: toLabel(s) }))} />
+                <LabelInput label="From Location" field="fromLocation" placeholder="e.g. Sydney Airport T1" />
+                <LabelInput label="To Location"   field="toLocation"   placeholder="e.g. Homestay address" />
+                <LabelInput label="Date & Time"   field="pickupDatetime" type="datetime-local" />
+              </>)}
+
+              {/* Accommodation */}
+              {selectedType === "accommodation" && (
+                <LabelSelect label="Accommodation Type" field="accommodationType"
+                  options={ACCOM_TYPES.map(s => ({ value: s, label: toLabel(s) }))} />
+              )}
+
+              {/* Internship / Settlement / Guardian / Other — status or status-like */}
+              {(selectedType === "internship" || selectedType === "guardian") && (
+                <LabelSelect label="Status" field="status"
+                  options={[
+                    { value: "pending",   label: "Pending"   },
+                    { value: "active",    label: "Active"    },
+                    { value: "completed", label: "Completed" },
+                  ]} />
+              )}
+
+              {/* Guardian — service fee */}
+              {selectedType === "guardian" && (
+                <LabelInput label="Service Fee ($)" field="serviceFee" type="number" placeholder="0.00" />
+              )}
+
+              {/* Other */}
+              {selectedType === "other" && (<>
+                <LabelSelect label="Service Type" field="serviceType"
+                  options={OTHER_SVC_TYPES.map(s => ({ value: s, label: toLabel(s) }))} />
+                <LabelInput label="Title" field="title" placeholder="Short description" />
+                <div className="grid grid-cols-2 gap-3">
+                  <LabelInput label="Start Date" field="startDate" type="date" />
+                  <LabelInput label="End Date"   field="endDate"   type="date" />
+                </div>
+                <LabelInput label="Service Fee ($)" field="serviceFee" type="number" placeholder="0.00" />
+              </>)}
+
+              {/* Assigned Staff — all types */}
+              <div>
+                <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Assigned Staff</label>
+                <select value={form.assignedStaffId} onChange={e => set("assignedStaffId", e.target.value)}
+                  className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[#F5821F] bg-white">
+                  <option value="">— Unassigned —</option>
+                  {(staffList ?? []).map((u: any) => (
+                    <option key={u.id} value={u.id}>{u.fullName}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Notes — all types */}
+              <div>
+                <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Notes</label>
+                <textarea value={form.notes} onChange={e => set("notes", e.target.value)}
+                  rows={3} placeholder="Optional notes…"
+                  className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[#F5821F] resize-none" />
+              </div>
+
+              {/* Error */}
+              {mut.isError && (
+                <p className="text-sm text-red-600">Failed to create service. Please try again.</p>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <button onClick={onClose}
+                  className="flex-1 h-10 rounded-xl border border-[#E8E6E2] text-sm font-semibold text-[#57534E] hover:bg-[#F4F3F1] transition-colors">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => mut.mutate()}
+                  disabled={mut.isPending}
+                  className="flex-1 h-10 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  style={{ background: "#F5821F" }}>
+                  {mut.isPending ? "Creating…" : <><SvcIcon size={14} /> Create {svcDef?.label}</>}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Services Panel (shown on Overview right column) ─────────────────────────
 const SERVICE_ROUTES: Record<string, string> = {
   studyAbroad:   "/admin/services/study-abroad",
@@ -543,13 +824,13 @@ const ALL_SVC_DEFS = [
   { key: "other",         label: "Other Service",   icon: Wrench        },
 ];
 
-function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType }: {
+function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType, onAddService }: {
   contract: any;
   primaryServiceType: string;
   setPrimaryServiceType: (s: string) => void;
+  onAddService: (defaultType?: string) => void;
 }) {
   const [, navigate] = useLocation();
-  const [showAdd, setShowAdd] = useState(false);
   const svcs = contract.services ?? {};
 
   const withData = ALL_SVC_DEFS.map(d => ({
@@ -558,8 +839,7 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType }: 
       ? (Array.isArray(svcs[d.key]) ? svcs[d.key][0] ?? null : svcs[d.key] ?? null)
       : (svcs[d.key] ?? null),
   }));
-  const active   = withData.filter(d => !!d.data);
-  const inactive = withData.filter(d => !d.data);
+  const active = withData.filter(d => !!d.data);
 
   return (
     <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
@@ -567,30 +847,12 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType }: 
         <h3 className="text-sm font-semibold text-[#1C1917]">Services
           <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF0E3] text-[#F5821F]">{active.length}</span>
         </h3>
-        <div className="relative">
-          <button
-            onClick={() => setShowAdd(v => !v)}
-            className="h-7 px-2.5 rounded-lg text-xs font-semibold text-white flex items-center gap-1 transition-opacity hover:opacity-90"
-            style={{ background: "#F5821F" }}>
-            <Plus size={12} /> Add Service
-          </button>
-          {showAdd && inactive.length > 0 && (
-            <div className="absolute right-0 top-8 bg-white border border-[#E8E6E2] rounded-lg shadow-lg py-1 z-20 w-48">
-              {inactive.map(({ key, label, icon: Icon }) => (
-                <button key={key}
-                  onClick={() => { setShowAdd(false); navigate(`${SERVICE_ROUTES[key]}?contractId=${contract.id}`); }}
-                  className="w-full text-left px-4 py-2 text-sm text-[#1C1917] hover:bg-[#FAFAF9] flex items-center gap-2">
-                  <Icon size={13} style={{ color: "#F5821F" }} /> {label}
-                </button>
-              ))}
-            </div>
-          )}
-          {showAdd && inactive.length === 0 && (
-            <div className="absolute right-0 top-8 bg-white border border-[#E8E6E2] rounded-lg shadow-lg p-3 z-20 w-44">
-              <p className="text-xs text-[#A8A29E]">All services are activated.</p>
-            </div>
-          )}
-        </div>
+        <button
+          onClick={() => onAddService()}
+          className="h-7 px-2.5 rounded-lg text-xs font-semibold text-white flex items-center gap-1 transition-opacity hover:opacity-90"
+          style={{ background: "#F5821F" }}>
+          <Plus size={12} /> Add Service
+        </button>
       </div>
 
       {active.length === 0 ? (
@@ -638,13 +900,13 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType }: 
 }
 
 // ── Services List Tab ────────────────────────────────────────────────────────
-function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }: {
+function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, onAddService }: {
   contract: any;
   primaryServiceType: string;
   setPrimaryServiceType: (s: string) => void;
+  onAddService: (defaultType?: string) => void;
 }) {
   const [, navigate] = useLocation();
-  const [showAdd, setShowAdd] = useState(false);
   const svcs = contract.services ?? {};
 
   // Flatten all services into rows (supports multiple of same type, e.g. multiple pickups, other services)
@@ -685,25 +947,12 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }
           <h2 className="text-sm font-semibold text-[#1C1917]">Services</h2>
           <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF0E3] text-[#F5821F]">{rows.length}</span>
         </div>
-        <div className="relative">
-          <button
-            onClick={() => setShowAdd(v => !v)}
-            className="h-8 px-3 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90"
-            style={{ background: "#F5821F" }}>
-            <Plus size={13} /> Add Service
-          </button>
-          {showAdd && (
-            <div className="absolute right-0 top-9 bg-white border border-[#E8E6E2] rounded-lg shadow-lg py-1 z-20 w-48">
-              {ALL_SVC_DEFS.map(({ key, label, icon: Icon }) => (
-                <button key={key}
-                  onClick={() => { setShowAdd(false); navigate(`${SERVICE_ROUTES[key]}?contractId=${contract.id}`); }}
-                  className="w-full text-left px-4 py-2 text-sm text-[#1C1917] hover:bg-[#FAFAF9] flex items-center gap-2">
-                  <Icon size={13} style={{ color: "#F5821F" }} /> {label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <button
+          onClick={() => onAddService()}
+          className="h-8 px-3 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90"
+          style={{ background: "#F5821F" }}>
+          <Plus size={13} /> Add Service
+        </button>
       </div>
 
       {/* List */}
@@ -1175,6 +1424,10 @@ export default function ContractDetailPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [editingContract, setEditingContract] = useState(false);
   const [editingAccount,  setEditingAccount]  = useState(false);
+  const [addingService,   setAddingService]   = useState<string | null>(null);
+
+  const openAddService = (defaultType?: string) =>
+    setAddingService(defaultType ?? "");
 
   const { data: contract, isLoading } = useQuery({
     queryKey: ["crm-contract", id],
@@ -1396,6 +1649,7 @@ export default function ContractDetailPage() {
             onEditContract={() => setEditingContract(true)}
             primaryServiceType={primaryServiceType}
             setPrimaryServiceType={setPrimaryServiceType}
+            onAddService={openAddService}
           />
         )}
         {activeTab === "services"     && (
@@ -1403,6 +1657,7 @@ export default function ContractDetailPage() {
             contract={contract}
             primaryServiceType={primaryServiceType}
             setPrimaryServiceType={setPrimaryServiceType}
+            onAddService={openAddService}
           />
         )}
         {activeTab === "schedule"     && <PaymentScheduleTab contract={contract} />}
@@ -1414,6 +1669,13 @@ export default function ContractDetailPage() {
 
       </div>
 
+      {addingService !== null && (
+        <AddServiceModal
+          contract={contract}
+          defaultType={addingService || undefined}
+          onClose={() => setAddingService(null)}
+        />
+      )}
       {editingAccount && (
         <EditAccountModal
           contract={contract}
