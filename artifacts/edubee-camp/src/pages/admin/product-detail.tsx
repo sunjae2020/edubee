@@ -950,6 +950,18 @@ export default function ProductDetail() {
                   </div>
                 </div>
                 <div>
+                  <FL>Unit</FL>
+                  <SelectField
+                    value={g("unit") || ""}
+                    onChange={sf("unit")}
+                    options={[
+                      { value: NONE, label: "— No unit —" },
+                      ...["per person","per night","per day","per session","per trip","per group","per week","per transfer","per meal","flat fee"]
+                        .map(u => ({ value: u, label: u }))
+                    ]}
+                  />
+                </div>
+                <div>
                   <FL>GST Included</FL>
                   <RadioYesNo value={gb("isGstIncluded")} onChange={sf("isGstIncluded")} />
                 </div>
