@@ -369,8 +369,8 @@ function Section({ title, children, description }: {
   title: string; children: React.ReactNode; description?: string;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-[#E8E6E2] shadow-[0_1px_3px_rgba(0,0,0,0.06)] overflow-hidden mb-6">
-      <div className="px-5 py-3 border-b border-[#E8E6E2] bg-[#FAFAF9]">
+    <div className="bg-white rounded-xl border border-[#E8E6E2] shadow-[0_1px_3px_rgba(0,0,0,0.06)] mb-6">
+      <div className="px-5 py-3 border-b border-[#E8E6E2] bg-[#FAFAF9] rounded-t-xl">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#57534E]">{title}</h3>
       </div>
       {description && (
