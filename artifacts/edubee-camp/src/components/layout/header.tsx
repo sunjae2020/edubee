@@ -127,16 +127,17 @@ export function Header({ collapsed, onToggle, title }: Props) {
       {/* Main header — 56px */}
       <header
         className="h-14 flex items-center justify-between px-4 shrink-0 z-20"
-        style={{ background: "#FFFFFF", borderBottom: "1px solid #E8E6E2" }}
+        style={{ background: "var(--e-bg-topbar)", borderBottom: "1px solid var(--e-border)" }}
       >
         <div className="flex items-center gap-3">
           <button
             onClick={onToggle}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#57534E] hover:bg-[#F4F3F1] transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F3F1] dark:hover:bg-[#242220]"
+            style={{ color: "var(--e-text-2)" }}
           >
             <Menu className="w-4 h-4" />
           </button>
-          <h1 className="font-semibold text-[18px] text-[#1C1917] leading-none">{pageTitle}</h1>
+          <h1 className="font-semibold text-[18px] leading-none" style={{ color: "var(--e-text-1)" }}>{pageTitle}</h1>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -225,7 +226,10 @@ export function Header({ collapsed, onToggle, title }: Props) {
           {/* Notifications Bell */}
           <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
             <DropdownMenuTrigger asChild>
-              <button className="w-8 h-8 rounded-lg flex items-center justify-center text-[#57534E] hover:bg-[#F4F3F1] transition-colors relative">
+              <button
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors relative hover:bg-[#F4F3F1] dark:hover:bg-[#242220]"
+                style={{ color: "var(--e-text-2)" }}
+              >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-[#F5821F] text-white text-[9px] font-bold flex items-center justify-center px-0.5">
@@ -235,20 +239,20 @@ export function Header({ collapsed, onToggle, title }: Props) {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 p-0">
-              <div className="flex items-center justify-between px-3 py-2 border-b border-[#E8E6E2]">
-                <span className="text-sm font-semibold text-[#1C1917]">Notifications</span>
+              <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: "1px solid var(--e-border)" }}>
+                <span className="text-sm font-semibold" style={{ color: "var(--e-text-1)" }}>Notifications</span>
                 <div className="flex items-center gap-2">
                   {unreadCount > 0 && (
                     <button className="text-[10px] text-[#F5821F] hover:text-[#D96A0A] font-medium" onClick={() => markAllMutation.mutate()}>
                       Mark all read
                     </button>
                   )}
-                  <Link href="/admin/notifications" className="text-[10px] text-[#A8A29E] hover:text-[#57534E]">View all</Link>
+                  <Link href="/admin/notifications" className="text-[10px] hover:text-[#57534E]" style={{ color: "var(--e-text-3)" }}>View all</Link>
                 </div>
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {!notifList || notifList.length === 0 ? (
-                  <div className="px-3 py-6 text-center text-[#A8A29E] text-xs">
+                  <div className="px-3 py-6 text-center text-xs" style={{ color: "var(--e-text-3)" }}>
                     <Bell className="w-6 h-6 mx-auto mb-2 opacity-30" />
                     No notifications
                   </div>
@@ -273,13 +277,17 @@ export function Header({ collapsed, onToggle, title }: Props) {
                           navigate(notifTarget);
                         }
                       }}
-                      className={`px-3 py-2.5 border-b border-[#F4F3F1] last:border-0 flex items-start gap-2.5 transition-colors ${!n.isRead ? "bg-[#FEF0E3]/40" : "hover:bg-[#FAFAF9]"} ${notifTarget ? "cursor-pointer hover:bg-[#FEF0E3]/60" : ""}`}
+                      className={`px-3 py-2.5 flex items-start gap-2.5 transition-colors last:border-0
+                        ${!n.isRead ? "bg-[#FEF0E3]/40 dark:bg-[rgba(245,130,31,0.08)]" : "hover:bg-[#FAFAF9] dark:hover:bg-[#242220]"}
+                        ${notifTarget ? "cursor-pointer" : ""}
+                      `}
+                      style={{ borderBottom: "1px solid var(--e-border-sub)" }}
                     >
-                      <span className="mt-0.5 shrink-0 text-[#A8A29E]"><NIcon className="w-4 h-4" /></span>
+                      <span className="mt-0.5 shrink-0" style={{ color: "var(--e-text-3)" }}><NIcon className="w-4 h-4" /></span>
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-medium leading-snug text-[#1C1917]">{n.title}</div>
-                        {n.message && <div className="text-[10px] text-[#57534E] mt-0.5 leading-snug line-clamp-2">{n.message}</div>}
-                        <div className="text-[9px] text-[#A8A29E] mt-1 flex items-center gap-1">
+                        <div className="text-xs font-medium leading-snug" style={{ color: "var(--e-text-1)" }}>{n.title}</div>
+                        {n.message && <div className="text-[10px] mt-0.5 leading-snug line-clamp-2" style={{ color: "var(--e-text-2)" }}>{n.message}</div>}
+                        <div className="text-[9px] mt-1 flex items-center gap-1" style={{ color: "var(--e-text-3)" }}>
                           <Clock className="w-2.5 h-2.5" />
                           {n.createdAt ? new Date(n.createdAt).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
                         </div>
@@ -297,7 +305,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
             <DropdownMenuTrigger asChild>
               <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="text-xs font-bold" style={{ background: "#FEF0E3", color: "#F5821F" }}>
+                  <AvatarFallback className="text-xs font-bold" style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
                     {user.fullName.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -305,13 +313,13 @@ export function Header({ collapsed, onToggle, title }: Props) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel className="font-normal p-3">
-                <div className="font-semibold text-sm leading-none text-[#1C1917]">{user.fullName}</div>
-                <div className="text-xs text-[#57534E] mt-1 truncate">{user.email}</div>
-                <div className="text-[10px] text-[#F5821F] mt-1 font-medium">{ROLE_EMOJIS[user.role]} {ROLE_LABELS[user.role]}</div>
+                <div className="font-semibold text-sm leading-none" style={{ color: "var(--e-text-1)" }}>{user.fullName}</div>
+                <div className="text-xs mt-1 truncate" style={{ color: "var(--e-text-2)" }}>{user.email}</div>
+                <div className="text-[10px] mt-1 font-medium text-[#F5821F]">{ROLE_EMOJIS[user.role]} {ROLE_LABELS[user.role]}</div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <UserIcon className="mr-2 h-3.5 w-3.5 text-[#A8A29E]" /> Profile
+                <UserIcon className="mr-2 h-3.5 w-3.5" style={{ color: "var(--e-text-3)" }} /> Profile
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-[#DC2626] focus:text-[#DC2626]" onClick={logout}>

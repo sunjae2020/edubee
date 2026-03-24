@@ -65,7 +65,8 @@ function api(path: string) {
 // ─── FieldLabel ────────────────────────────────────────────────────────────────
 function FL({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-[#57534E] mb-1.5">
+    <label className="block text-[11px] font-semibold uppercase tracking-[0.06em] mb-1.5"
+      style={{ color: "var(--e-text-2)" }}>
       {children}
     </label>
   );
@@ -89,12 +90,16 @@ function TextInput({
         value={value}
         onChange={e => onChange?.(e.target.value)}
         placeholder={placeholder}
-        className={`w-full h-10 border border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white
-          placeholder:text-[#A8A29E] transition-colors
+        className={`w-full h-10 border rounded-lg text-sm transition-colors
           focus:outline-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]
           disabled:opacity-60 disabled:cursor-not-allowed
-          ${readOnly ? "bg-[#FAFAF9] text-[#57534E] cursor-default" : ""}
+          ${readOnly ? "cursor-default opacity-75" : ""}
           ${prefix ? "pl-8" : "px-3"} ${suffix ? "pr-10" : "pr-3"}`}
+        style={{
+          background: "var(--e-bg-surface)",
+          borderColor: "var(--e-border)",
+          color: readOnly ? "var(--e-text-2)" : "var(--e-text-1)",
+        }}
       />
       {suffix && (
         <span className="absolute right-3 text-sm text-[#57534E] pointer-events-none select-none">{suffix}</span>
@@ -143,7 +148,7 @@ function RadioYesNo({
             onChange={() => onChange(v)}
             className="w-4 h-4 accent-[#F5821F]"
           />
-          <span className="text-sm text-[#1C1917]">{l}</span>
+          <span className="text-sm" style={{ color: "var(--e-text-1)" }}>{l}</span>
         </label>
       ))}
     </div>
@@ -167,7 +172,7 @@ function ToggleSwitch({
         onClick={() => onChange(!value)}
         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent
           transition-colors duration-200 ease-in-out focus:outline-none
-          ${value ? "bg-[#F5821F]" : "bg-[#E8E6E2]"}`}
+          ${value ? "bg-[#F5821F]" : "bg-[#E8E6E2] dark:bg-[#3A3835]"}`}
       >
         <span
           className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md
@@ -216,15 +221,17 @@ function SearchSelect({
 
   if (selected) {
     return (
-      <div className="flex items-center h-10 border border-[#F5821F] rounded-lg px-3 bg-white gap-2">
-        <span className="flex-1 text-sm text-[#1C1917] truncate">{selected.name}</span>
+      <div className="flex items-center h-10 border border-[#F5821F] rounded-lg px-3 gap-2"
+        style={{ background: "var(--e-bg-surface)" }}>
+        <span className="flex-1 text-sm truncate" style={{ color: "var(--e-text-1)" }}>{selected.name}</span>
         {selected.sub && (
-          <span className="text-xs text-[#A8A29E] shrink-0">{selected.sub}</span>
+          <span className="text-xs shrink-0" style={{ color: "var(--e-text-3)" }}>{selected.sub}</span>
         )}
         <button
           type="button"
           onClick={() => onChange("")}
-          className="shrink-0 text-[#A8A29E] hover:text-[#DC2626] transition-colors"
+          className="shrink-0 hover:text-[#DC2626] transition-colors"
+          style={{ color: "var(--e-text-3)" }}
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -235,34 +242,38 @@ function SearchSelect({
   return (
     <div className="relative" ref={containerRef}>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E] pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--e-text-3)" }} />
         {loading ? (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E] animate-spin" />
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin" style={{ color: "var(--e-text-3)" }} />
         ) : null}
         <input
           value={q}
           onChange={e => { setQ(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           placeholder={loading ? "Loading…" : (placeholder ?? "Search…")}
-          className="w-full h-10 pl-9 pr-3 border border-[#E8E6E2] rounded-lg text-sm text-[#1C1917]
-            placeholder:text-[#A8A29E] focus:outline-none focus:border-[#F5821F]
+          className="w-full h-10 pl-9 pr-3 border rounded-lg text-sm focus:outline-none focus:border-[#F5821F]
             focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]"
+          style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", color: "var(--e-text-1)" }}
         />
       </div>
       {open && (
-        <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-52 overflow-y-auto">
+        <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg shadow-lg max-h-52 overflow-y-auto"
+          style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}>
           {filtered.length === 0 ? (
-            <p className="px-3 py-2.5 text-sm text-[#A8A29E]">No results found</p>
+            <p className="px-3 py-2.5 text-sm" style={{ color: "var(--e-text-3)" }}>No results found</p>
           ) : (
             filtered.map(o => (
               <button
                 key={o.id}
                 type="button"
                 onMouseDown={() => { onChange(o.id); setOpen(false); }}
-                className="w-full text-left px-3 py-2 flex items-center justify-between gap-3 hover:bg-[#FEF0E3] transition-colors"
+                className="w-full text-left px-3 py-2 flex items-center justify-between gap-3 hover:opacity-80 transition-opacity"
+                style={{ color: "var(--e-text-1)" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--e-bg-hover)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "")}
               >
-                <span className="text-sm text-[#1C1917] truncate">{o.name}</span>
-                {o.sub && <span className="text-xs text-[#A8A29E] shrink-0">{o.sub}</span>}
+                <span className="text-sm truncate">{o.name}</span>
+                {o.sub && <span className="text-xs shrink-0" style={{ color: "var(--e-text-3)" }}>{o.sub}</span>}
               </button>
             ))
           )}
@@ -319,26 +330,28 @@ function AsyncSearchSelect({
   return (
     <div className="relative" ref={containerRef}>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E] pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--e-text-3)" }} />
         {loading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E] animate-spin" />
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin" style={{ color: "var(--e-text-3)" }} />
         )}
         <input
           value={q}
           onChange={e => setQ(e.target.value)}
           onFocus={() => { setOpen(true); if (results.length === 0) doFetch(""); }}
           placeholder={placeholder ?? "Search…"}
-          className="w-full h-10 pl-9 pr-3 border border-[#E8E6E2] rounded-lg text-sm text-[#1C1917]
-            placeholder:text-[#A8A29E] focus:outline-none focus:border-[#F5821F]
+          style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", color: "var(--e-text-1)" }}
+          className="w-full h-10 pl-9 pr-3 border rounded-lg text-sm
+            focus:outline-none focus:border-[#F5821F]
             focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]"
         />
       </div>
       {open && (
-        <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-52 overflow-y-auto">
+        <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg shadow-lg max-h-52 overflow-y-auto"
+          style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}>
           {loading && results.length === 0 ? (
-            <p className="px-3 py-2.5 text-sm text-[#A8A29E]">Loading…</p>
+            <p className="px-3 py-2.5 text-sm" style={{ color: "var(--e-text-3)" }}>Loading…</p>
           ) : results.length === 0 ? (
-            <p className="px-3 py-2.5 text-sm text-[#A8A29E]">No results found</p>
+            <p className="px-3 py-2.5 text-sm" style={{ color: "var(--e-text-3)" }}>No results found</p>
           ) : (
             results.map(o => {
               const isSelected = selectedIds.includes(o.id);
@@ -347,11 +360,11 @@ function AsyncSearchSelect({
                   key={o.id}
                   type="button"
                   onMouseDown={() => { onToggle(o.id, o.name); }}
-                  className={`w-full text-left px-3 py-2 flex items-center justify-between gap-3 transition-colors
-                    ${isSelected ? "bg-[#FEF0E3]" : "hover:bg-[#FEF0E3]"}`}
+                  className="w-full text-left px-3 py-2 flex items-center justify-between gap-3 transition-colors hover:opacity-80"
+                  style={{ background: isSelected ? "var(--e-orange-lt)" : undefined }}
                 >
-                  <span className="text-sm text-[#1C1917] truncate">{o.name}</span>
-                  <span className={`text-xs shrink-0 ${isSelected ? "text-[#F5821F] font-semibold" : "text-[#A8A29E]"}`}>
+                  <span className="text-sm truncate" style={{ color: "var(--e-text-1)" }}>{o.name}</span>
+                  <span className="text-xs shrink-0" style={{ color: isSelected ? "var(--e-orange)" : "var(--e-text-3)", fontWeight: isSelected ? 600 : 400 }}>
                     {isSelected ? "Added ✓" : (o.sub ?? "")}
                   </span>
                 </button>
@@ -369,12 +382,13 @@ function Section({ title, children, description }: {
   title: string; children: React.ReactNode; description?: string;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-[#E8E6E2] shadow-[0_1px_3px_rgba(0,0,0,0.06)] mb-6">
-      <div className="px-5 py-3 border-b border-[#E8E6E2] bg-[#FAFAF9] rounded-t-xl">
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#57534E]">{title}</h3>
+    <div className="rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] mb-6"
+      style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}>
+      <div className="px-5 py-3 rounded-t-xl" style={{ borderBottom: "1px solid var(--e-border)", background: "var(--e-bg-page)" }}>
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--e-text-2)" }}>{title}</h3>
       </div>
       {description && (
-        <p className="px-5 pt-3 text-xs text-[#57534E]">{description}</p>
+        <p className="px-5 pt-3 text-xs" style={{ color: "var(--e-text-2)" }}>{description}</p>
       )}
       <div className="p-5">{children}</div>
     </div>
@@ -396,7 +410,7 @@ function Btn({
   const sizes = size === "sm" ? "h-8 px-3 text-xs" : "h-10 px-5 text-sm";
   const variants = {
     primary: "bg-[#F5821F] text-white hover:bg-[#D96A0A] disabled:opacity-60 disabled:cursor-not-allowed",
-    outline: "bg-white text-[#1C1917] border border-[#E8E6E2] hover:border-[#A8A29E] disabled:opacity-60",
+    outline: "border disabled:opacity-60 hover:opacity-80",
   };
   return (
     <button
@@ -404,6 +418,7 @@ function Btn({
       onClick={onClick}
       disabled={disabled || loading}
       className={`${base} ${sizes} ${variants[variant]}`}
+      style={variant === "outline" ? { background: "var(--e-bg-surface)", color: "var(--e-text-1)", borderColor: "var(--e-border)" } : undefined}
     >
       {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
       {children}
@@ -679,20 +694,20 @@ export default function ProductDetail() {
   const nameForBreadcrumb = isNew ? "New Product" : (rec?.productName ?? "Product");
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
+    <div className="min-h-screen" style={{ background: "var(--e-bg-page)" }}>
       <div className="max-w-[960px] mx-auto px-6 py-8 pb-32">
 
         {/* ── Top Bar ── */}
         <div ref={topBarRef} className="flex items-center justify-between gap-4 mb-7">
-          <div className="flex items-center gap-2 text-sm text-[#57534E]">
+          <div className="flex items-center gap-2 text-sm" style={{ color: "var(--e-text-2)" }}>
             <button
               onClick={handleCancel}
               className="flex items-center gap-1 hover:text-[#F5821F] transition-colors"
             >
               <ChevronLeft className="w-4 h-4" /> Products
             </button>
-            <span className="text-[#E8E6E2]">/</span>
-            <span className="text-[#1C1917] font-semibold truncate max-w-[280px]">
+            <span style={{ color: "var(--e-border)" }}>/</span>
+            <span className="font-semibold truncate max-w-[280px]" style={{ color: "var(--e-text-1)" }}>
               {nameForBreadcrumb}
             </span>
           </div>
@@ -1010,12 +1025,12 @@ export default function ProductDetail() {
                       return (
                         <div
                           key={gid}
-                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg
-                            bg-[#FEF0E3] border border-[#F5821F]/20"
+                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg"
+                          style={{ background: "var(--e-orange-lt)", border: "1px solid rgba(245,130,31,0.2)" }}
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <Package className="w-3.5 h-3.5 text-[#F5821F] shrink-0" />
-                            <span className="text-sm font-medium text-[#1C1917] truncate">{name}</span>
+                            <Package className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--e-orange)" }} />
+                            <span className="text-sm font-medium truncate" style={{ color: "var(--e-text-1)" }}>{name}</span>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             {linkData?.packageGroupId && (
@@ -1074,13 +1089,13 @@ export default function ProductDetail() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <FL>Created On</FL>
-                      <p className="text-sm text-[#1C1917]">
+                      <p className="text-sm" style={{ color: "var(--e-text-1)" }}>
                         {rec.createdAt ? format(new Date(rec.createdAt), "PPP p") : "—"}
                       </p>
                     </div>
                     <div>
                       <FL>Modified On</FL>
-                      <p className="text-sm text-[#1C1917]">
+                      <p className="text-sm" style={{ color: "var(--e-text-1)" }}>
                         {(rec.modifiedOn ?? rec.updatedAt)
                           ? format(new Date(rec.modifiedOn ?? rec.updatedAt), "PPP p")
                           : "—"}
@@ -1099,11 +1114,12 @@ export default function ProductDetail() {
                     <div>
                       <FL>Product ID</FL>
                       <div className="flex items-center gap-1.5">
-                        <p className="text-xs font-mono text-[#A8A29E] truncate">{rec.id}</p>
+                        <p className="text-xs font-mono truncate" style={{ color: "var(--e-text-3)" }}>{rec.id}</p>
                         <button
                           type="button"
                           onClick={copyId}
-                          className="shrink-0 text-[#A8A29E] hover:text-[#F5821F] transition-colors"
+                          className="shrink-0 hover:text-[#F5821F] transition-colors"
+                          style={{ color: "var(--e-text-3)" }}
                           title="Copy ID"
                         >
                           {copiedId ? (
@@ -1125,9 +1141,10 @@ export default function ProductDetail() {
 
       {/* ── Sticky Bottom Bar ── */}
       {!topBarVisible && canEdit && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E8E6E2] px-6 py-3
-          flex items-center justify-end gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
-          <span className="flex-1 text-sm font-medium text-[#1C1917] truncate">
+        <div className="fixed bottom-0 left-0 right-0 z-40 px-6 py-3
+          flex items-center justify-end gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.10)]"
+          style={{ background: "var(--e-bg-surface)", borderTop: "1px solid var(--e-border)" }}>
+          <span className="flex-1 text-sm font-medium truncate" style={{ color: "var(--e-text-1)" }}>
             {nameForBreadcrumb}
           </span>
           {topBarBtns}

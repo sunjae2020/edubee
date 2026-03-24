@@ -75,6 +75,22 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
     -   **API routes**: `GET /api/tax-invoices`, `GET /api/tax-invoices/by-contract-product/:cpId`, `GET /api/tax-invoices/:id/pdf`, `POST /api/tax-invoices/:id/send`, `POST /api/tax-invoices/:id/mark-paid`.
     -   **Frontend**: `TaxInvoiceListPage` at `/admin/accounting/tax-invoices` with type/status filters, KPI cards, PDF download, email resend, mark-paid actions. `TaxInvoiceBadge` component shows invoice status on contract product lines.
 
+## Dark Mode System (2026-03-24)
+
+**Architecture**: CSS custom properties (`--e-*` variables) defined in `index.css` on `:root` (light) and `.dark` (dark). The `ThemeProvider` (`use-theme.tsx`) adds/removes the `dark` class on `document.documentElement` and persists to `localStorage("edubee-theme")`. Moon/Sun toggle button in `header.tsx`.
+
+**Design Tokens**:
+- Light: bg-page `#FAFAF9`, bg-surface `#FFFFFF`, bg-sidebar `#FAFAF9`, border `#E8E6E2`, text-1 `#1C1917`, text-2 `#57534E`, text-3 `#A8A29E`
+- Dark: bg-page `#0F0E0D`, bg-surface `#1A1917`, bg-sidebar `#161513`, border `#2E2B28`, text-1 `#F5F0EB`, text-2 `#A8A29E`, text-3 `#57534E`
+
+**Updated Files**:
+- `index.css` — CSS variable definitions + global Tailwind class overrides (`.dark .bg-white`, `.dark .text-[#1C1917]`, etc.)
+- `main-layout.tsx` — Page bg, loading screen
+- `app-sidebar.tsx` — Aside bg/border, category headers, SidebarNavItem (Tailwind dark: variants), user footer
+- `header.tsx` — Topbar bg/border, notification panel, avatar dropdown, bell/menu buttons
+- `login.tsx` — Page bg, card bg, form labels, demo account buttons, divider
+- `product-detail.tsx` — All shared components (FL, TextInput, SearchSelect, AsyncSearchSelect, Section, Btn, RadioYesNo, ToggleSwitch, page header, admin info, sticky bottom bar)
+
 ## Recent Changes (2026-03-24)
 
 - **Camp Contract Services Tab**: `camp-contract-detail.tsx` Services tab replaced with clickable institute/tour card layout → dedicated detail pages. Added `AddInstituteModal` / `AddTourModal`; removed old 4-dialog components.

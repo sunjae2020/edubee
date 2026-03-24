@@ -20,7 +20,7 @@ import {
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
 
 const ReportNavIcon = ({ size, style }: { size?: number; style?: React.CSSProperties; className?: string; strokeWidth?: number }) => (
-  <ReportSymbol name="report" size={size ?? 16} color={(style?.color as string) ?? "#A8A29E"} />
+  <ReportSymbol name="report" size={size ?? 16} color={(style?.color as string) ?? "var(--e-text-3)"} />
 );
 
 type NavItem  = { icon: LucideIcon; label: string; href: string };
@@ -38,13 +38,11 @@ function buildNav(effectiveRole: string): NavGroup[] {
 
   const nav: NavGroup[] = [];
 
-  // ── 1 · Dashboard ────────────────────────────────────────────────────────
   nav.push({
     key: "dashboard", label: "Dashboard", catIcon: LayoutDashboard,
     items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" }],
   });
 
-  // ── 2 · CRM ──────────────────────────────────────────────────────────────
   const crmItems: NavItem[] = [];
   if (isSAorAD || isCC) {
     crmItems.push(
@@ -55,11 +53,9 @@ function buildNav(effectiveRole: string): NavGroup[] {
       { icon: FileCheck, label: "Contracts",  href: "/admin/crm/contracts"  },
     );
   }
-  // Tasks & CS is visible to all roles
   crmItems.push({ icon: Ticket, label: "Tasks & CS", href: "/admin/services/tasks" });
   nav.push({ key: "crm", label: "CRM", catIcon: Users, items: crmItems });
 
-  // ── 3 · Sales ────────────────────────────────────────────────────────────
   if (isSAorAD || isCC || isEA) {
     const salesItems: NavItem[] = [
       { icon: ClipboardList, label: "Applications", href: "/admin/applications" },
@@ -69,7 +65,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
     nav.push({ key: "sales", label: "Sales", catIcon: ClipboardList, items: salesItems });
   }
 
-  // ── 4 · Camp ─────────────────────────────────────────────────────────────
   const campItems: NavItem[] = [];
   if (isSAorAD || isCC) {
     campItems.push(
@@ -93,7 +88,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
   if (campItems.length > 0)
     nav.push({ key: "camp", label: "Camp", catIcon: GraduationCap, items: campItems });
 
-  // ── 5 · Services ─────────────────────────────────────────────────────────
   if (isSAorAD || isCC) {
     nav.push({
       key: "services", label: "Services", catIcon: Briefcase,
@@ -109,7 +103,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
     });
   }
 
-  // ── 5.5 · Products Catalog ────────────────────────────────────────────────
   if (isSAorAD || isCC) {
     nav.push({
       key: "products-catalog", label: "Products", catIcon: ShoppingBag,
@@ -123,7 +116,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
     });
   }
 
-  // ── 6 · Finance ──────────────────────────────────────────────────────────
   const financeItems: NavItem[] = [];
   if (isSAorAD) {
     financeItems.push(
@@ -148,7 +140,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
   if (financeItems.length > 0)
     nav.push({ key: "finance", label: "Finance", catIcon: Wallet, items: financeItems });
 
-  // ── 7 · Reports ──────────────────────────────────────────────────────────
   if (!isParent) {
     nav.push({
       key: "reports", label: "Reports", catIcon: BarChart2,
@@ -156,7 +147,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
     });
   }
 
-  // ── 8 · AI Assistant ─────────────────────────────────────────────────────
   if (isSAorAD) {
     nav.push({
       key: "ai", label: "AI Assistant", catIcon: Bot,
@@ -164,14 +154,12 @@ function buildNav(effectiveRole: string): NavGroup[] {
     });
   }
 
-  // ── 9 · Admin ────────────────────────────────────────────────────────────
   const adminItems: NavItem[] = [];
   if (isSAorAD)  adminItems.push({ icon: Users,        label: "Users",      href: "/admin/users"       });
   if (isParent)  adminItems.push({ icon: GraduationCap, label: "My Programs", href: "/admin/my-programs" });
   if (adminItems.length > 0)
     nav.push({ key: "admin", label: "Admin", catIcon: Grid2x2, items: adminItems });
 
-  // ── 10 · Settings ────────────────────────────────────────────────────────
   if (isSAorAD) {
     nav.push({
       key: "settings", label: "Settings", catIcon: Settings,
@@ -220,13 +208,10 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
   const effectiveRole = viewAsUser?.role ?? user?.role ?? "parent_client";
   const nav           = buildNav(effectiveRole);
 
-  // Accordion state — set of category keys that are COLLAPSED
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(readCollapsed);
 
   const isGroupOpen = (group: NavGroup): boolean => {
-    // In icon-only mode show everything flat
     if (collapsed) return true;
-    // Active-route category always stays open
     const hasActive = group.items.some(
       item => location === item.href || location.startsWith(item.href + "/")
     );
@@ -247,12 +232,16 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
   return (
     <aside
       className="flex flex-col shrink-0 h-full overflow-hidden transition-all duration-200"
-      style={{ width: collapsed ? 64 : 240, background: "#FAFAF9", borderRight: "1px solid #E8E6E2" }}
+      style={{
+        width: collapsed ? 64 : 240,
+        background: "var(--e-bg-sidebar)",
+        borderRight: "1px solid var(--e-border)",
+      }}
     >
       {/* Logo header */}
       <div
         className="flex items-center h-14 shrink-0 px-3 gap-2"
-        style={{ borderBottom: "1px solid #E8E6E2" }}
+        style={{ borderBottom: "1px solid var(--e-border)" }}
       >
         {collapsed ? (
           <div className="flex-1 flex items-center justify-center">
@@ -266,7 +255,9 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
         <button
           onClick={onToggle}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0 text-[#A8A29E] hover:bg-[#F4F3F1] hover:text-[#57534E]"
+          className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0
+            hover:bg-[#F4F3F1] dark:hover:bg-[#242220]"
+          style={{ color: "var(--e-text-3)" }}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
@@ -288,16 +279,17 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
               {!collapsed && (
                 <button
                   onClick={() => toggleGroup(group.key)}
-                  className="w-full flex items-center gap-1.5 px-2 pt-3 pb-1.5 rounded-md transition-colors hover:bg-[#F4F3F1] group/cat"
+                  className="w-full flex items-center gap-1.5 px-2 pt-3 pb-1.5 rounded-md transition-colors
+                    hover:bg-[#F4F3F1] dark:hover:bg-[#242220] group/cat"
                 >
                   <CatIcon
                     size={13}
                     strokeWidth={hasActive ? 2.2 : 1.8}
-                    style={{ color: hasActive ? "#F5821F" : "#A8A29E", flexShrink: 0 }}
+                    style={{ color: hasActive ? "var(--e-orange)" : "var(--e-text-3)", flexShrink: 0 }}
                   />
                   <span
                     className="flex-1 text-left text-[11px] font-semibold uppercase tracking-[0.08em] truncate"
-                    style={{ color: hasActive ? "#F5821F" : "#A8A29E" }}
+                    style={{ color: hasActive ? "var(--e-orange)" : "var(--e-text-3)" }}
                   >
                     {group.label}
                   </span>
@@ -305,7 +297,7 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
                     size={11}
                     strokeWidth={1.8}
                     style={{
-                      color: "#A8A29E",
+                      color: "var(--e-text-3)",
                       flexShrink: 0,
                       transform: open ? "rotate(0deg)" : "rotate(-90deg)",
                       transition: "transform 150ms ease",
@@ -336,11 +328,11 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
 
       {/* User footer */}
       {user && (
-        <div className="p-3 shrink-0" style={{ borderTop: "1px solid #E8E6E2" }}>
+        <div className="p-3 shrink-0" style={{ borderTop: "1px solid var(--e-border)" }}>
           {collapsed ? (
             <div
               className="w-8 h-8 rounded-full text-xs font-bold flex items-center justify-center mx-auto"
-              style={{ background: "#FEF0E3", color: "#F5821F" }}
+              style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}
               title={user.fullName}
             >
               {user.fullName.substring(0, 2).toUpperCase()}
@@ -349,13 +341,13 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
             <div className="flex items-center gap-2.5">
               <div
                 className="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0"
-                style={{ background: "#FEF0E3", color: "#F5821F" }}
+                style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}
               >
                 {user.fullName.substring(0, 2).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-semibold truncate" style={{ color: "#1C1917" }}>{user.fullName}</div>
-                <div className="text-[10px] truncate" style={{ color: "#A8A29E" }}>{user.email}</div>
+                <div className="text-xs font-semibold truncate" style={{ color: "var(--e-text-1)" }}>{user.fullName}</div>
+                <div className="text-[10px] truncate" style={{ color: "var(--e-text-3)" }}>{user.email}</div>
               </div>
             </div>
           )}
@@ -373,34 +365,27 @@ function SidebarNavItem({
   return (
     <div
       title={collapsed ? label : undefined}
-      className="flex items-center gap-2.5 px-2 h-9 rounded-lg text-sm cursor-pointer transition-all duration-150 select-none"
+      className={`
+        flex items-center gap-2.5 px-2 h-9 rounded-lg text-[13px] cursor-pointer
+        transition-all duration-150 select-none
+        ${collapsed ? "justify-center" : "ml-1"}
+        ${isActive
+          ? "font-semibold"
+          : "font-normal hover:bg-[#F4F3F1] dark:hover:bg-[#242220]"
+        }
+      `}
       style={{
-        background:    isActive ? "#FEF0E3" : "transparent",
-        color:         isActive ? "#F5821F" : "#57534E",
-        fontWeight:    isActive ? 600 : 400,
-        justifyContent: collapsed ? "center" : undefined,
-        marginLeft:    collapsed ? 0 : 4,
-      }}
-      onMouseEnter={e => {
-        if (!isActive) {
-          (e.currentTarget as HTMLDivElement).style.background = "#F4F3F1";
-          (e.currentTarget as HTMLDivElement).style.color = "#1C1917";
-        }
-      }}
-      onMouseLeave={e => {
-        if (!isActive) {
-          (e.currentTarget as HTMLDivElement).style.background = "transparent";
-          (e.currentTarget as HTMLDivElement).style.color = "#57534E";
-        }
+        background: isActive ? "var(--e-orange-lt)" : "transparent",
+        color:      isActive ? "var(--e-orange)"    : "var(--e-text-2)",
       }}
     >
       <Icon
         className="shrink-0"
         size={15}
         strokeWidth={isActive ? 2.2 : 1.8}
-        style={{ color: isActive ? "#F5821F" : "#A8A29E" }}
+        style={{ color: isActive ? "var(--e-orange)" : "var(--e-text-3)" }}
       />
-      {!collapsed && <span className="truncate text-[13px]">{label}</span>}
+      {!collapsed && <span className="truncate">{label}</span>}
     </div>
   );
 }
