@@ -4,6 +4,7 @@ import { syncExchangeRates } from "./services/exchangeRateSync.js";
 import { seedChartOfAccounts } from "./seeds/coa-seed.js";
 import { markOverdueArItems } from "./seeds/arap-overdue.js";
 import { seedUsersIfEmpty } from "./seeds/seed-users.js";
+import { seedMenuAllocation } from "./seeds/seed-menu-allocation.js";
 import { startTaxInvoiceScheduler } from "./jobs/taxInvoiceScheduler.js";
 
 const rawPort = process.env["PORT"];
@@ -24,6 +25,7 @@ const server = app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
   seedUsersIfEmpty();
   seedChartOfAccounts();
+  seedMenuAllocation();
   markOverdueArItems();
   startTaxInvoiceScheduler();
 });
