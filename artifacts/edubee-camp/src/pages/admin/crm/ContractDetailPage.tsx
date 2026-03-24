@@ -782,6 +782,24 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }
   );
 }
 
+// ── Account Type Badge Helper ─────────────────────────────────────────────────
+function getAccountTypeBadge(accountType: string | null | undefined) {
+  const map: Record<string, { label: string; bg: string; color: string }> = {
+    Student:      { label: "STUDENT",      bg: "#FEF0E3", color: "#F5821F" },
+    School:       { label: "SCHOOL",       bg: "#DCFCE7", color: "#16A34A" },
+    Sub_Agency:   { label: "SUB AGENCY",   bg: "#EDE9FE", color: "#7C3AED" },
+    Super_Agency: { label: "SUPER AGENCY", bg: "#EDE9FE", color: "#7C3AED" },
+    Supplier:     { label: "SUPPLIER",     bg: "#F0F9FF", color: "#0369A1" },
+    Staff:        { label: "STAFF",        bg: "#F4F3F1", color: "#57534E" },
+    Branch:       { label: "BRANCH",       bg: "#FEF9C3", color: "#CA8A04" },
+    Organisation: { label: "ORGANISATION", bg: "#F4F3F1", color: "#57534E" },
+    Agent:        { label: "AGENT",        bg: "#EDE9FE", color: "#7C3AED" },
+    Provider:     { label: "PROVIDER",     bg: "#F0F9FF", color: "#0369A1" },
+    Partner:      { label: "PARTNER",      bg: "#F4F3F1", color: "#57534E" },
+  };
+  return map[accountType ?? ""] ?? { label: "ACCOUNT", bg: "#F4F3F1", color: "#57534E" };
+}
+
 // ── Edit Student Modal ───────────────────────────────────────────────────────
 function EditStudentModal({ contract, onClose }: { contract: any; onClose: () => void }) {
   const qc = useQueryClient();
@@ -794,7 +812,7 @@ function EditStudentModal({ contract, onClose }: { contract: any; onClose: () =>
     queryKey: ["account-search", search],
     queryFn:  () =>
       axios.get(`${BASE}/api/crm/accounts`, {
-        params: { search, account_type: "Student", limit: 20 },
+        params: { search, limit: 20 },
       }).then(r => r.data?.data ?? []),
     placeholderData: (prev) => prev,
   });
@@ -814,7 +832,7 @@ function EditStudentModal({ contract, onClose }: { contract: any; onClose: () =>
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
-          <h2 className="text-base font-semibold text-[#1C1917]">Link Student Account</h2>
+          <h2 className="text-base font-semibold text-[#1C1917]">Link Account</h2>
           <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] text-[#A8A29E]">
             <X size={16} />
           </button>
@@ -827,7 +845,10 @@ function EditStudentModal({ contract, onClose }: { contract: any; onClose: () =>
               style={{ background: "#FEF0E3", border: "1.5px solid #F5821F" }}>
               <div>
                 <p className="font-semibold text-[#1C1917]">{selected.name}</p>
-                <p className="text-[11px] text-[#57534E] mt-0.5">{selected.accountType ?? "Student"}</p>
+                {(() => { const b = getAccountTypeBadge(selected.accountType); return (
+                  <span className="inline-block mt-1 text-[11px] font-medium rounded-full px-2.5 py-0.5"
+                    style={{ background: b.bg, color: b.color }}>{b.label}</span>
+                ); })()}
               </div>
               <button onClick={() => setSelected(null)} className="text-[#A8A29E] hover:text-[#57534E]">
                 <X size={14} />
@@ -841,7 +862,7 @@ function EditStudentModal({ contract, onClose }: { contract: any; onClose: () =>
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search student accounts…"
+              placeholder="Search accounts…"
               className="w-full h-10 border rounded-lg px-3 text-sm outline-none transition-all"
               style={{
                 borderColor: "#E8E6E2",
@@ -864,7 +885,7 @@ function EditStudentModal({ contract, onClose }: { contract: any; onClose: () =>
           {/* Results */}
           <div className="max-h-56 overflow-y-auto rounded-lg border border-[#E8E6E2] divide-y divide-[#F4F3F1]">
             {results.length === 0 && !isFetching && (
-              <p className="text-center text-sm text-[#A8A29E] py-6">No student accounts found</p>
+              <p className="text-center text-sm text-[#A8A29E] py-6">No accounts found</p>
             )}
             {results.map((acc: any) => (
               <button key={acc.id}
@@ -873,7 +894,10 @@ function EditStudentModal({ contract, onClose }: { contract: any; onClose: () =>
                 style={selected?.id === acc.id ? { background: "#FEF0E3" } : {}}>
                 <div>
                   <p className="font-medium text-[#1C1917]">{acc.name}</p>
-                  <p className="text-[11px] text-[#A8A29E] mt-0.5">{acc.accountType}</p>
+                  {(() => { const b = getAccountTypeBadge(acc.accountType); return (
+                    <span className="inline-block mt-1 text-[11px] font-medium rounded-full px-2.5 py-0.5"
+                      style={{ background: b.bg, color: b.color }}>{b.label}</span>
+                  ); })()}
                 </div>
                 {selected?.id === acc.id && (
                   <span className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "#F5821F" }}>
@@ -1215,7 +1239,10 @@ export default function ContractDetailPage() {
           {/* Student */}
           <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Student</p>
+              {(() => { const b = getAccountTypeBadge(contract.studentAccount?.accountType); return (
+                <span className="text-[12px] font-medium rounded-full px-2.5 py-0.5"
+                  style={{ background: b.bg, color: b.color }}>{b.label}</span>
+              ); })()}
               <div className="flex items-center gap-1">
                 <button onClick={() => setEditingStudent(true)}
                   className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#57534E]">
