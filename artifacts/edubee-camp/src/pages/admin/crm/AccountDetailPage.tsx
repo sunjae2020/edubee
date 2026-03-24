@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   ArrowLeft, Save, Building2, Users, FileText, Briefcase,
-  Plus, Loader2, ChevronRight,
+  Plus, Loader2, ChevronRight, ExternalLink, Package, DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,14 +15,40 @@ import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const ACCOUNT_TYPES = ["Student", "School", "Agent", "Provider", "Organisation"];
+const ACCOUNT_TYPES = [
+  "Student", "School",
+  "Sub_Agency", "Super_Agency",
+  "Supplier", "Staff", "Branch",
+  "Agent", "Provider", "Organisation",
+];
 const CATEGORY_MAP: Record<string, string[]> = {
   Student:      [],
   School:       ["Language School", "University", "TAFE", "High School", "Other"],
+  Sub_Agency:   [],
+  Super_Agency: [],
+  Supplier:     ["Homestay", "Dormitory", "Pickup", "Insurance", "Migration Agent", "Tour Operator", "Other"],
+  Staff:        [],
+  Branch:       [],
   Agent:        ["Sub-agent", "Super-agent", "Referral Partner"],
   Provider:     ["Homestay", "Dormitory", "Pickup", "Insurance", "Migration Agent", "Tour Operator", "Other"],
   Organisation: ["Head Office", "Branch", "Partner Organisation"],
 };
+
+function getAccountTypeBadge(accountType?: string | null): { bg: string; text: string; label: string } {
+  switch (accountType) {
+    case "Student":      return { bg: "#FEF0E3", text: "#F5821F", label: "Student" };
+    case "School":       return { bg: "#DCFCE7", text: "#16A34A", label: "School" };
+    case "Sub_Agency":   return { bg: "#EDE9FE", text: "#7C3AED", label: "Sub Agency" };
+    case "Super_Agency": return { bg: "#EDE9FE", text: "#7C3AED", label: "Super Agency" };
+    case "Supplier":     return { bg: "#F0F9FF", text: "#0369A1", label: "Supplier" };
+    case "Staff":        return { bg: "#F4F3F1", text: "#57534E", label: "Staff" };
+    case "Branch":       return { bg: "#FEF9C3", text: "#CA8A04", label: "Branch" };
+    case "Agent":        return { bg: "#F4F3F1", text: "#57534E", label: "Agent" };
+    case "Provider":     return { bg: "#F4F3F1", text: "#57534E", label: "Provider" };
+    case "Organisation": return { bg: "#F4F3F1", text: "#57534E", label: "Organisation" };
+    default:             return { bg: "#F4F3F1", text: "#57534E", label: accountType ?? "—" };
+  }
+}
 
 interface Account {
   id: string;
@@ -56,19 +82,49 @@ interface Account {
   status: string;
   createdOn?: string | null;
   modifiedOn?: string | null;
-  primaryContact?: { id: string; firstName: string; lastName: string; email?: string | null; mobile?: string | null } | null;
+  primaryContact?: {
+    id: string; firstName: string; lastName: string;
+    email?: string | null; mobile?: string | null;
+    nationality?: string | null; dob?: string | null;
+    snsType?: string | null; snsId?: string | null;
+  } | null;
   secondaryContact?: { id: string; firstName: string; lastName: string } | null;
   parentAccount?: { id: string; name: string } | null;
 }
 
 type FormData = Omit<Account, "id" | "createdOn" | "modifiedOn" | "primaryContact" | "secondaryContact" | "parentAccount">;
 
-const TABS = [
-  { key: "overview",   label: "Overview",   icon: Building2 },
-  { key: "contacts",   label: "Contacts",   icon: Users     },
-  { key: "leads",      label: "Leads",      icon: Briefcase },
-  { key: "contracts",  label: "Contracts",  icon: FileText  },
-];
+function getTabs(accountType?: string | null) {
+  const base = [
+    { key: "overview",  label: "Overview",  icon: Building2 },
+    { key: "contacts",  label: "Contacts",  icon: Users     },
+  ];
+  const leads     = { key: "leads",      label: "Leads",      icon: Briefcase   };
+  const contracts = { key: "contracts",  label: "Contracts",  icon: FileText    };
+  const products  = { key: "products",   label: "Products",   icon: Package     };
+  const commission = { key: "commission", label: "Commission", icon: DollarSign  };
+
+  switch (accountType) {
+    case "Supplier":
+      return [...base, products];
+    case "School":
+      return [...base, leads, contracts, products];
+    case "Sub_Agency":
+    case "Super_Agency":
+      return [...base, leads, contracts, commission];
+    default:
+      return [...base, leads, contracts];
+  }
+}
+
+function QI({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-2 py-1.5 border-b border-[#E8E6E2] last:border-0">
+      <span className="text-[12px] text-[#57534E] shrink-0 w-28">{label}</span>
+      <span className="text-[13px] font-medium text-[#1C1917] text-right">{children}</span>
+    </div>
+  );
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -376,7 +432,7 @@ export default function AccountDetailPage() {
 
       {/* Tabs */}
       <div className="flex gap-0.5 border-b border-[#E8E6E2]">
-        {TABS.map(t => {
+        {getTabs(account?.accountType).map(t => {
           const Icon = t.icon;
           return (
             <button
@@ -535,55 +591,67 @@ export default function AccountDetailPage() {
                 </Section>
               </div>
 
-              {/* Organisation */}
-              <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
-                <Section title="Organisation">
-                  <Field label="Parent Account" span={2}>
-                    <AccountLookup
-                      value={form.parentAccountId ?? ""}
-                      onChange={id => set("parentAccountId", id)}
-                      excludeId={isNew ? undefined : id}
-                      placeholder="Search parent account…"
-                    />
-                  </Field>
-                  <Field label="ABN">
-                    <Input value={form.abn ?? ""} onChange={e => set("abn", e.target.value)} placeholder="ABN" className={INPUT_CLS} />
-                  </Field>
-                  <Field label="Founded Year">
-                    <Input value={form.foundYear ?? ""} onChange={e => set("foundYear", e.target.value)} placeholder="e.g. 2010" className={INPUT_CLS} />
-                  </Field>
-                  <Field label="Total Capacity">
-                    <Input
-                      type="number"
-                      value={form.totalCapacity ?? ""}
-                      onChange={e => set("totalCapacity", e.target.value ? Number(e.target.value) : undefined as any)}
-                      placeholder="0"
-                      className={INPUT_CLS}
-                    />
-                  </Field>
-                  <Field label="AVETMISS Delivery Location ID">
-                    <Input value={form.avetmissDeliveryLocationId ?? ""} onChange={e => set("avetmissDeliveryLocationId", e.target.value)} placeholder="Location ID" className={INPUT_CLS} />
-                  </Field>
-                </Section>
-              </div>
+              {/* Organisation — conditional by type */}
+              {["School","Sub_Agency","Super_Agency","Supplier","Branch","Agent","Provider","Organisation"].includes(form.accountType ?? "") && (
+                <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
+                  <Section title="Organisation">
+                    {["Branch","Super_Agency"].includes(form.accountType ?? "") && (
+                      <Field label="Parent Account" span={2}>
+                        <AccountLookup
+                          value={form.parentAccountId ?? ""}
+                          onChange={id => set("parentAccountId", id)}
+                          excludeId={isNew ? undefined : id}
+                          placeholder="Search parent account…"
+                        />
+                      </Field>
+                    )}
+                    {["School","Sub_Agency","Super_Agency","Supplier","Agent","Provider","Organisation"].includes(form.accountType ?? "") && (
+                      <Field label="ABN">
+                        <Input value={form.abn ?? ""} onChange={e => set("abn", e.target.value)} placeholder="ABN" className={INPUT_CLS} />
+                      </Field>
+                    )}
+                    {form.accountType === "School" && (
+                      <>
+                        <Field label="Founded Year">
+                          <Input value={form.foundYear ?? ""} onChange={e => set("foundYear", e.target.value)} placeholder="e.g. 2010" className={INPUT_CLS} />
+                        </Field>
+                        <Field label="Total Capacity">
+                          <Input
+                            type="number"
+                            value={form.totalCapacity ?? ""}
+                            onChange={e => set("totalCapacity", e.target.value ? Number(e.target.value) : undefined as any)}
+                            placeholder="0"
+                            className={INPUT_CLS}
+                          />
+                        </Field>
+                        <Field label="AVETMISS Location ID" span={2}>
+                          <Input value={form.avetmissDeliveryLocationId ?? ""} onChange={e => set("avetmissDeliveryLocationId", e.target.value)} placeholder="Location ID" className={INPUT_CLS} />
+                        </Field>
+                      </>
+                    )}
+                  </Section>
+                </div>
+              )}
 
-              {/* Product Settings */}
-              <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
-                <Section title="Product Settings">
-                  <Toggle
-                    label="Is Product Source"
-                    description="This account is a source of products"
-                    checked={form.isProductSource}
-                    onChange={v => set("isProductSource", v)}
-                  />
-                  <Toggle
-                    label="Is Product Provider"
-                    description="This account provides products/services"
-                    checked={form.isProductProvider}
-                    onChange={v => set("isProductProvider", v)}
-                  />
-                </Section>
-              </div>
+              {/* Product Settings — School + Supplier only */}
+              {["School","Supplier","Provider"].includes(form.accountType ?? "") && (
+                <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
+                  <Section title="Product Settings">
+                    <Toggle
+                      label="Is Product Source"
+                      description="This account is a source of products"
+                      checked={form.isProductSource}
+                      onChange={v => set("isProductSource", v)}
+                    />
+                    <Toggle
+                      label="Is Product Provider"
+                      description="This account provides products/services"
+                      checked={form.isProductProvider}
+                      onChange={v => set("isProductProvider", v)}
+                    />
+                  </Section>
+                </div>
+              )}
 
               {/* System */}
               <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
@@ -739,54 +807,173 @@ export default function AccountDetailPage() {
               )}
             </div>
           )}
+
+          {tab === "products" && (
+            <div className="bg-white rounded-xl border border-[#E8E6E2] p-8 text-center text-stone-400">
+              <Package size={32} strokeWidth={1.5} className="mx-auto mb-3" />
+              <p className="text-sm font-medium text-stone-600 mb-1">Products</p>
+              <p className="text-sm">Products linked to this account will appear here.</p>
+            </div>
+          )}
+
+          {tab === "commission" && (
+            <div className="bg-white rounded-xl border border-[#E8E6E2] p-8 text-center text-stone-400">
+              <DollarSign size={32} strokeWidth={1.5} className="mx-auto mb-3" />
+              <p className="text-sm font-medium text-stone-600 mb-1">Commission</p>
+              <p className="text-sm">Commission records for this agency will appear here.</p>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
         {!isNew && (
           <div className="w-64 shrink-0 space-y-3">
+            {getTabs(account?.accountType).some(t => t.key === "leads") && (
+              <div className="bg-white rounded-xl border border-[#E8E6E2] p-4">
+                <p className="text-xs text-stone-400 mb-1">Leads</p>
+                <p className="text-2xl font-bold text-stone-800">
+                  {leadsLoading ? "—" : accountLeads.length}
+                </p>
+                <button
+                  onClick={() => { setTab("leads"); }}
+                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:opacity-80"
+                >
+                  <ChevronRight size={12} /> View Leads
+                </button>
+              </div>
+            )}
+            {getTabs(account?.accountType).some(t => t.key === "contracts") && (
+              <div className="bg-white rounded-xl border border-[#E8E6E2] p-4">
+                <p className="text-xs text-stone-400 mb-1">Contracts</p>
+                <p className="text-2xl font-bold text-stone-800">
+                  {contractsLoading ? "—" : accountContracts.length}
+                </p>
+                <button
+                  onClick={() => { setTab("contracts"); }}
+                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:opacity-80"
+                >
+                  <ChevronRight size={12} /> View Contracts
+                </button>
+              </div>
+            )}
             <div className="bg-white rounded-xl border border-[#E8E6E2] p-4">
-              <p className="text-xs text-stone-400 mb-1">Leads</p>
-              <p className="text-2xl font-bold text-stone-800">
-                {leadsLoading ? "—" : accountLeads.length}
-              </p>
-              <button
-                onClick={() => { setTab("leads"); }}
-                className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:opacity-80"
-              >
-                <ChevronRight size={12} /> View Leads
-              </button>
-            </div>
-            <div className="bg-white rounded-xl border border-[#E8E6E2] p-4">
-              <p className="text-xs text-stone-400 mb-1">Contracts</p>
-              <p className="text-2xl font-bold text-stone-800">
-                {contractsLoading ? "—" : accountContracts.length}
-              </p>
-              <button
-                onClick={() => { setTab("contracts"); }}
-                className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:opacity-80"
-              >
-                <ChevronRight size={12} /> View Contracts
-              </button>
-            </div>
-            <div className="bg-white rounded-xl border border-[#E8E6E2] p-4 space-y-2">
-              <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">Quick Info</p>
-              {account?.accountType && (
-                <div>
-                  <p className="text-[11px] text-stone-400">Type</p>
-                  <p className="text-sm text-stone-700 font-medium">{account.accountType}</p>
-                </div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">Quick Info</p>
+                {account?.accountType && (() => {
+                  const badge = getAccountTypeBadge(account.accountType);
+                  return (
+                    <span
+                      className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: badge.bg, color: badge.text }}
+                    >
+                      {badge.label}
+                    </span>
+                  );
+                })()}
+              </div>
+
+              {/* Student */}
+              {account?.accountType === "Student" && (
+                <>
+                  <QI label="Nationality">{account.primaryContact?.nationality || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Date of Birth">{account.primaryContact?.dob ? new Date(account.primaryContact.dob).toLocaleDateString() : <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Email">{account.primaryContact?.email || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Phone">{account.primaryContact?.mobile || <span className="text-[#A8A29E]">—</span>}</QI>
+                  {account.primaryContact?.snsType && (
+                    <QI label="SNS">{account.primaryContact.snsType}{account.primaryContact.snsId ? ` · ${account.primaryContact.snsId}` : ""}</QI>
+                  )}
+                  <QI label="Owner">{account.ownerId ? <span className="text-[#A8A29E] text-xs">{account.ownerId.slice(0, 8)}…</span> : <span className="text-[#A8A29E]">—</span>}</QI>
+                </>
               )}
-              {account?.accountCategory && (
-                <div>
-                  <p className="text-[11px] text-stone-400">Category</p>
-                  <p className="text-sm text-stone-700">{account.accountCategory}</p>
-                </div>
+
+              {/* School */}
+              {account?.accountType === "School" && (
+                <>
+                  <QI label="Country">{account.country || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Website">
+                    {account.website
+                      ? <a href={account.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[#F5821F] hover:underline" style={{fontSize:13}}><ExternalLink size={11}/>{account.website.replace(/^https?:\/\//, "")}</a>
+                      : <span className="text-[#A8A29E]">—</span>}
+                  </QI>
+                  <QI label="ABN">{account.abn || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Phone">{account.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Email">{account.email || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account.ownerId?.slice(0,8)}…</span></QI>
+                </>
               )}
-              {account?.country && (
-                <div>
-                  <p className="text-[11px] text-stone-400">Country</p>
-                  <p className="text-sm text-stone-700">{account.country}</p>
-                </div>
+
+              {/* Sub_Agency / Super_Agency */}
+              {(account?.accountType === "Sub_Agency" || account?.accountType === "Super_Agency") && (
+                <>
+                  <QI label="Country">{account.country || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Website">
+                    {account.website
+                      ? <a href={account.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[#F5821F] hover:underline" style={{fontSize:13}}><ExternalLink size={11}/>{account.website.replace(/^https?:\/\//, "")}</a>
+                      : <span className="text-[#A8A29E]">—</span>}
+                  </QI>
+                  <QI label="ABN">{account.abn || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Phone">{account.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Email">{account.email || <span className="text-[#A8A29E]">—</span>}</QI>
+                  {account?.accountType === "Super_Agency" && (
+                    <QI label="Parent Account">
+                      {account.parentAccount
+                        ? <button className="text-[#F5821F] hover:underline text-[13px]" onClick={() => navigate(`/admin/crm/accounts/${account.parentAccount!.id}`)}>{account.parentAccount.name}</button>
+                        : <span className="text-[#A8A29E]">—</span>}
+                    </QI>
+                  )}
+                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account.ownerId?.slice(0,8)}…</span></QI>
+                </>
+              )}
+
+              {/* Supplier */}
+              {account?.accountType === "Supplier" && (
+                <>
+                  <QI label="Category">{account.accountCategory || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Country">{account.country || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="ABN">{account.abn || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Phone">{account.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Email">{account.email || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Website">
+                    {account.website
+                      ? <a href={account.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[#F5821F] hover:underline" style={{fontSize:13}}><ExternalLink size={11}/>{account.website.replace(/^https?:\/\//, "")}</a>
+                      : <span className="text-[#A8A29E]">—</span>}
+                  </QI>
+                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account.ownerId?.slice(0,8)}…</span></QI>
+                </>
+              )}
+
+              {/* Staff */}
+              {account?.accountType === "Staff" && (
+                <>
+                  <QI label="Email">{account.email || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Phone">{account.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account.ownerId?.slice(0,8)}…</span></QI>
+                </>
+              )}
+
+              {/* Branch */}
+              {account?.accountType === "Branch" && (
+                <>
+                  <QI label="Parent Account">
+                    {account.parentAccount
+                      ? <button className="text-[#F5821F] hover:underline text-[13px]" onClick={() => navigate(`/admin/crm/accounts/${account.parentAccount!.id}`)}>{account.parentAccount.name}</button>
+                      : <span className="text-[#A8A29E]">—</span>}
+                  </QI>
+                  <QI label="Country">{account.country || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Address">{account.address || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Phone">{account.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account.ownerId?.slice(0,8)}…</span></QI>
+                </>
+              )}
+
+              {/* Default: Agent / Provider / Organisation / unknown */}
+              {!["Student","School","Sub_Agency","Super_Agency","Supplier","Staff","Branch"].includes(account?.accountType ?? "") && (
+                <>
+                  <QI label="Country">{account?.country || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Phone">{account?.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Email">{account?.email || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account?.ownerId?.slice(0,8)}…</span></QI>
+                </>
               )}
             </div>
           </div>
