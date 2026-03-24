@@ -111,31 +111,9 @@ export const campApplications = pgTable("camp_applications", {
 });
 
 // ── Camp Institute Management ──────────────────────────────────────────────
-// Note: instituteAccountId references future 'accounts' table — plain uuid
-export const campInstituteMgt = pgTable("camp_institute_mgt", {
-  id:                  uuid("id").primaryKey().defaultRandom(),
-  contractId:          uuid("contract_id").notNull().references(() => contracts.id),
-  campApplicationId:   uuid("camp_application_id").references(() => campApplications.id),
-  instituteAccountId:  uuid("institute_account_id"),
-  className:           varchar("class_name", { length: 255 }),
-  classLevel:          varchar("class_level", { length: 100 }),
-  teacherName:         varchar("teacher_name", { length: 200 }),
-  classSchedule:       jsonb("class_schedule"),
-  attendanceRecord:    jsonb("attendance_record"),
-  teacherComment:      text("teacher_comment"),
-  certificateIssued:   boolean("certificate_issued").notNull().default(false),
-  certificateIssuedAt: timestamp("certificate_issued_at"),
-  status:              varchar("status", { length: 50 }).notNull().default("pending"),
-  notes:               text("notes"),
-  retailPrice:         decimal("retail_price",  { precision: 12, scale: 2 }),
-  partnerCost:         decimal("partner_cost",  { precision: 12, scale: 2 }),
-  arStatus:            varchar("ar_status",     { length: 20 }).default("scheduled"),
-  apStatus:            varchar("ap_status",     { length: 20 }).default("pending"),
-  coaArCode:           varchar("coa_ar_code",   { length: 10 }),
-  coaApCode:           varchar("coa_ap_code",   { length: 10 }),
-  createdAt:           timestamp("created_at").notNull().defaultNow(),
-  updatedAt:           timestamp("updated_at").notNull().defaultNow(),
-});
+// ⚠️  Phase 2 Migration: camp_institute_mgt was DROPPED on 2026-03-25.
+//     Data migrated to study_abroad_mgt with program_context = 'camp'.
+//     Use studyAbroadMgt (services.ts) with programContext filter instead.
 
 // ── Camp Tour Management ───────────────────────────────────────────────────
 // Note: tourProviderAccountId references future 'accounts' table — plain uuid

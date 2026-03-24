@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { campInstituteMgt, campTourMgt, campApplications } from "@workspace/db/schema";
+import { studyAbroadMgt, campTourMgt, campApplications } from "@workspace/db/schema";
 import { contracts } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
@@ -9,13 +9,14 @@ import { requireRole } from "../middleware/requireRole.js";
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
 
-// ─── INSTITUTE ───────────────────────────────────────────────────────────────
+// ─── INSTITUTE (Phase 2: now backed by study_abroad_mgt with program_context='camp') ───
 
 router.get("/camp-services/institutes", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { contractId } = req.query as Record<string, string>;
-    const where = contractId ? eq(campInstituteMgt.contractId, contractId) : undefined;
-    const rows = await db.select().from(campInstituteMgt).where(where);
+    const conditions = [eq(studyAbroadMgt.programContext, "camp")];
+    if (contractId) conditions.push(eq(studyAbroadMgt.contractId, contractId));
+    const rows = await db.select().from(studyAbroadMgt).where(and(...conditions));
     return res.json({ data: rows });
   } catch (err) {
     console.error("[GET /api/camp-services/institutes]", err);
@@ -25,20 +26,18 @@ router.get("/camp-services/institutes", authenticate, requireRole(...ADMIN_ROLES
 
 router.get("/camp-services/institutes/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [row] = await db.select().from(campInstituteMgt).where(eq(campInstituteMgt.id, req.params.id)).limit(1);
+    const [row] = await db
+      .select()
+      .from(studyAbroadMgt)
+      .where(and(eq(studyAbroadMgt.id, req.params.id), eq(studyAbroadMgt.programContext, "camp")))
+      .limit(1);
     if (!row) return res.status(404).json({ error: "Not found" });
 
     const [contract] = await db
       .select({ contractNumber: contracts.contractNumber, status: contracts.status, currency: contracts.currency, studentName: contracts.studentName })
       .from(contracts).where(eq(contracts.id, row.contractId)).limit(1);
 
-    let application = null;
-    if (row.campApplicationId) {
-      const [app] = await db.select().from(campApplications).where(eq(campApplications.id, row.campApplicationId)).limit(1);
-      application = app ?? null;
-    }
-
-    return res.json({ ...row, contract: contract ?? null, application });
+    return res.json({ ...row, contract: contract ?? null });
   } catch (err) {
     console.error("[GET /api/camp-services/institutes/:id]", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -47,21 +46,31 @@ router.get("/camp-services/institutes/:id", authenticate, requireRole(...ADMIN_R
 
 router.post("/camp-services/institutes", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { contractId, campApplicationId, className, classLevel, teacherName, status, notes, retailPrice, partnerCost, coaArCode, coaApCode } = req.body;
+    const {
+      contractId, instituteAccountId, programName, programType,
+      programStartDate, programEndDate, weeklyHours, classSizeMax,
+      ageGroup, levelAssessmentRequired, levelAssessmentDate,
+      assignedClass, partnerCost, status, notes,
+    } = req.body;
     if (!contractId) return res.status(400).json({ error: "contractId is required" });
 
-    const [row] = await db.insert(campInstituteMgt).values({
+    const [row] = await db.insert(studyAbroadMgt).values({
       contractId,
-      campApplicationId:  campApplicationId ?? null,
-      className:          className ?? null,
-      classLevel:         classLevel ?? null,
-      teacherName:        teacherName ?? null,
-      status:             status ?? "pending",
-      notes:              notes ?? null,
-      retailPrice:        retailPrice ? String(retailPrice) : null,
-      partnerCost:        partnerCost ? String(partnerCost) : null,
-      coaArCode:          coaArCode ?? "3500",
-      coaApCode:          coaApCode ?? "4700",
+      programContext:          "camp",
+      instituteAccountId:      instituteAccountId ?? null,
+      programName:             programName ?? null,
+      programType:             programType ?? null,
+      programStartDate:        programStartDate ?? null,
+      programEndDate:          programEndDate ?? null,
+      weeklyHours:             weeklyHours ? Number(weeklyHours) : null,
+      classSizeMax:            classSizeMax ? Number(classSizeMax) : null,
+      ageGroup:                ageGroup ?? null,
+      levelAssessmentRequired: levelAssessmentRequired ?? false,
+      levelAssessmentDate:     levelAssessmentDate ?? null,
+      assignedClass:           assignedClass ?? null,
+      partnerCost:             partnerCost ? String(partnerCost) : null,
+      status:                  status ?? "pending",
+      notes:                   notes ?? null,
     }).returning();
 
     return res.status(201).json(row);
@@ -73,24 +82,32 @@ router.post("/camp-services/institutes", authenticate, requireRole(...ADMIN_ROLE
 
 router.patch("/camp-services/institutes/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [existing] = await db.select({ id: campInstituteMgt.id }).from(campInstituteMgt).where(eq(campInstituteMgt.id, req.params.id)).limit(1);
+    const [existing] = await db
+      .select({ id: studyAbroadMgt.id })
+      .from(studyAbroadMgt)
+      .where(and(eq(studyAbroadMgt.id, req.params.id), eq(studyAbroadMgt.programContext, "camp")))
+      .limit(1);
     if (!existing) return res.status(404).json({ error: "Not found" });
 
     const allowedFields = [
-      "className", "classLevel", "teacherName", "teacherComment",
-      "certificateIssued", "certificateIssuedAt",
-      "status", "notes", "retailPrice", "partnerCost",
-      "arStatus", "apStatus", "coaArCode", "coaApCode",
-      "instituteAccountId",
+      "instituteAccountId", "programName", "programType",
+      "programStartDate", "programEndDate", "weeklyHours", "classSizeMax",
+      "ageGroup", "levelAssessmentRequired", "levelAssessmentDate",
+      "assignedClass", "partnerCost", "status", "notes",
     ];
     const patch: Record<string, any> = { updatedAt: new Date() };
     for (const key of allowedFields) {
       if (req.body[key] !== undefined) patch[key] = req.body[key];
     }
-    if (patch.retailPrice !== undefined) patch.retailPrice = String(patch.retailPrice);
     if (patch.partnerCost !== undefined) patch.partnerCost = String(patch.partnerCost);
+    if (patch.weeklyHours !== undefined) patch.weeklyHours = Number(patch.weeklyHours);
+    if (patch.classSizeMax !== undefined) patch.classSizeMax = Number(patch.classSizeMax);
 
-    const [updated] = await db.update(campInstituteMgt).set(patch).where(eq(campInstituteMgt.id, req.params.id)).returning();
+    const [updated] = await db
+      .update(studyAbroadMgt)
+      .set(patch)
+      .where(and(eq(studyAbroadMgt.id, req.params.id), eq(studyAbroadMgt.programContext, "camp")))
+      .returning();
     return res.json(updated);
   } catch (err) {
     console.error("[PATCH /api/camp-services/institutes/:id]", err);
