@@ -445,7 +445,7 @@ router.patch("/crm/contracts/:id", authenticate, async (req, res) => {
         const accRow = r(rows)[0] as { name?: string } | undefined;
         if (accRow?.name) {
           const dateStr = new Date().toISOString().split("T")[0];
-          parts.push(sql`name = ${"CT-" + accRow.name + "-" + dateStr}`);
+          parts.push(sql`contract_number = ${"CT-" + accRow.name + "-" + dateStr}`);
         }
       }
     }
