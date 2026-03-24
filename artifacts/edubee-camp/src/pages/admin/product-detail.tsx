@@ -20,28 +20,30 @@ import { format } from "date-fns";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const CURRENCIES = ["AUD", "USD", "NZD", "GBP", "EUR", "SGD", "CAD"];
+const NONE = "__none__";
+
 const INSTALLMENTS = [
-  { value: "", label: "— None —" },
+  { value: NONE, label: "— None —" },
   { value: "Weekly", label: "Weekly" },
   { value: "Quarterly", label: "Quarterly" },
   { value: "Half Yearly", label: "Half Yearly" },
   { value: "Annually", label: "Annually" },
 ];
 const PAYMENT_TERMS = [
-  { value: "", label: "— None —" },
+  { value: NONE, label: "— None —" },
   { value: "Once", label: "Once" },
   { value: "Multiple Times", label: "Multiple Times" },
   { value: "Monthly", label: "Monthly" },
 ];
 const PRIORITIES = [
-  { value: "", label: "— None —" },
+  { value: NONE, label: "— None —" },
   { value: "1", label: "Low" },
   { value: "2", label: "Normal" },
   { value: "3", label: "High" },
   { value: "4", label: "Featured" },
 ];
 const GRADES = [
-  { value: "", label: "— None —" },
+  { value: NONE, label: "— None —" },
   { value: "Beginner", label: "Beginner" },
   { value: "Elementary", label: "Elementary" },
   { value: "Intermediate", label: "Intermediate" },
@@ -109,8 +111,10 @@ function SelectField({
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
 }) {
+  const currentVal = (value === "" || value == null) ? NONE : value;
+  const handleChange = (v: string) => onChange(v === NONE ? "" : v);
   return (
-    <Select value={value || ""} onValueChange={onChange}>
+    <Select value={currentVal} onValueChange={handleChange}>
       <SelectTrigger className="h-10 border-[#E8E6E2] text-sm focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]">
         <SelectValue placeholder="Select…" />
       </SelectTrigger>
