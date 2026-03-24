@@ -1,15 +1,33 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
-import { Search, Car, Clock, MapPin, User, CheckCircle2, X, Upload } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isToday } from "date-fns";
+import { Car, Clock, MapPin, User, ChevronRight } from "lucide-react";
+import { ListToolbar } from "@/components/ui/list-toolbar";
+import { ListPagination } from "@/components/ui/list-pagination";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const PAGE_SIZE = 15;
+const STATUSES = ["pending", "driver_assigned", "en_route", "completed", "cancelled"];
+
+const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
+  pending:         { bg: "#F4F3F1", text: "#57534E" },
+  driver_assigned: { bg: "#FEF9C3", text: "#CA8A04" },
+  en_route:        { bg: "#FEF0E3", text: "#F5821F" },
+  completed:       { bg: "#DCFCE7", text: "#16A34A" },
+  cancelled:       { bg: "#FEF2F2", text: "#DC2626" },
+};
+
+function StatusBadge({ status }: { status?: string | null }) {
+  const s = status ?? "pending";
+  const style = STATUS_STYLE[s] ?? { bg: "#F4F3F1", text: "#57534E" };
+  return (
+    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ background: style.bg, color: style.text }}>
+      {s.replace(/_/g, " ")}
+    </span>
+  );
+}
 
 interface PickupRow {
   id: string;
@@ -21,194 +39,60 @@ interface PickupRow {
   toLocation?: string | null;
   pickupDatetime?: string | null;
   vehicleInfo?: string | null;
-  driverNotes?: string | null;
   driverName?: string | null;
   driverContact?: string | null;
   status?: string | null;
 }
 
-function fmtDatetime(d: string | null | undefined): { date: string; time: string } {
+function fmtDatetime(d?: string | null): { date: string; time: string } {
   if (!d) return { date: "—", time: "—" };
   try {
     const dt = parseISO(d);
-    return { date: format(dt, "MMM d"), time: format(dt, "h:mm a") };
+    return { date: format(dt, "MMM d, yyyy"), time: format(dt, "h:mm a") };
   } catch { return { date: d, time: "" }; }
 }
 
-const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
-  pending:         { bg: "#F4F3F1", text: "#57534E" },
-  driver_assigned: { bg: "#FEF9C3", text: "#CA8A04" },
-  en_route:        { bg: "#FEF0E3", text: "#F5821F" },
-  completed:       { bg: "#DCFCE7", text: "#16A34A" },
-  cancelled:       { bg: "#FEF2F2", text: "#DC2626" },
-};
-
-// ─── Assign Driver Modal ──────────────────────────────────────────────────────
-function AssignDriverModal({
-  pickupId,
-  existingVehicle,
-  onClose,
-}: {
-  pickupId: string;
-  existingVehicle?: string | null;
-  onClose: () => void;
-}) {
-  const [driverName,    setDriverName]    = useState("");
-  const [driverContact, setDriverContact] = useState("");
-  const [vehicleInfo,   setVehicleInfo]   = useState(existingVehicle ?? "");
-  const { toast } = useToast();
-  const qc = useQueryClient();
-
-  const assignMutation = useMutation({
-    mutationFn: () =>
-      axios.patch(`${BASE}/api/services/pickup/${pickupId}/assign`, {
-        driverName, driverContact, vehicleInfo,
-      }).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["pickup"] });
-      qc.invalidateQueries({ queryKey: ["pickup-today"] });
-      toast({ title: "Driver assigned successfully" });
-      onClose();
-    },
-    onError: () => toast({ title: "Failed to assign driver", variant: "destructive" }),
-  });
-
+// ─── Today's Pickups Banner ───────────────────────────────────────────────────
+function TodayBanner({ rows, onNavigate }: { rows: PickupRow[]; onNavigate: (id: string) => void }) {
+  if (rows.length === 0) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Car size={16} className="text-[#F5821F]" />
-            <h3 className="text-base font-bold text-stone-800">Assign Driver</h3>
-          </div>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-700"><X size={16} /></button>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Driver Name</Label>
-            <Input value={driverName} onChange={e => setDriverName(e.target.value)} className="h-9 text-sm" placeholder="Full name" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Driver Contact</Label>
-            <Input value={driverContact} onChange={e => setDriverContact(e.target.value)} className="h-9 text-sm" placeholder="Phone number" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Vehicle Info</Label>
-            <Input value={vehicleInfo} onChange={e => setVehicleInfo(e.target.value)} className="h-9 text-sm" placeholder="e.g. Toyota Hiace — ABC123" />
-          </div>
-        </div>
-        <div className="flex gap-3 pt-1">
-          <Button
-            onClick={() => assignMutation.mutate()}
-            disabled={!driverName || assignMutation.isPending}
-            className="flex-1 text-white" style={{ background: "#F5821F" }}
-          >
-            {assignMutation.isPending ? "Saving…" : "Assign Driver"}
-          </Button>
-          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-        </div>
+    <div className="rounded-xl p-4 space-y-2" style={{ background: "#FEF0E3", border: "1.5px solid rgba(245,130,31,0.25)" }}>
+      <div className="flex items-center gap-2 mb-2">
+        <Car className="w-4 h-4" style={{ color: "#F5821F" }} />
+        <h2 className="text-sm font-bold" style={{ color: "#C2410C" }}>
+          Today's Pickups — {rows.length}
+        </h2>
       </div>
-    </div>
-  );
-}
-
-// ─── Mark Complete Modal ──────────────────────────────────────────────────────
-function CompleteModal({ pickupId, onClose }: { pickupId: string; onClose: () => void }) {
-  const { toast } = useToast();
-  const qc = useQueryClient();
-
-  const completeMutation = useMutation({
-    mutationFn: () =>
-      axios.patch(`${BASE}/api/services/pickup/${pickupId}`, { status: "completed" }).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["pickup"] });
-      qc.invalidateQueries({ queryKey: ["pickup-today"] });
-      toast({ title: "Pickup marked as completed" });
-      onClose();
-    },
-    onError: () => toast({ title: "Failed to update", variant: "destructive" }),
-  });
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 size={16} className="text-[#16A34A]" />
-          <h3 className="text-base font-bold text-stone-800">Mark Complete</h3>
-        </div>
-        <p className="text-sm text-stone-600">
-          Confirm this pickup has been completed. This will update the status to <strong>Completed</strong>.
-        </p>
-        <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed border-stone-300 text-stone-400 text-sm cursor-not-allowed select-none">
-          <Upload size={14} />
-          <span>Completion photo upload (coming soon)</span>
-        </div>
-        <div className="flex gap-3 pt-1">
-          <Button
-            onClick={() => completeMutation.mutate()}
-            disabled={completeMutation.isPending}
-            className="flex-1 text-white" style={{ background: "#16A34A" }}
-          >
-            {completeMutation.isPending ? "Saving…" : "Mark Complete"}
-          </Button>
-          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Today Card ───────────────────────────────────────────────────────────────
-function TodayCard({
-  row,
-  onAssign,
-  onComplete,
-}: {
-  row: PickupRow;
-  onAssign: () => void;
-  onComplete: () => void;
-}) {
-  const { time } = fmtDatetime(row.pickupDatetime);
-  const badge = STATUS_STYLE[row.status ?? "pending"] ?? STATUS_STYLE.pending;
-
-  return (
-    <div className="bg-white rounded-xl border border-[#F5821F]/30 p-4 flex items-center gap-4 shadow-sm">
-      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: "#FEF0E3", color: "#F5821F" }}>
-        <Car size={18} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="font-semibold text-stone-800 text-sm">{row.studentName ?? "—"}</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: badge.bg, color: badge.text }}>
-            {row.status?.replace(/_/g, " ") ?? "—"}
-          </span>
-        </div>
-        <div className="flex items-center gap-3 text-xs text-stone-500 flex-wrap">
-          <span className="flex items-center gap-1"><Clock size={10} />{time}</span>
-          <span className="flex items-center gap-1"><MapPin size={10} />{row.fromLocation ?? "—"} → {row.toLocation ?? "—"}</span>
-          {row.driverName && (
-            <span className="flex items-center gap-1"><User size={10} />{row.driverName}</span>
-          )}
-        </div>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        {row.status !== "completed" && row.status !== "cancelled" && (
-          <>
-            {(!row.driverName || row.status === "pending") && (
-              <button onClick={onAssign}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg text-white" style={{ background: "#F5821F" }}>
-                Assign Driver
-              </button>
-            )}
-            {row.driverName && row.status !== "completed" && (
-              <button onClick={onComplete}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg text-white" style={{ background: "#16A34A" }}>
-                Complete
-              </button>
-            )}
-          </>
-        )}
-        {row.status === "completed" && <CheckCircle2 size={18} className="text-[#16A34A]" />}
+      <div className="space-y-2">
+        {rows.map(row => {
+          const { time } = fmtDatetime(row.pickupDatetime);
+          const badge = STATUS_STYLE[row.status ?? "pending"] ?? STATUS_STYLE.pending;
+          return (
+            <button
+              key={row.id}
+              className="w-full text-left bg-white rounded-xl border border-[#F5821F]/20 p-3.5 flex items-center gap-4 shadow-sm hover:bg-[#FEF9F5] transition-colors"
+              onClick={() => onNavigate(row.id)}
+            >
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "#FEF0E3", color: "#F5821F" }}>
+                <Car className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-semibold text-[#1C1917] text-sm">{row.studentName ?? "—"}</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: badge.bg, color: badge.text }}>
+                    {(row.status ?? "pending").replace(/_/g, " ")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-[#57534E] flex-wrap">
+                  <span className="flex items-center gap-1"><Clock className="w-2.5 h-2.5" />{time}</span>
+                  <span className="flex items-center gap-1"><MapPin className="w-2.5 h-2.5" />{row.fromLocation ?? "—"} → {row.toLocation ?? "—"}</span>
+                  {row.driverName && <span className="flex items-center gap-1"><User className="w-2.5 h-2.5" />{row.driverName}</span>}
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#A8A29E] shrink-0" />
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -216,159 +100,104 @@ function TodayCard({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PickupManagement() {
-  const [search, setSearch]               = useState("");
-  const [status, setStatus]               = useState("");
-  const [page, setPage]                   = useState(1);
-  const [assignId, setAssignId]           = useState<string | null>(null);
-  const [assignVehicle, setAssignVehicle] = useState<string | null>(null);
-  const [completeId, setCompleteId]       = useState<string | null>(null);
+  const [, navigate] = useLocation();
+  const [search, setSearch] = useState("");
+  const [activeStatus, setActiveStatus] = useState("all");
+  const [page, setPage] = useState(1);
 
   const { data: todayData } = useQuery({
     queryKey: ["pickup-today"],
     queryFn: () => axios.get(`${BASE}/api/services/pickup?today=true&limit=50`).then(r => r.data),
   });
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["pickup", search, status, page],
+  const { data: resp, isLoading } = useQuery({
+    queryKey: ["pickup", { search, status: activeStatus, page }],
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: "20" });
+      const p = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
       if (search) p.set("search", search);
-      if (status) p.set("status", status);
+      if (activeStatus !== "all") p.set("status", activeStatus);
       return axios.get(`${BASE}/api/services/pickup?${p}`).then(r => r.data);
     },
   });
 
   const todayRows: PickupRow[] = todayData?.data ?? [];
-  const rows: PickupRow[]      = data?.data ?? [];
-  const totalPages             = data?.meta?.totalPages ?? 1;
+  const rows: PickupRow[]      = resp?.data ?? [];
+  const total: number          = resp?.meta?.total ?? rows.length;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-stone-800">Pickup Management</h1>
-        <p className="text-sm text-stone-500 mt-1">Airport pickups and student transfers</p>
-      </div>
+    <div className="space-y-4">
+      <ListToolbar
+        search={search}
+        onSearch={v => { setSearch(v); setPage(1); }}
+        statuses={STATUSES}
+        activeStatus={activeStatus}
+        onStatusChange={s => { setActiveStatus(s); setPage(1); }}
+        total={total}
+      />
 
-      {/* Today's Pickups banner */}
-      {todayRows.length > 0 && (
-        <div className="rounded-xl p-5 space-y-3" style={{ background: "#FEF0E3", border: "1.5px solid #F5821F40" }}>
-          <div className="flex items-center gap-2 mb-1">
-            <Car size={16} style={{ color: "#F5821F" }} />
-            <h2 className="text-sm font-bold" style={{ color: "#C2410C" }}>
-              Today's Pickups — {todayRows.length}
-            </h2>
-          </div>
-          <div className="space-y-2">
-            {todayRows.map(row => (
-              <TodayCard
-                key={row.id}
-                row={row}
-                onAssign={() => { setAssignId(row.id); setAssignVehicle(row.vehicleInfo ?? null); }}
-                onComplete={() => setCompleteId(row.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      <TodayBanner rows={todayRows} onNavigate={id => navigate(`${BASE}/admin/services/pickup/${id}`)} />
 
-      {/* Filters */}
-      <div className="flex items-center gap-3">
-        <div className="relative w-72">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-          <Input
-            placeholder="Search student, contract…"
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-            className="h-9 text-sm pl-9"
-          />
-        </div>
-        <select
-          value={status}
-          onChange={e => { setStatus(e.target.value); setPage(1); }}
-          className="h-9 text-sm border border-stone-200 rounded-lg px-3 bg-white text-stone-700"
-        >
-          <option value="">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="driver_assigned">Driver Assigned</option>
-          <option value="en_route">En Route</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-      </div>
-
-      {/* Table */}
-      <div className="rounded-xl border border-stone-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-stone-50 border-b border-stone-200">
-            <tr>
-              {["Student", "Type", "Pickup Time", "From → To", "Driver", "Vehicle", "Status", "Actions"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
+      <div className="bg-card rounded-xl border border-border overflow-x-auto">
+        <table className="w-full min-w-[820px] text-sm">
+          <thead>
+            <tr className="border-b border-border bg-muted/30">
+              {["Contract #", "Student", "Type", "Pickup Time", "From → To", "Driver", "Vehicle", "Status", ""].map(h => (
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-100">
-            {isLoading && (
-              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
-            )}
-            {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
-            )}
-            {rows.map(row => {
+          <tbody className="divide-y divide-border">
+            {isLoading ? (
+              [...Array(PAGE_SIZE)].map((_, i) => (
+                <tr key={i}>
+                  {[...Array(9)].map((_, j) => (
+                    <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
+                  ))}
+                </tr>
+              ))
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                  <Car className="w-8 h-8 mx-auto mb-3 opacity-30" />
+                  No pickup records found
+                </td>
+              </tr>
+            ) : rows.map(row => {
               const { date, time } = fmtDatetime(row.pickupDatetime);
-              const badge = STATUS_STYLE[row.status ?? "pending"] ?? STATUS_STYLE.pending;
               const todayFlag = row.pickupDatetime ? isToday(parseISO(row.pickupDatetime)) : false;
-
               return (
-                <tr key={row.id} className={`hover:bg-stone-50 transition-colors ${todayFlag ? "bg-[#FEF9F5]" : ""}`}>
-                  <td className="px-4 py-3 font-medium text-stone-800">
+                <tr
+                  key={row.id}
+                  className={`hover:bg-[#FEF0E3] transition-colors cursor-pointer ${todayFlag ? "bg-[#FEF9F5]" : ""}`}
+                  onClick={() => navigate(`${BASE}/admin/services/pickup/${row.id}`)}
+                >
+                  <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F5821F]">
+                    {row.contractNumber ?? row.contractId?.slice(0, 8) ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-foreground">
                     {row.studentName ?? "—"}
                     {todayFlag && (
                       <span className="ml-2 text-[10px] font-bold text-[#F5821F] bg-[#FEF0E3] px-1.5 py-0.5 rounded-full">TODAY</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-stone-500 capitalize">{row.pickupType?.replace(/_/g, " ") ?? "—"}</td>
-                  <td className="px-4 py-3 text-xs text-stone-700 whitespace-nowrap">
-                    <div className="font-medium">{date}</div>
-                    <div className="text-stone-400">{time}</div>
+                  <td className="px-4 py-3 text-xs text-muted-foreground capitalize">
+                    {row.pickupType?.replace(/_/g, " ") ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-xs text-stone-600 max-w-[180px]">
+                  <td className="px-4 py-3 text-xs whitespace-nowrap">
+                    <div className="font-medium text-foreground">{date}</div>
+                    <div className="text-muted-foreground">{time}</div>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground max-w-[180px]">
                     <span className="truncate block">{row.fromLocation ?? "—"}</span>
-                    <span className="truncate block text-stone-400">→ {row.toLocation ?? "—"}</span>
+                    <span className="truncate block text-muted-foreground/60">→ {row.toLocation ?? "—"}</span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-stone-600">
-                    {row.driverName ?? <span className="text-stone-300">Unassigned</span>}
-                    {row.driverContact && <div className="text-stone-400">{row.driverContact}</div>}
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {row.driverName ?? <span className="text-muted-foreground/40 italic">Unassigned</span>}
+                    {row.driverContact && <div className="text-muted-foreground/60">{row.driverContact}</div>}
                   </td>
-                  <td className="px-4 py-3 text-xs text-stone-500">{row.vehicleInfo ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium"
-                      style={{ background: badge.bg, color: badge.text }}>
-                      {row.status?.replace(/_/g, " ") ?? "—"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {row.status !== "completed" && row.status !== "cancelled" && (
-                        <>
-                          <button
-                            onClick={() => { setAssignId(row.id); setAssignVehicle(row.vehicleInfo ?? null); }}
-                            className="text-xs font-medium text-[#F5821F] hover:underline"
-                          >
-                            Assign
-                          </button>
-                          {row.driverName && (
-                            <button
-                              onClick={() => setCompleteId(row.id)}
-                              className="text-xs font-medium text-[#16A34A] hover:underline"
-                            >
-                              Complete
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.vehicleInfo ?? "—"}</td>
+                  <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
+                  <td className="px-4 py-3"><ChevronRight className="w-4 h-4 text-muted-foreground" /></td>
                 </tr>
               );
             })}
@@ -376,31 +205,7 @@ export default function PickupManagement() {
         </table>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-end gap-2">
-          <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-            className="px-3 py-1.5 text-xs border border-stone-200 rounded-lg hover:bg-stone-50 disabled:opacity-40">Prev</button>
-          <span className="text-sm text-stone-500">Page {page} / {totalPages}</span>
-          <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
-            className="px-3 py-1.5 text-xs border border-stone-200 rounded-lg hover:bg-stone-50 disabled:opacity-40">Next</button>
-        </div>
-      )}
-
-      {/* Modals */}
-      {assignId && (
-        <AssignDriverModal
-          pickupId={assignId}
-          existingVehicle={assignVehicle}
-          onClose={() => { setAssignId(null); setAssignVehicle(null); }}
-        />
-      )}
-      {completeId && (
-        <CompleteModal
-          pickupId={completeId}
-          onClose={() => setCompleteId(null)}
-        />
-      )}
+      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
     </div>
   );
 }

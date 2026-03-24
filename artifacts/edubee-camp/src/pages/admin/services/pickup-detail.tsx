@@ -7,26 +7,38 @@ import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NotePanel } from "@/components/shared/NotePanel";
 import { ArTimeline } from "@/components/shared/ArTimeline";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const STATUSES = ["scheduled", "en_route", "completed", "cancelled", "no_show"];
+
+const STATUSES = ["pending", "driver_assigned", "en_route", "completed", "cancelled"];
+const PICKUP_TYPES = ["airport_pickup", "airport_dropoff", "hotel_to_school", "school_to_hotel", "custom"];
+
 const STATUS_COLORS: Record<string, string> = {
-  scheduled: "bg-blue-100 text-blue-700", en_route: "bg-orange-100 text-orange-700",
-  completed: "bg-green-100 text-green-700", cancelled: "bg-red-100 text-red-700",
-  no_show: "bg-gray-100 text-gray-600",
+  pending:         "bg-[#F4F3F1] text-[#57534E]",
+  driver_assigned: "bg-[#FEF9C3] text-[#CA8A04]",
+  en_route:        "bg-[#FEF0E3] text-[#F5821F]",
+  completed:       "bg-[#DCFCE7] text-[#16A34A]",
+  cancelled:       "bg-[#FEF2F2] text-[#DC2626]",
 };
+
+const TABS = [
+  { key: "overview",   label: "Overview" },
+  { key: "documents",  label: "Documents" },
+  { key: "notes",      label: "Notes" },
+  { key: "accounting", label: "Accounting" },
+];
 
 export default function PickupMgtDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [tab, setTab] = useState("details");
+  const [activeTab, setActiveTab] = useState("overview");
 
   const { data, isLoading } = useQuery({
     queryKey: ["pickup-detail", id],
@@ -34,13 +46,15 @@ export default function PickupMgtDetail() {
   });
 
   const rec = data?.data ?? data;
-  const canEdit = !["partner_institute", "partner_hotel", "partner_tour"].includes(user?.role ?? "");
+  const canEdit = !["partner_hotel", "partner_tour"].includes(user?.role ?? "");
 
   const updateRec = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
       axios.put(`${BASE}/api/services/pickup/${id}`, payload).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pickup-detail", id] });
+      qc.invalidateQueries({ queryKey: ["pickup"] });
+      qc.invalidateQueries({ queryKey: ["pickup-today"] });
       toast({ title: "Pickup record updated" });
     },
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
@@ -48,88 +62,157 @@ export default function PickupMgtDetail() {
 
   const { isEditing, isSaving, startEdit, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
     initialData: rec ?? {},
-    onSave: async (data) => { await updateRec.mutateAsync(data); },
+    onSave: async (d) => { await updateRec.mutateAsync(d); },
   });
 
-  if (isLoading) return <div className="p-6 space-y-4">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12" />)}</div>;
+  const fmtDt = (d?: string | null) => {
+    if (!d) return "—";
+    try { return format(parseISO(d), "PPp"); } catch { return d; }
+  };
+
+  if (isLoading) {
+    return <div className="p-6 space-y-4">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12" />)}</div>;
+  }
   if (!rec) return <div className="p-6 text-muted-foreground">Record not found.</div>;
 
   return (
     <DetailPageLayout
       title={rec.studentName ?? "Pickup Record"}
-      subtitle={rec.contractNumber ?? ""}
-      badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[rec.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{(rec.status ?? "—").replace(/_/g, " ")}</span>}
+      subtitle={rec.contractNumber ? `Contract ${rec.contractNumber}` : (rec.pickupType?.replace(/_/g, " ") ?? "Airport Transfer")}
+      badge={
+        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[rec.status ?? ""] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
+          {(rec.status ?? "pending").replace(/_/g, " ")}
+        </span>
+      }
       backPath="/admin/services/pickup"
       backLabel="Pickup Management"
-      canEdit={canEdit && tab === "details"}
+      canEdit={canEdit && activeTab === "overview"}
       isEditing={isEditing}
       isSaving={isSaving}
       onEdit={startEdit}
       onSave={saveEdit}
       onCancel={cancelEdit}
+      tabs={TABS}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
     >
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="accounting">Accounting</TabsTrigger>
-        </TabsList>
+      {/* ── Overview ── */}
+      {activeTab === "overview" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <DetailSection title="Transfer Details">
+            <EditableField
+              label="Status"
+              isEditing={isEditing}
+              value={(rec.status ?? "pending").replace(/_/g, " ")}
+              editChildren={
+                <Select value={getValue("status") ?? "pending"} onValueChange={v => setField("status", v)}>
+                  <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              }
+            />
+            <EditableField
+              label="Pickup Type"
+              isEditing={isEditing}
+              value={(rec.pickupType ?? "").replace(/_/g, " ")}
+              editChildren={
+                <Select value={getValue("pickupType") ?? "airport_pickup"} onValueChange={v => setField("pickupType", v)}>
+                  <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PICKUP_TYPES.map(t => <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              }
+            />
+            <DetailRow label="Pickup Date & Time" value={fmtDt(rec.pickupDatetime)} />
+            <EditableField
+              label="From Location"
+              isEditing={isEditing}
+              value={rec.fromLocation}
+              editValue={getValue("fromLocation")}
+              onEdit={v => setField("fromLocation", v)}
+            />
+            <EditableField
+              label="To Location"
+              isEditing={isEditing}
+              value={rec.toLocation}
+              editValue={getValue("toLocation")}
+              onEdit={v => setField("toLocation", v)}
+            />
+          </DetailSection>
 
-        <TabsContent value="details">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <DetailSection title="Pickup Info">
-              <EditableField label="Status" isEditing={isEditing} value={(rec.status ?? "").replace(/_/g, " ")}
-                editChildren={
-                  <Select value={getValue("status")} onValueChange={v => setField("status", v)}>
-                    <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
-                    <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
-                  </Select>
-                } />
-              <DetailRow label="Pickup Datetime" value={rec.pickupDatetime ? format(new Date(rec.pickupDatetime), "PPp") : "—"} />
-              <DetailRow label="Pickup Location" value={rec.pickupLocation} />
-              <DetailRow label="Dropoff Location" value={rec.dropoffLocation} />
-              <EditableField label="Vehicle Info" isEditing={isEditing} value={rec.vehicleInfo}
-                editValue={getValue("vehicleInfo")} onEdit={v => setField("vehicleInfo", v)} />
-            </DetailSection>
+          <DetailSection title="Student Info">
+            <DetailRow label="Student Name" value={rec.studentName} />
+            <DetailRow label="Client Email" value={rec.clientEmail} />
+            <DetailRow label="Contract #" value={rec.contractNumber} />
+          </DetailSection>
 
-            <DetailSection title="Student Info">
-              <DetailRow label="Student" value={rec.studentName} />
-              <DetailRow label="Email" value={rec.clientEmail} />
-              <DetailRow label="Contract #" value={rec.contractNumber} />
-              <DetailRow label="Flight Info" value={rec.flightInfo} />
-              <DetailRow label="Passengers" value={rec.passengerCount} />
-            </DetailSection>
+          <DetailSection title="Driver / Vehicle">
+            <EditableField
+              label="Driver Name"
+              isEditing={isEditing}
+              value={rec.driverName}
+              editValue={getValue("driverName")}
+              onEdit={v => setField("driverName", v)}
+            />
+            <EditableField
+              label="Driver Contact"
+              isEditing={isEditing}
+              value={rec.driverContact}
+              editValue={getValue("driverContact")}
+              onEdit={v => setField("driverContact", v)}
+            />
+            <EditableField
+              label="Vehicle Info"
+              isEditing={isEditing}
+              value={rec.vehicleInfo}
+              editValue={getValue("vehicleInfo")}
+              onEdit={v => setField("vehicleInfo", v)}
+            />
+          </DetailSection>
 
-            <DetailSection title="Driver Notes" className="lg:col-span-2">
-              {isEditing ? (
-                <textarea value={getValue("driverNotes") ?? ""} onChange={e => setField("driverNotes", e.target.value)}
-                  className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
-              ) : (
-                <p className="text-sm text-foreground whitespace-pre-wrap">{rec.driverNotes || <span className="text-muted-foreground/60">—</span>}</p>
-              )}
-            </DetailSection>
-          </div>
-        </TabsContent>
+          <DetailSection title="Driver Notes" className="lg:col-span-2">
+            {isEditing ? (
+              <textarea
+                value={getValue("driverNotes") ?? ""}
+                onChange={e => setField("driverNotes", e.target.value)}
+                className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#F5821F]"
+                placeholder="Notes for the driver…"
+              />
+            ) : (
+              <p className="text-sm text-foreground whitespace-pre-wrap">
+                {rec.driverNotes || <span className="text-muted-foreground/60">—</span>}
+              </p>
+            )}
+          </DetailSection>
+        </div>
+      )}
 
-        <TabsContent value="documents">
-          <EntityDocumentsTab
-            entityType="pickup_mgt"
-            entityId={id!}
-            mode="full"
-          />
-        </TabsContent>
+      {/* ── Documents ── */}
+      {activeTab === "documents" && (
+        <EntityDocumentsTab entityType="pickup_mgt" entityId={id!} mode="full" />
+      )}
 
-        <TabsContent value="accounting">
-          <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
-            <span>Click any invoice row to expand details and navigate to related records. To edit this record, switch to the <strong>Details</strong> tab.</span>
+      {/* ── Notes ── */}
+      {activeTab === "notes" && (
+        <NotePanel entityType="pickup_mgt" entityId={id!} />
+      )}
+
+      {/* ── Accounting ── */}
+      {activeTab === "accounting" && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
+            <span>Click any invoice row to expand details. To edit this record, switch to the <strong>Overview</strong> tab.</span>
           </div>
           {rec.contractId ? (
             <ArTimeline contractId={rec.contractId} showContractLink />
           ) : (
             <div className="text-center py-10 text-muted-foreground text-sm">No contract linked to this record.</div>
           )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </DetailPageLayout>
   );
 }
