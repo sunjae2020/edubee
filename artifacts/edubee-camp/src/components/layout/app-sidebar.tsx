@@ -93,20 +93,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
   if (campItems.length > 0)
     nav.push({ key: "camp", label: "Camp", catIcon: GraduationCap, items: campItems });
 
-  // ── 4.5 · Products Catalog ───────────────────────────────────────────────
-  if (isSAorAD || isCC) {
-    nav.push({
-      key: "products-catalog", label: "Products", catIcon: ShoppingBag,
-      items: [
-        { icon: Layers,     label: "Products Group", href: "/admin/product-groups" },
-        { icon: Tag,        label: "Products Type",  href: "/admin/product-types"  },
-        { icon: ShoppingBag,     label: "Products",    href: "/admin/products"     },
-        { icon: Percent,         label: "Promotion",   href: "/admin/promotions"   },
-        { icon: BadgeDollarSign, label: "Commission",  href: "/admin/commissions"  },
-      ],
-    });
-  }
-
   // ── 5 · Services ─────────────────────────────────────────────────────────
   if (isSAorAD || isCC) {
     nav.push({
@@ -118,6 +104,20 @@ function buildNav(effectiveRole: string): NavGroup[] {
         { icon: Shield,        label: "Guardian",      href: "/admin/services/guardian"      },
         { icon: FileCheck,     label: "Settlement",    href: "/admin/services/settlement"    },
         { icon: Wrench,        label: "Other Services", href: "/admin/services/other"        },
+      ],
+    });
+  }
+
+  // ── 5.5 · Products Catalog ────────────────────────────────────────────────
+  if (isSAorAD || isCC) {
+    nav.push({
+      key: "products-catalog", label: "Products", catIcon: ShoppingBag,
+      items: [
+        { icon: Layers,     label: "Products Group", href: "/admin/product-groups" },
+        { icon: Tag,        label: "Products Type",  href: "/admin/product-types"  },
+        { icon: ShoppingBag,     label: "Products",    href: "/admin/products"     },
+        { icon: Percent,         label: "Promotion",   href: "/admin/promotions"   },
+        { icon: BadgeDollarSign, label: "Commission",  href: "/admin/commissions"  },
       ],
     });
   }
