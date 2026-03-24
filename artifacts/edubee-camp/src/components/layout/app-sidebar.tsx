@@ -98,12 +98,13 @@ function buildNav(effectiveRole: string): NavGroup[] {
     nav.push({
       key: "services", label: "Services", catIcon: Briefcase,
       items: [
-        { icon: GraduationCap, label: "Study Abroad",  href: "/admin/services/study-abroad"  },
-        { icon: Building2,     label: "Accommodation", href: "/admin/services/accommodation" },
-        { icon: Briefcase,     label: "Internship",    href: "/admin/services/internship"    },
-        { icon: Shield,        label: "Guardian",      href: "/admin/services/guardian"      },
-        { icon: FileCheck,     label: "Settlement",    href: "/admin/services/settlement"    },
-        { icon: Wrench,        label: "Other Services", href: "/admin/services/other"        },
+        { icon: GraduationCap, label: "Study Abroad",      href: "/admin/services/study-abroad"  },
+        { icon: Car,           label: "Pickup / Transfer", href: "/admin/services/pickup"         },
+        { icon: Building2,     label: "Accommodation",     href: "/admin/services/accommodation"  },
+        { icon: Briefcase,     label: "Internship",        href: "/admin/services/internship"     },
+        { icon: Shield,        label: "Guardian",          href: "/admin/services/guardian"       },
+        { icon: FileCheck,     label: "Settlement",        href: "/admin/services/settlement"     },
+        { icon: Wrench,        label: "Other Services",    href: "/admin/services/other"          },
       ],
     });
   }

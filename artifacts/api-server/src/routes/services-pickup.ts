@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { pickupMgt, contracts, users } from "@workspace/db/schema";
-import { eq, and, sql, count, SQL, gte, lt, lte } from "drizzle-orm";
+import { eq, and, sql, count, SQL, gte, lt, lte, isNull, isNotNull } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -36,7 +36,7 @@ router.get(
   async (req, res) => {
     try {
       const {
-        today, this_week, status,
+        today, this_week, status, source, search,
         page = "1", limit = "20",
       } = req.query as Record<string, string>;
 
@@ -58,6 +58,17 @@ router.get(
       }
 
       if (status) conds.push(eq(pickupMgt.status, status));
+
+      // source=camp  → contracts linked to a camp application (applicationId IS NOT NULL)
+      // source=services → CRM contracts (applicationId IS NULL)
+      if (source === "camp")     conds.push(isNotNull(contracts.applicationId));
+      if (source === "services") conds.push(isNull(contracts.applicationId));
+
+      if (search) {
+        conds.push(
+          sql`(${contracts.studentName} ILIKE ${'%' + search + '%'} OR ${contracts.contractNumber} ILIKE ${'%' + search + '%'})`
+        );
+      }
 
       const where = conds.length ? and(...conds) : undefined;
 

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { format, parseISO, isToday } from "date-fns";
-import { Car, Clock, MapPin, User, ChevronRight } from "lucide-react";
+import { Car, Clock, MapPin, User, ChevronRight, GraduationCap, Briefcase } from "lucide-react";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 
@@ -18,6 +18,14 @@ const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   completed:       { bg: "#DCFCE7", text: "#16A34A" },
   cancelled:       { bg: "#FEF2F2", text: "#DC2626" },
 };
+
+type Source = "all" | "camp" | "services";
+
+const SOURCE_TABS: { key: Source; label: string; icon: typeof Car }[] = [
+  { key: "all",      label: "All",      icon: Car         },
+  { key: "camp",     label: "Camp",     icon: GraduationCap },
+  { key: "services", label: "Services", icon: Briefcase   },
+];
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = status ?? "pending";
@@ -98,24 +106,57 @@ function TodayBanner({ rows, onNavigate }: { rows: PickupRow[]; onNavigate: (id:
   );
 }
 
+// ─── Source Tabs ──────────────────────────────────────────────────────────────
+function SourceTabs({ active, onChange }: { active: Source; onChange: (s: Source) => void }) {
+  return (
+    <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "#F4F3F1", border: "1px solid #E8E6E2" }}>
+      {SOURCE_TABS.map(({ key, label, icon: Icon }) => {
+        const isActive = active === key;
+        return (
+          <button
+            key={key}
+            onClick={() => onChange(key)}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
+            style={{
+              background: isActive ? "#fff" : "transparent",
+              color: isActive ? "#F5821F" : "#57534E",
+              boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+              border: isActive ? "1px solid #E8E6E2" : "1px solid transparent",
+            }}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PickupManagement() {
   const [, navigate] = useLocation();
-  const [search, setSearch] = useState("");
+  const [search, setSearch]         = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
-  const [page, setPage] = useState(1);
+  const [source, setSource]         = useState<Source>("all");
+  const [page, setPage]             = useState(1);
 
   const { data: todayData } = useQuery({
-    queryKey: ["pickup-today"],
-    queryFn: () => axios.get(`${BASE}/api/services/pickup?today=true&limit=50`).then(r => r.data),
+    queryKey: ["pickup-today", source],
+    queryFn: () => {
+      const p = new URLSearchParams({ today: "true", limit: "50" });
+      if (source !== "all") p.set("source", source);
+      return axios.get(`${BASE}/api/services/pickup?${p}`).then(r => r.data);
+    },
   });
 
   const { data: resp, isLoading } = useQuery({
-    queryKey: ["pickup", { search, status: activeStatus, page }],
+    queryKey: ["pickup", { search, status: activeStatus, source, page }],
     queryFn: () => {
       const p = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
       if (search) p.set("search", search);
       if (activeStatus !== "all") p.set("status", activeStatus);
+      if (source !== "all") p.set("source", source);
       return axios.get(`${BASE}/api/services/pickup?${p}`).then(r => r.data);
     },
   });
@@ -124,8 +165,18 @@ export default function PickupManagement() {
   const rows: PickupRow[]      = resp?.data ?? [];
   const total: number          = resp?.meta?.total ?? rows.length;
 
+  function handleSourceChange(s: Source) {
+    setSource(s);
+    setPage(1);
+    setActiveStatus("all");
+    setSearch("");
+  }
+
   return (
     <div className="space-y-4">
+      {/* Camp / Services tabs — above the toolbar */}
+      <SourceTabs active={source} onChange={handleSourceChange} />
+
       <ListToolbar
         search={search}
         onSearch={v => { setSearch(v); setPage(1); }}
