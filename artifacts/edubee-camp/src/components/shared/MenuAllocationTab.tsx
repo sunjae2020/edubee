@@ -98,7 +98,7 @@ function RenameModal({ open, title, initialValue, onConfirm, onClose }: RenameMo
     >
       <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: 360, boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "#1C1917" }}>{title}</h3>
-        <p style={{ fontSize: 13, color: "#57534E", marginBottom: 16 }}>새 이름을 입력하세요</p>
+        <p style={{ fontSize: 13, color: "#57534E", marginBottom: 16 }}>Enter a new name</p>
         <input
           ref={inputRef}
           value={value}
@@ -113,7 +113,7 @@ function RenameModal({ open, title, initialValue, onConfirm, onClose }: RenameMo
         />
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button onClick={onClose} style={{ padding: "8px 14px", border: "1.5px solid #E8E6E2", borderRadius: 8, background: "#fff", fontSize: 13, cursor: "pointer", color: "#57534E" }}>
-            취소
+            Cancel
           </button>
           <button
             onClick={() => onConfirm(value)}
@@ -125,7 +125,7 @@ function RenameModal({ open, title, initialValue, onConfirm, onClose }: RenameMo
               fontSize: 13, fontWeight: 600, cursor: value.trim() ? "pointer" : "not-allowed",
             }}
           >
-            확인
+            Confirm
           </button>
         </div>
       </div>
@@ -164,7 +164,7 @@ export default function MenuAllocationTab() {
   useEffect(() => {
     fetchMenuAllocation()
       .then(setCategories)
-      .catch(() => showToast("데이터를 불러오지 못했습니다", "error"))
+      .catch(() => showToast("Failed to load data", "error"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -175,9 +175,9 @@ export default function MenuAllocationTab() {
     try {
       await saveOrder(categories);
       setIsDirty(false);
-      showToast("메뉴 순서가 저장되었습니다");
+      showToast("Menu order saved successfully");
     } catch {
-      showToast("저장에 실패했습니다", "error");
+      showToast("Failed to save changes", "error");
     } finally {
       setSaving(false);
     }
@@ -187,13 +187,13 @@ export default function MenuAllocationTab() {
     setLoading(true);
     fetchMenuAllocation()
       .then((data) => { setCategories(data); setIsDirty(false); })
-      .catch(() => showToast("불러오기 실패", "error"))
+      .catch(() => showToast("Failed to reload", "error"))
       .finally(() => setLoading(false));
   }, []);
 
   const openRenameCat = (ci: number) => {
     setModal({
-      open: true, title: "카테고리 이름 변경", value: categories[ci].name,
+      open: true, title: "Rename Category", value: categories[ci].name,
       onConfirm: async (v) => {
         setModal((m) => ({ ...m, open: false }));
         const newName = v.toUpperCase().trim();
@@ -203,15 +203,15 @@ export default function MenuAllocationTab() {
             method: "PATCH", headers, body: JSON.stringify({ name: newName }),
           });
           setCategories((prev) => { const next = [...prev]; next[ci] = { ...next[ci], name: newName }; return next; });
-          showToast("카테고리 이름이 변경되었습니다");
-        } catch { showToast("이름 변경 실패", "error"); }
+          showToast("Category renamed successfully");
+        } catch { showToast("Failed to rename category", "error"); }
       },
     });
   };
 
   const handleAddCategory = () => {
     setModal({
-      open: true, title: "카테고리 추가", value: "",
+      open: true, title: "Add Category", value: "",
       onConfirm: async (v) => {
         setModal((m) => ({ ...m, open: false }));
         if (!v.trim()) return;
@@ -222,26 +222,26 @@ export default function MenuAllocationTab() {
           const json = await res.json();
           if (!json.success) throw new Error();
           setCategories((prev) => [...prev, json.data]);
-          showToast("카테고리가 추가되었습니다");
-        } catch { showToast("카테고리 추가 실패", "error"); }
+          showToast("Category added successfully");
+        } catch { showToast("Failed to add category", "error"); }
       },
     });
   };
 
   const handleDeleteCategory = async (ci: number) => {
     const cat = categories[ci];
-    if (!window.confirm(`"${cat.name}" 카테고리를 삭제하시겠습니까?\n(소속 메뉴 ${cat.items.length}개 함께 비활성화)`)) return;
+    if (!window.confirm(`Delete category "${cat.name}"?\n(${cat.items.length} menu item(s) will also be deactivated)`)) return;
     try {
       await fetch(`${API_BASE}/category/${cat.id}`, { method: "DELETE", headers });
       setCategories((prev) => prev.filter((_, i) => i !== ci));
-      showToast("카테고리가 삭제되었습니다");
-    } catch { showToast("삭제 실패", "error"); }
+      showToast("Category deleted successfully");
+    } catch { showToast("Failed to delete category", "error"); }
   };
 
   const openRenameItem = (ci: number, ii: number) => {
     const item = categories[ci].items[ii];
     setModal({
-      open: true, title: "메뉴 이름 변경", value: item.name,
+      open: true, title: "Rename Menu Item", value: item.name,
       onConfirm: async (v) => {
         setModal((m) => ({ ...m, open: false }));
         const newName = v.trim();
@@ -254,8 +254,8 @@ export default function MenuAllocationTab() {
             next[ci].items[ii] = { ...next[ci].items[ii], name: newName };
             return next;
           });
-          showToast("메뉴 이름이 변경되었습니다");
-        } catch { showToast("이름 변경 실패", "error"); }
+          showToast("Menu item renamed successfully");
+        } catch { showToast("Failed to rename item", "error"); }
       },
     });
   };
@@ -346,7 +346,7 @@ export default function MenuAllocationTab() {
   if (loading) {
     return (
       <div style={{ padding: "48px 0", textAlign: "center", color: "#A8A29E", fontSize: 14 }}>
-        메뉴 데이터를 불러오는 중…
+        Loading menu data…
       </div>
     );
   }
@@ -361,8 +361,8 @@ export default function MenuAllocationTab() {
       }}>
         <Info size={14} style={{ flexShrink: 0 }} />
         <span>
-          <strong>≡</strong> 핸들을 드래그하여 카테고리·메뉴 순서를 변경하거나 다른 카테고리로 이동하세요.
-          저장 전까지 실제 사이드바에 반영되지 않습니다.
+          Drag the <strong>≡</strong> handle to reorder categories or menu items, or move items between categories.
+          Changes are not reflected in the sidebar until saved.
         </span>
       </div>
 
@@ -407,14 +407,14 @@ export default function MenuAllocationTab() {
                   <span style={{ fontSize: 12, color: "#A8A29E" }}>{cat.items.length} items</span>
                   <button
                     onClick={(e) => { e.stopPropagation(); openRenameCat(ci); }}
-                    title="이름 변경"
+                    title="Rename"
                     style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #E8E6E2", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#57534E" }}
                   >
                     <Pencil size={12} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteCategory(ci); }}
-                    title="카테고리 삭제"
+                    title="Delete category"
                     style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #FECACA", background: "#FEF2F2", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#DC2626" }}
                   >
                     <Trash2 size={12} />
@@ -429,7 +429,7 @@ export default function MenuAllocationTab() {
                   <div style={{ padding: 8, minHeight: 48 }}>
                     {cat.items.length === 0 && (
                       <div style={{ padding: 12, textAlign: "center", fontSize: 12, color: "#A8A29E", border: "1.5px dashed #E8E6E2", borderRadius: 8 }}>
-                        이 카테고리로 메뉴를 드래그하세요
+                        Drag menu items here
                       </div>
                     )}
                     {cat.items.map((item, ii) => (
@@ -462,7 +462,7 @@ export default function MenuAllocationTab() {
                         <div className="item-actions" style={{ display: "flex", gap: 4, opacity: 0, transition: "opacity .15s" }}>
                           <button
                             onClick={() => openRenameItem(ci, ii)}
-                            title="이름 변경"
+                            title="Rename item"
                             style={{ width: 26, height: 26, borderRadius: 6, border: "1px solid #E8E6E2", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#57534E" }}
                           >
                             <Pencil size={11} />
@@ -488,26 +488,26 @@ export default function MenuAllocationTab() {
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#F5821F"; e.currentTarget.style.color = "#F5821F"; e.currentTarget.style.background = "#FEF0E3"; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#E8E6E2"; e.currentTarget.style.color = "#57534E"; e.currentTarget.style.background = "transparent"; }}
           >
-            <Plus size={14} /> 카테고리 추가
+            <Plus size={14} /> Add Category
           </button>
 
           {/* Unsaved changes bar */}
           {isDirty && (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10, padding: "12px 16px", marginTop: 16 }}>
-              <p style={{ fontSize: 12, color: "#9A3412", fontWeight: 500 }}>저장되지 않은 변경사항이 있습니다</p>
+              <p style={{ fontSize: 12, color: "#9A3412", fontWeight: 500 }}>You have unsaved changes</p>
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={handleDiscard}
                   style={{ padding: "6px 12px", border: "1px solid #E8E6E2", borderRadius: 7, background: "#fff", fontSize: 12, cursor: "pointer", color: "#57534E", display: "flex", alignItems: "center", gap: 4 }}
                 >
-                  <RotateCcw size={11} /> 되돌리기
+                  <RotateCcw size={11} /> Discard
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
                   style={{ padding: "6px 14px", border: "none", borderRadius: 7, background: saving ? "#E8E6E2" : "#F5821F", color: saving ? "#A8A29E" : "#fff", fontSize: 12, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4 }}
                 >
-                  <Save size={11} /> {saving ? "저장 중…" : "순서 저장"}
+                  <Save size={11} /> {saving ? "Saving…" : "Save Order"}
                 </button>
               </div>
             </div>
@@ -521,7 +521,7 @@ export default function MenuAllocationTab() {
               <span style={{ width: 18, height: 18, borderRadius: 4, background: "#FEF0E3", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ fontSize: 9, color: "#F5821F" }}>▶</span>
               </span>
-              사이드바 미리보기
+              Sidebar Preview
             </h3>
             <div style={{ fontSize: 12, color: "#57534E", lineHeight: 1.8 }}>
               {categories.map((cat) => (
@@ -536,7 +536,7 @@ export default function MenuAllocationTab() {
                     </div>
                   ))}
                   {cat.items.length === 0 && (
-                    <div style={{ padding: "2px 8px", color: "#A8A29E", fontSize: 11, fontStyle: "italic" }}>(비어있음)</div>
+                    <div style={{ padding: "2px 8px", color: "#A8A29E", fontSize: 11, fontStyle: "italic" }}>(empty)</div>
                   )}
                 </div>
               ))}
@@ -544,12 +544,12 @@ export default function MenuAllocationTab() {
           </div>
 
           <div style={{ background: "#fff", border: "1px solid #E8E6E2", borderRadius: 12, padding: 16, marginTop: 12 }}>
-            <h3 style={{ fontSize: 13, fontWeight: 600, color: "#1C1917", marginBottom: 10 }}>사용법</h3>
+            <h3 style={{ fontSize: 13, fontWeight: 600, color: "#1C1917", marginBottom: 10 }}>How to Use</h3>
             {[
-              ["≡", "카테고리 행 드래그 → 카테고리 순서 변경"],
-              ["⠿", "메뉴 아이템 드래그 → 순서 변경 또는 다른 카테고리로 이동"],
-              ["✏", "연필 아이콘 클릭 → 이름 변경"],
-              ["🗑", "카테고리 휴지통 클릭 → 카테고리 삭제"],
+              ["≡", "Drag a category row to reorder categories"],
+              ["⠿", "Drag a menu item to reorder or move it to another category"],
+              ["✏", "Click the pencil icon to rename"],
+              ["🗑", "Click the trash icon to delete a category"],
             ].map(([icon, desc]) => (
               <div key={icon} style={{ display: "flex", gap: 8, marginBottom: 8, fontSize: 12, color: "#57534E", lineHeight: 1.5 }}>
                 <span style={{ width: 20, height: 20, borderRadius: 4, background: "#FEF0E3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#F5821F", flexShrink: 0 }}>
