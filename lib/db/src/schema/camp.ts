@@ -62,6 +62,8 @@ export const campPackages = pgTable("camp_packages", {
   status:              varchar("status", { length: 20 }).notNull().default("Active"),
   createdAt:           timestamp("created_at").notNull().defaultNow(),
   updatedAt:           timestamp("updated_at").notNull().defaultNow(),
+  // ── Phase 1 Migration ──────────────────────────────────────────────────
+  productId:           uuid("product_id").references(() => products.id),
 });
 
 // ── Camp Package Products ──────────────────────────────────────────────────
