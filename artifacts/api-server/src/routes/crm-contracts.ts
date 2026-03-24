@@ -254,20 +254,24 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, otRes, clRes] = await Promise.all([
       db.execute(sql`
         SELECT c.*,
-               a.name AS account_name,
-               u.full_name AS owner_name,
+               a.id           AS account_id_val,
+               a.name         AS account_name,
+               a.account_type AS account_type_val,
+               a.email        AS account_email,
+               a.phone_number AS account_phone,
+               u.id           AS owner_user_id,
+               u.full_name    AS owner_name,
                q.quote_ref_number,
-               COALESCE(ct1.nationality, ct2.nationality)    AS contact_nationality,
-               COALESCE(ct1.email,       ct2.email,       c.client_email) AS contact_email,
-               COALESCE(ct1.mobile,      ct2.mobile)          AS contact_phone,
-               CONCAT_WS(' ', ct1.first_name, ct1.last_name)  AS contact_name_primary,
-               CONCAT_WS(' ', ct2.first_name, ct2.last_name)  AS contact_name_fallback
+               COALESCE(ct1.id,          ct2.id)                       AS contact_id,
+               COALESCE(ct1.nationality, ct2.nationality)               AS contact_nationality,
+               COALESCE(ct1.email,       ct2.email, c.client_email)     AS contact_email,
+               COALESCE(ct1.mobile,      ct2.mobile)                    AS contact_phone
         FROM contracts c
-        LEFT JOIN accounts a  ON a.id  = c.account_id
-        LEFT JOIN contacts ct1 ON ct1.id = a.primary_contact_id
-        LEFT JOIN contacts ct2 ON ct2.id = c.customer_contact_id
-        LEFT JOIN users   u ON u.id = c.owner_id
-        LEFT JOIN quotes  q ON q.id = c.quote_id
+        LEFT JOIN accounts  a   ON a.id   = c.account_id
+        LEFT JOIN contacts  ct1 ON ct1.id = a.primary_contact_id
+        LEFT JOIN contacts  ct2 ON ct2.id = c.customer_contact_id
+        LEFT JOIN users     u   ON u.id   = a.owner_id
+        LEFT JOIN quotes    q   ON q.id   = c.quote_id
         WHERE c.id = ${id}::uuid
       `),
       db.execute(sql`
@@ -371,12 +375,29 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       serviceModulesActivated: c.service_modules_activated ?? [],
       notes:                   c.notes,
       account: {
-        id:          c.account_id,
+        id:          c.account_id_val ?? c.account_id,
         name:        c.account_name ?? c.student_name,
         nationality: c.contact_nationality ?? c.client_country,
         email:       c.contact_email ?? null,
         phone:       c.contact_phone ?? null,
       },
+      studentAccount: c.account_id_val ? {
+        id:          c.account_id_val,
+        name:        c.account_name,
+        accountType: c.account_type_val,
+        email:       c.account_email ?? null,
+        phone:       c.account_phone ?? null,
+      } : null,
+      studentContact: c.contact_id ? {
+        id:          c.contact_id,
+        nationality: c.contact_nationality ?? null,
+        email:       c.contact_email ?? null,
+        phone:       c.contact_phone ?? null,
+      } : null,
+      studentOwner: c.owner_user_id ? {
+        id:   c.owner_user_id,
+        name: c.owner_name,
+      } : null,
       studentName: c.student_name,
       clientEmail: c.contact_email ?? c.client_email ?? null,
       quote:   c.quote_id  ? { id: c.quote_id,  quoteRefNumber: c.quote_ref_number } : null,
@@ -405,7 +426,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
 // ─── PATCH /crm/contracts/:id ──────────────────────────────────────────────
 router.patch("/crm/contracts/:id", authenticate, async (req, res) => {
   try {
-    const { contractStatus, fromDate, toDate, paymentFrequency, notes, contractAmount, clientCountry, ownerId } = req.body;
+    const { contractStatus, fromDate, toDate, paymentFrequency, notes, contractAmount, clientCountry, ownerId, accountId } = req.body;
     const parts: ReturnType<typeof sql>[] = [];
     if (contractStatus    !== undefined) parts.push(sql`status             = ${contractStatus}`);
     if (fromDate          !== undefined) parts.push(sql`start_date         = ${fromDate || null}`);
@@ -415,6 +436,7 @@ router.patch("/crm/contracts/:id", authenticate, async (req, res) => {
     if (contractAmount    !== undefined) parts.push(sql`total_amount       = ${Number(contractAmount)}`);
     if (clientCountry     !== undefined) parts.push(sql`client_country     = ${clientCountry || null}`);
     if (ownerId           !== undefined) parts.push(sql`owner_id           = ${ownerId || null}`);
+    if (accountId         !== undefined) parts.push(sql`account_id         = ${accountId || null}`);
     if (parts.length === 0) return res.status(400).json({ error: "No fields provided" });
     const setSql = sql.join(parts, sql.raw(", "));
     await db.execute(sql`UPDATE contracts SET ${setSql} WHERE id = ${req.params.id}`);

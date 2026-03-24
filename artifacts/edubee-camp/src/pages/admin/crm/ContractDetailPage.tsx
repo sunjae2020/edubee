@@ -785,20 +785,24 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType }
 // ── Edit Student Modal ───────────────────────────────────────────────────────
 function EditStudentModal({ contract, onClose }: { contract: any; onClose: () => void }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState({
-    clientCountry: contract.account?.nationality ?? "",
-    ownerId:       contract.owner?.id            ?? "",
-  });
+  const [search, setSearch]       = useState("");
+  const [selected, setSelected]   = useState<any>(
+    contract.studentAccount ?? (contract.account?.id ? contract.account : null)
+  );
 
-  const { data: usersData } = useQuery({
-    queryKey: ["users-list"],
-    queryFn:  () => axios.get(`${BASE}/api/users`).then(r => r.data?.data ?? r.data ?? []),
+  const { data: searchData, isFetching } = useQuery({
+    queryKey: ["account-search", search],
+    queryFn:  () =>
+      axios.get(`${BASE}/api/crm/accounts`, {
+        params: { search, account_type: "Student", limit: 20 },
+      }).then(r => r.data?.data ?? []),
+    placeholderData: (prev) => prev,
   });
-  const users: { id: string; fullName: string }[] = usersData ?? [];
+  const results: any[] = searchData ?? [];
 
   const mut = useMutation({
-    mutationFn: (data: typeof form) =>
-      axios.patch(`${BASE}/api/crm/contracts/${contract.id}`, data),
+    mutationFn: (accountId: string) =>
+      axios.patch(`${BASE}/api/crm/contracts/${contract.id}`, { accountId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] });
       onClose();
@@ -810,51 +814,88 @@ function EditStudentModal({ contract, onClose }: { contract: any; onClose: () =>
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
-          <h2 className="text-base font-semibold text-[#1C1917]">Edit Student Info</h2>
+          <h2 className="text-base font-semibold text-[#1C1917]">Link Student Account</h2>
           <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] text-[#A8A29E]">
             <X size={16} />
           </button>
         </div>
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-[#57534E] mb-1">Student Name</label>
-            <div className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#A8A29E] bg-[#FAFAF9]">
-              {contract.account?.name ?? "—"}
+
+        <div className="p-5 space-y-4">
+          {/* Current */}
+          {selected && (
+            <div className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm"
+              style={{ background: "#FEF0E3", border: "1.5px solid #F5821F" }}>
+              <div>
+                <p className="font-semibold text-[#1C1917]">{selected.name}</p>
+                <p className="text-[11px] text-[#57534E] mt-0.5">{selected.accountType ?? "Student"}</p>
+              </div>
+              <button onClick={() => setSelected(null)} className="text-[#A8A29E] hover:text-[#57534E]">
+                <X size={14} />
+              </button>
             </div>
-            <p className="text-[11px] text-[#A8A29E] mt-1">Name is managed on the student account page.</p>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-[#57534E] mb-1">Nationality</label>
+          )}
+
+          {/* Search */}
+          <div className="relative">
             <input
               type="text"
-              value={form.clientCountry}
-              onChange={e => setForm(p => ({ ...p, clientCountry: e.target.value }))}
-              placeholder="e.g. Korean, Japanese..."
-              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#F5821F]"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search student accounts…"
+              className="w-full h-10 border rounded-lg px-3 text-sm outline-none transition-all"
+              style={{
+                borderColor: "#E8E6E2",
+                boxShadow: "none",
+              }}
+              onFocus={e => {
+                e.currentTarget.style.borderColor = "#F5821F";
+                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(245,130,31,0.15)";
+              }}
+              onBlur={e => {
+                e.currentTarget.style.borderColor = "#E8E6E2";
+                e.currentTarget.style.boxShadow = "none";
+              }}
             />
+            {isFetching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-[#F5821F] border-t-transparent animate-spin" />
+            )}
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-[#57534E] mb-1">Owner (EC)</label>
-            <select
-              value={form.ownerId}
-              onChange={e => setForm(p => ({ ...p, ownerId: e.target.value }))}
-              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#F5821F] bg-white">
-              <option value="">— Select EC —</option>
-              {users.map((u: any) => (
-                <option key={u.id} value={u.id}>{u.fullName ?? u.full_name ?? u.name}</option>
-              ))}
-            </select>
+
+          {/* Results */}
+          <div className="max-h-56 overflow-y-auto rounded-lg border border-[#E8E6E2] divide-y divide-[#F4F3F1]">
+            {results.length === 0 && !isFetching && (
+              <p className="text-center text-sm text-[#A8A29E] py-6">No student accounts found</p>
+            )}
+            {results.map((acc: any) => (
+              <button key={acc.id}
+                onClick={() => setSelected(acc)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left text-sm transition-colors hover:bg-[#FEF0E3]"
+                style={selected?.id === acc.id ? { background: "#FEF0E3" } : {}}>
+                <div>
+                  <p className="font-medium text-[#1C1917]">{acc.name}</p>
+                  <p className="text-[11px] text-[#A8A29E] mt-0.5">{acc.accountType}</p>
+                </div>
+                {selected?.id === acc.id && (
+                  <span className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "#F5821F" }}>
+                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                      <path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
-        <div className="flex justify-end gap-2 px-6 pb-5">
+
+        <div className="flex justify-end gap-2 px-5 pb-5">
           <button onClick={onClose}
             className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">
             Cancel
           </button>
           <button
-            onClick={() => mut.mutate(form)}
-            disabled={mut.isPending}
-            className="h-9 px-4 rounded-lg text-sm font-semibold text-white disabled:opacity-60 transition-opacity hover:opacity-90"
+            onClick={() => selected && mut.mutate(selected.id)}
+            disabled={!selected || mut.isPending}
+            className="h-9 px-4 rounded-lg text-sm font-semibold text-white disabled:opacity-50 transition-opacity hover:opacity-90"
             style={{ background: "#F5821F" }}>
             {mut.isPending ? "Saving…" : "Save"}
           </button>
@@ -1180,19 +1221,19 @@ export default function ContractDetailPage() {
                   className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#57534E]">
                   <Pencil size={13} />
                 </button>
-                {contract.account?.id && (
-                  <button onClick={() => navigate(`/admin/crm/accounts/${contract.account.id}`)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#57534E]">
+                {(contract.studentAccount?.id ?? contract.account?.id) && (
+                  <button onClick={() => navigate(`/admin/crm/accounts/${contract.studentAccount?.id ?? contract.account?.id}`)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#F5821F]">
                     <ExternalLink size={13} />
                   </button>
                 )}
               </div>
             </div>
-            <InfoRow label="Name"        value={contract.account?.name} />
-            <InfoRow label="Nationality" value={contract.account?.nationality} />
-            <InfoRow label="Email"       value={contract.account?.email} />
-            <InfoRow label="Phone"       value={contract.account?.phone} />
-            <InfoRow label="Owner (EC)"  value={contract.owner?.name} />
+            <InfoRow label="Name"        value={contract.studentAccount?.name ?? contract.account?.name} />
+            <InfoRow label="Nationality" value={contract.studentContact?.nationality ?? contract.account?.nationality} />
+            <InfoRow label="Email"       value={contract.studentContact?.email ?? contract.studentAccount?.email ?? contract.account?.email} />
+            <InfoRow label="Phone"       value={contract.studentContact?.phone ?? contract.studentAccount?.phone ?? contract.account?.phone} />
+            <InfoRow label="Owner (EC)"  value={contract.studentOwner?.name ?? contract.owner?.name} />
           </div>
 
           {/* Primary Service */}
