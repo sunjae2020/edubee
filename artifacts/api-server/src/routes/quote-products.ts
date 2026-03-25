@@ -118,7 +118,10 @@ router.patch("/quote-products/:id", authenticate, requireRole(...ADMIN_ROLES), a
     if (due_date !== undefined)         updates.dueDate          = due_date ? new Date(due_date) : null;
     if (quantity !== undefined)         updates.quantity         = Number(quantity);
     if (is_initial_payment !== undefined) updates.isInitialPayment = Boolean(is_initial_payment);
-    if (name !== undefined)             updates.name             = name;
+    if (name !== undefined) {
+      updates.name        = name;
+      updates.productName = name; // keep legacy column in sync
+    }
     if (item_description !== undefined) updates.itemDescription  = item_description;
     if (sort_index !== undefined)       updates.sortIndex        = Number(sort_index);
 
