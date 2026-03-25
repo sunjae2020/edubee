@@ -51,18 +51,19 @@ router.post("/quote-products/bulk", authenticate, requireRole(...ADMIN_ROLES), a
     const inserted = await db.insert(quote_products).values(
       items.map((it: any) => ({
         quoteId,
-        productId:        it.product_id ?? null,
-        manualInput:      it.manual_input ?? false,
-        name:             it.name ?? "Item",
-        productName:      it.name ?? "Item",
-        itemDescription:  it.item_description ?? null,
-        price:            String(it.price ?? "0"),
-        quantity:         it.quantity ?? 1,
-        isInitialPayment: it.is_initial_payment ?? false,
-        dueDate:          it.due_date ? new Date(it.due_date) : null,
-        sortIndex:        it.sort_index ?? 0,
-        isGstIncluded:    it.is_gst_included ?? false,
-        status:           "Active",
+        productId:         it.product_id ?? null,
+        manualInput:       it.manual_input ?? false,
+        name:              it.name ?? "Item",
+        productName:       it.name ?? "Item",
+        itemDescription:   it.item_description ?? null,
+        price:             String(it.price ?? "0"),
+        quantity:          it.quantity ?? 1,
+        isInitialPayment:  it.is_initial_payment ?? false,
+        dueDate:           it.due_date ? new Date(it.due_date) : null,
+        sortIndex:         it.sort_index ?? 0,
+        isGstIncluded:     it.is_gst_included ?? false,
+        serviceModuleType: it.service_module_type ?? null,
+        status:            "Active",
       }))
     ).returning();
 

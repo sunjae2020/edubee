@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -70,10 +70,78 @@ interface Product {
   itemDescription?: string;
   price?: string;
   isGstIncluded?: boolean;
+  defaultPaymentTerm?: string;
+  installmentPlan?: string;
   numberOfPayments?: number;
   minimumPayment?: string;
   providerId?: string;
   providerName?: string;
+}
+
+// ─── Installment Builder ──────────────────────────────────────────────────────
+
+function buildInstallmentItems(p: Product, startSortIndex: number) {
+  const total   = Math.max(0, Number(p.price ?? 0));
+  const term    = p.defaultPaymentTerm ?? "Once";
+  const n       = term === "Once" ? 1 : Math.max(1, p.numberOfPayments ?? 1);
+  const desc    = p.itemDescription ?? p.description ?? null;
+  const gst     = p.isGstIncluded ?? false;
+  const smt     = p.serviceModuleType ?? null;
+
+  if (n === 1) {
+    return [{
+      product_id:          p.id,
+      name:                p.productName,
+      item_description:    desc,
+      price:               total.toFixed(2),
+      quantity:            1,
+      is_gst_included:     gst,
+      is_initial_payment:  true,
+      sort_index:          startSortIndex,
+      service_module_type: smt,
+    }];
+  }
+
+  const minPay = Math.min(Math.max(0, Number(p.minimumPayment ?? 0)), total);
+  const remaining = total - minPay;
+  const perPayment = n > 1 ? remaining / (n - 1) : 0;
+
+  const items = [];
+  let allocated = minPay;
+  for (let i = 0; i < n; i++) {
+    let amt: number;
+    if (i === 0) {
+      amt = minPay;
+    } else if (i === n - 1) {
+      amt = total - allocated; // absorb rounding diff
+    } else {
+      amt = parseFloat(perPayment.toFixed(2));
+      allocated += amt;
+    }
+    items.push({
+      product_id:          p.id,
+      name:                p.productName,
+      item_description:    desc,
+      price:               Math.max(0, amt).toFixed(2),
+      quantity:            1,
+      is_gst_included:     gst,
+      is_initial_payment:  i === 0,
+      sort_index:          startSortIndex + i,
+      service_module_type: smt,
+    });
+  }
+  return items;
+}
+
+// ─── Group Type ───────────────────────────────────────────────────────────────
+
+interface LineGroup {
+  key:          string;
+  productId:    string | null;
+  label:        string;
+  providerName: string | null;
+  rows:         QuoteProduct[];
+  groupTotal:   number;
 }
 
 interface Account {
@@ -504,14 +572,21 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
 
 // ─── Sortable Row ─────────────────────────────────────────────────────────────
 
+const ORDINAL = ["1st","2nd","3rd","4th","5th","6th","7th","8th","9th","10th"];
+function ordinal(n: number) { return ORDINAL[n - 1] ?? `${n}th`; }
+
 function SortableRow({
   item,
   onDelete,
   onChange,
+  installmentIdx = 0,
+  installmentTotal = 1,
 }: {
   item: QuoteProduct;
   onDelete: (id: string) => void;
   onChange: (id: string, field: string, value: unknown) => void;
+  installmentIdx?: number;
+  installmentTotal?: number;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
@@ -522,6 +597,8 @@ function SortableRow({
     opacity: isDragging ? 0.5 : 1,
     background: isDragging ? "#fff7f0" : undefined,
   };
+
+  const showInstallmentBadge = installmentTotal > 1 && installmentIdx > 0;
 
   return (
     <tr ref={setNodeRef} style={style} className="border-b border-gray-100 hover:bg-gray-50">
@@ -535,6 +612,13 @@ function SortableRow({
         </button>
       </td>
       <td className="px-2 py-2">
+        {showInstallmentBadge && (
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="text-[10px] font-semibold text-orange-500 bg-orange-50 border border-orange-200 rounded px-1.5 py-0.5 uppercase tracking-wide">
+              {ordinal(installmentIdx)} Payment
+            </span>
+          </div>
+        )}
         <input
           className="w-full text-sm border border-transparent rounded px-1 py-0.5 focus:border-orange-300 focus:outline-none bg-transparent hover:bg-white"
           value={item.name ?? ""}
@@ -845,20 +929,21 @@ export default function QuoteBuilderPage() {
     setDirtyLines((prev) => new Set(prev).add(id));
   }, []);
 
-  // ── Add Product from Catalog ─────────────────────────────────────────────────
+  // ── Add Product from Catalog (auto-generates installments) ──────────────────
   const addProductMutation = useMutation({
-    mutationFn: (p: Product) =>
-      axios.post(`${BASE}/api/quote-products`, {
-        quote_id: quoteId,
-        product_id: p.id,
-        name: p.productName,
-        item_description: p.itemDescription ?? p.description,
-        price: p.price ?? "0",
-        quantity: 1,
-        is_gst_included: p.isGstIncluded ?? false,
-        sort_index: lines.length,
-        service_module_type: p.serviceModuleType ?? null,
-      }),
+    mutationFn: async (p: Product) => {
+      const items = buildInstallmentItems(p, lines.length);
+      if (items.length === 1) {
+        return axios.post(`${BASE}/api/quote-products`, {
+          quote_id: quoteId,
+          ...items[0],
+        });
+      }
+      return axios.post(`${BASE}/api/quote-products/bulk`, {
+        quoteId,
+        items,
+      });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quote-products", quoteId] }),
     onError: () => toast({ title: "Failed to add product", variant: "destructive" }),
   });
@@ -877,6 +962,22 @@ export default function QuoteBuilderPage() {
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quote-products", quoteId] }),
     onError: () => toast({ title: "Failed to add line item", variant: "destructive" }),
+  });
+
+  // ── Add Installment for existing catalog product ─────────────────────────────
+  const addInstallmentMutation = useMutation({
+    mutationFn: ({ productId, productName }: { productId: string; productName: string }) =>
+      axios.post(`${BASE}/api/quote-products`, {
+        quote_id:           quoteId,
+        product_id:         productId,
+        name:               productName,
+        price:              "0.00",
+        quantity:           1,
+        is_initial_payment: false,
+        sort_index:         lines.length,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["quote-products", quoteId] }),
+    onError: () => toast({ title: "Failed to add installment", variant: "destructive" }),
   });
 
   // ── Delete Line ─────────────────────────────────────────────────────────────
@@ -996,6 +1097,33 @@ export default function QuoteBuilderPage() {
 
   const isSaving = saveMutation.isPending;
   const activeLines = lines.filter((l) => !l.status || l.status === "Active");
+
+  // ── Group lines by productId for installment display ────────────────────────
+  const groups = useMemo((): LineGroup[] => {
+    const seen = new Map<string, LineGroup>();
+    const order: string[] = [];
+    for (const line of activeLines) {
+      // Manual items are each their own group; catalog items share by productId
+      const key = line.manualInput || !line.productId
+        ? `manual_${line.id}`
+        : line.productId;
+      if (!seen.has(key)) {
+        seen.set(key, {
+          key,
+          productId:   line.manualInput || !line.productId ? null : line.productId,
+          label:       line.name ?? "Item",
+          providerName: line.providerName ?? null,
+          rows:        [],
+          groupTotal:  0,
+        });
+        order.push(key);
+      }
+      const g = seen.get(key)!;
+      g.rows.push(line);
+      g.groupTotal += Number(line.price ?? 0) * (line.quantity ?? 1);
+    }
+    return order.map(k => seen.get(k)!);
+  }, [activeLines]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1136,7 +1264,7 @@ export default function QuoteBuilderPage() {
           <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-700">Payment Plan</h3>
             <span className="text-xs text-gray-400">
-              {activeLines.length} item{activeLines.length !== 1 ? "s" : ""}
+              {groups.length} product{groups.length !== 1 ? "s" : ""} · {activeLines.length} payment{activeLines.length !== 1 ? "s" : ""}
             </span>
           </div>
 
@@ -1162,26 +1290,67 @@ export default function QuoteBuilderPage() {
                     <thead>
                       <tr className="border-b border-gray-100 text-xs text-gray-400 font-medium bg-gray-50">
                         <th className="px-2 py-2 w-8" />
-                        <th className="px-2 py-2 text-left">Item</th>
+                        <th className="px-2 py-2 text-left">Item / Payment</th>
                         <th className="px-2 py-2 text-left w-28">Provider</th>
                         <th className="px-2 py-2 text-center w-20">Qty</th>
-                        <th className="px-2 py-2 text-left w-28">Price</th>
+                        <th className="px-2 py-2 text-left w-28">Amount</th>
                         <th className="px-2 py-2 text-left w-32">Due Date</th>
                         <th className="px-2 py-2 text-center w-20">Initial?</th>
                         <th className="px-2 py-2 text-right w-24">Subtotal</th>
                         <th className="px-2 py-2 w-10" />
                       </tr>
                     </thead>
-                    <tbody>
-                      {activeLines.map((item) => (
-                        <SortableRow
-                          key={item.id}
-                          item={item}
-                          onDelete={deleteLine}
-                          onChange={handleLineChange}
-                        />
-                      ))}
-                    </tbody>
+                    {groups.map((group) => (
+                      <tbody key={group.key}>
+                        {/* ── Group Header Row ── */}
+                        <tr className="bg-orange-50 border-t-2 border-orange-100">
+                          <td className="w-8" />
+                          <td className="px-2 py-1.5" colSpan={5}>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-xs text-gray-700">
+                                {group.label}
+                              </span>
+                              {group.providerName && (
+                                <span className="text-xs text-gray-400">· {group.providerName}</span>
+                              )}
+                              {group.rows.length > 1 && (
+                                <span className="text-[10px] font-semibold text-orange-600 bg-orange-100 border border-orange-200 rounded px-1.5 py-0.5 uppercase tracking-wide">
+                                  {group.rows.length} installments
+                                </span>
+                              )}
+                              <span className="ml-auto text-xs font-semibold text-gray-600 tabular-nums">
+                                Total ${group.groupTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5 text-right" colSpan={3}>
+                            {group.productId && (
+                              <button
+                                onClick={() => addInstallmentMutation.mutate({
+                                  productId:   group.productId!,
+                                  productName: group.label,
+                                })}
+                                disabled={addInstallmentMutation.isPending}
+                                className="flex items-center gap-1 text-xs text-orange-500 hover:text-orange-700 font-medium ml-auto disabled:opacity-50"
+                              >
+                                <Plus size={11} /> Add Installment
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                        {/* ── Installment Rows ── */}
+                        {group.rows.map((item, ri) => (
+                          <SortableRow
+                            key={item.id}
+                            item={item}
+                            installmentIdx={group.rows.length > 1 ? ri + 1 : 0}
+                            installmentTotal={group.rows.length}
+                            onDelete={deleteLine}
+                            onChange={handleLineChange}
+                          />
+                        ))}
+                      </tbody>
+                    ))}
                   </table>
                 </div>
               </SortableContext>

@@ -35,7 +35,6 @@ const PAYMENT_TERMS = [
   { value: NONE, label: "— None —" },
   { value: "Once", label: "Once" },
   { value: "Multiple Times", label: "Multiple Times" },
-  { value: "Monthly", label: "Monthly" },
 ];
 const PRIORITIES = [
   { value: NONE, label: "— None —" },
