@@ -3,6 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { ArrowLeft, Plus, HeartPulse, DollarSign, Home, Phone, MapPin, FileText, ExternalLink } from "lucide-react";
+import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -395,11 +396,12 @@ export default function AccommodationDetailPage() {
   if (!record)  return <div className="p-6 text-stone-500">Record not found.</div>;
 
   const TABS = [
-    { key: "details", label: "Details"        },
-    { key: "host",    label: "Host Family"    },
-    { key: "welfare", label: "Welfare Checks" },
-    { key: "billing", label: "Billing"        },
-    { key: "notes",   label: "Notes"          },
+    { key: "details",   label: "Details"        },
+    { key: "host",      label: "Host Family"    },
+    { key: "welfare",   label: "Welfare Checks" },
+    { key: "billing",   label: "Billing"        },
+    { key: "payments",  label: "Payments"       },
+    { key: "notes",     label: "Notes"          },
   ] as const;
 
   return (
@@ -539,6 +541,12 @@ export default function AccommodationDetailPage() {
       )}
       {tab === "welfare" && <WelfareTab record={record} id={id!} />}
       {tab === "billing" && <BillingTab record={record} />}
+      {tab === "payments" && (
+        <ContractPaymentsPanel
+          contractId={record.contractId}
+          contractNumber={record.contractNumber}
+        />
+      )}
       {tab === "notes" && id && (
         <div className="bg-white border border-stone-200 rounded-xl p-5">
           <h3 className="text-sm font-bold text-stone-800 mb-4">Activity Notes</h3>

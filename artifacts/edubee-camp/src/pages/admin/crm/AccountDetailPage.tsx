@@ -106,19 +106,20 @@ function getTabs(accountType?: string | null) {
   const products   = { key: "products",   label: "Products",       icon: Package    };
   const commission = { key: "commission", label: "Commission",     icon: DollarSign };
   const portal     = { key: "portal",     label: "Portal Access",  icon: Shield     };
+  const ledger     = { key: "ledger",     label: "Ledger",         icon: DollarSign };
 
   switch (accountType) {
     case "Student":
-      return [...base, leads, contracts];
+      return [...base, leads, contracts, ledger];
     case "Supplier":
-      return [...base, products, portal];
+      return [...base, products, ledger, portal];
     case "School":
-      return [...base, leads, contracts, products, portal];
+      return [...base, leads, contracts, products, ledger, portal];
     case "Sub_Agency":
     case "Super_Agency":
-      return [...base, leads, contracts, commission, portal];
+      return [...base, leads, contracts, commission, ledger, portal];
     default:
-      return [...base, leads, contracts, portal];
+      return [...base, leads, contracts, ledger, portal];
   }
 }
 
@@ -275,6 +276,122 @@ function AccountLookup({ value, onChange, excludeId, placeholder }: {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── LedgerTab ─────────────────────────────────────────────────────────────────
+const fmtAmt = (n: any) => n != null ? `$${Number(n).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
+const fmtD   = (d: any) => d ? new Date(d).toLocaleDateString("en-AU") : "—";
+
+const LDGR_SRC: Record<string, { bg: string; text: string }> = {
+  payment:     { bg: "#DCFCE7", text: "#16A34A" },
+  transaction: { bg: "#FEF0E3", text: "#F5821F" },
+};
+const LDGR_DIR: Record<string, { bg: string; text: string }> = {
+  received:    { bg: "#DCFCE7", text: "#16A34A" },
+  paid:        { bg: "#FEF2F2", text: "#DC2626" },
+  transaction: { bg: "#F0F9FF", text: "#0369A1" },
+};
+
+function LedgerTab({ accountId }: { accountId: string }) {
+  const { data: rows = [], isLoading } = useQuery<any[]>({
+    queryKey: ["account-ledger", accountId],
+    queryFn: () => axios.get(`${BASE}/api/accounting/ledger/by-account/${accountId}`).then(r => r.data),
+    enabled: !!accountId,
+  });
+
+  const totalIn  = rows.filter(r => r.direction === "received").reduce((s, r) => s + Number(r.amount ?? 0), 0);
+  const totalOut = rows.filter(r => r.direction === "paid").reduce((s, r) => s + Number(r.amount ?? 0), 0);
+  const txnTotal = rows.filter(r => r.source === "transaction").reduce((s, r) => s + Number(r.amount ?? 0), 0);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white border border-[#E8E6E2] rounded-xl p-10 text-center text-stone-400 text-sm">
+        Loading ledger…
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
+          <p className="text-xs text-stone-400 mb-1">Total Received</p>
+          <p className="text-xl font-bold text-[#16A34A]">{fmtAmt(totalIn)}</p>
+        </div>
+        <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
+          <p className="text-xs text-stone-400 mb-1">Total Paid Out</p>
+          <p className="text-xl font-bold text-[#DC2626]">{fmtAmt(totalOut)}</p>
+        </div>
+        <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
+          <p className="text-xs text-stone-400 mb-1">Transaction Volume</p>
+          <p className="text-xl font-bold text-[#F5821F]">{fmtAmt(txnTotal)}</p>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-[#E8E6E2]">
+          <h3 className="text-sm font-semibold text-[#1C1917]">Account Ledger ({rows.length} entries)</h3>
+        </div>
+        {rows.length === 0 ? (
+          <div className="text-center py-12 text-stone-400">
+            <DollarSign size={32} strokeWidth={1.5} className="mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No financial records linked to this account yet.</p>
+            <p className="text-xs mt-1">Records appear when payments are received/paid against this account.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#E8E6E2] bg-[#FAFAF9]">
+                  {["Source", "Ref", "Date", "Type", "Direction", "Amount", "Bank Ref", "Status"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-stone-400">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row: any, i: number) => {
+                  const srcStyle = LDGR_SRC[row.source] ?? { bg: "#F4F3F1", text: "#57534E" };
+                  const dirStyle = LDGR_DIR[row.direction] ?? { bg: "#F4F3F1", text: "#57534E" };
+                  const typeLabel = String(row.type ?? "").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+                  return (
+                    <tr key={`${row.id}-${i}`} className="border-b border-[#E8E6E2] hover:bg-[#FAFAF9]">
+                      <td className="px-4 py-3">
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: srcStyle.bg, color: srcStyle.text }}>
+                          {row.source === "payment" ? "Payment" : "Txn"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-stone-500">{row.ref?.slice(0, 16) ?? "—"}</td>
+                      <td className="px-4 py-3 text-[12px] text-stone-500">{fmtD(row.entry_date)}</td>
+                      <td className="px-4 py-3 text-[12px] text-stone-600">{typeLabel || "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: dirStyle.bg, color: dirStyle.text }}>
+                          {row.direction === "received" ? "Received" : row.direction === "paid" ? "Paid Out" : "Txn"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-[13px] font-bold" style={{ color: row.direction === "received" ? "#16A34A" : row.direction === "paid" ? "#DC2626" : "#F5821F" }}>
+                        {fmtAmt(row.amount)}
+                      </td>
+                      <td className="px-4 py-3 text-[12px] text-stone-400 font-mono">{row.bank_reference ?? "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                          row.status === "Approved" || row.status === "completed" ? "bg-[#DCFCE7] text-[#16A34A]" :
+                          row.status === "Pending"  ? "bg-[#FEF9C3] text-[#CA8A04]" :
+                          "bg-[#F4F3F1] text-[#57534E]"}`}>
+                          {row.status ?? "—"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -942,6 +1059,10 @@ export default function AccountDetailPage() {
 
           {tab === "portal" && account && (
             <PortalAccessPanel accountId={account.id} accountType={account.accountType} />
+          )}
+
+          {tab === "ledger" && account && (
+            <LedgerTab accountId={account.id} />
           )}
         </div>
 

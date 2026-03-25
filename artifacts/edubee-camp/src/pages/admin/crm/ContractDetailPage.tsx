@@ -65,6 +65,7 @@ const TABS = [
   { key: "services",     label: "Services"          },
   { key: "schedule",     label: "Payment Schedule"  },
   { key: "invoices",     label: "Invoices"          },
+  { key: "payments",     label: "Payments"          },
   { key: "transactions", label: "Transactions"      },
   { key: "commission",   label: "Commission / Cost" },
   { key: "documents",    label: "Documents"         },
@@ -499,6 +500,134 @@ function InvoicesTab({ contract }: { contract: any }) {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Payments Tab ─────────────────────────────────────────────────────────────
+const PTYPE_BADGE: Record<string, string> = {
+  trust_receipt:     "bg-[#DCFCE7] text-[#16A34A]",
+  trust_transfer:    "bg-[#FEF0E3] text-[#F5821F]",
+  commission:        "bg-[#EDE9FE] text-[#7C3AED]",
+  direct:            "bg-[#F0F9FF] text-[#0369A1]",
+  service_fee_camp:  "bg-[#DCFCE7] text-[#16A34A]",
+  camp_tour_ap:      "bg-[#FEF9C3] text-[#CA8A04]",
+  camp_institute_ap: "bg-[#FEF9C3] text-[#CA8A04]",
+};
+function ptypeLabel(t: string) {
+  return t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+function PaymentsTab({ contractId }: { contractId: string }) {
+  const { data: rows = [], isLoading } = useQuery<any[]>({
+    queryKey: ["contract-payments", contractId],
+    queryFn: () =>
+      axios.get(`${BASE}/api/accounting/payments/by-contract/${contractId}`).then(r => r.data),
+    enabled: !!contractId,
+  });
+
+  // Group lines by payment_header id
+  const grouped = rows.reduce<Record<string, { header: any; lines: any[] }>>((acc, row) => {
+    if (!acc[row.id]) acc[row.id] = { header: row, lines: [] };
+    acc[row.id].lines.push(row);
+    return acc;
+  }, {});
+  const headers = Object.values(grouped);
+
+  const totalReceived = headers
+    .filter(h => ["trust_receipt", "service_fee_camp"].includes(h.header.payment_type))
+    .reduce((s, h) => s + Number(h.header.total_amount ?? 0), 0);
+  const totalPaid = headers
+    .filter(h => ["trust_transfer", "camp_tour_ap", "camp_institute_ap"].includes(h.header.payment_type))
+    .reduce((s, h) => s + Number(h.header.total_amount ?? 0), 0);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white border border-[#E8E6E2] rounded-xl p-10 text-center text-[#A8A29E] text-sm">
+        Loading payments…
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
+          <p className="text-xs text-[#A8A29E] mb-1">Total Received (AR)</p>
+          <p className="text-xl font-bold text-[#16A34A]">{fmtMoney(totalReceived)}</p>
+        </div>
+        <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
+          <p className="text-xs text-[#A8A29E] mb-1">Total Paid Out (AP)</p>
+          <p className="text-xl font-bold text-[#DC2626]">{fmtMoney(totalPaid)}</p>
+        </div>
+        <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
+          <p className="text-xs text-[#A8A29E] mb-1">Transactions</p>
+          <p className="text-xl font-bold text-[#1C1917]">{headers.length}</p>
+        </div>
+      </div>
+
+      {/* Payment list */}
+      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-[#E8E6E2]">
+          <h3 className="text-sm font-semibold text-[#1C1917]">Payment Records ({headers.length})</h3>
+        </div>
+        {headers.length === 0 ? (
+          <div className="text-center py-12 text-[#A8A29E]">
+            <CreditCard size={32} className="mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No payments linked to this contract yet.</p>
+            <p className="text-xs mt-1">Use the Payments page to record a payment against this contract's products.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#E8E6E2] bg-[#FAFAF9]">
+                  {["Ref", "Date", "Type", "Method", "Counterparty", "Products", "Amount", "Status"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {headers.map(({ header, lines }) => {
+                  const counterparty = header.received_from_name ?? header.paid_to_name ?? "—";
+                  const productNames = [...new Set(lines.map((l: any) => l.product_name).filter(Boolean))].join(", ") || "—";
+                  return (
+                    <tr key={header.id} className="border-b border-[#E8E6E2] hover:bg-[#FAFAF9]">
+                      <td className="px-4 py-3 font-mono text-xs text-[#57534E]">{header.payment_ref}</td>
+                      <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(header.payment_date)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${PTYPE_BADGE[header.payment_type] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
+                          {ptypeLabel(header.payment_type)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-[12px] text-[#57534E]">{header.payment_method ?? "—"}</td>
+                      <td className="px-4 py-3 text-[12px] font-medium text-[#1C1917] max-w-[120px] truncate">{counterparty}</td>
+                      <td className="px-4 py-3 text-[12px] text-[#57534E] max-w-[140px] truncate">{productNames}</td>
+                      <td className="px-4 py-3 text-[13px] font-bold" style={{ color: ["trust_receipt","service_fee_camp"].includes(header.payment_type) ? "#16A34A" : "#DC2626" }}>
+                        {fmtMoney(Number(header.total_amount))}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                          header.status === "Approved" ? "bg-[#DCFCE7] text-[#16A34A]" :
+                          header.status === "Pending"  ? "bg-[#FEF9C3] text-[#CA8A04]" :
+                          "bg-[#F4F3F1] text-[#57534E]"}`}>
+                          {header.status ?? "—"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {headers.length > 0 && (
+          <div className="px-5 py-3 border-t border-[#E8E6E2] flex gap-6 bg-[#FAFAF9]">
+            <div><span className="text-xs text-[#A8A29E]">Total Received </span><span className="text-sm font-bold text-[#16A34A]">{fmtMoney(totalReceived)}</span></div>
+            <div><span className="text-xs text-[#A8A29E]">Total Paid Out </span><span className="text-sm font-bold text-[#DC2626]">{fmtMoney(totalPaid)}</span></div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1601,6 +1730,7 @@ export default function ContractDetailPage() {
     transactions: contract.transactions?.length      ?? 0,
     documents:    0,
   };
+  // payments count fetched separately via query — rendered by PaymentsTab itself
 
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
@@ -1782,6 +1912,7 @@ export default function ContractDetailPage() {
         )}
         {activeTab === "schedule"     && <PaymentScheduleTab contract={contract} />}
         {activeTab === "invoices"     && <InvoicesTab        contract={contract} />}
+        {activeTab === "payments"     && <PaymentsTab        contractId={contract.id} />}
         {activeTab === "transactions" && <TransactionsTab    contract={contract} />}
         {activeTab === "commission"   && <CommissionTab      contract={contract} />}
         {activeTab === "documents"    && <DocumentsTab />}

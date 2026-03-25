@@ -6,6 +6,7 @@ import {
   ArrowLeft, Plus, Pencil, Check, AlertTriangle,
   ChevronRight, FileText, ExternalLink, DollarSign,
 } from "lucide-react";
+import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -448,11 +449,12 @@ export default function StudyAbroadDetailPage() {
   }
 
   const TABS = [
-    { key: "overview", label: "Overview"            },
-    { key: "schools",  label: "School Applications" },
-    { key: "visa",     label: "Visa"                },
-    { key: "docs",     label: "Documents"           },
-    { key: "notes",    label: "Notes"               },
+    { key: "overview",  label: "Overview"            },
+    { key: "schools",   label: "School Applications" },
+    { key: "visa",      label: "Visa"                },
+    { key: "payments",  label: "Payments"            },
+    { key: "docs",      label: "Documents"           },
+    { key: "notes",     label: "Notes"               },
   ] as const;
 
   return (
@@ -573,6 +575,12 @@ export default function StudyAbroadDetailPage() {
           <VisaTab
             record={record}
             onSave={patch => patchMutation.mutate(patch)}
+          />
+        )}
+        {tab === "payments" && (
+          <ContractPaymentsPanel
+            contractId={record.contractId}
+            contractNumber={record.contractNumber}
           />
         )}
         {tab === "docs" && (

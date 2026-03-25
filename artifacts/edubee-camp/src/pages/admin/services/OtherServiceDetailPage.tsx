@@ -5,6 +5,7 @@ import axios from "axios";
 import {
   ArrowLeft, FileText, DollarSign, Pencil, ExternalLink, User, Building2,
 } from "lucide-react";
+import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -385,6 +386,7 @@ export default function OtherServiceDetailPage() {
     { key: "overview",   label: "Overview"   },
     { key: "documents",  label: "Documents"  },
     { key: "bill",       label: "Bill"       },
+    { key: "payments",   label: "Payments"   },
     { key: "notes",      label: "Notes"      },
   ] as const;
 
@@ -433,6 +435,12 @@ export default function OtherServiceDetailPage() {
         <EntityDocumentsTab entityType="other_services_mgt" entityId={id!} />
       )}
       {tab === "bill"      && <BillTab record={record} />}
+      {tab === "payments"  && (
+        <ContractPaymentsPanel
+          contractId={record.contractId}
+          contractNumber={record.contractNumber}
+        />
+      )}
       {tab === "notes"     && (
         <NotePanel
           entityType="other_services_mgt"

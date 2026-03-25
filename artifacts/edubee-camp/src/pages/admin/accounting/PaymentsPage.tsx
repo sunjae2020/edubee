@@ -1,9 +1,10 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import axios from "axios";
 import {
   Plus, X, Trash2, ChevronsRight, BookOpen,
-  CheckCircle2, AlertTriangle, ChevronDown,
+  CheckCircle2, AlertTriangle, ChevronDown, ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,8 @@ interface PaymentHeader {
   notes?: string | null;
   status: string;
   createdOn: string;
+  receivedFrom?: string | null;
+  paidTo?: string | null;
 }
 
 interface JournalEntry {
@@ -661,6 +664,7 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PaymentsPage() {
+  const [, navigate]          = useLocation();
   const [tab, setTab]         = useState<"payments" | "journal">("payments");
   const { sortBy, sortDir, onSort } = useSortState();
   const [showCreate, setShowCreate] = useState(false);
@@ -788,8 +792,32 @@ export default function PaymentsPage() {
                           {PAYMENT_TYPES.find(t => t.key === p.paymentType)?.label ?? p.paymentType}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-stone-600 text-xs">{notesObj.receivedFromName ?? "—"}</td>
-                      <td className="px-4 py-3 text-stone-600 text-xs">{notesObj.paidToName ?? "—"}</td>
+                      <td className="px-4 py-3 text-xs">
+                        {notesObj.receivedFromName && p.receivedFrom ? (
+                          <button
+                            onClick={() => navigate(`/admin/crm/accounts/${p.receivedFrom}`)}
+                            className="flex items-center gap-1 text-[#F5821F] hover:underline font-medium"
+                          >
+                            {notesObj.receivedFromName}
+                            <ExternalLink size={9} className="shrink-0" />
+                          </button>
+                        ) : (
+                          <span className="text-stone-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        {notesObj.paidToName && p.paidTo ? (
+                          <button
+                            onClick={() => navigate(`/admin/crm/accounts/${p.paidTo}`)}
+                            className="flex items-center gap-1 text-[#F5821F] hover:underline font-medium"
+                          >
+                            {notesObj.paidToName}
+                            <ExternalLink size={9} className="shrink-0" />
+                          </button>
+                        ) : (
+                          <span className="text-stone-400">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 font-medium text-stone-800">{fmtAmt(p.totalAmount)}</td>
                       <td className="px-4 py-3">
                         <span className="px-2.5 py-0.5 rounded-full text-xs font-medium"

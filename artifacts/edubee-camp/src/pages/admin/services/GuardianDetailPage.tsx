@@ -6,6 +6,7 @@ import {
   ArrowLeft, Plus, FileText, CalendarDays, HeartPulse,
   DollarSign, Check, X, ExternalLink,
 } from "lucide-react";
+import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -533,11 +534,12 @@ export default function GuardianDetailPage() {
   if (!record)  return <div className="p-6 text-stone-500">Record not found.</div>;
 
   const TABS = [
-    { key: "details",  label: "Details"          },
-    { key: "reports",  label: "Monthly Reports"  },
-    { key: "events",   label: "School Events"    },
-    { key: "medical",  label: "Medical"          },
-    { key: "billing",  label: "Billing"          },
+    { key: "details",   label: "Details"          },
+    { key: "reports",   label: "Monthly Reports"  },
+    { key: "events",    label: "School Events"    },
+    { key: "medical",   label: "Medical"          },
+    { key: "billing",   label: "Billing"          },
+    { key: "payments",  label: "Payments"         },
   ] as const;
 
   return (
@@ -635,11 +637,17 @@ export default function GuardianDetailPage() {
         ))}
       </div>
 
-      {tab === "details" && <DetailsTab  record={record} onSave={p => patchMutation.mutate(p)} />}
-      {tab === "reports" && <MonthlyReportsTab record={record} />}
-      {tab === "events"  && <SchoolEventsTab   record={record} />}
-      {tab === "medical" && <MedicalTab        record={record} />}
-      {tab === "billing" && <BillingTab        record={record} id={id!} />}
+      {tab === "details"   && <DetailsTab      record={record} onSave={p => patchMutation.mutate(p)} />}
+      {tab === "reports"   && <MonthlyReportsTab record={record} />}
+      {tab === "events"    && <SchoolEventsTab   record={record} />}
+      {tab === "medical"   && <MedicalTab        record={record} />}
+      {tab === "billing"   && <BillingTab        record={record} id={id!} />}
+      {tab === "payments"  && (
+        <ContractPaymentsPanel
+          contractId={record.contractId}
+          contractNumber={record.contractNumber}
+        />
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { ArrowLeft, Check, FileText, Briefcase, User, ChevronRight, Building2, ExternalLink, DollarSign } from "lucide-react";
+import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -346,11 +347,12 @@ export default function InternshipDetailPage() {
   if (!record)  return <div className="p-6 text-stone-500">Record not found.</div>;
 
   const TABS = [
-    { key: "profile",  label: "Student Profile"  },
-    { key: "company",  label: "Host Company"      },
-    { key: "progress", label: "Progress"          },
-    { key: "docs",     label: "Documents"         },
-    { key: "notes",    label: "Notes"             },
+    { key: "profile",   label: "Student Profile"  },
+    { key: "company",   label: "Host Company"      },
+    { key: "progress",  label: "Progress"          },
+    { key: "payments",  label: "Payments"          },
+    { key: "docs",      label: "Documents"         },
+    { key: "notes",     label: "Notes"             },
   ] as const;
 
   const currentStage = record.status ?? "profile_review";
@@ -463,9 +465,15 @@ export default function InternshipDetailPage() {
         ))}
       </div>
 
-      {tab === "profile"  && <StudentProfileTab record={record} />}
-      {tab === "company"  && <CompanyMatchTab  record={record} onSave={p => patchMutation.mutate(p)} />}
-      {tab === "progress" && <ProgressTab      record={record} onSave={p => patchMutation.mutate(p)} />}
+      {tab === "profile"   && <StudentProfileTab record={record} />}
+      {tab === "company"   && <CompanyMatchTab  record={record} onSave={p => patchMutation.mutate(p)} />}
+      {tab === "progress"  && <ProgressTab      record={record} onSave={p => patchMutation.mutate(p)} />}
+      {tab === "payments"  && (
+        <ContractPaymentsPanel
+          contractId={record.contractId}
+          contractNumber={record.contractNumber}
+        />
+      )}
       {tab === "docs"     && (
         <div className="flex items-center justify-center h-40 text-stone-400 text-sm gap-2">
           <FileText size={20} /> Document management coming soon

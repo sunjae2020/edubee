@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { NotePanel } from "@/components/shared/NotePanel";
 import { ArTimeline } from "@/components/shared/ArTimeline";
+import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import { format, parseISO } from "date-fns";
 
@@ -202,12 +203,19 @@ export default function PickupMgtDetail() {
 
       {/* ── Accounting ── */}
       {activeTab === "accounting" && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
-            <span>Click any invoice row to expand details. To edit this record, switch to the <strong>Overview</strong> tab.</span>
-          </div>
+        <div className="space-y-5">
           {rec.contractId ? (
-            <ArTimeline contractId={rec.contractId} showContractLink />
+            <>
+              <ArTimeline contractId={rec.contractId} showContractLink />
+              <div className="mt-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500 mb-3">Payment Records</h3>
+                <ContractPaymentsPanel
+                  contractId={rec.contractId}
+                  contractNumber={rec.contractNumber}
+                  compact
+                />
+              </div>
+            </>
           ) : (
             <div className="text-center py-10 text-muted-foreground text-sm">No contract linked to this record.</div>
           )}

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { NotePanel } from "@/components/shared/NotePanel";
+import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -448,6 +449,7 @@ export default function SettlementMgtDetail() {
   const TABS = [
     { key: "overview",  label: "Overview"  },
     { key: "checklist", label: `Checklist (${doneCount}/${items.length})` },
+    { key: "payments",  label: "Payments"  },
     { key: "notes",     label: "Notes"     },
   ] as const;
 
@@ -602,6 +604,14 @@ export default function SettlementMgtDetail() {
       {/* Checklist Tab */}
       {activeTab === "checklist" && rec && (
         <ChecklistSection rec={rec} isAdmin={isAdmin} />
+      )}
+
+      {/* Payments Tab */}
+      {activeTab === "payments" && (
+        <ContractPaymentsPanel
+          contractId={rec.contractId}
+          contractNumber={rec.contractNumber}
+        />
       )}
 
       {/* Notes Tab */}

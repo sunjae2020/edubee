@@ -408,4 +408,105 @@ router.get("/accounting/payments-lookup/contracts/:id/products", authenticate, a
   }
 });
 
+// ─── PAYMENTS BY CONTRACT ─────────────────────────────────────────────────────
+router.get("/accounting/payments/by-contract/:contractId", authenticate, async (req, res) => {
+  try {
+    const { contractId } = req.params;
+    const r = (x: any) => x.rows ?? (x as any[]);
+    const rows = await db.execute(sql`
+      SELECT
+        ph.id,
+        ph.payment_ref,
+        ph.payment_date,
+        ph.total_amount,
+        ph.payment_type,
+        ph.payment_method,
+        ph.bank_reference,
+        ph.status,
+        ph.notes,
+        ph.received_from,
+        ph.paid_to,
+        rf.name  AS received_from_name,
+        pt.name  AS paid_to_name,
+        pl.id    AS line_id,
+        pl.amount          AS line_amount,
+        pl.split_type,
+        pl.description     AS line_description,
+        COALESCE(cp.name, cp.product_name) AS product_name,
+        cp.ar_status,
+        cp.ap_status
+      FROM payment_lines pl
+      JOIN payment_headers ph ON ph.id = pl.payment_header_id
+      JOIN contract_products cp ON cp.id = pl.contract_product_id
+      LEFT JOIN accounts rf ON rf.id = ph.received_from
+      LEFT JOIN accounts pt ON pt.id = ph.paid_to
+      WHERE cp.contract_id = ${contractId}::uuid
+        AND ph.status != 'Void'
+      ORDER BY ph.payment_date DESC, ph.created_on DESC
+    `);
+    return res.json(r(rows));
+  } catch (err) {
+    console.error("[GET /api/accounting/payments/by-contract]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── LEDGER BY ACCOUNT ────────────────────────────────────────────────────────
+router.get("/accounting/ledger/by-account/:accountId", authenticate, async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const r = (x: any) => x.rows ?? (x as any[]);
+    const rows = await db.execute(sql`
+      SELECT
+        'payment' AS source,
+        ph.id,
+        ph.payment_ref      AS ref,
+        ph.payment_date     AS entry_date,
+        ph.total_amount     AS amount,
+        ph.payment_type     AS type,
+        ph.payment_method   AS method,
+        ph.status,
+        ph.bank_reference,
+        ph.notes,
+        CASE
+          WHEN ph.received_from = ${accountId}::uuid THEN 'received'
+          ELSE 'paid'
+        END AS direction,
+        rf.name AS received_from_name,
+        pt.name AS paid_to_name
+      FROM payment_headers ph
+      LEFT JOIN accounts rf ON rf.id = ph.received_from
+      LEFT JOIN accounts pt ON pt.id = ph.paid_to
+      WHERE (ph.received_from = ${accountId}::uuid OR ph.paid_to = ${accountId}::uuid)
+        AND ph.status != 'Void'
+
+      UNION ALL
+
+      SELECT
+        'transaction' AS source,
+        t.id,
+        COALESCE(t.bank_reference, t.id::text) AS ref,
+        t.transaction_date  AS entry_date,
+        COALESCE(t.credit_amount, t.amount)    AS amount,
+        t.transaction_type  AS type,
+        NULL                AS method,
+        t.status,
+        t.bank_reference,
+        t.description       AS notes,
+        'transaction'       AS direction,
+        NULL                AS received_from_name,
+        NULL                AS paid_to_name
+      FROM transactions t
+      WHERE t.account_id = ${accountId}::uuid
+
+      ORDER BY entry_date DESC NULLS LAST
+      LIMIT 200
+    `);
+    return res.json(r(rows));
+  } catch (err) {
+    console.error("[GET /api/accounting/ledger/by-account]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

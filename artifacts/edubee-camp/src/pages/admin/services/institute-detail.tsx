@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArTimeline } from "@/components/shared/ArTimeline";
+import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import { format } from "date-fns";
 
@@ -137,14 +138,19 @@ export default function InstituteMgtDetail() {
         </TabsContent>
 
         <TabsContent value="accounting">
-          <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
-            <span>Click any invoice row to expand details and navigate to related records. To edit this record, switch to the <strong>Details</strong> tab.</span>
+          <div className="space-y-5">
+            {rec.contractId ? (
+              <>
+                <ArTimeline contractId={rec.contractId} showContractLink />
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500 mb-3">Payment Records</h3>
+                  <ContractPaymentsPanel contractId={rec.contractId} contractNumber={rec.contractNumber} compact />
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-10 text-muted-foreground text-sm">No contract linked to this record.</div>
+            )}
           </div>
-          {rec.contractId ? (
-            <ArTimeline contractId={rec.contractId} showContractLink />
-          ) : (
-            <div className="text-center py-10 text-muted-foreground text-sm">No contract linked to this record.</div>
-          )}
         </TabsContent>
       </Tabs>
     </DetailPageLayout>
