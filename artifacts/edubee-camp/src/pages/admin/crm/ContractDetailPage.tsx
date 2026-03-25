@@ -81,6 +81,7 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
   setPrimaryServiceType: (s: string) => void;
   onAddService: (defaultType?: string) => void;
 }) {
+  const [, navigate] = useLocation();
   const arPct = contract.totalArAmount > 0
     ? Math.round((((contract.totalArAmount - (contract.arOutstanding ?? 0)) / contract.totalArAmount) * 100))
     : 0;
@@ -98,7 +99,19 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
               <Pencil size={13} />
             </button>
           </div>
-          <InfoRow label="Quote Ref"       value={contract.quote?.quoteRefNumber ?? "—"} />
+          <InfoRow label="Quote Ref" value={
+            contract.quote?.id && contract.quote?.quoteRefNumber
+              ? (
+                <button
+                  onClick={() => navigate(`/admin/crm/quotes/${contract.quote.id}`)}
+                  className="font-mono text-[#F5821F] hover:text-[#E5721F] hover:underline flex items-center gap-1 text-right"
+                >
+                  {contract.quote.quoteRefNumber}
+                  <ExternalLink size={11} />
+                </button>
+              )
+              : (contract.quote?.quoteRefNumber ?? "—")
+          } />
           <InfoRow label="Payment Count"   value={
             contract.contractProducts?.length
               ? `${contract.contractProducts.length} instalment${contract.contractProducts.length > 1 ? "s" : ""}`
