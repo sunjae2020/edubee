@@ -686,6 +686,8 @@ router.get("/products", authenticate, async (req, res) => {
       status:            products.status,
       providerId:        products.providerId,
       providerName:      accounts.name,
+      providerCountry:   accounts.country,
+      providerLocation:  accounts.location,
       numberOfPayments:  products.numberOfPayments,
       minimumPayment:    products.minimumPayment,
       isRecommend:       products.isRecommend,

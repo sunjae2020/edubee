@@ -82,10 +82,9 @@ export default function PackageDetail() {
   const [addError, setAddError] = useState<string | null>(null);
   // advanced search state
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [advCurrency, setAdvCurrency] = useState("all");
-  const [advMinPrice, setAdvMinPrice] = useState("");
-  const [advMaxPrice, setAdvMaxPrice] = useState("");
-  const [advSortBy, setAdvSortBy] = useState("name");
+  const [advCountry, setAdvCountry]   = useState("all");
+  const [advLocation, setAdvLocation] = useState("all");
+  const [advSortBy, setAdvSortBy]     = useState("name");
   // inline editing state per row
   const [editingProdId, setEditingProdId] = useState<string | null>(null);
   const [editQty, setEditQty] = useState(1);
@@ -268,28 +267,31 @@ export default function PackageDetail() {
     }, 0);
 
   // ── Advanced search computed values ────────────────────────────────
-  const availableCurrencies = Array.from(
-    new Set(allActiveProds.map((p: any) => p.currency).filter(Boolean))
+  const availableCountries = Array.from(
+    new Set(allActiveProds.map((p: any) => p.providerCountry).filter(Boolean))
+  ).sort() as string[];
+
+  const availableLocations = Array.from(
+    new Set(
+      allActiveProds.flatMap((p: any) =>
+        (p.providerLocation ?? "").split(",").map((s: string) => s.trim()).filter(Boolean)
+      )
+    )
   ).sort() as string[];
 
   const filteredProds = allActiveProds
     .filter((p: any) => prodTypeFilter === "all" || p.productType === prodTypeFilter)
     .filter((p: any) => !linkedProds.some((l: any) => l.productId === p.id))
     .filter((p: any) => !prodSearch || p.productName?.toLowerCase().includes(prodSearch.toLowerCase()))
-    .filter((p: any) => advCurrency === "all" || p.currency === advCurrency)
-    .filter((p: any) => {
-      const cost = parseFloat(p.cost ?? "0") || 0;
-      if (advMinPrice && cost < parseFloat(advMinPrice)) return false;
-      if (advMaxPrice && cost > parseFloat(advMaxPrice)) return false;
-      return true;
-    })
+    .filter((p: any) => advCountry === "all" || p.providerCountry === advCountry)
+    .filter((p: any) => advLocation === "all" || (p.providerLocation ?? "").toLowerCase().includes(advLocation.toLowerCase()))
     .sort((a: any, b: any) => {
       if (advSortBy === "price_asc")  return (parseFloat(a.cost ?? "0") || 0) - (parseFloat(b.cost ?? "0") || 0);
       if (advSortBy === "price_desc") return (parseFloat(b.cost ?? "0") || 0) - (parseFloat(a.cost ?? "0") || 0);
       return (a.productName ?? "").localeCompare(b.productName ?? "");
     });
 
-  const hasAdvancedFilters = advCurrency !== "all" || advMinPrice !== "" || advMaxPrice !== "" || advSortBy !== "name";
+  const hasAdvancedFilters = advCountry !== "all" || advLocation !== "all" || advSortBy !== "name";
 
   return (
     <DetailPageLayout
@@ -669,20 +671,36 @@ export default function PackageDetail() {
               {showAdvanced && (
                 <div className="border border-[#F5821F22] rounded-md p-3 bg-white/60 space-y-2.5">
                   <div className="grid grid-cols-2 gap-2">
-                    {/* Currency */}
+                    {/* Country */}
                     <div>
-                      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Currency</Label>
-                      <Select value={advCurrency} onValueChange={v => { setAdvCurrency(v); setSelectedProdId(null); }}>
+                      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Country</Label>
+                      <Select value={advCountry} onValueChange={v => { setAdvCountry(v); setSelectedProdId(null); }}>
                         <SelectTrigger className="mt-0.5 h-7 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All currencies</SelectItem>
-                          {availableCurrencies.map(c => (
+                          <SelectItem value="all">All Countries</SelectItem>
+                          {availableCountries.map(c => (
                             <SelectItem key={c} value={c}>{c}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
 
+                    {/* Location */}
+                    <div>
+                      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Location</Label>
+                      <Select value={advLocation} onValueChange={v => { setAdvLocation(v); setSelectedProdId(null); }}>
+                        <SelectTrigger className="mt-0.5 h-7 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Locations</SelectItem>
+                          {availableLocations.map(l => (
+                            <SelectItem key={l} value={l}>{l}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 items-end">
                     {/* Sort */}
                     <div>
                       <Label className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Sort by</Label>
@@ -695,42 +713,22 @@ export default function PackageDetail() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
 
-                  {/* Price range */}
-                  <div>
-                    <Label className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Price range (cost)</Label>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <Input
-                        type="number" min={0} step="0.01"
-                        placeholder="Min"
-                        value={advMinPrice}
-                        onChange={e => { setAdvMinPrice(e.target.value); setSelectedProdId(null); }}
-                        className="h-7 text-xs font-mono"
-                      />
-                      <span className="text-xs text-muted-foreground shrink-0">—</span>
-                      <Input
-                        type="number" min={0} step="0.01"
-                        placeholder="Max"
-                        value={advMaxPrice}
-                        onChange={e => { setAdvMaxPrice(e.target.value); setSelectedProdId(null); }}
-                        className="h-7 text-xs font-mono"
-                      />
-                      {hasAdvancedFilters && (
+                    {hasAdvancedFilters && (
+                      <div className="flex justify-end">
                         <button
                           onClick={() => {
-                            setAdvCurrency("all");
-                            setAdvMinPrice("");
-                            setAdvMaxPrice("");
+                            setAdvCountry("all");
+                            setAdvLocation("all");
                             setAdvSortBy("name");
                             setSelectedProdId(null);
                           }}
-                          className="text-[10px] text-muted-foreground hover:text-destructive underline shrink-0"
+                          className="text-[10px] text-muted-foreground hover:text-destructive underline"
                         >
                           Reset
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Result count */}
