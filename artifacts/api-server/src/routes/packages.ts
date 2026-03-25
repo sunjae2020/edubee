@@ -294,6 +294,7 @@ router.get("/packages", authenticate, async (req, res) => {
         features: packages.features,
         createdAt: packages.createdAt,
         updatedAt: packages.updatedAt,
+        productId: packages.productId,
         groupNameEn: packageGroups.nameEn,
         groupNameKo: packageGroups.nameKo,
         groupLocation: packageGroups.location,
@@ -354,6 +355,7 @@ router.get("/packages/:id", authenticate, async (req, res) => {
         groupCampProviderId: packageGroups.campProviderId,
         durationDays: packages.durationDays,
         status: packages.status,
+        productId: packages.productId,
         coordinatorName: users.fullName,
         coordinatorEmail: users.email,
       })
@@ -373,7 +375,7 @@ router.put("/packages/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coor
   try {
     const allowed = ["name", "status", "maxAdults", "maxStudents", "features",
       "priceAud", "priceUsd", "priceKrw", "priceJpy", "priceThb", "pricePhp", "priceSgd", "priceGbp",
-      "agentCommissionType", "agentCommissionRate", "agentCommissionFixed"] as const;
+      "agentCommissionType", "agentCommissionRate", "agentCommissionFixed", "productId"] as const;
     const patch: Record<string, unknown> = { updatedAt: new Date() };
     for (const key of allowed) {
       if (key in req.body) patch[key] = req.body[key];
@@ -562,6 +564,48 @@ router.get("/products-lookup/promotions-detail", authenticate, async (_req, res)
   } catch (err) { res.status(500).json({ error: "Failed" }); }
 });
 
+router.get("/products-lookup/camp-packages", authenticate, async (_req, res) => {
+  try {
+    const rows = await db
+      .select({
+        id:            products.id,
+        productName:   products.productName,
+        cost:          products.cost,
+        price:         products.price,
+        currency:      products.currency,
+        campPackageId: products.campPackageId,
+        status:        products.status,
+      })
+      .from(products)
+      .where(and(eq(products.productContext, "camp_package"), eq(products.status, "Active")))
+      .orderBy(asc(products.productName));
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: "Failed" }); }
+});
+
+router.get("/products-lookup/camp-addons", authenticate, async (req, res) => {
+  try {
+    const { campPackageId } = req.query as Record<string, string>;
+    const conds = [eq(products.productContext, "camp_addon"), eq(products.status, "Active")];
+    if (campPackageId) conds.push(eq(products.campPackageId, campPackageId));
+    const rows = await db
+      .select({
+        id:              products.id,
+        productName:     products.productName,
+        cost:            products.cost,
+        price:           products.price,
+        currency:        products.currency,
+        campPackageId:   products.campPackageId,
+        itemDescription: products.itemDescription,
+        status:          products.status,
+      })
+      .from(products)
+      .where(and(...conds))
+      .orderBy(asc(products.productName));
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: "Failed" }); }
+});
+
 // ─── PRODUCTS ────────────────────────────────────────────────────────────────
 
 router.get("/products", authenticate, async (req, res) => {
@@ -569,7 +613,7 @@ router.get("/products", authenticate, async (req, res) => {
     const {
       productType, status, page = "1", limit = "20",
       search, productPriority, productGrade, productTypeId, productGroup,
-      searchCategory, display_on_quote, provider,
+      searchCategory, display_on_quote, provider, productContext,
     } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
@@ -585,6 +629,7 @@ router.get("/products", authenticate, async (req, res) => {
     if (display_on_quote === "true")  conditions.push(eq(products.displayOnQuote, true));
     if (display_on_quote === "false") conditions.push(eq(products.displayOnQuote, false));
     if (provider)         conditions.push(eq(products.providerId, provider));
+    if (productContext)   conditions.push(eq(products.productContext, productContext));
     if (search) {
       const q = `%${search}%`;
       if (searchCategory === "provider") {
@@ -621,6 +666,8 @@ router.get("/products", authenticate, async (req, res) => {
       defaultPaymentTerm: products.defaultPaymentTerm,
       installmentPlan:   products.installmentPlan,
       promotionId:       products.promotionId,
+      productContext:    products.productContext,
+      campPackageId:     products.campPackageId,
       createdAt:         products.createdAt,
       updatedAt:         products.updatedAt,
     })
