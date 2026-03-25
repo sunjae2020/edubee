@@ -138,7 +138,7 @@ export default function TaxInvoiceListPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-x-auto">
         <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[#E8E6E2] flex-wrap gap-3">
           {/* Type filter */}
           <div className="flex gap-1">

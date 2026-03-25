@@ -50,7 +50,7 @@ export default function MyInvoices() {
         <div><h1 className="text-lg font-bold">My Invoices</h1><p className="text-xs text-muted-foreground">Invoices issued to you — view, track and download</p></div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
         {[
           { label: "Total Invoiced", value: `A$${total.toLocaleString("en-AU", { minimumFractionDigits: 2 })}` },
           { label: "Paid", value: `A$${paid.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`, color: "text-[#16A34A]" },

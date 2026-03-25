@@ -300,7 +300,7 @@ function AccommodationEditor({ content, onChange }: { content: Record<string, un
     <div className="space-y-3">
       <FieldRow label="Hotel Name"><Input className="h-8 text-sm bg-[#FAFAF9]" value={f("hotelName")} onChange={s("hotelName")} /></FieldRow>
       <FieldRow label="Room Type"><Input className="h-8 text-sm" value={f("roomType")} onChange={s("roomType")} /></FieldRow>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <FieldRow label="Check-in Date"><Input type="date" className="h-8 text-sm" value={f("checkinDate")} onChange={s("checkinDate")} /></FieldRow>
         <FieldRow label="Check-in Time"><Input type="time" className="h-8 text-sm" value={f("checkinTime")} onChange={s("checkinTime")} /></FieldRow>
         <FieldRow label="Check-out Date"><Input type="date" className="h-8 text-sm" value={f("checkoutDate")} onChange={s("checkoutDate")} /></FieldRow>
@@ -339,7 +339,7 @@ function AcademicEditor({ content, onChange }: { content: Record<string, unknown
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <FieldRow label="Institute"><Input className="h-8 text-sm bg-[#FAFAF9]" value={f("instituteName")} onChange={e => onChange({ ...content, instituteName: e.target.value })} /></FieldRow>
         <FieldRow label="Total Hours"><Input type="number" className="h-8 text-sm" value={f("totalHours")} onChange={e => onChange({ ...content, totalHours: e.target.value })} /></FieldRow>
         <FieldRow label="Period Start"><Input type="date" className="h-8 text-sm" value={f("startDate")} onChange={e => onChange({ ...content, startDate: e.target.value })} /></FieldRow>

@@ -651,7 +651,7 @@ export default function NewPackageGroup() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                   {[
                     { k: "durationDays",    l: "Days" },
                     { k: "maxAdults",       l: "Max Adults" },
@@ -841,7 +841,7 @@ export default function NewPackageGroup() {
               </span>
             </div>
             {form.interviewRequired && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1.5">Format</p>
                   <Select value={form.interviewFormat} onValueChange={v => upd("interviewFormat", v)}>

@@ -389,7 +389,7 @@ export default function LeadDetailPage() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="flex gap-1 border-b border-stone-200">
+      <div className="flex gap-1 border-b border-stone-200 overflow-x-auto">
         {TABS.map(t => {
           const Icon = t.icon;
           const active = tab === t.key;
@@ -509,7 +509,7 @@ export default function LeadDetailPage() {
 
           <div className="border border-stone-200 rounded-xl p-4 space-y-3 bg-stone-50">
             <p className="text-sm font-semibold text-stone-700">+ Log Activity</p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Channel</Label>
                 <Select value={activityForm.channel} onValueChange={v => setActivityForm(f => ({ ...f, channel: v }))}>

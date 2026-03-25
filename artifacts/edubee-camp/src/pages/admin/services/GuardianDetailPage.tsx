@@ -186,7 +186,7 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
           <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</h3>
           <div className="space-y-2 text-sm">
@@ -222,7 +222,7 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Service Details</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Service Start</Label>
             <Input type="date" value={serviceStart} onChange={e => setServiceStart(e.target.value)} className="h-9 text-sm" />
@@ -565,7 +565,7 @@ export default function GuardianDetailPage() {
 
       {/* Related Contract + Financial Summary */}
       {record.contractId && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <FileText size={14} style={{ color: "#F5821F" }} />
@@ -626,7 +626,7 @@ export default function GuardianDetailPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-stone-200">
+      <div className="flex gap-1 border-b border-stone-200 overflow-x-auto">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${

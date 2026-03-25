@@ -508,7 +508,7 @@ export default function ContactDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-stone-200">
+      <div className="flex gap-1 border-b border-stone-200 overflow-x-auto">
         {TABS.map(t => {
           const Icon = t.icon;
           const active = tab === t.key;

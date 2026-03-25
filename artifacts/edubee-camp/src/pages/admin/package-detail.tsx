@@ -670,7 +670,7 @@ export default function PackageDetail() {
               {/* Advanced search panel */}
               {showAdvanced && (
                 <div className="border border-[#F5821F22] rounded-md p-3 bg-white/60 space-y-2.5">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {/* Country */}
                     <div>
                       <Label className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Country</Label>
@@ -700,7 +700,7 @@ export default function PackageDetail() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 items-end">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end">
                     {/* Sort */}
                     <div>
                       <Label className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Sort by</Label>

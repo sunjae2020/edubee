@@ -95,7 +95,7 @@ export default function MyRevenue() {
       {/* Pending Payouts */}
       <div className="bg-white rounded-xl border p-5">
         <h2 className="text-sm font-semibold mb-3">Payout Status</h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="text-center p-4 bg-[#FEF9C3] rounded-lg border border-[#CA8A04]/20">
             <div className="text-2xl font-bold text-[#CA8A04]">A${Number(summaryData?.pending ?? 0).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</div>
             <div className="text-xs text-[#CA8A04] mt-1">Pending Payout</div>

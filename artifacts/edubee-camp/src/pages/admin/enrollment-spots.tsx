@@ -134,7 +134,7 @@ export default function EnrollmentSpots() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border overflow-hidden bg-card">
+        <div className="rounded-xl border border-border overflow-x-auto bg-card">
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b border-border bg-muted/40">

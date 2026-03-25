@@ -145,7 +145,7 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {/* Student & Contract */}
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
           <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</h3>
@@ -172,7 +172,7 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
       {/* Editable fields */}
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Booking Details</h3>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Check-in Date</Label>
             <Input type="date" value={checkin} onChange={e => setCheckin(e.target.value)} className="h-9 text-sm" />
@@ -306,7 +306,7 @@ function BillingTab({ record }: { record: AccomDetail }) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Stay Duration", value: nights > 0 ? `${nights} nights (${weeks.toFixed(1)} wks)` : "—", icon: <Home size={16} />, color: "#F5821F", bg: "#FEF0E3" },
           { label: "Charge to Student", value: total, icon: <DollarSign size={16} />, color: "#16A34A", bg: "#DCFCE7" },
@@ -426,7 +426,7 @@ export default function AccommodationDetailPage() {
 
       {/* Related Contract + Financial Summary */}
       {record.contractId && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <FileText size={14} style={{ color: "#F5821F" }} />
@@ -487,7 +487,7 @@ export default function AccommodationDetailPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-stone-200">
+      <div className="flex gap-1 border-b border-stone-200 overflow-x-auto">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
@@ -505,7 +505,7 @@ export default function AccommodationDetailPage() {
             <Home size={16} style={{ color: "#F5821F" }} />
             <h3 className="text-sm font-bold text-stone-800">Host Family Information</h3>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Host Name</p>
               <p className="text-sm text-stone-800">{record.hostName ?? <span className="text-stone-400 italic">Not assigned</span>}</p>

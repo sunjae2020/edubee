@@ -205,7 +205,7 @@ function AcademicViewer({ section }: { section: Section }) {
       <SectionHeader symbol="academic" number="04" title="Academic Program" variant="viewer" className="mb-4" />
 
       {/* Stat cards */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
         {[
           { label: "Institute", value: (c.instituteName as string) || "—" },
           { label: "Period", value: c.startDate ? `${fmtDate(c.startDate as string)} ~ ${fmtDate(c.endDate as string)}` : "—" },

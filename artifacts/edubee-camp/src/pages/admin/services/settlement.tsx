@@ -128,7 +128,7 @@ export default function Settlement() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {(["pending","in_progress","completed"] as const).map(s => {
           const cfg = STATUS_MAP[s];
           const count = totalByStatus(s);
@@ -175,7 +175,7 @@ export default function Settlement() {
           )}
         </div>
       ) : (
-        <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+        <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>

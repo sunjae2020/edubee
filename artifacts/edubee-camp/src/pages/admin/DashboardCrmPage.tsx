@@ -195,7 +195,7 @@ export default function DashboardCrmPage() {
     return (
       <div className="p-6 space-y-4">
         <div className="h-8 rounded-lg w-64 animate-pulse" style={{ background: "#F4F3F1" }} />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => <div key={i} className="h-24 rounded-xl animate-pulse" style={{ background: "#F4F3F1" }} />)}
         </div>
       </div>

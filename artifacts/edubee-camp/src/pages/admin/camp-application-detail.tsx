@@ -105,7 +105,7 @@ function InterviewDialog({
         </DialogHeader>
 
         <div className="space-y-3 pt-2">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1 col-span-2">
               <Label className="text-xs">Date & Time *</Label>
               <Input type="datetime-local" value={form.scheduledDatetime} onChange={e => f("scheduledDatetime")(e.target.value)} className="h-8 text-sm" />

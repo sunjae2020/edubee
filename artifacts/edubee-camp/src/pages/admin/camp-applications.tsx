@@ -343,7 +343,7 @@ export default function CampApplications() {
                   <TabsContent value="overview" className="p-6 m-0 space-y-6">
                     {isEditing ? (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="col-span-2 space-y-1">
                             <Label className="text-xs">Student Name</Label>
                             <Input className="h-8 text-sm" value={editForm.applicantName ?? ""} onChange={e => setEditForm(f => ({ ...f, applicantName: e.target.value }))} />
@@ -372,7 +372,7 @@ export default function CampApplications() {
                       </div>
                     ) : (
                       <>
-                        <dl className="grid grid-cols-2 gap-4">
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <DetailRow label="Student Name" value={selectedApp.studentName} />
                           <DetailRow label="Nationality" value={selectedApp.applicantNationality} />
                           <DetailRow label="Email" value={selectedApp.applicantEmail} />
@@ -417,7 +417,7 @@ export default function CampApplications() {
                             {p.participantType}
                           </span>
                         </div>
-                        <dl className="grid grid-cols-2 gap-3">
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {p.dateOfBirth && <DetailRow label="Date of Birth" value={format(new Date(p.dateOfBirth), "MMM d, yyyy")} />}
                           {p.gender && <DetailRow label="Gender" value={p.gender} />}
                           {p.nationality && <DetailRow label="Nationality" value={p.nationality} />}
@@ -449,7 +449,7 @@ export default function CampApplications() {
                             <InterviewResultBadge result={iv.result} />
                           </div>
                         </div>
-                        <dl className="grid grid-cols-2 gap-3">
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <DetailRow label="Scheduled" value={format(new Date(iv.scheduledDatetime), "MMM d, yyyy HH:mm")} />
                           <DetailRow label="Timezone" value={iv.timezone} />
                           {iv.meetingLink && (
@@ -529,7 +529,7 @@ export default function CampApplications() {
               <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3">
                 <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Application Details</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="col-span-2 space-y-1.5">
                   <Label className="text-xs">Student Name <span className="text-red-500">*</span></Label>
                   <Input className="h-9 text-sm" value={form.applicantName} onChange={e => setForm(f => ({ ...f, applicantName: e.target.value }))} placeholder="Full name" />
@@ -594,7 +594,7 @@ export default function CampApplications() {
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="col-span-2 space-y-1">
                           <Label className="text-[11px]">Full Name *</Label>
                           <Input className="h-8 text-sm" value={p.fullName} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, fullName: e.target.value } : x))} />
@@ -671,7 +671,7 @@ export default function CampApplications() {
               <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3">
                 <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Additional Options <span className="text-[#F5821F]/60 font-normal normal-case tracking-normal">(optional)</span></span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {WIZARD_OPTIONS.map(opt => {
                   const checked = wizardOptions.includes(opt.key);
                   return (

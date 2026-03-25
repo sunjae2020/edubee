@@ -92,7 +92,7 @@ function ServiceCard({ icon: Icon, title, record, fields }: {
         )}
       </div>
       {record && (
-        <dl className="grid grid-cols-2 gap-3">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {fields.map(f => record[f.key] != null && (
             <DetailRow key={f.key} label={f.label} value={f.format ? f.format(record[f.key]) : String(record[f.key])} />
           ))}
@@ -298,7 +298,7 @@ export default function CampContracts() {
                   <TabsContent value="overview" className="p-6 m-0 space-y-5">
                     {isEditing ? (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="space-y-1">
                             <Label className="text-xs">Start Date</Label>
                             <Input className="h-8 text-sm" type="date" value={editForm.startDate ? editForm.startDate.slice(0, 10) : ""} onChange={e => setEditForm(f => ({ ...f, startDate: e.target.value }))} />
@@ -330,7 +330,7 @@ export default function CampContracts() {
                       </div>
                     ) : (
                       <>
-                        <dl className="grid grid-cols-2 gap-4">
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <DetailRow label="Contract #" value={selected.contractNumber} />
                           <DetailRow label="Status" value={selected.status} />
                           <DetailRow label="Currency" value={selected.currency} />
@@ -425,7 +425,7 @@ export default function CampContracts() {
                     {accountingLoading ? [...Array(2)].map((_, i) => <div key={i} className="h-20 bg-muted rounded-xl animate-pulse" />) : (
                       <>
                         {accounting && (
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             {[
                               { label: "Paid", value: accounting.summary.totalPaid, color: "text-[#16A34A]" },
                               { label: "Sent", value: accounting.summary.totalSent, color: "text-[#F5821F]" },

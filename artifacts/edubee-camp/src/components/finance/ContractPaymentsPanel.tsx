@@ -98,7 +98,7 @@ export function ContractPaymentsPanel({ contractId, contractNumber, compact = fa
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-stone-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-stone-200 rounded-xl overflow-x-auto">
         {headers.length === 0 ? (
           <div className="text-center py-8 text-stone-400">
             <CreditCard size={24} className="mx-auto mb-2 opacity-40" />

@@ -271,7 +271,7 @@ export default function Promotions() {
                 <Input value={form.accountName} readOnly className="h-10 border-[#E8E6E2] bg-[#FAFAF9] text-[#57534E]" />
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">From Date</Label>
                 <Input type="date" value={form.fromDate} onChange={e => setForm(f => ({ ...f, fromDate: e.target.value }))}

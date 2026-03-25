@@ -67,7 +67,7 @@ function ContractCard({ rec, onViewContract }: { rec: Rec; onViewContract: () =>
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 text-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
         <div>
           <span className="text-muted-foreground">Student</span>
           <p className="font-medium text-foreground truncate">{rec.studentName ?? "—"}</p>
@@ -222,7 +222,7 @@ export default function HotelManagement() {
                 <div className="space-y-3">
                   <div><Label className="text-xs">Room Type</Label><Input value={form.roomType ?? ""} onChange={e => fld("roomType")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
                   <div><Label className="text-xs">Confirmation No.</Label><Input value={form.confirmationNo ?? ""} onChange={e => fld("confirmationNo")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div><Label className="text-xs">Check-in</Label><Input type="date" value={form.checkinDate ?? ""} onChange={e => fld("checkinDate")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
                     <div><Label className="text-xs">Check-out</Label><Input type="date" value={form.checkoutDate ?? ""} onChange={e => fld("checkoutDate")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
                   </div>

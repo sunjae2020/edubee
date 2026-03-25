@@ -346,7 +346,7 @@ export default function JournalEntriesPage() {
       )}
 
       {/* ── Table ──────────────────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-stone-200 overflow-hidden">
+      <div className="rounded-xl border border-stone-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">

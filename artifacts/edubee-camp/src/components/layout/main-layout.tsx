@@ -72,7 +72,11 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
 
       {/* Sidebar */}
       <div className={isMobile ? `fixed inset-y-0 left-0 z-40 transition-transform duration-200 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}` : ""}>
-        <AppSidebar collapsed={sidebarCollapsed} onToggle={toggleCollapsed} />
+        <AppSidebar
+          collapsed={sidebarCollapsed}
+          onToggle={toggleCollapsed}
+          onNavClick={isMobile ? () => setMobileOpen(false) : undefined}
+        />
       </div>
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">

@@ -738,7 +738,7 @@ function ManualLineForm({ onAdd }: { onAdd: (line: Partial<QuoteProduct>) => voi
       </button>
       {open && (
         <div className="p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-xs text-gray-500">Item Name *</Label>
               <Input
@@ -748,7 +748,7 @@ function ManualLineForm({ onAdd }: { onAdd: (line: Partial<QuoteProduct>) => voi
                 className="h-8 text-sm mt-1"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <Label className="text-xs text-gray-500">Price (AUD)</Label>
                 <Input
@@ -1356,7 +1356,7 @@ export default function QuoteBuilderPage() {
           <h2 className="text-sm font-semibold text-gray-700 border-b border-gray-100 pb-2">
             Quote Details
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-xs text-gray-500">Customer Name</Label>
               <Input
@@ -1382,7 +1382,7 @@ export default function QuoteBuilderPage() {
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-xs text-gray-500">Client Account</Label>
               <div className="mt-1">

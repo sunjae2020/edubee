@@ -204,7 +204,7 @@ function OverviewTab({ record, onStageChange }: { record: SARecord; onStageChang
         <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-4">Application Progress</h3>
         <StageStepper current={record.applicationStage ?? "counseling"} onSelect={onStageChange} />
       </div>
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
           <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Student</h3>
           <div className="space-y-2 text-sm">
@@ -357,7 +357,7 @@ function VisaTab({ record, onSave }: { record: SARecord; onSave: (patch: Partial
           <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Visa Information</h3>
           {visaExpiryDate && <VisaExpiryBadge expiryDate={visaExpiryDate} />}
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-stone-600">Visa Type</Label>
             <Input value={visaType} onChange={e => setVisaType(e.target.value)} className="h-9 text-sm" placeholder="e.g. Student Visa 500" />
@@ -482,7 +482,7 @@ export default function StudyAbroadDetailPage() {
 
       {/* Related Contract + Financial Summary */}
       {record.contractId && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <FileText size={14} style={{ color: "#F5821F" }} />
@@ -541,7 +541,7 @@ export default function StudyAbroadDetailPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-stone-200">
+      <div className="flex gap-1 border-b border-stone-200 overflow-x-auto">
         {TABS.map(t => (
           <button
             key={t.key}

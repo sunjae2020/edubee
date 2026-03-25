@@ -118,7 +118,7 @@ export default function AccommodationPage() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: "Searching",   count: kpi.searching,  icon: <Search size={18} />,       color: "#F5821F", bg: "#FEF0E3"  },
           { label: "Confirmed",   count: kpi.confirmed,  icon: <CheckCircle2 size={18} />,  color: "#CA8A04", bg: "#FEF9C3"  },
@@ -163,7 +163,7 @@ export default function AccommodationPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-stone-200 overflow-hidden">
+      <div className="rounded-xl border border-stone-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>

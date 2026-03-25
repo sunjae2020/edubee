@@ -200,9 +200,9 @@ function saveCollapsed(keys: Set<string>) {
 
 // ── AppSidebar ────────────────────────────────────────────────────────────
 
-type Props = { collapsed: boolean; onToggle: () => void };
+type Props = { collapsed: boolean; onToggle: () => void; onNavClick?: () => void };
 
-export function AppSidebar({ collapsed, onToggle }: Props) {
+export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
   const [location]                   = useLocation();
   const { user }                     = useAuth();
   const { viewAsUser, isImpersonating } = useViewAs();
@@ -313,7 +313,7 @@ export function AppSidebar({ collapsed, onToggle }: Props) {
                 const isActive = location === item.href || location.startsWith(item.href + "/");
                 const Icon     = item.icon;
                 return (
-                  <Link key={item.href} href={item.href}>
+                  <Link key={item.href} href={item.href} onClick={onNavClick}>
                     <SidebarNavItem
                       icon={Icon}
                       label={item.label}

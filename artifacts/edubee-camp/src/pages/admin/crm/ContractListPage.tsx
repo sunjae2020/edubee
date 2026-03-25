@@ -228,7 +228,7 @@ export default function ContractListPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard label="Active Contracts" value={String(summary.activeCount)} />
         <StatCard label="AR Outstanding"   value={fmtMoney(summary.arOutstanding)}  accent="#F5821F" />
         <StatCard label="AP Payable"        value={fmtMoney(summary.apPayable)}       accent="#DC2626" />
@@ -236,7 +236,7 @@ export default function ContractListPage() {
       </div>
 
       {/* Filter Card */}
-      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
         <div className="p-4 flex flex-wrap items-center gap-3">
           {/* Search */}
           <div className="relative flex-1 min-w-[220px]">
@@ -300,7 +300,7 @@ export default function ContractListPage() {
         {/* Advanced Panel */}
         {showAdv && (
           <div className="border-t border-[#E8E6E2] px-4 py-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
               <div>
                 <label className="block text-xs font-medium text-[#57534E] mb-1">Payment Type</label>
                 <select value={draftPayFreq} onChange={e => setDraftPayFreq(e.target.value)}
@@ -357,7 +357,7 @@ export default function ContractListPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

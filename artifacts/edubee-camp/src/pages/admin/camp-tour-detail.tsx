@@ -127,7 +127,7 @@ function OverviewTab({ record, canEdit, onSave }: { record: any; canEdit: boolea
         </div>
 
         {editing ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1 col-span-2">
               <Label className="text-xs">Tour Name</Label>
               <Input value={form.tourName} onChange={e => f("tourName")(e.target.value)} className="h-8 text-sm" />
@@ -191,7 +191,7 @@ function OverviewTab({ record, canEdit, onSave }: { record: any; canEdit: boolea
           <span className="text-sm font-semibold text-[#1C1917]">Billing</span>
         </div>
         {editing ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Retail Price (AR)</Label>
               <Input type="number" value={form.retailPrice} onChange={e => f("retailPrice")(e.target.value)} className="h-8 text-sm" placeholder="0.00" />

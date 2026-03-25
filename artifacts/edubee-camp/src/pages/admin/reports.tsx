@@ -107,7 +107,7 @@ export default function Reports() {
 
       {/* Stats */}
       {canEdit && (
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div className="bg-white rounded-lg border p-3 text-center">
             <div className="text-2xl font-bold text-[#CA8A04]">{drafts.length}</div>
             <div className="text-xs text-muted-foreground mt-1">Drafts</div>

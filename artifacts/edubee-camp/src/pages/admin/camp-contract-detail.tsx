@@ -114,7 +114,7 @@ function AddInstituteModal({ contractId, open, onClose, onCreated }: {
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle className="flex items-center gap-2"><School className="w-4 h-4 text-[#F5821F]" /> Add Language School Service</DialogTitle></DialogHeader>
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
           <div className="space-y-1 col-span-2">
             <Label className="text-xs">Program Name</Label>
             <Input value={form.programName} onChange={e => f("programName")(e.target.value)} className="h-8 text-sm" />
@@ -223,7 +223,7 @@ function AddTourModal({ contractId, open, onClose, onCreated }: {
         <DialogHeader><DialogTitle className="flex items-center gap-2"><Map className="w-4 h-4 text-[#F5821F]" /> Add Tour / Activity</DialogTitle></DialogHeader>
         <div className="grid gap-3 pt-2">
           <div className="space-y-1"><Label className="text-xs">Tour Name</Label><Input value={form.tourName} onChange={e => f("tourName")(e.target.value)} className="h-8 text-sm" /></div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1"><Label className="text-xs">Tour Type</Label><Input value={form.tourType} onChange={e => f("tourType")(e.target.value)} className="h-8 text-sm" placeholder="e.g. day_trip" /></div>
             <div className="space-y-1"><Label className="text-xs">Date</Label><Input type="date" value={form.tourDate} onChange={e => f("tourDate")(e.target.value)} className="h-8 text-sm" /></div>
           </div>
@@ -271,7 +271,7 @@ function _UnusedDialog({ data, contractId, open, onClose, onSave, saving }: {
             <School className="w-4 h-4 text-[#F5821F]" /> Edit Language School Service
           </DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
           <div className="space-y-1 col-span-2">
             <Label className="text-xs">Program Details</Label>
             <Input value={form.programDetails} onChange={e => f("programDetails")(e.target.value)} className="h-8 text-sm" />
@@ -358,7 +358,7 @@ function HotelEditDialog({ data, contractId, open, onClose, onSave, saving }: {
             <Hotel className="w-4 h-4 text-[#F5821F]" /> Edit Accommodation Service
           </DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
           <div className="space-y-1 col-span-2">
             <Label className="text-xs">Room Type</Label>
             <Input value={form.roomType} onChange={e => f("roomType")(e.target.value)} className="h-8 text-sm" placeholder="e.g. Twin shared, Single en-suite" />
@@ -428,7 +428,7 @@ function PickupEditDialog({ data, contractId, open, onClose, onSave, saving }: {
             <Car className="w-4 h-4 text-[#F5821F]" /> Edit Airport Transfer Service
           </DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
           <div className="space-y-1 col-span-2">
             <Label className="text-xs">Pickup Type</Label>
             <Select value={form.pickupType} onValueChange={f("pickupType")}>
@@ -499,7 +499,7 @@ function TourEditDialog({ data, contractId, open, onClose, onSave, saving }: {
             <Map className="w-4 h-4 text-[#F5821F]" /> Edit Tour / Activity Service
           </DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
           <div className="space-y-1 col-span-2">
             <Label className="text-xs">Tour Name</Label>
             <Input value={form.tourName} onChange={e => f("tourName")(e.target.value)} className="h-8 text-sm" />

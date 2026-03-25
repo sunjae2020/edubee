@@ -351,7 +351,7 @@ export default function Products() {
               <Label className="text-xs">Product Name *</Label>
               <Input value={form.productName} onChange={e => setForm(f => ({ ...f, productName: e.target.value }))} className="mt-1 h-8 text-sm" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Type *</Label>
                 <Select value={form.productType} onValueChange={v => setForm(f => ({ ...f, productType: v }))}>
@@ -367,7 +367,7 @@ export default function Products() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Cost</Label>
                 <Input type="number" step="0.01" value={form.cost} onChange={e => setForm(f => ({ ...f, cost: e.target.value }))} className="mt-1 h-8 text-sm font-mono" placeholder="0.00" />

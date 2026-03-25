@@ -215,7 +215,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
         const listPath = invoiceListPath(inv.invoiceType);
 
         return (
-          <div key={inv.invoiceId} className="bg-white border rounded-xl overflow-hidden shadow-sm">
+          <div key={inv.invoiceId} className="bg-white border rounded-xl overflow-x-auto shadow-sm">
             {/* Clickable invoice header */}
             <div
               className="flex items-center justify-between px-4 py-3 bg-muted/20 border-b cursor-pointer hover:bg-[#FEF0E3] transition-colors group"

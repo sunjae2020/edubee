@@ -225,7 +225,7 @@ export default function ContactsPage() {
         </Select>
       </div>
 
-      <div className="rounded-xl border border-stone-200 overflow-hidden">
+      <div className="rounded-xl border border-stone-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
@@ -324,7 +324,7 @@ export default function ContactsPage() {
           <div className="mt-6 space-y-4 pb-6">
             <SectionHeading>Personal</SectionHeading>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <FormField label="Title">
                 <SelectField value={form.title} onChange={v => patch("title", v)} options={TITLES} placeholder="Title" />
               </FormField>
@@ -336,7 +336,7 @@ export default function ContactsPage() {
               </FormField>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormField label="Date of Birth">
                 <Input type="date" value={form.dob ?? ""} onChange={e => patch("dob", e.target.value)} className="h-9 text-sm" />
               </FormField>
@@ -351,7 +351,7 @@ export default function ContactsPage() {
 
             <SectionHeading>Contact</SectionHeading>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormField label="Email">
                 <Input type="email" value={form.email ?? ""} onChange={e => patch("email", e.target.value)} className="h-9 text-sm" placeholder="email@example.com" />
               </FormField>
@@ -378,7 +378,7 @@ export default function ContactsPage() {
 
             <SectionHeading>Dates</SectionHeading>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormField label="Important Date 1">
                 <Input type="date" value={form.importantDate1 ?? ""} onChange={e => patch("importantDate1", e.target.value)} className="h-9 text-sm" />
               </FormField>
@@ -389,7 +389,7 @@ export default function ContactsPage() {
 
             <SectionHeading>Classification</SectionHeading>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormField label="Account Type">
                 <SelectField value={form.accountType} onChange={v => patch("accountType", v)} options={ACCOUNT_TYPES} placeholder="Account Type" />
               </FormField>

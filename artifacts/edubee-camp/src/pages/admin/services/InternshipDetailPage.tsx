@@ -146,7 +146,7 @@ function StudentProfileTab({ record }: { record: InternshipDetail }) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
           <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide flex items-center gap-1.5">
             <User size={13} /> Student Info
@@ -217,7 +217,7 @@ function CompanyMatchTab({ record, onSave }: { record: InternshipDetail; onSave:
   return (
     <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
       <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Company & Placement Details</h3>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label className="text-xs text-stone-600">Position Title</Label>
           <Input value={positionTitle} onChange={e => setPositionTitle(e.target.value)} className="h-9 text-sm" placeholder="e.g. Marketing Assistant" />
@@ -287,7 +287,7 @@ function ProgressTab({ record, onSave }: { record: InternshipDetail; onSave: (p:
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Interview</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Interview Date</Label>
             <Input type="date" value={interviewDate} onChange={e => setInterviewDate(e.target.value)} className="h-9 text-sm" />
@@ -388,7 +388,7 @@ export default function InternshipDetailPage() {
 
       {/* Related Contract + Financial Summary */}
       {record.contractId && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <FileText size={14} style={{ color: "#F5821F" }} />
@@ -454,7 +454,7 @@ export default function InternshipDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-stone-200">
+      <div className="flex gap-1 border-b border-stone-200 overflow-x-auto">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${

@@ -316,7 +316,7 @@ function LedgerTab({ accountId }: { accountId: string }) {
   return (
     <div className="space-y-4">
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
           <p className="text-xs text-stone-400 mb-1">Total Received</p>
           <p className="text-xl font-bold text-[#16A34A]">{fmtAmt(totalIn)}</p>
@@ -332,7 +332,7 @@ function LedgerTab({ accountId }: { accountId: string }) {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
         <div className="px-5 py-3 border-b border-[#E8E6E2]">
           <h3 className="text-sm font-semibold text-[#1C1917]">Account Ledger ({rows.length} entries)</h3>
         </div>
@@ -555,7 +555,7 @@ export default function AccountDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0.5 border-b border-[#E8E6E2]">
+      <div className="flex gap-0.5 border-b border-[#E8E6E2] overflow-x-auto">
         {getTabs(account?.accountType).map(t => {
           const Icon = t.icon;
           return (
@@ -922,7 +922,7 @@ export default function AccountDetailPage() {
           )}
 
           {tab === "leads" && (
-            <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden">
+            <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-x-auto">
               {leadsLoading ? (
                 <div className="p-8 flex justify-center">
                   <Loader2 size={20} className="animate-spin text-stone-400" />
@@ -978,7 +978,7 @@ export default function AccountDetailPage() {
           )}
 
           {tab === "contracts" && (
-            <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden">
+            <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-x-auto">
               {contractsLoading ? (
                 <div className="p-8 flex justify-center">
                   <Loader2 size={20} className="animate-spin text-stone-400" />

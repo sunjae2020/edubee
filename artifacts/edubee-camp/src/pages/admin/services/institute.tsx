@@ -72,7 +72,7 @@ function ContractCard({ rec, onViewContract }: { rec: Rec; onViewContract: () =>
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 text-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
         <div>
           <span className="text-muted-foreground">Student</span>
           <p className="font-medium text-foreground truncate">{rec.studentName ?? "—"}</p>
@@ -232,11 +232,11 @@ export default function InstituteManagement() {
               ) : (
                 <div className="space-y-3">
                   <div><Label className="text-xs">Program Details</Label><Textarea value={form.programDetails ?? ""} onChange={e => fld("programDetails")(e.target.value)} className="mt-1 text-sm" rows={2} /></div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div><Label className="text-xs">Start Date</Label><Input type="date" value={form.startDate ?? ""} onChange={e => fld("startDate")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
                     <div><Label className="text-xs">End Date</Label><Input type="date" value={form.endDate ?? ""} onChange={e => fld("endDate")(e.target.value)} className="mt-1 h-8 text-sm" /></div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div><Label className="text-xs">Total Hours</Label><Input type="number" value={form.totalHours ?? ""} onChange={e => setForm(f => ({ ...f, totalHours: Number(e.target.value) }))} className="mt-1 h-8 text-sm" /></div>
                     <div><Label className="text-xs">Level Start</Label><Input value={form.englishLevelStart ?? ""} onChange={e => fld("englishLevelStart")(e.target.value)} className="mt-1 h-8 text-sm" placeholder="e.g. A2" /></div>
                   </div>

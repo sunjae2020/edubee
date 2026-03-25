@@ -862,7 +862,7 @@ export default function PackageGroupDetail() {
             {/* Basic Info */}
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">기본 정보</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="col-span-2"><Label className="text-xs">Package Name</Label>
                   <Input value={pkgForm.name} onChange={e => setPkgForm(f => ({ ...f, name: e.target.value }))} className="mt-1 h-8 text-sm" /></div>
                 <div><Label className="text-xs">기간 (Duration Days)</Label>
@@ -885,7 +885,7 @@ export default function PackageGroupDetail() {
                   <label htmlFor="ac-pkg" className="text-xs text-muted-foreground cursor-pointer">AUD 기준 자동 환산</label>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {activeCurrencies.map(c => (
                   <div key={c.ccy}>
                     <Label className="text-xs">{c.flag} {c.label}</Label>
@@ -1035,7 +1035,7 @@ export default function PackageGroupDetail() {
           </DialogHeader>
           <div className="space-y-4 pt-2">
             {/* Grade Label & Order */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="col-span-2 space-y-1">
                 <Label className="text-xs">Grade / Label <span className="text-red-500">*</span></Label>
                 <Input
@@ -1057,7 +1057,7 @@ export default function PackageGroupDetail() {
             </div>
 
             {/* Spots */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Total Spots <span className="text-red-500">*</span></Label>
                 <Input
@@ -1095,7 +1095,7 @@ export default function PackageGroupDetail() {
             {/* Program Dates */}
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Program Dates</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Start Date</Label>
                   <Input
@@ -1120,7 +1120,7 @@ export default function PackageGroupDetail() {
             {/* DOB Range */}
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date of Birth Range (Eligibility)</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">DOB From (oldest)</Label>
                   <Input

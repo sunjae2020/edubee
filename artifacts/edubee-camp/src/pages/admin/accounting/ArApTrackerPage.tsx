@@ -403,12 +403,12 @@ export default function ArApTrackerPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {kpiCards.map(c => <KpiCard key={c.label} {...c} />)}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-stone-200">
+      <div className="flex gap-1 border-b border-stone-200 overflow-x-auto">
         {(
           [
             ["ar",       "Accounts Receivable"],
@@ -444,7 +444,7 @@ export default function ArApTrackerPage() {
 
       {/* AR Table */}
       {tab === "ar" && (
-        <div className="rounded-xl border border-stone-200 overflow-hidden">
+        <div className="rounded-xl border border-stone-200 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
@@ -507,7 +507,7 @@ export default function ArApTrackerPage() {
 
       {/* AP Table */}
       {tab === "ap" && (
-        <div className="rounded-xl border border-stone-200 overflow-hidden">
+        <div className="rounded-xl border border-stone-200 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>

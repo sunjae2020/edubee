@@ -314,7 +314,7 @@ export default function ApplicationForm() {
 
       {/* ── 2. PERSONAL INFORMATION ────────────────────────────────── */}
       <Section title="Personal Information">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Last Name" required>
             <Input className={inputCls} value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Family name" />
           </Field>
@@ -335,7 +335,7 @@ export default function ApplicationForm() {
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="ID / Passport No." required>
             <Input className={inputCls} value={passportNo} onChange={e => setPassportNo(e.target.value)} placeholder="Passport number" />
           </Field>
@@ -356,7 +356,7 @@ export default function ApplicationForm() {
           <Input className={inputCls} value={address} onChange={e => setAddress(e.target.value)} placeholder="Full address" />
         </Field>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Mobile Phone">
             <Input className={inputCls} value={phoneMobile} onChange={e => setPhoneMobile(e.target.value)} placeholder="+82 10 xxxx xxxx" />
           </Field>
@@ -375,7 +375,7 @@ export default function ApplicationForm() {
 
       {/* ── 3. EMERGENCY CONTACT DETAILS ───────────────────────────── */}
       <Section title="Emergency Contact Details">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Contact Name">
             <Input className={inputCls} value={ecName} onChange={e => setEcName(e.target.value)} placeholder="Full name" />
           </Field>
@@ -393,7 +393,7 @@ export default function ApplicationForm() {
 
       {/* ── 4. SCHOOL INFORMATION ──────────────────────────────────── */}
       <Section title="School Information">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="School / Institution">
             <Input className={inputCls} value={institution} onChange={e => setInstitution(e.target.value)} placeholder="School or university name" />
           </Field>
@@ -416,7 +416,7 @@ export default function ApplicationForm() {
       {/* ── 5. AIRPORT PICKUP (conditional) ───────────────────────── */}
       {has("pickup") && (
         <Section title="Airport Pickup">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Arrival Date" required>
               <Input className={inputCls} type="date" value={arrivalDate} onChange={e => setArrivalDate(e.target.value)} />
             </Field>
@@ -448,7 +448,7 @@ export default function ApplicationForm() {
       {/* ── 6. ACCOMMODATION / HOMESTAY (conditional) ─────────────── */}
       {has("accommodation") && (
         <Section title="Accommodation / Homestay">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Check-in Date" required>
                 <Input className={inputCls} type="date" value={checkinDate} onChange={e => setCheckinDate(e.target.value)} />
               </Field>
@@ -773,7 +773,7 @@ export default function ApplicationForm() {
 
       {/* ── 9. AGENT ───────────────────────────────────────────────── */}
       <Section title="Agent">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Agent Name / Code">
             <Input className={inputCls} value={agent} onChange={e => setAgent(e.target.value)} placeholder="Agent name or referral code" />
           </Field>

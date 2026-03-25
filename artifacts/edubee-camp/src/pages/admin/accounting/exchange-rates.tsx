@@ -426,7 +426,7 @@ export default function ExchangeRates() {
             <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700">
               💡 환율을 추가하면 매일 자정(호주 시간)에 자동으로 업데이트됩니다.
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">From Currency</Label>
                 <Select value={form.fromCurrency} onValueChange={v => setForm(f => ({ ...f, fromCurrency: v }))}>

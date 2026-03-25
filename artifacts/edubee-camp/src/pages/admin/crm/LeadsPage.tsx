@@ -236,7 +236,7 @@ export default function CrmLeadsPage() {
             </Select>
           </div>
 
-          <div className="rounded-xl border border-stone-200 overflow-hidden">
+          <div className="rounded-xl border border-stone-200 overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
@@ -351,7 +351,7 @@ export default function CrmLeadsPage() {
               <Label className="text-xs font-medium text-stone-600">Full Name <span className="text-red-500">*</span></Label>
               <Input value={form.fullName ?? ""} onChange={e => patch("fullName", e.target.value)} className="h-9 text-sm" placeholder="John Doe" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Email</Label>
                 <Input type="email" value={form.email ?? ""} onChange={e => patch("email", e.target.value)} className="h-9 text-sm" />
@@ -361,7 +361,7 @@ export default function CrmLeadsPage() {
                 <Input value={form.phone ?? ""} onChange={e => patch("phone", e.target.value)} className="h-9 text-sm" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Nationality</Label>
                 <Input value={form.nationality ?? ""} onChange={e => patch("nationality", e.target.value)} className="h-9 text-sm" />
@@ -371,7 +371,7 @@ export default function CrmLeadsPage() {
                 <SelectField value={form.inquiryType} onChange={v => patch("inquiryType", v)} options={INQUIRY_TYPES} placeholder="Type" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Budget (AUD)</Label>
                 <Input type="number" value={form.budget ?? ""} onChange={e => patch("budget", e.target.value)} className="h-9 text-sm" placeholder="0.00" />

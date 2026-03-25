@@ -773,7 +773,7 @@ export default function ProductDetail() {
                     placeholder="Enter product name"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <FL>Country</FL>
                     <div className={`w-full px-3 py-2 rounded-lg border text-sm bg-muted/40 text-foreground border-border cursor-default min-h-[38px] flex items-center`}>
@@ -793,7 +793,7 @@ export default function ProductDetail() {
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <FL>From Date</FL>
                     <TextInput type="date" value={g("fromDate")} onChange={sf("fromDate")} />
@@ -818,7 +818,7 @@ export default function ProductDetail() {
             {/* [2] CLASSIFICATION */}
             <Section title="Classification">
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <FL>Product Group <span className="text-red-500">*</span></FL>
                     <SearchSelect
@@ -840,7 +840,7 @@ export default function ProductDetail() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <FL>Service Module <span className="text-red-500">*</span></FL>
                     <div className={`w-full px-3 py-2 rounded-lg border text-sm min-h-[38px] flex items-center gap-2 ${inheritedServiceModule ? "bg-orange-50 border-orange-200 text-orange-700" : "bg-muted/40 border-border text-muted-foreground/60"}`}>
@@ -851,7 +851,7 @@ export default function ProductDetail() {
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <FL>Product Priority</FL>
                     <SelectField
@@ -869,7 +869,7 @@ export default function ProductDetail() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <FL>Recommend</FL>
                     <RadioYesNo value={gb("isRecommend")} onChange={sf("isRecommend")} />
@@ -887,7 +887,7 @@ export default function ProductDetail() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <FL>Product Context</FL>
                     <SelectField
@@ -952,7 +952,7 @@ export default function ProductDetail() {
             {/* [5] PAYMENT SETTINGS */}
             <Section title="Payment Settings">
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <FL>Installment Plan</FL>
                     <SelectField
@@ -970,7 +970,7 @@ export default function ProductDetail() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <FL>Number of Payments</FL>
                     <TextInput
@@ -1042,7 +1042,7 @@ export default function ProductDetail() {
                     className="border-[#E8E6E2] text-sm resize-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <FL>Price</FL>
                     <TextInput
@@ -1179,7 +1179,7 @@ export default function ProductDetail() {
             {!isNew && rec && (
               <Section title="Admin Info">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <FL>Created On</FL>
                       <p className="text-sm" style={{ color: "var(--e-text-1)" }}>
@@ -1195,7 +1195,7 @@ export default function ProductDetail() {
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <FL>Status</FL>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${

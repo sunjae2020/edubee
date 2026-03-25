@@ -213,7 +213,7 @@ function OverviewTab({ record, canEdit, onSave }: { record: any; canEdit: boolea
         </div>
 
         {editing ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1 col-span-2">
               <Label className="text-xs">School Account</Label>
               <AccountSearchInput
@@ -313,7 +313,7 @@ function OverviewTab({ record, canEdit, onSave }: { record: any; canEdit: boolea
           <span className="text-sm font-semibold text-[#1C1917]">Billing</span>
         </div>
         {editing ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1 col-span-2">
               <Label className="text-xs">Partner Cost (AP)</Label>
               <Input type="number" value={form.partnerCost} onChange={e => f("partnerCost")(e.target.value)} className="h-8 text-sm" placeholder="0.00" />

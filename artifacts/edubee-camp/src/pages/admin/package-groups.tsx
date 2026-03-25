@@ -551,7 +551,7 @@ export default function PackageGroups() {
                 ))}
               </Tabs>
 
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 <div className="space-y-1.5">
                   <Label>Country *</Label>
                   <Select value={form.countryCode} onValueChange={v => setForm(f => ({ ...f, countryCode: v }))}>
@@ -636,7 +636,7 @@ export default function PackageGroups() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Status</Label>
                   <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
@@ -732,7 +732,7 @@ export default function PackageGroups() {
                   <form onSubmit={handlePkgSubmit} className="border border-[#F5821F]/40 rounded-xl p-4 bg-[#FEF0E3]/30 space-y-4">
                     <h4 className="text-sm font-semibold text-[#F5821F]">{editingPkg ? "Edit Package" : "New Package"}</h4>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="col-span-2 space-y-1.5">
                         <Label>Package Name *</Label>
                         <Input value={pkgForm.name} onChange={e => setPkgForm(f => ({ ...f, name: e.target.value }))} required placeholder="e.g. 4-Week Program" />
@@ -745,7 +745,7 @@ export default function PackageGroups() {
 
                     <div>
                       <Label className="mb-2 block">Pricing by Currency</Label>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {countryPriceFields.map(({ label, field, flag }) => (
                           <div key={field} className="space-y-1">
                             <Label className="text-[11px] text-muted-foreground">{flag} {label}</Label>
@@ -783,7 +783,7 @@ export default function PackageGroups() {
                 </div>
 
                 {/* Linked products table */}
-                <div className="rounded-xl border border-border overflow-hidden">
+                <div className="rounded-xl border border-border overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-neutral-50 border-b">
@@ -936,7 +936,7 @@ export default function PackageGroups() {
 
             {/* Qty + Unit Price */}
             {selectedProductId && (
-              <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
                   <Label className="text-xs">Quantity</Label>
                   <Input type="number" min={1} value={addQty} onChange={e => setAddQty(Number(e.target.value))} className="mt-1 h-8 text-sm" />

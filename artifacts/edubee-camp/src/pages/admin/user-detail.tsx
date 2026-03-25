@@ -201,7 +201,7 @@ export default function UserDetail() {
         <TabsContent value="ledger">
           <div className="space-y-4">
             {/* Balance Summary */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-white border rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="w-4 h-4 text-green-500" />

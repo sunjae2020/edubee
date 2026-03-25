@@ -142,7 +142,7 @@ export default function GeneralSettings() {
         <h2 className="text-sm font-semibold flex items-center gap-2">
           <Globe className="w-4 h-4 text-[#F5821F]" /> Platform
         </h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label className="text-xs">Platform Name</Label>
             <Input value={general.platformName} onChange={e => setGeneral(s => ({ ...s, platformName: e.target.value }))} className="mt-1 h-8 text-sm" />
@@ -166,7 +166,7 @@ export default function GeneralSettings() {
         <h2 className="text-sm font-semibold flex items-center gap-2">
           <Phone className="w-4 h-4 text-[#F5821F]" /> Support Contacts
         </h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label className="text-xs">Support Email</Label>
             <Input type="email" value={general.supportEmail} onChange={e => setGeneral(s => ({ ...s, supportEmail: e.target.value }))} className="mt-1 h-8 text-sm" />
@@ -187,7 +187,7 @@ export default function GeneralSettings() {
         <h2 className="text-sm font-semibold flex items-center gap-2">
           <Mail className="w-4 h-4 text-[#F5821F]" /> Email (SMTP)
         </h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label className="text-xs">SMTP Host</Label>
             <Input value={smtp.host} onChange={e => setSmtp(s => ({ ...s, host: e.target.value }))} className="mt-1 h-8 text-sm" placeholder="smtp.gmail.com" />

@@ -495,7 +495,7 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
           </div>
 
           {/* Core Fields */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-stone-600">Payment Date</Label>
               <Input type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)}
@@ -716,7 +716,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-stone-200">
+      <div className="flex gap-1 border-b border-stone-200 overflow-x-auto">
         {([["payments", "Payments"], ["journal", "Journal Entries"]] as const).map(([key, label]) => (
           <button
             key={key}
@@ -758,8 +758,8 @@ export default function PaymentsPage() {
               className="h-9 text-sm w-36" />
           </div>
 
-          <div className="rounded-xl border border-stone-200 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="rounded-xl border border-stone-200 overflow-x-auto">
+            <table className="w-full min-w-[700px] text-sm">
               <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
                   <SortableTh col="payRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">PAY Ref</SortableTh>
@@ -839,12 +839,12 @@ export default function PaymentsPage() {
 
       {/* Journal Entries Tab */}
       {tab === "journal" && (
-        <div className="rounded-xl border border-stone-200 overflow-hidden">
+        <div className="rounded-xl border border-stone-200 overflow-x-auto">
           <div className="bg-stone-50 border-b border-stone-200 px-4 py-3 flex items-center gap-2">
             <BookOpen size={14} className="text-stone-400" />
             <span className="text-xs font-semibold text-stone-600 uppercase tracking-wide">Journal Entries — Read Only</span>
           </div>
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[800px] text-sm">
             <thead className="bg-stone-50 border-b border-stone-100">
               <tr>
                 <SortableTh col="entryDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Date</SortableTh>

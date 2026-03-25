@@ -503,7 +503,7 @@ export default function SettlementMgtDetail() {
 
       {/* Overview Tab */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Student / Contract */}
           <InfoCard label="Student & Contract">
             <InfoRow label="Student" value={rec.studentName} />

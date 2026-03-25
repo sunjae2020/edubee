@@ -179,7 +179,7 @@ function StatementHistorySection({ contractId, onGenerate }: { contractId: strin
   };
 
   return (
-    <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
       <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText size={14} className="text-[#F5821F]" />
@@ -360,7 +360,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
         <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[#1C1917]">Payment Schedule ({products.length})</h3>
         </div>
@@ -461,7 +461,7 @@ function InvoicesTab({ contract }: { contract: any }) {
     overdue:  "bg-[#FEF2F2] text-[#DC2626]",
   };
   return (
-    <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
       <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#1C1917]">Invoices ({invoices.length})</h3>
         <button disabled className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs text-[#A8A29E] cursor-not-allowed">+ Generate Invoice</button>
@@ -551,7 +551,7 @@ function PaymentsTab({ contractId }: { contractId: string }) {
   return (
     <div className="space-y-4">
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
           <p className="text-xs text-[#A8A29E] mb-1">Total Received (AR)</p>
           <p className="text-xl font-bold text-[#16A34A]">{fmtMoney(totalReceived)}</p>
@@ -567,7 +567,7 @@ function PaymentsTab({ contractId }: { contractId: string }) {
       </div>
 
       {/* Payment list */}
-      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
         <div className="px-5 py-3 border-b border-[#E8E6E2]">
           <h3 className="text-sm font-semibold text-[#1C1917]">Payment Records ({headers.length})</h3>
         </div>
@@ -639,7 +639,7 @@ function TransactionsTab({ contract }: { contract: any }) {
   const totalDebit  = txns.reduce((s: number, t: any) => s + (t.debitAmount ?? 0), 0);
 
   return (
-    <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
       <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#1C1917]">Transactions ({txns.length})</h3>
         <button disabled className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs text-[#A8A29E] cursor-not-allowed">+ Record Payment</button>
@@ -710,7 +710,7 @@ function CommissionTab({ contract }: { contract: any }) {
   };
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: "Sub-Agent",      val: cs.subAgent      },
           { label: "Super-Agent",    val: cs.superAgent     },
@@ -723,7 +723,7 @@ function CommissionTab({ contract }: { contract: any }) {
           </div>
         ))}
       </div>
-      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
         <div className="px-5 py-3 border-b border-[#E8E6E2]">
           <h3 className="text-sm font-semibold text-[#1C1917]">Cost Lines ({allLines.length})</h3>
         </div>
@@ -926,7 +926,7 @@ function AddServiceModal({ contract, defaultType, onClose }: {
 
           {/* Step 1: Type selection */}
           {!selectedType && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {SVC_DEFS_MODAL.map(({ key, label, icon: Icon, desc }) => (
                 <button key={key}
                   onClick={() => { setSelectedType(key); setForm(initForm()); }}
@@ -988,7 +988,7 @@ function AddServiceModal({ contract, defaultType, onClose }: {
                 <LabelSelect label="Service Type" field="serviceType"
                   options={OTHER_SVC_TYPES.map(s => ({ value: s, label: toLabel(s) }))} />
                 <LabelInput label="Title" field="title" placeholder="Short description" />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <LabelInput label="Start Date" field="startDate" type="date" />
                   <LabelInput label="End Date"   field="endDate"   type="date" />
                 </div>
@@ -1091,7 +1091,7 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType, on
   const active = withData.filter(d => !!d.data);
 
   return (
-    <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
       <div className="px-4 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#1C1917]">Services
           <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF0E3] text-[#F5821F]">{active.length}</span>
@@ -1212,7 +1212,7 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
           <p className="text-xs text-[#D6D3D1] mt-1">Use the "Add Service" button above to get started.</p>
         </div>
       ) : (
-        <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+        <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
           {/* Table header */}
           <div className="grid grid-cols-[2fr_3fr_1.5fr_1.5fr_32px] gap-0 border-b border-[#E8E6E2] px-5 py-2.5">
             {["Service", "Details", "Status", "Applied", ""].map((h, i) => (
@@ -1518,7 +1518,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
           </button>
         </div>
         <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {sel("Status", "contractStatus", [
               { v: "active",      l: "Active"      },
               { v: "in progress", l: "In Progress"  },
@@ -1533,7 +1533,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
               { v: "one_off",     l: "One-off"      },
             ])}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {field("Contract From", "fromDate", "date")}
             {field("Contract To",   "toDate",   "date")}
           </div>
@@ -1694,7 +1694,7 @@ export default function ContractDetailPage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 w-48 rounded-lg bg-[#F4F3F1]" />
           <div className="h-28 rounded-xl bg-[#F4F3F1]" />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[1,2,3].map(i => <div key={i} className="h-36 rounded-xl bg-[#F4F3F1]" />)}
           </div>
         </div>
@@ -1771,7 +1771,7 @@ export default function ContractDetailPage() {
       <div className="p-6 space-y-5">
 
         {/* 3 Info Cards */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Student */}
           <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
