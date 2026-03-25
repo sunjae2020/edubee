@@ -97,11 +97,15 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
               <Pencil size={13} />
             </button>
           </div>
-          <InfoRow label="Quote Ref"         value={contract.quote?.quoteRefNumber} />
-          <InfoRow label="Payment Frequency" value={contract.paymentFrequency?.replace("_"," ").replace(/\b\w/g,(c: string)=>c.toUpperCase())} />
-          <InfoRow label="Contract From"     value={fmtDate(contract.fromDate)} />
-          <InfoRow label="Contract To"       value={fmtDate(contract.toDate)} />
-          <InfoRow label="Notes"             value={contract.notes} />
+          <InfoRow label="Quote Ref"       value={contract.quote?.quoteRefNumber ?? "—"} />
+          <InfoRow label="Payment Count"   value={
+            contract.contractProducts?.length
+              ? `${contract.contractProducts.length} instalment${contract.contractProducts.length > 1 ? "s" : ""}`
+              : "—"
+          } />
+          <InfoRow label="Contract From"   value={fmtDate(contract.fromDate)} />
+          <InfoRow label="Contract To"     value={fmtDate(contract.toDate)} />
+          <InfoRow label="Notes"           value={contract.notes} />
         </div>
       </div>
 
@@ -237,6 +241,114 @@ function StatementHistorySection({ contractId, onGenerate }: { contractId: strin
   );
 }
 
+// ── Per-row invoice printer ────────────────────────────────────────────────
+function printInstalment(cp: any, contract: any, idx: number) {
+  const clientName = contract.account?.name ?? contract.studentName ?? "Client";
+  const clientEmail = contract.clientEmail ?? contract.account?.email ?? "";
+  const refNum = contract.contractRefDisplay ?? "";
+  const quoteRef = contract.quote?.quoteRefNumber ?? "";
+  const instNo = idx + 1;
+  const invRef = `INV-${refNum}-${String(instNo).padStart(2, "0")}`;
+  const itemName = cp.name ?? `Instalment ${instNo}`;
+  const amount = fmtMoney(cp.arAmount);
+  const dueDate = fmtDate(cp.arDueDate);
+  const todayDate = format(new Date(), "dd MMM yyyy");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>${invRef}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:Arial,sans-serif;color:#333;padding:40px;font-size:13px;max-width:720px;margin:0 auto}
+      .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #F5821F;margin-bottom:28px}
+      .brand{font-size:24px;font-weight:700;color:#F5821F}
+      .brand-sub{font-size:12px;color:#aaa;margin-top:3px}
+      .inv-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#aaa;text-align:right}
+      .inv-ref{font-size:20px;font-weight:700;color:#1C1917;text-align:right;margin-top:2px}
+      .inv-date{font-size:12px;color:#888;text-align:right;margin-top:2px}
+      .section{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+      .section-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#aaa;margin-bottom:6px}
+      .section-val{font-size:14px;font-weight:600;color:#1C1917}
+      .section-sub{font-size:12px;color:#888;margin-top:2px}
+      table{width:100%;border-collapse:collapse;margin-bottom:24px}
+      th{background:#fdf8f4;padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#888;border-bottom:2px solid #e5e0db}
+      td{padding:12px 14px;border-bottom:1px solid #f0ece8;vertical-align:top}
+      .total-row{background:#fdf8f4;font-weight:700}
+      .total-row td{border-top:2px solid #e5e0db;border-bottom:none;font-size:15px}
+      .total-row td:last-child{color:#F5821F;font-size:20px}
+      .due-box{display:inline-block;background:#FEF0E3;color:#F5821F;border:1px solid #F5821F;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;margin-bottom:24px}
+      .status-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;background:${cp.arStatus === "paid" ? "#DCFCE7;color:#16A34A" : cp.arStatus === "overdue" ? "#FEF2F2;color:#DC2626" : "#F4F3F1;color:#57534E"}}
+      .footer{margin-top:32px;font-size:11px;color:#aaa;text-align:center;border-top:1px solid #f0ece8;padding-top:12px}
+    </style>
+  </head><body>
+    <div class="header">
+      <div>
+        <div class="brand">Edubee Camp</div>
+        <div class="brand-sub">Payment Invoice</div>
+      </div>
+      <div>
+        <div class="inv-label">Invoice</div>
+        <div class="inv-ref">${invRef}</div>
+        <div class="inv-date">Issued: ${todayDate}</div>
+        ${quoteRef ? `<div class="inv-date">Quote: ${quoteRef}</div>` : ""}
+      </div>
+    </div>
+
+    <div class="section">
+      <div>
+        <div class="section-label">Bill To</div>
+        <div class="section-val">${clientName}</div>
+        ${clientEmail ? `<div class="section-sub">${clientEmail}</div>` : ""}
+      </div>
+      <div>
+        <div class="section-label">Contract</div>
+        <div class="section-val">${refNum}</div>
+        <div class="section-sub">Instalment ${instNo} of ${contract.contractProducts?.length ?? "?"}</div>
+      </div>
+    </div>
+
+    ${dueDate !== "—" ? `<div class="due-box">Payment Due: ${dueDate}</div>` : ""}
+
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Service</th>
+          <th style="text-align:right">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div style="font-weight:600;color:#1C1917">${itemName}</div>
+            ${cp.isInitialPayment ? `<div style="font-size:11px;color:#CA8A04;margin-top:2px">★ Initial Payment</div>` : ""}
+          </td>
+          <td style="color:#888;font-size:12px">${cp.serviceModuleType ? cp.serviceModuleType.replace(/_/g," ").replace(/\b\w/g,(c: string)=>c.toUpperCase()) : "—"}</td>
+          <td style="text-align:right;font-weight:700;font-size:15px">${amount}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td colspan="2" style="text-align:right">Total Due</td>
+          <td style="text-align:right">${amount}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div style="margin-top:8px">
+      <span class="section-label">Status: </span>
+      <span class="status-badge">${cp.arStatus ?? "scheduled"}</span>
+    </div>
+
+    <div class="footer">
+      Thank you for your business · Edubee Camp · Generated ${todayDate}
+    </div>
+    <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>
+  </body></html>`;
+
+  const w = window.open("", "_blank", "width=860,height=700");
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
 // ── Payment Schedule Tab ───────────────────────────────────────────────────
 function PaymentScheduleTab({ contract }: { contract: any }) {
   const products: any[] = contract.contractProducts ?? [];
@@ -250,7 +362,6 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
       <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
         <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[#1C1917]">Payment Schedule ({products.length})</h3>
-          <button disabled className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs text-[#A8A29E] cursor-not-allowed">+ Add Instalment</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -264,6 +375,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Due Date</th>
                 <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Amount</th>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Status</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Invoice</th>
               </tr>
             </thead>
             <tbody>
@@ -288,6 +400,14 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                   <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.apDueDate)}</td>
                   <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.apAmount)}</td>
                   <td className="px-4 py-3"><Badge s={cp.apStatus} map={AP_BADGE} /></td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => printInstalment(cp, contract, i)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+                    >
+                      <Download size={11} /> Invoice
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -301,7 +421,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                 <td className="px-4 py-3 text-right">
                   <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background:"#9A3412" }}>{fmtMoney(totalAp)}</span>
                 </td>
-                <td></td>
+                <td colSpan={2}></td>
               </tr>
             </tfoot>
           </table>

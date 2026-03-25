@@ -6,7 +6,7 @@ import {
   accommodationMgt, internshipMgt, guardianMgt, studyAbroadMgt,
   hotelMgt, tourMgt, accounts,
 } from "@workspace/db/schema";
-import { eq, and, count, SQL } from "drizzle-orm";
+import { eq, and, count, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { sendMail } from "../mailer.js";
@@ -199,26 +199,53 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
         contractNumber,
         status: "draft",
         studentName:  quote.customerName ?? quote.accountName ?? null,
+        clientEmail:  null,
         notes:        quote.notes ?? null,
         totalAmount:  totalAmount > 0 ? String(totalAmount) : null,
+        totalArAmount: totalAmount > 0 ? String(totalAmount) : null,
       }).returning();
 
       const contractId = newContract.id;
 
-      // 2. Copy quote_products → contract_products (all fields)
+      // 1b. Set quote_id and account_id (not in Drizzle schema → raw SQL)
+      await tx.execute(sql`
+        UPDATE contracts
+        SET quote_id   = ${req.params.id}::uuid,
+            account_id = ${quote.studentAccountId ?? null}
+        WHERE id = ${contractId}::uuid
+      `);
+
+      // Resolve client email from account
+      if (quote.studentAccountId) {
+        await tx.execute(sql`
+          UPDATE contracts
+          SET client_email = (SELECT email FROM accounts WHERE id = ${quote.studentAccountId}::uuid LIMIT 1)
+          WHERE id = ${contractId}::uuid
+        `);
+      }
+
+      // 2. Copy quote_products → contract_products (including ar_due_date and ar_amount)
       if (products.length > 0) {
         await tx.insert(contractProducts).values(
-          products.map((p, i) => ({
-            contractId,
-            productId:         p.productId ?? null,
-            name:              p.name ?? p.productName ?? null,
-            quantity:          p.quantity ?? p.qty ?? 1,
-            unitPrice:         p.unitPrice,
-            totalPrice:        p.total,
-            isInitialPayment:  p.isInitialPayment ?? false,
-            serviceModuleType: p.serviceModuleType ?? null,
-            sortIndex:         p.sortIndex ?? p.sortOrder ?? i,
-          }))
+          products.map((p, i) => {
+            const arAmt = parseFloat(String(p.price ?? p.unitPrice ?? "0")) * (p.quantity ?? p.qty ?? 1);
+            const dueDateStr = p.dueDate
+              ? new Date(p.dueDate).toISOString().split("T")[0]
+              : null;
+            return {
+              contractId,
+              productId:         p.productId ?? null,
+              name:              p.name ?? p.productName ?? null,
+              quantity:          p.quantity ?? p.qty ?? 1,
+              unitPrice:         String(p.price ?? p.unitPrice ?? "0"),
+              totalPrice:        String(arAmt),
+              arAmount:          arAmt > 0 ? String(arAmt) : null,
+              arDueDate:         dueDateStr,
+              isInitialPayment:  p.isInitialPayment ?? false,
+              serviceModuleType: p.serviceModuleType ?? null,
+              sortIndex:         p.sortIndex ?? p.sortOrder ?? i,
+            };
+          })
         );
       }
 
