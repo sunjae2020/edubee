@@ -105,8 +105,7 @@ export default function CampApplications() {
   const [form, setForm] = useState(emptyForm);
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Wizard state
-  const [wizardStep, setWizardStep] = useState(1);
+  // Create form state (single-page)
   const [wizardParticipants, setWizardParticipants] = useState<Array<{
     fullName: string; dateOfBirth: string; gender: string; nationality: string;
     passportNumber: string; grade: string; schoolName: string; englishLevel: string;
@@ -132,7 +131,7 @@ export default function CampApplications() {
       if (wizardPackageSearch) p.set("search", wizardPackageSearch);
       return axios.get(`${BASE}/api/packages?${p}`).then(r => r.data);
     },
-    enabled: createDialog && wizardStep === 3,
+    enabled: createDialog,
   });
   const wizardPackages: Array<{ id: string; name: string; priceAud?: number }> = packagesResp?.data ?? packagesResp ?? [];
   const [isEditing, setIsEditing] = useState(false);
@@ -175,7 +174,7 @@ export default function CampApplications() {
   });
 
   const resetWizard = () => {
-    setWizardStep(1); setForm(emptyForm);
+    setForm(emptyForm);
     setWizardParticipants([]); setWizardPackageId("");
     setWizardPackageSearch(""); setWizardOptions([]); setWizardAgreed(false);
   };
@@ -513,257 +512,215 @@ export default function CampApplications() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Camp Application Wizard */}
+      {/* Create Camp Application — Single-page form */}
       <Dialog open={createDialog} onOpenChange={open => { if (!open) { setCreateDialog(false); resetWizard(); } }}>
-        <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
+        <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header */}
-          <div className="bg-[#F5821F] px-6 py-4">
+          <div className="bg-[#F5821F] px-6 py-4 shrink-0">
             <DialogTitle className="text-white text-base font-semibold">New Camp Application</DialogTitle>
-            {/* Step indicators */}
-            <div className="flex items-center gap-0 mt-3">
-              {[
-                { n: 1, label: "Application", icon: FileText },
-                { n: 2, label: "Students", icon: Users },
-                { n: 3, label: "Package", icon: Package },
-                { n: 4, label: "Options", icon: ListChecks },
-                { n: 5, label: "Agreement", icon: FileSignature },
-              ].map(({ n, label, icon: Icon }, idx) => (
-                <div key={n} className="flex items-center">
-                  <div className={`flex flex-col items-center ${wizardStep === n ? "opacity-100" : wizardStep > n ? "opacity-80" : "opacity-40"}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors
-                      ${wizardStep === n ? "bg-white text-[#F5821F] border-white" : wizardStep > n ? "bg-[#F5821F] text-white border-white" : "bg-transparent text-white border-white/60"}`}>
-                      {wizardStep > n ? <Check className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
-                    </div>
-                    <span className="text-[10px] text-white mt-1 whitespace-nowrap font-medium">{label}</span>
-                  </div>
-                  {idx < 4 && (
-                    <div className={`h-0.5 w-8 mx-1 mb-4 ${wizardStep > n ? "bg-white" : "bg-white/30"}`} />
-                  )}
-                </div>
-              ))}
-            </div>
+            <p className="text-white/80 text-xs mt-0.5">Fill in the details below and submit</p>
           </div>
 
-          {/* Step content */}
-          <div className="px-6 py-5 min-h-[320px] max-h-[420px] overflow-y-auto">
-            {/* Step 1 — Application */}
-            {wizardStep === 1 && (
-              <div className="space-y-4">
-                <p className="text-xs text-muted-foreground">Enter the basic application details.</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2 space-y-1.5">
-                    <Label className="text-xs">Student Name <span className="text-red-500">*</span></Label>
-                    <Input className="h-9 text-sm" value={form.applicantName} onChange={e => setForm(f => ({ ...f, applicantName: e.target.value }))} placeholder="Full name" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Email</Label>
-                    <Input className="h-9 text-sm" type="email" value={form.applicantEmail} onChange={e => setForm(f => ({ ...f, applicantEmail: e.target.value }))} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Phone</Label>
-                    <Input className="h-9 text-sm" value={form.applicantPhone} onChange={e => setForm(f => ({ ...f, applicantPhone: e.target.value }))} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Nationality</Label>
-                    <Input className="h-9 text-sm" value={form.applicantNationality} onChange={e => setForm(f => ({ ...f, applicantNationality: e.target.value }))} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Preferred Start Date</Label>
-                    <Input className="h-9 text-sm" type="date" value={form.preferredStartDate} onChange={e => setForm(f => ({ ...f, preferredStartDate: e.target.value }))} />
-                  </div>
-                  <div className="col-span-2 space-y-1.5">
-                    <Label className="text-xs">Program Type</Label>
-                    <Select value={form.notes?.match(/Program: (.+)/)?.[1] ?? "english_camp"} onValueChange={v => setForm(f => ({ ...f, notes: `Program: ${v}` }))}>
-                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {[
-                          { v: "english_camp", l: "English Camp" },
-                          { v: "stem_camp", l: "STEM Camp" },
-                          { v: "arts_camp", l: "Arts Camp" },
-                          { v: "sports_camp", l: "Sports Camp" },
-                          { v: "leadership_camp", l: "Leadership Camp" },
-                          { v: "language_immersion", l: "Language Immersion" },
-                        ].map(t => <SelectItem key={t.v} value={t.v}>{t.l}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
+          {/* Scrollable form body */}
+          <div className="overflow-y-auto flex-1 px-6 py-5 space-y-6">
+
+            {/* ── Section 1: Application Details ─────────────────────── */}
+            <div>
+              <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Application Details</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-xs">Student Name <span className="text-red-500">*</span></Label>
+                  <Input className="h-9 text-sm" value={form.applicantName} onChange={e => setForm(f => ({ ...f, applicantName: e.target.value }))} placeholder="Full name" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Email</Label>
+                  <Input className="h-9 text-sm" type="email" value={form.applicantEmail} onChange={e => setForm(f => ({ ...f, applicantEmail: e.target.value }))} placeholder="email@example.com" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Phone</Label>
+                  <Input className="h-9 text-sm" value={form.applicantPhone} onChange={e => setForm(f => ({ ...f, applicantPhone: e.target.value }))} placeholder="+82 10 xxxx xxxx" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Nationality</Label>
+                  <Input className="h-9 text-sm" value={form.applicantNationality} onChange={e => setForm(f => ({ ...f, applicantNationality: e.target.value }))} placeholder="e.g. Korean" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Preferred Start Date</Label>
+                  <Input className="h-9 text-sm" type="date" value={form.preferredStartDate} onChange={e => setForm(f => ({ ...f, preferredStartDate: e.target.value }))} />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-xs">Program Type</Label>
+                  <Select value={form.notes?.match(/Program: (.+)/)?.[1] ?? "english_camp"} onValueChange={v => setForm(f => ({ ...f, notes: `Program: ${v}` }))}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[
+                        { v: "english_camp", l: "English Camp" },
+                        { v: "stem_camp", l: "STEM Camp" },
+                        { v: "arts_camp", l: "Arts Camp" },
+                        { v: "sports_camp", l: "Sports Camp" },
+                        { v: "leadership_camp", l: "Leadership Camp" },
+                        { v: "language_immersion", l: "Language Immersion" },
+                      ].map(t => <SelectItem key={t.v} value={t.v}>{t.l}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Step 2 — Students */}
-            {wizardStep === 2 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">Add participating students (optional). You can also add them later.</p>
-                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs gap-1"
-                    onClick={() => setWizardParticipants(p => [...p, { fullName: "", dateOfBirth: "", gender: "", nationality: "", passportNumber: "", grade: "", schoolName: "", englishLevel: "", email: "", phone: "" }])}>
-                    <Plus className="w-3 h-3" /> Add Student
-                  </Button>
+            {/* ── Section 2: Participating Students ──────────────────── */}
+            <div>
+              <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Participating Students</span>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs gap-1 text-[#F5821F] hover:bg-[#F5821F]/10"
+                  onClick={() => setWizardParticipants(p => [...p, { fullName: "", dateOfBirth: "", gender: "", nationality: "", passportNumber: "", grade: "", schoolName: "", englishLevel: "", email: "", phone: "" }])}>
+                  <Plus className="w-3 h-3" /> Add Student
+                </Button>
+              </div>
+              {wizardParticipants.length === 0 ? (
+                <div className="border border-dashed border-border rounded-lg py-8 flex flex-col items-center gap-2 text-muted-foreground">
+                  <Users className="w-7 h-7 opacity-30" />
+                  <span className="text-xs">Click "Add Student" to register participants (optional)</span>
                 </div>
-                {wizardParticipants.length === 0 && (
-                  <div className="border border-dashed border-border rounded-lg py-10 flex flex-col items-center gap-2 text-muted-foreground">
-                    <Users className="w-8 h-8 opacity-30" />
-                    <span className="text-xs">Click "Add Student" to register participants</span>
-                  </div>
-                )}
-                {wizardParticipants.map((p, i) => (
-                  <div key={i} className="border border-border rounded-lg p-3 space-y-2 bg-muted/20">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-foreground">Student {i + 1}</span>
-                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
-                        onClick={() => setWizardParticipants(prev => prev.filter((_, j) => j !== i))}>
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+              ) : (
+                <div className="space-y-3">
+                  {wizardParticipants.map((p, i) => (
+                    <div key={i} className="border border-border rounded-lg p-3 space-y-2 bg-muted/20">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-foreground">Student {i + 1}</span>
+                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
+                          onClick={() => setWizardParticipants(prev => prev.filter((_, j) => j !== i))}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="col-span-2 space-y-1">
+                          <Label className="text-[11px]">Full Name *</Label>
+                          <Input className="h-8 text-sm" value={p.fullName} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, fullName: e.target.value } : x))} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]">Date of Birth</Label>
+                          <Input className="h-8 text-sm" type="date" value={p.dateOfBirth} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, dateOfBirth: e.target.value } : x))} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]">Gender</Label>
+                          <Select value={p.gender} onValueChange={v => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, gender: v } : x))}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+                            <SelectContent>
+                              {["male","female","other"].map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]">Nationality</Label>
+                          <Input className="h-8 text-sm" value={p.nationality} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, nationality: e.target.value } : x))} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]">Grade / Year</Label>
+                          <Input className="h-8 text-sm" value={p.grade} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, grade: e.target.value } : x))} />
+                        </div>
+                        <div className="col-span-2 space-y-1">
+                          <Label className="text-[11px]">School Name</Label>
+                          <Input className="h-8 text-sm" value={p.schoolName} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, schoolName: e.target.value } : x))} />
+                        </div>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="col-span-2 space-y-1">
-                        <Label className="text-[11px]">Full Name *</Label>
-                        <Input className="h-8 text-sm" value={p.fullName} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, fullName: e.target.value } : x))} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Section 3: Camp Package ─────────────────────────────── */}
+            <div>
+              <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Camp Package <span className="text-[#F5821F]/60 font-normal normal-case tracking-normal">(optional)</span></span>
+              </div>
+              <Input className="h-9 text-sm mb-2" placeholder="Search packages…" value={wizardPackageSearch} onChange={e => setWizardPackageSearch(e.target.value)} />
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                <div
+                  className={`rounded-lg border p-3 cursor-pointer transition-colors ${!wizardPackageId ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}
+                  onClick={() => setWizardPackageId("")}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${!wizardPackageId ? "border-[#F5821F]" : "border-muted-foreground"}`}>
+                      {!wizardPackageId && <div className="w-2 h-2 rounded-full bg-[#F5821F]" />}
+                    </div>
+                    <span className="text-sm font-medium text-muted-foreground">No package</span>
+                  </div>
+                </div>
+                {wizardPackages.map((pkg: any) => (
+                  <div key={pkg.id}
+                    className={`rounded-lg border p-3 cursor-pointer transition-colors ${wizardPackageId === pkg.id ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}
+                    onClick={() => setWizardPackageId(pkg.id)}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${wizardPackageId === pkg.id ? "border-[#F5821F]" : "border-muted-foreground"}`}>
+                        {wizardPackageId === pkg.id && <div className="w-2 h-2 rounded-full bg-[#F5821F]" />}
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px]">Date of Birth</Label>
-                        <Input className="h-8 text-sm" type="date" value={p.dateOfBirth} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, dateOfBirth: e.target.value } : x))} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px]">Gender</Label>
-                        <Select value={p.gender} onValueChange={v => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, gender: v } : x))}>
-                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
-                          <SelectContent>
-                            {["male","female","other"].map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px]">Nationality</Label>
-                        <Input className="h-8 text-sm" value={p.nationality} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, nationality: e.target.value } : x))} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px]">Grade / Year</Label>
-                        <Input className="h-8 text-sm" value={p.grade} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, grade: e.target.value } : x))} />
-                      </div>
-                      <div className="col-span-2 space-y-1">
-                        <Label className="text-[11px]">School Name</Label>
-                        <Input className="h-8 text-sm" value={p.schoolName} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, schoolName: e.target.value } : x))} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-foreground truncate">{pkg.name}</div>
+                        {pkg.priceAud && <div className="text-xs text-muted-foreground">AUD {Number(pkg.priceAud).toLocaleString()}</div>}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
+            </div>
 
-            {/* Step 3 — Package */}
-            {wizardStep === 3 && (
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">Select a camp package (optional).</p>
-                <Input className="h-9 text-sm" placeholder="Search packages…" value={wizardPackageSearch} onChange={e => setWizardPackageSearch(e.target.value)} />
-                <div className="space-y-2 max-h-[260px] overflow-y-auto">
-                  {/* No package option */}
-                  <div
-                    className={`rounded-lg border p-3 cursor-pointer transition-colors ${!wizardPackageId ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}
-                    onClick={() => setWizardPackageId("")}>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${!wizardPackageId ? "border-[#F5821F]" : "border-muted-foreground"}`}>
-                        {!wizardPackageId && <div className="w-2 h-2 rounded-full bg-[#F5821F]" />}
-                      </div>
-                      <span className="text-sm font-medium text-muted-foreground">No package (skip)</span>
-                    </div>
-                  </div>
-                  {wizardPackages.map((pkg: any) => (
-                    <div key={pkg.id}
-                      className={`rounded-lg border p-3 cursor-pointer transition-colors ${wizardPackageId === pkg.id ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}
-                      onClick={() => setWizardPackageId(pkg.id)}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${wizardPackageId === pkg.id ? "border-[#F5821F]" : "border-muted-foreground"}`}>
-                          {wizardPackageId === pkg.id && <div className="w-2 h-2 rounded-full bg-[#F5821F]" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground truncate">{pkg.name}</div>
-                          {pkg.priceAud && <div className="text-xs text-muted-foreground">AUD {Number(pkg.priceAud).toLocaleString()}</div>}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {wizardPackages.length === 0 && (
-                    <div className="text-xs text-muted-foreground text-center py-6">Loading packages…</div>
-                  )}
-                </div>
+            {/* ── Section 4: Additional Options ──────────────────────── */}
+            <div>
+              <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Additional Options <span className="text-[#F5821F]/60 font-normal normal-case tracking-normal">(optional)</span></span>
               </div>
-            )}
+              <div className="grid grid-cols-2 gap-2">
+                {WIZARD_OPTIONS.map(opt => {
+                  const checked = wizardOptions.includes(opt.key);
+                  return (
+                    <label key={opt.key}
+                      className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${checked ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}>
+                      <input type="checkbox" className="accent-[#F5821F] w-4 h-4 shrink-0" checked={checked}
+                        onChange={() => setWizardOptions(prev => checked ? prev.filter(k => k !== opt.key) : [...prev, opt.key])} />
+                      <span className="text-sm">{opt.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
 
-            {/* Step 4 — Options */}
-            {wizardStep === 4 && (
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">Select any additional services (optional).</p>
-                <div className="space-y-2">
-                  {WIZARD_OPTIONS.map(opt => {
-                    const checked = wizardOptions.includes(opt.key);
-                    return (
-                      <label key={opt.key}
-                        className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${checked ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}>
-                        <input type="checkbox" className="accent-[#F5821F] w-4 h-4" checked={checked}
-                          onChange={() => setWizardOptions(prev => checked ? prev.filter(k => k !== opt.key) : [...prev, opt.key])} />
-                        <span className="text-sm">{opt.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
+            {/* ── Section 5: Terms & Agreement ───────────────────────── */}
+            <div>
+              <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Terms &amp; Agreement</span>
               </div>
-            )}
-
-            {/* Step 5 — Agreement */}
-            {wizardStep === 5 && (
-              <div className="space-y-4">
-                <div className="rounded-lg border border-border bg-muted/20 p-4 text-xs text-muted-foreground space-y-2 max-h-[200px] overflow-y-auto leading-relaxed">
-                  <p className="font-semibold text-foreground text-sm">Terms &amp; Conditions</p>
-                  <p>This application is the official document for enrolling in the Edubee Camp program. By agreeing below, your application will be submitted for review.</p>
-                  <p>1. All information provided is true and accurate.</p>
-                  <p>2. I agree to the camp program cancellation and refund policy.</p>
-                  <p>3. Participant photos and videos may be used for promotional purposes.</p>
-                  <p>4. Medical and other expenses incurred during the camp are the responsibility of the applicant.</p>
-                  <p>5. I agree to comply with Edubee Camp's operational rules and instructions.</p>
-                </div>
-                {/* Summary */}
-                <div className="rounded-lg border border-border p-3 space-y-1.5 text-xs">
-                  <p className="font-semibold text-foreground text-sm mb-2">Application Summary</p>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Student Name</span><span className="font-medium">{form.applicantName || "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Nationality</span><span className="font-medium">{form.applicantNationality || "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Preferred Start</span><span className="font-medium">{form.preferredStartDate || "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Participants</span><span className="font-medium">{wizardParticipants.filter(p => p.fullName.trim()).length} student(s)</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Additional Options</span><span className="font-medium">{wizardOptions.length > 0 ? `${wizardOptions.length} selected` : "None"}</span></div>
-                </div>
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input type="checkbox" className="accent-[#F5821F] w-4 h-4 mt-0.5 shrink-0" checked={wizardAgreed} onChange={e => setWizardAgreed(e.target.checked)} />
-                  <span className="text-xs text-foreground">I have read and agree to the terms and conditions above.</span>
-                </label>
+              <div className="rounded-lg border border-border bg-muted/20 p-4 text-xs text-muted-foreground space-y-2 leading-relaxed mb-3">
+                <p>This application is the official document for enrolling in the Edubee Camp program. By agreeing below, your application will be submitted for review.</p>
+                <p>1. All information provided is true and accurate.</p>
+                <p>2. I agree to the camp program cancellation and refund policy.</p>
+                <p>3. Participant photos and videos may be used for promotional purposes.</p>
+                <p>4. Medical and other expenses incurred during the camp are the responsibility of the applicant.</p>
+                <p>5. I agree to comply with Edubee Camp's operational rules and instructions.</p>
               </div>
-            )}
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input type="checkbox" className="accent-[#F5821F] w-4 h-4 mt-0.5 shrink-0" checked={wizardAgreed} onChange={e => setWizardAgreed(e.target.checked)} />
+                <span className="text-sm text-foreground">I have read and agree to the terms and conditions above.</span>
+              </label>
+            </div>
           </div>
 
-          {/* Footer navigation */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/20">
+          {/* Footer */}
+          <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/20 shrink-0">
             <Button variant="outline" className="gap-1.5 h-9 text-sm"
-              onClick={() => { if (wizardStep === 1) { setCreateDialog(false); resetWizard(); } else setWizardStep(s => s - 1); }}>
-              {wizardStep === 1 ? <><X className="w-3.5 h-3.5" /> Cancel</> : <><ChevronLeft className="w-3.5 h-3.5" /> Back</>}
+              onClick={() => { setCreateDialog(false); resetWizard(); }}>
+              <X className="w-3.5 h-3.5" /> Cancel
             </Button>
-            <span className="text-xs text-muted-foreground">{wizardStep} / 5</span>
-            {wizardStep < 5 ? (
-              <Button className="gap-1.5 h-9 text-sm bg-[#F5821F] hover:bg-[#d97706] text-white"
-                disabled={wizardStep === 1 && !form.applicantName.trim()}
-                onClick={() => setWizardStep(s => s + 1)}>
-                Next <ChevronRight className="w-3.5 h-3.5" />
-              </Button>
-            ) : (
-              <Button className="gap-1.5 h-9 text-sm bg-[#F5821F] hover:bg-[#d97706] text-white"
-                disabled={!wizardAgreed || createApp.isPending}
-                onClick={() => createApp.mutate({
-                  ...form,
-                  notes: [form.notes, wizardOptions.length > 0 ? `Options: ${wizardOptions.join(", ")}` : "", wizardPackageId ? `PackageId: ${wizardPackageId}` : ""].filter(Boolean).join("\n"),
-                })}>
-                {createApp.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                Submit
-              </Button>
-            )}
+            <Button className="gap-1.5 h-9 text-sm bg-[#F5821F] hover:bg-[#d97706] text-white"
+              disabled={!form.applicantName.trim() || !wizardAgreed || createApp.isPending}
+              onClick={() => createApp.mutate({
+                ...form,
+                notes: [form.notes, wizardOptions.length > 0 ? `Options: ${wizardOptions.join(", ")}` : "", wizardPackageId ? `PackageId: ${wizardPackageId}` : ""].filter(Boolean).join("\n"),
+              })}>
+              {createApp.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              Submit Application
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
