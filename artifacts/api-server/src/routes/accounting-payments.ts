@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import {
   paymentHeaders, paymentLines, journalEntries,
   chartOfAccounts, contractProducts, contracts,
+  transactions,
 } from "@workspace/db/schema";
 import { eq, and, gte, lte, inArray, asc, desc, SQL } from "drizzle-orm";
 import { generateTaxInvoice } from "../services/taxInvoiceService.js";
@@ -245,6 +246,41 @@ router.post(
 
         return { header, lines: insertedLines, journalEntry: je };
       });
+
+      // === BRIDGE: auto-create transaction record ===
+      try {
+        // trust_receipt (고객 입금) → transactionType: 'payment_received', creditAmount 설정
+        // trust_transfer (송금)     → transactionType: 'bank_transfer',    amount 설정
+        // 그 외 타입                 → transactionType: paymentType,        amount 설정
+        const txType =
+          paymentType === "trust_receipt"  ? "payment_received" :
+          paymentType === "trust_transfer" ? "bank_transfer"    :
+          paymentType;
+
+        const firstLine = (lineItems as any[])[0];
+
+        await db.insert(transactions).values({
+          transactionType:  txType,
+          transactionDate:  paymentDate,
+          amount:           String(totalAmount.toFixed(2)),
+          creditAmount:     paymentType === "trust_receipt"
+                              ? String(totalAmount.toFixed(2))
+                              : null,
+          currency:         "AUD",
+          description:      `${paymentType} — ${result.header.paymentRef} — ${totalAmount.toFixed(2)}`,
+          bankReference:    bankReference ?? null,
+          accountId:        receivedFromId ?? paidToId ?? null,
+          paymentInfoId:    (req.body.paymentInfoId as string | undefined) ?? null,
+          contractId:       firstLine?.contractId ?? null,
+          invoiceId:        firstLine?.invoiceId  ?? null,
+          createdBy:        userId(req),
+          status:           "Active",
+        });
+      } catch (bridgeError) {
+        // 브릿지 실패해도 payment_header 저장은 성공으로 처리
+        console.error("[Bridge] Failed to create transaction record:", bridgeError);
+      }
+      // === END BRIDGE ===
 
       // ── Tax Invoice auto-generation (post-transaction, non-blocking) ──────
       if (paymentType === "trust_transfer") {
