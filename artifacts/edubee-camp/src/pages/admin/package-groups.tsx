@@ -110,6 +110,7 @@ export default function PackageGroups() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [typeTab, setTypeTab] = useState("all");
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<PackageGroup | null>(null);
@@ -330,13 +331,25 @@ export default function PackageGroups() {
     { label: "USD (United States)", field: "priceUsd", flag: "🇺🇸" },
   ];
 
+  // Derive unique type tabs from loaded groups
+  const typeOptions: { id: string; name: string }[] = [];
+  {
+    const seen = new Map<string, string>();
+    for (const g of groups) {
+      if (g.typeId && g.typeName && !seen.has(g.typeId)) seen.set(g.typeId, g.typeName);
+    }
+    seen.forEach((name, id) => typeOptions.push({ id, name }));
+    typeOptions.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   const filtered = groups.filter(g => {
     const matchSearch = !search ||
       (g.nameEn ?? "").toLowerCase().includes(search.toLowerCase()) ||
       (g.countryCode ?? "").toLowerCase().includes(search.toLowerCase()) ||
       (g.location ?? "").toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || g.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchType = typeTab === "all" || g.typeId === typeTab;
+    return matchSearch && matchStatus && matchType;
   });
 
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -356,6 +369,36 @@ export default function PackageGroups() {
         activeStatus={statusFilter}
         onStatusChange={v => { setStatusFilter(v); setPage(1); }}
       />
+
+      {/* Type tabs */}
+      {typeOptions.length > 0 && (
+        <div className="flex items-center gap-1 flex-wrap border-b border-border pb-0">
+          {[{ id: "all", name: "All" }, ...typeOptions].map(opt => {
+            const count = opt.id === "all"
+              ? groups.filter(g => statusFilter === "all" || g.status === statusFilter).length
+              : groups.filter(g => g.typeId === opt.id && (statusFilter === "all" || g.status === statusFilter)).length;
+            const isActive = typeTab === opt.id;
+            return (
+              <button
+                key={opt.id}
+                onClick={() => { setTypeTab(opt.id); setPage(1); }}
+                className={`relative px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${
+                  isActive
+                    ? "text-[#F5821F] border-b-2 border-[#F5821F] -mb-px"
+                    : "text-muted-foreground hover:text-foreground border-b-2 border-transparent -mb-px"
+                }`}
+              >
+                {opt.name}
+                <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                  isActive ? "bg-[#FEF0E3] text-[#F5821F]" : "bg-muted text-muted-foreground"
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
