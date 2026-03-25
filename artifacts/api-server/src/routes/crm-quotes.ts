@@ -189,25 +189,33 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
 
     const contractNumber = genContractNumber();
 
+    const totalAmount = products.reduce((sum, p) => sum + parseFloat(p.total ?? "0"), 0);
+
     const result = await db.transaction(async (tx) => {
-      // 1. Create contract
+      // 1. Create contract — copy all transferable quote fields
       const [newContract] = await tx.insert(contracts).values({
         contractNumber,
         status: "draft",
-        studentName: quote.accountName ?? null,
+        studentName:  quote.customerName ?? quote.accountName ?? null,
+        notes:        quote.notes ?? null,
+        totalAmount:  totalAmount > 0 ? String(totalAmount) : null,
       }).returning();
 
       const contractId = newContract.id;
 
-      // 2. Copy quote_products → contract_products
+      // 2. Copy quote_products → contract_products (all fields)
       if (products.length > 0) {
         await tx.insert(contractProducts).values(
-          products.map(p => ({
+          products.map((p, i) => ({
             contractId,
-            quantity:          p.qty,
+            productId:         p.productId ?? null,
+            name:              p.name ?? p.productName ?? null,
+            quantity:          p.quantity ?? p.qty ?? 1,
             unitPrice:         p.unitPrice,
             totalPrice:        p.total,
+            isInitialPayment:  p.isInitialPayment ?? false,
             serviceModuleType: p.serviceModuleType ?? null,
+            sortIndex:         p.sortIndex ?? p.sortOrder ?? i,
           }))
         );
       }

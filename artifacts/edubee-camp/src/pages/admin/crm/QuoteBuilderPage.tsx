@@ -933,9 +933,11 @@ export default function QuoteBuilderPage() {
   const convertMutation = useMutation({
     mutationFn: () =>
       axios.post(`${BASE}/api/crm/quotes/${quoteId}/convert-to-contract`),
-    onSuccess: () => {
+    onSuccess: (res) => {
       toast({ title: "Quote converted to contract" });
       qc.invalidateQueries({ queryKey: ["quote", quoteId] });
+      const contractId = res.data?.contractId;
+      if (contractId) navigate(`/admin/crm/contracts/${contractId}`);
     },
     onError: (err: any) =>
       toast({
@@ -1022,15 +1024,15 @@ export default function QuoteBuilderPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {quoteStatus !== "Accepted" && (
+          {quoteStatus !== "Declined" && quoteStatus !== "Expired" && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => convertMutation.mutate()}
               disabled={convertMutation.isPending || activeLines.length === 0}
-              className="text-sm"
+              className="text-sm border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
             >
-              Convert to Contract
+              {convertMutation.isPending ? "Converting…" : "Convert to Contract"}
             </Button>
           )}
           <Button
