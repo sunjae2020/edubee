@@ -174,6 +174,28 @@ router.delete("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES), 
   }
 });
 
+// Clone package group
+router.post("/package-groups/:id/clone", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const [original] = await db.select().from(packageGroups).where(eq(packageGroups.id, req.params.id)).limit(1);
+    if (!original) return res.status(404).json({ error: "Not Found" });
+
+    const { id: _id, createdAt: _c, updatedAt: _u, ...fields } = original;
+    const [cloned] = await db.insert(packageGroups).values({
+      ...fields,
+      nameEn: `${original.nameEn} (Copy)`,
+      status: "draft",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+
+    return res.status(201).json(cloned);
+  } catch (err) {
+    console.error("[POST /package-groups/:id/clone]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Package-Group → Products links (PART 2)
 router.get("/package-groups/:id/products", authenticate, async (req, res) => {
   try {

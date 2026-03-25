@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { UserRound, Mail, Phone, Building2 } from "lucide-react";
@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Edit, RefreshCw, X, Loader2 } from "lucide-react";
+import { Plus, Edit, RefreshCw, X, Loader2, Copy } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 
@@ -54,6 +54,7 @@ const RATES: Record<string, number> = { KRW: 952.38, THB: 22.99, JPY: 102.04, US
 
 export default function PackageGroupDetail() {
   const { id } = useParams<{ id: string }>();
+  const [, setLocation] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -166,6 +167,17 @@ export default function PackageGroupDetail() {
       toast({ title: "Package group updated" });
     },
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
+  });
+
+  const cloneGroup = useMutation({
+    mutationFn: () =>
+      axios.post(`${BASE}/api/package-groups/${id}/clone`).then(r => r.data),
+    onSuccess: (cloned) => {
+      qc.invalidateQueries({ queryKey: ["package-groups"] });
+      toast({ title: "Package group cloned", description: `"${cloned.nameEn}" created` });
+      setLocation(`${BASE}/admin/package-groups/${cloned.id}`);
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to clone package group" }),
   });
 
   const createPkg = useMutation({
@@ -328,6 +340,22 @@ export default function PackageGroupDetail() {
         onEdit={startEdit}
         onSave={saveEdit}
         onCancel={cancelEdit}
+        headerExtra={
+          !isEditing && canEdit ? (
+            <Button
+              size="sm"
+              onClick={() => cloneGroup.mutate()}
+              disabled={cloneGroup.isPending}
+              className="gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white"
+            >
+              {cloneGroup.isPending
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <Copy className="h-3.5 w-3.5" />
+              }
+              Clone
+            </Button>
+          ) : undefined
+        }
       >
         {/* General Tab */}
         {activeTab === "general" && (
