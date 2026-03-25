@@ -301,3 +301,32 @@
 .dark td { border-color: var(--e-border) !important; }
 .dark tr:hover td { background-color: var(--e-bg-muted) !important; }
 .dark tbody tr:nth-child(even) td { background-color: transparent !important; }
+
+/* ── Tiptap WYSIWYG Editor ───────────────────────────────────────────────── */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #A8A29E;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+.tiptap { outline: none; }
+.tiptap .prose { max-width: none; }
+.tiptap h1 { font-size: 1.5rem; font-weight: 700; margin: 0.75rem 0 0.5rem; }
+.tiptap h2 { font-size: 1.25rem; font-weight: 700; margin: 0.6rem 0 0.4rem; }
+.tiptap h3 { font-size: 1.1rem; font-weight: 600; margin: 0.5rem 0 0.3rem; }
+.tiptap p { margin: 0.25rem 0; }
+.tiptap ul { list-style-type: disc; padding-left: 1.5rem; margin: 0.3rem 0; }
+.tiptap ol { list-style-type: decimal; padding-left: 1.5rem; margin: 0.3rem 0; }
+.tiptap blockquote {
+  border-left: 3px solid #F5821F;
+  margin: 0.5rem 0;
+  padding: 0.25rem 0.75rem;
+  color: #57534E;
+  font-style: italic;
+  background: #FEF0E3;
+  border-radius: 0 4px 4px 0;
+}
+.tiptap hr { border: none; border-top: 1px solid #E8E6E2; margin: 0.75rem 0; }
+.tiptap a { color: #F5821F; text-decoration: underline; }
+.tiptap a:hover { color: #d97706; }

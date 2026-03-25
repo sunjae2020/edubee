@@ -7,6 +7,7 @@ import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -1111,13 +1112,16 @@ export default function ProductDetail() {
             {/* [9] DESCRIPTION & NOTES */}
             <Section title="Description & Notes">
               <div>
-                <FL>Description</FL>
-                <Textarea
-                  rows={6}
+                <FL>Product Description</FL>
+                <p className="text-xs mb-2" style={{ color: "var(--e-text-3)" }}>
+                  Rich text description shown to external customers on the website or catalog.
+                  Supports headings, lists, bold/italic, links, and more.
+                </p>
+                <RichTextEditor
                   value={g("description")}
-                  onChange={e => sf("description")(e.target.value)}
-                  placeholder="Detailed product description for website, catalog, or internal notes"
-                  className="border-[#E8E6E2] text-sm resize-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]"
+                  onChange={sf("description")}
+                  placeholder="Write a detailed product description for customers…"
+                  minHeight={220}
                 />
               </div>
             </Section>
