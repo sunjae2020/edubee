@@ -11,6 +11,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Plus, Trash2, ArrowLeft, GripVertical, Search, X, Check, ChevronDown,
+  Mail, Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -879,6 +883,13 @@ export default function QuoteBuilderPage() {
   const [customerName, setCustomerName] = useState("");
   const [studentAccountId, setStudentAccountId] = useState<string | null>(null);
   const [studentAccountName, setStudentAccountName] = useState<string | null>(null);
+  const [clientAccountEmail, setClientAccountEmail] = useState<string | null>(null);
+
+  // Email dialog
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
 
   const validId = isValidUuid(quoteId);
 
@@ -914,6 +925,14 @@ export default function QuoteBuilderPage() {
     setLines([...serverLines].sort((a, b) => a.sortIndex - b.sortIndex));
     setDirtyLines(new Set());
   }, [serverLines]);
+
+  // ── Fetch client account email when account changes ──────────────────────────
+  useEffect(() => {
+    if (!studentAccountId) { setClientAccountEmail(null); return; }
+    axios.get(`${BASE}/api/crm/accounts/${studentAccountId}`)
+      .then((r) => setClientAccountEmail(r.data?.email ?? null))
+      .catch(() => setClientAccountEmail(null));
+  }, [studentAccountId]);
 
   // ── DnD ─────────────────────────────────────────────────────────────────────
   const sensors = useSensors(
@@ -1022,6 +1041,95 @@ export default function QuoteBuilderPage() {
     } catch {
       toast({ title: "Failed to delete item", variant: "destructive" });
     }
+  };
+
+  // ── Send Email ───────────────────────────────────────────────────────────────
+  const sendEmailMutation = useMutation({
+    mutationFn: () =>
+      axios.post(`${BASE}/api/crm/quotes/${quoteId}/send-email`, {
+        to:      emailTo,
+        subject: emailSubject,
+        message: emailBody,
+      }),
+    onSuccess: (res) => {
+      const mocked = res.data?.mocked;
+      toast({
+        title: mocked ? "Email logged (SMTP not configured)" : "Email sent successfully",
+        description: mocked ? "Configure SMTP in Settings to send real emails." : `Sent to ${emailTo}`,
+      });
+      setEmailDialogOpen(false);
+    },
+    onError: (err: any) =>
+      toast({
+        title: "Failed to send email",
+        description: err?.response?.data?.error ?? "Unknown error",
+        variant: "destructive",
+      }),
+  });
+
+  // ── Print / PDF ──────────────────────────────────────────────────────────────
+  const printQuote = () => {
+    const total = activeLines.reduce((s, l) => s + Number(l.price ?? 0) * (l.quantity ?? 1), 0);
+    const rows = activeLines.map((l) => `
+      <tr>
+        <td>${l.name || l.productName || "Item"}</td>
+        <td>${l.itemDescription ?? ""}</td>
+        <td style="text-align:center">${l.quantity ?? 1}</td>
+        <td style="text-align:right">$${Number(l.price ?? 0).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
+        <td style="text-align:right">$${(Number(l.price ?? 0) * (l.quantity ?? 1)).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
+      </tr>`).join("");
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Quote ${quote.quoteRefNumber ?? ""}</title>
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:Arial,sans-serif;color:#333;padding:32px;font-size:13px}
+        .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:16px;border-bottom:3px solid #F5821F}
+        .brand{font-size:22px;font-weight:700;color:#F5821F}
+        .ref{font-size:13px;color:#888;margin-top:4px}
+        .meta{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-bottom:28px;background:#fdf8f4;padding:16px;border-radius:6px;font-size:12px}
+        .meta-label{color:#888;margin-bottom:1px}
+        .meta-value{font-weight:600;color:#333}
+        table{width:100%;border-collapse:collapse;margin-bottom:20px}
+        th{background:#fdf8f4;padding:10px 12px;text-align:left;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #e5e0db}
+        td{padding:9px 12px;border-bottom:1px solid #f0ece8;vertical-align:top}
+        .total-row td{font-weight:700;font-size:15px;border-top:2px solid #e5e0db;border-bottom:none;padding-top:14px}
+        .total-row td:last-child{color:#F5821F;font-size:18px}
+        .footer{margin-top:24px;font-size:11px;color:#aaa;text-align:center}
+        @media print{body{padding:16px}.no-print{display:none}}
+      </style>
+    </head><body>
+      <div class="header">
+        <div><div class="brand">Edubee Camp</div><div class="ref">Quote ${quote.quoteRefNumber ?? ""}</div></div>
+        <div style="text-align:right;font-size:12px;color:#888">
+          ${quote.expiryDate ? `<div>Expiry: ${quote.expiryDate}</div>` : ""}
+          <div style="margin-top:4px;font-size:11px;background:#${quoteStatus === "Accepted" ? "d1fae5;color:#065f46" : quoteStatus === "Sent" ? "dbeafe;color:#1e40af" : "fef3c7;color:#92400e"};padding:2px 8px;border-radius:999px;display:inline-block">${quoteStatus}</div>
+        </div>
+      </div>
+      <div class="meta">
+        ${customerName ? `<div><div class="meta-label">Customer Name</div><div class="meta-value">${customerName}</div></div>` : ""}
+        ${studentAccountName ? `<div><div class="meta-label">Client Account</div><div class="meta-value">${studentAccountName}${clientAccountEmail ? `<br><span style="font-weight:400;color:#888">${clientAccountEmail}</span>` : ""}</div></div>` : ""}
+      </div>
+      <table>
+        <thead><tr>
+          <th>Item / Payment</th><th>Description</th>
+          <th style="text-align:center">Qty</th>
+          <th style="text-align:right">Amount</th>
+          <th style="text-align:right">Subtotal</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr class="total-row">
+          <td colspan="4" style="text-align:right">Total</td>
+          <td style="text-align:right">$${total.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
+        </tr></tfoot>
+      </table>
+      ${notes ? `<div style="background:#fdf8f4;padding:12px 16px;border-radius:6px;font-size:12px;color:#666;margin-bottom:16px"><strong>Notes:</strong> ${notes}</div>` : ""}
+      <div class="footer">Generated by Edubee Camp CRM</div>
+      <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>
+    </body></html>`;
+
+    const w = window.open("", "_blank", "width=900,height=700");
+    if (w) { w.document.write(html); w.document.close(); }
   };
 
   // ── Save ─────────────────────────────────────────────────────────────────────
@@ -1190,6 +1298,33 @@ export default function QuoteBuilderPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Send Email */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEmailTo(clientAccountEmail ?? "");
+              setEmailSubject(`Quote ${quote.quoteRefNumber ?? ""} from Edubee Camp`);
+              setEmailBody("");
+              setEmailDialogOpen(true);
+            }}
+            className="text-sm border-gray-300 text-gray-600 hover:bg-gray-50 gap-1.5"
+          >
+            <Mail className="w-3.5 h-3.5" />
+            Send Email
+          </Button>
+
+          {/* Print PDF */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={printQuote}
+            className="text-sm border-gray-300 text-gray-600 hover:bg-gray-50 gap-1.5"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            Print PDF
+          </Button>
+
           {quoteStatus !== "Declined" && quoteStatus !== "Expired" && (
             <Button
               variant="outline"
@@ -1249,7 +1384,7 @@ export default function QuoteBuilderPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-xs text-gray-500">Student Account</Label>
+              <Label className="text-xs text-gray-500">Client Account</Label>
               <div className="mt-1">
                 <AccountLookupField
                   currentId={studentAccountId}
@@ -1260,6 +1395,12 @@ export default function QuoteBuilderPage() {
                   }}
                 />
               </div>
+              {clientAccountEmail && (
+                <p className="mt-1 text-xs text-gray-400 flex items-center gap-1">
+                  <Mail className="w-3 h-3 shrink-0" />
+                  {clientAccountEmail}
+                </p>
+              )}
             </div>
             <div>
               <Label className="text-xs text-gray-500">Expiry Date</Label>
@@ -1447,6 +1588,62 @@ export default function QuoteBuilderPage() {
         </div>
 
       </div>
+
+      {/* ── Send Email Dialog ─────────────────────────────────────────────────── */}
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Quote by Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            <div>
+              <Label className="text-xs text-gray-500">To</Label>
+              <Input
+                className="h-8 text-sm mt-1"
+                value={emailTo}
+                onChange={(e) => setEmailTo(e.target.value)}
+                placeholder="recipient@example.com"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">Subject</Label>
+              <Input
+                className="h-8 text-sm mt-1"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">Message (optional)</Label>
+              <Textarea
+                className="text-sm mt-1 resize-none"
+                rows={3}
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                placeholder="Add a personal message…"
+              />
+            </div>
+            <p className="text-xs text-gray-400">
+              The quote summary and itemised product table will be included automatically.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setEmailDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={!emailTo.trim() || sendEmailMutation.isPending}
+              onClick={() => sendEmailMutation.mutate()}
+              style={{ backgroundColor: PRIMARY }}
+              className="text-white hover:opacity-90 gap-1.5"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              {sendEmailMutation.isPending ? "Sending…" : "Send Email"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

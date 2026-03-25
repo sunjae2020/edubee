@@ -4,11 +4,12 @@ import {
   quotes, quote_products, contracts, contractProducts,
   pickupMgt, settlementMgt,
   accommodationMgt, internshipMgt, guardianMgt, studyAbroadMgt,
-  hotelMgt, tourMgt,
+  hotelMgt, tourMgt, accounts,
 } from "@workspace/db/schema";
 import { eq, and, count, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { sendMail } from "../mailer.js";
 const router = Router();
 
 function fmtDate(d: Date): string {
@@ -298,6 +299,75 @@ router.get("/crm/quotes/:id/pdf", authenticate, requireRole(...ADMIN_ROLES), asy
   } catch (err) {
     console.error("[GET /api/crm/quotes/:id/pdf]", err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── POST /api/crm/quotes/:id/send-email ────────────────────────────
+router.post("/crm/quotes/:id/send-email", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { to, subject, message } = req.body;
+    if (!to) return res.status(400).json({ error: "Recipient email is required" });
+
+    const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
+    if (!quote) return res.status(404).json({ error: "Quote not found" });
+
+    const products = await db
+      .select()
+      .from(quote_products)
+      .where(and(eq(quote_products.quoteId, req.params.id), eq(quote_products.status, "Active")))
+      .orderBy(quote_products.sortIndex);
+
+    // Fetch client account name if available
+    let clientName = quote.customerName ?? "";
+    if (quote.studentAccountId) {
+      const [acc] = await db.select({ name: accounts.name }).from(accounts).where(eq(accounts.id, quote.studentAccountId));
+      if (acc) clientName = acc.name;
+    }
+
+    const totalAmount = products.reduce((s, p) => s + Number(p.price ?? 0) * (p.quantity ?? 1), 0);
+
+    const rows = products.map(p => `
+      <tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #f0ece8;font-size:13px;">${p.name || p.productName || "Item"}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f0ece8;text-align:center;font-size:13px;">${p.quantity ?? 1}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f0ece8;text-align:right;font-size:13px;">$${Number(p.price ?? 0).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f0ece8;text-align:right;font-size:13px;">$${(Number(p.price ?? 0) * (p.quantity ?? 1)).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
+      </tr>`).join("");
+
+    const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#333;max-width:640px;margin:0 auto;padding:20px;">
+      <div style="background:#F5821F;color:white;padding:24px 28px;border-radius:8px 8px 0 0;">
+        <div style="font-size:11px;opacity:.75;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;">Edubee Camp</div>
+        <h1 style="margin:0;font-size:22px;font-weight:700;">Quote ${quote.quoteRefNumber ?? ""}</h1>
+        ${clientName ? `<p style="margin:6px 0 0;opacity:.85;font-size:13px;">Prepared for: ${clientName}</p>` : ""}
+      </div>
+      <div style="border:1px solid #e5e0db;border-top:none;padding:24px 28px;border-radius:0 0 8px 8px;background:#fff;">
+        ${message ? `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;">${message.replace(/\n/g, "<br>")}</p><hr style="border:none;border-top:1px solid #f0ece8;margin:0 0 20px;">` : ""}
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:#fdf8f4;">
+              <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #e5e0db;font-size:12px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Item</th>
+              <th style="padding:10px 12px;text-align:center;border-bottom:2px solid #e5e0db;font-size:12px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Qty</th>
+              <th style="padding:10px 12px;text-align:right;border-bottom:2px solid #e5e0db;font-size:12px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Amount</th>
+              <th style="padding:10px 12px;text-align:right;border-bottom:2px solid #e5e0db;font-size:12px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" style="padding:14px 12px;text-align:right;font-weight:700;font-size:14px;">Total</td>
+              <td style="padding:14px 12px;text-align:right;font-weight:700;font-size:18px;color:#F5821F;">$${totalAmount.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
+            </tr>
+          </tfoot>
+        </table>
+        ${quote.expiryDate ? `<p style="margin:16px 0 0;font-size:12px;color:#aaa;">This quote is valid until ${quote.expiryDate}.</p>` : ""}
+      </div>
+    </body></html>`;
+
+    const result = await sendMail({ to, subject: subject || `Quote ${quote.quoteRefNumber ?? ""}`, html });
+    return res.json({ success: true, mocked: !!(result as any).mocked });
+  } catch (err) {
+    console.error("[POST /api/crm/quotes/:id/send-email]", err);
+    return res.status(500).json({ error: String(err) });
   }
 });
 
