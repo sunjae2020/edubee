@@ -356,7 +356,7 @@ export default function PackageGroupDetail() {
                     <SelectTrigger className="h-8 text-sm border-[#F5821F]">
                       <SelectValue placeholder="— Select type —" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60 overflow-y-auto">
                       <SelectItem value="none">— None —</SelectItem>
                       {productTypesList.map((pt: any) => (
                         <SelectItem key={pt.id} value={pt.id}>{pt.name}</SelectItem>
