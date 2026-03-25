@@ -78,14 +78,27 @@ function AddInstituteModal({ contractId, open, onClose, onCreated }: {
   contractId: string; open: boolean; onClose: () => void; onCreated: () => void;
 }) {
   const { toast } = useToast();
-  const [form, setForm] = useState({ className: "", classLevel: "", teacherName: "", status: "pending", notes: "" });
+  const [form, setForm] = useState({
+    programName: "", programType: "", programStartDate: "", programEndDate: "",
+    weeklyHours: "", classSizeMax: "", ageGroup: "", levelAssessmentRequired: false,
+    levelAssessmentDate: "", assignedClass: "", partnerCost: "", status: "pending", notes: "",
+  });
   const f = (k: string) => (v: string) => setForm(p => ({ ...p, [k]: v }));
   const [saving, setSaving] = useState(false);
 
   const handleCreate = async () => {
     setSaving(true);
     try {
-      await axios.post(`${BASE}/api/camp-services/institutes`, { contractId, ...form });
+      await axios.post(`${BASE}/api/camp-services/institutes`, {
+        contractId,
+        ...form,
+        weeklyHours:  form.weeklyHours  ? Number(form.weeklyHours)  : null,
+        classSizeMax: form.classSizeMax ? Number(form.classSizeMax) : null,
+        partnerCost:  form.partnerCost  || null,
+        programStartDate: form.programStartDate || null,
+        programEndDate:   form.programEndDate   || null,
+        levelAssessmentDate: form.levelAssessmentDate || null,
+      });
       toast({ title: "Institute service created" });
       onCreated();
       onClose();
@@ -94,15 +107,83 @@ function AddInstituteModal({ contractId, open, onClose, onCreated }: {
     } finally { setSaving(false); }
   };
 
+  const AGE_GROUPS = ["junior", "teen", "young_adult", "adult", "mixed"];
+  const PROG_TYPES = ["english", "french", "german", "spanish", "japanese", "chinese", "other"];
+
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle className="flex items-center gap-2"><School className="w-4 h-4 text-[#F5821F]" /> Add Language School Service</DialogTitle></DialogHeader>
-        <div className="grid gap-3 pt-2">
-          <div className="space-y-1"><Label className="text-xs">Class Name</Label><Input value={form.className} onChange={e => f("className")(e.target.value)} className="h-8 text-sm" /></div>
-          <div className="space-y-1"><Label className="text-xs">Class Level</Label><Input value={form.classLevel} onChange={e => f("classLevel")(e.target.value)} className="h-8 text-sm" /></div>
-          <div className="space-y-1"><Label className="text-xs">Teacher Name</Label><Input value={form.teacherName} onChange={e => f("teacherName")(e.target.value)} className="h-8 text-sm" /></div>
-          <div className="space-y-1"><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => f("notes")(e.target.value)} className="text-sm min-h-[60px]" /></div>
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="space-y-1 col-span-2">
+            <Label className="text-xs">Program Name</Label>
+            <Input value={form.programName} onChange={e => f("programName")(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Program Type</Label>
+            <Select value={form.programType || "__none"} onValueChange={v => f("programType")(v === "__none" ? "" : v)}>
+              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="— Select —" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">— None —</SelectItem>
+                {PROG_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Age Group</Label>
+            <Select value={form.ageGroup || "__none"} onValueChange={v => f("ageGroup")(v === "__none" ? "" : v)}>
+              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="— Select —" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">— None —</SelectItem>
+                {AGE_GROUPS.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Start Date</Label>
+            <Input type="date" value={form.programStartDate} onChange={e => f("programStartDate")(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">End Date</Label>
+            <Input type="date" value={form.programEndDate} onChange={e => f("programEndDate")(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Weekly Hours</Label>
+            <Input type="number" min={0} value={form.weeklyHours} onChange={e => f("weeklyHours")(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Class Size Max</Label>
+            <Input type="number" min={0} value={form.classSizeMax} onChange={e => f("classSizeMax")(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Assigned Class</Label>
+            <Input value={form.assignedClass} onChange={e => f("assignedClass")(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Partner Cost</Label>
+            <Input type="number" min={0} step="0.01" value={form.partnerCost} onChange={e => f("partnerCost")(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Level Assessment Date</Label>
+            <Input type="date" value={form.levelAssessmentDate} onChange={e => f("levelAssessmentDate")(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1 flex items-center gap-2 pt-4">
+            <input type="checkbox" id="lvlAssess" checked={form.levelAssessmentRequired}
+              onChange={e => setForm(p => ({ ...p, levelAssessmentRequired: e.target.checked }))}
+              className="w-4 h-4 accent-[#F5821F]" />
+            <Label htmlFor="lvlAssess" className="text-xs cursor-pointer">Level Assessment Required</Label>
+          </div>
+          <div className="space-y-1 col-span-2">
+            <Label className="text-xs">Status</Label>
+            <Select value={form.status} onValueChange={v => f("status")(v)}>
+              <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>{SERVICE_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1 col-span-2">
+            <Label className="text-xs">Notes</Label>
+            <Textarea value={form.notes} onChange={e => f("notes")(e.target.value)} className="text-sm min-h-[60px]" />
+          </div>
         </div>
         <div className="flex justify-end gap-2 pt-4 border-t mt-2">
           <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
@@ -825,11 +906,11 @@ export default function CampContractDetail() {
                         <Building2 className="w-4 h-4 text-[#F5821F]" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-[#1C1917]">{inst.className ?? "Language School Service"}</div>
+                        <div className="text-sm font-medium text-[#1C1917]">{inst.programName ?? "Language School Service"}</div>
                         <div className="text-xs text-[#57534E] mt-0.5 flex items-center gap-2">
-                          {inst.classLevel && <span>{inst.classLevel}</span>}
-                          {inst.teacherName && <span>· {inst.teacherName}</span>}
-                          {inst.retailPrice && <span className="flex items-center gap-0.5"><DollarSign className="w-3 h-3" />{fmtMoney(inst.retailPrice, contract?.currency)}</span>}
+                          {inst.programType && <span>{inst.programType.replace(/_/g, " ")}</span>}
+                          {inst.ageGroup && <span>· {inst.ageGroup}</span>}
+                          {inst.partnerCost && <span className="flex items-center gap-0.5"><DollarSign className="w-3 h-3" />{fmtMoney(inst.partnerCost, contract?.currency)}</span>}
                         </div>
                       </div>
                       <SvcStatusBadge status={inst.status} />
