@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   ChevronRight, FileText, GitMerge, Loader2,
   User, Users, CalendarCheck, Video, MapPin, CheckCircle2, XCircle, Clock, AlertCircle,
-  Pencil, X, Check,
+  Pencil, X, Check, Plus, Trash2, Package, ChevronLeft, ListChecks, FileSignature,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -101,6 +101,37 @@ export default function CampApplications() {
   const [createDialog, setCreateDialog] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Wizard state
+  const [wizardStep, setWizardStep] = useState(1);
+  const [wizardParticipants, setWizardParticipants] = useState<Array<{
+    fullName: string; dateOfBirth: string; gender: string; nationality: string;
+    passportNumber: string; grade: string; schoolName: string; englishLevel: string;
+    email: string; phone: string;
+  }>>([]);
+  const [wizardPackageId, setWizardPackageId] = useState("");
+  const [wizardPackageSearch, setWizardPackageSearch] = useState("");
+  const [wizardOptions, setWizardOptions] = useState<string[]>([]);
+  const [wizardAgreed, setWizardAgreed] = useState(false);
+
+  const WIZARD_OPTIONS = [
+    { key: "airport_pickup", label: "공항 픽업 (Airport Pickup)" },
+    { key: "accommodation", label: "숙소 배정 (Accommodation)" },
+    { key: "guardian_service", label: "가디언 서비스 (Guardian Service)" },
+    { key: "settlement_service", label: "정착 서비스 (Settlement Service)" },
+    { key: "insurance", label: "여행 보험 (Travel Insurance)" },
+  ];
+
+  const { data: packagesResp } = useQuery({
+    queryKey: ["packages-wizard", wizardPackageSearch],
+    queryFn: () => {
+      const p = new URLSearchParams({ limit: "20" });
+      if (wizardPackageSearch) p.set("search", wizardPackageSearch);
+      return axios.get(`${BASE}/api/packages?${p}`).then(r => r.data);
+    },
+    enabled: createDialog && wizardStep === 3,
+  });
+  const wizardPackages: Array<{ id: string; name: string; priceAud?: number }> = packagesResp?.data ?? packagesResp ?? [];
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Application>>({});
 
@@ -139,11 +170,34 @@ export default function CampApplications() {
     onError: (err: any) => toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed" }),
   });
 
+  const resetWizard = () => {
+    setWizardStep(1); setForm(emptyForm);
+    setWizardParticipants([]); setWizardPackageId("");
+    setWizardPackageSearch(""); setWizardOptions([]); setWizardAgreed(false);
+  };
+
   const createApp = useMutation({
-    mutationFn: (d: any) => axios.post(`${BASE}/api/applications`, d).then(r => r.data),
+    mutationFn: async (d: any) => {
+      const app = await axios.post(`${BASE}/api/applications`, d).then(r => r.data);
+      // Post each participant
+      for (const p of wizardParticipants) {
+        if (p.fullName.trim()) {
+          await axios.post(`${BASE}/api/applications/participants`, {
+            applicationId: app.id,
+            participantType: "student",
+            fullName: p.fullName, dateOfBirth: p.dateOfBirth || undefined,
+            gender: p.gender || undefined, nationality: p.nationality || undefined,
+            passportNumber: p.passportNumber || undefined, grade: p.grade || undefined,
+            schoolName: p.schoolName || undefined, englishLevel: p.englishLevel || undefined,
+            email: p.email || undefined, phone: p.phone || undefined,
+          });
+        }
+      }
+      return app;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["camp-applications"] });
-      setCreateDialog(false); setForm(emptyForm);
+      setCreateDialog(false); resetWizard();
       toast({ title: "Camp Application created" });
     },
     onError: () => toast({ variant: "destructive", title: "Failed to create camp application" }),
@@ -463,51 +517,258 @@ export default function CampApplications() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Camp Application Dialog */}
-      <Dialog open={createDialog} onOpenChange={setCreateDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>New Camp Application</DialogTitle></DialogHeader>
-          <form onSubmit={e => { e.preventDefault(); createApp.mutate(form); }} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2 space-y-1.5">
-                <Label>Student Name *</Label>
-                <Input value={form.studentName} onChange={e => setForm(f => ({ ...f, studentName: e.target.value }))} required />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Email</Label>
-                <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Phone</Label>
-                <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Nationality</Label>
-                <Input value={form.nationality} onChange={e => setForm(f => ({ ...f, nationality: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Start Date</Label>
-                <Input type="date" value={form.preferredStartDate} onChange={e => setForm(f => ({ ...f, preferredStartDate: e.target.value }))} />
-              </div>
-              <div className="col-span-2 space-y-1.5">
-                <Label>Program Type</Label>
-                <Select value={form.programType} onValueChange={v => setForm(f => ({ ...f, programType: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["english_camp","stem_camp","arts_camp","sports_camp","leadership_camp","language_immersion"].map(t => (
-                      <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      {/* Create Camp Application Wizard */}
+      <Dialog open={createDialog} onOpenChange={open => { if (!open) { setCreateDialog(false); resetWizard(); } }}>
+        <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
+          {/* Header */}
+          <div className="bg-[#F5821F] px-6 py-4">
+            <DialogTitle className="text-white text-base font-semibold">New Camp Application</DialogTitle>
+            {/* Step indicators */}
+            <div className="flex items-center gap-0 mt-3">
+              {[
+                { n: 1, label: "신청서", icon: FileText },
+                { n: 2, label: "학생 추가", icon: Users },
+                { n: 3, label: "패키지", icon: Package },
+                { n: 4, label: "옵션 선택", icon: ListChecks },
+                { n: 5, label: "동의서", icon: FileSignature },
+              ].map(({ n, label, icon: Icon }, idx) => (
+                <div key={n} className="flex items-center">
+                  <div className={`flex flex-col items-center ${wizardStep === n ? "opacity-100" : wizardStep > n ? "opacity-80" : "opacity-40"}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors
+                      ${wizardStep === n ? "bg-white text-[#F5821F] border-white" : wizardStep > n ? "bg-[#F5821F] text-white border-white" : "bg-transparent text-white border-white/60"}`}>
+                      {wizardStep > n ? <Check className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
+                    </div>
+                    <span className="text-[10px] text-white mt-1 whitespace-nowrap font-medium">{label}</span>
+                  </div>
+                  {idx < 4 && (
+                    <div className={`h-0.5 w-8 mx-1 mb-4 ${wizardStep > n ? "bg-white" : "bg-white/30"}`} />
+                  )}
+                </div>
+              ))}
             </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <Button type="button" variant="outline" onClick={() => setCreateDialog(false)}>Cancel</Button>
-              <Button type="submit" disabled={createApp.isPending} className="gap-2 bg-[#F5821F] hover:bg-[#d97706] text-white">
-                {createApp.isPending && <Loader2 className="w-4 h-4 animate-spin" />} Create
+          </div>
+
+          {/* Step content */}
+          <div className="px-6 py-5 min-h-[320px] max-h-[420px] overflow-y-auto">
+            {/* Step 1 — 신청서 */}
+            {wizardStep === 1 && (
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground">기본 신청 정보를 입력하세요.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs">학생 이름 (Student Name) <span className="text-red-500">*</span></Label>
+                    <Input className="h-9 text-sm" value={form.studentName} onChange={e => setForm(f => ({ ...f, studentName: e.target.value }))} placeholder="홍길동" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">이메일 (Email)</Label>
+                    <Input className="h-9 text-sm" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">전화번호 (Phone)</Label>
+                    <Input className="h-9 text-sm" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">국적 (Nationality)</Label>
+                    <Input className="h-9 text-sm" value={form.nationality} onChange={e => setForm(f => ({ ...f, nationality: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">희망 출발일 (Preferred Start)</Label>
+                    <Input className="h-9 text-sm" type="date" value={form.preferredStartDate} onChange={e => setForm(f => ({ ...f, preferredStartDate: e.target.value }))} />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs">프로그램 유형 (Program Type)</Label>
+                    <Select value={form.programType} onValueChange={v => setForm(f => ({ ...f, programType: v }))}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[
+                          { v: "english_camp", l: "영어 캠프 (English Camp)" },
+                          { v: "stem_camp", l: "STEM 캠프" },
+                          { v: "arts_camp", l: "예술 캠프 (Arts Camp)" },
+                          { v: "sports_camp", l: "스포츠 캠프 (Sports Camp)" },
+                          { v: "leadership_camp", l: "리더십 캠프 (Leadership Camp)" },
+                          { v: "language_immersion", l: "언어 몰입 (Language Immersion)" },
+                        ].map(t => <SelectItem key={t.v} value={t.v}>{t.l}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2 — 학생 추가 */}
+            {wizardStep === 2 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">참가 학생을 추가하세요 (선택사항). 나중에 추가할 수도 있습니다.</p>
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs gap-1"
+                    onClick={() => setWizardParticipants(p => [...p, { fullName: "", dateOfBirth: "", gender: "", nationality: "", passportNumber: "", grade: "", schoolName: "", englishLevel: "", email: "", phone: "" }])}>
+                    <Plus className="w-3 h-3" /> 학생 추가
+                  </Button>
+                </div>
+                {wizardParticipants.length === 0 && (
+                  <div className="border border-dashed border-border rounded-lg py-10 flex flex-col items-center gap-2 text-muted-foreground">
+                    <Users className="w-8 h-8 opacity-30" />
+                    <span className="text-xs">학생 추가 버튼을 눌러 참가자를 등록하세요</span>
+                  </div>
+                )}
+                {wizardParticipants.map((p, i) => (
+                  <div key={i} className="border border-border rounded-lg p-3 space-y-2 bg-muted/20">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-foreground">학생 {i + 1}</span>
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
+                        onClick={() => setWizardParticipants(prev => prev.filter((_, j) => j !== i))}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="col-span-2 space-y-1">
+                        <Label className="text-[11px]">이름 (Full Name) *</Label>
+                        <Input className="h-8 text-sm" value={p.fullName} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, fullName: e.target.value } : x))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[11px]">생년월일 (DOB)</Label>
+                        <Input className="h-8 text-sm" type="date" value={p.dateOfBirth} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, dateOfBirth: e.target.value } : x))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[11px]">성별 (Gender)</Label>
+                        <Select value={p.gender} onValueChange={v => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, gender: v } : x))}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="선택" /></SelectTrigger>
+                          <SelectContent>
+                            {["male","female","other"].map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[11px]">국적</Label>
+                        <Input className="h-8 text-sm" value={p.nationality} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, nationality: e.target.value } : x))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[11px]">학년 (Grade)</Label>
+                        <Input className="h-8 text-sm" value={p.grade} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, grade: e.target.value } : x))} />
+                      </div>
+                      <div className="col-span-2 space-y-1">
+                        <Label className="text-[11px]">학교명 (School)</Label>
+                        <Input className="h-8 text-sm" value={p.schoolName} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, schoolName: e.target.value } : x))} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Step 3 — 패키지 선택 */}
+            {wizardStep === 3 && (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">캠프 패키지를 선택하세요 (선택사항).</p>
+                <Input className="h-9 text-sm" placeholder="패키지 검색..." value={wizardPackageSearch} onChange={e => setWizardPackageSearch(e.target.value)} />
+                <div className="space-y-2 max-h-[260px] overflow-y-auto">
+                  {/* No package option */}
+                  <div
+                    className={`rounded-lg border p-3 cursor-pointer transition-colors ${!wizardPackageId ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}
+                    onClick={() => setWizardPackageId("")}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${!wizardPackageId ? "border-[#F5821F]" : "border-muted-foreground"}`}>
+                        {!wizardPackageId && <div className="w-2 h-2 rounded-full bg-[#F5821F]" />}
+                      </div>
+                      <span className="text-sm font-medium text-muted-foreground">패키지 미선택 (Skip)</span>
+                    </div>
+                  </div>
+                  {wizardPackages.map((pkg: any) => (
+                    <div key={pkg.id}
+                      className={`rounded-lg border p-3 cursor-pointer transition-colors ${wizardPackageId === pkg.id ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}
+                      onClick={() => setWizardPackageId(pkg.id)}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${wizardPackageId === pkg.id ? "border-[#F5821F]" : "border-muted-foreground"}`}>
+                          {wizardPackageId === pkg.id && <div className="w-2 h-2 rounded-full bg-[#F5821F]" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-foreground truncate">{pkg.name}</div>
+                          {pkg.priceAud && <div className="text-xs text-muted-foreground">AUD {Number(pkg.priceAud).toLocaleString()}</div>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {wizardPackages.length === 0 && (
+                    <div className="text-xs text-muted-foreground text-center py-6">패키지를 불러오는 중...</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 4 — 옵션 선택 */}
+            {wizardStep === 4 && (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">추가 서비스를 선택하세요 (선택사항).</p>
+                <div className="space-y-2">
+                  {WIZARD_OPTIONS.map(opt => {
+                    const checked = wizardOptions.includes(opt.key);
+                    return (
+                      <label key={opt.key}
+                        className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${checked ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}>
+                        <input type="checkbox" className="accent-[#F5821F] w-4 h-4" checked={checked}
+                          onChange={() => setWizardOptions(prev => checked ? prev.filter(k => k !== opt.key) : [...prev, opt.key])} />
+                        <span className="text-sm">{opt.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Step 5 — 동의서 */}
+            {wizardStep === 5 && (
+              <div className="space-y-4">
+                <div className="rounded-lg border border-border bg-muted/20 p-4 text-xs text-muted-foreground space-y-2 max-h-[200px] overflow-y-auto leading-relaxed">
+                  <p className="font-semibold text-foreground text-sm">캠프 신청 이용약관</p>
+                  <p>본 신청서는 Edubee Camp 캠프 프로그램 신청을 위한 공식 문서입니다. 신청자는 아래 내용에 동의함으로써 프로그램 참가 신청이 완료됩니다.</p>
+                  <p>1. 제공된 모든 정보는 사실이며 정확합니다.</p>
+                  <p>2. 캠프 프로그램 취소 및 환불 정책에 동의합니다.</p>
+                  <p>3. 참가자의 사진 및 영상이 홍보 목적으로 사용될 수 있음에 동의합니다.</p>
+                  <p>4. 캠프 기간 중 발생하는 의료비 및 기타 비용은 신청자가 부담합니다.</p>
+                  <p>5. Edubee Camp의 운영 규정 및 지시사항을 준수합니다.</p>
+                </div>
+                {/* Summary */}
+                <div className="rounded-lg border border-border p-3 space-y-1.5 text-xs">
+                  <p className="font-semibold text-foreground text-sm mb-2">신청 요약</p>
+                  <div className="flex justify-between"><span className="text-muted-foreground">학생명</span><span className="font-medium">{form.studentName || "—"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">프로그램</span><span className="font-medium">{form.programType?.replace(/_/g," ") || "—"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">출발 희망일</span><span className="font-medium">{form.preferredStartDate || "—"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">참가 학생 수</span><span className="font-medium">{wizardParticipants.filter(p => p.fullName.trim()).length}명</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">추가 옵션</span><span className="font-medium">{wizardOptions.length > 0 ? wizardOptions.length + "개 선택" : "없음"}</span></div>
+                </div>
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input type="checkbox" className="accent-[#F5821F] w-4 h-4 mt-0.5 shrink-0" checked={wizardAgreed} onChange={e => setWizardAgreed(e.target.checked)} />
+                  <span className="text-xs text-foreground">위 이용약관을 읽었으며 내용에 동의합니다.</span>
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Footer navigation */}
+          <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/20">
+            <Button variant="outline" className="gap-1.5 h-9 text-sm"
+              onClick={() => { if (wizardStep === 1) { setCreateDialog(false); resetWizard(); } else setWizardStep(s => s - 1); }}>
+              {wizardStep === 1 ? <><X className="w-3.5 h-3.5" /> 취소</> : <><ChevronLeft className="w-3.5 h-3.5" /> 이전</>}
+            </Button>
+            <span className="text-xs text-muted-foreground">{wizardStep} / 5</span>
+            {wizardStep < 5 ? (
+              <Button className="gap-1.5 h-9 text-sm bg-[#F5821F] hover:bg-[#d97706] text-white"
+                disabled={wizardStep === 1 && !form.studentName.trim()}
+                onClick={() => setWizardStep(s => s + 1)}>
+                다음 <ChevronRight className="w-3.5 h-3.5" />
               </Button>
-            </div>
-          </form>
+            ) : (
+              <Button className="gap-1.5 h-9 text-sm bg-[#F5821F] hover:bg-[#d97706] text-white"
+                disabled={!wizardAgreed || createApp.isPending}
+                onClick={() => createApp.mutate({
+                  ...form,
+                  notes: [form.notes, wizardOptions.length > 0 ? `Options: ${wizardOptions.join(", ")}` : "", wizardPackageId ? `PackageId: ${wizardPackageId}` : ""].filter(Boolean).join("\n"),
+                })}>
+                {createApp.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                신청 완료
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
