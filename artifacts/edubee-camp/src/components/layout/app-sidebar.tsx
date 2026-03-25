@@ -68,23 +68,24 @@ function buildNav(effectiveRole: string): NavGroup[] {
   const campItems: NavItem[] = [];
   if (isSAorAD || isCC) {
     campItems.push(
-      { icon: Layers,    label: "Package Groups",   href: "/admin/package-groups"   },
-      { icon: Package,   label: "Packages",         href: "/admin/packages"         },
-      { icon: ListChecks,  label: "Enrollment Spots", href: "/admin/enrollment-spots" },
       { icon: ClipboardList, label: "Camp Application", href: "/admin/camp-applications" },
-      { icon: FileText,    label: "Camp Contract",  href: "/admin/camp-contracts"   },
+      { icon: FileText,      label: "Camp Contract",    href: "/admin/camp-contracts"    },
     );
   }
   if (isSAorAD || isCC || effectiveRole === "partner_institute")
-    campItems.push({ icon: GraduationCap, label: "Institute / Study",  href: "/admin/services/institute" });
+    campItems.push({ icon: GraduationCap, label: "Institute", href: "/admin/camp-services/institutes" });
+  if (isSAorAD || isCC) {
+    campItems.push(
+      { icon: ListChecks,   label: "Enrollment Spots",  href: "/admin/enrollment-spots"       },
+      { icon: CalendarCheck, label: "Interviews",        href: "/admin/services/interviews"     },
+    );
+  }
   if (isSAorAD || isCC || effectiveRole === "partner_hotel")
-    campItems.push({ icon: Building2, label: "Hotel",            href: "/admin/services/hotel"     });
+    campItems.push({ icon: Building2, label: "Hotel",            href: "/admin/services/hotel"          });
   if (isSAorAD || isCC || effectiveRole === "partner_pickup")
-    campItems.push({ icon: Car, label: "Pickup / Transfer", href: "/admin/services/pickup"    });
+    campItems.push({ icon: Car,       label: "Pickup / Transfer", href: "/admin/services/pickup"         });
   if (isSAorAD || isCC || effectiveRole === "partner_tour")
-    campItems.push({ icon: Map, label: "Tour",             href: "/admin/services/tour"      });
-  if (isSAorAD || isCC)
-    campItems.push({ icon: CalendarCheck, label: "Interviews", href: "/admin/services/interviews" });
+    campItems.push({ icon: Map,       label: "Tour",              href: "/admin/camp-services/tours"     });
   if (campItems.length > 0)
     nav.push({ key: "camp", label: "Camp", catIcon: GraduationCap, items: campItems });
 
@@ -93,7 +94,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
       key: "services", label: "Services", catIcon: Briefcase,
       items: [
         { icon: GraduationCap, label: "Study Abroad",      href: "/admin/services/study-abroad"  },
-        { icon: Car,           label: "Pickup / Transfer", href: "/admin/services/pickup"         },
         { icon: Building2,     label: "Accommodation",     href: "/admin/services/accommodation"  },
         { icon: Briefcase,     label: "Internship",        href: "/admin/services/internship"     },
         { icon: Shield,        label: "Guardian",          href: "/admin/services/guardian"       },
@@ -107,11 +107,13 @@ function buildNav(effectiveRole: string): NavGroup[] {
     nav.push({
       key: "products-catalog", label: "Products", catIcon: ShoppingBag,
       items: [
-        { icon: Layers,     label: "Products Group", href: "/admin/product-groups" },
-        { icon: Tag,        label: "Products Type",  href: "/admin/product-types"  },
-        { icon: ShoppingBag,     label: "Products",    href: "/admin/products"     },
-        { icon: Percent,         label: "Promotion",   href: "/admin/promotions"   },
-        { icon: BadgeDollarSign, label: "Commission",  href: "/admin/commissions"  },
+        { icon: Layers,          label: "Products Group", href: "/admin/product-groups" },
+        { icon: Tag,             label: "Products Type",  href: "/admin/product-types"  },
+        { icon: ShoppingBag,     label: "Products",       href: "/admin/products"       },
+        { icon: Percent,         label: "Promotion",      href: "/admin/promotions"     },
+        { icon: BadgeDollarSign, label: "Commission",     href: "/admin/commissions"    },
+        { icon: Package,         label: "Package Groups", href: "/admin/package-groups" },
+        { icon: Layers,          label: "Packages",       href: "/admin/packages"       },
       ],
     });
   }
