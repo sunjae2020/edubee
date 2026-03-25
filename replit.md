@@ -43,10 +43,11 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
     -   Knowledge base stored in `chat_documents` table with PostgreSQL full-text search (`to_tsvector`) for RAG context retrieval.
     -   API endpoints for chat messaging (SSE streaming), document management (list, add, delete, Google Doc import).
     -   Admin UI (`ChatbotAdminPage.tsx`) for chat interaction and knowledge base management.
--   **Object Storage & Thumbnail Upload**:
-    -   Utilizes Replit GCS object storage for file uploads.
-    -   API endpoints for requesting upload URLs and retrieving objects.
-    -   `ThumbnailUploader.tsx` component for drag-and-drop image uploads with progress.
+-   **Object Storage & File Uploads**:
+    -   Replit GCS object storage sidecar returns "no allowed resources" (sidecar 401 error) — both presigned URL signing and direct GCS client writes are blocked at the Replit account level.
+    -   **Product Image Gallery** (`ProductImageGallery.tsx`): images are compressed client-side (≤300 KB, 900 px max edge) and stored as Base64 data URIs in `products.product_images` JSONB column. No external storage dependency. Express JSON body limit is 10 MB to accommodate multiple images.
+    -   `ThumbnailUploader.tsx` component for other drag-and-drop image uploads with progress (uses object-storage route).
+    -   API endpoints exist for `/api/storage/uploads/direct` and `/api/storage/objects/*` (object proxy), but GCS writes are currently unavailable.
 -   **Dual Currency Display**:
     -   API endpoint (`/api/public/exchange-rates`) for fetching real-time currency exchange rates.
     -   `DisplayCurrencyContext` for price conversion and formatting, leveraging browser language detection and localStorage.

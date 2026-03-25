@@ -1,10 +1,17 @@
 import { Router, type IRouter, type Request, type Response } from "express";
+import multer from "multer";
+import { randomUUID } from "crypto";
 import { z } from "zod";
-import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage.js";
+import { ObjectStorageService, ObjectNotFoundError, objectStorageClient } from "../lib/objectStorage.js";
 import { authenticate } from "../middleware/authenticate.js";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 12 * 1024 * 1024 },
+});
 
 const RequestUploadUrlBody = z.object({
   name: z.string(),
@@ -30,6 +37,40 @@ router.post("/storage/uploads/request-url", authenticate, async (req: Request, r
     res.status(500).json({ error: "Failed to generate upload URL" });
   }
 });
+
+// Direct upload — client sends the file as multipart/form-data.
+// The server writes directly to GCS, bypassing the sidecar signed-URL endpoint.
+router.post(
+  "/storage/uploads/direct",
+  authenticate,
+  upload.single("file"),
+  async (req: Request, res: Response) => {
+    if (!req.file) {
+      res.status(400).json({ error: "No file provided" });
+      return;
+    }
+    try {
+      const privateDir = objectStorageService.getPrivateObjectDir().replace(/^\//, "");
+      const parts = privateDir.split("/");
+      const bucketName = parts[0];
+      const dirPrefix = parts.slice(1).join("/");
+      const objectName = `${dirPrefix}/uploads/${randomUUID()}`;
+
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      await file.save(req.file.buffer, {
+        contentType: req.file.mimetype,
+        resumable: false,
+      });
+
+      const objectPath = `/objects/uploads/${objectName.split("/uploads/")[1]}`;
+      res.json({ objectPath });
+    } catch (error) {
+      console.error("Error uploading file directly", error);
+      res.status(500).json({ error: "Failed to upload file" });
+    }
+  }
+);
 
 router.get("/storage/objects/*objectPath", authenticate, async (req: Request, res: Response) => {
   try {

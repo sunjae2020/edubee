@@ -1,12 +1,10 @@
 import { useRef, useState, useCallback } from "react";
 import { Upload, X, Star, ImageIcon, Loader2, AlertCircle } from "lucide-react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
 const MAX_IMAGES   = 5;
-const MAX_FILE_MB  = 10;       // raw upload limit
-const TARGET_PX    = 1280;     // resize long edge to this
-const TARGET_BYTES = 2 * 1024 * 1024; // target ≤ 2 MB after resize
+const MAX_FILE_MB  = 10;
+const TARGET_PX    = 900;
+const TARGET_BYTES = 300 * 1024;
 const QUALITY_STEP = 0.05;
 
 export interface ProductImage {
@@ -20,15 +18,13 @@ interface Props {
   disabled?: boolean;
 }
 
-// ── Client-side resize + compress ───────────────────────────────────────────
-async function resizeAndCompress(file: File): Promise<Blob> {
+async function resizeAndCompress(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const src = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(src);
       const { naturalWidth: w, naturalHeight: h } = img;
-      // Scale down if larger than TARGET_PX
       let sw = w, sh = h;
       if (Math.max(w, h) > TARGET_PX) {
         const ratio = TARGET_PX / Math.max(w, h);
@@ -41,14 +37,16 @@ async function resizeAndCompress(file: File): Promise<Blob> {
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, 0, 0, sw, sh);
 
-      // Iteratively reduce quality until ≤ TARGET_BYTES
-      let quality = 0.85;
+      let quality = 0.82;
       const tryExport = () => {
         canvas.toBlob(
           (blob) => {
             if (!blob) { reject(new Error("Canvas export failed")); return; }
             if (blob.size <= TARGET_BYTES || quality <= QUALITY_STEP) {
-              resolve(blob);
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = () => reject(new Error("FileReader failed"));
+              reader.readAsDataURL(blob);
             } else {
               quality = Math.max(QUALITY_STEP, quality - QUALITY_STEP);
               tryExport();
@@ -65,14 +63,11 @@ async function resizeAndCompress(file: File): Promise<Blob> {
   });
 }
 
-// ── Object URL helper ────────────────────────────────────────────────────────
 function getDisplayUrl(url: string) {
   if (!url) return "";
-  if (url.startsWith("/objects/")) return `${BASE}/api/storage${url}`;
   return url;
 }
 
-// ── Single slot component ────────────────────────────────────────────────────
 function ImageSlot({
   image, index, onUpload, onRemove, onSetPrimary, uploading, progress, disabled,
 }: {
@@ -130,7 +125,6 @@ function ImageSlot({
           </div>
         )}
 
-        {/* Upload progress overlay */}
         {uploading && (
           <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2">
             <Loader2 className="w-6 h-6 text-white animate-spin" />
@@ -141,7 +135,6 @@ function ImageSlot({
           </div>
         )}
 
-        {/* Hover overlay for existing image */}
         {displayUrl && !uploading && !disabled && (
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
             <button
@@ -154,14 +147,12 @@ function ImageSlot({
           </div>
         )}
 
-        {/* Primary badge */}
         {isPrimary && (
           <div className="absolute top-1.5 left-1.5 bg-[#F5821F] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
             <Star className="w-2.5 h-2.5 fill-white" /> Primary
           </div>
         )}
 
-        {/* Remove button */}
         {displayUrl && !disabled && !uploading && (
           <button
             type="button"
@@ -173,7 +164,6 @@ function ImageSlot({
         )}
       </div>
 
-      {/* Set primary + upload buttons below slot */}
       {displayUrl && !disabled && (
         <div className="flex items-center gap-1.5 mt-1.5">
           {!isPrimary && (
@@ -199,14 +189,10 @@ function ImageSlot({
   );
 }
 
-// ── Main Gallery ─────────────────────────────────────────────────────────────
 export function ProductImageGallery({ images, onChange, disabled }: Props) {
   const [uploadingIdx, setUploadingIdx]   = useState<number | null>(null);
   const [progress,     setProgress]       = useState(0);
   const [error,        setError]          = useState<string | null>(null);
-
-  const getAuthToken = () =>
-    localStorage.getItem("accessToken") ?? sessionStorage.getItem("accessToken") ?? "";
 
   const handleUpload = useCallback(async (idx: number, file: File) => {
     setError(null);
@@ -218,53 +204,25 @@ export function ProductImageGallery({ images, onChange, disabled }: Props) {
       setError(`File must be under ${MAX_FILE_MB} MB.`); return;
     }
 
-    setUploadingIdx(idx); setProgress(0);
+    setUploadingIdx(idx); setProgress(10);
 
     try {
-      // 1. Resize + compress client-side
-      const blob = await resizeAndCompress(file);
-      const resizedFile = new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" });
+      setProgress(30);
+      const dataUrl = await resizeAndCompress(file);
+      setProgress(90);
 
-      // 2. Request signed upload URL
-      const urlRes = await fetch(`${BASE}/api/storage/uploads/request-url`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-        body: JSON.stringify({ name: resizedFile.name, size: resizedFile.size, contentType: "image/jpeg" }),
-      });
-      if (!urlRes.ok) throw new Error("Failed to get upload URL");
-      const { uploadURL, objectPath } = await urlRes.json();
-
-      // 3. Upload via XHR for progress tracking
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = e => {
-          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
-        };
-        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`)));
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.open("PUT", uploadURL);
-        xhr.setRequestHeader("Content-Type", "image/jpeg");
-        xhr.send(resizedFile);
-      });
-
-      // 4. Update images state
       const newImages = [...images];
-      const entry: ProductImage = {
-        url: objectPath,
-        isPrimary: images.length === 0 || (idx === 0 && !images.some(img => img?.isPrimary)),
-      };
-      // If no primary exists yet, make this one primary
       const hasPrimary = newImages.some(img => img?.isPrimary);
-      if (!hasPrimary) entry.isPrimary = true;
+      const entry: ProductImage = {
+        url: dataUrl,
+        isPrimary: !hasPrimary,
+      };
 
       newImages[idx] = entry;
-      // Ensure exactly one primary
       if (entry.isPrimary) {
         newImages.forEach((img, i) => { if (img && i !== idx) img.isPrimary = false; });
       }
+      setProgress(100);
       onChange(newImages.filter(Boolean) as ProductImage[]);
     } catch (e: any) {
       setError(e.message ?? "Upload failed.");
@@ -276,7 +234,6 @@ export function ProductImageGallery({ images, onChange, disabled }: Props) {
 
   const handleRemove = (idx: number) => {
     const newImages = images.filter((_, i) => i !== idx);
-    // Ensure a primary exists if any images remain
     if (newImages.length > 0 && !newImages.some(img => img.isPrimary)) {
       newImages[0].isPrimary = true;
     }
@@ -288,24 +245,21 @@ export function ProductImageGallery({ images, onChange, disabled }: Props) {
     onChange(newImages);
   };
 
-  // Build 5 slots: filled + empty
   const slots: (ProductImage | null)[] = Array.from({ length: MAX_IMAGES }, (_, i) => images[i] ?? null);
 
   return (
     <div className="space-y-3">
-      {/* Recommendation notice */}
       <div className="flex items-start gap-2 rounded-lg bg-[#FEF0E3]/60 border border-[#F5821F]/20 px-3.5 py-2.5">
         <AlertCircle className="w-3.5 h-3.5 text-[#F5821F] shrink-0 mt-0.5" />
         <p className="text-[11px] text-[#57534E] leading-relaxed">
           <span className="font-semibold text-[#F5821F]">Recommended:</span>{" "}
-          1280 × 960 px (4:3 ratio) · JPG / PNG / WebP · Max {MAX_FILE_MB} MB per file.
-          Images are automatically resized and compressed to ≤ 2 MB before saving.
+          900 × 675 px (4:3 ratio) · JPG / PNG / WebP · Max {MAX_FILE_MB} MB per file.
+          Images are automatically resized and compressed before saving.
           Select one image as the <span className="font-semibold">Primary</span> (shown as the main product image).
           Up to {MAX_IMAGES} images allowed.
         </p>
       </div>
 
-      {/* Image grid — 5 slots */}
       <div className="grid grid-cols-5 gap-3">
         {slots.map((img, idx) => (
           <ImageSlot
@@ -322,14 +276,12 @@ export function ProductImageGallery({ images, onChange, disabled }: Props) {
         ))}
       </div>
 
-      {/* Error message */}
       {error && (
         <p className="text-xs text-red-500 flex items-center gap-1.5">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
         </p>
       )}
 
-      {/* Summary */}
       <p className="text-[11px] text-[#A8A29E]">
         {images.length} / {MAX_IMAGES} images uploaded
         {images.some(i => i.isPrimary) && ` · Primary: Image ${images.findIndex(i => i.isPrimary) + 1}`}
