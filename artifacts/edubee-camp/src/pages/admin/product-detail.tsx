@@ -968,6 +968,23 @@ export default function ProductDetail() {
               </div>
             </Section>
 
+            {/* [10] DESCRIPTION & NOTES */}
+            <Section title="Description & Notes">
+              <div>
+                <FL>Product Description</FL>
+                <p className="text-xs mb-2" style={{ color: "var(--e-text-3)" }}>
+                  Rich text description shown to external customers on the website or catalog.
+                  Supports headings, lists, bold/italic, links, and more.
+                </p>
+                <RichTextEditor
+                  value={g("description")}
+                  onChange={sf("description")}
+                  placeholder="Write a detailed product description for customers…"
+                  minHeight={220}
+                />
+              </div>
+            </Section>
+
           </div>
 
           {/* ════ RIGHT COLUMN ════ */}
@@ -1117,23 +1134,6 @@ export default function ProductDetail() {
                 onChange={sf("productImages")}
                 disabled={!canEdit}
               />
-            </Section>
-
-            {/* [10] DESCRIPTION & NOTES */}
-            <Section title="Description & Notes">
-              <div>
-                <FL>Product Description</FL>
-                <p className="text-xs mb-2" style={{ color: "var(--e-text-3)" }}>
-                  Rich text description shown to external customers on the website or catalog.
-                  Supports headings, lists, bold/italic, links, and more.
-                </p>
-                <RichTextEditor
-                  value={g("description")}
-                  onChange={sf("description")}
-                  placeholder="Write a detailed product description for customers…"
-                  minHeight={220}
-                />
-              </div>
             </Section>
 
             {/* [10] ADMIN INFO */}
