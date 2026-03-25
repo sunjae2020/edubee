@@ -740,7 +740,7 @@ export default function ProductDetail() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <FL>Provider Country</FL>
+                    <FL>Country</FL>
                     <div className={`w-full px-3 py-2 rounded-lg border text-sm bg-muted/40 text-foreground border-border cursor-default min-h-[38px] flex items-center`}>
                       {providerCountry
                         ? <span className="flex items-center gap-1.5">{providerCountry}</span>

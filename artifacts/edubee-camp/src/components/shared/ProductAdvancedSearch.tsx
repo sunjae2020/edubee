@@ -247,7 +247,7 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
           <div style={{ ...S.row, flexWrap: "wrap", alignItems: "flex-start" }}>
             {/* Country */}
             <div style={S.fieldGroup}>
-              <label style={S.label}>Provider Country</label>
+              <label style={S.label}>Country</label>
               <div style={S.selectWrap}>
                 <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.country} onChange={set("country")}>
                   <option value="">All Countries</option>
