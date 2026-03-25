@@ -383,6 +383,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       totalArAmount:           parseFloat(c.total_ar_amount ?? "0"),
       totalApAmount:           parseFloat(c.total_ap_amount ?? "0"),
       serviceModulesActivated: c.service_modules_activated ?? [],
+      primaryServiceModule:    c.primary_service_module ?? null,
       notes:                   c.notes,
       account: {
         id:          c.account_id_val ?? c.account_id,
@@ -440,17 +441,18 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
 // ─── PATCH /crm/contracts/:id ──────────────────────────────────────────────
 router.patch("/crm/contracts/:id", authenticate, async (req, res) => {
   try {
-    const { contractStatus, fromDate, toDate, paymentFrequency, notes, contractAmount, clientCountry, ownerId, accountId } = req.body;
+    const { contractStatus, fromDate, toDate, paymentFrequency, notes, contractAmount, clientCountry, ownerId, accountId, primaryServiceModule } = req.body;
     const parts: ReturnType<typeof sql>[] = [];
-    if (contractStatus    !== undefined) parts.push(sql`status             = ${contractStatus}`);
-    if (fromDate          !== undefined) parts.push(sql`start_date         = ${fromDate || null}`);
-    if (toDate            !== undefined) parts.push(sql`end_date           = ${toDate || null}`);
-    if (paymentFrequency  !== undefined) parts.push(sql`payment_frequency  = ${paymentFrequency}`);
-    if (notes             !== undefined) parts.push(sql`notes              = ${notes || null}`);
-    if (contractAmount    !== undefined) parts.push(sql`total_amount       = ${Number(contractAmount)}`);
-    if (clientCountry     !== undefined) parts.push(sql`client_country     = ${clientCountry || null}`);
-    if (ownerId           !== undefined) parts.push(sql`owner_id           = ${ownerId || null}`);
-    if (accountId         !== undefined) {
+    if (contractStatus       !== undefined) parts.push(sql`status                  = ${contractStatus}`);
+    if (fromDate             !== undefined) parts.push(sql`start_date              = ${fromDate || null}`);
+    if (toDate               !== undefined) parts.push(sql`end_date                = ${toDate || null}`);
+    if (paymentFrequency     !== undefined) parts.push(sql`payment_frequency       = ${paymentFrequency}`);
+    if (notes                !== undefined) parts.push(sql`notes                   = ${notes || null}`);
+    if (contractAmount       !== undefined) parts.push(sql`total_amount            = ${Number(contractAmount)}`);
+    if (clientCountry        !== undefined) parts.push(sql`client_country          = ${clientCountry || null}`);
+    if (ownerId              !== undefined) parts.push(sql`owner_id                = ${ownerId || null}`);
+    if (primaryServiceModule !== undefined) parts.push(sql`primary_service_module  = ${primaryServiceModule || null}`);
+    if (accountId            !== undefined) {
       parts.push(sql`account_id = ${accountId || null}`);
       // Auto-regenerate contract name when account changes
       if (accountId) {

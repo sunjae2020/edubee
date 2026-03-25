@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import axios from "axios";
@@ -1697,9 +1697,27 @@ export default function ContractDetailPage() {
     enabled: !!id,
   });
 
-  const [primaryServiceType, setPrimaryServiceType] = useState<string>(
-    contract?.serviceModulesActivated?.[0] ?? "study_abroad"
-  );
+  const [primaryServiceType, setPrimaryServiceType] = useState<string>("study_abroad");
+
+  useEffect(() => {
+    if (contract?.primaryServiceModule) {
+      setPrimaryServiceType(contract.primaryServiceModule);
+    } else if (contract?.serviceModulesActivated?.[0]) {
+      setPrimaryServiceType(contract.serviceModulesActivated[0]);
+    }
+  }, [contract?.primaryServiceModule, contract?.serviceModulesActivated]);
+
+  const qc = useQueryClient();
+  const primaryMut = useMutation({
+    mutationFn: (module: string) =>
+      axios.patch(`${BASE}/api/crm/contracts/${id}`, { primaryServiceModule: module }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["crm-contract", id] }),
+  });
+
+  const handleSetPrimary = (module: string) => {
+    setPrimaryServiceType(module);
+    primaryMut.mutate(module);
+  };
 
   if (isLoading) {
     return (
@@ -1911,7 +1929,7 @@ export default function ContractDetailPage() {
             contract={contract}
             onEditContract={() => setEditingContract(true)}
             primaryServiceType={primaryServiceType}
-            setPrimaryServiceType={setPrimaryServiceType}
+            setPrimaryServiceType={handleSetPrimary}
             onAddService={openAddService}
           />
         )}
@@ -1919,7 +1937,7 @@ export default function ContractDetailPage() {
           <ServicesGridTab
             contract={contract}
             primaryServiceType={primaryServiceType}
-            setPrimaryServiceType={setPrimaryServiceType}
+            setPrimaryServiceType={handleSetPrimary}
             onAddService={openAddService}
           />
         )}
