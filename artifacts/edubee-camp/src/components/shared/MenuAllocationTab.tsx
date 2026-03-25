@@ -29,7 +29,7 @@ type DragPayload =
   | { type: "item"; catIndex: number; itemIndex: number };
 
 function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("accessToken") ?? sessionStorage.getItem("accessToken") ?? "";
+  const token = localStorage.getItem("edubee_token") ?? sessionStorage.getItem("edubee_token") ?? "";
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -58,7 +58,7 @@ async function saveOrder(categories: MenuCategory[]): Promise<void> {
 function useToken() {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   try {
-    const t = localStorage.getItem("accessToken") ?? sessionStorage.getItem("accessToken") ?? "";
+    const t = localStorage.getItem("edubee_token") ?? sessionStorage.getItem("edubee_token") ?? "";
     if (t) headers["Authorization"] = `Bearer ${t}`;
   } catch {}
   return headers;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, Save, Menu } from "lucide-react";
@@ -190,8 +190,8 @@ export default function PageAccess() {
               </thead>
               <tbody>
                 {GROUPS.map(group => (
-                  <>
-                    <tr key={`group-${group}`} className="bg-muted/20">
+                  <React.Fragment key={group}>
+                    <tr className="bg-muted/20">
                       <td colSpan={ROLES.length + 1} className="px-4 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{group}</td>
                     </tr>
                     {PAGES.filter(p => p.group === group).map(p => (
@@ -220,7 +220,7 @@ export default function PageAccess() {
                         ))}
                       </tr>
                     ))}
-                  </>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
