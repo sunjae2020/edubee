@@ -3,22 +3,35 @@ import { db } from "@workspace/db";
 import { invoices, transactions, exchangeRates, receipts, contracts, applications, users, accountLedgerEntries, settlementMgt } from "@workspace/db/schema";
 import { eq, and, count, inArray, sql, SQL } from "drizzle-orm";
 import { createLedgerEntry, confirmLedgerEntriesBySource, reverseLedgerEntry } from "../services/ledgerService.js";
+import { sendMail } from "../mailer.js";
 
 async function enrichWithStudentName(rows: any[]): Promise<any[]> {
   const contractIds = [...new Set(rows.map(r => r.contractId).filter(Boolean))] as string[];
   if (contractIds.length === 0) return rows;
   const contractRows = await db
-    .select({ contractId: contracts.id, clientId: applications.clientId })
+    .select({
+      contractId: contracts.id,
+      contractNumber: contracts.contractNumber,
+      studentName: contracts.studentName,
+      clientEmail: contracts.clientEmail,
+      agentName: contracts.agentName,
+      clientId: applications.clientId,
+    })
     .from(contracts)
     .leftJoin(applications, eq(contracts.applicationId, applications.id))
     .where(inArray(contracts.id, contractIds));
-  const clientIds = [...new Set(contractRows.map(c => c.clientId).filter(Boolean))] as string[];
-  const userRows = clientIds.length > 0
-    ? await db.select({ id: users.id, fullName: users.fullName }).from(users).where(inArray(users.id, clientIds))
-    : [];
-  const userMap = new Map(userRows.map(u => [u.id, u.fullName]));
-  const contractMap = new Map(contractRows.map(c => [c.contractId, c.clientId ? (userMap.get(c.clientId) ?? null) : null]));
-  return rows.map(r => ({ ...r, studentName: contractMap.get(r.contractId) ?? null }));
+
+  const contractMap = new Map(contractRows.map(c => [c.contractId, {
+    contractNumber: c.contractNumber,
+    studentName: c.studentName,
+    studentEmail: c.clientEmail,
+    agentName: c.agentName,
+  }]));
+
+  return rows.map(r => {
+    const info = contractMap.get(r.contractId) ?? {};
+    return { ...r, ...info };
+  });
 }
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -118,6 +131,54 @@ router.put("/invoices/:id", authenticate, requireRole(...ADMIN_ROLES), async (re
     return res.json(invoice);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Send Invoice by Email
+router.post("/invoices/:id/send-email", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const [inv] = await db.select().from(invoices).where(eq(invoices.id, req.params.id)).limit(1);
+    if (!inv) return res.status(404).json({ error: "Invoice not found" });
+
+    const toEmail: string | undefined = req.body.email;
+    if (!toEmail) return res.status(400).json({ error: "email is required" });
+
+    const invNumber = inv.invoiceNumber ?? req.params.id;
+    const amount = inv.totalAmount ? `${inv.currency ?? "AUD"} ${Number(inv.totalAmount).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—";
+    const dueDate = inv.dueDate ?? "—";
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px">
+        <div style="text-align:center;margin-bottom:24px">
+          <h1 style="color:#F5821F;font-size:28px;margin:0">Edubee Camp</h1>
+          <p style="color:#64748b;margin:4px 0">Invoice Notification</p>
+        </div>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0" />
+        <h2 style="color:#1a1917;font-size:20px">Invoice ${invNumber}</h2>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+          <tr><td style="padding:8px 0;color:#64748b;width:140px">Invoice Number</td><td style="padding:8px 0;font-weight:bold">${invNumber}</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Amount</td><td style="padding:8px 0;font-weight:bold">${amount}</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Due Date</td><td style="padding:8px 0">${dueDate}</td></tr>
+          ${inv.notes ? `<tr><td style="padding:8px 0;color:#64748b">Notes</td><td style="padding:8px 0">${inv.notes}</td></tr>` : ""}
+        </table>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0" />
+        <p style="color:#64748b;font-size:13px;text-align:center">Please process this payment by the due date. Contact us if you have any questions.</p>
+        <p style="color:#64748b;font-size:12px;text-align:center">Edubee Camp Administration</p>
+      </div>
+    `;
+
+    await sendMail({ to: toEmail, subject: `Invoice ${invNumber} from Edubee Camp`, html });
+
+    await db.update(invoices).set({
+      status: inv.status === "draft" ? "sent" : inv.status,
+      issuedAt: inv.issuedAt ?? new Date(),
+      updatedAt: new Date(),
+    }).where(eq(invoices.id, inv.id));
+
+    return res.json({ success: true, sentTo: toEmail });
+  } catch (err: any) {
+    console.error("[POST /invoices/:id/send-email]", err);
+    return res.status(500).json({ error: err.message ?? "Internal Server Error" });
   }
 });
 

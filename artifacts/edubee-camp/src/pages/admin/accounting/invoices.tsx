@@ -1,15 +1,21 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
-import { Receipt, Send, ChevronRight, CreditCard, Loader2, FileText, Handshake, Download } from "lucide-react";
+import {
+  Receipt, Send, ChevronRight, CreditCard, Loader2, FileText, Handshake,
+  Printer, Mail, ExternalLink, Plus,
+} from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
@@ -17,10 +23,10 @@ import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
 
+const CURRENCIES = ["AUD", "USD", "SGD", "PHP", "THB", "KRW", "JPY", "GBP"];
 const CURRENCY_SYMBOLS: Record<string, string> = {
   AUD: "A$", USD: "$", SGD: "S$", PHP: "₱", THB: "฿", KRW: "₩", JPY: "¥", GBP: "£",
 };
-
 const STATUS_COLORS: Record<string, string> = {
   draft:            "bg-[#F4F3F1] text-[#57534E]",
   sent:             "bg-[#FEF0E3] text-[#F5821F]",
@@ -33,15 +39,36 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 interface Invoice {
-  id: string; invoiceNumber?: string | null; contractId?: string | null;
-  studentName?: string | null; invoiceType?: string | null;
-  totalAmount?: string | null; currency?: string | null;
-  originalCurrency?: string | null; originalAmount?: string | null; audEquivalent?: string | null;
-  status?: string | null; issuedAt?: string | null; dueDate?: string | null;
-  paidAt?: string | null; notes?: string | null;
+  id: string;
+  invoiceNumber?: string | null;
+  contractId?: string | null;
+  contractNumber?: string | null;
+  studentName?: string | null;
+  studentEmail?: string | null;
+  agentName?: string | null;
+  invoiceType?: string | null;
+  totalAmount?: string | null;
+  currency?: string | null;
+  originalCurrency?: string | null;
+  originalAmount?: string | null;
+  audEquivalent?: string | null;
+  status?: string | null;
+  issuedAt?: string | null;
+  dueDate?: string | null;
+  paidAt?: string | null;
+  notes?: string | null;
+  lineItems?: any;
 }
 
-/* ── Shared Helpers ─────────────────────────────────────── */
+interface ContractOption {
+  id: string;
+  contractNumber?: string | null;
+  studentName?: string | null;
+  clientEmail?: string | null;
+  status?: string | null;
+}
+
+/* ── Helpers ─────────────────────────────────────────────── */
 function DualAmount({ amount, currency, audEquivalent }: {
   amount?: string | number | null; currency?: string | null; audEquivalent?: string | number | null;
 }) {
@@ -82,7 +109,350 @@ function SkeletonRows({ cols }: { cols: number }) {
   );
 }
 
-/* ── Record Payment Modal (Client only) ─────────────────── */
+/* ── Print Invoice ────────────────────────────────────────── */
+function printInvoice(inv: Invoice) {
+  const sym = CURRENCY_SYMBOLS[inv.originalCurrency ?? inv.currency ?? "AUD"] ?? (inv.originalCurrency ?? inv.currency ?? "AUD");
+  const amount = inv.originalAmount ?? inv.totalAmount;
+  const amountStr = amount ? `${sym}${Number(amount).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—";
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Invoice ${inv.invoiceNumber ?? ""}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #fff; color: #1a1917; padding: 48px; font-size: 14px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+    .brand { font-size: 28px; font-weight: 700; color: #F5821F; }
+    .brand-sub { font-size: 13px; color: #64748b; margin-top: 2px; }
+    .inv-title { text-align: right; }
+    .inv-title h2 { font-size: 22px; font-weight: 700; color: #1a1917; }
+    .inv-title p { color: #64748b; font-size: 13px; margin-top: 4px; }
+    .badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #FEF0E3; color: #F5821F; text-transform: capitalize; margin-top: 8px; }
+    .divider { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0; }
+    .section h3 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 8px; }
+    .section p { font-size: 14px; color: #1a1917; margin-bottom: 4px; }
+    .section .label { color: #64748b; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+    thead tr { background: #f8fafc; }
+    thead th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; border-bottom: 1px solid #e2e8f0; }
+    tbody td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+    .total-row td { font-weight: 700; font-size: 16px; color: #F5821F; border-top: 2px solid #e2e8f0; padding-top: 16px; }
+    .notes { margin-top: 32px; padding: 16px; background: #f8fafc; border-radius: 8px; }
+    .notes h3 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 6px; }
+    .footer { margin-top: 48px; text-align: center; font-size: 12px; color: #94a3b8; }
+    @media print { body { padding: 24px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="brand">Edubee Camp</div>
+      <div class="brand-sub">Educational Services</div>
+    </div>
+    <div class="inv-title">
+      <h2>INVOICE</h2>
+      <p>${inv.invoiceNumber ?? "—"}</p>
+      <span class="badge">${(inv.status ?? "draft").replace(/_/g, " ")}</span>
+    </div>
+  </div>
+  <hr class="divider" />
+  <div class="grid">
+    <div class="section">
+      <h3>Bill To</h3>
+      <p>${inv.studentName ?? "—"}</p>
+      ${inv.studentEmail ? `<p class="label">${inv.studentEmail}</p>` : ""}
+    </div>
+    <div class="section">
+      <h3>Invoice Details</h3>
+      <p><span class="label">Date Issued: </span>${inv.issuedAt ? format(new Date(inv.issuedAt), "MMMM d, yyyy") : "—"}</p>
+      <p><span class="label">Due Date: </span>${inv.dueDate ?? "—"}</p>
+      ${inv.contractNumber ? `<p><span class="label">Contract: </span>${inv.contractNumber}</p>` : ""}
+      ${inv.agentName ? `<p><span class="label">Agent: </span>${inv.agentName}</p>` : ""}
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th style="text-align:right">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>${inv.invoiceType ? inv.invoiceType.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) : "Service"} — ${inv.studentName ?? ""}</td>
+        <td style="text-align:right">${amountStr}</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td>Total Due</td>
+        <td style="text-align:right">${amountStr}</td>
+      </tr>
+    </tfoot>
+  </table>
+  ${inv.notes ? `<div class="notes"><h3>Notes</h3><p>${inv.notes}</p></div>` : ""}
+  <div class="footer">
+    <p>Thank you for your business. Please remit payment by the due date.</p>
+    <p style="margin-top:4px">Edubee Camp Administration — admin@edubee.com</p>
+  </div>
+  <script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`;
+
+  const w = window.open("", "_blank");
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
+/* ── New Invoice Modal ────────────────────────────────────── */
+function NewInvoiceModal({
+  open, onClose, defaultType, onSuccess,
+}: {
+  open: boolean; onClose: () => void; defaultType: string; onSuccess: () => void;
+}) {
+  const { toast } = useToast();
+  const [form, setForm] = useState({
+    contractId: "",
+    invoiceType: defaultType,
+    totalAmount: "",
+    currency: "AUD",
+    dueDate: "",
+    notes: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [contractSearch, setContractSearch] = useState("");
+
+  const { data: contractsResp } = useQuery({
+    queryKey: ["contracts-dropdown"],
+    queryFn: () => axios.get(`${BASE}/api/crm/contracts?limit=200`).then(r => r.data),
+    enabled: open,
+  });
+  const contractOptions: ContractOption[] = contractsResp?.data ?? contractsResp ?? [];
+
+  const filtered = contractOptions.filter(c =>
+    !contractSearch ||
+    (c.contractNumber ?? "").toLowerCase().includes(contractSearch.toLowerCase()) ||
+    (c.studentName ?? "").toLowerCase().includes(contractSearch.toLowerCase())
+  );
+
+  const selectedContract = contractOptions.find(c => c.id === form.contractId);
+
+  const partnerTypes = [
+    { value: "partner_school", label: "Partner — School" },
+    { value: "partner_hotel", label: "Partner — Hotel" },
+    { value: "partner_tour", label: "Partner — Tour" },
+    { value: "partner_pickup", label: "Partner — Pickup" },
+    { value: "partner_other", label: "Partner — Other" },
+  ];
+
+  const invoiceTypeOptions = defaultType === "partner"
+    ? partnerTypes
+    : [
+        { value: "client", label: "Client Invoice" },
+        { value: "agent", label: "Agent Commission" },
+      ];
+
+  const f = (k: keyof typeof form, v: string) => setForm(prev => ({ ...prev, [k]: v }));
+
+  const handleSubmit = async () => {
+    if (!form.totalAmount || Number(form.totalAmount) <= 0) {
+      toast({ title: "Enter a valid amount", variant: "destructive" }); return;
+    }
+    setSaving(true);
+    try {
+      await axios.post(`${BASE}/api/invoices`, {
+        contractId: form.contractId || undefined,
+        invoiceType: form.invoiceType,
+        totalAmount: Number(form.totalAmount),
+        originalAmount: Number(form.totalAmount),
+        originalCurrency: form.currency,
+        currency: form.currency,
+        dueDate: form.dueDate || undefined,
+        notes: form.notes || undefined,
+        status: "draft",
+      });
+      toast({ title: "Invoice created", description: "Draft invoice created successfully." });
+      onSuccess();
+      onClose();
+      setForm({ contractId: "", invoiceType: defaultType, totalAmount: "", currency: "AUD", dueDate: "", notes: "" });
+    } catch (e: any) {
+      toast({ title: "Failed to create invoice", description: e?.response?.data?.error ?? e.message, variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={o => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="w-4 h-4 text-[#F5821F]" /> New Invoice
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-1">
+          {/* Contract Picker */}
+          <div className="space-y-1.5">
+            <Label>Contract <span className="text-muted-foreground text-xs">(optional)</span></Label>
+            <Input
+              placeholder="Search by contract number or student name…"
+              value={contractSearch}
+              onChange={e => setContractSearch(e.target.value)}
+              className="mb-1"
+            />
+            {contractSearch && filtered.length > 0 && (
+              <div className="border border-border rounded-lg max-h-36 overflow-y-auto bg-background shadow">
+                {filtered.slice(0, 8).map(c => (
+                  <button
+                    key={c.id}
+                    className={cn(
+                      "w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors",
+                      form.contractId === c.id && "bg-[#FEF0E3]"
+                    )}
+                    onClick={() => { f("contractId", c.id); setContractSearch(""); }}
+                  >
+                    <span className="font-mono font-medium text-xs mr-2">{c.contractNumber}</span>
+                    <span className="text-muted-foreground">{c.studentName}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {selectedContract && (
+              <div className="flex items-center justify-between bg-muted/40 rounded-md px-3 py-2 text-sm">
+                <span>
+                  <span className="font-mono font-medium text-xs mr-2">{selectedContract.contractNumber}</span>
+                  {selectedContract.studentName}
+                </span>
+                <button className="text-muted-foreground hover:text-foreground text-xs" onClick={() => f("contractId", "")}>×</button>
+              </div>
+            )}
+          </div>
+
+          {/* Invoice Type */}
+          <div className="space-y-1.5">
+            <Label>Invoice Type</Label>
+            <Select value={form.invoiceType} onValueChange={v => f("invoiceType", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {invoiceTypeOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Amount + Currency */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Amount</Label>
+              <Input type="number" min="0" step="0.01" placeholder="0.00" value={form.totalAmount} onChange={e => f("totalAmount", e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Currency</Label>
+              <Select value={form.currency} onValueChange={v => f("currency", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Due Date */}
+          <div className="space-y-1.5">
+            <Label>Due Date <span className="text-muted-foreground text-xs">(optional)</span></Label>
+            <Input type="date" value={form.dueDate} onChange={e => f("dueDate", e.target.value)} />
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-1.5">
+            <Label>Notes <span className="text-muted-foreground text-xs">(optional)</span></Label>
+            <Textarea rows={2} placeholder="Additional notes…" value={form.notes} onChange={e => f("notes", e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
+            {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Creating…</> : "Create Invoice"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ── Email Invoice Modal ──────────────────────────────────── */
+function EmailInvoiceModal({
+  invoice, open, onClose, onSuccess,
+}: {
+  invoice: Invoice | null; open: boolean; onClose: () => void; onSuccess: () => void;
+}) {
+  const { toast } = useToast();
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+
+  if (!invoice) return null;
+
+  const defaultEmail = invoice.studentEmail ?? "";
+
+  const handleSend = async () => {
+    const to = email || defaultEmail;
+    if (!to) { toast({ title: "Enter an email address", variant: "destructive" }); return; }
+    setSending(true);
+    try {
+      const resp = await axios.post(`${BASE}/api/invoices/${invoice.id}/send-email`, { email: to });
+      if (resp.data?.mocked) {
+        toast({ title: "Invoice email logged (mock)", description: `Email would be sent to ${to}` });
+      } else {
+        toast({ title: "Invoice sent!", description: `Email sent to ${to}` });
+      }
+      onSuccess();
+      onClose();
+      setEmail("");
+    } catch (e: any) {
+      toast({ title: "Send failed", description: e?.response?.data?.error ?? e.message, variant: "destructive" });
+    } finally { setSending(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={o => { if (!o) { onClose(); setEmail(""); } }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Mail className="w-4 h-4 text-[#F5821F]" /> Send Invoice by Email
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="bg-muted/30 rounded-lg p-3 text-sm space-y-1">
+            <div className="flex justify-between"><span className="text-muted-foreground">Invoice</span><span className="font-mono font-medium">{invoice.invoiceNumber}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Student</span><span>{invoice.studentName ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Amount</span>
+              <DualAmount amount={invoice.originalAmount ?? invoice.totalAmount} currency={invoice.originalCurrency ?? invoice.currency} audEquivalent={invoice.audEquivalent} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Recipient Email</Label>
+            <Input
+              type="email"
+              placeholder={defaultEmail || "email@example.com"}
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+            />
+            {defaultEmail && !email && (
+              <p className="text-xs text-muted-foreground">Sending to <span className="font-medium">{defaultEmail}</span> (student email on file)</p>
+            )}
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => { onClose(); setEmail(""); }} disabled={sending}>Cancel</Button>
+          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSend} disabled={sending}>
+            {sending ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Sending…</> : <><Send className="w-3.5 h-3.5" />Send Email</>}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ── Record Payment Modal ─────────────────────────────────── */
 function RecordPaymentModal({ invoice, open, onClose, onSuccess }: {
   invoice: Invoice | null; open: boolean; onClose: () => void; onSuccess: () => void;
 }) {
@@ -153,6 +523,126 @@ function RecordPaymentModal({ invoice, open, onClose, onSuccess }: {
   );
 }
 
+/* ── Detail Sheet ─────────────────────────────────────────── */
+function InvoiceDetailSheet({
+  invoice, open, onClose, onPayment, onUpdate, onEmail, label = "Invoice",
+}: {
+  invoice: Invoice | null; open: boolean; onClose: () => void;
+  onPayment: (inv: Invoice) => void;
+  onUpdate: (id: string, payload: Partial<Invoice>) => void;
+  onEmail: (inv: Invoice) => void;
+  label?: string;
+}) {
+  const [, navigate] = useLocation();
+  const canPay = (s?: string | null) => !["paid", "refunded", "cancelled"].includes(s ?? "");
+
+  if (!invoice) return null;
+
+  return (
+    <Sheet open={open} onOpenChange={o => { if (!o) onClose(); }}>
+      <SheetContent className="w-[520px] sm:max-w-[520px] overflow-y-auto bg-background">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            {label} <span className="font-mono text-sm text-muted-foreground">{invoice.invoiceNumber}</span>
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="mt-4 space-y-4">
+          <StatusBadge status={invoice.status} />
+
+          {/* Main info */}
+          <div className="bg-muted/30 rounded-lg p-4 space-y-2.5 text-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Student</span>
+              <span className="font-medium">{invoice.studentName ?? "—"}</span>
+            </div>
+            {invoice.studentEmail && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Student Email</span>
+                <span className="text-xs">{invoice.studentEmail}</span>
+              </div>
+            )}
+            {invoice.agentName && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Agent</span>
+                <span>{invoice.agentName}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Contract</span>
+              {invoice.contractId ? (
+                <button
+                  className="flex items-center gap-1 text-[#F5821F] hover:underline font-mono text-xs font-medium"
+                  onClick={() => { onClose(); navigate(`/admin/crm/contracts/${invoice.contractId}`); }}
+                >
+                  {invoice.contractNumber ?? invoice.contractId.slice(0, 8)}
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              ) : <span className="text-muted-foreground text-xs">—</span>}
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Amount</span>
+              <DualAmount amount={invoice.originalAmount ?? invoice.totalAmount} currency={invoice.originalCurrency ?? invoice.currency} audEquivalent={invoice.audEquivalent} />
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Issued</span>
+              <span>{invoice.issuedAt ? format(new Date(invoice.issuedAt), "MMM d, yyyy") : "—"}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Due</span>
+              <span>{invoice.dueDate ?? "—"}</span>
+            </div>
+            {invoice.paidAt && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Paid At</span>
+                <span>{format(new Date(invoice.paidAt), "MMM d, yyyy")}</span>
+              </div>
+            )}
+          </div>
+
+          {invoice.notes && (
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notes</div>
+              <p className="text-sm">{invoice.notes}</p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            {invoice.status === "draft" && (
+              <Button
+                size="sm"
+                className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5 col-span-2"
+                onClick={() => onUpdate(invoice.id, { status: "sent", issuedAt: new Date().toISOString() })}
+              >
+                <Send className="w-3.5 h-3.5" /> Mark as Sent
+              </Button>
+            )}
+            {canPay(invoice.status) && (
+              <Button
+                size="sm"
+                className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5"
+                onClick={() => { onClose(); onPayment(invoice); }}
+              >
+                <CreditCard className="w-3.5 h-3.5" /> Record Payment
+              </Button>
+            )}
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onEmail(invoice)}>
+              <Mail className="w-3.5 h-3.5" /> Email
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => printInvoice(invoice)}>
+              <Printer className="w-3.5 h-3.5" /> Print / PDF
+            </Button>
+            <Button size="sm" variant="ghost" onClick={onClose} className="col-span-2 text-muted-foreground">
+              Close
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 /* ── Client Tab ─────────────────────────────────────────── */
 const CLIENT_STATUSES = ["draft", "sent", "partially_paid", "awaiting_receipt", "paid", "overdue", "cancelled", "refunded"];
 
@@ -165,6 +655,8 @@ function ClientTab() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Invoice | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Invoice | null>(null);
+  const [emailTarget, setEmailTarget] = useState<Invoice | null>(null);
+  const [showNewModal, setShowNewModal] = useState(false);
 
   const queryKey = ["invoices-client", { search, status: activeStatus, page }];
   const { data: resp, isLoading } = useQuery({
@@ -188,25 +680,26 @@ function ClientTab() {
   });
 
   const canPay = (s?: string | null) => !["paid", "refunded", "cancelled"].includes(s ?? "");
+  const invalidate = () => { qc.invalidateQueries({ queryKey: ["invoices-client"] }); qc.invalidateQueries({ queryKey: ["ar-status"] }); };
 
   return (
     <div className="space-y-4">
       <ListToolbar
         search={search} onSearch={v => { setSearch(v); setPage(1); }}
         statuses={CLIENT_STATUSES} activeStatus={activeStatus} onStatusChange={s => { setActiveStatus(s); setPage(1); }}
-        total={total} addLabel="New Invoice" onAdd={() => toast({ title: "Coming soon", description: "Invoice creation will open contract picker" })}
+        total={total} addLabel="New Invoice" onAdd={() => setShowNewModal(true)}
       />
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
               <SortableTh col="invoiceNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Invoice #</SortableTh>
-              <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Student</SortableTh>
+              <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Student / Contract</SortableTh>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Amount</th>
               <SortableTh col="issuedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Issued</SortableTh>
               <SortableTh col="dueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Due</SortableTh>
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Status</SortableTh>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left w-20" />
+              <th className="px-4 py-3 w-24" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -218,13 +711,16 @@ function ClientTab() {
               ) : sorted.map(r => (
                 <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
-                  <td className="px-4 py-3 font-medium">{r.studentName ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium">{r.studentName ?? "—"}</div>
+                    {r.contractNumber && <div className="text-xs text-muted-foreground font-mono">{r.contractNumber}</div>}
+                  </td>
                   <td className="px-4 py-3 text-right"><DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.issuedAt ? format(new Date(r.issuedAt), "MMM d, yyyy") : "—"}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.dueDate ?? "—"}</td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       {r.status === "draft" && (
                         <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "sent", issuedAt: new Date().toISOString() } }); }}>
                           <Send className="w-2.5 h-2.5" /> Send
@@ -245,35 +741,19 @@ function ClientTab() {
       </div>
       <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
 
-      <RecordPaymentModal
-        invoice={paymentTarget} open={!!paymentTarget} onClose={() => setPaymentTarget(null)}
-        onSuccess={() => { qc.invalidateQueries({ queryKey: ["invoices-client"] }); qc.invalidateQueries({ queryKey: ["ar-status"] }); }}
-      />
+      <NewInvoiceModal open={showNewModal} onClose={() => setShowNewModal(false)} defaultType="client" onSuccess={invalidate} />
+      <RecordPaymentModal invoice={paymentTarget} open={!!paymentTarget} onClose={() => setPaymentTarget(null)} onSuccess={invalidate} />
+      <EmailInvoiceModal invoice={emailTarget} open={!!emailTarget} onClose={() => setEmailTarget(null)} onSuccess={invalidate} />
 
-      <Sheet open={!!selected} onOpenChange={o => { if (!o) setSelected(null); }}>
-        <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto bg-background">
-          <SheetHeader><SheetTitle>Invoice {selected?.invoiceNumber}</SheetTitle></SheetHeader>
-          {selected && (
-            <div className="mt-4 space-y-4">
-              <StatusBadge status={selected.status} />
-              <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Student</span><span className="font-medium">{selected.studentName ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Contract</span><span className="font-mono text-xs">{selected.contractId?.slice(0, 8)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Amount</span><DualAmount amount={selected.originalAmount ?? selected.totalAmount} currency={selected.originalCurrency ?? selected.currency} audEquivalent={selected.audEquivalent} /></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Issued</span><span>{selected.issuedAt ? format(new Date(selected.issuedAt), "MMM d, yyyy") : "—"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Due</span><span>{selected.dueDate ?? "—"}</span></div>
-                {selected.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">Paid At</span><span>{format(new Date(selected.paidAt), "MMM d, yyyy")}</span></div>}
-              </div>
-              {selected.notes && <div><div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notes</div><p className="text-sm">{selected.notes}</p></div>}
-              <div className="flex gap-2 pt-2">
-                {selected.status === "draft" && <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white flex-1 gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}><Send className="w-3.5 h-3.5" /> Send Invoice</Button>}
-                {canPay(selected.status) && <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white flex-1 gap-1.5" onClick={() => { setSelected(null); setPaymentTarget(selected); }}><CreditCard className="w-3.5 h-3.5" /> Record Payment</Button>}
-                <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+      <InvoiceDetailSheet
+        invoice={selected}
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        onPayment={inv => setPaymentTarget(inv)}
+        onUpdate={(id, payload) => updateMutation.mutate({ id, payload })}
+        onEmail={inv => { setSelected(null); setEmailTarget(inv); }}
+        label="Client Invoice"
+      />
     </div>
   );
 }
@@ -289,6 +769,8 @@ function AgentTab() {
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Invoice | null>(null);
+  const [emailTarget, setEmailTarget] = useState<Invoice | null>(null);
+  const [showNewModal, setShowNewModal] = useState(false);
 
   const queryKey = ["invoices-agent", { search, status: activeStatus, page }];
   const { data: resp, isLoading } = useQuery({
@@ -310,24 +792,26 @@ function AgentTab() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices-agent"] }); toast({ title: "Invoice updated" }); setSelected(null); },
   });
 
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["invoices-agent"] });
+
   return (
     <div className="space-y-4">
       <ListToolbar
         search={search} onSearch={v => { setSearch(v); setPage(1); }}
         statuses={AGENT_STATUSES} activeStatus={activeStatus} onStatusChange={s => { setActiveStatus(s); setPage(1); }}
-        total={total} addLabel="New Invoice" onAdd={() => toast({ title: "Coming soon" })}
+        total={total} addLabel="New Invoice" onAdd={() => setShowNewModal(true)}
       />
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
               <SortableTh col="invoiceNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Invoice #</SortableTh>
-              <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Student</SortableTh>
+              <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Student / Contract</SortableTh>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Commission</th>
               <SortableTh col="issuedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Issued</SortableTh>
               <SortableTh col="dueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Due</SortableTh>
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Status</SortableTh>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left w-20" />
+              <th className="px-4 py-3 w-24" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -339,7 +823,10 @@ function AgentTab() {
               ) : sorted.map(r => (
                 <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
-                  <td className="px-4 py-3 font-medium">{r.studentName ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium">{r.studentName ?? "—"}</div>
+                    {r.contractNumber && <div className="text-xs text-muted-foreground font-mono">{r.contractNumber}</div>}
+                  </td>
                   <td className="px-4 py-3 text-right"><DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.issuedAt ? format(new Date(r.issuedAt), "MMM d, yyyy") : "—"}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.dueDate ?? "—"}</td>
@@ -356,28 +843,18 @@ function AgentTab() {
       </div>
       <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
 
-      <Sheet open={!!selected} onOpenChange={o => { if (!o) setSelected(null); }}>
-        <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto bg-background">
-          <SheetHeader><SheetTitle>Agent Invoice {selected?.invoiceNumber}</SheetTitle></SheetHeader>
-          {selected && (
-            <div className="mt-4 space-y-4">
-              <StatusBadge status={selected.status} />
-              <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Student</span><span className="font-medium">{selected.studentName ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Commission</span><DualAmount amount={selected.originalAmount ?? selected.totalAmount} currency={selected.originalCurrency ?? selected.currency} audEquivalent={selected.audEquivalent} /></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Issued</span><span>{selected.issuedAt ? format(new Date(selected.issuedAt), "MMM d, yyyy") : "—"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Due</span><span>{selected.dueDate ?? "—"}</span></div>
-              </div>
-              <div className="flex gap-2 pt-2">
-                {selected.status === "draft" && <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}><Send className="w-3.5 h-3.5" /> Send</Button>}
-                {selected.status === "sent" && <Button size="sm" className="bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "paid", paidAt: new Date().toISOString() } })}>Mark Paid</Button>}
-                <Button size="sm" variant="ghost" className="gap-1.5"><Download className="w-3.5 h-3.5" /> PDF</Button>
-                <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+      <NewInvoiceModal open={showNewModal} onClose={() => setShowNewModal(false)} defaultType="agent" onSuccess={invalidate} />
+      <EmailInvoiceModal invoice={emailTarget} open={!!emailTarget} onClose={() => setEmailTarget(null)} onSuccess={invalidate} />
+
+      <InvoiceDetailSheet
+        invoice={selected}
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        onPayment={() => {}}
+        onUpdate={(id, payload) => updateMutation.mutate({ id, payload })}
+        onEmail={inv => { setSelected(null); setEmailTarget(inv); }}
+        label="Agent Invoice"
+      />
     </div>
   );
 }
@@ -393,6 +870,8 @@ function PartnerTab() {
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Invoice | null>(null);
+  const [emailTarget, setEmailTarget] = useState<Invoice | null>(null);
+  const [showNewModal, setShowNewModal] = useState(false);
 
   const queryKey = ["invoices-partner", { search, status: activeStatus, page }];
   const { data: resp, isLoading } = useQuery({
@@ -414,24 +893,26 @@ function PartnerTab() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices-partner"] }); toast({ title: "Invoice updated" }); setSelected(null); },
   });
 
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["invoices-partner"] });
+
   return (
     <div className="space-y-4">
       <ListToolbar
         search={search} onSearch={v => { setSearch(v); setPage(1); }}
         statuses={PARTNER_STATUSES} activeStatus={activeStatus} onStatusChange={s => { setActiveStatus(s); setPage(1); }}
-        total={total} addLabel="New Invoice" onAdd={() => toast({ title: "Coming soon" })}
+        total={total} addLabel="New Invoice" onAdd={() => setShowNewModal(true)}
       />
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
               <SortableTh col="invoiceNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Invoice #</SortableTh>
-              <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Student</SortableTh>
-              <SortableTh col="providerType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Provider Type</SortableTh>
+              <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Student / Contract</SortableTh>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Provider Type</th>
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Amount</th>
               <SortableTh col="dueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Due</SortableTh>
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Status</SortableTh>
-              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left w-20" />
+              <th className="px-4 py-3 w-24" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -443,7 +924,10 @@ function PartnerTab() {
               ) : sorted.map(r => (
                 <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
-                  <td className="px-4 py-3 font-medium">{r.studentName ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium">{r.studentName ?? "—"}</div>
+                    {r.contractNumber && <div className="text-xs text-muted-foreground font-mono">{r.contractNumber}</div>}
+                  </td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-0.5 bg-muted rounded text-xs capitalize">{r.invoiceType?.replace("partner_", "") ?? "—"}</span>
                   </td>
@@ -462,27 +946,18 @@ function PartnerTab() {
       </div>
       <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
 
-      <Sheet open={!!selected} onOpenChange={o => { if (!o) setSelected(null); }}>
-        <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto bg-background">
-          <SheetHeader><SheetTitle>Partner Invoice {selected?.invoiceNumber}</SheetTitle></SheetHeader>
-          {selected && (
-            <div className="mt-4 space-y-4">
-              <StatusBadge status={selected.status} />
-              <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Student</span><span className="font-medium">{selected.studentName ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Provider Type</span><span className="capitalize">{selected.invoiceType?.replace("partner_", "") ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Amount</span><DualAmount amount={selected.originalAmount ?? selected.totalAmount} currency={selected.originalCurrency ?? selected.currency} audEquivalent={selected.audEquivalent} /></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Due</span><span>{selected.dueDate ?? "—"}</span></div>
-              </div>
-              <div className="flex gap-2 pt-2">
-                {selected.status === "draft" && <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}><Send className="w-3.5 h-3.5" /> Send</Button>}
-                {selected.status === "sent" && <Button size="sm" className="bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "paid", paidAt: new Date().toISOString() } })}>Mark Paid</Button>}
-                <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+      <NewInvoiceModal open={showNewModal} onClose={() => setShowNewModal(false)} defaultType="partner" onSuccess={invalidate} />
+      <EmailInvoiceModal invoice={emailTarget} open={!!emailTarget} onClose={() => setEmailTarget(null)} onSuccess={invalidate} />
+
+      <InvoiceDetailSheet
+        invoice={selected}
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        onPayment={() => {}}
+        onUpdate={(id, payload) => updateMutation.mutate({ id, payload })}
+        onEmail={inv => { setSelected(null); setEmailTarget(inv); }}
+        label="Partner Invoice"
+      />
     </div>
   );
 }
@@ -501,8 +976,7 @@ export default function Invoices() {
 
   return (
     <div className="space-y-0">
-      {/* Tab bar */}
-      <div className="flex border-b border-border mb-5 -mt-1">
+      <div className="flex border-b border-border mb-5 -mt-1 overflow-x-auto">
         {TABS.map(t => {
           const Icon = t.icon;
           const isActive = activeTab === t.key;
@@ -511,7 +985,7 @@ export default function Invoices() {
               key={t.key}
               onClick={() => setActiveTab(t.key)}
               className={cn(
-                "flex items-center gap-2 px-5 py-2.5 text-sm border-b-2 transition-colors font-medium",
+                "flex items-center gap-2 px-5 py-2.5 text-sm border-b-2 transition-colors font-medium whitespace-nowrap",
                 isActive
                   ? "border-[#F5821F] text-[#F5821F]"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
@@ -523,8 +997,6 @@ export default function Invoices() {
           );
         })}
       </div>
-
-      {/* Tab content */}
       {activeTab === "client"  && <ClientTab />}
       {activeTab === "agent"   && <AgentTab />}
       {activeTab === "partner" && <PartnerTab />}
