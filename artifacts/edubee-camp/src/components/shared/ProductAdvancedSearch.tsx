@@ -20,7 +20,7 @@ interface ProductAdvancedSearchProps {
     productGroups?: { value: string; label: string }[];
     productTypes?: { value: string; label: string }[];
     countries?: { value: string; label: string }[];
-    cities?: { value: string; label: string }[];
+    cities?: { value: string; label: string; country?: string }[];
   };
 }
 
@@ -243,38 +243,34 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
           </div>
 
           {/* Row 3: Country / City */}
-          {(countries.length > 0 || cities.length > 0) && (
-            <>
-              <div style={{ ...S.divider, margin: "10px 0" }} />
-              <div style={{ ...S.row, flexWrap: "wrap", alignItems: "flex-start" }}>
-                {/* Country */}
-                <div style={S.fieldGroup}>
-                  <label style={S.label}>Provider Country</label>
-                  <div style={S.selectWrap}>
-                    <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.country} onChange={set("country")}>
-                      <option value="">All Countries</option>
-                      {countries.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </FocusSelect>
-                    <span style={S.chevron}><ChevronDown size={13} strokeWidth={1.5} /></span>
-                  </div>
-                </div>
-
-                {/* City */}
-                <div style={S.fieldGroup}>
-                  <label style={S.label}>Provider City</label>
-                  <div style={S.selectWrap}>
-                    <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.city} onChange={set("city")}>
-                      <option value="">All Cities</option>
-                      {cities
-                        .filter(c => !filters.country || c.country === filters.country)
-                        .map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </FocusSelect>
-                    <span style={S.chevron}><ChevronDown size={13} strokeWidth={1.5} /></span>
-                  </div>
-                </div>
+          <div style={{ ...S.divider, margin: "10px 0" }} />
+          <div style={{ ...S.row, flexWrap: "wrap", alignItems: "flex-start" }}>
+            {/* Country */}
+            <div style={S.fieldGroup}>
+              <label style={S.label}>Provider Country</label>
+              <div style={S.selectWrap}>
+                <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.country} onChange={set("country")}>
+                  <option value="">All Countries</option>
+                  {countries.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </FocusSelect>
+                <span style={S.chevron}><ChevronDown size={13} strokeWidth={1.5} /></span>
               </div>
-            </>
-          )}
+            </div>
+
+            {/* City */}
+            <div style={S.fieldGroup}>
+              <label style={S.label}>Provider City</label>
+              <div style={S.selectWrap}>
+                <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.city} onChange={set("city")}>
+                  <option value="">All Cities</option>
+                  {cities
+                    .filter(c => !filters.country || c.country === filters.country)
+                    .map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </FocusSelect>
+                <span style={S.chevron}><ChevronDown size={13} strokeWidth={1.5} /></span>
+              </div>
+            </div>
+          </div>
 
           {/* Action buttons */}
           <div style={{ ...S.row, marginTop: 10, justifyContent: "flex-end" }}>
