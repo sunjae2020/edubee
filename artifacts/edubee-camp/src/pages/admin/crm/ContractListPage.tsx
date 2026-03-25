@@ -396,7 +396,7 @@ export default function ContractListPage() {
                   </td>
                 </tr>
               )}
-              {!isLoading && rows.map(row => (
+              {!isLoading && sorted.map(row => (
                 <tr key={row.id}
                   className="border-b border-[#E8E6E2] cursor-pointer hover:bg-[#FAFAF9] transition-colors"
                   onClick={() => navigate(`/admin/crm/contracts/${row.id}`)}

@@ -86,7 +86,7 @@ export default function EnrollmentSpots() {
   const grouped: GroupedData[] = [];
   const groupMap = new Map<string, GroupedData>();
 
-  for (const row of rows) {
+  for (const row of sorted) {
     const key = row.packageGroupId ?? "__ungrouped__";
     const name = row.packageGroupName ?? "Ungrouped";
     if (!groupMap.has(key)) {
@@ -164,7 +164,7 @@ export default function EnrollmentSpots() {
                       <div className="flex items-center gap-2">
                         <span>{group.groupName}</span>
                         <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-bold">
-                          {group.sorted.length}
+                          {group.rows.length}
                         </span>
                       </div>
                     </td>

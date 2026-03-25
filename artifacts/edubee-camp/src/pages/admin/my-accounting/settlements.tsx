@@ -55,8 +55,8 @@ export default function MySettlements() {
   });
 
   const rows: Rec[] = settlements?.data ?? [];
-  const sorted = useSorted(rows, sortBy, sortDir);
   const filtered = statusFilter === "all" ? rows : rows.filter(r => r.status === statusFilter);
+  const sorted = useSorted(filtered, sortBy, sortDir);
 
   const isCC = user?.role === "camp_coordinator";
 
@@ -100,7 +100,7 @@ export default function MySettlements() {
 
       {isLoading ? (
         <div className="space-y-2">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-      ) : filtered.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground"><DollarSign className="w-10 h-10 mx-auto mb-3 opacity-30" /><p className="text-sm">No settlements yet</p></div>
       ) : (
         <div className="rounded-lg border overflow-x-auto bg-white">
@@ -115,7 +115,7 @@ export default function MySettlements() {
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</SortableTh>
             </tr></thead>
             <tbody>
-              {filtered.map(r => (
+              {sorted.map(r => (
                 <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3]">
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.contractId?.slice(0, 8) ?? "—"}</td>
                   <td className="px-4 py-3 text-xs max-w-[180px] truncate">{r.serviceDescription ?? "—"}</td>

@@ -29,14 +29,16 @@ export default function ImpersonationLogs() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const logs = DEMO_LOGS.filter(l => {
-  const sorted = useSorted(logs, sortBy, sortDir);
+  const filtered = DEMO_LOGS.filter(l => {
     if (search) {
       const q = search.toLowerCase();
-      return l.actor?.fullName?.toLowerCase().includes(q) || l.target?.fullName?.toLowerCase().includes(q) || l.actor?.email?.toLowerCase().includes(q) || l.ipAddress?.toLowerCase().includes(q);
+      if (!(l.actor?.fullName?.toLowerCase().includes(q) || l.target?.fullName?.toLowerCase().includes(q) || l.actor?.email?.toLowerCase().includes(q) || l.ipAddress?.toLowerCase().includes(q))) return false;
     }
+    if (dateFrom && l.startedAt && l.startedAt < dateFrom) return false;
+    if (dateTo   && l.startedAt && l.startedAt > dateTo + "T23:59:59") return false;
     return true;
   });
+  const sorted = useSorted(filtered, sortBy, sortDir);
 
   function formatDuration(start?: string | null, end?: string | null) {
     if (!start) return "—";
@@ -81,9 +83,9 @@ export default function ImpersonationLogs() {
             <SortableTh col="ipAddress" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">IP Address</SortableTh>
           </tr></thead>
           <tbody>
-            {logs.length === 0 ? (
+            {sorted.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground text-sm">No impersonation sessions recorded</td></tr>
-            ) : logs.map(log => (
+            ) : sorted.map(log => (
               <tr key={log.id} className="border-t hover:bg-[#FEF0E3]">
                 <td className="px-4 py-3">
                   <div className="font-medium text-xs">{log.actor?.fullName ?? "—"}</div>
