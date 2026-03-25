@@ -362,18 +362,65 @@ router.get("/receipts", authenticate, async (req, res) => {
     const [totalResult] = await db.select({ count: count() }).from(receipts).where(whereClause);
     const rawData = await db.select().from(receipts).where(whereClause).limit(limitNum).offset(offset).orderBy(receipts.createdAt);
 
-    // Enrich via invoiceId → invoice.contractId → student name
+    // Enrich via invoiceId → invoice (contractId + invoiceNumber) → contracts (studentName, contractNumber, studentEmail)
     const invIds = [...new Set(rawData.map(r => r.invoiceId).filter(Boolean))] as string[];
     const invRows = invIds.length > 0
-      ? await db.select({ id: invoices.id, contractId: invoices.contractId }).from(invoices).where(inArray(invoices.id, invIds))
+      ? await db.select({ id: invoices.id, contractId: invoices.contractId, invoiceNumber: invoices.invoiceNumber }).from(invoices).where(inArray(invoices.id, invIds))
       : [];
-    const withContractId = rawData.map(r => ({ ...r, contractId: invRows.find(i => i.id === r.invoiceId)?.contractId ?? null }));
-    const data = await enrichWithStudentName(withContractId);
+    const withInvoiceData = rawData.map(r => {
+      const inv = invRows.find(i => i.id === r.invoiceId);
+      return { ...r, contractId: inv?.contractId ?? null, invoiceNumber: inv?.invoiceNumber ?? null };
+    });
+    const data = await enrichWithStudentName(withInvoiceData);
 
     const total = Number(totalResult.count);
     return res.json({ data, meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) } });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Send Receipt by Email
+router.post("/receipts/:id/send-email", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const [rcp] = await db.select().from(receipts).where(eq(receipts.id, req.params.id)).limit(1);
+    if (!rcp) return res.status(404).json({ error: "Receipt not found" });
+
+    const toEmail: string | undefined = req.body.email;
+    if (!toEmail) return res.status(400).json({ error: "email is required" });
+
+    const rcpNumber = rcp.receiptNumber ?? req.params.id;
+    const sym = (rcp.currency ?? "AUD") === "AUD" ? "A$" : (rcp.currency ?? "");
+    const amountStr = rcp.amount ? `${rcp.currency ?? "AUD"} ${Number(rcp.amount).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—";
+    const dateStr = rcp.receiptDate ?? "—";
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px">
+        <div style="text-align:center;margin-bottom:24px">
+          <h1 style="color:#F5821F;font-size:28px;margin:0">Edubee Camp</h1>
+          <p style="color:#64748b;margin:4px 0">Payment Receipt</p>
+        </div>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0" />
+        <h2 style="color:#1a1917;font-size:20px">Receipt ${rcpNumber}</h2>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+          <tr><td style="padding:8px 0;color:#64748b;width:150px">Receipt Number</td><td style="padding:8px 0;font-weight:bold">${rcpNumber}</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Amount Received</td><td style="padding:8px 0;font-weight:bold;color:#16A34A">${amountStr}</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Payment Method</td><td style="padding:8px 0;text-transform:capitalize">${(rcp.paymentMethod ?? "—").replace(/_/g, " ")}</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Receipt Date</td><td style="padding:8px 0">${dateStr}</td></tr>
+          ${rcp.notes ? `<tr><td style="padding:8px 0;color:#64748b">Notes</td><td style="padding:8px 0">${rcp.notes}</td></tr>` : ""}
+        </table>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0" />
+        <p style="color:#64748b;font-size:13px;text-align:center">Thank you — your payment has been received and confirmed.</p>
+        <p style="color:#64748b;font-size:12px;text-align:center">Edubee Camp Administration</p>
+      </div>
+    `;
+
+    await sendMail({ to: toEmail, subject: `Payment Receipt ${rcpNumber} — Edubee Camp`, html });
+
+    return res.json({ success: true, sentTo: toEmail });
+  } catch (err: any) {
+    console.error("[POST /receipts/:id/send-email]", err);
+    return res.status(500).json({ error: err.message ?? "Internal Server Error" });
   }
 });
 
