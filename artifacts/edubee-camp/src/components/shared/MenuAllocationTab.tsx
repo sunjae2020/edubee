@@ -151,7 +151,7 @@ function iconEmoji(iconName: string | null): string {
     Layers: "🗂", Package: "📦", ListChecks: "☑️",
     GraduationCap: "🎓", Hotel: "🏨", Car: "🚗", Map: "🗺", CalendarCheck: "📅",
     // Services
-    Briefcase: "💼", Shield: "🛡", Wrench: "🔧",
+    Briefcase: "💼", Shield: "🛡", Wrench: "🔧", Stamp: "🛂",
     // Products
     ShoppingBag: "🛍", Tag: "🏷", Percent: "％", BadgeDollarSign: "💲",
     // Finance
