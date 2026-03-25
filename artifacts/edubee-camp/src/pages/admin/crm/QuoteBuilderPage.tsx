@@ -258,7 +258,13 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
 
   // Derive distinct country and location options from providers
   const countryOptions = Array.from(new Set(providersData.map((p) => p.country).filter(Boolean))) as string[];
-  const locationOptions = Array.from(new Set(providersData.map((p) => p.location).filter(Boolean))) as string[];
+  const locationOptions = Array.from(
+    new Set(
+      providersData.flatMap((p) =>
+        (p.location ?? "").split(",").map((s) => s.trim()).filter(Boolean)
+      )
+    )
+  ).sort() as string[];
 
   // Search results — only fetched when committed !== null
   const { data: productData, isFetching } = useQuery<{ data: Product[]; total: number }>({
