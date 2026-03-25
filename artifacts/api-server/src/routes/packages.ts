@@ -527,7 +527,7 @@ router.get("/products-lookup/product-types", authenticate, async (_req, res) => 
 
 router.get("/products-lookup/accounts", authenticate, async (_req, res) => {
   try {
-    const rows = await db.select({ id: accounts.id, name: accounts.name })
+    const rows = await db.select({ id: accounts.id, name: accounts.name, country: accounts.country, city: accounts.city })
       .from(accounts).where(eq(accounts.status, "Active")).orderBy(asc(accounts.name)).limit(300);
     res.json(rows);
   } catch (err) { res.status(500).json({ error: "Failed" }); }
@@ -830,9 +830,24 @@ router.put("/products/:id/linked-groups", authenticate, requireRole(...ADMIN_ROL
 
 router.get("/products/:id", authenticate, async (req, res) => {
   try {
-    const [product] = await db.select().from(products).where(eq(products.id, req.params.id)).limit(1);
-    if (!product) return res.status(404).json({ error: "Not Found" });
-    return res.json(product);
+    const [row] = await db
+      .select({
+        product: products,
+        providerName:    accounts.name,
+        providerCountry: accounts.country,
+        providerCity:    accounts.city,
+      })
+      .from(products)
+      .leftJoin(accounts, eq(products.providerId, accounts.id))
+      .where(eq(products.id, req.params.id))
+      .limit(1);
+    if (!row) return res.status(404).json({ error: "Not Found" });
+    return res.json({
+      ...row.product,
+      providerName:    row.providerName    ?? null,
+      providerCountry: row.providerCountry ?? null,
+      providerCity:    row.providerCity    ?? null,
+    });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }

@@ -513,6 +513,11 @@ export default function ProductDetail() {
     staleTime: 60000,
   });
 
+  // ── Derived: selected provider for country/city display ───────────────────
+  const selectedProvider = (accountOpts as any[]).find((a: any) => a.id === g("providerId")) ?? null;
+  const providerCountry: string = selectedProvider?.country ?? g("providerCountry") ?? "";
+  const providerCity:    string = selectedProvider?.city    ?? g("providerCity")    ?? "";
+
   // ── Derived: product types filtered by selected group ─────────────────────
   const filteredTypes: SelectOption[] = selectedGroupId
     ? allProductTypes
@@ -732,6 +737,26 @@ export default function ProductDetail() {
                     onChange={sf("productName")}
                     placeholder="Enter product name"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <FL>Provider Country</FL>
+                    <div className={`w-full px-3 py-2 rounded-lg border text-sm bg-muted/40 text-foreground border-border cursor-default min-h-[38px] flex items-center`}>
+                      {providerCountry
+                        ? <span className="flex items-center gap-1.5">{providerCountry}</span>
+                        : <span className="text-muted-foreground/60">—</span>
+                      }
+                    </div>
+                  </div>
+                  <div>
+                    <FL>Provider City</FL>
+                    <div className={`w-full px-3 py-2 rounded-lg border text-sm bg-muted/40 text-foreground border-border cursor-default min-h-[38px] flex items-center`}>
+                      {providerCity
+                        ? <span>{providerCity}</span>
+                        : <span className="text-muted-foreground/60">—</span>
+                      }
+                    </div>
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
