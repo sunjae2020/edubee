@@ -247,12 +247,13 @@ export default function PackageGroupDetail() {
   const coordinators: any[] = coordinatorsData?.data ?? [];
 
   // Product types — always fetched for display, cached
+  // NOTE: /api/product-types returns a plain array (not { data: [...] })
   const { data: productTypesData } = useQuery({
     queryKey: ["product-types-active"],
-    queryFn: () => axios.get(`${BASE}/api/product-types?status=Active&limit=100`).then(r => r.data),
+    queryFn: () => axios.get(`${BASE}/api/product-types?status=Active`).then(r => r.data),
     staleTime: 120_000,
   });
-  const productTypesList: any[] = productTypesData?.data ?? [];
+  const productTypesList: any[] = Array.isArray(productTypesData) ? productTypesData : [];
 
   const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
 
