@@ -72,6 +72,7 @@ interface Account {
   state?: string | null;
   city?: string | null;
   postalCode?: string | null;
+  location?: string | null;
   abn?: string | null;
   isProductSource: boolean;
   isProductProvider: boolean;
@@ -322,6 +323,7 @@ export default function AccountDetailPage() {
     email: undefined as any, website: undefined as any, websiteUrl2: undefined as any,
     address: undefined as any, secondaryAddress: undefined as any, country: undefined as any,
     state: undefined as any, city: undefined as any, postalCode: undefined as any,
+    location: undefined as any,
     abn: undefined as any, isProductSource: false, isProductProvider: false,
     foundYear: undefined as any, totalCapacity: undefined as any,
     avetmissDeliveryLocationId: undefined as any, description: undefined as any,
@@ -353,6 +355,7 @@ export default function AccountDetailPage() {
         state:                      account.state ?? undefined,
         city:                       account.city ?? undefined,
         postalCode:                 account.postalCode ?? undefined,
+        location:                   account.location ?? undefined,
         abn:                        account.abn ?? undefined,
         isProductSource:            account.isProductSource ?? false,
         isProductProvider:          account.isProductProvider ?? false,
@@ -567,6 +570,17 @@ export default function AccountDetailPage() {
                   </Field>
                   <Field label="Postcode">
                     <Input value={form.postalCode ?? ""} onChange={e => set("postalCode", e.target.value)} placeholder="Postcode" className={INPUT_CLS} />
+                  </Field>
+                  <Field label="Location" span={2}>
+                    <div className="space-y-1">
+                      <Input
+                        value={form.location ?? ""}
+                        onChange={e => set("location", e.target.value)}
+                        placeholder="e.g. Sydney, Melbourne, Brisbane"
+                        className={INPUT_CLS}
+                      />
+                      <p className="text-xs text-muted-foreground">여러 도시는 쉼표(,)로 구분하여 입력하세요.</p>
+                    </div>
                   </Field>
                 </Section>
               </div>

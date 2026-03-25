@@ -56,6 +56,7 @@ export const accounts = pgTable("accounts", {
   state:                      varchar("state",         { length: 100 }),
   city:                       varchar("city",          { length: 100 }),
   postalCode:                 varchar("postal_code",   { length: 20  }),
+  location:                   text("location"),
   abn:                        varchar("abn",           { length: 50  }),
   paymentInfoId:              uuid("payment_info_id"),
   isProductSource:            boolean("is_product_source").notNull().default(false),

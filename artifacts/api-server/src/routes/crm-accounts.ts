@@ -189,6 +189,7 @@ router.put("/crm/accounts/:id", authenticate, requireRole(...ADMIN_ROLES), async
       state:                      (body.state as string | undefined) ?? existing.state ?? undefined,
       city:                       (body.city as string | undefined) ?? existing.city ?? undefined,
       postalCode:                 (body.postalCode as string | undefined) ?? existing.postalCode ?? undefined,
+      location:                   (body.location as string | undefined) ?? existing.location ?? undefined,
       abn:                        (body.abn as string | undefined) ?? existing.abn ?? undefined,
       isProductSource:            body.isProductSource as boolean ?? existing.isProductSource,
       isProductProvider:          body.isProductProvider as boolean ?? existing.isProductProvider,
