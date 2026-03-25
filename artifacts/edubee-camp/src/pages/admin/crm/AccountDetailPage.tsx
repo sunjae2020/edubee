@@ -700,9 +700,107 @@ export default function AccountDetailPage() {
           )}
 
           {tab === "contacts" && (
-            <div className="bg-white rounded-xl border border-[#E8E6E2] p-8 text-center text-stone-400">
-              <Users size={32} strokeWidth={1.5} className="mx-auto mb-3" />
-              <p className="text-sm">Contact linkage is managed from the Primary / Secondary Contact fields in Overview.</p>
+            <div className="space-y-4">
+              {/* Contact cards */}
+              {!account.primaryContact && !account.secondaryContact ? (
+                <div className="bg-white rounded-xl border border-[#E8E6E2] p-8 text-center text-stone-400">
+                  <Users size={32} strokeWidth={1.5} className="mx-auto mb-3" />
+                  <p className="text-sm font-medium text-stone-500">No contacts linked yet</p>
+                  <p className="text-xs text-stone-400 mt-1">
+                    Add a Primary or Secondary Contact in the Overview tab.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Primary Contact */}
+                  {account.primaryContact && (
+                    <div
+                      className="bg-white rounded-xl border border-[#E8E6E2] p-5 flex flex-col gap-3 hover:shadow-sm transition-shadow cursor-pointer group"
+                      onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[#FEF0E3] flex items-center justify-center text-[#F5821F] font-semibold text-sm flex-shrink-0">
+                            {account.primaryContact.firstName?.[0]}{account.primaryContact.lastName?.[0]}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-stone-800 text-sm group-hover:text-[#F5821F] transition-colors">
+                              {account.primaryContact.firstName} {account.primaryContact.lastName}
+                            </p>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 mt-0.5">
+                              Primary
+                            </span>
+                          </div>
+                        </div>
+                        <ExternalLink size={14} className="text-stone-300 group-hover:text-[#F5821F] transition-colors mt-1" />
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        {account.primaryContact.email && (
+                          <div className="flex items-center gap-2">
+                            <span className="w-12 text-stone-400 flex-shrink-0">Email</span>
+                            <span className="text-stone-700">{account.primaryContact.email}</span>
+                          </div>
+                        )}
+                        {account.primaryContact.mobile && (
+                          <div className="flex items-center gap-2">
+                            <span className="w-12 text-stone-400 flex-shrink-0">Phone</span>
+                            <span className="text-stone-700">{account.primaryContact.mobile}</span>
+                          </div>
+                        )}
+                        {account.primaryContact.nationality && (
+                          <div className="flex items-center gap-2">
+                            <span className="w-12 text-stone-400 flex-shrink-0">Nation</span>
+                            <span className="text-stone-700">{account.primaryContact.nationality}</span>
+                          </div>
+                        )}
+                        {account.primaryContact.dob && (
+                          <div className="flex items-center gap-2">
+                            <span className="w-12 text-stone-400 flex-shrink-0">DOB</span>
+                            <span className="text-stone-700">{new Date(account.primaryContact.dob).toLocaleDateString()}</span>
+                          </div>
+                        )}
+                        {account.primaryContact.snsType && (
+                          <div className="flex items-center gap-2">
+                            <span className="w-12 text-stone-400 flex-shrink-0">SNS</span>
+                            <span className="text-stone-700">{account.primaryContact.snsType}{account.primaryContact.snsId ? ` · ${account.primaryContact.snsId}` : ""}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Secondary Contact */}
+                  {account.secondaryContact && (
+                    <div
+                      className="bg-white rounded-xl border border-[#E8E6E2] p-5 flex flex-col gap-3 hover:shadow-sm transition-shadow cursor-pointer group"
+                      onClick={() => navigate(`/admin/crm/contacts/${account.secondaryContact!.id}`)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[#EFF6FF] flex items-center justify-center text-blue-600 font-semibold text-sm flex-shrink-0">
+                            {account.secondaryContact.firstName?.[0]}{account.secondaryContact.lastName?.[0]}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-stone-800 text-sm group-hover:text-blue-600 transition-colors">
+                              {account.secondaryContact.firstName} {account.secondaryContact.lastName}
+                            </p>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 mt-0.5">
+                              Secondary
+                            </span>
+                          </div>
+                        </div>
+                        <ExternalLink size={14} className="text-stone-300 group-hover:text-blue-500 transition-colors mt-1" />
+                      </div>
+                      <p className="text-xs text-stone-400 italic">Click to view full contact details</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Info note */}
+              <div className="bg-[#FAFAF9] rounded-lg border border-[#E8E6E2] px-4 py-3 text-xs text-stone-400">
+                To add or change contacts, use the <strong className="text-stone-500">Primary / Secondary Contact</strong> fields in the Overview tab.
+              </div>
             </div>
           )}
 
