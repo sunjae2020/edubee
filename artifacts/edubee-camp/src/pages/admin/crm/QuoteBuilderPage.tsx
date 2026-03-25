@@ -1055,6 +1055,34 @@ export default function QuoteBuilderPage() {
       }),
   });
 
+  // ── Computed values (must be before early returns — Rules of Hooks) ──────────
+  const activeLines = lines.filter((l) => !l.status || l.status === "Active");
+
+  const groups = useMemo((): LineGroup[] => {
+    const seen = new Map<string, LineGroup>();
+    const order: string[] = [];
+    for (const line of activeLines) {
+      const key = line.manualInput || !line.productId
+        ? `manual_${line.id}`
+        : line.productId;
+      if (!seen.has(key)) {
+        seen.set(key, {
+          key,
+          productId:    line.manualInput || !line.productId ? null : line.productId,
+          label:        line.name ?? "Item",
+          providerName: line.providerName ?? null,
+          rows:         [],
+          groupTotal:   0,
+        });
+        order.push(key);
+      }
+      const g = seen.get(key)!;
+      g.rows.push(line);
+      g.groupTotal += Number(line.price ?? 0) * (line.quantity ?? 1);
+    }
+    return order.map(k => seen.get(k)!);
+  }, [activeLines]);
+
   if (!validId) {
     return (
       <div className="p-8 text-center text-gray-400">
@@ -1096,34 +1124,6 @@ export default function QuoteBuilderPage() {
   }
 
   const isSaving = saveMutation.isPending;
-  const activeLines = lines.filter((l) => !l.status || l.status === "Active");
-
-  // ── Group lines by productId for installment display ────────────────────────
-  const groups = useMemo((): LineGroup[] => {
-    const seen = new Map<string, LineGroup>();
-    const order: string[] = [];
-    for (const line of activeLines) {
-      // Manual items are each their own group; catalog items share by productId
-      const key = line.manualInput || !line.productId
-        ? `manual_${line.id}`
-        : line.productId;
-      if (!seen.has(key)) {
-        seen.set(key, {
-          key,
-          productId:   line.manualInput || !line.productId ? null : line.productId,
-          label:       line.name ?? "Item",
-          providerName: line.providerName ?? null,
-          rows:        [],
-          groupTotal:  0,
-        });
-        order.push(key);
-      }
-      const g = seen.get(key)!;
-      g.rows.push(line);
-      g.groupTotal += Number(line.price ?? 0) * (line.quantity ?? 1);
-    }
-    return order.map(k => seen.get(k)!);
-  }, [activeLines]);
 
   return (
     <div className="min-h-screen bg-gray-50">
