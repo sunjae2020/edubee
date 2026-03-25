@@ -294,7 +294,6 @@ router.get("/packages", authenticate, async (req, res) => {
         features: packages.features,
         createdAt: packages.createdAt,
         updatedAt: packages.updatedAt,
-        productId: packages.productId,
         groupNameEn: packageGroups.nameEn,
         groupNameKo: packageGroups.nameKo,
         groupLocation: packageGroups.location,
@@ -355,7 +354,6 @@ router.get("/packages/:id", authenticate, async (req, res) => {
         groupCampProviderId: packageGroups.campProviderId,
         durationDays: packages.durationDays,
         status: packages.status,
-        productId: packages.productId,
         coordinatorName: users.fullName,
         coordinatorEmail: users.email,
       })
@@ -375,7 +373,7 @@ router.put("/packages/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coor
   try {
     const allowed = ["name", "status", "maxAdults", "maxStudents", "features",
       "priceAud", "priceUsd", "priceKrw", "priceJpy", "priceThb", "pricePhp", "priceSgd", "priceGbp",
-      "agentCommissionType", "agentCommissionRate", "agentCommissionFixed", "productId"] as const;
+      "agentCommissionType", "agentCommissionRate", "agentCommissionFixed"] as const;
     const patch: Record<string, unknown> = { updatedAt: new Date() };
     for (const key of allowed) {
       if (key in req.body) patch[key] = req.body[key];
