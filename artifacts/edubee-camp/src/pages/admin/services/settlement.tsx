@@ -79,12 +79,12 @@ export default function Settlement() {
       }).then(r => r.data.data ?? []),
   });
   const rows: Rec[] = (data ?? []).filter((r: Rec) => {
-  const sorted = useSorted(rows, sortBy, sortDir);
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (r.studentName ?? "").toLowerCase().includes(q)
         || (r.contractNumber ?? "").toLowerCase().includes(q);
   });
+  const sorted = useSorted(rows, sortBy, sortDir);
 
   const totalByStatus = (s: string) => (data ?? []).filter((r: Rec) => (r.overallStatus ?? "pending") === s).length;
 
