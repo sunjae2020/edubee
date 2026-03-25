@@ -9,6 +9,8 @@ export interface ProductSearchFilters {
   productPriority: string;
   productGrade: string;
   status: string;
+  country: string;
+  city: string;
 }
 
 interface ProductAdvancedSearchProps {
@@ -17,6 +19,8 @@ interface ProductAdvancedSearchProps {
     searchCategories?: { value: string; label: string }[];
     productGroups?: { value: string; label: string }[];
     productTypes?: { value: string; label: string }[];
+    countries?: { value: string; label: string }[];
+    cities?: { value: string; label: string }[];
   };
 }
 
@@ -100,6 +104,7 @@ function FocusInput({ style, ...props }: React.InputHTMLAttributes<HTMLInputElem
 const empty: ProductSearchFilters = {
   searchCategory: "", searchText: "", productGroup: "",
   productType: "", productPriority: "", productGrade: "", status: "",
+  country: "", city: "",
 };
 
 export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvancedSearchProps) {
@@ -111,6 +116,7 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
   const activeCount = [
     filters.productGroup, filters.productType,
     filters.productPriority, filters.productGrade, filters.status,
+    filters.country, filters.city,
   ].filter(Boolean).length;
 
   const reset = () => { setFilters(empty); onSearch(empty); };
@@ -118,6 +124,8 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
   const searchCategories = options.searchCategories ?? DEFAULT_SEARCH_CATEGORIES;
   const productGroups    = options.productGroups ?? [];
   const productTypes     = options.productTypes  ?? [];
+  const countries        = options.countries     ?? [];
+  const cities           = options.cities        ?? [];
 
   return (
     <div style={S.wrapper}>
@@ -171,7 +179,7 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
         <>
           <div style={S.divider} />
 
-          {/* Row 2 */}
+          {/* Row 2: Group / Type / Priority / Grade / Status */}
           <div style={{ ...S.row, flexWrap: "wrap", alignItems: "flex-start" }}>
             {/* Product Group */}
             <div style={S.fieldGroup}>
@@ -234,7 +242,41 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
             </div>
           </div>
 
-          {/* Row 3: action buttons */}
+          {/* Row 3: Country / City */}
+          {(countries.length > 0 || cities.length > 0) && (
+            <>
+              <div style={{ ...S.divider, margin: "10px 0" }} />
+              <div style={{ ...S.row, flexWrap: "wrap", alignItems: "flex-start" }}>
+                {/* Country */}
+                <div style={S.fieldGroup}>
+                  <label style={S.label}>Provider Country</label>
+                  <div style={S.selectWrap}>
+                    <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.country} onChange={set("country")}>
+                      <option value="">All Countries</option>
+                      {countries.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </FocusSelect>
+                    <span style={S.chevron}><ChevronDown size={13} strokeWidth={1.5} /></span>
+                  </div>
+                </div>
+
+                {/* City */}
+                <div style={S.fieldGroup}>
+                  <label style={S.label}>Provider City</label>
+                  <div style={S.selectWrap}>
+                    <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.city} onChange={set("city")}>
+                      <option value="">All Cities</option>
+                      {cities
+                        .filter(c => !filters.country || c.country === filters.country)
+                        .map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </FocusSelect>
+                    <span style={S.chevron}><ChevronDown size={13} strokeWidth={1.5} /></span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Action buttons */}
           <div style={{ ...S.row, marginTop: 10, justifyContent: "flex-end" }}>
             {activeCount > 0 && (
               <button style={{ height: 32, padding: "0 10px", background: "transparent", color: "#A8A29E", border: "none", borderRadius: 8, fontWeight: 500, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}

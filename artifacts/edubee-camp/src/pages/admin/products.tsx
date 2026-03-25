@@ -58,6 +58,7 @@ const emptyForm = {
 const emptyFilters: ProductSearchFilters = {
   searchCategory: "", searchText: "", productGroup: "",
   productType: "", productPriority: "", productGrade: "", status: "",
+  country: "", city: "",
 };
 
 // ── LinkedGroupsCell ─────────────────────────────────────────────────────────
@@ -123,6 +124,19 @@ export default function Products() {
     queryFn: () => axios.get(`${BASE}/api/products-lookup/product-types`).then(r => r.data),
     staleTime: 60_000,
   });
+  const { data: accountsLookup = [] } = useQuery<{ id: string; name: string; country?: string | null; city?: string | null }[]>({
+    queryKey: ["lookup-accounts"],
+    queryFn: () => axios.get(`${BASE}/api/products-lookup/accounts`).then(r => r.data),
+    staleTime: 120_000,
+  });
+
+  const countryOpts = Array.from(
+    new Map(accountsLookup.filter(a => a.country).map(a => [a.country!, a.country!]))
+  ).sort().map(([v]) => ({ value: v, label: v }));
+
+  const cityOpts: { value: string; label: string; country: string }[] = Array.from(
+    new Map(accountsLookup.filter(a => a.city).map(a => [`${a.country ?? ""}::${a.city}`, { value: a.city!, label: a.city!, country: a.country ?? "" }]))
+  ).map(([, v]) => v).sort((a, b) => a.label.localeCompare(b.label));
 
   // ── Products query ────────────────────────────────────────────────────────
   const queryKey = ["products", { filters, page }];
@@ -137,6 +151,8 @@ export default function Products() {
       if (filters.productPriority) params.set("productPriority", filters.productPriority);
       if (filters.productGrade)   params.set("productGrade",    filters.productGrade);
       if (filters.status)         params.set("status",          filters.status);
+      if (filters.country)        params.set("country",         filters.country);
+      if (filters.city)           params.set("city",            filters.city);
       return axios.get(`${BASE}/api/products?${params}`).then(r => r.data);
     },
   });
@@ -224,6 +240,8 @@ export default function Products() {
         options={{
           productGroups: productGroupOpts.map(g => ({ value: g.id, label: g.name })),
           productTypes:  productTypeOpts.map(t => ({ value: t.id, label: t.name })),
+          countries: countryOpts,
+          cities:    cityOpts,
         }}
       />
 

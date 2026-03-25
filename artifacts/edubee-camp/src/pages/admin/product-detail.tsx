@@ -514,9 +514,9 @@ export default function ProductDetail() {
   });
 
   // ── Derived: selected provider for country/city display ───────────────────
-  const selectedProvider = (accountOpts as any[]).find((a: any) => a.id === g("providerId")) ?? null;
-  const providerCountry: string = selectedProvider?.country ?? g("providerCountry") ?? "";
-  const providerCity:    string = selectedProvider?.city    ?? g("providerCity")    ?? "";
+  const selectedProvider = (accountOpts as any[]).find((a: any) => a.id === (form["providerId"] ?? "")) ?? null;
+  const providerCountry: string = selectedProvider?.country ?? (form["providerCountry"] as string) ?? "";
+  const providerCity:    string = selectedProvider?.city    ?? (form["providerCity"]    as string) ?? "";
 
   // ── Derived: product types filtered by selected group ─────────────────────
   const filteredTypes: SelectOption[] = selectedGroupId
