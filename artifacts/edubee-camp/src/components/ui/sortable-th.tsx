@@ -33,7 +33,7 @@ export function SortableTh({ col, sortBy, sortDir, onSort, children, className =
   );
 }
 
-export function useSortState(defaultCol = "", defaultDir: SortDir = "asc") {
+export function useSortState(defaultCol = "createdAt", defaultDir: SortDir = "desc") {
   const [sortBy, setSortBy]   = useState(defaultCol);
   const [sortDir, setSortDir] = useState<SortDir>(defaultDir);
 
@@ -59,18 +59,27 @@ export function useSorted<T extends Record<string, any>>(
   sortDir: SortDir,
 ): T[] {
   return useMemo(() => {
-    if (!sortBy || !data?.length) return data ?? [];
+    if (!data?.length) return data ?? [];
     return [...data].sort((a, b) => {
-      const av = getVal(a, sortBy);
-      const bv = getVal(b, sortBy);
-      if (av == null && bv == null) return 0;
-      if (av == null) return 1;
-      if (bv == null) return -1;
-      const cmp =
-        typeof av === "number" && typeof bv === "number"
-          ? av - bv
-          : String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: "base" });
-      return sortDir === "asc" ? cmp : -cmp;
+      if (sortBy) {
+        const av = getVal(a, sortBy);
+        const bv = getVal(b, sortBy);
+        if (av != null || bv != null) {
+          if (av == null) return 1;
+          if (bv == null) return -1;
+          const cmp =
+            typeof av === "number" && typeof bv === "number"
+              ? av - bv
+              : String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: "base" });
+          if (cmp !== 0) return sortDir === "asc" ? cmp : -cmp;
+        }
+      }
+      const ua = getVal(a, "updatedAt") ?? getVal(a, "updatedOn") ?? getVal(a, "createdAt") ?? getVal(a, "createdOn");
+      const ub = getVal(b, "updatedAt") ?? getVal(b, "updatedOn") ?? getVal(b, "createdAt") ?? getVal(b, "createdOn");
+      if (ua == null && ub == null) return 0;
+      if (ua == null) return 1;
+      if (ub == null) return -1;
+      return -String(ua).localeCompare(String(ub), undefined, { numeric: true, sensitivity: "base" });
     });
   }, [data, sortBy, sortDir]);
 }
