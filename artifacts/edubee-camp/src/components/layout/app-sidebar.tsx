@@ -13,7 +13,7 @@ import {
   Wallet, BarChart2,
   Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
   Ticket, FolderOpen, Bot,
-  BookOpen, CreditCard, BookMarked, Briefcase, Shield, Wrench,
+  BookOpen, CreditCard, BookMarked, Briefcase, Shield, Wrench, Stamp,
   Tag, Percent, BadgeDollarSign,
   LucideIcon,
 } from "lucide-react";
@@ -99,6 +99,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
         { icon: Shield,        label: "Guardian",          href: "/admin/services/guardian"       },
         { icon: FileCheck,     label: "Settlement",        href: "/admin/services/settlement"     },
         { icon: Wrench,        label: "Other Services",    href: "/admin/services/other"          },
+        { icon: Stamp,         label: "Visa Services",     href: "/admin/services/visa"            },
       ],
     });
   }

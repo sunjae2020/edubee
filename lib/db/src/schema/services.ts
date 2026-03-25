@@ -150,6 +150,29 @@ export type ProgramContext  = "study_abroad" | "camp";
 export type CampProgramType = "english" | "academic" | "holiday" | "mixed" | "stem" | "arts";
 export type CampAgeGroup    = "adult" | "junior" | "mixed";
 
+// ── Visa Service Management ─────────────────────────────────────────────────
+export const visaServicesMgt = pgTable("visa_services_mgt", {
+  id:              uuid("id").primaryKey().defaultRandom(),
+  contractId:      uuid("contract_id").notNull().references(() => contracts.id),
+  assignedStaffId: uuid("assigned_staff_id").references(() => users.id),
+  partnerId:       uuid("partner_id"),
+  visaType:        varchar("visa_type", { length: 100 }),
+  country:         varchar("country", { length: 100 }),
+  applicationDate: date("application_date"),
+  appointmentDate: date("appointment_date"),
+  submissionDate:  date("submission_date"),
+  decisionDate:    date("decision_date"),
+  visaNumber:      varchar("visa_number", { length: 100 }),
+  startDate:       date("start_date"),
+  endDate:         date("end_date"),
+  status:          varchar("status", { length: 50 }).notNull().default("pending"),
+  serviceFee:      decimal("service_fee", { precision: 12, scale: 2 }),
+  apCost:          decimal("ap_cost", { precision: 12, scale: 2 }),
+  notes:           text("notes"),
+  createdAt:       timestamp("created_at").notNull().defaultNow(),
+  updatedAt:       timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ── Other Service Management ────────────────────────────────────────────────
 // Note: partnerId references future 'accounts' table — plain uuid
 export const otherServicesMgt = pgTable("other_services_mgt", {

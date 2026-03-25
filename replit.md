@@ -92,6 +92,16 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `login.tsx` — Page bg, card bg, form labels, demo account buttons, divider
 - `product-detail.tsx` — All shared components (FL, TextInput, SearchSelect, AsyncSearchSelect, Section, Btn, RadioYesNo, ToggleSwitch, page header, admin info, sticky bottom bar)
 
+## Recent Changes (2026-03-25)
+
+- **Visa Services Module**: New full-featured service module at `/admin/services/visa`.
+  - DB table: `visa_services_mgt` (fields: visaType, country, applicationDate, appointmentDate, submissionDate, decisionDate, visaNumber, startDate/endDate, status, serviceFee, apCost, notes).
+  - 7 statuses: pending, applied, in_review, approved, rejected, expired, cancelled.
+  - Detail page has 6 tabs: Overview, Timeline (visual visa milestone tracker), Documents, Bill, Payments, Notes.
+  - API routes: `GET/POST /api/services/visa`, `GET/PATCH /api/services/visa/:id`.
+  - Sidebar icon: `Stamp` (lucide-react), added after "Other Services" in Services section.
+- **Mobile Responsiveness**: Tab bars across all service detail pages, AccountDetail, LeadDetail, ContactDetail, ArApTracker, PaymentsPage given `overflow-x-auto`. PaymentsPage and JE tables given `min-w-[700px]`/`min-w-[800px]`. ContractDetailPage and ArTimeline table containers changed from `overflow-hidden` → `overflow-x-auto`.
+
 ## Recent Changes (2026-03-24)
 
 - **Camp Contract Services Tab**: `camp-contract-detail.tsx` Services tab replaced with clickable institute/tour card layout → dedicated detail pages. Added `AddInstituteModal` / `AddTourModal`; removed old 4-dialog components.
