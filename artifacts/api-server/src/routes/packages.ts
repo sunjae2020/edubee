@@ -858,8 +858,26 @@ router.get("/products/:id", authenticate, async (req, res) => {
 
 router.put("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { id: _id, createdAt: _ca, updatedAt: _ua, convertedCost: _cc, ...body } = req.body;
-    const [product] = await db.update(products).set({ ...body, updatedAt: new Date() })
+    // Strip non-column and computed/join fields
+    const {
+      id: _id, createdAt: _ca, updatedAt: _ua, convertedCost: _cc,
+      providerCountry: _pc, providerCity: _pci, typeName: _tn,
+      ...body
+    } = req.body;
+
+    // Convert timestamp string fields to Date objects
+    const toDate = (v: unknown): Date | null => {
+      if (!v) return null;
+      if (v instanceof Date) return v;
+      const d = new Date(v as string);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
+    const cleaned: Record<string, unknown> = { ...body };
+    if ("startDate" in cleaned) cleaned.startDate = toDate(cleaned.startDate);
+    if ("endDate"   in cleaned) cleaned.endDate   = toDate(cleaned.endDate);
+
+    const [product] = await db.update(products).set({ ...cleaned, updatedAt: new Date() })
       .where(eq(products.id, req.params.id)).returning();
     if (!product) return res.status(404).json({ error: "Not Found" });
     return res.json(product);
