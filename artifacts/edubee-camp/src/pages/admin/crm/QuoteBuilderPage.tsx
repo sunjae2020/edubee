@@ -967,14 +967,19 @@ export default function QuoteBuilderPage() {
 
   // ── Add Installment for existing catalog product ─────────────────────────────
   const addInstallmentMutation = useMutation({
-    mutationFn: ({ productId, productName }: { productId: string; productName: string }) =>
+    mutationFn: ({ productId, productName, manualInput }: {
+      productId:   string | null;
+      productName: string;
+      manualInput: boolean;
+    }) =>
       axios.post(`${BASE}/api/quote-products`, {
         quote_id:           quoteId,
-        product_id:         productId,
+        product_id:         productId ?? undefined,
         name:               productName,
         price:              "0.00",
         quantity:           1,
         is_initial_payment: false,
+        manual_input:       manualInput,
         sort_index:         lines.length,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quote-products", quoteId] }),
@@ -1314,29 +1319,39 @@ export default function QuoteBuilderPage() {
                               {group.providerName && (
                                 <span className="text-xs text-gray-400">· {group.providerName}</span>
                               )}
-                              {group.rows.length > 1 && (
-                                <span className="text-[10px] font-semibold text-orange-600 bg-orange-100 border border-orange-200 rounded px-1.5 py-0.5 uppercase tracking-wide">
-                                  {group.rows.length} installments
-                                </span>
-                              )}
                               <span className="ml-auto text-xs font-semibold text-gray-600 tabular-nums">
                                 Total ${group.groupTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}
                               </span>
                             </div>
                           </td>
                           <td className="px-2 py-1.5 text-right" colSpan={3}>
-                            {group.productId && (
+                            {/* Installment count +/− controls — all groups */}
+                            <div className="flex items-center gap-1 ml-auto w-fit">
+                              <span className="text-[10px] text-gray-400 mr-0.5 hidden sm:inline">Payments</span>
+                              <button
+                                onClick={() => deleteLine(group.rows[group.rows.length - 1].id)}
+                                disabled={group.rows.length <= 1 || addInstallmentMutation.isPending}
+                                title="Remove last installment"
+                                className="w-5 h-5 flex items-center justify-center rounded border border-gray-300 text-gray-500 hover:border-orange-400 hover:text-orange-500 disabled:opacity-30 disabled:cursor-not-allowed text-sm leading-none"
+                              >
+                                −
+                              </button>
+                              <span className="w-5 text-center text-xs font-semibold text-gray-700 tabular-nums">
+                                {group.rows.length}
+                              </span>
                               <button
                                 onClick={() => addInstallmentMutation.mutate({
-                                  productId:   group.productId!,
+                                  productId:   group.productId,
                                   productName: group.label,
+                                  manualInput: !group.productId,
                                 })}
                                 disabled={addInstallmentMutation.isPending}
-                                className="flex items-center gap-1 text-xs text-orange-500 hover:text-orange-700 font-medium ml-auto disabled:opacity-50"
+                                title="Add installment"
+                                className="w-5 h-5 flex items-center justify-center rounded border border-gray-300 text-gray-500 hover:border-orange-400 hover:text-orange-500 disabled:opacity-30 disabled:cursor-not-allowed text-sm leading-none"
                               >
-                                <Plus size={11} /> Add Installment
+                                +
                               </button>
-                            )}
+                            </div>
                           </td>
                         </tr>
                         {/* ── Installment Rows ── */}
