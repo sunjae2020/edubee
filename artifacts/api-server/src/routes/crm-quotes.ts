@@ -187,15 +187,28 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
     const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
     if (!quote) return res.status(404).json({ error: "Quote not found" });
 
-    const products = await db.select().from(quote_products)
-      .where(and(
-        eq(quote_products.quoteId, req.params.id),
-        sql`(${quote_products.status} IS NULL OR ${quote_products.status} != 'Inactive')`
-      ));
+    // Fetch quote products with resolved service_module_type:
+    // priority: qp.service_module_type → p.service_module_type → pt.service_module_type → 'other'
+    const rawProducts = await db.execute(sql`
+      SELECT
+        qp.*,
+        COALESCE(
+          NULLIF(qp.service_module_type, ''),
+          NULLIF(p.service_module_type, ''),
+          NULLIF(pt.service_module_type, ''),
+          'other'
+        ) AS resolved_smt
+      FROM quote_products qp
+      LEFT JOIN products     p  ON p.id  = qp.product_id
+      LEFT JOIN product_types pt ON pt.id = p.product_type_id
+      WHERE qp.quote_id = ${req.params.id}::uuid
+        AND (qp.status IS NULL OR qp.status != 'Inactive')
+    `);
+    const products: any[] = (rawProducts.rows ?? (rawProducts as any[]));
 
     const contractNumber = genContractNumber();
 
-    const totalAmount = products.reduce((sum, p) => sum + parseFloat(p.total ?? "0"), 0);
+    const totalAmount = products.reduce((sum: number, p: any) => sum + parseFloat(p.total ?? p.price ?? "0"), 0);
 
     const result = await db.transaction(async (tx) => {
       // 1. Create contract — copy all transferable quote fields
@@ -232,30 +245,33 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
       // 2. Copy quote_products → contract_products (including ar_due_date and ar_amount)
       if (products.length > 0) {
         await tx.insert(contractProducts).values(
-          products.map((p, i) => {
-            const arAmt = parseFloat(String(p.price ?? p.unitPrice ?? "0")) * (p.quantity ?? p.qty ?? 1);
-            const dueDateStr = p.dueDate
-              ? new Date(p.dueDate).toISOString().split("T")[0]
+          products.map((p: any, i: number) => {
+            const unitAmt = parseFloat(String(p.price ?? p.unit_price ?? "0"));
+            const qty     = p.quantity ?? p.qty ?? 1;
+            const arAmt   = unitAmt * qty;
+            const rawDue  = p.due_date ?? p.dueDate ?? null;
+            const dueDateStr = rawDue
+              ? new Date(rawDue).toISOString().split("T")[0]
               : null;
             return {
               contractId,
-              productId:         p.productId ?? null,
-              name:              p.name ?? p.productName ?? null,
-              quantity:          p.quantity ?? p.qty ?? 1,
-              unitPrice:         String(p.price ?? p.unitPrice ?? "0"),
+              productId:         p.product_id ?? p.productId ?? null,
+              name:              p.name ?? p.product_name ?? null,
+              quantity:          qty,
+              unitPrice:         String(unitAmt),
               totalPrice:        String(arAmt),
               arAmount:          arAmt > 0 ? String(arAmt) : null,
               arDueDate:         dueDateStr,
-              isInitialPayment:  p.isInitialPayment ?? false,
-              serviceModuleType: p.serviceModuleType ?? null,
-              sortIndex:         p.sortIndex ?? p.sortOrder ?? i,
+              isInitialPayment:  p.is_initial_payment ?? p.isInitialPayment ?? false,
+              serviceModuleType: p.resolved_smt ?? null,
+              sortIndex:         p.sort_index ?? p.sort_order ?? i,
             };
           })
         );
       }
 
-      // 3. Activate service modules
-      const moduleTypes = [...new Set(products.map(p => p.serviceModuleType).filter(Boolean))] as string[];
+      // 3. Activate service modules (use resolved_smt from the JOIN query)
+      const moduleTypes = [...new Set(products.map((p: any) => p.resolved_smt).filter(Boolean))] as string[];
       const activatedModules: string[] = [];
 
       for (const mod of moduleTypes) {
