@@ -27,6 +27,7 @@ const SELECT_COLS = {
   orientationCompleted: studyAbroadMgt.orientationCompleted,
   status:              studyAbroadMgt.status,
   notes:               studyAbroadMgt.notes,
+  programContext:      studyAbroadMgt.programContext,
   createdAt:           studyAbroadMgt.createdAt,
   updatedAt:           studyAbroadMgt.updatedAt,
   contractNumber:      contracts.contractNumber,
@@ -57,6 +58,7 @@ router.get(
         .leftJoin(users, eq(studyAbroadMgt.assignedStaffId, users.id))
         .where(
           and(
+            eq(studyAbroadMgt.programContext, "study_abroad"),
             isNotNull(studyAbroadMgt.visaExpiryDate),
             lte(studyAbroadMgt.visaExpiryDate, sql`CURRENT_DATE + INTERVAL '30 days'`)
           )
@@ -83,7 +85,9 @@ router.get(
       const limitNum = Math.min(100, parseInt(limit));
       const offset   = (pageNum - 1) * limitNum;
 
-      const conds: SQL[] = [];
+      const conds: SQL[] = [
+        eq(studyAbroadMgt.programContext, "study_abroad"),
+      ];
       if (applicationStage) conds.push(eq(studyAbroadMgt.applicationStage, applicationStage));
       if (status)           conds.push(eq(studyAbroadMgt.status, status));
       if (search) {
@@ -94,7 +98,7 @@ router.get(
         )!);
       }
 
-      const where = conds.length ? and(...conds) : undefined;
+      const where = and(...conds);
 
       const [{ total }] = await db
         .select({ total: count() })
@@ -135,7 +139,12 @@ router.get(
         .from(studyAbroadMgt)
         .leftJoin(contracts, eq(studyAbroadMgt.contractId, contracts.id))
         .leftJoin(users, eq(studyAbroadMgt.assignedStaffId, users.id))
-        .where(eq(studyAbroadMgt.id, req.params.id));
+        .where(
+          and(
+            eq(studyAbroadMgt.id, req.params.id),
+            eq(studyAbroadMgt.programContext, "study_abroad")
+          )
+        );
 
       if (!row) return res.status(404).json({ error: "Study abroad record not found" });
       return res.json(row);
@@ -156,7 +165,12 @@ router.patch(
       const [existing] = await db
         .select({ id: studyAbroadMgt.id })
         .from(studyAbroadMgt)
-        .where(eq(studyAbroadMgt.id, req.params.id));
+        .where(
+          and(
+            eq(studyAbroadMgt.id, req.params.id),
+            eq(studyAbroadMgt.programContext, "study_abroad")
+          )
+        );
 
       if (!existing) return res.status(404).json({ error: "Study abroad record not found" });
 
@@ -187,7 +201,12 @@ router.patch(
           ...(assignedStaffId     !== undefined && { assignedStaffId }),
           updatedAt: new Date(),
         })
-        .where(eq(studyAbroadMgt.id, req.params.id))
+        .where(
+          and(
+            eq(studyAbroadMgt.id, req.params.id),
+            eq(studyAbroadMgt.programContext, "study_abroad")
+          )
+        )
         .returning();
 
       return res.json(updated);
@@ -212,6 +231,7 @@ router.post(
         .insert(studyAbroadMgt)
         .values({
           contractId,
+          programContext:   "study_abroad",
           applicationStage: applicationStage ?? "counseling",
           ...(assignedStaffId && { assignedStaffId }),
           ...(notes          && { notes }),
