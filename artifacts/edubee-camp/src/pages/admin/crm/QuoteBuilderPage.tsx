@@ -50,6 +50,7 @@ interface QuoteProduct {
   productId?: string;
   manualInput: boolean;
   name?: string;
+  productName?: string;
   itemDescription?: string;
   price?: string;
   quantity: number;
@@ -621,7 +622,7 @@ function SortableRow({
         )}
         <input
           className="w-full text-sm border border-transparent rounded px-1 py-0.5 focus:border-orange-300 focus:outline-none bg-transparent hover:bg-white"
-          value={item.name ?? ""}
+          value={item.name || item.productName || ""}
           onChange={(e) => onChange(item.id, "name", e.target.value)}
         />
         <input
@@ -829,7 +830,7 @@ function QuoteSummary({ items }: { items: QuoteProduct[] }) {
                 </div>
                 {rows.map((r) => (
                   <div key={r.id} className="flex items-center justify-between text-sm py-0.5 pl-2">
-                    <span className="text-gray-700 truncate flex-1">{r.name ?? "Item"}</span>
+                    <span className="text-gray-700 truncate flex-1">{r.name || r.productName || "Item"}</span>
                     <span className="text-gray-400 text-xs ml-2 shrink-0">×{r.quantity}</span>
                     <span className="text-gray-700 ml-4 tabular-nums shrink-0">
                       $
@@ -1069,7 +1070,7 @@ export default function QuoteBuilderPage() {
         seen.set(key, {
           key,
           productId:    line.manualInput || !line.productId ? null : line.productId,
-          label:        line.name ?? "Item",
+          label:        line.name || line.productName || "Item",
           providerName: line.providerName ?? null,
           rows:         [],
           groupTotal:   0,
