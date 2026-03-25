@@ -514,9 +514,9 @@ export default function ProductDetail() {
   });
 
   // ── Derived: selected provider for country/city display ───────────────────
-  const selectedProvider = (accountOpts as any[]).find((a: any) => a.id === (form["providerId"] ?? "")) ?? null;
-  const providerCountry: string = selectedProvider?.country ?? (form["providerCountry"] as string) ?? "";
-  const providerCity:    string = selectedProvider?.city    ?? (form["providerCity"]    as string) ?? "";
+  const selectedProvider    = (accountOpts as any[]).find((a: any) => a.id === (form["providerId"] ?? "")) ?? null;
+  const providerCountry:  string = selectedProvider?.country   ?? (form["providerCountry"]  as string) ?? "";
+  const providerLocation: string = selectedProvider?.location  ?? (form["providerLocation"] as string) ?? "";
 
   // ── Derived: product types filtered by selected group ─────────────────────
   const filteredTypes: SelectOption[] = selectedGroupId
@@ -749,10 +749,10 @@ export default function ProductDetail() {
                     </div>
                   </div>
                   <div>
-                    <FL>Provider City</FL>
+                    <FL>Location</FL>
                     <div className={`w-full px-3 py-2 rounded-lg border text-sm bg-muted/40 text-foreground border-border cursor-default min-h-[38px] flex items-center`}>
-                      {providerCity
-                        ? <span>{providerCity}</span>
+                      {providerLocation
+                        ? <span>{providerLocation}</span>
                         : <span className="text-muted-foreground/60">—</span>
                       }
                     </div>

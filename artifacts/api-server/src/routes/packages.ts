@@ -527,7 +527,7 @@ router.get("/products-lookup/product-types", authenticate, async (_req, res) => 
 
 router.get("/products-lookup/accounts", authenticate, async (_req, res) => {
   try {
-    const rows = await db.select({ id: accounts.id, name: accounts.name, country: accounts.country, city: accounts.city })
+    const rows = await db.select({ id: accounts.id, name: accounts.name, country: accounts.country, city: accounts.city, location: accounts.location })
       .from(accounts).where(eq(accounts.status, "Active")).orderBy(asc(accounts.name)).limit(300);
     res.json(rows);
   } catch (err) { res.status(500).json({ error: "Failed" }); }
@@ -837,8 +837,8 @@ router.get("/products/:id", authenticate, async (req, res) => {
       .select({
         product: products,
         providerName:    accounts.name,
-        providerCountry: accounts.country,
-        providerCity:    accounts.city,
+        providerCountry:   accounts.country,
+        providerLocation:  accounts.location,
       })
       .from(products)
       .leftJoin(accounts, eq(products.providerId, accounts.id))
@@ -848,8 +848,8 @@ router.get("/products/:id", authenticate, async (req, res) => {
     return res.json({
       ...row.product,
       providerName:    row.providerName    ?? null,
-      providerCountry: row.providerCountry ?? null,
-      providerCity:    row.providerCity    ?? null,
+      providerCountry:  row.providerCountry  ?? null,
+      providerLocation: row.providerLocation ?? null,
     });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -861,7 +861,7 @@ router.put("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async (re
     // Strip non-column and computed/join fields
     const {
       id: _id, createdAt: _ca, updatedAt: _ua, convertedCost: _cc,
-      providerCountry: _pc, providerCity: _pci, typeName: _tn,
+      providerCountry: _pc, providerLocation: _pl, typeName: _tn,
       ...body
     } = req.body;
 
