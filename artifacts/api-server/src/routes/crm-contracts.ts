@@ -251,7 +251,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     const { id } = req.params;
     const r = (x: any) => x.rows ?? (x as any[]);
 
-    const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, otRes, clRes] = await Promise.all([
+    const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, otRes, clRes, htRes, trRes, stRes, vsRes, ctRes] = await Promise.all([
       db.execute(sql`
         SELECT c.*,
                a.id           AS account_id_val,
@@ -303,6 +303,11 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
         )
         ORDER BY pcl.created_on
       `),
+      db.execute(sql`SELECT * FROM hotel_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
+      db.execute(sql`SELECT * FROM tour_mgt WHERE contract_id = ${id}::uuid ORDER BY created_at`),
+      db.execute(sql`SELECT * FROM settlement_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
+      db.execute(sql`SELECT * FROM visa_services_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
+      db.execute(sql`SELECT * FROM camp_tour_mgt WHERE contract_id = ${id}::uuid ORDER BY created_at`),
     ]);
 
     const contractArr = r(cRes);
@@ -361,6 +366,11 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     const inArr = r(inRes); const intern = inArr[0] ?? null;
     const gdArr = r(gdRes); const gd = gdArr[0] ?? null;
     const otArr = r(otRes);
+    const htArr = r(htRes); const ht = htArr[0] ?? null;
+    const trArr = r(trRes);
+    const stArr = r(stRes); const st = stArr[0] ?? null;
+    const vsArr = r(vsRes); const vs = vsArr[0] ?? null;
+    const ctArr = r(ctRes);
 
     return res.json({
       id: c.id,
@@ -413,7 +423,11 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
         internship:    intern ? { id: intern.id, status: intern.status, positionTitle: intern.position_title, hourlyRate: intern.hourly_rate, employmentType: intern.employment_type } : null,
         guardian:      gd ? { id: gd.id, status: gd.status, serviceFee: gd.service_fee, billingCycle: gd.billing_cycle } : null,
         other:         otArr.length ? otArr.map((o: any) => ({ id: o.id, status: o.status, serviceType: o.service_type, title: o.title, startDate: o.start_date, endDate: o.end_date, serviceFee: o.service_fee })) : null,
-        settlement:    null,
+        settlement:    st ? { id: st.id, status: st.status, serviceDescription: st.service_description, grossAmount: st.gross_amount } : null,
+        hotel:         ht ? { id: ht.id, status: ht.status, roomType: ht.room_type, checkin: ht.checkin_date, checkout: ht.checkout_date, confirmationNo: ht.confirmation_no } : null,
+        tour:          trArr.length ? trArr.map((t: any) => ({ id: t.id, status: t.status, tourName: t.tour_name, tourDate: t.tour_date })) : null,
+        visa:          vs ? { id: vs.id, status: vs.status, visaType: vs.visa_type, country: vs.country, applicationDate: vs.application_date, decisionDate: vs.decision_date } : null,
+        camp:          ctArr.length ? ctArr.map((ct: any) => ({ id: ct.id, status: ct.status, tourName: ct.tour_name, tourDate: ct.tour_date, tourType: ct.tour_type })) : null,
       },
       documents: [],
     });

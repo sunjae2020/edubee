@@ -5,6 +5,7 @@ import {
   pickupMgt, settlementMgt,
   accommodationMgt, internshipMgt, guardianMgt, studyAbroadMgt,
   hotelMgt, tourMgt, accounts,
+  visaServicesMgt, campTourMgt, otherServicesMgt,
 } from "@workspace/db/schema";
 import { eq, and, count, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
@@ -187,7 +188,10 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
     if (!quote) return res.status(404).json({ error: "Quote not found" });
 
     const products = await db.select().from(quote_products)
-      .where(eq(quote_products.quoteId, req.params.id));
+      .where(and(
+        eq(quote_products.quoteId, req.params.id),
+        sql`(${quote_products.status} IS NULL OR ${quote_products.status} != 'Inactive')`
+      ));
 
     const contractNumber = genContractNumber();
 
@@ -215,11 +219,12 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
         WHERE id = ${contractId}::uuid
       `);
 
-      // Resolve client email from account
+      // Resolve client email and fallback student_name from account
       if (quote.studentAccountId) {
         await tx.execute(sql`
           UPDATE contracts
-          SET client_email = (SELECT email FROM accounts WHERE id = ${quote.studentAccountId}::uuid LIMIT 1)
+          SET client_email  = COALESCE(client_email,  (SELECT email FROM accounts WHERE id = ${quote.studentAccountId}::uuid LIMIT 1)),
+              student_name  = COALESCE(student_name,  (SELECT name  FROM accounts WHERE id = ${quote.studentAccountId}::uuid LIMIT 1))
           WHERE id = ${contractId}::uuid
         `);
       }
@@ -288,8 +293,19 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
             activatedModules.push("tour");
             break;
           case "camp":
-            // Camp products tracked at contract level; no separate mgt table
+            await tx.insert(campTourMgt).values({ contractId });
             activatedModules.push("camp");
+            break;
+          case "visa":
+            await tx.insert(visaServicesMgt).values({ contractId });
+            activatedModules.push("visa");
+            break;
+          case "health_exam":
+          case "insurance":
+          case "migration":
+          case "other":
+            await tx.insert(otherServicesMgt).values({ contractId, serviceType: mod });
+            activatedModules.push(mod);
             break;
         }
       }
