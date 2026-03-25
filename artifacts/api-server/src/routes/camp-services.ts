@@ -37,7 +37,12 @@ router.get("/camp-services/institutes/:id", authenticate, requireRole(...ADMIN_R
       .select({ contractNumber: contracts.contractNumber, status: contracts.status, currency: contracts.currency, studentName: contracts.studentName })
       .from(contracts).where(eq(contracts.id, row.contractId)).limit(1);
 
-    return res.json({ ...row, contract: contract ?? null });
+    const [account] = row.instituteAccountId
+      ? await db.select({ id: accounts.id, accountName: accounts.name })
+          .from(accounts).where(eq(accounts.id, row.instituteAccountId)).limit(1)
+      : [null];
+
+    return res.json({ ...row, contract: contract ?? null, instituteAccountName: account?.accountName ?? null });
   } catch (err) {
     console.error("[GET /api/camp-services/institutes/:id]", err);
     return res.status(500).json({ error: "Internal server error" });

@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   ArrowLeft, School, DollarSign, Pencil,
-  ExternalLink, Loader2, Check, X,
+  ExternalLink, Loader2, Check, X, Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,69 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// ─── Account Search ────────────────────────────────────────────────────────────
+function AccountSearchInput({ value, displayName, onChange }: {
+  value: string; displayName: string;
+  onChange: (id: string, name: string) => void;
+}) {
+  const [search, setSearch] = useState(displayName);
+  const [results, setResults] = useState<{ id: string; name: string }[]>([]);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setSearch(displayName); }, [displayName]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!search.trim() || search === displayName) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      try {
+        const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+        const token = localStorage.getItem("edubee_token");
+        const res = await fetch(`${BASE}/api/crm/accounts-search?search=${encodeURIComponent(search)}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        setResults((data.data ?? data).map((a: any) => ({ id: a.id, name: a.accountName ?? a.name })));
+        setOpen(true);
+      } catch { setResults([]); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search, displayName]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+        <Input
+          className="h-8 text-sm pl-8"
+          value={search}
+          placeholder="Search school account…"
+          onChange={e => { setSearch(e.target.value); if (!e.target.value.trim()) onChange("", ""); }}
+          onFocus={() => { if (results.length) setOpen(true); }}
+        />
+      </div>
+      {open && results.length > 0 && (
+        <div className="absolute z-50 top-full mt-1 w-full bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {results.map(r => (
+            <button key={r.id} type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-[#FEF0E3] transition-colors"
+              onMouseDown={() => { onChange(r.id, r.name); setSearch(r.name); setOpen(false); }}>
+              {r.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 function OverviewTab({ record, canEdit, onSave }: { record: any; canEdit: boolean; onSave: (p: object) => void }) {
   const [editing, setEditing] = useState(false);
@@ -76,7 +139,9 @@ function OverviewTab({ record, canEdit, onSave }: { record: any; canEdit: boolea
     partnerCost:             record.partnerCost             ?? "",
     status:                  record.status                  ?? "pending",
     notes:                   record.notes                   ?? "",
+    instituteAccountId:      record.instituteAccountId      ?? "",
   });
+  const [accountDisplayName, setAccountDisplayName] = useState(record.instituteAccountName ?? "");
   const f = (k: string) => (v: string | boolean) => setForm(p => ({ ...p, [k]: v }));
 
   const handleSave = () => { onSave(form); setEditing(false); };
@@ -95,7 +160,9 @@ function OverviewTab({ record, canEdit, onSave }: { record: any; canEdit: boolea
       partnerCost:             record.partnerCost             ?? "",
       status:                  record.status                  ?? "pending",
       notes:                   record.notes                   ?? "",
+      instituteAccountId:      record.instituteAccountId      ?? "",
     });
+    setAccountDisplayName(record.instituteAccountName ?? "");
     setEditing(false);
   };
 
@@ -147,6 +214,14 @@ function OverviewTab({ record, canEdit, onSave }: { record: any; canEdit: boolea
 
         {editing ? (
           <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1 col-span-2">
+              <Label className="text-xs">School Account</Label>
+              <AccountSearchInput
+                value={form.instituteAccountId}
+                displayName={accountDisplayName}
+                onChange={(id, name) => { setForm(p => ({ ...p, instituteAccountId: id })); setAccountDisplayName(name); }}
+              />
+            </div>
             <div className="space-y-1 col-span-2">
               <Label className="text-xs">Program Name</Label>
               <Input value={form.programName} onChange={e => f("programName")(e.target.value)} className="h-8 text-sm" />
@@ -210,6 +285,9 @@ function OverviewTab({ record, canEdit, onSave }: { record: any; canEdit: boolea
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-x-6">
+            {record.instituteAccountName && (
+              <InfoRow label="School Account" value={record.instituteAccountName} />
+            )}
             <InfoRow label="Program Name" value={record.programName} />
             <InfoRow label="Program Type" value={record.programType} />
             <InfoRow label="Age Group" value={record.ageGroup} />

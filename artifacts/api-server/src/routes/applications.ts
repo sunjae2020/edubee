@@ -184,7 +184,7 @@ router.get("/applications", authenticate, async (req, res) => {
     const userMap = new Map(userRows.map(u => [u.id, u.fullName]));
     const data = rawData.map(a => ({
       ...a,
-      studentName: a.clientId ? (userMap.get(a.clientId) ?? a.applicationNumber) : a.applicationNumber,
+      studentName: a.clientId ? (userMap.get(a.clientId) ?? a.applicantName ?? a.applicationNumber) : (a.applicantName ?? a.applicationNumber),
     }));
 
     const total = Number(totalResult.count);

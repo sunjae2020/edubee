@@ -29,8 +29,9 @@ const APP_STATUSES = ["draft", "submitted", "under_review", "approved", "rejecte
 
 interface Application {
   id: string; applicationNumber: string; studentName?: string;
-  email?: string; phone?: string; nationality?: string; status: string;
-  programType?: string; preferredStartDate?: string; participantCount?: number;
+  applicantName?: string; applicantEmail?: string; applicantPhone?: string;
+  applicantNationality?: string; status: string;
+  preferredStartDate?: string; participantCount?: number;
   notes?: string; createdAt: string; updatedAt: string; clientId?: string;
 }
 interface Participant {
@@ -85,7 +86,7 @@ function DetailRow({ label, value }: { label: string; value?: string | number | 
 }
 
 const emptyForm = {
-  studentName: "", email: "", phone: "", nationality: "", programType: "english_camp",
+  applicantName: "", applicantEmail: "", applicantPhone: "", applicantNationality: "",
   preferredStartDate: "", status: "submitted", notes: "",
 };
 
@@ -245,7 +246,7 @@ export default function CampApplications() {
         <table className="w-full min-w-[860px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Application #", "Student", "Nationality", "Program", "Start Date", "Status", ""].map(h => (
+              {["Application #", "Student", "Nationality", "Start Date", "Status", ""].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
               ))}
             </tr>
@@ -253,12 +254,12 @@ export default function CampApplications() {
           <tbody className="divide-y divide-border">
             {isLoading ? (
               [...Array(PAGE_SIZE)].map((_, i) => (
-                <tr key={i}>{[...Array(7)].map((_, j) => (
+                <tr key={i}>{[...Array(6)].map((_, j) => (
                   <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                 ))}</tr>
               ))
             ) : apps.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">No camp applications found</td></tr>
+              <tr><td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">No camp applications found</td></tr>
             ) : (
               apps.map(app => (
                 <tr key={app.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
@@ -266,10 +267,9 @@ export default function CampApplications() {
                   <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{app.applicationNumber}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-foreground">{app.studentName ?? "—"}</div>
-                    {app.email && <div className="text-xs text-muted-foreground">{app.email}</div>}
+                    {app.applicantEmail && <div className="text-xs text-muted-foreground">{app.applicantEmail}</div>}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{app.nationality ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{app.programType ?? "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{app.applicantNationality ?? "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {app.preferredStartDate ? format(new Date(app.preferredStartDate), "MMM d, yyyy") : "—"}
                   </td>
@@ -339,30 +339,19 @@ export default function CampApplications() {
                         <div className="grid grid-cols-2 gap-3">
                           <div className="col-span-2 space-y-1">
                             <Label className="text-xs">Student Name</Label>
-                            <Input className="h-8 text-sm" value={editForm.studentName ?? ""} onChange={e => setEditForm(f => ({ ...f, studentName: e.target.value }))} />
+                            <Input className="h-8 text-sm" value={editForm.applicantName ?? ""} onChange={e => setEditForm(f => ({ ...f, applicantName: e.target.value }))} />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Email</Label>
-                            <Input className="h-8 text-sm" type="email" value={editForm.email ?? ""} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} />
+                            <Input className="h-8 text-sm" type="email" value={editForm.applicantEmail ?? ""} onChange={e => setEditForm(f => ({ ...f, applicantEmail: e.target.value }))} />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Phone</Label>
-                            <Input className="h-8 text-sm" value={editForm.phone ?? ""} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} />
+                            <Input className="h-8 text-sm" value={editForm.applicantPhone ?? ""} onChange={e => setEditForm(f => ({ ...f, applicantPhone: e.target.value }))} />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Nationality</Label>
-                            <Input className="h-8 text-sm" value={editForm.nationality ?? ""} onChange={e => setEditForm(f => ({ ...f, nationality: e.target.value }))} />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Program Type</Label>
-                            <Select value={editForm.programType ?? ""} onValueChange={v => setEditForm(f => ({ ...f, programType: v }))}>
-                              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-                              <SelectContent>
-                                {["english_camp", "stem_camp", "arts_camp", "sports_camp", "cultural_exchange", "language_school", "university_prep", "other"].map(p => (
-                                  <SelectItem key={p} value={p}>{p.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Input className="h-8 text-sm" value={editForm.applicantNationality ?? ""} onChange={e => setEditForm(f => ({ ...f, applicantNationality: e.target.value }))} />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Preferred Start Date</Label>
@@ -378,10 +367,9 @@ export default function CampApplications() {
                       <>
                         <dl className="grid grid-cols-2 gap-4">
                           <DetailRow label="Student Name" value={selectedApp.studentName} />
-                          <DetailRow label="Nationality" value={selectedApp.nationality} />
-                          <DetailRow label="Email" value={selectedApp.email} />
-                          <DetailRow label="Phone" value={selectedApp.phone} />
-                          <DetailRow label="Program Type" value={selectedApp.programType} />
+                          <DetailRow label="Nationality" value={selectedApp.applicantNationality} />
+                          <DetailRow label="Email" value={selectedApp.applicantEmail} />
+                          <DetailRow label="Phone" value={selectedApp.applicantPhone} />
                           <DetailRow label="Participants" value={selectedApp.participantCount} />
                           <DetailRow label="Preferred Start" value={selectedApp.preferredStartDate ? format(new Date(selectedApp.preferredStartDate), "MMM d, yyyy") : undefined} />
                           <DetailRow label="Created" value={format(new Date(selectedApp.createdAt), "MMM d, yyyy")} />
@@ -557,19 +545,19 @@ export default function CampApplications() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2 space-y-1.5">
                     <Label className="text-xs">Student Name <span className="text-red-500">*</span></Label>
-                    <Input className="h-9 text-sm" value={form.studentName} onChange={e => setForm(f => ({ ...f, studentName: e.target.value }))} placeholder="Full name" />
+                    <Input className="h-9 text-sm" value={form.applicantName} onChange={e => setForm(f => ({ ...f, applicantName: e.target.value }))} placeholder="Full name" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Email</Label>
-                    <Input className="h-9 text-sm" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                    <Input className="h-9 text-sm" type="email" value={form.applicantEmail} onChange={e => setForm(f => ({ ...f, applicantEmail: e.target.value }))} />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Phone</Label>
-                    <Input className="h-9 text-sm" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                    <Input className="h-9 text-sm" value={form.applicantPhone} onChange={e => setForm(f => ({ ...f, applicantPhone: e.target.value }))} />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Nationality</Label>
-                    <Input className="h-9 text-sm" value={form.nationality} onChange={e => setForm(f => ({ ...f, nationality: e.target.value }))} />
+                    <Input className="h-9 text-sm" value={form.applicantNationality} onChange={e => setForm(f => ({ ...f, applicantNationality: e.target.value }))} />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Preferred Start Date</Label>
@@ -577,7 +565,7 @@ export default function CampApplications() {
                   </div>
                   <div className="col-span-2 space-y-1.5">
                     <Label className="text-xs">Program Type</Label>
-                    <Select value={form.programType} onValueChange={v => setForm(f => ({ ...f, programType: v }))}>
+                    <Select value={form.notes?.match(/Program: (.+)/)?.[1] ?? "english_camp"} onValueChange={v => setForm(f => ({ ...f, notes: `Program: ${v}` }))}>
                       <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {[
@@ -730,8 +718,8 @@ export default function CampApplications() {
                 {/* Summary */}
                 <div className="rounded-lg border border-border p-3 space-y-1.5 text-xs">
                   <p className="font-semibold text-foreground text-sm mb-2">Application Summary</p>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Student Name</span><span className="font-medium">{form.studentName || "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Program Type</span><span className="font-medium">{form.programType?.replace(/_/g," ") || "—"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Student Name</span><span className="font-medium">{form.applicantName || "—"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Nationality</span><span className="font-medium">{form.applicantNationality || "—"}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Preferred Start</span><span className="font-medium">{form.preferredStartDate || "—"}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Participants</span><span className="font-medium">{wizardParticipants.filter(p => p.fullName.trim()).length} student(s)</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Additional Options</span><span className="font-medium">{wizardOptions.length > 0 ? `${wizardOptions.length} selected` : "None"}</span></div>
@@ -753,7 +741,7 @@ export default function CampApplications() {
             <span className="text-xs text-muted-foreground">{wizardStep} / 5</span>
             {wizardStep < 5 ? (
               <Button className="gap-1.5 h-9 text-sm bg-[#F5821F] hover:bg-[#d97706] text-white"
-                disabled={wizardStep === 1 && !form.studentName.trim()}
+                disabled={wizardStep === 1 && !form.applicantName.trim()}
                 onClick={() => setWizardStep(s => s + 1)}>
                 Next <ChevronRight className="w-3.5 h-3.5" />
               </Button>
