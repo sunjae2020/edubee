@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import {
   FileText, Download, Send, CheckCircle2, Clock,
   DollarSign, Plus, Printer, X, ExternalLink, Search,
-  Building2, User, Calendar,
+  Building2, User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -494,7 +494,7 @@ function TaxInvoiceDetailSheet({
   onSend: () => void; onPaid: () => void;
   sendPending: boolean; paidPending: boolean;
 }) {
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   if (!row) return null;
 
   return (
@@ -652,7 +652,7 @@ function TaxInvoiceDetailSheet({
 // ─── Main Page ─────────────────────────────────────────────────────────────
 export default function TaxInvoiceListPage() {
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const qc = useQueryClient();
   const [typeTab, setTypeTab] = useState("");
   const { sortBy, sortDir, onSort } = useSortState();
