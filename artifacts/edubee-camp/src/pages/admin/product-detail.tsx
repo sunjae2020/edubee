@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { ProductImageGallery, type ProductImage } from "@/components/ui/product-image-gallery";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -1109,7 +1110,16 @@ export default function ProductDetail() {
               </div>
             </Section>
 
-            {/* [9] DESCRIPTION & NOTES */}
+            {/* [9] PRODUCT IMAGES */}
+            <Section title="Product Images">
+              <ProductImageGallery
+                images={Array.isArray(form.productImages) ? (form.productImages as ProductImage[]) : []}
+                onChange={sf("productImages")}
+                disabled={!canEdit}
+              />
+            </Section>
+
+            {/* [10] DESCRIPTION & NOTES */}
             <Section title="Description & Notes">
               <div>
                 <FL>Product Description</FL>

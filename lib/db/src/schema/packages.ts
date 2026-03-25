@@ -116,6 +116,9 @@ export const products = pgTable("products", {
   // Note: campPackageId references camp_packages.id — plain uuid to avoid circular import
   productContext:     varchar("product_context", { length: 50 }).notNull().default("general"),
   campPackageId:      uuid("camp_package_id"),
+  // ── Product Images (up to 5, with primary flag) ──────────────────────
+  // Stored as JSON array: [{ url: "/objects/...", isPrimary: boolean }]
+  productImages:      jsonb("product_images").$type<Array<{ url: string; isPrimary: boolean }>>().default([]),
 });
 
 // ── Phase 1 Type Definitions ──────────────────────────────────────────────
