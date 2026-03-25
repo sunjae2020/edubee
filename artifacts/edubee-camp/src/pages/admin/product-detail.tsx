@@ -52,6 +52,11 @@ const GRADES = [
   { value: "Professional", label: "Professional" },
   { value: "All Levels", label: "All Levels" },
 ];
+const PRODUCT_CONTEXTS = [
+  { value: "general",      label: "General" },
+  { value: "camp_package", label: "Camp Package" },
+  { value: "camp_addon",   label: "Camp Addon" },
+];
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 function getAuthHeaders() {
@@ -440,7 +445,7 @@ export default function ProductDetail() {
     productName: "", fromDate: "", toDate: "", durationWeeks: "",
     productTypeId: "", currency: "AUD", isGstIncluded: false,
     displayOnQuote: true, displayOnInvoice: true,
-    isRecommend: false, status: "active",
+    isRecommend: false, status: "active", productContext: "general",
   });
   const [originalForm, setOriginalForm] = useState<Record<string, any>>({});
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
@@ -838,6 +843,16 @@ export default function ProductDetail() {
                         { value: "inactive", label: "Inactive" },
                         { value: "archived", label: "Archived" },
                       ]}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <FL>Product Context</FL>
+                    <SelectField
+                      value={g("productContext") || "general"}
+                      onChange={sf("productContext")}
+                      options={PRODUCT_CONTEXTS}
                     />
                   </div>
                 </div>
