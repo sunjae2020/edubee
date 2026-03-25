@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 import axios from "axios";
 import {
   DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter,
@@ -11,7 +12,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Plus, Trash2, ArrowLeft, GripVertical, Search, X, Check, ChevronDown,
-  Mail, Printer,
+  Mail, Printer, UserPlus, Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,6 +159,10 @@ interface Account {
 
 // ─── Account Lookup Field ─────────────────────────────────────────────────────
 
+const ACCOUNT_TYPES = [
+  "Client", "Agent", "Institute", "Hotel", "Tour Operator", "Pickup", "Other",
+];
+
 function AccountLookupField({
   currentId,
   currentName,
@@ -167,13 +172,26 @@ function AccountLookupField({
   currentName?: string | null;
   onSelect: (id: string | null, name: string | null) => void;
 }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
   const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Account | null>(
     currentId && currentName ? { id: currentId, name: currentName } : null,
   );
   const [pending, setPending] = useState<Account | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  // New account form state
+  const [newName, setNewName] = useState("");
+  const [newType, setNewType] = useState("Client");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [creating, setCreating] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSelected(currentId && currentName ? { id: currentId, name: currentName } : null);
@@ -189,10 +207,23 @@ function AccountLookupField({
     staleTime: 10_000,
   });
 
+  // Click-outside to close
+  useEffect(() => {
+    if (!editing) return;
+    function handler(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        if (!showCreate) cancel();
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [editing, showCreate]);
+
   const startEdit = () => {
     setPending(selected);
     setQuery(selected?.name ?? "");
     setEditing(true);
+    setShowCreate(false);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
@@ -200,19 +231,17 @@ function AccountLookupField({
     setPending(null);
     setQuery("");
     setEditing(false);
+    setShowCreate(false);
+    resetCreateForm();
   };
 
   const pick = (acc: Account) => {
-    setPending(acc);
-    setQuery(acc.name);
-  };
-
-  const save = () => {
-    setSelected(pending);
-    onSelect(pending?.id ?? null, pending?.name ?? null);
+    setSelected(acc);
+    onSelect(acc.id, acc.name);
     setEditing(false);
     setQuery("");
     setPending(null);
+    setShowCreate(false);
   };
 
   const clear = () => {
@@ -221,6 +250,55 @@ function AccountLookupField({
     setEditing(false);
     setQuery("");
     setPending(null);
+    setShowCreate(false);
+  };
+
+  const resetCreateForm = () => {
+    setNewName("");
+    setNewType("Client");
+    setNewEmail("");
+    setNewPhone("");
+  };
+
+  const openCreate = () => {
+    setNewName(query);
+    setShowCreate(true);
+  };
+
+  const handleCreate = async () => {
+    if (!newName.trim()) {
+      toast({ title: "Account name is required", variant: "destructive" });
+      return;
+    }
+    if (!user?.id) {
+      toast({ title: "User session not found", variant: "destructive" });
+      return;
+    }
+    setCreating(true);
+    try {
+      const res = await axios.post(`${BASE}/api/crm/accounts`, {
+        name:         newName.trim(),
+        accountType:  newType,
+        email:        newEmail.trim() || undefined,
+        phoneNumber:  newPhone.trim() || undefined,
+        ownerId:      user.id,
+        manualInput:  true,
+        status:       "Active",
+      });
+      const created = res.data;
+      toast({ title: "Account created", description: `"${created.name}" has been added.` });
+      qc.invalidateQueries({ queryKey: ["account-search-qb"] });
+      pick({ id: created.id, name: created.name, accountType: created.accountType });
+      resetCreateForm();
+    } catch (err: any) {
+      toast({
+        title: "Failed to create account",
+        description: err?.response?.data?.error ?? err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setCreating(false);
+    }
   };
 
   if (!editing) {
@@ -228,7 +306,11 @@ function AccountLookupField({
       <div className="flex items-center gap-2 min-h-8">
         {selected ? (
           <>
+            <Building2 size={14} className="text-[#F5821F] shrink-0" />
             <span className="text-sm font-medium text-gray-800">{selected.name}</span>
+            {(selected as any).accountType && (
+              <span className="text-xs text-gray-400">({(selected as any).accountType})</span>
+            )}
             <button
               onClick={startEdit}
               className="text-xs underline"
@@ -243,10 +325,10 @@ function AccountLookupField({
         ) : (
           <button
             onClick={startEdit}
-            className="text-sm underline flex items-center gap-1"
-            style={{ color: PRIMARY }}
+            className="w-full text-left text-sm flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-gray-300 hover:border-orange-400 hover:bg-orange-50 transition-colors text-gray-400 hover:text-gray-700"
           >
-            <Search size={13} /> Select Account
+            <Search size={13} style={{ color: PRIMARY }} />
+            Search or create account…
           </button>
         )}
       </div>
@@ -254,38 +336,140 @@ function AccountLookupField({
   }
 
   return (
-    <div className="relative">
+    <div ref={dropdownRef} className="relative">
+      {/* Search row */}
       <div className="flex gap-2">
-        <Input
-          ref={inputRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search account name…"
-          className="h-8 text-sm"
-        />
-        <button onClick={save} className="text-green-600 hover:text-green-800">
-          <Check size={16} />
-        </button>
-        <button onClick={cancel} className="text-gray-400 hover:text-gray-600">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <Input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setShowCreate(false); }}
+            placeholder="Search account name…"
+            className="h-8 text-sm pl-8"
+          />
+        </div>
+        <button onClick={cancel} className="text-gray-400 hover:text-gray-600" title="Cancel">
           <X size={16} />
         </button>
       </div>
-      {results.length > 0 && (
-        <div className="absolute top-9 left-0 z-50 bg-white border border-gray-200 rounded shadow-md w-80 max-h-52 overflow-y-auto">
+
+      {/* Dropdown */}
+      {(results.length > 0 || query.length >= 1) && !showCreate && (
+        <div className="absolute top-9 left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg w-full min-w-[280px] max-h-60 overflow-y-auto">
           {results.map((acc) => (
             <button
               key={acc.id}
               onClick={() => pick(acc)}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-orange-50 ${
+              className={`w-full text-left px-3 py-2.5 text-sm hover:bg-orange-50 flex items-center gap-2 border-b border-gray-50 last:border-0 ${
                 pending?.id === acc.id ? "bg-orange-100 font-medium" : ""
               }`}
             >
-              {acc.name}
+              <Building2 size={13} className="text-gray-400 shrink-0" />
+              <span className="flex-1 truncate">{acc.name}</span>
               {acc.accountType && (
-                <span className="ml-2 text-xs text-gray-400">({acc.accountType})</span>
+                <span className="text-xs text-gray-400 shrink-0">({acc.accountType})</span>
               )}
             </button>
           ))}
+          {/* Always show "Create new" option */}
+          <button
+            onClick={openCreate}
+            className="w-full text-left px-3 py-2.5 text-sm hover:bg-green-50 flex items-center gap-2 border-t border-gray-100 text-green-700 font-medium"
+          >
+            <UserPlus size={13} className="shrink-0" />
+            {query.trim()
+              ? `Create "${query.trim()}"`
+              : "Create new account…"}
+          </button>
+        </div>
+      )}
+
+      {/* Inline create form */}
+      {showCreate && (
+        <div className="mt-2 border border-green-200 rounded-lg bg-green-50 p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <UserPlus size={14} className="text-green-700" />
+            <span className="text-sm font-semibold text-green-800">New Account</span>
+          </div>
+
+          {/* Name */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">
+              Name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              placeholder="e.g. John Smith"
+              className="h-8 text-sm bg-white"
+              autoFocus
+            />
+          </div>
+
+          {/* Type */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">
+              Account Type <span className="text-red-500">*</span>
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {ACCOUNT_TYPES.map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setNewType(t)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    newType === t
+                      ? "bg-[#F5821F] text-white border-[#F5821F]"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-orange-300"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Email + Phone */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Email</label>
+              <Input
+                type="email"
+                value={newEmail}
+                onChange={e => setNewEmail(e.target.value)}
+                placeholder="email@example.com"
+                className="h-8 text-sm bg-white"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Phone</label>
+              <Input
+                value={newPhone}
+                onChange={e => setNewPhone(e.target.value)}
+                placeholder="+61 4xx xxx xxx"
+                className="h-8 text-sm bg-white"
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => setShowCreate(false)}
+              className="flex-1 h-8 rounded border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Back to search
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={creating || !newName.trim()}
+              className="flex-1 h-8 rounded text-sm font-semibold text-white transition-colors disabled:opacity-50"
+              style={{ backgroundColor: PRIMARY }}
+            >
+              {creating ? "Creating…" : "Create & Select"}
+            </button>
+          </div>
         </div>
       )}
     </div>
