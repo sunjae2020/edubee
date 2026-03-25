@@ -220,113 +220,277 @@ function AccountLookupField({
 // ─── Product Search Panel ─────────────────────────────────────────────────────
 
 function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
-  const [search, setSearch] = useState("");
-  const [provider, setProvider] = useState("");
-  const [open, setOpen] = useState(false);
+  // Filter state (draft — applied on button click)
+  const [search,       setSearch]       = useState("");
+  const [productGroup, setProductGroup] = useState("");
+  const [productType,  setProductType]  = useState("");
+  const [priority,     setPriority]     = useState("");
+  const [grade,        setGrade]        = useState("");
+  const [status,       setStatus]       = useState("Active");
+  const [country,      setCountry]      = useState("");
+  const [location,     setLocation]     = useState("");
 
-  const { data: productData } = useQuery<{ data: Product[]; total: number }>({
-    queryKey: ["products-quote-search", search, provider],
-    queryFn: () => {
-      const params = new URLSearchParams({ display_on_quote: "true", status: "Active", limit: "50" });
-      if (search) params.set("search", search);
-      if (provider) params.set("provider", provider);
-      return axios.get(`${BASE}/api/products?${params}`).then((r) => r.data);
-    },
-    enabled: open,
-    staleTime: 30_000,
-  });
+  // Committed params — query only runs when this changes (on button click)
+  const [committed, setCommitted] = useState<null | Record<string, string>>(null);
 
-  const { data: formData } = useQuery<{ providers?: Account[] }>({
-    queryKey: ["product-form-data"],
-    queryFn: () => axios.get(`${BASE}/api/product-form-data`).then((r) => r.data),
+  // Lookup data
+  const { data: groupsData = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ["product-groups-lookup"],
+    queryFn: () => axios.get(`${BASE}/api/product-groups?status=Active`).then((r) => r.data),
     staleTime: 60_000,
   });
 
-  const providers: Account[] = formData?.providers ?? [];
+  const { data: typesData = [] } = useQuery<{ id: string; name: string; productGroupId: string }[]>({
+    queryKey: ["product-types-lookup", productGroup],
+    queryFn: () => {
+      const params = new URLSearchParams({ status: "Active" });
+      if (productGroup) params.set("product_group_id", productGroup);
+      return axios.get(`${BASE}/api/product-types?${params}`).then((r) => r.data);
+    },
+    staleTime: 60_000,
+  });
+
+  const { data: providersData = [] } = useQuery<{ id: string; name: string; country?: string; location?: string }[]>({
+    queryKey: ["products-lookup-accounts"],
+    queryFn: () => axios.get(`${BASE}/api/products-lookup/accounts`).then((r) => r.data),
+    staleTime: 60_000,
+  });
+
+  // Derive distinct country and location options from providers
+  const countryOptions = Array.from(new Set(providersData.map((p) => p.country).filter(Boolean))) as string[];
+  const locationOptions = Array.from(new Set(providersData.map((p) => p.location).filter(Boolean))) as string[];
+
+  // Search results — only fetched when committed !== null
+  const { data: productData, isFetching } = useQuery<{ data: Product[]; total: number }>({
+    queryKey: ["products-quote-search", committed],
+    queryFn: () => {
+      const params = new URLSearchParams({ display_on_quote: "true", limit: "100" });
+      if (committed!.search)       params.set("search",        committed!.search);
+      if (committed!.productGroup) params.set("productGroup",  committed!.productGroup);
+      if (committed!.productType)  params.set("productTypeId", committed!.productType);
+      if (committed!.priority)     params.set("productPriority", committed!.priority);
+      if (committed!.grade)        params.set("productGrade",  committed!.grade);
+      if (committed!.status)       params.set("status",        committed!.status);
+      if (committed!.country)      params.set("country",       committed!.country);
+      if (committed!.location)     params.set("location",      committed!.location);
+      return axios.get(`${BASE}/api/products?${params}`).then((r) => r.data);
+    },
+    enabled: committed !== null,
+    staleTime: 30_000,
+  });
+
   const products = productData?.data ?? [];
+
+  const handleSearch = () => {
+    setCommitted({ search, productGroup, productType, priority, grade, status, country, location });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
+  // Reset productType when group changes
+  const handleGroupChange = (v: string) => {
+    setProductGroup(v === "_all" ? "" : v);
+    setProductType("");
+  };
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700"
-      >
-        <span className="flex items-center gap-2">
-          <Plus size={15} style={{ color: PRIMARY }} />
-          Add Products from Catalog
-        </span>
-        <ChevronDown
-          size={15}
-          className={`transition-transform text-gray-400 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
+      {/* Header — always visible, no toggle */}
+      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+        <Plus size={15} style={{ color: PRIMARY }} />
+        <span className="text-sm font-medium text-gray-700">Add Products from Catalog</span>
+      </div>
 
-      {open && (
-        <div className="p-4 space-y-3">
-          <div className="flex gap-2 flex-wrap">
-            <Input
-              placeholder="Search products…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 text-sm flex-1 min-w-36"
-            />
-            <Select
-              value={provider || "_all"}
-              onValueChange={(v) => setProvider(v === "_all" ? "" : v)}
-            >
-              <SelectTrigger className="h-8 text-sm w-44">
-                <SelectValue placeholder="All Providers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_all">All Providers</SelectItem>
-                {providers.map((p: any) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <div className="p-4 space-y-4">
+        {/* Advanced Search Filters */}
+        <div className="space-y-3">
+          {/* Row 1: Group / Type / Priority / Grade */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Product Group</label>
+              <Select value={productGroup || "_all"} onValueChange={handleGroupChange}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All Groups" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">All Groups</SelectItem>
+                  {groupsData.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Product Type</label>
+              <Select value={productType || "_all"} onValueChange={(v) => setProductType(v === "_all" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">All Types</SelectItem>
+                  {typesData.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Priority</label>
+              <Select value={priority || "_any"} onValueChange={(v) => setPriority(v === "_any" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Any" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_any">Any</SelectItem>
+                  <SelectItem value="1">1 — Highest</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
+                  <SelectItem value="5">5 — Lowest</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Grade</label>
+              <Select value={grade || "_any"} onValueChange={(v) => setGrade(v === "_any" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Any" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_any">Any</SelectItem>
+                  <SelectItem value="Beginner">Beginner</SelectItem>
+                  <SelectItem value="Elementary">Elementary</SelectItem>
+                  <SelectItem value="Pre-Intermediate">Pre-Intermediate</SelectItem>
+                  <SelectItem value="Intermediate">Intermediate</SelectItem>
+                  <SelectItem value="Upper-Intermediate">Upper-Intermediate</SelectItem>
+                  <SelectItem value="Advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {products.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">
-              {search || provider ? "No products match your filters" : "Search to find products"}
-            </p>
-          ) : (
-            <div className="space-y-1 max-h-72 overflow-y-auto">
-              {products.map((p) => (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between px-3 py-2 rounded border border-gray-100 hover:border-orange-200 hover:bg-orange-50 group"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{p.productName}</p>
-                    <p className="text-xs text-gray-400 truncate">
-                      {p.providerName && <span>{p.providerName} · </span>}
-                      {p.productType}
-                      {p.isGstIncluded ? " · GST incl." : ""}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 ml-3 shrink-0">
-                    <span className="text-sm font-semibold text-gray-700">
-                      {p.price
-                        ? `$${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 2 })}`
-                        : "—"}
-                    </span>
-                    <button
-                      onClick={() => onAdd(p)}
-                      className="opacity-0 group-hover:opacity-100 text-white text-xs px-2 py-1 rounded transition-all"
-                      style={{ backgroundColor: PRIMARY }}
-                    >
-                      Add
-                    </button>
-                  </div>
-                </div>
-              ))}
+          {/* Row 2: Status */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Status</label>
+              <Select value={status || "_all"} onValueChange={(v) => setStatus(v === "_all" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">All</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
+          </div>
+
+          {/* Row 3: Country / Location */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Country</label>
+              <Select value={country || "_all"} onValueChange={(v) => setCountry(v === "_all" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All Countries" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">All Countries</SelectItem>
+                  {countryOptions.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Location</label>
+              <Select value={location || "_all"} onValueChange={(v) => setLocation(v === "_all" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All Locations" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">All Locations</SelectItem>
+                  {locationOptions.map((l) => (
+                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Row 4: Text search + Search button */}
+          <div className="flex gap-2 items-end">
+            <div className="flex-1 space-y-1">
+              <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Search</label>
+              <Input
+                placeholder="Search by product name or provider…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="h-8 text-xs"
+              />
+            </div>
+            <button
+              onClick={handleSearch}
+              className="flex items-center gap-1.5 px-4 h-8 rounded border text-xs font-medium transition-colors whitespace-nowrap"
+              style={{ borderColor: PRIMARY, color: PRIMARY }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#FEF0E3"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}
+            >
+              <Search size={13} />
+              Product Search
+            </button>
+          </div>
         </div>
-      )}
+
+        {/* Results */}
+        {committed === null ? (
+          <p className="text-sm text-gray-400 text-center py-6">
+            Set filters and click <strong>Product Search</strong> to find products.
+          </p>
+        ) : isFetching ? (
+          <div className="py-6 flex justify-center">
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-200" style={{ borderTopColor: PRIMARY }} />
+          </div>
+        ) : products.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">No products match your filters.</p>
+        ) : (
+          <div className="space-y-1 max-h-72 overflow-y-auto">
+            <p className="text-xs text-gray-400 mb-1">{productData?.total ?? products.length} result{(productData?.total ?? products.length) !== 1 ? "s" : ""}</p>
+            {products.map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center justify-between px-3 py-2 rounded border border-gray-100 hover:border-orange-200 hover:bg-orange-50 group"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{p.productName}</p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {p.providerName && <span>{p.providerName} · </span>}
+                    {p.productType}
+                    {p.isGstIncluded ? " · GST incl." : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 ml-3 shrink-0">
+                  <span className="text-sm font-semibold text-gray-700">
+                    {p.price
+                      ? `$${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 2 })}`
+                      : "—"}
+                  </span>
+                  <button
+                    onClick={() => onAdd(p)}
+                    className="opacity-0 group-hover:opacity-100 text-white text-xs px-2 py-1 rounded transition-all"
+                    style={{ backgroundColor: PRIMARY }}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
