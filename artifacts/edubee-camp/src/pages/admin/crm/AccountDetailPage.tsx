@@ -579,7 +579,7 @@ export default function AccountDetailPage() {
                         placeholder="e.g. Sydney, Melbourne, Brisbane"
                         className={INPUT_CLS}
                       />
-                      <p className="text-xs text-muted-foreground">여러 도시는 쉼표(,)로 구분하여 입력하세요.</p>
+                      <p className="text-xs text-muted-foreground">Enter multiple cities separated by commas.</p>
                     </div>
                   </Field>
                 </Section>
