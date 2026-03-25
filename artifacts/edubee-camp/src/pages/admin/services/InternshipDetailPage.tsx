@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { ArrowLeft, Check, FileText, Briefcase, User, ChevronRight, Building2, ExternalLink, DollarSign } from "lucide-react";
+import { ArrowLeft, Check, FileText, Briefcase, User, ChevronRight, Building2, ExternalLink, DollarSign, Pencil, X, Plus } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -135,7 +135,22 @@ function ToggleRow({
 }
 
 // ─── Student Profile Tab ──────────────────────────────────────────────────────
-function StudentProfileTab({ record }: { record: InternshipDetail }) {
+function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSave: (p: object) => void }) {
+  const [editing, setEditing] = useState(false);
+
+  const initIndustries = Array.isArray(record.preferredIndustry)
+    ? record.preferredIndustry.join(", ")
+    : record.preferredIndustry ?? "";
+
+  const [englishLevel,         setEnglishLevel]         = useState(record.englishLevel ?? "");
+  const [availableHours,       setAvailableHours]       = useState(String(record.availableHoursPerWeek ?? ""));
+  const [preferredIndustryStr, setPreferredIndustryStr] = useState(initIndustries);
+  const [newExpRole,     setNewExpRole]     = useState("");
+  const [newExpCompany,  setNewExpCompany]  = useState("");
+  const [newExpDuration, setNewExpDuration] = useState("");
+  const [newExpDesc,     setNewExpDesc]     = useState("");
+  const [showAddExp,     setShowAddExp]     = useState(false);
+
   const industries = Array.isArray(record.preferredIndustry)
     ? record.preferredIndustry
     : record.preferredIndustry
@@ -144,34 +159,99 @@ function StudentProfileTab({ record }: { record: InternshipDetail }) {
 
   const workExp = Array.isArray(record.workExperience) ? record.workExperience : [];
 
+  function handleSaveProfile() {
+    const industries = preferredIndustryStr
+      .split(",")
+      .map(s => s.trim())
+      .filter(Boolean);
+    onSave({
+      englishLevel:          englishLevel || null,
+      availableHoursPerWeek: availableHours ? Number(availableHours) : null,
+      preferredIndustry:     industries.length > 0 ? industries : null,
+    });
+    setEditing(false);
+  }
+
+  function handleAddExp() {
+    if (!newExpRole.trim()) return;
+    const newEntry = { role: newExpRole.trim(), company: newExpCompany.trim() || undefined, duration: newExpDuration.trim() || undefined, description: newExpDesc.trim() || undefined };
+    onSave({ workExperience: [...workExp, newEntry] });
+    setNewExpRole(""); setNewExpCompany(""); setNewExpDuration(""); setNewExpDesc("");
+    setShowAddExp(false);
+  }
+
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide flex items-center gap-1.5">
-            <User size={13} /> Student Info
-          </h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.studentName ?? "—"}</span></div>
-            <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
-            <div className="flex justify-between"><span className="text-stone-400">Contract</span><span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span></div>
-            <div className="flex justify-between"><span className="text-stone-400">English Level</span>
-              <span className="px-2 py-0.5 rounded text-xs font-medium bg-[#FEF0E3] text-[#F5821F]">{record.englishLevel ?? "—"}</span>
-            </div>
-            <div className="flex justify-between"><span className="text-stone-400">Avail. Hours/Wk</span><span className="text-stone-700">{record.availableHoursPerWeek ?? "—"}</span></div>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide flex items-center gap-1.5">
+              <User size={13} /> Student Info
+            </h3>
+            {!editing && (
+              <button onClick={() => setEditing(true)}
+                className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
+                <Pencil size={12} /> Edit
+              </button>
+            )}
           </div>
+          {!editing ? (
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.studentName ?? "—"}</span></div>
+              <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
+              <div className="flex justify-between"><span className="text-stone-400">Contract</span><span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span></div>
+              <div className="flex justify-between"><span className="text-stone-400">English Level</span>
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-[#FEF0E3] text-[#F5821F]">{record.englishLevel ?? "—"}</span>
+              </div>
+              <div className="flex justify-between"><span className="text-stone-400">Avail. Hours/Wk</span><span className="text-stone-700">{record.availableHoursPerWeek ?? "—"}</span></div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-stone-600">English Level</Label>
+                <Select value={englishLevel || "_none"} onValueChange={v => setEnglishLevel(v === "_none" ? "" : v)}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">— Not set —</SelectItem>
+                    {["beginner", "elementary", "intermediate", "upper_intermediate", "advanced", "native"].map(l => (
+                      <SelectItem key={l} value={l} className="capitalize">{l.replace(/_/g, " ")}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-stone-600">Available Hours / Week</Label>
+                <Input type="number" value={availableHours} onChange={e => setAvailableHours(e.target.value)} className="h-9 text-sm" placeholder="e.g. 20" />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveProfile} className="text-white text-xs h-8" style={{ background: "#F5821F" }}>Save</Button>
+                <Button variant="outline" onClick={() => setEditing(false)} className="text-xs h-8">Cancel</Button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Preferred Industry</h3>
-          {industries.length === 0 ? (
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Preferred Industry</h3>
+            {!editing && (
+              <button onClick={() => setEditing(true)}
+                className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
+                <Pencil size={12} /> Edit
+              </button>
+            )}
+          </div>
+          {editing ? (
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-600">Industries (comma-separated)</Label>
+              <Input value={preferredIndustryStr} onChange={e => setPreferredIndustryStr(e.target.value)} className="h-9 text-sm" placeholder="e.g. IT, Finance, Marketing" />
+            </div>
+          ) : industries.length === 0 ? (
             <p className="text-sm text-stone-400">No preferences set</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {industries.map((ind, i) => (
-                <span key={i} className="px-3 py-1 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#C2410C]">
-                  {ind}
-                </span>
+                <span key={i} className="px-3 py-1 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#C2410C]">{ind}</span>
               ))}
             </div>
           )}
@@ -180,9 +260,44 @@ function StudentProfileTab({ record }: { record: InternshipDetail }) {
 
       {/* Work Experience */}
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-        <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide flex items-center gap-1.5">
-          <Briefcase size={13} /> Work Experience
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide flex items-center gap-1.5">
+            <Briefcase size={13} /> Work Experience
+          </h3>
+          <button
+            onClick={() => setShowAddExp(v => !v)}
+            className="flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:underline"
+          >
+            <Plus size={13} /> Add Experience
+          </button>
+        </div>
+        {showAddExp && (
+          <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-3">
+            <h4 className="text-xs font-semibold text-stone-600 uppercase tracking-wide">New Work Experience</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-stone-600">Role / Title *</Label>
+                <Input value={newExpRole} onChange={e => setNewExpRole(e.target.value)} className="h-9 text-sm" placeholder="e.g. Marketing Assistant" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-stone-600">Company</Label>
+                <Input value={newExpCompany} onChange={e => setNewExpCompany(e.target.value)} className="h-9 text-sm" placeholder="Company name" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-stone-600">Duration</Label>
+                <Input value={newExpDuration} onChange={e => setNewExpDuration(e.target.value)} className="h-9 text-sm" placeholder="e.g. Jan 2022 – Dec 2023" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-stone-600">Description</Label>
+                <Input value={newExpDesc} onChange={e => setNewExpDesc(e.target.value)} className="h-9 text-sm" placeholder="Brief description" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleAddExp} disabled={!newExpRole.trim()} className="text-white text-xs h-8" style={{ background: "#F5821F" }}>Add</Button>
+              <Button variant="outline" onClick={() => setShowAddExp(false)} className="text-xs h-8">Cancel</Button>
+            </div>
+          </div>
+        )}
         {workExp.length === 0 ? (
           <p className="text-sm text-stone-400">No work experience recorded</p>
         ) : (
@@ -373,17 +488,27 @@ export default function InternshipDetailPage() {
         <ArrowLeft size={15} /> Back to Internship
       </button>
 
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-stone-800">{record.studentName ?? "—"}</h1>
           <p className="text-sm text-stone-500 mt-0.5">
             {record.positionTitle ?? "No position assigned"}
           </p>
         </div>
-        <span className="px-3 py-1 rounded-full text-sm font-medium capitalize"
-          style={{ background: badge.bg, color: badge.text }}>
-          {STAGES.find(s => s.key === currentStage)?.label ?? currentStage}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="px-3 py-1 rounded-full text-sm font-medium capitalize"
+            style={{ background: badge.bg, color: badge.text }}>
+            {STAGES.find(s => s.key === currentStage)?.label ?? currentStage}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setTab("profile")}
+            className="flex items-center gap-1.5 h-8 text-sm border-stone-300"
+          >
+            <Pencil size={13} /> Edit Profile
+          </Button>
+        </div>
       </div>
 
       {/* Related Contract + Financial Summary */}
@@ -465,7 +590,7 @@ export default function InternshipDetailPage() {
         ))}
       </div>
 
-      {tab === "profile"   && <StudentProfileTab record={record} />}
+      {tab === "profile"   && <StudentProfileTab record={record} onSave={p => patchMutation.mutate(p)} />}
       {tab === "company"   && <CompanyMatchTab  record={record} onSave={p => patchMutation.mutate(p)} />}
       {tab === "progress"  && <ProgressTab      record={record} onSave={p => patchMutation.mutate(p)} />}
       {tab === "payments"  && (

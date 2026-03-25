@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
-  ArrowLeft, FileText, DollarSign, Pencil, ExternalLink, Stamp,
+  ArrowLeft, FileText, DollarSign, Pencil, ExternalLink, Stamp, Plus,
 } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
@@ -374,7 +374,7 @@ function OverviewTab({
 }
 
 // ─── Timeline Tab ──────────────────────────────────────────────────────────────
-function TimelineTab({ record }: { record: VisaServiceRecord }) {
+function TimelineTab({ record, onEdit }: { record: VisaServiceRecord; onEdit: () => void }) {
   const steps = [
     { label: "Application Submitted",   date: record.applicationDate,  status: "applied"   },
     { label: "Documents Submitted",     date: record.submissionDate,   status: "applied"   },
@@ -392,9 +392,17 @@ function TimelineTab({ record }: { record: VisaServiceRecord }) {
   return (
     <div className="space-y-4">
       <div className="bg-white border border-stone-200 rounded-xl p-5">
-        <div className="flex items-center gap-2 mb-5">
-          <Stamp size={14} style={{ color: "#F5821F" }} />
-          <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Application Timeline</h3>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <Stamp size={14} style={{ color: "#F5821F" }} />
+            <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Application Timeline</h3>
+          </div>
+          <button
+            onClick={onEdit}
+            className="flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:underline"
+          >
+            <Pencil size={12} /> Edit Dates
+          </button>
         </div>
         <ol className="relative border-l-2 border-stone-200 space-y-6 ml-3">
           {steps.map((step, i) => {
@@ -438,7 +446,7 @@ function TimelineTab({ record }: { record: VisaServiceRecord }) {
 }
 
 // ─── Bill Tab ─────────────────────────────────────────────────────────────────
-function BillTab({ record }: { record: VisaServiceRecord }) {
+function BillTab({ record, onEdit }: { record: VisaServiceRecord; onEdit: () => void }) {
   const margin = record.serviceFee && record.apCost
     ? parseFloat(record.serviceFee) - parseFloat(record.apCost)
     : null;
@@ -446,9 +454,17 @@ function BillTab({ record }: { record: VisaServiceRecord }) {
   return (
     <div className="space-y-4">
       <div className="bg-white border border-stone-200 rounded-xl overflow-x-auto">
-        <div className="px-5 py-4 border-b border-stone-100 flex items-center gap-2">
-          <DollarSign size={14} style={{ color: "#F5821F" }} />
-          <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Billing Summary</h3>
+        <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <DollarSign size={14} style={{ color: "#F5821F" }} />
+            <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Billing Summary</h3>
+          </div>
+          <button
+            onClick={onEdit}
+            className="flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:underline"
+          >
+            <Pencil size={12} /> Edit Fees
+          </button>
         </div>
         <div className="divide-y divide-stone-100">
           <div className="px-5 py-3.5 flex items-center justify-between text-sm">
@@ -558,10 +574,20 @@ export default function VisaServiceDetailPage() {
             {record.visaNumber ? ` · #${record.visaNumber}` : ""}
           </p>
         </div>
-        <span className="px-3 py-1 rounded-full text-sm font-medium shrink-0"
-          style={{ background: statusStyle.bg, color: statusStyle.color }}>
-          {STATUS_LABEL[record.status] ?? record.status}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="px-3 py-1 rounded-full text-sm font-medium"
+            style={{ background: statusStyle.bg, color: statusStyle.color }}>
+            {STATUS_LABEL[record.status] ?? record.status}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setTab("overview")}
+            className="flex items-center gap-1.5 h-8 text-sm border-stone-300"
+          >
+            <Pencil size={13} /> Edit Details
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -581,11 +607,11 @@ export default function VisaServiceDetailPage() {
       {tab === "overview"  && (
         <OverviewTab record={record} onSave={p => patchMutation.mutate(p)} />
       )}
-      {tab === "timeline"  && <TimelineTab record={record} />}
+      {tab === "timeline"  && <TimelineTab record={record} onEdit={() => setTab("overview")} />}
       {tab === "documents" && (
         <EntityDocumentsTab entityType="visa_services_mgt" entityId={id!} />
       )}
-      {tab === "bill"      && <BillTab record={record} />}
+      {tab === "bill"      && <BillTab record={record} onEdit={() => setTab("overview")} />}
       {tab === "payments"  && (
         <ContractPaymentsPanel
           contractId={record.contractId}

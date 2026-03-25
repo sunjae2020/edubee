@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   ArrowLeft, Plus, Pencil, Check, AlertTriangle,
-  ChevronRight, FileText, ExternalLink, DollarSign,
+  ChevronRight, FileText, ExternalLink, DollarSign, X,
 } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
@@ -196,8 +196,107 @@ function AddSchoolModal({
   );
 }
 
+// ─── Edit SA Details Modal ────────────────────────────────────────────────────
+function EditSADetailsModal({
+  record,
+  onSave,
+  onClose,
+}: {
+  record: SARecord;
+  onSave: (patch: object) => void;
+  onClose: () => void;
+}) {
+  const [status,               setStatus]               = useState(record.status ?? "active");
+  const [coeNumber,            setCoeNumber]            = useState(record.coeNumber ?? "");
+  const [coeExpiryDate,        setCoeExpiryDate]        = useState(record.coeExpiryDate ?? "");
+  const [departureDate,        setDepartureDate]        = useState(record.departureDate ?? "");
+  const [orientationCompleted, setOrientationCompleted] = useState(record.orientationCompleted ?? false);
+  const [notes,                setNotes]                = useState(record.notes ?? "");
+  const [assignedStaffId,      setAssignedStaffId]      = useState(record.assignedStaffId ?? "");
+
+  const { data: usersData } = useQuery({
+    queryKey: ["users-list"],
+    queryFn:  () => axios.get(`${BASE}/api/users`).then(r => r.data),
+  });
+  const usersList: { id: string; fullName?: string | null }[] = usersData?.data ?? usersData ?? [];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-stone-800">Edit Record Details</h3>
+          <button onClick={onClose} className="p-1.5 rounded hover:bg-stone-100 text-stone-500"><X size={16} /></button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["active", "completed", "cancelled", "on_hold"].map(s => (
+                  <SelectItem key={s} value={s} className="capitalize">{s.replace(/_/g, " ")}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Assigned Staff</Label>
+            <Select value={assignedStaffId || "_none"} onValueChange={v => setAssignedStaffId(v === "_none" ? "" : v)}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select staff" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">— Unassigned —</SelectItem>
+                {usersList.map(u => (
+                  <SelectItem key={u.id} value={u.id}>{u.fullName ?? u.id}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">COE Number</Label>
+            <Input value={coeNumber} onChange={e => setCoeNumber(e.target.value)} className="h-9 text-sm font-mono" placeholder="e.g. COE2024XXXXX" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">COE Expiry Date</Label>
+            <Input type="date" value={coeExpiryDate} onChange={e => setCoeExpiryDate(e.target.value)} className="h-9 text-sm" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Departure Date</Label>
+            <Input type="date" value={departureDate} onChange={e => setDepartureDate(e.target.value)} className="h-9 text-sm" />
+          </div>
+          <div className="col-span-2 flex items-center gap-3 p-3 rounded-lg border border-stone-200 bg-stone-50">
+            <input
+              type="checkbox" id="sa-orientation"
+              checked={orientationCompleted}
+              onChange={e => setOrientationCompleted(e.target.checked)}
+              className="w-4 h-4 rounded"
+            />
+            <label htmlFor="sa-orientation" className="text-sm font-medium text-stone-700">Orientation Completed</label>
+            {orientationCompleted && <span className="ml-auto text-xs font-semibold text-[#16A34A]">Done ✓</span>}
+          </div>
+          <div className="col-span-2 space-y-1.5">
+            <Label className="text-xs text-stone-600">Notes</Label>
+            <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="text-sm min-h-[80px] resize-none" placeholder="Internal notes…" />
+          </div>
+        </div>
+        <div className="flex gap-3 pt-2">
+          <Button
+            onClick={() => {
+              onSave({ status, coeNumber: coeNumber || null, coeExpiryDate: coeExpiryDate || null, departureDate: departureDate || null, orientationCompleted, notes: notes || null, assignedStaffId: assignedStaffId || null });
+              onClose();
+            }}
+            className="flex-1 text-white" style={{ background: "#F5821F" }}
+          >
+            Save Changes
+          </Button>
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
-function OverviewTab({ record, onStageChange }: { record: SARecord; onStageChange: (s: string) => void }) {
+function OverviewTab({ record, onStageChange, onEdit }: { record: SARecord; onStageChange: (s: string) => void; onEdit: () => void }) {
   return (
     <div className="space-y-6">
       <div className="bg-white border border-stone-200 rounded-xl p-5 overflow-x-auto">
@@ -206,7 +305,12 @@ function OverviewTab({ record, onStageChange }: { record: SARecord; onStageChang
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Student</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Student</h3>
+            <button onClick={onEdit} className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
+              <Pencil size={12} /> Edit
+            </button>
+          </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.studentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
@@ -225,7 +329,12 @@ function OverviewTab({ record, onStageChange }: { record: SARecord; onStageChang
           </div>
         </div>
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Contract</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Contract & COE</h3>
+            <button onClick={onEdit} className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
+              <Pencil size={12} /> Edit
+            </button>
+          </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-stone-400">Contract #</span>
               <span className="font-mono text-xs text-stone-600">{record.contractNumber ?? "—"}</span>
@@ -416,6 +525,7 @@ export default function StudyAbroadDetailPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"overview" | "schools" | "visa" | "docs" | "notes">("overview");
+  const [showEdit, setShowEdit] = useState(false);
 
   const id = params?.id;
 
@@ -468,16 +578,26 @@ export default function StudyAbroadDetailPage() {
       </button>
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-stone-800">{record.studentName ?? "—"}</h1>
           <p className="text-sm text-stone-500 mt-0.5">
             {record.contractNumber ?? ""}{record.agentName ? ` · via ${record.agentName}` : ""}
           </p>
         </div>
-        <span className="px-3 py-1 rounded-full text-sm font-medium bg-[#F4F3F1] text-[#57534E] capitalize">
-          {record.status ?? "—"}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="px-3 py-1 rounded-full text-sm font-medium bg-[#F4F3F1] text-[#57534E] capitalize">
+            {record.status ?? "—"}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowEdit(true)}
+            className="flex items-center gap-1.5 h-8 text-sm border-stone-300"
+          >
+            <Pencil size={13} /> Edit Details
+          </Button>
+        </div>
       </div>
 
       {/* Related Contract + Financial Summary */}
@@ -563,6 +683,7 @@ export default function StudyAbroadDetailPage() {
           <OverviewTab
             record={record}
             onStageChange={stage => patchMutation.mutate({ applicationStage: stage })}
+            onEdit={() => setShowEdit(true)}
           />
         )}
         {tab === "schools" && (
@@ -600,6 +721,14 @@ export default function StudyAbroadDetailPage() {
           </div>
         )}
       </div>
+
+      {showEdit && (
+        <EditSADetailsModal
+          record={record}
+          onSave={patch => patchMutation.mutate(patch)}
+          onClose={() => setShowEdit(false)}
+        />
+      )}
     </div>
   );
 }

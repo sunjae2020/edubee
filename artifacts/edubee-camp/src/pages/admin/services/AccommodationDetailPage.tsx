@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { ArrowLeft, Plus, HeartPulse, DollarSign, Home, Phone, MapPin, FileText, ExternalLink } from "lucide-react";
+import { ArrowLeft, Plus, HeartPulse, DollarSign, Home, Phone, MapPin, FileText, ExternalLink, Pencil, X } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -283,8 +283,170 @@ function WelfareTab({ record, id }: { record: AccomDetail; id: string }) {
   );
 }
 
+// ─── Host Tab ─────────────────────────────────────────────────────────────────
+function HostTab({ record, onSave }: { record: AccomDetail; onSave: (p: object) => void }) {
+  const [editing,          setEditing]          = useState(false);
+  const [hostName,         setHostName]         = useState(record.hostName         ?? "");
+  const [hostContact,      setHostContact]      = useState(record.hostContact      ?? "");
+  const [hostAddress,      setHostAddress]      = useState(record.hostAddress      ?? "");
+  const [distanceToSchool, setDistanceToSchool] = useState(record.distanceToSchool ?? "");
+  const [mealIncluded,     setMealIncluded]     = useState(record.mealIncluded     ?? "");
+  const [roomType,         setRoomType]         = useState(record.roomType         ?? "");
+  const [accommodationType, setAccommodationType] = useState(record.accommodationType ?? "");
+  const [partnerWeeklyCost, setPartnerWeeklyCost] = useState(record.partnerWeeklyCost ?? "");
+
+  function startEdit() {
+    setHostName(record.hostName ?? "");
+    setHostContact(record.hostContact ?? "");
+    setHostAddress(record.hostAddress ?? "");
+    setDistanceToSchool(record.distanceToSchool ?? "");
+    setMealIncluded(record.mealIncluded ?? "");
+    setRoomType(record.roomType ?? "");
+    setAccommodationType(record.accommodationType ?? "");
+    setPartnerWeeklyCost(record.partnerWeeklyCost ?? "");
+    setEditing(true);
+  }
+
+  if (editing) {
+    return (
+      <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Home size={16} style={{ color: "#F5821F" }} />
+            <h3 className="text-sm font-bold text-stone-800">Edit Host / Provider</h3>
+          </div>
+          <button onClick={() => setEditing(false)} className="p-1.5 rounded hover:bg-stone-100 text-stone-500"><X size={16} /></button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Host Name</Label>
+            <Input value={hostName} onChange={e => setHostName(e.target.value)} className="h-9 text-sm" placeholder="Host family name" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600"><Phone size={10} className="inline mr-1" />Contact</Label>
+            <Input value={hostContact} onChange={e => setHostContact(e.target.value)} className="h-9 text-sm" placeholder="Phone / Email" />
+          </div>
+          <div className="col-span-2 space-y-1.5">
+            <Label className="text-xs text-stone-600"><MapPin size={10} className="inline mr-1" />Address</Label>
+            <Input value={hostAddress} onChange={e => setHostAddress(e.target.value)} className="h-9 text-sm" placeholder="Full address" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Distance to School</Label>
+            <Input value={distanceToSchool} onChange={e => setDistanceToSchool(e.target.value)} className="h-9 text-sm" placeholder="e.g. 2.5 km" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Accommodation Type</Label>
+            <Select value={accommodationType || "_none"} onValueChange={v => setAccommodationType(v === "_none" ? "" : v)}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">— Not set —</SelectItem>
+                {["homestay", "private_rental", "student_residence", "shared_house"].map(t => (
+                  <SelectItem key={t} value={t} className="capitalize">{t.replace(/_/g, " ")}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Room Type</Label>
+            <Select value={roomType || "_none"} onValueChange={v => setRoomType(v === "_none" ? "" : v)}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">— Not set —</SelectItem>
+                {["single", "shared", "ensuite", "studio"].map(t => (
+                  <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Meal Included</Label>
+            <Select value={mealIncluded || "_none"} onValueChange={v => setMealIncluded(v === "_none" ? "" : v)}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">— Not set —</SelectItem>
+                {["none", "breakfast", "half_board", "full_board"].map(t => (
+                  <SelectItem key={t} value={t} className="capitalize">{t.replace(/_/g, " ")}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Partner Weekly Cost ($)</Label>
+            <Input type="number" value={partnerWeeklyCost} onChange={e => setPartnerWeeklyCost(e.target.value)} className="h-9 text-sm" placeholder="0.00" />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            onClick={() => {
+              onSave({ hostName: hostName || null, hostContact: hostContact || null, hostAddress: hostAddress || null, distanceToSchool: distanceToSchool || null, mealIncluded: mealIncluded || null, roomType: roomType || null, accommodationType: accommodationType || null, partnerWeeklyCost: partnerWeeklyCost || null });
+              setEditing(false);
+            }}
+            className="text-white" style={{ background: "#F5821F" }}
+          >
+            Save Host Details
+          </Button>
+          <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Home size={16} style={{ color: "#F5821F" }} />
+          <h3 className="text-sm font-bold text-stone-800">Host Family Information</h3>
+        </div>
+        <button
+          onClick={startEdit}
+          className="flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:underline"
+        >
+          <Pencil size={13} /> Edit Host
+        </button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Host Name</p>
+          <p className="text-sm text-stone-800">{record.hostName ?? <span className="text-stone-400 italic">Not assigned</span>}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1 flex items-center gap-1"><Phone size={10} /> Contact</p>
+          <p className="text-sm text-stone-800">{record.hostContact ?? "—"}</p>
+        </div>
+        <div className="col-span-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1 flex items-center gap-1"><MapPin size={10} /> Address</p>
+          <p className="text-sm text-stone-800">{record.hostAddress ?? "—"}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Distance to School</p>
+          <p className="text-sm text-stone-800">{record.distanceToSchool ?? "—"}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Meal Included</p>
+          <p className="text-sm text-stone-800 capitalize">{record.mealIncluded?.replace(/_/g, " ") ?? "—"}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Room Type</p>
+          <p className="text-sm text-stone-800 capitalize">{record.roomType?.replace(/_/g, " ") ?? "—"}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Weekly Rate</p>
+          <p className="text-sm font-semibold" style={{ color: "#F5821F" }}>
+            {record.weeklyRate ? `A$${Number(record.weeklyRate).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Accommodation Type</p>
+          <p className="text-sm text-stone-800 capitalize">{record.accommodationType?.replace(/_/g, " ") ?? "—"}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Billing Tab ──────────────────────────────────────────────────────────────
-function BillingTab({ record }: { record: AccomDetail }) {
+function BillingTab({ record, onEditRates }: { record: AccomDetail; onEditRates: () => void }) {
   const total = calcTotal(record.checkinDate, record.checkoutDate, record.weeklyRate);
 
   let nights = 0;
@@ -354,11 +516,19 @@ function BillingTab({ record }: { record: AccomDetail }) {
         </table>
       </div>
 
-      <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
-        <p className="text-xs text-stone-400 mb-2 font-semibold uppercase tracking-wide">Formula</p>
-        <p className="text-xs text-stone-600 font-mono">
-          Total = (nights ÷ 7) × weekly rate = {nights > 0 ? `(${nights} ÷ 7) × $${parseFloat(record.weeklyRate ?? "0").toLocaleString()} = ${total}` : "dates not set"}
-        </p>
+      <div className="flex items-center justify-between bg-stone-50 border border-stone-200 rounded-xl p-4">
+        <div>
+          <p className="text-xs text-stone-400 mb-1 font-semibold uppercase tracking-wide">Formula</p>
+          <p className="text-xs text-stone-600 font-mono">
+            Total = (nights ÷ 7) × weekly rate = {nights > 0 ? `(${nights} ÷ 7) × $${parseFloat(record.weeklyRate ?? "0").toLocaleString()} = ${total}` : "dates not set"}
+          </p>
+        </div>
+        <button
+          onClick={onEditRates}
+          className="flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:underline shrink-0 ml-4"
+        >
+          <Pencil size={12} /> Edit Rates
+        </button>
       </div>
     </div>
   );
@@ -411,17 +581,27 @@ export default function AccommodationDetailPage() {
         <ArrowLeft size={15} /> Back to Accommodation
       </button>
 
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-stone-800">{record.studentName ?? "—"}</h1>
           <p className="text-sm text-stone-500 mt-0.5">
             {record.hostName ?? "No host assigned"}{record.accommodationType ? ` · ${record.accommodationType.replace(/_/g, " ")}` : ""}
           </p>
         </div>
-        <span className="px-3 py-1 rounded-full text-sm font-medium capitalize"
-          style={{ background: "#F4F3F1", color: "#57534E" }}>
-          {record.status?.replace(/_/g, " ") ?? "—"}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="px-3 py-1 rounded-full text-sm font-medium capitalize"
+            style={{ background: "#F4F3F1", color: "#57534E" }}>
+            {record.status?.replace(/_/g, " ") ?? "—"}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setTab("host")}
+            className="flex items-center gap-1.5 h-8 text-sm border-stone-300"
+          >
+            <Pencil size={13} /> Edit Host
+          </Button>
+        </div>
       </div>
 
       {/* Related Contract + Financial Summary */}
@@ -499,48 +679,9 @@ export default function AccommodationDetailPage() {
       </div>
 
       {tab === "details" && <DetailsTab record={record} onSave={p => patchMutation.mutate(p)} />}
-      {tab === "host" && (
-        <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Home size={16} style={{ color: "#F5821F" }} />
-            <h3 className="text-sm font-bold text-stone-800">Host Family Information</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Host Name</p>
-              <p className="text-sm text-stone-800">{record.hostName ?? <span className="text-stone-400 italic">Not assigned</span>}</p>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1 flex items-center gap-1"><Phone size={10} /> Contact</p>
-              <p className="text-sm text-stone-800">{record.hostContact ?? "—"}</p>
-            </div>
-            <div className="col-span-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1 flex items-center gap-1"><MapPin size={10} /> Address</p>
-              <p className="text-sm text-stone-800">{record.hostAddress ?? "—"}</p>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Distance to School</p>
-              <p className="text-sm text-stone-800">{record.distanceToSchool ?? "—"}</p>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Meal Included</p>
-              <p className="text-sm text-stone-800 capitalize">{record.mealIncluded?.replace(/_/g, " ") ?? "—"}</p>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Room Type</p>
-              <p className="text-sm text-stone-800 capitalize">{record.roomType?.replace(/_/g, " ") ?? "—"}</p>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Weekly Rate</p>
-              <p className="text-sm font-semibold" style={{ color: "#F5821F" }}>
-                {record.weeklyRate ? `A$${Number(record.weeklyRate).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {tab === "host" && <HostTab record={record} onSave={p => patchMutation.mutate(p)} />}
       {tab === "welfare" && <WelfareTab record={record} id={id!} />}
-      {tab === "billing" && <BillingTab record={record} />}
+      {tab === "billing" && <BillingTab record={record} onEditRates={() => setTab("details")} />}
       {tab === "payments" && (
         <ContractPaymentsPanel
           contractId={record.contractId}
