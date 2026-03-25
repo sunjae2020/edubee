@@ -226,7 +226,7 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
   const [productType,  setProductType]  = useState("");
   const [priority,     setPriority]     = useState("");
   const [grade,        setGrade]        = useState("");
-  const [status,       setStatus]       = useState("Active");
+  const [status,       setStatus]       = useState("active");
   const [country,      setCountry]      = useState("");
   const [location,     setLocation]     = useState("");
 
@@ -381,8 +381,8 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_all">All</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
             </div>
