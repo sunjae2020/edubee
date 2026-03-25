@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Plus, TrendingUp, ArrowRight, Clock, Trash2, Zap, CheckCircle2, AlertCircle, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, parseISO } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -81,6 +82,7 @@ export default function ExchangeRates() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [showCreate, setShowCreate] = useState(false);
+  const { sortBy, sortDir, onSort } = useSortState();
   const [form, setForm] = useState(defaultForm);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [syncResult, setSyncResult] = useState<{ updated: string[]; skipped: string[]; date: string } | null>(null);
@@ -105,6 +107,7 @@ export default function ExchangeRates() {
     queryFn: () => axios.get(`${BASE}/api/exchange-rates`).then(r => r.data),
   });
   const rates: ExchangeRate[] = data?.data ?? [];
+  const sorted = useSorted(rates, sortBy, sortDir);
 
   const { data: syncInfo } = useQuery({
     queryKey: ["exchange-rates-sync-info"],
@@ -366,12 +369,12 @@ export default function ExchangeRates() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">From</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">To</th>
-                  <th className="px-4 py-2 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rate</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Effective</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Source</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Added</th>
+                  <SortableTh col="fromCurrency" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">From</SortableTh>
+                  <SortableTh col="toCurrency" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">To</SortableTh>
+                  <SortableTh col="rate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rate</SortableTh>
+                  <SortableTh col="effectiveDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Effective</SortableTh>
+                  <SortableTh col="source" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Source</SortableTh>
+                  <SortableTh col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Added</SortableTh>
                   <th className="px-4 py-2 w-10"></th>
                 </tr>
               </thead>

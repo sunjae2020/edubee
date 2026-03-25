@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -277,6 +278,7 @@ function FilterBar({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ArApTrackerPage() {
   const [tab, setTab]                   = useState<"ar" | "ap" | "schedule">("ar");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [search, setSearch]             = useState("");
   const [dateFrom, setDateFrom]         = useState("");
   const [dateTo, setDateTo]             = useState("");
@@ -317,7 +319,9 @@ export default function ArApTrackerPage() {
   });
 
   const arRows: ArRow[] = arData?.data ?? [];
+  const sortedAr = useSorted(arRows, sortBy, sortDir);
   const apRows: ApRow[] = apData?.data ?? [];
+  const sortedAp = useSorted(apRows, sortBy, sortDir);
   const totalPages = (tab === "ar" ? arData?.meta?.totalPages : apData?.meta?.totalPages) ?? 1;
 
   function handleTabChange(t: "ar" | "ap" | "schedule") {
@@ -444,11 +448,15 @@ export default function ArApTrackerPage() {
           <table className="w-full text-sm">
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
-                {["Contract", "Student", "Product", "Due Date", "Amount (AUD)", "Status", "Actions"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
-                    {h}
-                  </th>
-                ))}
+                <>
+                    <SortableTh col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Contract</SortableTh>
+                    <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+                    <SortableTh col="serviceModuleType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Product</SortableTh>
+                    <SortableTh col="arDueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Due Date</SortableTh>
+                    <SortableTh col="arAmount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Amount (AUD)</SortableTh>
+                    <SortableTh col="arStatus" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
+                  </>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -458,7 +466,7 @@ export default function ArApTrackerPage() {
               {!arLoading && arRows.length === 0 && (
                 <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No AR records found</td></tr>
               )}
-              {arRows.map(row => {
+              {sortedAr.map(row => {
                 const isOverdue = row.arStatus === "overdue";
                 const badge = AR_BADGE[row.arStatus ?? "scheduled"] ?? AR_BADGE.scheduled;
                 return (
@@ -503,11 +511,15 @@ export default function ArApTrackerPage() {
           <table className="w-full text-sm">
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
-                {["Contract", "School / Partner", "Product", "Due Date", "Amount (AUD)", "Status", "Actions"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
-                    {h}
-                  </th>
-                ))}
+                <>
+                    <SortableTh col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Contract</SortableTh>
+                    <SortableTh col="partnerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">School / Partner</SortableTh>
+                    <SortableTh col="serviceModuleType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Product</SortableTh>
+                    <SortableTh col="apDueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Due Date</SortableTh>
+                    <SortableTh col="apAmount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Amount (AUD)</SortableTh>
+                    <SortableTh col="apStatus" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
+                  </>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -517,7 +529,7 @@ export default function ArApTrackerPage() {
               {!apLoading && apRows.length === 0 && (
                 <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No AP records found</td></tr>
               )}
-              {apRows.map(row => {
+              {sortedAp.map(row => {
                 const badge = AP_BADGE[row.apStatus ?? "pending"] ?? AP_BADGE.pending;
                 return (
                   <tr key={row.id} className="hover:bg-stone-50 transition-colors">

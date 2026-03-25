@@ -3,6 +3,7 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -36,6 +37,7 @@ export default function MyInvoices() {
     queryFn: () => axios.get(`${BASE}/api/my-accounting/invoices`).then(r => r.data),
   });
   const rows: Invoice[] = data?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
 
   const total = rows.reduce((s, r) => s + Number(r.totalAmount ?? 0), 0);
   const paid = rows.filter(r => r.status === "paid").reduce((s, r) => s + Number(r.totalAmount ?? 0), 0);
@@ -69,14 +71,14 @@ export default function MyInvoices() {
         <div className="rounded-lg border overflow-hidden bg-white">
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-muted/30">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Invoice #</th>
+              <SortableTh col="invoiceNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Invoice #</SortableTh>
               <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">Amount</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Due Date</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
+              <SortableTh col="dueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Due Date</SortableTh>
+              <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</SortableTh>
               <th className="px-4 py-3"></th>
             </tr></thead>
             <tbody>
-              {rows.map(r => (
+              {sorted.map(r => (
                 <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3]">
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3 text-right"><DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>

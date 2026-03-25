@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Receipt, Send, ChevronRight, CreditCard, Loader2, FileText, Handshake, Download } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
@@ -159,6 +160,7 @@ function ClientTab() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Invoice | null>(null);
@@ -175,6 +177,7 @@ function ClientTab() {
     },
   });
   const rows: Invoice[] = resp?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const total: number = resp?.meta?.total ?? rows.length;
 
   const updateMutation = useMutation({
@@ -197,9 +200,13 @@ function ClientTab() {
         <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Invoice #", "Student", "Amount", "Issued", "Due", "Status", ""].map(h => (
-                <th key={h} className={cn("px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide", h === "Amount" ? "text-right" : "text-left")}>{h}</th>
-              ))}
+              <SortableTh col="invoiceNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Invoice #</SortableTh>
+              <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Student</SortableTh>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Amount</th>
+              <SortableTh col="issuedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Issued</SortableTh>
+              <SortableTh col="dueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Due</SortableTh>
+              <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Status</SortableTh>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left w-20" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -208,7 +215,7 @@ function ClientTab() {
                 <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">
                   <Receipt className="w-8 h-8 mx-auto mb-3 opacity-30" />No client invoices found
                 </td></tr>
-              ) : rows.map(r => (
+              ) : sorted.map(r => (
                 <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3 font-medium">{r.studentName ?? "—"}</td>
@@ -278,6 +285,7 @@ function AgentTab() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Invoice | null>(null);
@@ -293,6 +301,7 @@ function AgentTab() {
     },
   });
   const rows: Invoice[] = resp?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const total: number = resp?.meta?.total ?? rows.length;
 
   const updateMutation = useMutation({
@@ -312,9 +321,13 @@ function AgentTab() {
         <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Invoice #", "Student", "Commission", "Issued", "Due", "Status", ""].map(h => (
-                <th key={h} className={cn("px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide", h === "Commission" ? "text-right" : "text-left")}>{h}</th>
-              ))}
+              <SortableTh col="invoiceNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Invoice #</SortableTh>
+              <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Student</SortableTh>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Commission</th>
+              <SortableTh col="issuedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Issued</SortableTh>
+              <SortableTh col="dueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Due</SortableTh>
+              <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Status</SortableTh>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left w-20" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -323,7 +336,7 @@ function AgentTab() {
                 <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">
                   <FileText className="w-8 h-8 mx-auto mb-3 opacity-30" />No agent invoices found
                 </td></tr>
-              ) : rows.map(r => (
+              ) : sorted.map(r => (
                 <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3 font-medium">{r.studentName ?? "—"}</td>
@@ -376,6 +389,7 @@ function PartnerTab() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Invoice | null>(null);
@@ -391,6 +405,7 @@ function PartnerTab() {
     },
   });
   const rows: Invoice[] = resp?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const total: number = resp?.meta?.total ?? rows.length;
 
   const updateMutation = useMutation({
@@ -410,9 +425,13 @@ function PartnerTab() {
         <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Invoice #", "Student", "Provider Type", "Amount", "Due", "Status", ""].map(h => (
-                <th key={h} className={cn("px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide", h === "Amount" ? "text-right" : "text-left")}>{h}</th>
-              ))}
+              <SortableTh col="invoiceNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Invoice #</SortableTh>
+              <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Student</SortableTh>
+              <SortableTh col="providerType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Provider Type</SortableTh>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Amount</th>
+              <SortableTh col="dueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Due</SortableTh>
+              <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Status</SortableTh>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left w-20" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -421,7 +440,7 @@ function PartnerTab() {
                 <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">
                   <Handshake className="w-8 h-8 mx-auto mb-3 opacity-30" />No partner invoices found
                 </td></tr>
-              ) : rows.map(r => (
+              ) : sorted.map(r => (
                 <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3 font-medium">{r.studentName ?? "—"}</td>

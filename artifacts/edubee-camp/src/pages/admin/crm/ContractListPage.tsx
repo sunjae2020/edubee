@@ -8,6 +8,7 @@ import {
   MoreHorizontal, ChevronLeft, ChevronRight as ChevronRightIcon,
 } from "lucide-react";
 import { format, differenceInWeeks } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -116,6 +117,7 @@ function ActiveTag({ label, onRemove }: { label: string; onRemove: () => void })
 // ── Main Component ─────────────────────────────────────────────────────────
 export default function ContractListPage() {
   const [, navigate] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
 
   // Filter state
   const [search,    setSearch]    = useState("");
@@ -184,6 +186,7 @@ export default function ContractListPage() {
   });
 
   const rows: ContractRow[]    = resp?.data       ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const pagination: Pagination = resp?.pagination ?? { total: 0, page: 1, pageSize: 10, totalPages: 1 };
   const summary: Summary       = resp?.summary    ?? { activeCount: 0, arOutstanding: 0, apPayable: 0, commissionEstimate: 0 };
 
@@ -360,17 +363,17 @@ export default function ContractListPage() {
             <thead>
               <tr className="border-b border-[#E8E6E2]" style={{ background: "#FAFAF9" }}>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] w-8"><input type="checkbox" /></th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Contract Ref</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Student</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">School / Program</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">From</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">To</th>
+                <SortableTh col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Contract Ref</SortableTh>
+                <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Student</SortableTh>
+                <SortableTh col="programName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">School / Program</SortableTh>
+                <SortableTh col="startDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">From</SortableTh>
+                <SortableTh col="endDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">To</SortableTh>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Dur.</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Value</th>
+                <SortableTh col="totalValue" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Value</SortableTh>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">AR</th>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">AP</th>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] min-w-[90px]">Collected</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Status</th>
+                <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Status</SortableTh>
                 <th className="px-4 py-3 w-8"></th>
               </tr>
             </thead>
@@ -384,7 +387,7 @@ export default function ContractListPage() {
                   ))}
                 </tr>
               ))}
-              {!isLoading && rows.length === 0 && (
+              {!isLoading && sorted.length === 0 && (
                 <tr>
                   <td colSpan={13} className="text-center py-16 text-[#A8A29E]">
                     <FileText size={32} className="mx-auto mb-3 opacity-40" />

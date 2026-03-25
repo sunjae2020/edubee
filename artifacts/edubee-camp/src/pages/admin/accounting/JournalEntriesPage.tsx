@@ -8,6 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -143,6 +144,7 @@ function CoaCell({ code, name, side }: { code: string; name?: string; side: "DR"
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function JournalEntriesPage() {
   const [fromDate,   setFromDate]   = useState("");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [toDate,     setToDate]     = useState("");
   const [entryType,  setEntryType]  = useState("");
   const [showFilter, setShowFilter] = useState(false);
@@ -180,6 +182,7 @@ export default function JournalEntriesPage() {
   });
 
   const entries: JournalEntry[] = jeData?.data ?? EMPTY_JE;
+  const sorted = useSorted(entries, sortBy, sortDir);
   const summary = summaryData;
   const balance = balanceData;
 
@@ -347,12 +350,12 @@ export default function JournalEntriesPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-32">Date</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Entry Type</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Debit Account</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Credit Account</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-32">Amount (AUD)</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Description</th>
+              <SortableTh col="entryDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-32">Date</SortableTh>
+              <SortableTh col="entryType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Entry Type</SortableTh>
+              <SortableTh col="debitAccountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Debit Account</SortableTh>
+              <SortableTh col="creditAccountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Credit Account</SortableTh>
+              <SortableTh col="amount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-right px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-32">Amount (AUD)</SortableTh>
+              <SortableTh col="description" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Description</SortableTh>
               <th className="text-center px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-20">Source</th>
             </tr>
           </thead>
@@ -379,7 +382,7 @@ export default function JournalEntriesPage() {
                 </td>
               </tr>
             ) : (
-              entries.map(je => {
+              sorted.map(je => {
                 const typeStyle = ENTRY_TYPE_STYLE[je.entryType ?? ""] ?? { bg: "#F4F3F1", text: "#57534E" };
                 return (
                   <tr key={je.id} className="hover:bg-stone-50 transition-colors">

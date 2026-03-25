@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarCheck, Video, MapPin, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -48,6 +49,7 @@ export default function Interviews() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [selected, setSelected] = useState<Interview | null>(null);
+  const { sortBy, sortDir, onSort } = useSortState();
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState<Partial<Interview>>({});
 
@@ -56,6 +58,7 @@ export default function Interviews() {
     queryFn: () => axios.get(`${BASE}/api/interview-schedules`).then(r => r.data),
   });
   const rows: Interview[] = data?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
 
   const updateMutation = useMutation({
     mutationFn: (payload: Partial<Interview>) => axios.patch(`${BASE}/api/interview-schedules/${selected!.id}`, payload).then(r => r.data),
@@ -92,15 +95,15 @@ export default function Interviews() {
         <div className="rounded-lg border overflow-x-auto bg-white">
           <table className="w-full min-w-[860px] text-sm">
             <thead><tr className="border-b bg-muted/30">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Application</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Scheduled</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Format</th>
+              <SortableTh col="applicationNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Application</SortableTh>
+              <SortableTh col="scheduledAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Scheduled</SortableTh>
+              <SortableTh col="format" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Format</SortableTh>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Location / Link</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Result</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+              <SortableTh col="result" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Result</SortableTh>
+              <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
             </tr></thead>
             <tbody>
-              {rows.map(r => (
+              {sorted.map(r => (
                 <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3] cursor-pointer transition-colors" onClick={() => openSheet(r)}>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.applicationId?.slice(0, 8) ?? "—"}</td>
                   <td className="px-4 py-3 text-xs whitespace-nowrap">{new Date(r.scheduledDatetime).toLocaleString("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>

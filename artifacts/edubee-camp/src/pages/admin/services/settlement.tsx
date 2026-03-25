@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import axios from "axios";
 import { format, parseISO } from "date-fns";
 import { Search, Plus, MapPin, Calendar, User, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -61,6 +62,7 @@ export default function Settlement() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [, navigate] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
@@ -77,6 +79,7 @@ export default function Settlement() {
       }).then(r => r.data.data ?? []),
   });
   const rows: Rec[] = (data ?? []).filter((r: Rec) => {
+  const sorted = useSorted(rows, sortBy, sortDir);
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (r.studentName ?? "").toLowerCase().includes(q)
@@ -176,13 +179,18 @@ export default function Settlement() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
-                {["Student","Arrival Date","Assigned Consultant","Service Fee","Status","Created"].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">{h}</th>
-                ))}
+                <>
+              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Student</SortableTh>
+              <SortableTh key="Arrival Date" col="arrivalDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Arrival Date</SortableTh>
+              <SortableTh key="Assigned Consultant" col="consultantName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Assigned Consultant</SortableTh>
+              <SortableTh key="Service Fee" col="serviceFee" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Service Fee</SortableTh>
+              <SortableTh key="Status" col="overallStatus" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Status</SortableTh>
+              <SortableTh key="Created" col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Created</SortableTh>
+            </>
               </tr>
             </thead>
             <tbody>
-              {rows.map(r => (
+              {sorted.map(r => (
                 <tr key={r.id}
                   onClick={() => navigate(`${BASE}/admin/services/settlement/${r.id}`)}
                   className="border-b border-[#E8E6E2] cursor-pointer transition-colors hover:bg-[#FAFAF9]">

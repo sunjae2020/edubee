@@ -5,6 +5,7 @@ import axios from "axios";
 import { AlertTriangle, ChevronRight, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format, differenceInDays, parseISO } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -102,6 +103,7 @@ function PipelineStepper({
 export default function StudyAbroadPage() {
   const qc                            = useQueryClient();
   const [, navigate]                  = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const [activeStage, setActiveStage] = useState("");
   const [search, setSearch]           = useState("");
   const [page, setPage]               = useState(1);
@@ -130,6 +132,7 @@ export default function StudyAbroadPage() {
   });
 
   const rows: StudyAbroadRow[] = data?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const allRows: StudyAbroadRow[] = allData?.data ?? [];
   const totalPages = data?.meta?.totalPages ?? 1;
   const alertCount = alertsData?.count ?? 0;
@@ -224,9 +227,16 @@ export default function StudyAbroadPage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              {["Student", "Account / Contract", "Stage", "COE #", "Visa Type", "Visa Expiry", "Staff", "Status"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Account / Contract" col="accountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Account / Contract</SortableTh>
+              <SortableTh key="Stage" col="applicationStage" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Stage</SortableTh>
+              <SortableTh key="COE #" col="coeNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">COE #</SortableTh>
+              <SortableTh key="Visa Type" col="visaType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Visa Type</SortableTh>
+              <SortableTh key="Visa Expiry" col="visaExpiry" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Visa Expiry</SortableTh>
+              <SortableTh key="Staff" col="staffName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Staff</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -236,7 +246,7 @@ export default function StudyAbroadPage() {
             {!isLoading && rows.length === 0 && (
               <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
             )}
-            {rows.map(row => {
+            {sorted.map(row => {
               const stage   = row.applicationStage ?? "counseling";
               const badge   = STAGE_BADGE[stage] ?? STAGE_BADGE.counseling;
               const staffName = row.staffFirstName

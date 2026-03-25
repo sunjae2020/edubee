@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ListPagination } from "@/components/ui/list-pagination";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import {
   FolderOpen, Search, Eye, Download, Trash2, FileText, FileImage,
   File, Loader2, ExternalLink, X, HistoryIcon,
@@ -64,6 +65,7 @@ export default function DocumentsPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [, navigate] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const { user } = useAuth();
 
   const [entityType, setEntityType] = useState("");
@@ -132,6 +134,7 @@ export default function DocumentsPage() {
   }
 
   const docs = data?.data ?? [];
+  const sorted = useSorted(docs, sortBy, sortDir);
   const total = data?.meta?.total ?? docs.length;
 
   const isAdmin = ["super_admin", "admin"].includes(user?.role ?? "");
@@ -224,12 +227,12 @@ export default function DocumentsPage() {
             <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[220px]">Document</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[120px]">Entity</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[100px]">Category</th>
+                  <SortableTh col="filename" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[220px]">Document</SortableTh>
+                  <SortableTh col="entityType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[120px]">Entity</SortableTh>
+                  <SortableTh col="category" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[100px]">Category</SortableTh>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[100px]">Uploaded by</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[90px]">Uploaded</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[90px]">Status</th>
+                  <SortableTh col="uploadedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[90px]">Uploaded</SortableTh>
+                  <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[90px]">Status</SortableTh>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[80px]">Size</th>
                   <th className="px-4 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase min-w-[120px]">Actions</th>
                 </tr>

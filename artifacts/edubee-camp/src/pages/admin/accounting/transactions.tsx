@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, Plus, Loader2, Search, X } from "lucide-react";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
@@ -110,6 +111,7 @@ export default function Transactions() {
   const qc = useQueryClient();
 
   const [search, setSearch]       = useState("");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage]           = useState(1);
   const [selected, setSelected]   = useState<Transaction | null>(null);
@@ -128,6 +130,7 @@ export default function Transactions() {
     },
   });
   const rows: Transaction[] = resp?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const total: number = resp?.meta?.total ?? 0;
 
   const { data: accounts   = [] } = useQuery<LookupItem[]>({ queryKey: ["tx-lookup-accounts"],    queryFn: () => axios.get(`${BASE}/api/transactions-lookup/accounts`).then(r => r.data),    staleTime: 60000 });
@@ -185,9 +188,15 @@ export default function Transactions() {
         <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Type", "Description", "Amount", "Date", "Ref #", "Status", ""].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Type" col="transactionType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</SortableTh>
+              <SortableTh key="Description" col="description" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Description</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Amount</th>
+              <SortableTh key="Date" col="transactionDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</SortableTh>
+              <SortableTh key="Ref #" col="refNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ref #</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20" />
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -202,7 +211,7 @@ export default function Transactions() {
                   No transactions found
                 </td>
               </tr>
-            ) : rows.map(r => (
+            ) : sorted.map(r => (
               <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">

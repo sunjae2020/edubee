@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { format, parseISO } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -45,6 +46,7 @@ function fmtDate(d: string | null | undefined): string {
 export default function OtherServicePage() {
   const qc               = useQueryClient();
   const [, navigate]     = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const [search, setSearch]   = useState("");
   const [status, setStatus]   = useState("");
   const [page, setPage]       = useState(1);
@@ -62,6 +64,7 @@ export default function OtherServicePage() {
   });
 
   const rows: OtherServiceRow[] = data?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const totalPages              = data?.meta?.totalPages ?? 1;
 
   const createMutation = useMutation({
@@ -120,9 +123,16 @@ export default function OtherServicePage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              {["Contract", "Student", "Service Type", "Title", "Period", "Staff", "Status", "Fee"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Contract" col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Contract</SortableTh>
+              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Service Type" col="serviceType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Service Type</SortableTh>
+              <SortableTh key="Title" col="title" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Title</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Period</th>
+              <SortableTh key="Staff" col="staffName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Staff</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+              <SortableTh key="Fee" col="fee" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Fee</SortableTh>
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -132,7 +142,7 @@ export default function OtherServicePage() {
             {!isLoading && rows.length === 0 && (
               <tr><td colSpan={8} className="text-center py-10 text-stone-400">No records found</td></tr>
             )}
-            {rows.map(row => {
+            {sorted.map(row => {
               const badge = STATUS_STYLE[row.status] ?? { bg: "#F4F3F1", text: "#57534E" };
               return (
                 <tr key={row.id}

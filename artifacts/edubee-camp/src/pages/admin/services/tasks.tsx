@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -77,6 +78,7 @@ function TypeBadge({ type }: { type: string }) {
 export default function TasksPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const qc = useQueryClient();
   const role = user?.role ?? "";
   const isParent = role === "parent_client";
@@ -115,6 +117,7 @@ export default function TasksPage() {
   });
 
   const tasks: TaskRec[] = data?.data ?? [];
+  const sorted = useSorted(tasks, sortBy, sortDir);
 
   function openDetail(t: TaskRec) {
     axios.get(`${BASE}/api/tasks/${t.id}`).then(r => {
@@ -258,9 +261,17 @@ export default function TasksPage() {
           <table className="w-full min-w-[860px] text-sm">
             <thead>
               <tr className="border-b border-[#E7E5E4] bg-[#FAFAF9]">
-                {["Task #", "Type", "Category", "Subject", "Submitted by", "Assigned", "Priority", "Status", "Created"].map(h => (
-                  <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">{h}</th>
-                ))}
+                <>
+              <SortableTh key="Task #" col="taskNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Task #</SortableTh>
+              <SortableTh key="Type" col="taskType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Type</SortableTh>
+              <SortableTh key="Category" col="category" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Category</SortableTh>
+              <SortableTh key="Subject" col="subject" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Subject</SortableTh>
+              <SortableTh key="Submitted by" col="submittedBy" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Submitted by</SortableTh>
+              <SortableTh key="Assigned" col="assignedName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Assigned</SortableTh>
+              <SortableTh key="Priority" col="priority" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Priority</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Status</SortableTh>
+              <SortableTh key="Created" col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Created</SortableTh>
+            </>
               </tr>
             </thead>
             <tbody>
@@ -273,7 +284,7 @@ export default function TasksPage() {
                   <Ticket className="w-8 h-8 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">No tasks found</p>
                 </td></tr>
-              ) : tasks.map(t => (
+              ) : sorted.map(t => (
                 <tr
                   key={t.id}
                   onClick={() => openDetail(t)}
@@ -311,7 +322,7 @@ export default function TasksPage() {
                 <span className="text-xs text-[#A8A29E] bg-[#F4F3F1] px-1.5 rounded-full">{col.tasks.length}</span>
               </div>
               <div className="space-y-2">
-                {col.tasks.map(t => (
+                {col.sorted.map(t => (
                   <div
                     key={t.id}
                     onClick={() => openDetail(t)}

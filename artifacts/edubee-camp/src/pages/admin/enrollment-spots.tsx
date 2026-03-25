@@ -4,6 +4,7 @@ import axios from "axios";
 import { differenceInDays } from "date-fns";
 import { format } from "date-fns";
 import { ListChecks } from "lucide-react";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -80,6 +81,7 @@ export default function EnrollmentSpots() {
   });
 
   const rows = data?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
 
   const grouped: GroupedData[] = [];
   const groupMap = new Map<string, GroupedData>();
@@ -136,18 +138,10 @@ export default function EnrollmentSpots() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b border-border bg-muted/40">
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                  Enroll Name
-                </th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                  Period
-                </th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                  Duration
-                </th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                  DOB Range
-                </th>
+                <SortableTh col="enrollName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Enroll Name</SortableTh>
+                <SortableTh col="startDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Period</SortableTh>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Duration</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">DOB Range</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">
                   Total Spots
                 </th>
@@ -170,7 +164,7 @@ export default function EnrollmentSpots() {
                       <div className="flex items-center gap-2">
                         <span>{group.groupName}</span>
                         <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-bold">
-                          {group.rows.length}
+                          {group.sorted.length}
                         </span>
                       </div>
                     </td>

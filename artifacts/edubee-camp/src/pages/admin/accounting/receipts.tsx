@@ -6,6 +6,7 @@ import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { ClipboardList, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
@@ -30,6 +31,7 @@ interface Receipt {
 
 export default function Receipts() {
   const [search, setSearch] = useState("");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Receipt | null>(null);
@@ -45,6 +47,7 @@ export default function Receipts() {
     },
   });
   const rows: Receipt[] = resp?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const total: number = resp?.meta?.total ?? rows.length;
 
   const fmtAmount = (amount?: string | number | null, currency?: string | null) => {
@@ -66,9 +69,16 @@ export default function Receipts() {
         <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Receipt #", "Student", "Payer", "Amount", "Method", "Date", "Status", ""].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Receipt #" col="receiptNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Receipt #</SortableTh>
+              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Payer" col="payerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Payer</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Amount</th>
+              <SortableTh key="Method" col="paymentMethod" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Method</SortableTh>
+              <SortableTh key="Date" col="receiptDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20" />
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -80,7 +90,7 @@ export default function Receipts() {
               <tr><td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
                 <ClipboardList className="w-8 h-8 mx-auto mb-3 opacity-30" />No receipts found
               </td></tr>
-            ) : rows.map(r => (
+            ) : sorted.map(r => (
               <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                 <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{r.receiptNumber ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>

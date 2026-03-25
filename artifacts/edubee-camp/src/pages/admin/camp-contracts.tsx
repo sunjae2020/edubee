@@ -20,6 +20,7 @@ import {
   Pencil, X, Check, Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
@@ -106,6 +107,7 @@ export default function CampContracts() {
   const qc = useQueryClient();
   const searchStr = useSearch();
   const [, setLocation] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const targetContractId = new URLSearchParams(searchStr).get("contractId");
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
@@ -127,6 +129,7 @@ export default function CampContracts() {
     },
   });
   const contracts: Contract[] = resp?.data ?? [];
+  const sorted = useSorted(contracts, sortBy, sortDir);
   const total: number = resp?.meta?.total ?? contracts.length;
 
   const { data: targetContract } = useQuery({
@@ -200,9 +203,15 @@ export default function CampContracts() {
         <table className="w-full min-w-[860px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Contract #", "Student", "Status", "Total Amount", "Start Date", "End Date", ""].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Contract #" col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contract #</SortableTh>
+              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
+              <SortableTh key="Total Amount" col="totalAmount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Amount</SortableTh>
+              <SortableTh key="Start Date" col="startDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Start Date</SortableTh>
+              <SortableTh key="End Date" col="endDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">End Date</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20" />
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -214,7 +223,7 @@ export default function CampContracts() {
               ))
             ) : contracts.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">No contracts found</td></tr>
-            ) : contracts.map(c => (
+            ) : sorted.map(c => (
               <tr key={c.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                 onClick={() => setLocation(`${BASE}/admin/camp-contracts/${c.id}`)}>
                 <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{c.contractNumber}</td>

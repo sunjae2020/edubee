@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Layers, Pencil, Plus, Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -36,6 +37,7 @@ export default function ProductGroups() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [, navigate] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
 
   const [search, setSearch]       = useState("");
   const [statusFilter, setStatus] = useState("Active");
@@ -124,9 +126,14 @@ export default function ProductGroups() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#F4F3F1] bg-[#FAFAF9]">
-              {["Name", "Description", "Types", "Status", "Created", "Actions"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Name" col="name" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Name</SortableTh>
+              <SortableTh key="Description" col="description" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Description</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Types</th>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Status</SortableTh>
+              <SortableTh key="Created" col="createdOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Created</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Actions</th>
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F4F3F1]">

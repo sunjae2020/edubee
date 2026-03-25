@@ -15,6 +15,7 @@ import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
 import { MapIcon, Pencil, ChevronRight, FileText, ArrowUpRight, CalendarRange, Banknote } from "lucide-react";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
@@ -101,6 +102,7 @@ export default function TourManagement() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
@@ -120,6 +122,7 @@ export default function TourManagement() {
     },
   });
   const rows: Rec[] = resp?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const total: number = resp?.meta?.total ?? rows.length;
 
   const saveMutation = useMutation({
@@ -142,9 +145,16 @@ export default function TourManagement() {
         <table className="w-full min-w-[820px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Contract #", "Student", "Tour Name", "Date", "Meeting Point", "Group Size", "Status", ""].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Contract #" col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contract #</SortableTh>
+              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Tour Name" col="tourName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tour Name</SortableTh>
+              <SortableTh key="Date" col="tourDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Meeting Point</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Group Size</th>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20" />
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -156,7 +166,7 @@ export default function TourManagement() {
               <tr><td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
                 <MapIcon className="w-8 h-8 mx-auto mb-3 opacity-30" />No tour records found
               </td></tr>
-            ) : rows.map(r => (
+            ) : sorted.map(r => (
               <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`${BASE}/admin/services/tour/${r.id}`)}>
                 <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F5821F]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>

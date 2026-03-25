@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -425,6 +426,7 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PaymentsPage() {
   const [tab, setTab]         = useState<"payments" | "journal">("payments");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [showCreate, setShowCreate] = useState(false);
   const [typeFilter, setTypeFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -452,7 +454,9 @@ export default function PaymentsPage() {
   });
 
   const payments: PaymentHeader[] = paymentsData?.data ?? [];
+  const sortedPayments = useSorted(payments, sortBy, sortDir);
   const jes: JournalEntry[]       = jeData?.data       ?? [];
+  const sortedJes = useSorted(jes, sortBy, sortDir);
 
   return (
     <div className="p-6 space-y-6">
@@ -518,9 +522,14 @@ export default function PaymentsPage() {
             <table className="w-full text-sm">
               <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
-                  {["PAY Ref", "Date", "Type", "From", "To", "Amount", "Status", "Actions"].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
-                  ))}
+                  <SortableTh col="payRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">PAY Ref</SortableTh>
+                  <SortableTh col="paymentDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Date</SortableTh>
+                  <SortableTh col="paymentType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Type</SortableTh>
+                  <SortableTh col="fromName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">From</SortableTh>
+                  <SortableTh col="toName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">To</SortableTh>
+                  <SortableTh col="totalAmount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Amount</SortableTh>
+                  <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -530,7 +539,7 @@ export default function PaymentsPage() {
                 {!paymentsLoading && payments.length === 0 && (
                   <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No payments yet</td></tr>
                 )}
-                {payments.map(p => {
+                {sortedPayments.map(p => {
                   const notesObj = parseNotes(p.notes);
                   const statusStyle = STATUS_STYLE[p.status] ?? STATUS_STYLE.Active;
                   const typeBg = TYPE_STYLE[p.paymentType] ?? "#F4F3F1";
@@ -574,9 +583,14 @@ export default function PaymentsPage() {
           <table className="w-full text-sm">
             <thead className="bg-stone-50 border-b border-stone-100">
               <tr>
-                {["Date", "DR Account", "CR Account", "Amount", "Type", "Payment Ref", "Auto", "Actions"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
-                ))}
+                <SortableTh col="entryDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Date</SortableTh>
+                  <SortableTh col="debitAccountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">DR Account</SortableTh>
+                  <SortableTh col="creditAccountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">CR Account</SortableTh>
+                  <SortableTh col="amount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Amount</SortableTh>
+                  <SortableTh col="entryType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Type</SortableTh>
+                  <SortableTh col="paymentRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Payment Ref</SortableTh>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Auto</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -586,7 +600,7 @@ export default function PaymentsPage() {
               {!jeLoading && jes.length === 0 && (
                 <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No journal entries yet</td></tr>
               )}
-              {jes.map(je => (
+              {sortedJes.map(je => (
                 <tr key={je.id} className={`hover:bg-stone-50 transition-colors ${je.paymentStatus === "Void" ? "opacity-50" : ""}`}>
                   <td className="px-4 py-3 text-stone-700">{fmtDate(je.entryDate)}</td>
                   <td className="px-4 py-3">

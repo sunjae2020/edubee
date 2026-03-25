@@ -5,6 +5,7 @@ import axios from "axios";
 import { Search, Home, CheckCircle2, LogIn, HeartPulse, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format, parseISO, differenceInWeeks, differenceInCalendarDays } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -53,6 +54,7 @@ function welfareDueCount(rows: AccomRow[]): number {
 export default function AccommodationPage() {
   const qc              = useQueryClient();
   const [, navigate]    = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const [search, setSearch]   = useState("");
   const [status, setStatus]   = useState("");
   const [page, setPage]       = useState(1);
@@ -75,6 +77,7 @@ export default function AccommodationPage() {
   });
 
   const rows: AccomRow[]    = data?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const allRows: AccomRow[] = allData?.data ?? [];
   const totalPages          = data?.meta?.totalPages ?? 1;
 
@@ -164,9 +167,16 @@ export default function AccommodationPage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              {["Student", "Provider / Host", "Type", "Check-in", "Check-out", "Weekly Rate", "Welfare", "Status"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Provider / Host" col="providerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Provider / Host</SortableTh>
+              <SortableTh key="Type" col="accommodationType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Type</SortableTh>
+              <SortableTh key="Check-in" col="checkIn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Check-in</SortableTh>
+              <SortableTh key="Check-out" col="checkOut" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Check-out</SortableTh>
+              <SortableTh key="Weekly Rate" col="weeklyRate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Weekly Rate</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Welfare</th>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -176,7 +186,7 @@ export default function AccommodationPage() {
             {!isLoading && rows.length === 0 && (
               <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
             )}
-            {rows.map(row => {
+            {sorted.map(row => {
               const badge   = STATUS_BADGE[row.status ?? "searching"] ?? STATUS_BADGE.searching;
               const checks  = row.welfareCheckDates ?? [];
               const lastCheck = checks.length > 0 ? checks[checks.length - 1] : null;

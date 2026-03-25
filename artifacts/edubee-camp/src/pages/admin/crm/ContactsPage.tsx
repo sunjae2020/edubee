@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
@@ -109,6 +110,7 @@ export default function ContactsPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
 
   const [search, setSearch]           = useState("");
   const [statusFilter, setStatusFilter]       = useState("all");
@@ -133,6 +135,7 @@ export default function ContactsPage() {
   });
 
   const rows: Contact[]   = resp?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const total: number     = resp?.meta?.total ?? rows.length;
   const totalPages: number = resp?.meta?.totalPages ?? 1;
 
@@ -229,12 +232,12 @@ export default function ContactsPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-8">
                 <input type="checkbox" className="rounded" />
               </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Name</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Email</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Mobile</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Nationality</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Account</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
+              <SortableTh col="firstName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Name</SortableTh>
+              <SortableTh col="email" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Email</SortableTh>
+              <SortableTh col="mobile" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Mobile</SortableTh>
+              <SortableTh col="nationality" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Nationality</SortableTh>
+              <SortableTh col="primaryAccountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Account</SortableTh>
+              <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
@@ -245,7 +248,7 @@ export default function ContactsPage() {
             {!isLoading && rows.length === 0 && (
               <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
             )}
-            {rows.map(c => {
+            {sorted.map(c => {
               const fullName = `${c.firstName} ${c.lastName}`;
               return (
                 <tr key={c.id} className="hover:bg-stone-50 transition-colors">

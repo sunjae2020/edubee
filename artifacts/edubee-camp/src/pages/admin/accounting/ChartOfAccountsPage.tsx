@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -143,6 +144,7 @@ function EditSheet({ account, onClose, isNew, isSuperAdmin }: EditSheetProps) {
 
 export default function ChartOfAccountsPage() {
   const [activeTab, setActiveTab] = useState("asset");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [editAccount, setEditAccount] = useState<CoaRow | null>(null);
   const [showNew, setShowNew] = useState(false);
 
@@ -156,6 +158,7 @@ export default function ChartOfAccountsPage() {
 
   const allRows: CoaRow[] = data?.data ?? [];
   const filtered = allRows.filter(r => r.accountType === activeTab);
+  const sorted = useSorted(filtered, sortBy, sortDir);
   const currentTab = TABS.find(t => t.type === activeTab)!;
 
   return (
@@ -209,11 +212,13 @@ export default function ChartOfAccountsPage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              {["Code", "Account Name", "Description", "Active", ...(isSuperAdmin ? [""] : [])].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
-                  {h}
-                </th>
-              ))}
+              <>
+                <SortableTh col="code" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Code</SortableTh>
+                <SortableTh col="name" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Account Name</SortableTh>
+                <SortableTh col="description" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Description</SortableTh>
+                <SortableTh col="isActive" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Active</SortableTh>
+                {isSuperAdmin && <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-20" />}
+              </>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -223,7 +228,7 @@ export default function ChartOfAccountsPage() {
             {!isLoading && filtered.length === 0 && (
               <tr><td colSpan={5} className="text-center py-12 text-stone-400 text-sm">No accounts in this category</td></tr>
             )}
-            {filtered.map(row => (
+            {sorted.map(row => (
               <tr key={row.id} className="hover:bg-stone-50 transition-colors">
                 <td className="px-4 py-3">
                   <span

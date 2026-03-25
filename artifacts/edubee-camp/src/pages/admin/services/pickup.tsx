@@ -6,6 +6,7 @@ import { format, parseISO, isToday } from "date-fns";
 import { Car, Clock, MapPin, User, ChevronRight, GraduationCap, Briefcase } from "lucide-react";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 15;
@@ -72,7 +73,7 @@ function TodayBanner({ rows, onNavigate }: { rows: PickupRow[]; onNavigate: (id:
         </h2>
       </div>
       <div className="space-y-2">
-        {rows.map(row => {
+        {sorted.map(row => {
           const { time } = fmtDatetime(row.pickupDatetime);
           const badge = STATUS_STYLE[row.status ?? "pending"] ?? STATUS_STYLE.pending;
           return (
@@ -136,6 +137,7 @@ function SourceTabs({ active, onChange }: { active: Source; onChange: (s: Source
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PickupManagement() {
   const [, navigate] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const [search, setSearch]         = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
   const [source, setSource]         = useState<Source>("all");
@@ -163,6 +165,7 @@ export default function PickupManagement() {
 
   const todayRows: PickupRow[] = todayData?.data ?? [];
   const rows: PickupRow[]      = resp?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const total: number          = resp?.meta?.total ?? rows.length;
 
   function handleSourceChange(s: Source) {
@@ -192,9 +195,17 @@ export default function PickupManagement() {
         <table className="w-full min-w-[820px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Contract #", "Student", "Type", "Pickup Time", "From → To", "Driver", "Vehicle", "Status", ""].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Contract #" col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contract #</SortableTh>
+              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Type" col="pickupType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</SortableTh>
+              <SortableTh key="Pickup Time" col="pickupTime" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pickup Time</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">From → To</th>
+              <SortableTh key="Driver" col="driverName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Driver</SortableTh>
+              <SortableTh key="Vehicle" col="vehicleInfo" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vehicle</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20" />
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -213,7 +224,7 @@ export default function PickupManagement() {
                   No pickup records found
                 </td>
               </tr>
-            ) : rows.map(row => {
+            ) : sorted.map(row => {
               const { date, time } = fmtDatetime(row.pickupDatetime);
               const todayFlag = row.pickupDatetime ? isToday(parseISO(row.pickupDatetime)) : false;
               return (

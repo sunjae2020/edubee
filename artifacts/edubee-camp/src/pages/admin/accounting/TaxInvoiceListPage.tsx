@@ -6,6 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE   = import.meta.env.BASE_URL.replace(/\/$/, "");
 const EMPTY: any[] = [];
@@ -43,6 +44,7 @@ export default function TaxInvoiceListPage() {
   const { toast }  = useToast();
   const qc         = useQueryClient();
   const [typeTab,   setTypeTab]   = useState("");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [statusTab, setStatusTab] = useState("");
 
   const qs = new URLSearchParams();
@@ -60,6 +62,7 @@ export default function TaxInvoiceListPage() {
   });
 
   const rows: any[] = data?.data ?? EMPTY;
+  const sorted = useSorted(rows, sortBy, sortDir);
 
   const totals = rows.reduce((acc, r) => {
     acc.total     += parseFloat(r.totalAmount ?? "0");
@@ -172,9 +175,18 @@ export default function TaxInvoiceListPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#E8E6E2] bg-[#FAFAF9]">
-                {["Invoice Ref", "Date", "Type", "School", "Student / Program", "Commission", "GST", "Total", "Status", "Actions"].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-[#78716C] uppercase tracking-wide whitespace-nowrap">{h}</th>
-                ))}
+                <>
+              <SortableTh key="Invoice Ref" col="invoiceRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-[#78716C] uppercase tracking-wide whitespace-nowrap">Invoice Ref</SortableTh>
+              <SortableTh key="Date" col="invoiceDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-[#78716C] uppercase tracking-wide whitespace-nowrap">Date</SortableTh>
+              <SortableTh key="Type" col="invoiceType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-[#78716C] uppercase tracking-wide whitespace-nowrap">Type</SortableTh>
+              <SortableTh key="School" col="schoolName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-[#78716C] uppercase tracking-wide whitespace-nowrap">School</SortableTh>
+              <SortableTh key="Student / Program" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-[#78716C] uppercase tracking-wide whitespace-nowrap">Student / Program</SortableTh>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-[#78716C] uppercase tracking-wide whitespace-nowrap">Commission</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-[#78716C] uppercase tracking-wide whitespace-nowrap">GST</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-[#78716C] uppercase tracking-wide whitespace-nowrap">Total</th>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-[#78716C] uppercase tracking-wide whitespace-nowrap">Status</SortableTh>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-[#78716C] uppercase tracking-wide whitespace-nowrap">Actions</th>
+            </>
               </tr>
             </thead>
             <tbody>
@@ -184,7 +196,7 @@ export default function TaxInvoiceListPage() {
               {!isLoading && rows.length === 0 && (
                 <tr><td colSpan={10} className="px-4 py-8 text-center text-[#A8A29E]">No tax invoices found.</td></tr>
               )}
-              {rows.map(row => (
+              {sorted.map(row => (
                 <tr key={row.id} className="border-b border-[#F5F4F2] hover:bg-[#FAFAF9] transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-[#1C1917] font-semibold whitespace-nowrap">{row.invoiceRef}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-[#57534E]">{fmtDate(row.invoiceDate)}</td>

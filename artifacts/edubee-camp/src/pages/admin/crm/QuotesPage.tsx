@@ -5,6 +5,7 @@ import axios from "axios";
 import { Plus, Eye, Pencil, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -39,6 +40,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function QuotesPage() {
   const [, navigate] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const [tab, setTab] = useState<"quotes" | "templates">("quotes");
   const [page, setPage] = useState(1);
 
@@ -59,6 +61,7 @@ export default function QuotesPage() {
   });
 
   const rows: QuoteRow[] = resp?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const totalPages = resp?.meta?.totalPages ?? 1;
 
   return (
@@ -97,9 +100,13 @@ export default function QuotesPage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              {["Quote Ref", "Customer", "Items", "Total (AUD)", "Status", "Expiry", "Actions"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
-              ))}
+              <SortableTh col="quoteRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Quote Ref</SortableTh>
+              <SortableTh col="customerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Customer</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Items</th>
+              <SortableTh col="totalAmount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Total (AUD)</SortableTh>
+              <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+              <SortableTh col="expiryDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Expiry</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -109,7 +116,7 @@ export default function QuotesPage() {
             {!isLoading && rows.length === 0 && (
               <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No quotes found</td></tr>
             )}
-            {rows.map(q => (
+            {sorted.map(q => (
               <tr key={q.id} className="hover:bg-stone-50 transition-colors">
                 <td className="px-4 py-3 font-mono text-xs text-stone-500">{q.quoteRefNumber ?? "—"}</td>
                 <td className="px-4 py-3">

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Percent, Pencil, Plus, Loader2, Search } from "lucide-react";
 import { format, isAfter, isBefore, parseISO } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -56,6 +57,7 @@ export default function Promotions() {
   const qc = useQueryClient();
 
   const [search, setSearch]        = useState("");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [statusFilter, setStatus]  = useState("all");
   const [productFilter, setProduct]= useState("all");
   const [modalOpen, setModalOpen]  = useState(false);
@@ -181,9 +183,15 @@ export default function Promotions() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#F4F3F1] bg-[#FAFAF9]">
-              {["Name", "Product", "Provider", "Period", "Promo Price", "Status", "Actions"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Name" col="name" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Name</SortableTh>
+              <SortableTh key="Product" col="productName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Product</SortableTh>
+              <SortableTh key="Provider" col="providerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Provider</SortableTh>
+              <SortableTh key="Period" col="startDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Period</SortableTh>
+              <SortableTh key="Promo Price" col="promoPrice" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Promo Price</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Status</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Actions</th>
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F4F3F1]">

@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DollarSign, TrendingDown } from "lucide-react";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -41,6 +42,7 @@ interface Rec { id: string; contractId?: string | null; serviceDescription?: str
 export default function MySettlements() {
   const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState("all");
+  const { sortBy, sortDir, onSort } = useSortState();
 
   const { data: settlements, isLoading } = useQuery({
     queryKey: ["my-settlements"],
@@ -53,6 +55,7 @@ export default function MySettlements() {
   });
 
   const rows: Rec[] = settlements?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const filtered = statusFilter === "all" ? rows : rows.filter(r => r.status === statusFilter);
 
   const isCC = user?.role === "camp_coordinator";
@@ -103,13 +106,13 @@ export default function MySettlements() {
         <div className="rounded-lg border overflow-x-auto bg-white">
           <table className="w-full min-w-[800px] text-sm">
             <thead><tr className="border-b bg-muted/30">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Contract</th>
+              <SortableTh col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Contract</SortableTh>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Description</th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">Gross</th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">Commission</th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">Net (You Receive)</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Settlement Date</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
+              <SortableTh col="settlementDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Settlement Date</SortableTh>
+              <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</SortableTh>
             </tr></thead>
             <tbody>
               {filtered.map(r => (

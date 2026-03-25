@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
@@ -62,6 +63,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function AccountsPage() {
   const [, navigate] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -81,6 +83,7 @@ export default function AccountsPage() {
   });
 
   const rows: Account[] = data?.data  ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const total: number   = data?.total ?? 0;
   const totalPages      = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -149,12 +152,12 @@ export default function AccountsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/30">
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Name</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Category</th>
+              <SortableTh col="name" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Name</SortableTh>
+              <SortableTh col="accountType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</SortableTh>
+              <SortableTh col="accountCategory" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Category</SortableTh>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Primary Contact</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Phone</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+              <SortableTh col="phoneNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Phone</SortableTh>
+              <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
               <th className="px-4 py-2.5 w-20" />
             </tr>
           </thead>
@@ -179,7 +182,7 @@ export default function AccountsPage() {
                 </td>
               </tr>
             ) : (
-              rows.map(row => {
+              sorted.map(row => {
                 const contact = [row.primaryContactFirstName, row.primaryContactLastName]
                   .filter(Boolean).join(" ") || "—";
                 return (

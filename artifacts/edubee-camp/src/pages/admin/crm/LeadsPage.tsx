@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -104,6 +105,7 @@ export default function CrmLeadsPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
 
   const [view, setView]               = useState<"table" | "kanban">("table");
   const [search, setSearch]           = useState("");
@@ -137,6 +139,7 @@ export default function CrmLeadsPage() {
   });
 
   const rows: Lead[] = tableResp?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const totalPages   = tableResp?.meta?.totalPages ?? 1;
 
   const kanbanCols: Array<{ status: string; count: number; cards: Lead[] }> =
@@ -237,9 +240,14 @@ export default function CrmLeadsPage() {
             <table className="w-full text-sm">
               <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
-                  {["Lead Ref", "Contact", "Inquiry Type", "Budget (AUD)", "Expected Start", "Assigned Staff", "Status", "Actions"].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
-                  ))}
+                  <SortableTh col="leadRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Lead Ref</SortableTh>
+                  <SortableTh col="contactName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Contact</SortableTh>
+                  <SortableTh col="inquiryType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Inquiry Type</SortableTh>
+                  <SortableTh col="budget" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Budget (AUD)</SortableTh>
+                  <SortableTh col="expectedStart" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Expected Start</SortableTh>
+                  <SortableTh col="assignedStaff" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Assigned Staff</SortableTh>
+                  <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -249,7 +257,7 @@ export default function CrmLeadsPage() {
                 {!tableLoading && rows.length === 0 && (
                   <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No leads found</td></tr>
                 )}
-                {rows.map(l => (
+                {sorted.map(l => (
                   <tr key={l.id} className="hover:bg-stone-50 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-stone-500">{l.leadRefNumber ?? "—"}</td>
                     <td className="px-4 py-3">

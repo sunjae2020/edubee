@@ -5,6 +5,7 @@ import axios from "axios";
 import { Search, ChevronRight, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format, parseISO } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -94,6 +95,7 @@ function PipelineStepper({
 export default function InternshipPage() {
   const qc                            = useQueryClient();
   const [, navigate]                  = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const [activeStage, setActiveStage] = useState("");
   const [search, setSearch]           = useState("");
   const [page, setPage]               = useState(1);
@@ -116,6 +118,7 @@ export default function InternshipPage() {
   });
 
   const rows: InternshipRow[]    = data?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const allRows: InternshipRow[] = allData?.data ?? [];
   const totalPages               = data?.meta?.totalPages ?? 1;
 
@@ -181,9 +184,14 @@ export default function InternshipPage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              {["Student", "Industry", "Position / Company", "Employment Type", "Start Date", "Status"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Industry" col="industry" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Industry</SortableTh>
+              <SortableTh key="Position / Company" col="positionTitle" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Position / Company</SortableTh>
+              <SortableTh key="Employment Type" col="employmentType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Employment Type</SortableTh>
+              <SortableTh key="Start Date" col="startDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Start Date</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -193,7 +201,7 @@ export default function InternshipPage() {
             {!isLoading && rows.length === 0 && (
               <tr><td colSpan={6} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
             )}
-            {rows.map(row => {
+            {sorted.map(row => {
               const stage = row.status ?? "profile_review";
               const badge = STAGE_STYLE[stage] ?? STAGE_STYLE.profile_review;
               const industries = Array.isArray(row.preferredIndustry)

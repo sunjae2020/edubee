@@ -21,6 +21,7 @@ import {
   Pencil, X, Check, Plus, Trash2, Package, ChevronLeft, ListChecks, FileSignature,
 } from "lucide-react";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
@@ -94,6 +95,7 @@ export default function CampApplications() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
@@ -147,7 +149,8 @@ export default function CampApplications() {
     },
   });
   const apps: Application[] = resp?.data ?? [];
-  const total: number = resp?.meta?.total ?? apps.length;
+  const sorted = useSorted(apps, sortBy, sortDir);
+  const total: number = resp?.meta?.total ?? sorted.length;
 
   const { data: appDetail } = useQuery<{ participants?: Participant[] }>({
     queryKey: ["camp-application-detail", selectedApp?.id],
@@ -246,9 +249,14 @@ export default function CampApplications() {
         <table className="w-full min-w-[860px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Application #", "Student", "Nationality", "Start Date", "Status", ""].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Application #" col="applicationNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Application #</SortableTh>
+              <SortableTh key="Student" col="applicantName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Nationality" col="applicantNationality" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nationality</SortableTh>
+              <SortableTh key="Start Date" col="preferredStartDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Start Date</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20" />
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -258,10 +266,10 @@ export default function CampApplications() {
                   <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                 ))}</tr>
               ))
-            ) : apps.length === 0 ? (
+            ) : sorted.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">No camp applications found</td></tr>
             ) : (
-              apps.map(app => (
+              sorted.map(app => (
                 <tr key={app.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                   onClick={() => setLocation(`${BASE}/admin/camp-applications/${app.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{app.applicationNumber}</td>

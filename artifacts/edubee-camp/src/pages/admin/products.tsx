@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Package, Pencil, Trash2, RefreshCw, Plus } from "lucide-react";
 import ProductDrawer from "@/components/shared/ProductDrawer";
 import ProductAdvancedSearch, { type ProductSearchFilters } from "@/components/shared/ProductAdvancedSearch";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
@@ -94,6 +95,7 @@ function LinkedGroupsCell({ productId }: { productId: string }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function Products() {
   const [, setLocation] = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -161,6 +163,7 @@ export default function Products() {
   });
 
   const products: Product[] = resp?.data ?? [];
+  const sorted = useSorted(products, sortBy, sortDir);
   const total: number       = resp?.meta?.total ?? 0;
 
   const handleSearch = (f: ProductSearchFilters) => {
@@ -253,13 +256,13 @@ export default function Products() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/30">
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provider</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Name</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Currency</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Price</th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Grade</th>
-              <th className="px-4 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Priority</th>
+              <SortableTh col="providerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provider</SortableTh>
+              <SortableTh col="productName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Name</SortableTh>
+              <SortableTh col="productType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</SortableTh>
+              <SortableTh col="currency" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Currency</SortableTh>
+              <SortableTh col="price" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Price</SortableTh>
+              <SortableTh col="productGrade" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Grade</SortableTh>
+              <SortableTh col="productPriority" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Priority</SortableTh>
               <th className="px-4 py-2.5 w-20" />
             </tr>
           </thead>
@@ -278,7 +281,7 @@ export default function Products() {
                 </td>
               </tr>
             ) : (
-              products.map(p => (
+              sorted.map(p => (
                 <tr key={p.id}
                   className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                   onClick={() => setLocation(`${BASE}/admin/products/${p.id}`)}>

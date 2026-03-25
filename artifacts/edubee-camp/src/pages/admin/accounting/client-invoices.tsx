@@ -11,6 +11,7 @@ import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
 import { Receipt, Send, ChevronRight, CreditCard, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
@@ -208,6 +209,7 @@ export default function ClientInvoices() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Invoice | null>(null);
@@ -224,6 +226,7 @@ export default function ClientInvoices() {
     },
   });
   const rows: Invoice[] = resp?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const total: number = resp?.meta?.total ?? rows.length;
 
   const updateMutation = useMutation({
@@ -248,9 +251,15 @@ export default function ClientInvoices() {
         <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Invoice #", "Student", "Amount", "Issued", "Due", "Status", ""].map(h => (
-                <th key={h} className={`px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide ${h === "Amount" ? "text-right" : "text-left"}`}>{h}</th>
-              ))}
+              <>
+              <SortableTh key="Invoice #" col="invoiceNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Invoice #</SortableTh>
+              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Student</SortableTh>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Amount</th>
+              <SortableTh key="Issued" col="issuedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Issued</SortableTh>
+              <SortableTh key="Due" col="dueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Due</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left">Status</SortableTh>
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-left w-20" />
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -262,7 +271,7 @@ export default function ClientInvoices() {
               <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">
                 <Receipt className="w-8 h-8 mx-auto mb-3 opacity-30" />No client invoices found
               </td></tr>
-            ) : rows.map(r => (
+            ) : sorted.map(r => (
               <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                 <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{r.invoiceNumber ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>

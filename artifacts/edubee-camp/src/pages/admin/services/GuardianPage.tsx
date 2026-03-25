@@ -5,6 +5,7 @@ import axios from "axios";
 import { Search, AlertCircle, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format, parseISO } from "date-fns";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -38,6 +39,7 @@ function fmtDate(d: string | null | undefined): string {
 export default function GuardianPage() {
   const qc              = useQueryClient();
   const [, navigate]    = useLocation();
+  const { sortBy, sortDir, onSort } = useSortState();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage]     = useState(1);
@@ -60,6 +62,7 @@ export default function GuardianPage() {
   });
 
   const rows: GuardianRow[] = data?.data ?? [];
+  const sorted = useSorted(rows, sortBy, sortDir);
   const totalPages          = data?.meta?.totalPages ?? 1;
   const billingDueCount     = billingData?.count ?? 0;
 
@@ -140,9 +143,14 @@ export default function GuardianPage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              {["Student", "Guardian Staff", "Billing Cycle", "Service Period", "Fee (A$)", "Status"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
-              ))}
+              <>
+              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Guardian Staff" col="guardianName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Guardian Staff</SortableTh>
+              <SortableTh key="Billing Cycle" col="billingCycle" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Billing Cycle</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Service Period</th>
+              <SortableTh key="Fee (A$)" col="fee" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Fee (A$)</SortableTh>
+              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+            </>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -152,7 +160,7 @@ export default function GuardianPage() {
             {!isLoading && rows.length === 0 && (
               <tr><td colSpan={6} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
             )}
-            {rows.map(row => {
+            {sorted.map(row => {
               const badge = STATUS_STYLE[row.status ?? "pending"] ?? STATUS_STYLE.pending;
               const staffName = row.staffFirstName
                 ? `${row.staffFirstName} ${row.staffLastName ?? ""}`.trim()

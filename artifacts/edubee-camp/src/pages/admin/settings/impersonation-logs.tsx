@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Eye, Search, Calendar } from "lucide-react";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -24,10 +25,12 @@ const DEMO_LOGS: LogEntry[] = [
 
 export default function ImpersonationLogs() {
   const [search, setSearch] = useState("");
+  const { sortBy, sortDir, onSort } = useSortState();
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
   const logs = DEMO_LOGS.filter(l => {
+  const sorted = useSorted(logs, sortBy, sortDir);
     if (search) {
       const q = search.toLowerCase();
       return l.actor?.fullName?.toLowerCase().includes(q) || l.target?.fullName?.toLowerCase().includes(q) || l.actor?.email?.toLowerCase().includes(q) || l.ipAddress?.toLowerCase().includes(q);
@@ -70,12 +73,12 @@ export default function ImpersonationLogs() {
       <div className="rounded-xl border overflow-x-auto bg-white">
         <table className="w-full min-w-[720px] text-sm">
           <thead><tr className="border-b bg-muted/30">
-            <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Actor (Who)</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Target (Viewed As)</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Started</th>
+            <SortableTh col="actorName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Actor (Who)</SortableTh>
+            <SortableTh col="targetName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Target (Viewed As)</SortableTh>
+            <SortableTh col="startedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Started</SortableTh>
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Duration</th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Pages Visited</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">IP Address</th>
+            <SortableTh col="ipAddress" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">IP Address</SortableTh>
           </tr></thead>
           <tbody>
             {logs.length === 0 ? (
