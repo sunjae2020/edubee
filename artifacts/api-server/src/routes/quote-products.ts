@@ -138,23 +138,24 @@ router.patch("/quote-products/:id", authenticate, requireRole(...ADMIN_ROLES), a
 // ─── POST /api/quote-products ───────────────────────────────────────────────
 router.post("/quote-products", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { quote_id, name, item_description, price, quantity, is_initial_payment, sort_index, manual_input, product_id } = req.body;
+    const { quote_id, name, item_description, price, quantity, is_initial_payment, sort_index, manual_input, product_id, service_module_type } = req.body;
     if (!quote_id) return res.status(400).json({ error: "quote_id is required" });
 
     const maxIdx = sort_index !== undefined ? sort_index : (await getMaxSortIndex(quote_id)) + 1;
 
     const [created] = await db.insert(quote_products).values({
-      quoteId:         quote_id,
-      productId:       product_id ?? null,
-      manualInput:     manual_input ?? false,
-      name:            name ?? "Item",
-      productName:     name ?? "Item",
-      itemDescription: item_description ?? null,
-      price:           String(price ?? "0"),
-      quantity:        quantity ?? 1,
-      isInitialPayment: is_initial_payment ?? false,
-      sortIndex:       maxIdx,
-      status:          "Active",
+      quoteId:           quote_id,
+      productId:         product_id ?? null,
+      manualInput:       manual_input ?? false,
+      name:              name ?? "Item",
+      productName:       name ?? "Item",
+      itemDescription:   item_description ?? null,
+      price:             String(price ?? "0"),
+      quantity:          quantity ?? 1,
+      isInitialPayment:  is_initial_payment ?? false,
+      sortIndex:         maxIdx,
+      status:            "Active",
+      serviceModuleType: service_module_type ?? null,
     }).returning();
 
     return res.status(201).json(created);

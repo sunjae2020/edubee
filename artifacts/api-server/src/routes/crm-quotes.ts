@@ -4,6 +4,7 @@ import {
   quotes, quote_products, contracts, contractProducts,
   pickupMgt, settlementMgt,
   accommodationMgt, internshipMgt, guardianMgt, studyAbroadMgt,
+  hotelMgt, tourMgt,
 } from "@workspace/db/schema";
 import { eq, and, count, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
@@ -249,6 +250,18 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
           case "guardian":
             await tx.insert(guardianMgt).values({ contractId, officialGuardianRegistered: false, status: "pending" });
             activatedModules.push("guardian");
+            break;
+          case "hotel":
+            await tx.insert(hotelMgt).values({ contractId });
+            activatedModules.push("hotel");
+            break;
+          case "tour":
+            await tx.insert(tourMgt).values({ contractId });
+            activatedModules.push("tour");
+            break;
+          case "camp":
+            // Camp products tracked at contract level; no separate mgt table
+            activatedModules.push("camp");
             break;
         }
       }

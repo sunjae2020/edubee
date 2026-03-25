@@ -29,14 +29,21 @@ interface ProductType {
 }
 
 const SERVICE_MODULE_OPTIONS = [
-  { value: "__none",        label: "— None —"       },
-  { value: "study_abroad",  label: "Study Abroad"   },
-  { value: "pickup",        label: "Pickup"          },
-  { value: "accommodation", label: "Accommodation"  },
-  { value: "internship",    label: "Internship"      },
-  { value: "settlement",    label: "Settlement"      },
-  { value: "guardian",      label: "Guardian"        },
-  { value: "camp",          label: "Camp"            },
+  { value: "__none",        label: "— None —"              },
+  { value: "study_abroad",  label: "Study Abroad"          },
+  { value: "pickup",        label: "Pickup"                 },
+  { value: "accommodation", label: "Accommodation"         },
+  { value: "internship",    label: "Internship"             },
+  { value: "settlement",    label: "Settlement"             },
+  { value: "guardian",      label: "Guardian"               },
+  { value: "camp",          label: "Camp"                   },
+  { value: "hotel",         label: "Hotel / Accommodation" },
+  { value: "tour",          label: "Tour"                   },
+  { value: "health_exam",   label: "Health Examination"    },
+  { value: "insurance",     label: "Insurance"              },
+  { value: "migration",     label: "Migration"              },
+  { value: "visa",          label: "Visa"                   },
+  { value: "other",         label: "Other"                  },
 ];
 
 function serviceLabel(v?: string | null) {
@@ -64,8 +71,9 @@ export default function ProductTypeDetail() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const [editing, setEditing]     = useState(false);
-  const [nameError, setNameError] = useState("");
+  const [editing, setEditing]       = useState(false);
+  const [nameError, setNameError]   = useState("");
+  const [smodError, setSmodError]   = useState("");
   const [form, setForm] = useState({
     name: "", productGroupId: "__none", serviceModuleType: "__none", description: "", status: "",
   });
@@ -103,7 +111,7 @@ export default function ProductTypeDetail() {
     setNameError("");
     setEditing(true);
   };
-  const cancelEdit = () => { setEditing(false); setNameError(""); };
+  const cancelEdit = () => { setEditing(false); setNameError(""); setSmodError(""); };
 
   const toPayload = () => ({
     name:              form.name,
@@ -115,8 +123,10 @@ export default function ProductTypeDetail() {
 
   const save = useMutation({
     mutationFn: () => {
-      if (!form.name.trim()) { setNameError("Name is required"); return Promise.reject(); }
-      setNameError("");
+      let valid = true;
+      if (!form.name.trim()) { setNameError("Name is required"); valid = false; } else setNameError("");
+      if (form.serviceModuleType === "__none") { setSmodError("Service Module is required"); valid = false; } else setSmodError("");
+      if (!valid) return Promise.reject();
       return axios.put(`${BASE}/api/product-types/${id}`, toPayload()).then(r => r.data);
     },
     onSuccess: () => {
@@ -266,16 +276,19 @@ export default function ProductTypeDetail() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Service Module Type</Label>
-              <Select value={form.serviceModuleType} onValueChange={v => setForm(f => ({ ...f, serviceModuleType: v }))}>
-                <SelectTrigger className="h-10 border-[#E8E6E2]"><SelectValue /></SelectTrigger>
+              <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">
+                Service Module Type <span className="text-[#DC2626]">*</span>
+              </Label>
+              <Select value={form.serviceModuleType} onValueChange={v => { setForm(f => ({ ...f, serviceModuleType: v })); setSmodError(""); }}>
+                <SelectTrigger className={`h-10 border-[#E8E6E2] ${smodError ? "border-[#DC2626]" : ""}`}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {SERVICE_MODULE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-[#A8A29E]">
-                When a contract is created with this product type, the corresponding service record will be auto-generated.
-              </p>
+              {smodError
+                ? <p className="text-xs text-[#DC2626]">{smodError}</p>
+                : <p className="text-xs text-[#A8A29E]">When a contract is created with this product type, the corresponding service record will be auto-generated.</p>
+              }
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Description</Label>

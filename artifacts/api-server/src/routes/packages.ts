@@ -699,6 +699,8 @@ router.get("/products", authenticate, async (req, res) => {
       promotionId:       products.promotionId,
       productContext:    products.productContext,
       campPackageId:     products.campPackageId,
+      productTypeId:     products.productTypeId,
+      serviceModuleType: products.serviceModuleType,
       createdAt:         products.createdAt,
       updatedAt:         products.updatedAt,
     })

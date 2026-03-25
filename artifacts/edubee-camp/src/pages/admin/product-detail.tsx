@@ -532,6 +532,10 @@ export default function ProductDetail() {
         .map((t: any) => ({ id: t.id, name: t.name, sub: t.productGroupName }))
     : allProductTypes.map((t: any) => ({ id: t.id, name: t.name, sub: t.productGroupName }));
 
+  // ── Derived: serviceModuleType inherited from selected product type ────────
+  const selectedProductType = allProductTypes.find((t: any) => t.id === form["productTypeId"]);
+  const inheritedServiceModule: string = (selectedProductType as any)?.serviceModuleType ?? "";
+
   const groupSelectOpts: SelectOption[] = productGroups.map((g: any) => ({ id: g.id, name: g.name }));
 
   const commSelectOpts: SelectOption[] = commissionOpts.map((c: any) => ({
@@ -570,6 +574,15 @@ export default function ProductDetail() {
     }
   }, [rec, allProductTypes]);
 
+  // ── Auto-sync serviceModuleType from selected product type ────────────────
+  useEffect(() => {
+    if (!form["productTypeId"] || allProductTypes.length === 0) return;
+    const found = allProductTypes.find((t: any) => t.id === form["productTypeId"]) as any;
+    if (found?.serviceModuleType) {
+      setForm(f => ({ ...f, serviceModuleType: found.serviceModuleType }));
+    }
+  }, [form["productTypeId"], allProductTypes]);
+
   useEffect(() => {
     if (linkedGroupsData.length > 0) {
       const ids = linkedGroupsData.map((g: any) => g.packageGroupId);
@@ -599,7 +612,23 @@ export default function ProductDetail() {
   // ── Save mutations ────────────────────────────────────────────────────────
   const saveMutation = useMutation({
     mutationFn: async () => {
+      // ── Required field validation ────────────────────────────────────────
+      if (!selectedGroupId) {
+        toast({ title: "Product Group is required", className: "border-[#DC2626] bg-[#FEF2F2] text-[#DC2626]" });
+        return Promise.reject(new Error("validation"));
+      }
+      if (!form["productTypeId"]) {
+        toast({ title: "Product Type is required", className: "border-[#DC2626] bg-[#FEF2F2] text-[#DC2626]" });
+        return Promise.reject(new Error("validation"));
+      }
+      const smt = form["serviceModuleType"] || inheritedServiceModule;
+      if (!smt) {
+        toast({ title: "Service Module is required — ensure the selected Product Type has a Service Module assigned", className: "border-[#DC2626] bg-[#FEF2F2] text-[#DC2626]" });
+        return Promise.reject(new Error("validation"));
+      }
       const { id: _id, createdAt: _ca, updatedAt: _ua, convertedCost: _cc, ...body } = form;
+      // Ensure serviceModuleType is set from the product type if not already set
+      if (!body.serviceModuleType && inheritedServiceModule) body.serviceModuleType = inheritedServiceModule;
       if (isNew) {
         return axios.post(`${BASE}/api/products`, body, { headers: getAuthHeaders() }).then(r => r.data);
       }
@@ -792,7 +821,7 @@ export default function ProductDetail() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <FL>Product Group</FL>
+                    <FL>Product Group <span className="text-red-500">*</span></FL>
                     <SearchSelect
                       value={selectedGroupId}
                       onChange={handleGroupChange}
@@ -802,7 +831,7 @@ export default function ProductDetail() {
                     />
                   </div>
                   <div>
-                    <FL>Product Type</FL>
+                    <FL>Product Type <span className="text-red-500">*</span></FL>
                     <SearchSelect
                       value={g("productTypeId")}
                       onChange={sf("productTypeId")}
@@ -810,6 +839,17 @@ export default function ProductDetail() {
                       placeholder={selectedGroupId ? "Search product types…" : "Select a Product Group first"}
                       loading={typesLoading}
                     />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <FL>Service Module <span className="text-red-500">*</span></FL>
+                    <div className={`w-full px-3 py-2 rounded-lg border text-sm min-h-[38px] flex items-center gap-2 ${inheritedServiceModule ? "bg-orange-50 border-orange-200 text-orange-700" : "bg-muted/40 border-border text-muted-foreground/60"}`}>
+                      {inheritedServiceModule
+                        ? <><span className="w-2 h-2 rounded-full bg-orange-400 inline-block shrink-0" />{inheritedServiceModule}</>
+                        : <span className="italic">Auto-filled from Product Type</span>
+                      }
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

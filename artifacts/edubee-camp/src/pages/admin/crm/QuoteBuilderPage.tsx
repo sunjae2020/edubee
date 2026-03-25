@@ -65,6 +65,7 @@ interface Product {
   id: string;
   productName: string;
   productType?: string;
+  serviceModuleType?: string;
   description?: string;
   itemDescription?: string;
   price?: string;
@@ -856,6 +857,7 @@ export default function QuoteBuilderPage() {
         quantity: 1,
         is_gst_included: p.isGstIncluded ?? false,
         sort_index: lines.length,
+        service_module_type: p.serviceModuleType ?? null,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quote-products", quoteId] }),
     onError: () => toast({ title: "Failed to add product", variant: "destructive" }),
