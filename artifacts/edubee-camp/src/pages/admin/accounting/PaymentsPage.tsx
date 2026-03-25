@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -50,10 +50,19 @@ interface JournalEntry {
 interface SplitLine {
   uid: string;
   contractProductId: string;
+  contractId: string;
+  contractNumber: string;
+  productName: string;
   coaCode: string;
   splitType: string;
   amount: string;
   description: string;
+}
+
+interface AccountOption {
+  id: string;
+  name: string;
+  accountType: string;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -99,7 +108,210 @@ function parseNotes(notes: string | null | undefined): { receivedFromName?: stri
   try { return JSON.parse(notes); } catch { return { notes: notes ?? undefined }; }
 }
 function newLine(): SplitLine {
-  return { uid: crypto.randomUUID(), contractProductId: "", coaCode: "", splitType: "principal", amount: "", description: "" };
+  return { uid: crypto.randomUUID(), contractProductId: "", contractId: "", contractNumber: "", productName: "", coaCode: "", splitType: "principal", amount: "", description: "" };
+}
+
+// ─── Account Combobox ─────────────────────────────────────────────────────────
+function AccountCombobox({
+  value, onChange, placeholder,
+}: {
+  value: AccountOption | null;
+  onChange: (v: AccountOption | null) => void;
+  placeholder: string;
+}) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen]     = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const { data: results = [] } = useQuery<AccountOption[]>({
+    queryKey: ["pay-acct-lookup", search],
+    queryFn: () =>
+      axios.get(`${BASE}/api/accounting/payments-lookup/accounts?search=${encodeURIComponent(search)}`).then(r => r.data),
+    enabled: search.length >= 1,
+  });
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  if (value) {
+    return (
+      <div className="flex items-center gap-2 h-9 px-3 border border-stone-200 rounded-md bg-stone-50 text-sm">
+        <span className="flex-1 font-medium text-stone-800 truncate">{value.name}</span>
+        <span className="text-xs text-stone-400 shrink-0">{value.accountType}</span>
+        <button onClick={() => onChange(null)} className="text-stone-300 hover:text-red-500 transition-colors shrink-0">
+          <X size={12} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <Input
+        value={search}
+        onChange={e => { setSearch(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder}
+        className="h-9 text-sm"
+      />
+      {open && results.length > 0 && (
+        <div className="absolute top-10 left-0 right-0 z-50 bg-white border border-stone-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+          {results.map(a => (
+            <button
+              key={a.id}
+              onMouseDown={() => { onChange(a); setSearch(""); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-orange-50 flex items-center gap-2"
+            >
+              <span className="font-medium text-stone-800 flex-1 truncate">{a.name}</span>
+              <span className="text-xs text-stone-400 shrink-0">{a.accountType}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {open && search.length >= 1 && results.length === 0 && (
+        <div className="absolute top-10 left-0 right-0 z-50 bg-white border border-stone-200 rounded-xl shadow-sm px-3 py-2 text-xs text-stone-400">
+          No accounts found
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Contract Product Picker (per split line) ─────────────────────────────────
+function ContractProductPicker({
+  line, paymentType, onUpdate, onContractSelect,
+}: {
+  line: SplitLine;
+  paymentType: string;
+  onUpdate: (uid: string, fields: Partial<SplitLine>) => void;
+  onContractSelect: (accountId: string, accountName: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen]     = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const { data: contracts = [] } = useQuery<any[]>({
+    queryKey: ["pay-contract-lookup", search],
+    queryFn: () =>
+      axios.get(`${BASE}/api/accounting/payments-lookup/contracts?search=${encodeURIComponent(search)}`).then(r => r.data),
+    enabled: search.length >= 1,
+  });
+
+  const { data: products = [] } = useQuery<any[]>({
+    queryKey: ["pay-products-lookup", line.contractId],
+    queryFn: () =>
+      axios.get(`${BASE}/api/accounting/payments-lookup/contracts/${line.contractId}/products`).then(r => r.data),
+    enabled: !!line.contractId,
+  });
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  function clearContract() {
+    onUpdate(line.uid, { contractId: "", contractNumber: "", contractProductId: "", productName: "", amount: "" });
+  }
+
+  if (line.contractId) {
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center gap-1">
+          <span className="bg-orange-50 border border-orange-200 text-orange-700 text-xs font-mono px-2 py-0.5 rounded">
+            {line.contractNumber}
+          </span>
+          <button onClick={clearContract} className="text-stone-300 hover:text-red-500 transition-colors">
+            <X size={10} />
+          </button>
+        </div>
+        <Select
+          value={line.contractProductId}
+          onValueChange={v => {
+            const p = products.find((p: any) => p.id === v);
+            if (!p) return;
+            const amt = paymentType === "trust_transfer"
+              ? (p.ap_amount ?? "0")
+              : (p.ar_amount ?? "0");
+            onUpdate(line.uid, {
+              contractProductId: v,
+              productName: p.name ?? "",
+              amount: String(Number(amt).toFixed(2)),
+            });
+          }}
+        >
+          <SelectTrigger className="h-7 text-xs border-stone-200">
+            <SelectValue placeholder="Select product…" />
+          </SelectTrigger>
+          <SelectContent>
+            {products.map((p: any) => {
+              const amt = paymentType === "trust_transfer" ? p.ap_amount : p.ar_amount;
+              const status = paymentType === "trust_transfer" ? p.ap_status : p.ar_status;
+              return (
+                <SelectItem key={p.id} value={p.id}>
+                  <span className="flex items-center gap-2">
+                    <span>{p.name}</span>
+                    <span className="text-stone-400">A${Number(amt ?? 0).toFixed(2)}</span>
+                    {status === "paid" && <span className="text-green-600 text-xs">✓paid</span>}
+                  </span>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <Input
+        value={search}
+        onChange={e => { setSearch(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder="Search contract…"
+        className="h-7 text-xs"
+      />
+      {open && contracts.length > 0 && (
+        <div className="absolute top-8 left-0 z-50 w-64 bg-white border border-stone-200 rounded-xl shadow-lg max-h-40 overflow-y-auto">
+          {contracts.map((c: any) => (
+            <button
+              key={c.id}
+              onMouseDown={() => {
+                onUpdate(line.uid, {
+                  contractId: c.id,
+                  contractNumber: c.contract_number ?? c.id.slice(0, 8),
+                });
+                if (c.account_id && c.account_name) {
+                  onContractSelect(c.account_id, c.account_name);
+                }
+                setSearch("");
+                setOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 hover:bg-orange-50"
+            >
+              <div className="text-xs font-medium text-stone-800">
+                {c.contract_number} — {c.student_name}
+              </div>
+              <div className="text-xs text-stone-400">{c.account_name}</div>
+            </button>
+          ))}
+        </div>
+      )}
+      {open && search.length >= 1 && contracts.length === 0 && (
+        <div className="absolute top-8 left-0 right-0 z-50 bg-white border border-stone-200 rounded-xl shadow-sm px-3 py-2 text-xs text-stone-400">
+          No contracts found
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Void Action dropdown ────────────────────────────────────────────────────
@@ -194,29 +406,39 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const [paymentType,      setPaymentType]      = useState("trust_receipt");
-  const [paymentDate,      setPaymentDate]      = useState(new Date().toISOString().slice(0, 10));
-  const [paymentMethod,    setPaymentMethod]    = useState("Bank Transfer");
-  const [receivedFromName, setReceivedFromName] = useState("");
-  const [paidToName,       setPaidToName]       = useState("");
-  const [bankReference,    setBankReference]    = useState("");
-  const [notes,            setNotes]            = useState("");
-  const [lines,            setLines]            = useState<SplitLine[]>([newLine()]);
+  const [paymentType,   setPaymentType]   = useState("trust_receipt");
+  const [paymentDate,   setPaymentDate]   = useState(new Date().toISOString().slice(0, 10));
+  const [paymentMethod, setPaymentMethod] = useState("Bank Transfer");
+  const [receivedFrom,  setReceivedFrom]  = useState<AccountOption | null>(null);
+  const [paidTo,        setPaidTo]        = useState<AccountOption | null>(null);
+  const [bankReference, setBankReference] = useState("");
+  const [notes,         setNotes]         = useState("");
+  const [lines,         setLines]         = useState<SplitLine[]>([newLine()]);
 
   const total = lines.reduce((s, l) => s + Number(l.amount || 0), 0);
   const je    = JE_PREVIEW[paymentType];
 
-  function updateLine<K extends keyof SplitLine>(uid: string, key: K, val: SplitLine[K]) {
-    setLines(prev => prev.map(l => l.uid === uid ? { ...l, [key]: val } : l));
+  function updateLine(uid: string, fields: Partial<SplitLine>) {
+    setLines(prev => prev.map(l => l.uid === uid ? { ...l, ...fields } : l));
+  }
+
+  function handleContractSelect(accountId: string, accountName: string) {
+    if (paymentType === "trust_receipt" && !receivedFrom) {
+      setReceivedFrom({ id: accountId, name: accountName, accountType: "Others" });
+    } else if (paymentType === "trust_transfer" && !paidTo) {
+      setPaidTo({ id: accountId, name: accountName, accountType: "Others" });
+    }
   }
 
   const createMutation = useMutation({
     mutationFn: () => axios.post(`${BASE}/api/accounting/payments`, {
       paymentDate, paymentMethod, paymentType,
-      bankReference: bankReference || null,
-      notes: notes || null,
-      receivedFromName: receivedFromName || null,
-      paidToName: paidToName || null,
+      bankReference:    bankReference || null,
+      notes:            notes || null,
+      receivedFromId:   receivedFrom?.id   || null,
+      receivedFromName: receivedFrom?.name || null,
+      paidToId:         paidTo?.id         || null,
+      paidToName:       paidTo?.name       || null,
       lines: lines.map(l => ({
         contractProductId: l.contractProductId || null,
         coaCode:           l.coaCode || null,
@@ -286,14 +508,26 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-stone-600">Received From</Label>
-              <Input value={receivedFromName} onChange={e => setReceivedFromName(e.target.value)}
-                placeholder="Name / company…" className="h-9 text-sm" />
+              <Label className="text-xs font-medium text-stone-600">
+                Received From
+                <span className="ml-1 text-stone-400 font-normal">(Account)</span>
+              </Label>
+              <AccountCombobox
+                value={receivedFrom}
+                onChange={setReceivedFrom}
+                placeholder="Search account…"
+              />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-stone-600">Paid To</Label>
-              <Input value={paidToName} onChange={e => setPaidToName(e.target.value)}
-                placeholder="Name / company…" className="h-9 text-sm" />
+              <Label className="text-xs font-medium text-stone-600">
+                Paid To
+                <span className="ml-1 text-stone-400 font-normal">(Account)</span>
+              </Label>
+              <AccountCombobox
+                value={paidTo}
+                onChange={setPaidTo}
+                placeholder="Search account…"
+              />
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label className="text-xs font-medium text-stone-600">Bank Reference</Label>
@@ -309,7 +543,7 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
               <table className="w-full text-xs">
                 <thead className="bg-stone-50 border-b border-stone-100">
                   <tr>
-                    <th className="text-left px-3 py-2 text-stone-400 font-medium">Invoice / Contract Product ID</th>
+                    <th className="text-left px-3 py-2 text-stone-400 font-medium">Contract / Product</th>
                     <th className="text-left px-3 py-2 text-stone-400 font-medium w-20">COA</th>
                     <th className="text-left px-3 py-2 text-stone-400 font-medium w-24">Split Type</th>
                     <th className="text-left px-3 py-2 text-stone-400 font-medium w-24">Amount (AUD)</th>
@@ -319,22 +553,24 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
                 <tbody className="divide-y divide-stone-50">
                   {lines.map(line => (
                     <tr key={line.uid}>
-                      <td className="px-2 py-1.5">
-                        <Input
-                          value={line.contractProductId}
-                          onChange={e => updateLine(line.uid, "contractProductId", e.target.value)}
-                          className="h-7 text-xs border-stone-200" placeholder="UUID (optional)" />
+                      <td className="px-2 py-1.5 min-w-[160px]">
+                        <ContractProductPicker
+                          line={line}
+                          paymentType={paymentType}
+                          onUpdate={updateLine}
+                          onContractSelect={handleContractSelect}
+                        />
                       </td>
                       <td className="px-2 py-1.5">
                         <Input
                           value={line.coaCode}
-                          onChange={e => updateLine(line.uid, "coaCode", e.target.value)}
+                          onChange={e => updateLine(line.uid, { coaCode: e.target.value })}
                           className="h-7 text-xs border-stone-200 font-mono" placeholder="1200" />
                       </td>
                       <td className="px-2 py-1.5">
                         <Select
                           value={line.splitType}
-                          onValueChange={v => updateLine(line.uid, "splitType", v)}
+                          onValueChange={v => updateLine(line.uid, { splitType: v })}
                         >
                           <SelectTrigger className="h-7 text-xs border-stone-200">
                             <SelectValue />
@@ -350,7 +586,7 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
                         <Input
                           type="number" min={0} step="0.01"
                           value={line.amount}
-                          onChange={e => updateLine(line.uid, "amount", e.target.value)}
+                          onChange={e => updateLine(line.uid, { amount: e.target.value })}
                           className="h-7 text-xs border-stone-200" placeholder="0.00" />
                       </td>
                       <td className="px-2 py-1.5">

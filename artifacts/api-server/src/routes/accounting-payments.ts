@@ -3,9 +3,9 @@ import { db } from "@workspace/db";
 import {
   paymentHeaders, paymentLines, journalEntries,
   chartOfAccounts, contractProducts, contracts,
-  transactions,
+  transactions, accounts,
 } from "@workspace/db/schema";
-import { eq, and, gte, lte, inArray, asc, desc, SQL } from "drizzle-orm";
+import { eq, and, gte, lte, inArray, ilike, asc, desc, sql, SQL } from "drizzle-orm";
 import { generateTaxInvoice } from "../services/taxInvoiceService.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -339,5 +339,73 @@ router.patch(
     }
   }
 );
+
+// ─── LOOKUP: accounts search ─────────────────────────────────────────────────
+router.get("/accounting/payments-lookup/accounts", authenticate, async (req, res) => {
+  try {
+    const { search = "" } = req.query as Record<string, string>;
+    const conds: SQL[] = [];
+    if (search) conds.push(ilike(accounts.name, `%${search}%`));
+    const rows = await db
+      .select({ id: accounts.id, name: accounts.name, accountType: accounts.accountType })
+      .from(accounts)
+      .where(conds.length ? and(...conds) : undefined)
+      .orderBy(asc(accounts.name))
+      .limit(20);
+    return res.json(rows);
+  } catch (err) {
+    console.error("[GET /accounting/payments-lookup/accounts]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── LOOKUP: contract search ──────────────────────────────────────────────────
+router.get("/accounting/payments-lookup/contracts", authenticate, async (req, res) => {
+  try {
+    const { search = "" } = req.query as Record<string, string>;
+    const r = (x: any) => x.rows ?? (x as any[]);
+    const rows = await db.execute(sql`
+      SELECT c.id, c.contract_number, c.student_name, c.status,
+             a.id   AS account_id,
+             a.name AS account_name
+      FROM contracts c
+      LEFT JOIN accounts a ON a.id = c.account_id
+      WHERE c.status IN ('active', 'signed')
+        AND (
+          ${search} = ''
+          OR c.contract_number ILIKE ${'%' + search + '%'}
+          OR c.student_name    ILIKE ${'%' + search + '%'}
+          OR a.name            ILIKE ${'%' + search + '%'}
+        )
+      ORDER BY c.created_at DESC
+      LIMIT 20
+    `);
+    return res.json(r(rows));
+  } catch (err) {
+    console.error("[GET /accounting/payments-lookup/contracts]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── LOOKUP: contract products ────────────────────────────────────────────────
+router.get("/accounting/payments-lookup/contracts/:id/products", authenticate, async (req, res) => {
+  try {
+    const r = (x: any) => x.rows ?? (x as any[]);
+    const rows = await db.execute(sql`
+      SELECT id,
+             COALESCE(name, product_name) AS name,
+             ar_amount, ar_status,
+             ap_amount, ap_status,
+             service_module_type
+      FROM contract_products
+      WHERE contract_id = ${req.params.id}::uuid
+      ORDER BY COALESCE(sort_index, 0), created_at
+    `);
+    return res.json(r(rows));
+  } catch (err) {
+    console.error("[GET /accounting/payments-lookup/contracts/:id/products]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 export default router;
