@@ -41,6 +41,7 @@ export const packageGroups = pgTable("package_groups", {
   maxAge: integer("max_age"),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
+  typeId: uuid("type_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

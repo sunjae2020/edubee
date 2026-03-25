@@ -28,7 +28,7 @@ router.get("/package-groups", authenticate, async (req, res) => {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(packageGroups).where(whereClause);
 
-    // JOIN coordinator info
+    // JOIN coordinator info + type info
     const rows = await db
       .select({
         group: packageGroups,
@@ -36,9 +36,11 @@ router.get("/package-groups", authenticate, async (req, res) => {
         coordinatorName: users.fullName,
         coordinatorEmail: users.email,
         coordinatorPhone: users.phone,
+        typeName: productTypes.name,
       })
       .from(packageGroups)
       .leftJoin(users, eq(packageGroups.campProviderId, users.id))
+      .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
       .where(whereClause)
       .limit(limitNum)
       .offset(offset)
@@ -60,6 +62,7 @@ router.get("/package-groups", authenticate, async (req, res) => {
     const data = rows.map(r => ({
       ...r.group,
       packageCount: pkgCounts[r.group.id] ?? 0,
+      typeName: r.typeName ?? null,
       coordinator: r.coordinatorId ? {
         id: r.coordinatorId,
         fullName: r.coordinatorName,
@@ -103,14 +106,17 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
         coordinatorPhone: users.phone,
         coordinatorCompany: users.companyName,
         coordinatorCountry: users.countryOfOps,
+        typeName: productTypes.name,
       })
       .from(packageGroups)
       .leftJoin(users, eq(packageGroups.campProviderId, users.id))
+      .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
       .where(eq(packageGroups.id, req.params.id))
       .limit(1);
     if (!row) return res.status(404).json({ error: "Not Found" });
     return res.json({
       ...row.group,
+      typeName: row.typeName ?? null,
       coordinator: row.coordinatorId ? {
         id: row.coordinatorId,
         fullName: row.coordinatorName,
@@ -145,7 +151,7 @@ router.put("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES, "cam
     // Strip computed/unknown fields that aren't in the schema
     if (body.minAge !== undefined) (payload as any).minAge = toIntOrNull(body.minAge);
     if (body.maxAge !== undefined) (payload as any).maxAge = toIntOrNull(body.maxAge);
-    const allowed = ["campProviderId","nameEn","nameKo","nameJa","nameTh","descriptionEn","descriptionKo","descriptionJa","descriptionTh","inclusionsEn","inclusionsKo","exclusionsEn","exclusionsKo","durationText","thumbnailUrl","location","countryCode","status","sortOrder","landingOrder","minAge","maxAge","startDate","endDate","updatedAt"] as const;
+    const allowed = ["campProviderId","nameEn","nameKo","nameJa","nameTh","descriptionEn","descriptionKo","descriptionJa","descriptionTh","inclusionsEn","inclusionsKo","exclusionsEn","exclusionsKo","durationText","thumbnailUrl","location","countryCode","status","sortOrder","landingOrder","minAge","maxAge","startDate","endDate","typeId","updatedAt"] as const;
     const cleanPayload = Object.fromEntries(allowed.filter(k => (payload as any)[k] !== undefined).map(k => [k, (payload as any)[k]]));
     cleanPayload.updatedAt = new Date();
     const [group] = await db.update(packageGroups).set(cleanPayload as any)

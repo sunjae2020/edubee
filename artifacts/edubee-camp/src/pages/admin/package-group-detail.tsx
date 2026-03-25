@@ -246,6 +246,14 @@ export default function PackageGroupDetail() {
   });
   const coordinators: any[] = coordinatorsData?.data ?? [];
 
+  // Product types — always fetched for display, cached
+  const { data: productTypesData } = useQuery({
+    queryKey: ["product-types-active"],
+    queryFn: () => axios.get(`${BASE}/api/product-types?status=Active&limit=100`).then(r => r.data),
+    staleTime: 120_000,
+  });
+  const productTypesList: any[] = productTypesData?.data ?? [];
+
   const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
 
   const DECIMAL_CCYS = new Set(["USD", "SGD", "GBP", "EUR", "NZD"]);
@@ -336,6 +344,33 @@ export default function PackageGroupDetail() {
                 editValue={getValue("location")} onEdit={v => setField("location", v)} />
               <EditableField label="Country Code" isEditing={isEditing} value={group.countryCode}
                 editValue={getValue("countryCode")} onEdit={v => setField("countryCode", v)} />
+
+              {/* Type — Product Type dropdown */}
+              <DetailRow label="Type">
+                {isEditing ? (
+                  <Select
+                    value={getValue("typeId") ?? "none"}
+                    onValueChange={v => setField("typeId", v === "none" ? null : v)}
+                  >
+                    <SelectTrigger className="h-8 text-sm border-[#F5821F]">
+                      <SelectValue placeholder="— Select type —" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
+                      {productTypesList.map((pt: any) => (
+                        <SelectItem key={pt.id} value={pt.id}>{pt.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span className="text-sm">
+                    {group.typeName
+                      ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FEF0E3] text-[#F5821F] text-xs font-medium border border-[#F5821F33]">{group.typeName}</span>
+                      : <span className="text-muted-foreground/60">—</span>
+                    }
+                  </span>
+                )}
+              </DetailRow>
 
               {/* Min Age / Max Age — English only */}
               <DetailRow label="Min Age">

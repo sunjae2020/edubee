@@ -36,6 +36,8 @@ interface PackageGroup {
   sortOrder?: number | null;
   campProviderId?: string | null;
   packageCount?: number;
+  typeId?: string | null;
+  typeName?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -383,11 +385,16 @@ export default function PackageGroups() {
                 <div className="relative">
                   <div className="flex items-start justify-between mb-2">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 mb-1">
+                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                         <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${isActive ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>
                           {isActive ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
                           {g.status ?? "draft"}
                         </span>
+                        {g.typeName && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F22]">
+                            {g.typeName}
+                          </span>
+                        )}
                       </div>
                       <h3 className="font-semibold text-sm leading-tight">{g.nameEn}</h3>
                       {g.nameKo && <p className="text-[11px] text-muted-foreground mt-0.5">{g.nameKo}</p>}
