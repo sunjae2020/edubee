@@ -47,19 +47,172 @@ router.get("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (re
   }
 });
 
+// ─── Helper: fetch all accounts linked to a contact ────────────────────────
+async function getLinkedAccounts(contactId: string) {
+  const cols = {
+    id: accounts.id, name: accounts.name, accountType: accounts.accountType,
+    status: accounts.status, email: accounts.email, phoneNumber: accounts.phoneNumber,
+    country: accounts.country, city: accounts.city,
+    primaryContactId: accounts.primaryContactId, secondaryContactId: accounts.secondaryContactId,
+  };
+  const primRows = await db.select(cols).from(accounts)
+    .where(eq(accounts.primaryContactId, contactId));
+  const secRows  = await db.select(cols).from(accounts)
+    .where(eq(accounts.secondaryContactId, contactId));
+
+  const seen = new Set<string>();
+  const merged: any[] = [];
+  for (const r of primRows) {
+    if (!seen.has(r.id)) { seen.add(r.id); merged.push({ ...r, role: "primary" }); }
+  }
+  for (const r of secRows) {
+    if (!seen.has(r.id)) { seen.add(r.id); merged.push({ ...r, role: "secondary" }); }
+    else {
+      const existing = merged.find((m: any) => m.id === r.id);
+      if (existing) existing.role = "both";
+    }
+  }
+  return merged;
+}
+
 router.get("/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [row] = await db.select().from(contacts).where(eq(contacts.id, req.params.id));
     if (!row) return res.status(404).json({ error: "Contact not found" });
-    // Check if this contact is already a primary contact of any account
-    const [linkedAccount] = await db
-      .select({ id: accounts.id, name: accounts.name, accountType: accounts.accountType })
-      .from(accounts)
-      .where(eq(accounts.primaryContactId, req.params.id))
-      .limit(1);
-    return res.json({ ...row, linkedAccount: linkedAccount ?? null });
+
+    const linkedAccounts = await getLinkedAccounts(req.params.id);
+    const linkedAccount  = linkedAccounts[0] ?? null;
+
+    return res.json({ ...row, linkedAccount, linkedAccounts });
   } catch (err) {
     console.error("[GET /api/crm/contacts/:id]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET all accounts linked to a contact
+router.get("/crm/contacts/:id/accounts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const [row] = await db.select({ id: contacts.id }).from(contacts)
+      .where(eq(contacts.id, req.params.id)).limit(1);
+    if (!row) return res.status(404).json({ error: "Contact not found" });
+
+    const linkedAccounts = await getLinkedAccounts(req.params.id);
+    return res.json({ data: linkedAccounts });
+  } catch (err) {
+    console.error("[GET /api/crm/contacts/:id/accounts]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST create a new account linked to this contact
+router.post("/crm/contacts/:id/accounts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const [contact] = await db.select().from(contacts)
+      .where(eq(contacts.id, req.params.id)).limit(1);
+    if (!contact) return res.status(404).json({ error: "Contact not found" });
+
+    const { accountType, name, role = "primary" } = req.body;
+    if (!accountType) return res.status(400).json({ error: "accountType is required" });
+
+    const accountName = name?.trim() ||
+      `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.trim() || "New Account";
+
+    const ownerId = (req as any).user?.id;
+    if (!ownerId) return res.status(401).json({ error: "Unauthorized" });
+
+    const insertValues: any = {
+      name: accountName,
+      accountType,
+      status: "Active",
+      ownerId,
+    };
+    if (role === "secondary") {
+      insertValues.secondaryContactId = req.params.id;
+    } else {
+      insertValues.primaryContactId = req.params.id;
+    }
+
+    const [created] = await db.insert(accounts).values(insertValues).returning();
+    return res.status(201).json({ ...created, role: role === "secondary" ? "secondary" : "primary" });
+  } catch (err) {
+    console.error("[POST /api/crm/contacts/:id/accounts]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PATCH update basic info of an account linked to this contact
+router.patch("/crm/contacts/:id/accounts/:accountId", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const { name, accountType, status } = req.body;
+
+    const [existing] = await db.select({ id: accounts.id })
+      .from(accounts).where(eq(accounts.id, accountId)).limit(1);
+    if (!existing) return res.status(404).json({ error: "Account not found" });
+
+    const updates: Record<string, any> = { modifiedOn: new Date() };
+    if (name      !== undefined) updates.name        = name;
+    if (accountType !== undefined) updates.accountType = accountType;
+    if (status    !== undefined) updates.status      = status;
+
+    const [updated] = await db.update(accounts).set(updates)
+      .where(eq(accounts.id, accountId)).returning();
+    return res.json(updated);
+  } catch (err) {
+    console.error("[PATCH /api/crm/contacts/:id/accounts/:accountId]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST link an existing account to this contact
+router.post("/crm/contacts/:id/link-account", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { accountId, role = "primary" } = req.body;
+    if (!accountId) return res.status(400).json({ error: "accountId is required" });
+
+    const [existing] = await db.select({ id: accounts.id })
+      .from(accounts).where(eq(accounts.id, accountId)).limit(1);
+    if (!existing) return res.status(404).json({ error: "Account not found" });
+
+    const updates: Record<string, any> = { modifiedOn: new Date() };
+    if (role === "secondary") updates.secondaryContactId = req.params.id;
+    else updates.primaryContactId = req.params.id;
+
+    const [updated] = await db.update(accounts).set(updates)
+      .where(eq(accounts.id, accountId)).returning();
+    return res.json(updated);
+  } catch (err) {
+    console.error("[POST /api/crm/contacts/:id/link-account]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE unlink an account from this contact
+router.delete("/crm/contacts/:id/accounts/:accountId", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { id: contactId, accountId } = req.params;
+
+    const [existing] = await db.select({
+      id: accounts.id,
+      primaryContactId: accounts.primaryContactId,
+      secondaryContactId: accounts.secondaryContactId,
+    }).from(accounts).where(eq(accounts.id, accountId)).limit(1);
+
+    if (!existing) return res.status(404).json({ error: "Account not found" });
+
+    const updates: Record<string, any> = { modifiedOn: new Date() };
+    if (existing.primaryContactId === contactId)   updates.primaryContactId = null;
+    if (existing.secondaryContactId === contactId) updates.secondaryContactId = null;
+
+    if (Object.keys(updates).length === 1) {
+      return res.status(400).json({ error: "This contact is not linked to the account" });
+    }
+
+    await db.update(accounts).set(updates).where(eq(accounts.id, accountId));
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("[DELETE /api/crm/contacts/:id/accounts/:accountId]", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
