@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
-import { ExternalLink, MapPin, Globe, Users, GraduationCap, Building2, CheckCircle2, Clock, FileText, Plus, X, Loader2, Package, Copy } from "lucide-react";
+import { ExternalLink, MapPin, Globe, Users, GraduationCap, Building2, CheckCircle2, Clock, FileText, Plus, X, Loader2, Package, Copy, SlidersHorizontal, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { useLocation } from "wouter";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -80,6 +80,12 @@ export default function PackageDetail() {
   const [addUnitPrice, setAddUnitPrice] = useState("");
   const [addIsOptional, setAddIsOptional] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  // advanced search state
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [advCurrency, setAdvCurrency] = useState("all");
+  const [advMinPrice, setAdvMinPrice] = useState("");
+  const [advMaxPrice, setAdvMaxPrice] = useState("");
+  const [advSortBy, setAdvSortBy] = useState("name");
   // inline editing state per row
   const [editingProdId, setEditingProdId] = useState<string | null>(null);
   const [editQty, setEditQty] = useState(1);
@@ -260,6 +266,30 @@ export default function PackageDetail() {
       const qty   = r.quantity ?? 1;
       return sum + price * qty;
     }, 0);
+
+  // ── Advanced search computed values ────────────────────────────────
+  const availableCurrencies = Array.from(
+    new Set(allActiveProds.map((p: any) => p.currency).filter(Boolean))
+  ).sort() as string[];
+
+  const filteredProds = allActiveProds
+    .filter((p: any) => prodTypeFilter === "all" || p.productType === prodTypeFilter)
+    .filter((p: any) => !linkedProds.some((l: any) => l.productId === p.id))
+    .filter((p: any) => !prodSearch || p.productName?.toLowerCase().includes(prodSearch.toLowerCase()))
+    .filter((p: any) => advCurrency === "all" || p.currency === advCurrency)
+    .filter((p: any) => {
+      const cost = parseFloat(p.cost ?? "0") || 0;
+      if (advMinPrice && cost < parseFloat(advMinPrice)) return false;
+      if (advMaxPrice && cost > parseFloat(advMaxPrice)) return false;
+      return true;
+    })
+    .sort((a: any, b: any) => {
+      if (advSortBy === "price_asc")  return (parseFloat(a.cost ?? "0") || 0) - (parseFloat(b.cost ?? "0") || 0);
+      if (advSortBy === "price_desc") return (parseFloat(b.cost ?? "0") || 0) - (parseFloat(a.cost ?? "0") || 0);
+      return (a.productName ?? "").localeCompare(b.productName ?? "");
+    });
+
+  const hasAdvancedFilters = advCurrency !== "all" || advMinPrice !== "" || advMaxPrice !== "" || advSortBy !== "name";
 
   return (
     <DetailPageLayout
@@ -574,6 +604,11 @@ export default function PackageDetail() {
                   setAddUnitPrice("");
                   setAddIsOptional(false);
                   setAddError(null);
+                  setShowAdvanced(false);
+                  setAdvCurrency("all");
+                  setAdvMinPrice("");
+                  setAdvMaxPrice("");
+                  setAdvSortBy("name");
                   setShowAddProd(v => !v);
                 }}
               >
@@ -602,28 +637,116 @@ export default function PackageDetail() {
                 ))}
               </div>
 
-              {/* Search box */}
-              <Input
-                placeholder="Search product name..."
-                value={prodSearch}
-                onChange={e => { setProdSearch(e.target.value); setSelectedProdId(null); }}
-                className="h-7 text-xs"
-              />
+              {/* Search row: text input + advanced toggle */}
+              <div className="flex gap-1.5 items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                  <Input
+                    placeholder="Search product name..."
+                    value={prodSearch}
+                    onChange={e => { setProdSearch(e.target.value); setSelectedProdId(null); }}
+                    className="h-7 text-xs pl-6"
+                  />
+                </div>
+                <button
+                  onClick={() => setShowAdvanced(v => !v)}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors shrink-0 ${
+                    showAdvanced || hasAdvancedFilters
+                      ? "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F66]"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <SlidersHorizontal className="w-3 h-3" />
+                  Advanced
+                  {hasAdvancedFilters && (
+                    <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-[#F5821F] inline-block" />
+                  )}
+                  {showAdvanced ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
+              </div>
+
+              {/* Advanced search panel */}
+              {showAdvanced && (
+                <div className="border border-[#F5821F22] rounded-md p-3 bg-white/60 space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Currency */}
+                    <div>
+                      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Currency</Label>
+                      <Select value={advCurrency} onValueChange={v => { setAdvCurrency(v); setSelectedProdId(null); }}>
+                        <SelectTrigger className="mt-0.5 h-7 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All currencies</SelectItem>
+                          {availableCurrencies.map(c => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Sort */}
+                    <div>
+                      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Sort by</Label>
+                      <Select value={advSortBy} onValueChange={v => setAdvSortBy(v)}>
+                        <SelectTrigger className="mt-0.5 h-7 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="name">Name A → Z</SelectItem>
+                          <SelectItem value="price_asc">Price low → high</SelectItem>
+                          <SelectItem value="price_desc">Price high → low</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Price range */}
+                  <div>
+                    <Label className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Price range (cost)</Label>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Input
+                        type="number" min={0} step="0.01"
+                        placeholder="Min"
+                        value={advMinPrice}
+                        onChange={e => { setAdvMinPrice(e.target.value); setSelectedProdId(null); }}
+                        className="h-7 text-xs font-mono"
+                      />
+                      <span className="text-xs text-muted-foreground shrink-0">—</span>
+                      <Input
+                        type="number" min={0} step="0.01"
+                        placeholder="Max"
+                        value={advMaxPrice}
+                        onChange={e => { setAdvMaxPrice(e.target.value); setSelectedProdId(null); }}
+                        className="h-7 text-xs font-mono"
+                      />
+                      {hasAdvancedFilters && (
+                        <button
+                          onClick={() => {
+                            setAdvCurrency("all");
+                            setAdvMinPrice("");
+                            setAdvMaxPrice("");
+                            setAdvSortBy("name");
+                            setSelectedProdId(null);
+                          }}
+                          className="text-[10px] text-muted-foreground hover:text-destructive underline shrink-0"
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Result count */}
+                  <p className="text-[10px] text-muted-foreground">
+                    {filteredProds.length} product{filteredProds.length !== 1 ? "s" : ""} match
+                    {filteredProds.length !== 1 ? "" : "es"}
+                  </p>
+                </div>
+              )}
 
               {/* Product list */}
-              <div className="max-h-40 overflow-y-auto border border-border rounded-md divide-y bg-white">
-                {allActiveProds
-                  .filter((p: any) => prodTypeFilter === "all" || p.productType === prodTypeFilter)
-                  .filter((p: any) => !linkedProds.some((l: any) => l.productId === p.id))
-                  .filter((p: any) => !prodSearch || p.productName?.toLowerCase().includes(prodSearch.toLowerCase()))
-                  .length === 0 ? (
+              <div className="max-h-44 overflow-y-auto border border-border rounded-md divide-y bg-white">
+                {filteredProds.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-4">No products available</p>
                 ) : (
-                  allActiveProds
-                    .filter((p: any) => prodTypeFilter === "all" || p.productType === prodTypeFilter)
-                    .filter((p: any) => !linkedProds.some((l: any) => l.productId === p.id))
-                    .filter((p: any) => !prodSearch || p.productName?.toLowerCase().includes(prodSearch.toLowerCase()))
-                    .map((p: any) => (
+                  filteredProds.map((p: any) => (
                       <label key={p.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/40">
                         <input
                           type="radio"
