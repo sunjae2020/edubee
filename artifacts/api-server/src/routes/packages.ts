@@ -860,8 +860,8 @@ router.put("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async (re
   try {
     // Strip non-column and computed/join fields
     const {
-      id: _id, createdAt: _ca, updatedAt: _ua, convertedCost: _cc,
-      providerCountry: _pc, providerLocation: _pl, typeName: _tn,
+      id: _id, createdAt: _ca, updatedAt: _ua, modifiedOn: _mo, convertedCost: _cc,
+      providerCountry: _pc, providerLocation: _pl, providerName: _pn, typeName: _tn,
       ...body
     } = req.body;
 
@@ -877,7 +877,7 @@ router.put("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async (re
     if ("startDate" in cleaned) cleaned.startDate = toDate(cleaned.startDate);
     if ("endDate"   in cleaned) cleaned.endDate   = toDate(cleaned.endDate);
 
-    const [product] = await db.update(products).set({ ...cleaned, updatedAt: new Date() })
+    const [product] = await db.update(products).set({ ...cleaned, updatedAt: new Date(), modifiedOn: new Date() })
       .where(eq(products.id, req.params.id)).returning();
     if (!product) return res.status(404).json({ error: "Not Found" });
     return res.json(product);
