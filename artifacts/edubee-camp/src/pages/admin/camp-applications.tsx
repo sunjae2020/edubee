@@ -115,11 +115,11 @@ export default function CampApplications() {
   const [wizardAgreed, setWizardAgreed] = useState(false);
 
   const WIZARD_OPTIONS = [
-    { key: "airport_pickup", label: "공항 픽업 (Airport Pickup)" },
-    { key: "accommodation", label: "숙소 배정 (Accommodation)" },
-    { key: "guardian_service", label: "가디언 서비스 (Guardian Service)" },
-    { key: "settlement_service", label: "정착 서비스 (Settlement Service)" },
-    { key: "insurance", label: "여행 보험 (Travel Insurance)" },
+    { key: "airport_pickup", label: "Airport Pickup" },
+    { key: "accommodation", label: "Accommodation" },
+    { key: "guardian_service", label: "Guardian Service" },
+    { key: "settlement_service", label: "Settlement Service" },
+    { key: "insurance", label: "Travel Insurance" },
   ];
 
   const { data: packagesResp } = useQuery({
@@ -526,11 +526,11 @@ export default function CampApplications() {
             {/* Step indicators */}
             <div className="flex items-center gap-0 mt-3">
               {[
-                { n: 1, label: "신청서", icon: FileText },
-                { n: 2, label: "학생 추가", icon: Users },
-                { n: 3, label: "패키지", icon: Package },
-                { n: 4, label: "옵션 선택", icon: ListChecks },
-                { n: 5, label: "동의서", icon: FileSignature },
+                { n: 1, label: "Application", icon: FileText },
+                { n: 2, label: "Students", icon: Users },
+                { n: 3, label: "Package", icon: Package },
+                { n: 4, label: "Options", icon: ListChecks },
+                { n: 5, label: "Agreement", icon: FileSignature },
               ].map(({ n, label, icon: Icon }, idx) => (
                 <div key={n} className="flex items-center">
                   <div className={`flex flex-col items-center ${wizardStep === n ? "opacity-100" : wizardStep > n ? "opacity-80" : "opacity-40"}`}>
@@ -550,43 +550,43 @@ export default function CampApplications() {
 
           {/* Step content */}
           <div className="px-6 py-5 min-h-[320px] max-h-[420px] overflow-y-auto">
-            {/* Step 1 — 신청서 */}
+            {/* Step 1 — Application */}
             {wizardStep === 1 && (
               <div className="space-y-4">
-                <p className="text-xs text-muted-foreground">기본 신청 정보를 입력하세요.</p>
+                <p className="text-xs text-muted-foreground">Enter the basic application details.</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2 space-y-1.5">
-                    <Label className="text-xs">학생 이름 (Student Name) <span className="text-red-500">*</span></Label>
-                    <Input className="h-9 text-sm" value={form.studentName} onChange={e => setForm(f => ({ ...f, studentName: e.target.value }))} placeholder="홍길동" />
+                    <Label className="text-xs">Student Name <span className="text-red-500">*</span></Label>
+                    <Input className="h-9 text-sm" value={form.studentName} onChange={e => setForm(f => ({ ...f, studentName: e.target.value }))} placeholder="Full name" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">이메일 (Email)</Label>
+                    <Label className="text-xs">Email</Label>
                     <Input className="h-9 text-sm" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">전화번호 (Phone)</Label>
+                    <Label className="text-xs">Phone</Label>
                     <Input className="h-9 text-sm" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">국적 (Nationality)</Label>
+                    <Label className="text-xs">Nationality</Label>
                     <Input className="h-9 text-sm" value={form.nationality} onChange={e => setForm(f => ({ ...f, nationality: e.target.value }))} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">희망 출발일 (Preferred Start)</Label>
+                    <Label className="text-xs">Preferred Start Date</Label>
                     <Input className="h-9 text-sm" type="date" value={form.preferredStartDate} onChange={e => setForm(f => ({ ...f, preferredStartDate: e.target.value }))} />
                   </div>
                   <div className="col-span-2 space-y-1.5">
-                    <Label className="text-xs">프로그램 유형 (Program Type)</Label>
+                    <Label className="text-xs">Program Type</Label>
                     <Select value={form.programType} onValueChange={v => setForm(f => ({ ...f, programType: v }))}>
                       <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {[
-                          { v: "english_camp", l: "영어 캠프 (English Camp)" },
-                          { v: "stem_camp", l: "STEM 캠프" },
-                          { v: "arts_camp", l: "예술 캠프 (Arts Camp)" },
-                          { v: "sports_camp", l: "스포츠 캠프 (Sports Camp)" },
-                          { v: "leadership_camp", l: "리더십 캠프 (Leadership Camp)" },
-                          { v: "language_immersion", l: "언어 몰입 (Language Immersion)" },
+                          { v: "english_camp", l: "English Camp" },
+                          { v: "stem_camp", l: "STEM Camp" },
+                          { v: "arts_camp", l: "Arts Camp" },
+                          { v: "sports_camp", l: "Sports Camp" },
+                          { v: "leadership_camp", l: "Leadership Camp" },
+                          { v: "language_immersion", l: "Language Immersion" },
                         ].map(t => <SelectItem key={t.v} value={t.v}>{t.l}</SelectItem>)}
                       </SelectContent>
                     </Select>
@@ -595,26 +595,26 @@ export default function CampApplications() {
               </div>
             )}
 
-            {/* Step 2 — 학생 추가 */}
+            {/* Step 2 — Students */}
             {wizardStep === 2 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">참가 학생을 추가하세요 (선택사항). 나중에 추가할 수도 있습니다.</p>
+                  <p className="text-xs text-muted-foreground">Add participating students (optional). You can also add them later.</p>
                   <Button size="sm" variant="outline" className="h-7 px-2 text-xs gap-1"
                     onClick={() => setWizardParticipants(p => [...p, { fullName: "", dateOfBirth: "", gender: "", nationality: "", passportNumber: "", grade: "", schoolName: "", englishLevel: "", email: "", phone: "" }])}>
-                    <Plus className="w-3 h-3" /> 학생 추가
+                    <Plus className="w-3 h-3" /> Add Student
                   </Button>
                 </div>
                 {wizardParticipants.length === 0 && (
                   <div className="border border-dashed border-border rounded-lg py-10 flex flex-col items-center gap-2 text-muted-foreground">
                     <Users className="w-8 h-8 opacity-30" />
-                    <span className="text-xs">학생 추가 버튼을 눌러 참가자를 등록하세요</span>
+                    <span className="text-xs">Click "Add Student" to register participants</span>
                   </div>
                 )}
                 {wizardParticipants.map((p, i) => (
                   <div key={i} className="border border-border rounded-lg p-3 space-y-2 bg-muted/20">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-foreground">학생 {i + 1}</span>
+                      <span className="text-xs font-semibold text-foreground">Student {i + 1}</span>
                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
                         onClick={() => setWizardParticipants(prev => prev.filter((_, j) => j !== i))}>
                         <Trash2 className="w-3.5 h-3.5" />
@@ -622,32 +622,32 @@ export default function CampApplications() {
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="col-span-2 space-y-1">
-                        <Label className="text-[11px]">이름 (Full Name) *</Label>
+                        <Label className="text-[11px]">Full Name *</Label>
                         <Input className="h-8 text-sm" value={p.fullName} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, fullName: e.target.value } : x))} />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[11px]">생년월일 (DOB)</Label>
+                        <Label className="text-[11px]">Date of Birth</Label>
                         <Input className="h-8 text-sm" type="date" value={p.dateOfBirth} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, dateOfBirth: e.target.value } : x))} />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[11px]">성별 (Gender)</Label>
+                        <Label className="text-[11px]">Gender</Label>
                         <Select value={p.gender} onValueChange={v => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, gender: v } : x))}>
-                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="선택" /></SelectTrigger>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
                           <SelectContent>
                             {["male","female","other"].map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[11px]">국적</Label>
+                        <Label className="text-[11px]">Nationality</Label>
                         <Input className="h-8 text-sm" value={p.nationality} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, nationality: e.target.value } : x))} />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[11px]">학년 (Grade)</Label>
+                        <Label className="text-[11px]">Grade / Year</Label>
                         <Input className="h-8 text-sm" value={p.grade} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, grade: e.target.value } : x))} />
                       </div>
                       <div className="col-span-2 space-y-1">
-                        <Label className="text-[11px]">학교명 (School)</Label>
+                        <Label className="text-[11px]">School Name</Label>
                         <Input className="h-8 text-sm" value={p.schoolName} onChange={e => setWizardParticipants(prev => prev.map((x, j) => j === i ? { ...x, schoolName: e.target.value } : x))} />
                       </div>
                     </div>
@@ -656,11 +656,11 @@ export default function CampApplications() {
               </div>
             )}
 
-            {/* Step 3 — 패키지 선택 */}
+            {/* Step 3 — Package */}
             {wizardStep === 3 && (
               <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">캠프 패키지를 선택하세요 (선택사항).</p>
-                <Input className="h-9 text-sm" placeholder="패키지 검색..." value={wizardPackageSearch} onChange={e => setWizardPackageSearch(e.target.value)} />
+                <p className="text-xs text-muted-foreground">Select a camp package (optional).</p>
+                <Input className="h-9 text-sm" placeholder="Search packages…" value={wizardPackageSearch} onChange={e => setWizardPackageSearch(e.target.value)} />
                 <div className="space-y-2 max-h-[260px] overflow-y-auto">
                   {/* No package option */}
                   <div
@@ -670,7 +670,7 @@ export default function CampApplications() {
                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${!wizardPackageId ? "border-[#F5821F]" : "border-muted-foreground"}`}>
                         {!wizardPackageId && <div className="w-2 h-2 rounded-full bg-[#F5821F]" />}
                       </div>
-                      <span className="text-sm font-medium text-muted-foreground">패키지 미선택 (Skip)</span>
+                      <span className="text-sm font-medium text-muted-foreground">No package (skip)</span>
                     </div>
                   </div>
                   {wizardPackages.map((pkg: any) => (
@@ -689,16 +689,16 @@ export default function CampApplications() {
                     </div>
                   ))}
                   {wizardPackages.length === 0 && (
-                    <div className="text-xs text-muted-foreground text-center py-6">패키지를 불러오는 중...</div>
+                    <div className="text-xs text-muted-foreground text-center py-6">Loading packages…</div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Step 4 — 옵션 선택 */}
+            {/* Step 4 — Options */}
             {wizardStep === 4 && (
               <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">추가 서비스를 선택하세요 (선택사항).</p>
+                <p className="text-xs text-muted-foreground">Select any additional services (optional).</p>
                 <div className="space-y-2">
                   {WIZARD_OPTIONS.map(opt => {
                     const checked = wizardOptions.includes(opt.key);
@@ -715,30 +715,30 @@ export default function CampApplications() {
               </div>
             )}
 
-            {/* Step 5 — 동의서 */}
+            {/* Step 5 — Agreement */}
             {wizardStep === 5 && (
               <div className="space-y-4">
                 <div className="rounded-lg border border-border bg-muted/20 p-4 text-xs text-muted-foreground space-y-2 max-h-[200px] overflow-y-auto leading-relaxed">
-                  <p className="font-semibold text-foreground text-sm">캠프 신청 이용약관</p>
-                  <p>본 신청서는 Edubee Camp 캠프 프로그램 신청을 위한 공식 문서입니다. 신청자는 아래 내용에 동의함으로써 프로그램 참가 신청이 완료됩니다.</p>
-                  <p>1. 제공된 모든 정보는 사실이며 정확합니다.</p>
-                  <p>2. 캠프 프로그램 취소 및 환불 정책에 동의합니다.</p>
-                  <p>3. 참가자의 사진 및 영상이 홍보 목적으로 사용될 수 있음에 동의합니다.</p>
-                  <p>4. 캠프 기간 중 발생하는 의료비 및 기타 비용은 신청자가 부담합니다.</p>
-                  <p>5. Edubee Camp의 운영 규정 및 지시사항을 준수합니다.</p>
+                  <p className="font-semibold text-foreground text-sm">Terms &amp; Conditions</p>
+                  <p>This application is the official document for enrolling in the Edubee Camp program. By agreeing below, your application will be submitted for review.</p>
+                  <p>1. All information provided is true and accurate.</p>
+                  <p>2. I agree to the camp program cancellation and refund policy.</p>
+                  <p>3. Participant photos and videos may be used for promotional purposes.</p>
+                  <p>4. Medical and other expenses incurred during the camp are the responsibility of the applicant.</p>
+                  <p>5. I agree to comply with Edubee Camp's operational rules and instructions.</p>
                 </div>
                 {/* Summary */}
                 <div className="rounded-lg border border-border p-3 space-y-1.5 text-xs">
-                  <p className="font-semibold text-foreground text-sm mb-2">신청 요약</p>
-                  <div className="flex justify-between"><span className="text-muted-foreground">학생명</span><span className="font-medium">{form.studentName || "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">프로그램</span><span className="font-medium">{form.programType?.replace(/_/g," ") || "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">출발 희망일</span><span className="font-medium">{form.preferredStartDate || "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">참가 학생 수</span><span className="font-medium">{wizardParticipants.filter(p => p.fullName.trim()).length}명</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">추가 옵션</span><span className="font-medium">{wizardOptions.length > 0 ? wizardOptions.length + "개 선택" : "없음"}</span></div>
+                  <p className="font-semibold text-foreground text-sm mb-2">Application Summary</p>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Student Name</span><span className="font-medium">{form.studentName || "—"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Program Type</span><span className="font-medium">{form.programType?.replace(/_/g," ") || "—"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Preferred Start</span><span className="font-medium">{form.preferredStartDate || "—"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Participants</span><span className="font-medium">{wizardParticipants.filter(p => p.fullName.trim()).length} student(s)</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Additional Options</span><span className="font-medium">{wizardOptions.length > 0 ? `${wizardOptions.length} selected` : "None"}</span></div>
                 </div>
                 <label className="flex items-start gap-2.5 cursor-pointer">
                   <input type="checkbox" className="accent-[#F5821F] w-4 h-4 mt-0.5 shrink-0" checked={wizardAgreed} onChange={e => setWizardAgreed(e.target.checked)} />
-                  <span className="text-xs text-foreground">위 이용약관을 읽었으며 내용에 동의합니다.</span>
+                  <span className="text-xs text-foreground">I have read and agree to the terms and conditions above.</span>
                 </label>
               </div>
             )}
@@ -748,14 +748,14 @@ export default function CampApplications() {
           <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/20">
             <Button variant="outline" className="gap-1.5 h-9 text-sm"
               onClick={() => { if (wizardStep === 1) { setCreateDialog(false); resetWizard(); } else setWizardStep(s => s - 1); }}>
-              {wizardStep === 1 ? <><X className="w-3.5 h-3.5" /> 취소</> : <><ChevronLeft className="w-3.5 h-3.5" /> 이전</>}
+              {wizardStep === 1 ? <><X className="w-3.5 h-3.5" /> Cancel</> : <><ChevronLeft className="w-3.5 h-3.5" /> Back</>}
             </Button>
             <span className="text-xs text-muted-foreground">{wizardStep} / 5</span>
             {wizardStep < 5 ? (
               <Button className="gap-1.5 h-9 text-sm bg-[#F5821F] hover:bg-[#d97706] text-white"
                 disabled={wizardStep === 1 && !form.studentName.trim()}
                 onClick={() => setWizardStep(s => s + 1)}>
-                다음 <ChevronRight className="w-3.5 h-3.5" />
+                Next <ChevronRight className="w-3.5 h-3.5" />
               </Button>
             ) : (
               <Button className="gap-1.5 h-9 text-sm bg-[#F5821F] hover:bg-[#d97706] text-white"
@@ -765,7 +765,7 @@ export default function CampApplications() {
                   notes: [form.notes, wizardOptions.length > 0 ? `Options: ${wizardOptions.join(", ")}` : "", wizardPackageId ? `PackageId: ${wizardPackageId}` : ""].filter(Boolean).join("\n"),
                 })}>
                 {createApp.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                신청 완료
+                Submit
               </Button>
             )}
           </div>
