@@ -1,41 +1,59 @@
+// /client/src/pages/admin/camp-services/camp-tours.tsx
+// Camp Tour 목록 페이지
+// 백엔드: camp_tour_mgt 테이블
+// API:    GET /api/camp-services/tours
+
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
   Plus,
-  BookOpen,
+  MapPin,
   ChevronRight,
   Calendar,
-  Users,
+  Clock,
 } from "lucide-react";
 
-interface CampInstitute {
+// ── 타입 ──────────────────────────────────────────────────────
+interface CampTour {
   id: string;
   contractId: string;
   contractNumber?: string;
   studentName?: string;
-  instituteAccountId?: string;
-  instituteName?: string;
-  programName?: string;
-  programType?: string;
-  programStartDate?: string;
-  programEndDate?: string;
-  weeklyHours?: number;
-  ageGroup?: string;
-  levelAssessmentRequired?: boolean;
-  assignedClass?: string;
+  tourProviderAccountId?: string;
+  providerName?: string;
+  tourName?: string;
+  tourType?: string;
+  tourDate?: string;
+  tourDurationHours?: number;
+  pickupLocation?: string;
+  maxParticipants?: number;
+  bookingReference?: string;
+  partnerCost?: number;
+  retailPrice?: number;
   status: string;
   notes?: string;
   createdAt: string;
 }
 
+// ── 투어 타입 라벨 ────────────────────────────────────────────
+const TOUR_TYPE_LABELS: Record<string, string> = {
+  day_tour:   "Day Tour",
+  overnight:  "Overnight",
+  cultural:   "Cultural",
+  adventure:  "Adventure",
+  city:       "City",
+  nature:     "Nature",
+};
+
+// ── 상태 뱃지 ─────────────────────────────────────────────────
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  pending:     { bg: "#FEF9C3", text: "#CA8A04", label: "Pending" },
-  confirmed:   { bg: "#DCFCE7", text: "#16A34A", label: "Confirmed" },
-  in_progress: { bg: "#FEF0E3", text: "#F5821F", label: "In Progress" },
-  completed:   { bg: "#DCFCE7", text: "#16A34A", label: "Completed" },
-  cancelled:   { bg: "#FEF2F2", text: "#DC2626", label: "Cancelled" },
+  pending:   { bg: "#FEF9C3", text: "#CA8A04", label: "Pending" },
+  booked:    { bg: "#FEF0E3", text: "#F5821F", label: "Booked" },
+  confirmed: { bg: "#DCFCE7", text: "#16A34A", label: "Confirmed" },
+  completed: { bg: "#DCFCE7", text: "#16A34A", label: "Completed" },
+  cancelled: { bg: "#FEF2F2", text: "#DC2626", label: "Cancelled" },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -57,39 +75,44 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function CampInstitutes() {
+// ── 메인 컴포넌트 ─────────────────────────────────────────────
+export default function CampTours() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [tourTypeFilter, setTourTypeFilter] = useState("");
   const [page, setPage] = useState(1);
   const limit = 20;
 
+  // ── 데이터 페치 ─────────────────────────────────────────────
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
     ...(search && { search }),
     ...(statusFilter && { status: statusFilter }),
+    ...(tourTypeFilter && { tourType: tourTypeFilter }),
   });
 
   const { data, isLoading } = useQuery<{
-    institutes: CampInstitute[];
+    tours: CampTour[];
     total: number;
     page: number;
     totalPages: number;
   }>({
-    queryKey: ["/api/camp-services/institutes", search, statusFilter, page],
+    queryKey: ["/api/camp-services/tours", search, statusFilter, tourTypeFilter, page],
     queryFn: async () => {
-      const res = await fetch(`/api/camp-services/institutes?${params}`, {
+      const res = await fetch(`/api/camp-services/tours?${params}`, {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to fetch institutes");
+      if (!res.ok) throw new Error("Failed to fetch tours");
       return res.json();
     },
   });
 
-  const institutes = data?.institutes ?? [];
+  const tours = data?.tours ?? [];
   const totalPages = data?.totalPages ?? 1;
 
+  // ── 헬퍼 ────────────────────────────────────────────────────
   function formatDate(d?: string) {
     if (!d) return "—";
     return new Date(d).toLocaleDateString("en-AU", {
@@ -97,14 +120,18 @@ export default function CampInstitutes() {
     });
   }
 
-  function programTypeLabel(t?: string) {
-    if (!t) return "—";
-    return t.charAt(0).toUpperCase() + t.slice(1);
+  function formatCurrency(amount?: number) {
+    if (amount == null) return "—";
+    return new Intl.NumberFormat("en-AU", {
+      style: "currency", currency: "AUD", minimumFractionDigits: 0,
+    }).format(amount);
   }
 
+  // ── 렌더 ────────────────────────────────────────────────────
   return (
     <div style={{ padding: 32, background: "#FAFAF9", minHeight: "100vh" }}>
 
+      {/* ── 페이지 헤더 ── */}
       <div
         style={{
           display: "flex",
@@ -117,14 +144,14 @@ export default function CampInstitutes() {
       >
         <div>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: "#1C1917", margin: 0 }}>
-            Camp Institute
+            Camp Tours
           </h1>
           <p style={{ fontSize: 14, color: "#57534E", marginTop: 4 }}>
-            Manage camp academic programme placements
+            Manage camp tour bookings and activities
           </p>
         </div>
         <button
-          onClick={() => navigate("/admin/camp-services/institutes/new")}
+          onClick={() => navigate("/admin/camp-services/tours/new")}
           style={{
             display: "flex",
             alignItems: "center",
@@ -140,11 +167,20 @@ export default function CampInstitutes() {
           }}
         >
           <Plus size={16} />
-          New Institute
+          New Tour
         </button>
       </div>
 
-      <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+      {/* ── 필터 바 ── */}
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          marginBottom: 24,
+          flexWrap: "wrap",
+        }}
+      >
+        {/* 검색 */}
         <div style={{ position: "relative", flex: 1, minWidth: 240 }}>
           <Search
             size={16}
@@ -156,7 +192,7 @@ export default function CampInstitutes() {
           <input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search student, program, school..."
+            placeholder="Search student, tour name, provider..."
             style={{
               width: "100%", height: 40,
               border: "1.5px solid #E8E6E2", borderRadius: 8,
@@ -165,29 +201,56 @@ export default function CampInstitutes() {
             }}
           />
         </div>
+
+        {/* 투어 타입 필터 */}
+        <select
+          value={tourTypeFilter}
+          onChange={(e) => { setTourTypeFilter(e.target.value); setPage(1); }}
+          style={{
+            height: 40, border: "1.5px solid #E8E6E2", borderRadius: 8,
+            padding: "0 12px", fontSize: 14, color: "#1C1917",
+            background: "#fff", cursor: "pointer", minWidth: 140,
+          }}
+        >
+          <option value="">All Types</option>
+          {Object.entries(TOUR_TYPE_LABELS).map(([val, label]) => (
+            <option key={val} value={val}>{label}</option>
+          ))}
+        </select>
+
+        {/* 상태 필터 */}
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           style={{
             height: 40, border: "1.5px solid #E8E6E2", borderRadius: 8,
             padding: "0 12px", fontSize: 14, color: "#1C1917",
-            background: "#fff", cursor: "pointer", minWidth: 150,
+            background: "#fff", cursor: "pointer", minWidth: 140,
           }}
         >
           <option value="">All Status</option>
           <option value="pending">Pending</option>
+          <option value="booked">Booked</option>
           <option value="confirmed">Confirmed</option>
-          <option value="in_progress">In Progress</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
         </select>
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #E8E6E2", borderRadius: 12, overflow: "hidden" }}>
+      {/* ── 테이블 ── */}
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #E8E6E2",
+          borderRadius: 12,
+          overflow: "hidden",
+        }}
+      >
+        {/* 테이블 헤더 */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "2fr 2fr 1.5fr 1fr 1fr 1fr 40px",
+            gridTemplateColumns: "2fr 2fr 1.2fr 1fr 1fr 1fr 40px",
             padding: "12px 20px",
             background: "#FAFAF9",
             borderBottom: "1px solid #E8E6E2",
@@ -197,19 +260,23 @@ export default function CampInstitutes() {
           }}
         >
           <span>Student / Contract</span>
-          <span>Program</span>
-          <span>Period</span>
-          <span>Age Group</span>
-          <span>Hours/wk</span>
+          <span>Tour</span>
+          <span>Date</span>
+          <span>Duration</span>
+          <span>Retail Price</span>
           <span>Status</span>
           <span />
         </div>
 
+        {/* 로딩 */}
         {isLoading && (
-          <div style={{ padding: 48, textAlign: "center", color: "#A8A29E" }}>Loading...</div>
+          <div style={{ padding: 48, textAlign: "center", color: "#A8A29E" }}>
+            Loading...
+          </div>
         )}
 
-        {!isLoading && institutes.length === 0 && (
+        {/* 빈 상태 */}
+        {!isLoading && tours.length === 0 && (
           <div style={{ padding: 64, textAlign: "center" }}>
             <div
               style={{
@@ -219,24 +286,25 @@ export default function CampInstitutes() {
                 margin: "0 auto 16px",
               }}
             >
-              <BookOpen size={24} color="#F5821F" />
+              <MapPin size={24} color="#F5821F" />
             </div>
             <p style={{ fontSize: 16, fontWeight: 600, color: "#1C1917", margin: "0 0 8px" }}>
-              No institutes found
+              No tours found
             </p>
             <p style={{ fontSize: 14, color: "#57534E", margin: 0 }}>
-              Create a new camp institute placement to get started.
+              Create a new camp tour booking to get started.
             </p>
           </div>
         )}
 
-        {institutes.map((inst) => (
+        {/* 데이터 행 */}
+        {tours.map((tour) => (
           <div
-            key={inst.id}
-            onClick={() => navigate(`/admin/camp-services/institutes/${inst.id}`)}
+            key={tour.id}
+            onClick={() => navigate(`/admin/camp-services/tours/${tour.id}`)}
             style={{
               display: "grid",
-              gridTemplateColumns: "2fr 2fr 1.5fr 1fr 1fr 1fr 40px",
+              gridTemplateColumns: "2fr 2fr 1.2fr 1fr 1fr 1fr 40px",
               padding: "14px 20px",
               borderBottom: "1px solid #F4F3F1",
               alignItems: "center",
@@ -246,50 +314,68 @@ export default function CampInstitutes() {
             onMouseEnter={(e) => (e.currentTarget.style.background = "#FAFAF9")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
+            {/* Student / Contract */}
             <div>
               <div style={{ fontSize: 14, fontWeight: 500, color: "#1C1917" }}>
-                {inst.studentName ?? "—"}
+                {tour.studentName ?? "—"}
               </div>
               <div style={{ fontSize: 12, color: "#A8A29E", marginTop: 2 }}>
-                {inst.contractNumber ?? inst.contractId.slice(0, 8)}
+                {tour.contractNumber ?? tour.contractId.slice(0, 8)}
               </div>
             </div>
 
+            {/* Tour */}
             <div>
-              <div style={{ fontSize: 14, color: "#1C1917" }}>{inst.programName ?? "—"}</div>
+              <div style={{ fontSize: 14, color: "#1C1917" }}>
+                {tour.tourName ?? "—"}
+              </div>
               <div style={{ fontSize: 12, color: "#A8A29E", marginTop: 2 }}>
-                {programTypeLabel(inst.programType)}
+                {tour.tourType ? (TOUR_TYPE_LABELS[tour.tourType] ?? tour.tourType) : "—"}
+                {tour.providerName ? ` · ${tour.providerName}` : ""}
               </div>
             </div>
 
+            {/* Date */}
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <Calendar size={14} color="#A8A29E" />
-              <div>
-                <div style={{ fontSize: 12, color: "#57534E" }}>{formatDate(inst.programStartDate)}</div>
-                <div style={{ fontSize: 12, color: "#A8A29E" }}>→ {formatDate(inst.programEndDate)}</div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Users size={14} color="#A8A29E" />
-              <span style={{ fontSize: 14, color: "#57534E", textTransform: "capitalize" }}>
-                {inst.ageGroup ?? "—"}
+              <span style={{ fontSize: 14, color: "#57534E" }}>
+                {formatDate(tour.tourDate)}
               </span>
             </div>
 
-            <div style={{ fontSize: 14, color: "#57534E" }}>
-              {inst.weeklyHours ? `${inst.weeklyHours}h` : "—"}
+            {/* Duration */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Clock size={14} color="#A8A29E" />
+              <span style={{ fontSize: 14, color: "#57534E" }}>
+                {tour.tourDurationHours ? `${tour.tourDurationHours}h` : "—"}
+              </span>
             </div>
 
-            <StatusBadge status={inst.status} />
+            {/* Retail Price */}
+            <div style={{ fontSize: 14, color: "#1C1917", fontWeight: 500 }}>
+              {formatCurrency(tour.retailPrice)}
+            </div>
 
+            {/* Status */}
+            <StatusBadge status={tour.status} />
+
+            {/* Arrow */}
             <ChevronRight size={16} color="#A8A29E" />
           </div>
         ))}
       </div>
 
+      {/* ── 페이지네이션 ── */}
       {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 24 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 8,
+            marginTop: 24,
+          }}
+        >
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
@@ -302,7 +388,9 @@ export default function CampInstitutes() {
           >
             Previous
           </button>
-          <span style={{ fontSize: 14, color: "#57534E" }}>Page {page} of {totalPages}</span>
+          <span style={{ fontSize: 14, color: "#57534E" }}>
+            Page {page} of {totalPages}
+          </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}

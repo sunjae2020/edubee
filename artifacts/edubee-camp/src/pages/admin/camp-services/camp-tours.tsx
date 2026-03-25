@@ -1,27 +1,68 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import axios from "axios";
-import { Map, ChevronRight, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Search,
+  Plus,
+  MapPin,
+  ChevronRight,
+  Calendar,
+  Clock,
+} from "lucide-react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+interface CampTour {
+  id: string;
+  contractId: string;
+  contractNumber?: string;
+  studentName?: string;
+  tourProviderAccountId?: string;
+  providerName?: string;
+  tourName?: string;
+  tourType?: string;
+  tourDate?: string;
+  tourDurationHours?: number;
+  pickupLocation?: string;
+  maxParticipants?: number;
+  bookingReference?: string;
+  partnerCost?: number;
+  retailPrice?: number;
+  status: string;
+  notes?: string;
+  createdAt: string;
+}
 
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  pending:     { bg: "#FEF9C3", color: "#854D0E" },
-  confirmed:   { bg: "#FEF0E3", color: "#F5821F" },
-  in_progress: { bg: "#DBEAFE", color: "#1D4ED8" },
-  completed:   { bg: "#DCFCE7", color: "#16A34A" },
-  cancelled:   { bg: "#FEE2E2", color: "#DC2626" },
+const TOUR_TYPE_LABELS: Record<string, string> = {
+  day_tour:  "Day Tour",
+  overnight: "Overnight",
+  cultural:  "Cultural",
+  adventure: "Adventure",
+  city:      "City",
+  nature:    "Nature",
+};
+
+const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  pending:   { bg: "#FEF9C3", text: "#CA8A04", label: "Pending" },
+  booked:    { bg: "#FEF0E3", text: "#F5821F", label: "Booked" },
+  confirmed: { bg: "#DCFCE7", text: "#16A34A", label: "Confirmed" },
+  completed: { bg: "#DCFCE7", text: "#16A34A", label: "Completed" },
+  cancelled: { bg: "#FEF2F2", text: "#DC2626", label: "Cancelled" },
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_COLORS[status] ?? { bg: "#F4F3F1", color: "#57534E" };
+  const s = STATUS_STYLES[status] ?? { bg: "#F4F3F1", text: "#57534E", label: status };
   return (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ background: s.bg, color: s.color }}>
-      {status.replace(/_/g, " ")}
+    <span
+      style={{
+        background: s.bg,
+        color: s.text,
+        fontSize: 12,
+        fontWeight: 500,
+        borderRadius: 999,
+        padding: "3px 10px",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {s.label}
     </span>
   );
 }
@@ -29,124 +70,279 @@ function StatusBadge({ status }: { status: string }) {
 export default function CampTours() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [tourTypeFilter, setTourTypeFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["camp-tours", status],
-    queryFn: () =>
-      axios.get(`${BASE}/api/camp-services/tours`).then(r => r.data),
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    ...(search && { search }),
+    ...(statusFilter && { status: statusFilter }),
+    ...(tourTypeFilter && { tourType: tourTypeFilter }),
   });
 
-  const rows: any[] = data?.data ?? [];
-
-  const filtered = rows.filter(r => {
-    const matchStatus = status === "all" || r.status === status;
-    const q = search.toLowerCase();
-    const matchSearch = !q ||
-      (r.tourName ?? "").toLowerCase().includes(q) ||
-      (r.tourType ?? "").toLowerCase().includes(q) ||
-      (r.pickupLocation ?? "").toLowerCase().includes(q) ||
-      (r.bookingReference ?? "").toLowerCase().includes(q);
-    return matchStatus && matchSearch;
+  const { data, isLoading } = useQuery<{
+    tours: CampTour[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>({
+    queryKey: ["/api/camp-services/tours", search, statusFilter, tourTypeFilter, page],
+    queryFn: async () => {
+      const res = await fetch(`/api/camp-services/tours?${params}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch tours");
+      return res.json();
+    },
   });
+
+  const tours = data?.tours ?? [];
+  const totalPages = data?.totalPages ?? 1;
+
+  function formatDate(d?: string) {
+    if (!d) return "—";
+    return new Date(d).toLocaleDateString("en-AU", {
+      day: "2-digit", month: "short", year: "numeric",
+    });
+  }
+
+  function formatCurrency(amount?: number) {
+    if (amount == null) return "—";
+    return new Intl.NumberFormat("en-AU", {
+      style: "currency", currency: "AUD", minimumFractionDigits: 0,
+    }).format(amount);
+  }
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--e-bg-page)" }}>
-      {/* Header */}
-      <div className="px-6 py-5 border-b" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--e-orange-lt)" }}>
-            <Map className="w-5 h-5" style={{ color: "var(--e-orange)" }} />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold" style={{ color: "var(--e-text-1)" }}>Camp Tours</h1>
-            <p className="text-sm" style={{ color: "var(--e-text-3)" }}>Tour and excursion service records</p>
-          </div>
-          <span className="ml-auto text-sm font-medium px-2.5 py-1 rounded-full" style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
-            {filtered.length} records
-          </span>
-        </div>
+    <div style={{ padding: 32, background: "#FAFAF9", minHeight: "100vh" }}>
 
-        {/* Filters */}
-        <div className="flex gap-3">
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--e-text-3)" }} />
-            <Input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search tour name, reference…"
-              className="pl-9 h-9 text-sm"
-            />
-          </div>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-9 w-40 text-sm"><SelectValue placeholder="All statuses" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              {Object.keys(STATUS_COLORS).map(s => (
-                <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 32,
+          paddingBottom: 24,
+          borderBottom: "1px solid #E8E6E2",
+        }}
+      >
+        <div>
+          <h1 style={{ fontSize: 32, fontWeight: 700, color: "#1C1917", margin: 0 }}>
+            Camp Tours
+          </h1>
+          <p style={{ fontSize: 14, color: "#57534E", marginTop: 4 }}>
+            Manage camp tour bookings and activities
+          </p>
         </div>
+        <button
+          onClick={() => navigate("/admin/camp-services/tours/new")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            background: "#F5821F",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            padding: "10px 20px",
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          <Plus size={16} />
+          New Tour
+        </button>
       </div>
 
-      {/* Table */}
-      <div className="px-6 py-4">
-        {isLoading ? (
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-16" style={{ color: "var(--e-text-3)" }}>
-            <Map className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No tour records found</p>
-          </div>
-        ) : (
-          <div className="rounded-xl overflow-hidden border" style={{ borderColor: "var(--e-border)" }}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ background: "var(--e-bg-surface)", borderBottom: `1px solid var(--e-border)` }}>
-                  {["Tour Name", "Type", "Tour Date", "Duration", "Pickup Location", "Booking Ref", "Status", ""].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((row, i) => (
-                  <tr
-                    key={row.id}
-                    onClick={() => navigate(`/admin/camp-services/tours/${row.id}`)}
-                    className="cursor-pointer transition-colors hover:bg-[#F4F3F1] dark:hover:bg-[#242220]"
-                    style={{
-                      background: i % 2 === 0 ? "var(--e-bg-surface)" : "var(--e-bg-page)",
-                      borderBottom: `1px solid var(--e-border)`,
-                    }}
-                  >
-                    <td className="px-4 py-3 font-medium" style={{ color: "var(--e-text-1)" }}>
-                      {row.tourName ?? "—"}
-                    </td>
-                    <td className="px-4 py-3" style={{ color: "var(--e-text-2)" }}>{row.tourType ?? "—"}</td>
-                    <td className="px-4 py-3 text-xs" style={{ color: "var(--e-text-2)" }}>
-                      {row.tourDate ? row.tourDate.slice(0, 10) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: "var(--e-text-2)" }}>
-                      {row.tourDurationHours ? `${row.tourDurationHours}h` : "—"}
-                    </td>
-                    <td className="px-4 py-3" style={{ color: "var(--e-text-2)" }}>{row.pickupLocation ?? "—"}</td>
-                    <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--e-text-3)" }}>
-                      {row.bookingReference ?? "—"}
-                    </td>
-                    <td className="px-4 py-3"><StatusBadge status={row.status ?? "pending"} /></td>
-                    <td className="px-4 py-3 text-right">
-                      <ChevronRight className="w-4 h-4 inline-block" style={{ color: "var(--e-text-3)" }} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+        <div style={{ position: "relative", flex: 1, minWidth: 240 }}>
+          <Search
+            size={16}
+            style={{
+              position: "absolute", left: 12, top: "50%",
+              transform: "translateY(-50%)", color: "#A8A29E",
+            }}
+          />
+          <input
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Search student, tour name, provider..."
+            style={{
+              width: "100%", height: 40,
+              border: "1.5px solid #E8E6E2", borderRadius: 8,
+              padding: "0 12px 0 36px", fontSize: 14,
+              color: "#1C1917", background: "#fff", boxSizing: "border-box",
+            }}
+          />
+        </div>
+        <select
+          value={tourTypeFilter}
+          onChange={(e) => { setTourTypeFilter(e.target.value); setPage(1); }}
+          style={{
+            height: 40, border: "1.5px solid #E8E6E2", borderRadius: 8,
+            padding: "0 12px", fontSize: 14, color: "#1C1917",
+            background: "#fff", cursor: "pointer", minWidth: 140,
+          }}
+        >
+          <option value="">All Types</option>
+          {Object.entries(TOUR_TYPE_LABELS).map(([val, label]) => (
+            <option key={val} value={val}>{label}</option>
+          ))}
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          style={{
+            height: 40, border: "1.5px solid #E8E6E2", borderRadius: 8,
+            padding: "0 12px", fontSize: 14, color: "#1C1917",
+            background: "#fff", cursor: "pointer", minWidth: 140,
+          }}
+        >
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="booked">Booked</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      <div style={{ background: "#fff", border: "1px solid #E8E6E2", borderRadius: 12, overflow: "hidden" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "2fr 2fr 1.2fr 1fr 1fr 1fr 40px",
+            padding: "12px 20px",
+            background: "#FAFAF9",
+            borderBottom: "1px solid #E8E6E2",
+            fontSize: 12, fontWeight: 500,
+            color: "#57534E", textTransform: "uppercase",
+            letterSpacing: "0.05em",
+          }}
+        >
+          <span>Student / Contract</span>
+          <span>Tour</span>
+          <span>Date</span>
+          <span>Duration</span>
+          <span>Retail Price</span>
+          <span>Status</span>
+          <span />
+        </div>
+
+        {isLoading && (
+          <div style={{ padding: 48, textAlign: "center", color: "#A8A29E" }}>Loading...</div>
+        )}
+
+        {!isLoading && tours.length === 0 && (
+          <div style={{ padding: 64, textAlign: "center" }}>
+            <div
+              style={{
+                width: 48, height: 48, borderRadius: 10,
+                background: "#FEF0E3", display: "flex",
+                alignItems: "center", justifyContent: "center",
+                margin: "0 auto 16px",
+              }}
+            >
+              <MapPin size={24} color="#F5821F" />
+            </div>
+            <p style={{ fontSize: 16, fontWeight: 600, color: "#1C1917", margin: "0 0 8px" }}>
+              No tours found
+            </p>
+            <p style={{ fontSize: 14, color: "#57534E", margin: 0 }}>
+              Create a new camp tour booking to get started.
+            </p>
           </div>
         )}
+
+        {tours.map((tour) => (
+          <div
+            key={tour.id}
+            onClick={() => navigate(`/admin/camp-services/tours/${tour.id}`)}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "2fr 2fr 1.2fr 1fr 1fr 1fr 40px",
+              padding: "14px 20px",
+              borderBottom: "1px solid #F4F3F1",
+              alignItems: "center",
+              cursor: "pointer",
+              transition: "background 200ms",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#FAFAF9")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: "#1C1917" }}>
+                {tour.studentName ?? "—"}
+              </div>
+              <div style={{ fontSize: 12, color: "#A8A29E", marginTop: 2 }}>
+                {tour.contractNumber ?? tour.contractId.slice(0, 8)}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: 14, color: "#1C1917" }}>{tour.tourName ?? "—"}</div>
+              <div style={{ fontSize: 12, color: "#A8A29E", marginTop: 2 }}>
+                {tour.tourType ? (TOUR_TYPE_LABELS[tour.tourType] ?? tour.tourType) : "—"}
+                {tour.providerName ? ` · ${tour.providerName}` : ""}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Calendar size={14} color="#A8A29E" />
+              <span style={{ fontSize: 14, color: "#57534E" }}>{formatDate(tour.tourDate)}</span>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Clock size={14} color="#A8A29E" />
+              <span style={{ fontSize: 14, color: "#57534E" }}>
+                {tour.tourDurationHours ? `${tour.tourDurationHours}h` : "—"}
+              </span>
+            </div>
+
+            <div style={{ fontSize: 14, color: "#1C1917", fontWeight: 500 }}>
+              {formatCurrency(tour.retailPrice)}
+            </div>
+
+            <StatusBadge status={tour.status} />
+
+            <ChevronRight size={16} color="#A8A29E" />
+          </div>
+        ))}
       </div>
+
+      {totalPages > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 24 }}>
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            style={{
+              padding: "6px 14px", borderRadius: 8, fontSize: 14,
+              border: "1.5px solid #E8E6E2", background: "#fff",
+              cursor: page === 1 ? "not-allowed" : "pointer",
+              color: page === 1 ? "#A8A29E" : "#1C1917",
+            }}
+          >
+            Previous
+          </button>
+          <span style={{ fontSize: 14, color: "#57534E" }}>Page {page} of {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            style={{
+              padding: "6px 14px", borderRadius: 8, fontSize: 14,
+              border: "1.5px solid #E8E6E2", background: "#fff",
+              cursor: page === totalPages ? "not-allowed" : "pointer",
+              color: page === totalPages ? "#A8A29E" : "#1C1917",
+            }}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
