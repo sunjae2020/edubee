@@ -139,6 +139,7 @@ function buildInstallmentItems(p: Product, startSortIndex: number) {
 interface LineGroup {
   key:          string;
   productId:    string | null;
+  isManual:     boolean;
   label:        string;
   providerName: string | null;
   rows:         QuoteProduct[];
@@ -700,14 +701,19 @@ function ManualLineForm({ onAdd }: { onAdd: (line: Partial<QuoteProduct>) => voi
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState(1);
+  // Virtual groupId — used so that installments added via + button on
+  // this group share the same UUID key. Regenerated after each successful
+  // add so the next manual item starts its own independent group.
+  const [groupId, setGroupId] = useState(() => crypto.randomUUID());
 
   const handleAdd = () => {
     if (!name.trim()) return;
-    onAdd({ name, itemDescription: description, price, quantity, manualInput: true });
+    onAdd({ name, itemDescription: description, price, quantity, manualInput: true, productId: groupId });
     setName("");
     setDescription("");
     setPrice("");
     setQuantity(1);
+    setGroupId(crypto.randomUUID()); // fresh UUID for the next separate manual item
     setOpen(false);
   };
 
@@ -953,13 +959,14 @@ export default function QuoteBuilderPage() {
   const addManualMutation = useMutation({
     mutationFn: (line: Partial<QuoteProduct>) =>
       axios.post(`${BASE}/api/quote-products`, {
-        quote_id: quoteId,
-        name: line.name,
+        quote_id:    quoteId,
+        product_id:  line.productId ?? undefined,
+        name:        line.name,
         item_description: line.itemDescription,
-        price: line.price ?? "0",
-        quantity: line.quantity ?? 1,
+        price:       line.price ?? "0",
+        quantity:    line.quantity ?? 1,
         manual_input: true,
-        sort_index: lines.length,
+        sort_index:  lines.length,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quote-products", quoteId] }),
     onError: () => toast({ title: "Failed to add line item", variant: "destructive" }),
@@ -1068,13 +1075,15 @@ export default function QuoteBuilderPage() {
     const seen = new Map<string, LineGroup>();
     const order: string[] = [];
     for (const line of activeLines) {
-      const key = line.manualInput || !line.productId
-        ? `manual_${line.id}`
-        : line.productId;
+      // Catalog items: group by productId.
+      // Manual items WITH a virtual groupId stored in productId: group by that UUID.
+      // Legacy manual items with no productId: each is its own group.
+      const key = line.productId ?? `manual_${line.id}`;
       if (!seen.has(key)) {
         seen.set(key, {
           key,
-          productId:    line.manualInput || !line.productId ? null : line.productId,
+          productId:    line.productId ?? null,
+          isManual:     !!line.manualInput,
           label:        line.name || line.productName || "Item",
           providerName: line.providerName ?? null,
           rows:         [],
@@ -1343,7 +1352,7 @@ export default function QuoteBuilderPage() {
                                 onClick={() => addInstallmentMutation.mutate({
                                   productId:   group.productId,
                                   productName: group.label,
-                                  manualInput: !group.productId,
+                                  manualInput: group.isManual,
                                 })}
                                 disabled={addInstallmentMutation.isPending}
                                 title="Add installment"
