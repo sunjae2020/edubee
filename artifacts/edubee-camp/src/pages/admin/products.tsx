@@ -58,7 +58,7 @@ const emptyForm = {
 const emptyFilters: ProductSearchFilters = {
   searchCategory: "", searchText: "", productGroup: "",
   productType: "", productPriority: "", productGrade: "", status: "",
-  country: "", city: "",
+  country: "", location: "",
 };
 
 // ── LinkedGroupsCell ─────────────────────────────────────────────────────────
@@ -124,7 +124,7 @@ export default function Products() {
     queryFn: () => axios.get(`${BASE}/api/products-lookup/product-types`).then(r => r.data),
     staleTime: 60_000,
   });
-  const { data: accountsLookup = [] } = useQuery<{ id: string; name: string; country?: string | null; city?: string | null }[]>({
+  const { data: accountsLookup = [] } = useQuery<{ id: string; name: string; country?: string | null; city?: string | null; location?: string | null }[]>({
     queryKey: ["lookup-accounts"],
     queryFn: () => axios.get(`${BASE}/api/products-lookup/accounts`).then(r => r.data),
     staleTime: 120_000,
@@ -134,9 +134,12 @@ export default function Products() {
     new Map(accountsLookup.filter(a => a.country).map(a => [a.country!, a.country!]))
   ).sort().map(([v]) => ({ value: v, label: v }));
 
-  const cityOpts: { value: string; label: string; country: string }[] = Array.from(
-    new Map(accountsLookup.filter(a => a.city).map(a => [`${a.country ?? ""}::${a.city}`, { value: a.city!, label: a.city!, country: a.country ?? "" }]))
-  ).map(([, v]) => v).sort((a, b) => a.label.localeCompare(b.label));
+  const locationOpts: { value: string; label: string }[] = Array.from(
+    new Set(
+      accountsLookup
+        .flatMap(a => (a.location ?? "").split(",").map(s => s.trim()).filter(Boolean))
+    )
+  ).sort().map(v => ({ value: v, label: v }));
 
   // ── Products query ────────────────────────────────────────────────────────
   const queryKey = ["products", { filters, page }];
@@ -152,7 +155,7 @@ export default function Products() {
       if (filters.productGrade)   params.set("productGrade",    filters.productGrade);
       if (filters.status)         params.set("status",          filters.status);
       if (filters.country)        params.set("country",         filters.country);
-      if (filters.city)           params.set("city",            filters.city);
+      if (filters.location)       params.set("location",        filters.location);
       return axios.get(`${BASE}/api/products?${params}`).then(r => r.data);
     },
   });
@@ -241,7 +244,7 @@ export default function Products() {
           productGroups: productGroupOpts.map(g => ({ value: g.id, label: g.name })),
           productTypes:  productTypeOpts.map(t => ({ value: t.id, label: t.name })),
           countries: countryOpts,
-          cities:    cityOpts,
+          locations: locationOpts,
         }}
       />
 

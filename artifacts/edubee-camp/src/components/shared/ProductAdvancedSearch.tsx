@@ -10,7 +10,7 @@ export interface ProductSearchFilters {
   productGrade: string;
   status: string;
   country: string;
-  city: string;
+  location: string;
 }
 
 interface ProductAdvancedSearchProps {
@@ -20,7 +20,7 @@ interface ProductAdvancedSearchProps {
     productGroups?: { value: string; label: string }[];
     productTypes?: { value: string; label: string }[];
     countries?: { value: string; label: string }[];
-    cities?: { value: string; label: string; country?: string }[];
+    locations?: { value: string; label: string }[];
   };
 }
 
@@ -104,7 +104,7 @@ function FocusInput({ style, ...props }: React.InputHTMLAttributes<HTMLInputElem
 const empty: ProductSearchFilters = {
   searchCategory: "", searchText: "", productGroup: "",
   productType: "", productPriority: "", productGrade: "", status: "",
-  country: "", city: "",
+  country: "", location: "",
 };
 
 export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvancedSearchProps) {
@@ -116,7 +116,7 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
   const activeCount = [
     filters.productGroup, filters.productType,
     filters.productPriority, filters.productGrade, filters.status,
-    filters.country, filters.city,
+    filters.country, filters.location,
   ].filter(Boolean).length;
 
   const reset = () => { setFilters(empty); onSearch(empty); };
@@ -125,7 +125,7 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
   const productGroups    = options.productGroups ?? [];
   const productTypes     = options.productTypes  ?? [];
   const countries        = options.countries     ?? [];
-  const cities           = options.cities        ?? [];
+  const locations        = options.locations      ?? [];
 
   return (
     <div style={S.wrapper}>
@@ -257,15 +257,13 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
               </div>
             </div>
 
-            {/* City */}
+            {/* Location */}
             <div style={S.fieldGroup}>
-              <label style={S.label}>Provider City</label>
+              <label style={S.label}>Location</label>
               <div style={S.selectWrap}>
-                <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.city} onChange={set("city")}>
-                  <option value="">All Cities</option>
-                  {cities
-                    .filter(c => !filters.country || c.country === filters.country)
-                    .map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.location} onChange={set("location")}>
+                  <option value="">All Locations</option>
+                  {locations.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </FocusSelect>
                 <span style={S.chevron}><ChevronDown size={13} strokeWidth={1.5} /></span>
               </div>

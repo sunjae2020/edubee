@@ -640,7 +640,7 @@ router.get("/products", authenticate, async (req, res) => {
       productType, status, page = "1", limit = "20",
       search, productPriority, productGrade, productTypeId, productGroup,
       searchCategory, display_on_quote, provider, productContext,
-      country, city,
+      country, location,
     } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
@@ -658,7 +658,7 @@ router.get("/products", authenticate, async (req, res) => {
     if (provider)         conditions.push(eq(products.providerId, provider));
     if (productContext)   conditions.push(eq(products.productContext, productContext));
     if (country)          conditions.push(eq(accounts.country, country));
-    if (city)             conditions.push(eq(accounts.city, city));
+    if (location)         conditions.push(ilike(accounts.location, `%${location}%`));
     if (search) {
       const q = `%${search}%`;
       if (searchCategory === "provider") {
