@@ -972,23 +972,38 @@ export default function QuoteBuilderPage() {
     onError: () => toast({ title: "Failed to add line item", variant: "destructive" }),
   });
 
-  // ── Add Installment for existing catalog product ─────────────────────────────
+  // ── Add Installment (supports catalog + manual groups) ───────────────────────
   const addInstallmentMutation = useMutation({
-    mutationFn: ({ productId, productName, manualInput }: {
-      productId:   string | null;
-      productName: string;
-      manualInput: boolean;
-    }) =>
-      axios.post(`${BASE}/api/quote-products`, {
+    mutationFn: async ({ productId, productName, manualInput, existingRowIds }: {
+      productId:      string | null;
+      productName:    string;
+      manualInput:    boolean;
+      existingRowIds: string[];
+    }) => {
+      let resolvedProductId = productId;
+
+      // Old manual groups have no productId yet. Assign a new virtual UUID
+      // and backfill all existing rows in the group so they share the same key.
+      if (manualInput && !resolvedProductId) {
+        resolvedProductId = crypto.randomUUID();
+        await Promise.all(
+          existingRowIds.map((id) =>
+            axios.patch(`${BASE}/api/quote-products/${id}`, { product_id: resolvedProductId })
+          )
+        );
+      }
+
+      return axios.post(`${BASE}/api/quote-products`, {
         quote_id:           quoteId,
-        product_id:         productId ?? undefined,
+        product_id:         resolvedProductId ?? undefined,
         name:               productName,
         price:              "0.00",
         quantity:           1,
         is_initial_payment: false,
         manual_input:       manualInput,
         sort_index:         lines.length,
-      }),
+      });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quote-products", quoteId] }),
     onError: () => toast({ title: "Failed to add installment", variant: "destructive" }),
   });
@@ -1350,9 +1365,10 @@ export default function QuoteBuilderPage() {
                               </span>
                               <button
                                 onClick={() => addInstallmentMutation.mutate({
-                                  productId:   group.productId,
-                                  productName: group.label,
-                                  manualInput: group.isManual,
+                                  productId:      group.productId,
+                                  productName:    group.label,
+                                  manualInput:    group.isManual,
+                                  existingRowIds: group.rows.map((r) => r.id),
                                 })}
                                 disabled={addInstallmentMutation.isPending}
                                 title="Add installment"

@@ -113,7 +113,7 @@ router.patch("/quote-products/:id", authenticate, requireRole(...ADMIN_ROLES), a
     const [existing] = await db.select().from(quote_products).where(eq(quote_products.id, req.params.id));
     if (!existing) return res.status(404).json({ error: "Quote product not found" });
 
-    const { price, due_date, quantity, is_initial_payment, name, item_description, sort_index } = req.body;
+    const { price, due_date, quantity, is_initial_payment, name, item_description, sort_index, product_id } = req.body;
     const updates: Record<string, any> = { modifiedOn: new Date() };
     if (price !== undefined)            updates.price            = String(price);
     if (due_date !== undefined)         updates.dueDate          = due_date ? new Date(due_date) : null;
@@ -125,6 +125,7 @@ router.patch("/quote-products/:id", authenticate, requireRole(...ADMIN_ROLES), a
     }
     if (item_description !== undefined) updates.itemDescription  = item_description;
     if (sort_index !== undefined)       updates.sortIndex        = Number(sort_index);
+    if (product_id !== undefined)       updates.productId        = product_id ?? null;
 
     const [updated] = await db.update(quote_products).set(updates)
       .where(eq(quote_products.id, req.params.id)).returning();
