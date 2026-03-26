@@ -80,6 +80,8 @@ export default function EnrollmentSpots() {
     queryFn: () => axios.get(`${BASE}/api/enrollment-spots`).then(r => r.data),
   });
 
+  const { sortBy, sortDir, onSort } = useSortState("gradeOrder");
+
   const rows = data?.data ?? [];
   const sorted = useSorted(rows, sortBy, sortDir);
 
