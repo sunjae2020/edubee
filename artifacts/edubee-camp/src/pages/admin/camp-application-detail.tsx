@@ -100,95 +100,157 @@ function WorkflowBar({ status }: { status: string }) {
 }
 
 // ─── Action Buttons ───────────────────────────────────────────────────────────
+function ConvertButton({
+  label,
+  loading,
+  loadingLabel,
+  onClick,
+}: {
+  label: string;
+  loading: boolean;
+  loadingLabel?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      disabled={loading}
+      onClick={onClick}
+      style={{
+        background: loading ? "#D96A0A" : "#F5821F",
+        color: "white",
+        border: "none",
+        borderRadius: 8,
+        padding: "8px 18px",
+        fontWeight: 600,
+        fontSize: 14,
+        cursor: loading ? "not-allowed" : "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        transition: "background 0.15s, transform 0.15s",
+        opacity: loading ? 0.8 : 1,
+      }}
+      onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "none"; }}
+    >
+      {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+      {loading ? (loadingLabel ?? "Processing...") : label}
+    </button>
+  );
+}
+
 function ActionButtons({
   app,
   id,
   onStatusChange,
   statusChanging,
+  onConvertDone,
 }: {
   app: any;
   id: string;
   onStatusChange: (s: string) => void;
   statusChanging: boolean;
+  onConvertDone: () => void;
 }) {
-  const [, navigate]        = useLocation();
-  const { toast }           = useToast();
-  const [converting, setConverting] = useState(false);
+  const [, navigate]               = useLocation();
+  const { toast }                  = useToast();
+  const [convertingQuote, setConvertingQuote]       = useState(false);
+  const [convertingContract, setConvertingContract] = useState(false);
   const status = app.applicationStatus ?? app.status;
+
+  const handleConvertToQuote = async () => {
+    setConvertingQuote(true);
+    try {
+      const res = await axios.post(`${BASE}/api/camp-applications/${id}/convert-to-quote`);
+      toast({ title: "Quote created!", description: `Ref: ${res.data.quoteRefNumber}` });
+      onConvertDone();
+      navigate(`/admin/crm/quotes/${res.data.quoteId}`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error ?? "Failed to convert to quote";
+      toast({ variant: "destructive", title: msg });
+    } finally {
+      setConvertingQuote(false);
+    }
+  };
+
+  const handleConvertToContract = async () => {
+    setConvertingContract(true);
+    try {
+      const res = await axios.post(`${BASE}/api/camp-applications/${id}/convert-to-contract`);
+      toast({ title: "Contract created!", description: `Ref: ${res.data.contractNumber}` });
+      onConvertDone();
+      navigate(`/admin/crm/contracts/${res.data.contractId}`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error ?? "Failed to convert to contract";
+      toast({ variant: "destructive", title: msg });
+    } finally {
+      setConvertingContract(false);
+    }
+  };
 
   if (status === "submitted") {
     return (
-      <Button
-        variant="outline"
-        disabled={statusChanging}
-        onClick={() => onStatusChange("reviewing")}
-        className="border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1]"
-      >
-        {statusChanging ? "Updating..." : "Mark as Reviewing"}
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={statusChanging || convertingQuote}
+          onClick={() => onStatusChange("reviewing")}
+          className="border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1]"
+        >
+          {statusChanging ? "Updating..." : "Mark as Reviewing"}
+        </Button>
+        <ConvertButton
+          label="Convert to Quote"
+          loading={convertingQuote}
+          loadingLabel="Converting..."
+          onClick={handleConvertToQuote}
+        />
+      </div>
     );
   }
 
   if (status === "reviewing") {
     return (
-      <button
-        disabled={converting}
-        onClick={async () => {
-          setConverting(true);
-          try {
-            const res = await axios.post(`${BASE}/api/camp-applications/${id}/convert-to-quote`);
-            toast({ title: "Quote created successfully!" });
-            navigate(`/admin/crm/quotes/${res.data.quoteId}`);
-          } catch (err: any) {
-            const msg = err?.response?.data?.error ?? "Failed to convert to quote";
-            toast({ variant: "destructive", title: msg });
-          } finally {
-            setConverting(false);
-          }
-        }}
-        style={{
-          background: converting ? "#D96A0A" : "#F5821F",
-          color: "white",
-          border: "none",
-          borderRadius: 8,
-          padding: "10px 20px",
-          fontWeight: 600,
-          fontSize: 14,
-          cursor: converting ? "not-allowed" : "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          transition: "background 0.15s, transform 0.15s",
-        }}
-        onMouseEnter={e => { if (!converting) (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "none"; }}
-      >
-        {converting && <Loader2 className="w-4 h-4 animate-spin" />}
-        {converting ? "Converting..." : "Convert to Quote"}
-      </button>
+      <ConvertButton
+        label="Convert to Quote"
+        loading={convertingQuote}
+        loadingLabel="Converting..."
+        onClick={handleConvertToQuote}
+      />
     );
   }
 
   if (status === "quoted") {
     return (
-      <Button
-        variant="outline"
-        disabled={!app.quoteId}
-        title={!app.quoteId ? "Quote ID not found" : undefined}
-        onClick={() => app.quoteId && navigate(`/admin/crm/quotes/${app.quoteId}`)}
-        className="border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1] gap-1"
-      >
-        View Quote <ArrowRight className="w-4 h-4" />
-      </Button>
+      <div className="flex items-center gap-2">
+        {app.quoteId && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/admin/crm/quotes/${app.quoteId}`)}
+            className="border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1] gap-1"
+          >
+            View Quote <ArrowRight className="w-4 h-4" />
+          </Button>
+        )}
+        <ConvertButton
+          label="Convert to Contract"
+          loading={convertingContract}
+          loadingLabel="Converting..."
+          onClick={handleConvertToContract}
+        />
+      </div>
     );
   }
 
   if (status === "confirmed") {
     return (
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         {app.quoteId && (
           <Button
             variant="outline"
+            size="sm"
             onClick={() => navigate(`/admin/crm/quotes/${app.quoteId}`)}
             className="border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1] gap-1"
           >
@@ -198,6 +260,7 @@ function ActionButtons({
         {app.contractId && (
           <Button
             variant="outline"
+            size="sm"
             onClick={() => navigate(`/admin/crm/contracts/${app.contractId}`)}
             className="border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1] gap-1"
           >
@@ -210,7 +273,12 @@ function ActionButtons({
 
   if (status === "cancelled") {
     return (
-      <span className="text-sm text-[#A8A29E]">This application has been cancelled.</span>
+      <ConvertButton
+        label="Convert to Quote"
+        loading={convertingQuote}
+        loadingLabel="Converting..."
+        onClick={handleConvertToQuote}
+      />
     );
   }
 
@@ -421,6 +489,7 @@ export default function CampApplicationDetail() {
       id={id!}
       onStatusChange={(s) => changeStatus.mutate(s)}
       statusChanging={changeStatus.isPending}
+      onConvertDone={() => qc.invalidateQueries({ queryKey: ["camp-application-detail-page", id] })}
     />
   );
 

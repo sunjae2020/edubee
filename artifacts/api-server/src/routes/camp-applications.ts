@@ -187,8 +187,8 @@ router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole
     if (application.quoteId)
       return res.status(409).json({ error: "Quote already exists for this application", quoteId: application.quoteId });
 
-    if (application.applicationStatus !== "reviewing")
-      return res.status(400).json({ error: "Application must be in reviewing status to convert to quote" });
+    if (!["submitted", "reviewing"].includes(application.applicationStatus))
+      return res.status(400).json({ error: "Application must be in submitted or reviewing status to convert to quote" });
 
     const quoteRefNumber = "QTE-" + Date.now().toString().slice(-8);
 
@@ -227,6 +227,60 @@ router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole
   } catch (err: any) {
     console.error("[POST /api/camp-applications/:id/convert-to-quote]", err);
     return res.status(500).json({ error: "Failed to convert to quote", detail: err.message });
+  }
+});
+
+router.post("/camp-applications/:id/convert-to-contract", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    if (!UUID_RE.test(req.params.id))
+      return res.status(400).json({ error: "Invalid application ID format" });
+
+    const [application] = await db.select().from(campApplications)
+      .where(eq(campApplications.id, req.params.id)).limit(1);
+    if (!application) return res.status(404).json({ error: "Camp application not found" });
+
+    if (application.contractId)
+      return res.status(409).json({ error: "Contract already exists for this application", contractId: application.contractId });
+
+    if (application.applicationStatus !== "quoted")
+      return res.status(400).json({ error: "Application must be in quoted status to convert to contract" });
+
+    if (!application.quoteId)
+      return res.status(400).json({ error: "No quote found. Please convert to quote first." });
+
+    const contractNumber = "CNT-" + Date.now().toString().slice(-8);
+
+    const result = await db.transaction(async (tx) => {
+      const [newContract] = await tx.insert(contracts).values({
+        contractNumber,
+        studentName:   application.applicantName,
+        clientEmail:   application.applicantEmail,
+        clientCountry: application.applicantNationality ?? null,
+        status:        "draft",
+        currency:      "AUD",
+        notes:         `Created from Camp Application: ${application.applicationRef ?? application.id}`,
+        updatedAt:     new Date(),
+      }).returning();
+
+      await tx.update(campApplications).set({
+        contractId:        newContract.id,
+        applicationStatus: "confirmed",
+        updatedAt:         new Date(),
+      }).where(eq(campApplications.id, application.id));
+
+      return newContract;
+    });
+
+    return res.json({
+      success:          true,
+      contractId:       result.id,
+      contractNumber:   result.contractNumber,
+      campApplicationId: application.id,
+      message:          "Contract created successfully",
+    });
+  } catch (err: any) {
+    console.error("[POST /api/camp-applications/:id/convert-to-contract]", err);
+    return res.status(500).json({ error: "Failed to convert to contract", detail: err.message });
   }
 });
 
