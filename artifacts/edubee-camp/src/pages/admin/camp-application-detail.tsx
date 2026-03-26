@@ -274,6 +274,7 @@ function LinkedRecordsCard({ app }: { app: any }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CampApplicationDetail() {
   const { id }           = useParams<{ id: string }>();
+  const [, navigate]     = useLocation();
   const qc               = useQueryClient();
   const { toast }        = useToast();
   const { user }         = useAuth();
@@ -360,12 +361,25 @@ export default function CampApplicationDetail() {
   }
 
   if (isError) {
+    const errStatus = (error as any)?.response?.status;
+    if (errStatus === 404) {
+      return (
+        <div className="m-6 rounded-lg border border-[#E8E6E2] bg-[#FAFAF9] px-5 py-6 text-center space-y-3">
+          <p className="text-sm font-medium text-[#1C1917]">Camp Application not found.</p>
+          <p className="text-xs text-[#78716C]">This record may have been deleted or the link is incorrect.</p>
+          <button
+            onClick={() => navigate("/admin/camp-applications")}
+            className="inline-flex items-center gap-1.5 rounded-md bg-[#F5821F] px-4 py-2 text-xs font-semibold text-white hover:opacity-90"
+          >
+            ← Back to Camp Applications
+          </button>
+        </div>
+      );
+    }
     const errMsg = (error as any)?.response?.data?.message
       || (error as any)?.response?.data?.error
       || (error as any)?.message
       || String(error);
-    const errStatus = (error as any)?.response?.status;
-    const reqUrl = `${BASE}/api/camp-applications/${id}`;
     return (
       <div className="m-6 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-4 text-sm text-[#DC2626] space-y-2">
         <div className="flex items-center gap-4">
@@ -378,12 +392,7 @@ export default function CampApplicationDetail() {
             {isFetching ? "Retrying…" : "Try Again"}
           </button>
         </div>
-        <div className="text-xs text-[#991B1B] font-mono break-all space-y-0.5">
-          {errStatus && <div>HTTP {errStatus}</div>}
-          <div>{errMsg}</div>
-          <div className="text-[#7F1D1D] opacity-70">URL: {reqUrl}</div>
-          <div className="text-[#7F1D1D] opacity-70">ID: {id ?? "(none)"}</div>
-        </div>
+        <p className="text-xs text-[#991B1B]">{errMsg}</p>
       </div>
     );
   }

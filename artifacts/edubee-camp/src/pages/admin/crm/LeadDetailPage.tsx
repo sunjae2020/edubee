@@ -464,10 +464,12 @@ export default function LeadDetailPage() {
                   </span>
                 </div>
               </div>
-              <a href={`/admin/camp-applications/${lead.campApplication.id}`}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#F5821F] hover:underline">
+              <button
+                onClick={() => navigate(`/admin/camp-applications/${lead.campApplication.id}`)}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#F5821F] hover:underline"
+              >
                 View Application <ExternalLink size={13} />
-              </a>
+              </button>
             </div>
           )}
           <SystemInfoSection owner={(lead as any).ownerId ?? null} createdAt={(lead as any).createdAt} updatedAt={(lead as any).updatedAt} />
