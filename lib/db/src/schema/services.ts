@@ -13,6 +13,7 @@ import {
 import { users } from "./users";
 import { contracts } from "./contracts";
 import { leads } from "./applications";
+import { products } from "./packages";
 
 // ── Accommodation Management ───────────────────────────────────────────────
 // Note: studentAccountId, providerAccountId reference future 'accounts' table — plain uuid
@@ -190,4 +191,96 @@ export const otherServicesMgt = pgTable("other_services_mgt", {
   notes:           text("notes"),
   createdAt:       timestamp("created_at").notNull().defaultNow(),
   updatedAt:       timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ── Pickup Management ──────────────────────────────────────────────────────
+// (이동됨: contracts.ts → services.ts)
+export const pickupMgt = pgTable("pickup_mgt", {
+  id:            uuid("id").primaryKey().defaultRandom(),
+  contractId:    uuid("contract_id").references(() => contracts.id),
+  driverId:      uuid("driver_id").references(() => users.id),
+  pickupType:    varchar("pickup_type", { length: 50 }),
+  fromLocation:  varchar("from_location", { length: 255 }),
+  toLocation:    varchar("to_location", { length: 255 }),
+  pickupDatetime: timestamp("pickup_datetime"),
+  driverName:    varchar("driver_name",    { length: 255 }),
+  driverContact: varchar("driver_contact", { length: 100 }),
+  vehicleInfo:   varchar("vehicle_info",   { length: 100 }),
+  driverNotes:   text("driver_notes"),
+  status:        varchar("status", { length: 50 }).default("pending"),
+  ledgerEntryId: uuid("ledger_entry_id"),
+  createdAt:     timestamp("created_at").defaultNow(),
+  updatedAt:     timestamp("updated_at").defaultNow(),
+  productId:     uuid("product_id").references(() => products.id),
+  serviceFee:    decimal("service_fee", { precision: 12, scale: 2 }),
+  apCost:        decimal("ap_cost",     { precision: 12, scale: 2 }),
+});
+
+// ── Tour Management ────────────────────────────────────────────────────────
+// (이동됨: contracts.ts → services.ts)
+export const tourMgt = pgTable("tour_mgt", {
+  id:            uuid("id").primaryKey().defaultRandom(),
+  contractId:    uuid("contract_id").references(() => contracts.id),
+  tourCompanyId: uuid("tour_company_id").references(() => users.id),
+  tourName:      varchar("tour_name",    { length: 255 }),
+  tourDate:      date("tour_date"),
+  startTime:     varchar("start_time",   { length: 20 }),
+  endTime:       varchar("end_time",     { length: 20 }),
+  meetingPoint:  varchar("meeting_point", { length: 255 }),
+  highlights:    jsonb("highlights"),
+  guideInfo:     varchar("guide_info",   { length: 255 }),
+  tourNotes:     text("tour_notes"),
+  status:        varchar("status", { length: 50 }).default("pending"),
+  ledgerEntryId: uuid("ledger_entry_id"),
+  createdAt:     timestamp("created_at").defaultNow(),
+  updatedAt:     timestamp("updated_at").defaultNow(),
+  productId:     uuid("product_id").references(() => products.id),
+  serviceFee:    decimal("service_fee", { precision: 12, scale: 2 }),
+  apCost:        decimal("ap_cost",     { precision: 12, scale: 2 }),
+});
+
+// ── Settlement Management ──────────────────────────────────────────────────
+// (이동됨: contracts.ts → services.ts)
+export const settlementMgt = pgTable("settlement_mgt", {
+  id:                    uuid("id").primaryKey().defaultRandom(),
+  contractId:            uuid("contract_id").references(() => contracts.id),
+  productId:             uuid("product_id").references(() => products.id),
+  providerUserId:        uuid("provider_user_id").references(() => users.id),
+  providerRole:          varchar("provider_role", { length: 50 }),
+  serviceDescription:    text("service_description"),
+  grossAmount:           decimal("gross_amount",        { precision: 12, scale: 2 }),
+  commissionRate:        decimal("commission_rate",     { precision: 5,  scale: 2 }),
+  commissionAmount:      decimal("commission_amount",   { precision: 12, scale: 2 }),
+  netAmount:             decimal("net_amount",          { precision: 12, scale: 2 }),
+  currency:              varchar("currency",            { length: 10 }).default("AUD"),
+  originalCurrency:      varchar("original_currency",  { length: 10 }),
+  originalNetAmount:     decimal("original_net_amount", { precision: 12, scale: 2 }),
+  audEquivalent:         decimal("aud_equivalent",      { precision: 12, scale: 2 }),
+  exchangeRateToAud:     decimal("exchange_rate_to_aud", { precision: 10, scale: 6 }),
+  status:                varchar("status", { length: 50 }).default("pending"),
+  settlementDate:        date("settlement_date"),
+  notes:                 text("notes"),
+  ledgerEntryId:         uuid("ledger_entry_id"),
+  createdAt:             timestamp("created_at").defaultNow(),
+  updatedAt:             timestamp("updated_at").defaultNow(),
+  // ── Arrival Settlement Service fields ─────────────────────────────────
+  studentAccountId:      uuid("student_account_id"),
+  assignedConsultantId:  uuid("assigned_consultant_id").references(() => users.id),
+  arrivalDate:           date("arrival_date"),
+  overallStatus:         varchar("overall_status", { length: 50 }).default("pending"),
+  checklist:             jsonb("checklist"),
+  checklistTemplateId:   uuid("checklist_template_id"),
+});
+
+// ── Settlement Checklist Templates ─────────────────────────────────────────
+// (이동됨: contracts.ts → services.ts)
+export const settlementChecklistTemplates = pgTable("settlement_checklist_templates", {
+  id:          uuid("id").primaryKey().defaultRandom(),
+  name:        varchar("name",        { length: 200 }).notNull(),
+  description: text("description"),
+  items:       jsonb("items").notNull(),
+  isDefault:   boolean("is_default").notNull().default(false),
+  createdBy:   uuid("created_by").references(() => users.id),
+  createdAt:   timestamp("created_at").defaultNow(),
+  updatedAt:   timestamp("updated_at").defaultNow(),
 });
