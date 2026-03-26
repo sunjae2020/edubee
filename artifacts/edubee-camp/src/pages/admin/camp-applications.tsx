@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ListToolbar } from "@/components/ui/list-toolbar";
-import { ListPagination } from "@/components/ui/list-pagination";
+import { TableFooter } from "@/components/ui/table-footer";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -99,6 +99,7 @@ export default function CampApplications() {
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [convertDialog, setConvertDialog] = useState(false);
   const [createDialog, setCreateDialog] = useState(false);
@@ -137,11 +138,11 @@ export default function CampApplications() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Application>>({});
 
-  const queryKey = ["camp-applications", { search, status: activeStatus, page }];
+  const queryKey = ["camp-applications", { search, status: activeStatus, page, pageSize }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
-      const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) params.set("search", search);
       if (activeStatus !== "all") params.set("status", activeStatus);
       return axios.get(`${BASE}/api/applications?${params}`).then(r => r.data);
@@ -260,7 +261,7 @@ export default function CampApplications() {
           </thead>
           <tbody className="divide-y divide-border">
             {isLoading ? (
-              [...Array(PAGE_SIZE)].map((_, i) => (
+              [...Array(pageSize)].map((_, i) => (
                 <tr key={i}>{[...Array(6)].map((_, j) => (
                   <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                 ))}</tr>
@@ -289,7 +290,7 @@ export default function CampApplications() {
         </table>
       </div>
 
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+      <TableFooter page={page} pageSize={pageSize} total={total} label="applications" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       {/* Detail Sheet */}
       <Sheet open={!!selectedApp} onOpenChange={o => { if (!o) { setSelectedApp(null); setIsEditing(false); } }}>
