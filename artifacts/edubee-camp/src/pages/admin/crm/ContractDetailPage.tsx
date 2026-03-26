@@ -1766,6 +1766,14 @@ export default function ContractDetailPage() {
     enabled: !!id,
   });
 
+  const { data: linkedCampApp } = useQuery({
+    queryKey: ["camp-app-by-contract", id],
+    queryFn: () =>
+      axios.get(`${BASE}/api/camp-applications?contractId=${id}&limit=1`)
+        .then(r => r.data?.data?.[0] ?? null),
+    enabled: !!id,
+  });
+
   const [primaryServiceType, setPrimaryServiceType] = useState<string>("study_abroad");
 
   useEffect(() => {
@@ -1911,8 +1919,8 @@ export default function ContractDetailPage() {
         </div>
       </div>
 
-      {/* Camp Application Badge */}
-      {contract.applicationId && (
+      {/* Camp Application Badge — only shown when this contract originated from a camp application */}
+      {linkedCampApp && (
         <div className="bg-white border-b border-[#F4F3F1] px-6 py-2.5">
           <div style={{
             display: "inline-flex",
@@ -1926,9 +1934,9 @@ export default function ContractDetailPage() {
             color: "#F5821F",
           }}>
             <span>📋</span>
-            <span>Camp Application: <strong>{contract.applicationRef ?? contract.applicationId}</strong></span>
+            <span>Camp Application: <strong>{linkedCampApp.applicationRef ?? linkedCampApp.id}</strong></span>
             <button
-              onClick={() => navigate(`/admin/camp-applications/${contract.applicationId}`)}
+              onClick={() => navigate(`/admin/camp-applications/${linkedCampApp.id}`)}
               style={{ fontWeight: 600, cursor: "pointer", background: "none", border: "none", color: "#F5821F", padding: 0 }}
               onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
               onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}

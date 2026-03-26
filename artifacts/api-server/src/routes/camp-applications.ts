@@ -12,13 +12,14 @@ const VALID_STATUSES = ["submitted", "reviewing", "quoted", "confirmed", "cancel
 
 router.get("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { applicationStatus, search, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const { applicationStatus, search, contractId, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum  = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset   = (pageNum - 1) * limitNum;
 
     const conditions: SQL[] = [];
     if (applicationStatus) conditions.push(eq(campApplications.applicationStatus, applicationStatus));
+    if (contractId) conditions.push(eq(campApplications.contractId, contractId));
     if (search) {
       conditions.push(
         or(

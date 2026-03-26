@@ -470,7 +470,7 @@ export default function LeadDetailPage() {
               </a>
             </div>
           )}
-          <SystemInfoSection owner={lead.ownerId ?? null} createdAt={lead.createdAt} updatedAt={lead.updatedAt} />
+          <SystemInfoSection owner={(lead as any).ownerId ?? null} createdAt={(lead as any).createdAt} updatedAt={(lead as any).updatedAt} />
         </div>
       )}
 

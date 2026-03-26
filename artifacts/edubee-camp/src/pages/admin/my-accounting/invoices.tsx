@@ -32,6 +32,7 @@ const STATUS_COLORS: Record<string, string> = {
 interface Invoice { id: string; invoiceNumber?: string | null; contractId?: string | null; totalAmount?: string | null; currency?: string | null; originalCurrency?: string | null; originalAmount?: string | null; audEquivalent?: string | null; status?: string | null; issuedAt?: string | null; dueDate?: string | null; paidAt?: string | null; }
 
 export default function MyInvoices() {
+  const { sortBy, sortDir, onSort } = useSortState("invoiceNumber");
   const { data, isLoading } = useQuery({
     queryKey: ["my-invoices"],
     queryFn: () => axios.get(`${BASE}/api/my-accounting/invoices`).then(r => r.data),
