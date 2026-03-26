@@ -282,11 +282,12 @@ export default function CampApplicationDetail() {
   const [editParticipant, setEditParticipant] = useState<any | null>(null);
   const [addParticipant,  setAddParticipant]  = useState(false);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["camp-application-detail-page", id],
     queryFn: () => axios.get(`${BASE}/api/camp-applications/${id}`).then(r => r.data),
     enabled: !!id,
-    retry: 1,
+    retry: 2,
+    retryDelay: 800,
   });
 
   const app          = data?.data ?? data;
@@ -356,8 +357,15 @@ export default function CampApplicationDetail() {
 
   if (isError) {
     return (
-      <div className="m-6 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-5 py-4 text-sm text-[#DC2626]">
-        Failed to load camp application. Please refresh the page.
+      <div className="m-6 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-5 py-4 text-sm text-[#DC2626] flex items-center gap-4">
+        <span>Failed to load camp application.</span>
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="ml-auto shrink-0 rounded-md bg-[#DC2626] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#b91c1c] disabled:opacity-50"
+        >
+          {isFetching ? "Retrying…" : "Try Again"}
+        </button>
       </div>
     );
   }

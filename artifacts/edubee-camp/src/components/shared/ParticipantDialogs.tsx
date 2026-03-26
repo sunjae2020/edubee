@@ -239,9 +239,9 @@ export function ParticipantAddDialog({
   });
 
   const handleSave = () => {
-    const data = { ...form, applicationId };
-    if (data.gender === "__none") data.gender = "";
-    if (data.englishLevel === "__none") data.englishLevel = "";
+    const data: Record<string, string> = { ...form, applicationId };
+    if (data["gender"] === "__none") data["gender"] = "";
+    if (data["englishLevel"] === "__none") data["englishLevel"] = "";
     onSave(data);
   };
 
