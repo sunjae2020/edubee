@@ -109,6 +109,8 @@ export const applicationParticipants = pgTable("application_participants", {
   applicationId: uuid("application_id").references(() => applications.id),
   participantType: varchar("participant_type", { length: 50 }).notNull(),
   sequenceOrder: integer("sequence_order").default(1),
+  firstName: varchar("first_name", { length: 255 }),
+  lastName: varchar("last_name", { length: 255 }),
   fullName: varchar("full_name", { length: 255 }).notNull(),
   fullNameNative: varchar("full_name_native", { length: 255 }),
   dateOfBirth: date("date_of_birth"),

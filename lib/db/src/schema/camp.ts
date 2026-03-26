@@ -88,6 +88,8 @@ export const campApplications = pgTable("camp_applications", {
   applicationRef:        varchar("application_ref", { length: 50 }).unique(),
   packageGroupId:        uuid("package_group_id").notNull().references(() => campPackageGroups.id),
   packageId:             uuid("package_id").notNull().references(() => campPackages.id),
+  applicantFirstName:    varchar("applicant_first_name", { length: 255 }),
+  applicantLastName:     varchar("applicant_last_name", { length: 255 }),
   applicantName:         varchar("applicant_name", { length: 255 }).notNull(),
   applicantEmail:        varchar("applicant_email", { length: 255 }).notNull(),
   applicantPhone:        varchar("applicant_phone", { length: 50 }),

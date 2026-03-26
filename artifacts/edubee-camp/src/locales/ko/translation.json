@@ -65,6 +65,8 @@
     "referralCode": "에이전트 추천 코드",
     "specialRequests": "특별 요청사항",
     "primaryStudent": "주요 학생 정보",
+    "firstName": "이름(First Name)*",
+    "lastName": "성(Last Name)*",
     "fullNameEn": "영문 이름*",
     "nativeName": "한국어 이름",
     "dateOfBirth": "생년월일*",

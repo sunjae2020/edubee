@@ -65,6 +65,8 @@
     "referralCode": "รหัสเอเจนต์แนะนำ",
     "specialRequests": "คำขอพิเศษ",
     "primaryStudent": "ข้อมูลนักเรียนหลัก",
+    "firstName": "ชื่อ (First Name)*",
+    "lastName": "นามสกุล (Last Name)*",
     "fullNameEn": "ชื่อ-สกุล (ภาษาอังกฤษ)*",
     "nativeName": "ชื่อภาษาไทย",
     "dateOfBirth": "วันเดือนปีเกิด*",

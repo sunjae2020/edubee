@@ -497,7 +497,11 @@ export default function CampApplicationDetail() {
     <>
       <DetailPageLayout
         title={app.applicationRef ?? app.applicationNumber ?? "Camp Application"}
-        subtitle={app.applicantName ?? app.studentName ?? ""}
+        subtitle={
+          app.applicantFirstName || app.applicantLastName
+            ? `${app.applicantFirstName ?? ""} ${app.applicantLastName ? app.applicantLastName.toUpperCase() : ""}`.trim()
+            : (app.applicantName ?? app.studentName ?? "")
+        }
         badge={badge}
         backPath="/admin/camp-applications"
         backLabel="Camp Applications"
@@ -535,11 +539,18 @@ export default function CampApplicationDetail() {
                   }
                 />
                 <EditableField
-                  label="Applicant Name"
+                  label="First Name"
                   isEditing={isEditing}
-                  value={app.applicantName}
-                  editValue={getValue("applicantName") ?? ""}
-                  onChange={v => setField("applicantName", v)}
+                  value={app.applicantFirstName ?? (app.applicantName ? app.applicantName.split(" ")[0] : "—")}
+                  editValue={getValue("applicantFirstName") ?? app.applicantFirstName ?? (app.applicantName ? app.applicantName.split(" ")[0] : "")}
+                  onChange={v => setField("applicantFirstName", v)}
+                />
+                <EditableField
+                  label="Last Name"
+                  isEditing={isEditing}
+                  value={app.applicantLastName ? app.applicantLastName.toUpperCase() : (app.applicantName ? app.applicantName.split(" ").slice(1).join(" ").toUpperCase() : "—")}
+                  editValue={getValue("applicantLastName") ?? app.applicantLastName ?? (app.applicantName ? app.applicantName.split(" ").slice(1).join(" ") : "")}
+                  onChange={v => setField("applicantLastName", v)}
                 />
                 <EditableField
                   label="Email"

@@ -65,6 +65,8 @@
     "referralCode": "エージェント紹介コード",
     "specialRequests": "特別リクエスト",
     "primaryStudent": "主な生徒情報",
+    "firstName": "名(ファーストネーム)*",
+    "lastName": "姓(ラストネーム)*",
     "fullNameEn": "英語氏名*",
     "nativeName": "母国語氏名",
     "dateOfBirth": "生年月日*",

@@ -16,7 +16,8 @@ type Props = {
 };
 
 type Adult = {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   relationship: string;
   dateOfBirth: string;
   nationality: string;
@@ -29,7 +30,8 @@ type Adult = {
 };
 
 type Child = {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   dateOfBirth: string;
   gender: string;
   nationality: string;
@@ -41,7 +43,8 @@ type Child = {
 };
 
 type PrimaryStudent = {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   fullNameNative: string;
   dateOfBirth: string;
   gender: string;
@@ -61,7 +64,7 @@ type PrimaryStudent = {
 };
 
 const defaultPrimary = (): PrimaryStudent => ({
-  fullName: "", fullNameNative: "", dateOfBirth: "", gender: "",
+  firstName: "", lastName: "", fullNameNative: "", dateOfBirth: "", gender: "",
   nationality: "", passportNumber: "", passportExpiry: "", grade: "",
   enrollmentSpotId: "", schoolName: "", englishLevel: "",
   medicalConditions: "", dietaryRequirements: "", specialNeeds: "",
@@ -69,13 +72,13 @@ const defaultPrimary = (): PrimaryStudent => ({
 });
 
 const defaultAdult = (): Adult => ({
-  fullName: "", relationship: "", dateOfBirth: "", nationality: "",
+  firstName: "", lastName: "", relationship: "", dateOfBirth: "", nationality: "",
   passportNumber: "", phone: "", email: "", whatsapp: "", lineId: "",
   isEmergencyContact: false,
 });
 
 const defaultChild = (): Child => ({
-  fullName: "", dateOfBirth: "", gender: "", nationality: "",
+  firstName: "", lastName: "", dateOfBirth: "", gender: "", nationality: "",
   passportNumber: "", grade: "", enrollmentSpotId: "",
   medicalConditions: "", dietaryRequirements: "",
 });
@@ -257,7 +260,8 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
 
   function validateStep2(): boolean {
     const e: Record<string, string> = {};
-    if (!primary.fullName) e.fullName = t("common.required");
+    if (!primary.firstName) e.firstName = t("common.required");
+    if (!primary.lastName)  e.lastName  = t("common.required");
     if (!primary.dateOfBirth) e.dateOfBirth = t("common.required");
     if (!primary.gender) e.gender = t("common.required");
     if (!primary.nationality) e.nationality = t("common.required");
@@ -278,7 +282,9 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
       const participants = [
         {
           participantType: "primary_student",
-          fullName: primary.fullName,
+          firstName: primary.firstName,
+          lastName: primary.lastName,
+          fullName: `${primary.firstName} ${primary.lastName.toUpperCase()}`.trim(),
           fullNameNative: primary.fullNameNative || undefined,
           dateOfBirth: primary.dateOfBirth || undefined,
           gender: primary.gender || undefined,
@@ -298,7 +304,9 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
         },
         ...adults.map((a) => ({
           participantType: "adult" as const,
-          fullName: a.fullName,
+          firstName: a.firstName,
+          lastName: a.lastName,
+          fullName: `${a.firstName} ${a.lastName.toUpperCase()}`.trim(),
           dateOfBirth: a.dateOfBirth || undefined,
           nationality: a.nationality || undefined,
           passportNumber: a.passportNumber || undefined,
@@ -311,7 +319,9 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
         })),
         ...children.map((c) => ({
           participantType: "child" as const,
-          fullName: c.fullName,
+          firstName: c.firstName,
+          lastName: c.lastName,
+          fullName: `${c.firstName} ${c.lastName.toUpperCase()}`.trim(),
           dateOfBirth: c.dateOfBirth || undefined,
           gender: c.gender || undefined,
           nationality: c.nationality || undefined,
@@ -475,8 +485,11 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                   <div className="space-y-5">
                     <h3 className="font-semibold text-foreground text-lg">{t("apply.primaryStudent")}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Field label={t("apply.fullNameEn")} required error={errors.fullName}>
-                        <Input value={primary.fullName} onChange={(v) => updatePrimary("fullName", v)} placeholder="e.g. Kim Ji-won" />
+                      <Field label={t("apply.firstName")} required error={errors.firstName}>
+                        <Input value={primary.firstName} onChange={(v) => updatePrimary("firstName", v)} placeholder="e.g. Ji-won" />
+                      </Field>
+                      <Field label={t("apply.lastName")} required error={errors.lastName}>
+                        <Input value={primary.lastName} onChange={(v) => updatePrimary("lastName", v)} placeholder="e.g. Kim" />
                       </Field>
                       <Field label={t("apply.nativeName")}>
                         <Input value={primary.fullNameNative} onChange={(v) => updatePrimary("fullNameNative", v)} placeholder="김지원" />
@@ -587,8 +600,11 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                             </button>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <Field label={t("apply.fullNameEn")} required>
-                              <Input value={adult.fullName} onChange={(v) => updateAdult(idx, "fullName", v)} />
+                            <Field label={t("apply.firstName")} required>
+                              <Input value={adult.firstName} onChange={(v) => updateAdult(idx, "firstName", v)} />
+                            </Field>
+                            <Field label={t("apply.lastName")} required>
+                              <Input value={adult.lastName} onChange={(v) => updateAdult(idx, "lastName", v)} />
                             </Field>
                             <Field label={t("apply.relationship")} required>
                               <Select value={adult.relationship} onChange={(v) => updateAdult(idx, "relationship", v)}>
@@ -638,8 +654,11 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                             </button>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <Field label={t("apply.fullNameEn")} required>
-                              <Input value={child.fullName} onChange={(v) => updateChild(idx, "fullName", v)} />
+                            <Field label={t("apply.firstName")} required>
+                              <Input value={child.firstName} onChange={(v) => updateChild(idx, "firstName", v)} />
+                            </Field>
+                            <Field label={t("apply.lastName")} required>
+                              <Input value={child.lastName} onChange={(v) => updateChild(idx, "lastName", v)} />
                             </Field>
                             <Field label={t("apply.dateOfBirth")} required>
                               <Input type="date" value={child.dateOfBirth} onChange={(v) => updateChild(idx, "dateOfBirth", v)} />
@@ -713,7 +732,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                     <div className="bg-muted/40 rounded-xl p-4 flex items-start justify-between gap-4">
                       <div>
                         <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Primary Student</div>
-                        <div className="font-semibold text-foreground">{primary.fullName || "—"}</div>
+                        <div className="font-semibold text-foreground">{primary.firstName && primary.lastName ? `${primary.firstName} ${primary.lastName.toUpperCase()}` : primary.firstName || "—"}</div>
                         {primary.fullNameNative && <div className="text-sm text-muted-foreground">{primary.fullNameNative}</div>}
                         <div className="text-sm text-muted-foreground mt-1">
                           {[primary.nationality, primary.grade, primary.englishLevel].filter(Boolean).join(" · ")}
@@ -731,10 +750,10 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                         <div>
                           <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Additional Participants</div>
                           {adults.map((a, i) => (
-                            <div key={i} className="text-sm text-foreground">{a.fullName || "Adult"} ({a.relationship || "Adult"})</div>
+                            <div key={i} className="text-sm text-foreground">{a.firstName && a.lastName ? `${a.firstName} ${a.lastName.toUpperCase()}` : a.firstName || "Adult"} ({a.relationship || "Adult"})</div>
                           ))}
                           {children.map((c, i) => (
-                            <div key={i} className="text-sm text-foreground">{c.fullName || "Child"} ({c.grade || "Child"})</div>
+                            <div key={i} className="text-sm text-foreground">{c.firstName && c.lastName ? `${c.firstName} ${c.lastName.toUpperCase()}` : c.firstName || "Child"} ({c.grade || "Child"})</div>
                           ))}
                         </div>
                         <button onClick={() => setStep(3)} className="text-primary hover:text-primary/80 shrink-0">

@@ -223,6 +223,8 @@ export default function ApplicationForm() {
       const payload: Record<string, unknown> = {
         applicationType:    "service",
         serviceTypes:       services,
+        applicantFirstName: firstName.trim() || undefined,
+        applicantLastName:  lastName.trim()  || undefined,
         applicantName:      fullName || undefined,
         applicantEmail:     email    || undefined,
         applicantPhone:     phoneMobile || undefined,

@@ -242,14 +242,20 @@ router.get("/applications/:id", authenticate, async (req, res) => {
 
 router.post("/applications/participants", authenticate, async (req, res) => {
   try {
-    const { applicationId, participantType, sequenceOrder, fullName, fullNameNative, dateOfBirth,
+    const { applicationId, participantType, sequenceOrder,
+      firstName, lastName, fullName: rawFullName, fullNameNative, dateOfBirth,
       gender, nationality, passportNumber, passportExpiry, grade, schoolName, englishLevel,
       medicalConditions, dietaryRequirements, specialNeeds, relationshipToStudent,
       isEmergencyContact, email, phone, whatsapp, lineId } = req.body;
-    if (!applicationId || !fullName) return res.status(400).json({ error: "applicationId and fullName are required" });
+    const computedFullName = rawFullName
+      || (firstName && lastName ? `${firstName} ${lastName.toUpperCase()}` : null)
+      || firstName || null;
+    if (!applicationId || !computedFullName) return res.status(400).json({ error: "applicationId and name are required" });
     const [created] = await db.insert(applicationParticipants).values({
       applicationId, participantType: participantType ?? "child",
-      sequenceOrder: sequenceOrder ?? 1, fullName,
+      sequenceOrder: sequenceOrder ?? 1,
+      firstName: firstName ?? null, lastName: lastName ?? null,
+      fullName: computedFullName,
       fullNameNative: fullNameNative ?? null, dateOfBirth: dateOfBirth ?? null,
       gender: gender ?? null, nationality: nationality ?? null,
       passportNumber: passportNumber ?? null, passportExpiry: passportExpiry ?? null,
@@ -269,13 +275,23 @@ router.post("/applications/participants", authenticate, async (req, res) => {
 router.patch("/applications/participants/:id", authenticate, async (req, res) => {
   try {
     const {
+      firstName, lastName,
       fullName, fullNameNative, dateOfBirth, gender, nationality,
       passportNumber, passportExpiry, grade, schoolName, englishLevel,
       medicalConditions, dietaryRequirements, specialNeeds,
       relationshipToStudent, isEmergencyContact, email, phone, whatsapp, lineId,
     } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };
-    if (fullName !== undefined) updates.fullName = fullName;
+    if (firstName !== undefined) updates.firstName = firstName;
+    if (lastName  !== undefined) updates.lastName  = lastName;
+    // Auto-compute fullName from first/last when provided
+    if (firstName !== undefined || lastName !== undefined) {
+      const fn = firstName ?? "";
+      const ln = lastName  ?? "";
+      updates.fullName = [fn, ln ? ln.toUpperCase() : ""].filter(Boolean).join(" ") || fullName;
+    } else if (fullName !== undefined) {
+      updates.fullName = fullName;
+    }
     if (fullNameNative !== undefined) updates.fullNameNative = fullNameNative;
     if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth || null;
     if (gender !== undefined) updates.gender = gender;

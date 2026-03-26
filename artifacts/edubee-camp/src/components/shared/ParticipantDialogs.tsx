@@ -25,8 +25,12 @@ function ParticipantFormFields({
         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Personal Info</p>
       </div>
       <div className="space-y-1">
-        <Label className="text-xs">Full Name *</Label>
-        <Input value={form.fullName} onChange={e => f("fullName")(e.target.value)} className="h-8 text-sm" />
+        <Label className="text-xs">First Name *</Label>
+        <Input value={form.firstName} onChange={e => f("firstName")(e.target.value)} className="h-8 text-sm" placeholder="e.g. Ji-won" />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Last Name *</Label>
+        <Input value={form.lastName} onChange={e => f("lastName")(e.target.value)} className="h-8 text-sm" placeholder="e.g. Kim" />
       </div>
       <div className="space-y-1">
         <Label className="text-xs">Full Name (Native Script)</Label>
@@ -152,7 +156,8 @@ export function ParticipantEditDialog({
   saving: boolean;
 }) {
   const [form, setForm] = useState<Record<string, string>>({
-    fullName: participant?.fullName ?? "",
+    firstName: participant?.firstName ?? (participant?.fullName ? participant.fullName.split(" ")[0] : ""),
+    lastName:  participant?.lastName  ?? (participant?.fullName ? participant.fullName.split(" ").slice(1).join(" ") : ""),
     fullNameNative: participant?.fullNameNative ?? "",
     participantType: participant?.participantType ?? "child",
     dateOfBirth: participant?.dateOfBirth ?? "",
@@ -186,13 +191,13 @@ export function ParticipantEditDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ClipboardList className="w-4 h-4 text-[#F5821F]" />
-            Edit Participant — {participant?.fullName}
+            Edit Participant — {(participant?.firstName || participant?.fullName?.split(" ")[0]) ?? ""} {participant?.lastName ? participant.lastName.toUpperCase() : (participant?.fullName?.split(" ").slice(1).join(" ").toUpperCase() ?? "")}
           </DialogTitle>
         </DialogHeader>
         <ParticipantFormFields form={form} setForm={setForm} />
         <div className="flex justify-end gap-2 pt-4 border-t mt-4">
           <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSave} disabled={saving || !form.fullName}>
+          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSave} disabled={saving || !form.firstName || !form.lastName}>
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Save Changes
           </Button>
@@ -217,7 +222,8 @@ export function ParticipantAddDialog({
   saving: boolean;
 }) {
   const [form, setForm] = useState<Record<string, string>>({
-    fullName: "",
+    firstName: "",
+    lastName: "",
     fullNameNative: "",
     participantType: "child",
     dateOfBirth: "",
@@ -257,7 +263,7 @@ export function ParticipantAddDialog({
         <ParticipantFormFields form={form} setForm={setForm} />
         <div className="flex justify-end gap-2 pt-4 border-t mt-4">
           <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSave} disabled={saving || !form.fullName}>
+          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSave} disabled={saving || !form.firstName || !form.lastName}>
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Add Participant
           </Button>

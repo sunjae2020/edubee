@@ -101,6 +101,19 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 
 ## Recent Changes (2026-03-26)
 
+- **Name Split — First Name / Last Name 분리**:
+  - DB: `camp_applications` 테이블에 `applicant_first_name`, `applicant_last_name` 컬럼 추가 (raw SQL ALTER TABLE).
+  - DB: `application_participants` 테이블에 `first_name`, `last_name` 컬럼 추가.
+  - Drizzle Schema: `lib/db/src/schema/camp.ts`, `lib/db/src/schema/applications.ts` 업데이트.
+  - API `camp-applications.ts` PUT: `applicantFirstName`/`applicantLastName` ALLOWED_FIELDS 추가; 저장 시 `applicantName` 자동 계산 (`firstName LASTNAME`).
+  - API `applications.ts` participants POST/PATCH: `firstName`/`lastName` 수락; `fullName` 자동 계산.
+  - Admin Detail Page (`camp-application-detail.tsx`): "Applicant Name" 단일 필드 → "First Name" + "Last Name" 두 개 EditableField. Subtitle도 분리된 필드 기반으로 표시.
+  - Admin Application Form (`application-form.tsx`): 기존 firstName/lastName state → payload에 `applicantFirstName`/`applicantLastName` 추가 전송.
+  - Participant Dialogs (`ParticipantDialogs.tsx`): "Full Name" 단일 입력 → "First Name *" + "Last Name *" 두 컬럼으로 분리.
+  - Landing Page Modal (`application-modal.tsx`): PrimaryStudent/Adult/Child 타입에서 `fullName` → `firstName` + `lastName`; Step 2 UI, 유효성 검사, 제출 payload, 리뷰 화면 모두 업데이트.
+  - i18n: 4개 언어(en/ko/ja/th) `apply.firstName`, `apply.lastName` 키 추가.
+  - 표시 포뮬러: `{firstName} {LASTNAME.toUpperCase()}` (예: "Ji-won KIM").
+
 - **Account Service Profiles Migration (v1.1)**: 6개 신규 테이블 추가 (`lib/db/src/schema/account-service-profiles.ts`).
   - `account_service_categories`: Account별 멀티 서비스 카테고리 태그 (UNIQUE account_id+service_type).
   - `account_homestay_profiles`: 홈스테이 방/숙소 상세 프로필 (1:N). `accommodation_mgt` Pre-fill 소스.

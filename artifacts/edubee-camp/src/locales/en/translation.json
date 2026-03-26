@@ -65,6 +65,8 @@
     "referralCode": "Referral Agent Code",
     "specialRequests": "Special Requests",
     "primaryStudent": "Primary Student Information",
+    "firstName": "First Name*",
+    "lastName": "Last Name*",
     "fullNameEn": "Full Name (English)*",
     "nativeName": "Native Name",
     "dateOfBirth": "Date of Birth*",

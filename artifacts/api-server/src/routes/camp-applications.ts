@@ -88,8 +88,8 @@ router.patch("/camp-applications/:id/status", authenticate, requireRole(...ADMIN
       } else {
         const nameParts = application.applicantName.split(" ");
         const [newContact] = await db.insert(contacts).values({
-          firstName:   nameParts[0],
-          lastName:    nameParts.slice(1).join(" ") || "-",
+          firstName:   application.applicantFirstName ?? nameParts[0],
+          lastName:    (application.applicantLastName ?? nameParts.slice(1).join(" ")) || "-",
           email:       application.applicantEmail,
           mobile:      application.applicantPhone    ?? null,
           nationality: application.applicantNationality ?? null,
@@ -144,6 +144,7 @@ router.put("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
       return res.status(400).json({ error: "Invalid application ID format" });
 
     const ALLOWED_FIELDS = [
+      "applicantFirstName", "applicantLastName",
       "applicantName", "applicantEmail", "applicantPhone", "applicantNationality", "applicantDob",
       "adultCount", "studentCount", "preferredStartDate",
       "specialRequirements", "dietaryRequirements", "medicalConditions",
@@ -157,6 +158,13 @@ router.put("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
         const val = req.body[key];
         payload[key] = val === "" ? null : val;
       }
+    }
+
+    // Auto-compute applicantName from first/last name if either provided
+    const fn = (payload.applicantFirstName ?? req.body.applicantFirstName ?? "") as string;
+    const ln = (payload.applicantLastName  ?? req.body.applicantLastName  ?? "") as string;
+    if (fn || ln) {
+      payload.applicantName = [fn, ln ? ln.toUpperCase() : ""].filter(Boolean).join(" ") || payload.applicantName;
     }
 
     if (payload.applicationStatus !== undefined) {
