@@ -81,9 +81,13 @@ interface Lead {
   notes?: string | null;
   accountId?: string | null;
   accountName?: string | null;
+  assignedStaffId?: string | null;
+  assignedStaffName?: string | null;
   activities?: ActivityRecord[];
   campApplication?: CampApplicationSnippet | null;
 }
+
+interface StaffOption { id: string; name: string; }
 
 function DetailField({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -291,6 +295,7 @@ export default function LeadDetailPage() {
     firstName: "", lastName: "", englishName: "", originalName: "",
     email: "", phone: "", nationality: "", source: "", inquiryType: "",
     budget: "", expectedStartDate: "", status: "new", notes: "",
+    assignedStaffId: "",
   });
   const id = params?.id ?? "";
 
@@ -298,6 +303,11 @@ export default function LeadDetailPage() {
     queryKey: ["crm-lead", id],
     queryFn: () => axios.get(`${BASE}/api/crm/leads/${id}`).then(r => r.data),
     enabled: !!id,
+  });
+
+  const { data: staffList = [] } = useQuery<StaffOption[]>({
+    queryKey: ["crm-staff"],
+    queryFn: () => axios.get(`${BASE}/api/crm/staff`).then(r => r.data),
   });
 
   // ── Open Edit Modal ─────────────────────────────────────────────────────────
@@ -317,6 +327,7 @@ export default function LeadDetailPage() {
       expectedStartDate: lead.expectedStartDate  ?? "",
       status:            lead.status            ?? "new",
       notes:             lead.notes             ?? "",
+      assignedStaffId:   lead.assignedStaffId    ?? "",
     });
     setEditOpen(true);
   };
@@ -341,6 +352,7 @@ export default function LeadDetailPage() {
         expectedStartDate: f.expectedStartDate  || null,
         status:            f.status,
         notes:             f.notes             || null,
+        assignedStaffId:   f.assignedStaffId    || null,
       }).then(r => r.data);
     },
     onSuccess: () => {
@@ -488,6 +500,13 @@ export default function LeadDetailPage() {
           {/* Info Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <DetailField label="Full Name"      value={lead.fullName} />
+            <div>
+              <p className="text-xs text-stone-400 mb-0.5">Status</p>
+              <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${STATUS_COLORS[lead.status ?? "new"] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
+                {(lead.status ?? "new").replace(/_/g, " ")}
+              </span>
+            </div>
+            <DetailField label="Assigned Staff" value={lead.assignedStaffName} />
             <DetailField label="Email"          value={lead.email} />
             <DetailField label="Phone"          value={lead.phone} />
             <DetailField label="Nationality"    value={lead.nationality} />
@@ -674,6 +693,16 @@ export default function LeadDetailPage() {
                 <Label className="text-xs">Expected Start Date</Label>
                 <Input className="h-9 text-sm" type="date" value={editForm.expectedStartDate}
                   onChange={e => setEditForm(f => ({ ...f, expectedStartDate: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Assigned Staff (담당 직원)</Label>
+                <Select value={editForm.assignedStaffId || "__none__"} onValueChange={v => setEditForm(f => ({ ...f, assignedStaffId: v === "__none__" ? "" : v }))}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select staff…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Unassigned —</SelectItem>
+                    {staffList.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="space-y-1">

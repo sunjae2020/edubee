@@ -54,6 +54,7 @@ interface Lead {
   budget?: string | null;
   expectedStartDate?: string | null;
   assignedStaffId?: string | null;
+  assignedStaffName?: string | null;
   notes?: string | null;
   contactId?: string | null;
   accountId?: string | null;
@@ -76,13 +77,17 @@ interface FormData {
   source: string;
   contactId: string;
   accountId: string;
+  assignedStaffId: string;
 }
 
 const EMPTY_FORM: FormData = {
   firstName: "", lastName: "", englishName: "", originalName: "",
   email: "", phone: "", nationality: "", inquiryType: "", budget: "",
   expectedStartDate: "", status: "new", notes: "", source: "", contactId: "", accountId: "",
+  assignedStaffId: "",
 };
+
+interface StaffOption { id: string; name: string; }
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = status ?? "new";
@@ -156,6 +161,11 @@ export default function CrmLeadsPage() {
     setForm(prev => ({ ...prev, [key]: val }));
   }
 
+  const { data: staffList = [] } = useQuery<StaffOption[]>({
+    queryKey: ["crm-staff"],
+    queryFn: () => axios.get(`${BASE}/api/crm/staff`).then(r => r.data),
+  });
+
   const tableKey = ["crm-leads-table", { search, status: statusFilter, page, pageSize }];
   const { data: tableResp, isLoading: tableLoading } = useQuery({
     queryKey: tableKey,
@@ -206,6 +216,7 @@ export default function CrmLeadsPage() {
       source:           l.source ?? "",
       contactId:        l.contactId ?? "",
       accountId:        l.accountId ?? "",
+      assignedStaffId:  l.assignedStaffId ?? "",
     });
     setSheetOpen(true);
   }
@@ -299,15 +310,16 @@ export default function CrmLeadsPage() {
                   <SortableTh col="budget" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Budget (AUD)</SortableTh>
                   <SortableTh col="expectedStart" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Expected Start</SortableTh>
                   <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Assigned Staff</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {tableLoading && (
-                  <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+                  <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
                 )}
                 {!tableLoading && rows.length === 0 && (
-                  <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No leads found</td></tr>
+                  <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No leads found</td></tr>
                 )}
                 {sorted.map(l => (
                   <tr key={l.id} className="hover:bg-stone-50 transition-colors">
@@ -329,6 +341,7 @@ export default function CrmLeadsPage() {
                       {l.expectedStartDate ? format(new Date(l.expectedStartDate), "MMM d, yyyy") : "—"}
                     </td>
                     <td className="px-4 py-3"><StatusBadge status={l.status} /></td>
+                    <td className="px-4 py-3 text-sm text-stone-600">{l.assignedStaffName ?? "—"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         <button onClick={() => navigate(`/admin/crm/leads/${l.id}`)}
@@ -431,6 +444,16 @@ export default function CrmLeadsPage() {
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-stone-600">Status</Label>
               <SelectField value={form.status} onChange={v => setForm(f => ({ ...f, status: v }))} options={KANBAN_COLS.map(c => c.key)} placeholder="Status" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-stone-600">Assigned Staff (담당 직원)</Label>
+              <Select value={form.assignedStaffId || "__none__"} onValueChange={v => setForm(f => ({ ...f, assignedStaffId: v === "__none__" ? "" : v }))}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select staff…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Unassigned —</SelectItem>
+                  {staffList.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-stone-600">Notes</Label>

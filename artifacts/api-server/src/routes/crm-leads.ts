@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { leads, lead_activities, quotes, campApplications, accounts } from "@workspace/db/schema";
-import { eq, ilike, and, or, count, SQL, desc } from "drizzle-orm";
+import { eq, ilike, and, or, count, SQL, desc, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -17,6 +17,22 @@ function genLeadRef() {
 function genQuoteRef() {
   return "QTE-" + Date.now().toString(36).toUpperCase().padStart(8, "0");
 }
+
+// ── Staff list (for selectors) ──────────────────────────────────────────────
+router.get("/crm/staff", authenticate, requireRole(...ADMIN_ROLES), async (_req, res) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT id, full_name AS name FROM users
+      WHERE role IN ('admin','super_admin','camp_coordinator','agent')
+      AND full_name IS NOT NULL
+      ORDER BY full_name
+    `);
+    return res.json(result.rows);
+  } catch (err) {
+    console.error("[GET /api/crm/staff]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 router.get("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
@@ -44,7 +60,18 @@ router.get("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, 
     const where = conditions.length ? and(...conditions) : undefined;
 
     const [totalResult] = await db.select({ count: count() }).from(leads).where(where);
-    const data = await db.select().from(leads).where(where)
+    const data = await db.select({
+      id: leads.id, leadRefNumber: leads.leadRefNumber,
+      fullName: leads.fullName, firstName: leads.firstName, lastName: leads.lastName,
+      englishName: leads.englishName, originalName: leads.originalName,
+      email: leads.email, phone: leads.phone, nationality: leads.nationality,
+      source: leads.source, status: leads.status, inquiryType: leads.inquiryType,
+      budget: leads.budget, expectedStartDate: leads.expectedStartDate,
+      assignedStaffId: leads.assignedStaffId, notes: leads.notes,
+      contactId: leads.contactId, accountId: leads.accountId,
+      createdAt: leads.createdAt, updatedAt: leads.updatedAt,
+      assignedStaffName: sql<string | null>`(SELECT u.full_name FROM users u WHERE u.id = ${leads.assignedStaffId})`,
+    }).from(leads).where(where)
       .orderBy(desc(leads.createdAt)).limit(limitNum).offset(offset);
 
     return res.json({
@@ -114,7 +141,21 @@ router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
       campApplication = ca ?? null;
     }
 
-    return res.json({ ...lead, accountName: accountName ?? null, activities, campApplication });
+    let assignedStaffName: string | null = null;
+    if (lead.assignedStaffId) {
+      const staffResult = await db.execute(sql`
+        SELECT full_name FROM users WHERE id = ${lead.assignedStaffId}
+      `);
+      assignedStaffName = (staffResult.rows?.[0] as any)?.full_name ?? null;
+    }
+
+    return res.json({
+      ...lead,
+      accountName: accountName ?? null,
+      assignedStaffName,
+      activities,
+      campApplication,
+    });
   } catch (err) {
     console.error("[GET /api/crm/leads/:id]", err);
     return res.status(500).json({ error: "Internal server error" });
