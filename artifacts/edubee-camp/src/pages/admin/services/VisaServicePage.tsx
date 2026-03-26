@@ -142,14 +142,16 @@ export default function VisaServicePage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Visa #</th>
               <SortableTh col="status"         sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
               <SortableTh col="serviceFee"     sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Fee</SortableTh>
+              <SortableTh col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Created</SortableTh>
+              <SortableTh col="updatedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Updated</SortableTh>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={9} className="text-center py-10 text-stone-400">Loading…</td></tr>
+              <tr><td colSpan={11} className="text-center py-10 text-stone-400">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={9} className="text-center py-10 text-stone-400">No records found</td></tr>
+              <tr><td colSpan={11} className="text-center py-10 text-stone-400">No records found</td></tr>
             )}
             {sorted.map(row => {
               const badge = STATUS_STYLE[row.status] ?? { bg: "#F4F3F1", text: "#57534E" };
@@ -173,6 +175,8 @@ export default function VisaServicePage() {
                   <td className="px-4 py-3 font-semibold text-stone-800">
                     {row.serviceFee ? `A$${parseFloat(row.serviceFee).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
                   </td>
+                  <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(row.createdAt)}</td>
+                  <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(row.updatedAt)}</td>
                 </tr>
               );
             })}

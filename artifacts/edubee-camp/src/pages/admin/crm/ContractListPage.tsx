@@ -32,6 +32,8 @@ interface ContractRow {
   arSummary?: { totalAr: number; collectedAr: number; statusList: string[] };
   apSummary?: { totalAp: number; remittedAp: number; statusList: string[] };
   collectionRate: number;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 interface Pagination { total: number; page: number; pageSize: number; totalPages: number }
 interface Summary { activeCount: number; arOutstanding: number; apPayable: number; commissionEstimate: number }
@@ -419,13 +421,15 @@ export default function ContractListPage() {
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">AP</th>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] min-w-[90px]">Collected</th>
                 <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Status</SortableTh>
+                <SortableTh col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] whitespace-nowrap">Created</SortableTh>
+                <SortableTh col="updatedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] whitespace-nowrap">Updated</SortableTh>
                 <th className="px-4 py-3 w-8"></th>
               </tr>
             </thead>
             <tbody>
               {isLoading && Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-b border-[#E8E6E2]">
-                  {Array.from({ length: 13 }).map((__, j) => (
+                  {Array.from({ length: 15 }).map((__, j) => (
                     <td key={j} className="px-4 py-3">
                       <div className="h-4 rounded animate-pulse" style={{ background: "#F4F3F1", width: `${60 + Math.random()*40}%` }} />
                     </td>
@@ -434,7 +438,7 @@ export default function ContractListPage() {
               ))}
               {!isLoading && sorted.length === 0 && (
                 <tr>
-                  <td colSpan={13} className="text-center py-16 text-[#A8A29E]">
+                  <td colSpan={15} className="text-center py-16 text-[#A8A29E]">
                     <FileText size={32} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">No contracts found</p>
                     <button onClick={clearAdv} className="mt-2 text-sm underline" style={{ color:"#F5821F" }}>Clear filters</button>
@@ -498,6 +502,8 @@ export default function ContractListPage() {
                   <td className="px-4 py-3">
                     <StatusBadge s={row.contractStatus} map={CONTRACT_STATUS_STYLES} />
                   </td>
+                  <td className="px-4 py-3 text-[11px] text-[#A8A29E] whitespace-nowrap">{fmtDate(row.createdAt)}</td>
+                  <td className="px-4 py-3 text-[11px] text-[#A8A29E] whitespace-nowrap">{fmtDate(row.updatedAt)}</td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <button className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] text-[#A8A29E]">
                       <MoreHorizontal size={15} />

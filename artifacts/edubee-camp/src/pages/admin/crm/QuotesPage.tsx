@@ -34,7 +34,10 @@ interface QuoteRow {
   products?: Array<{ id: string }>;
   total?: number;
   createdOn: string;
+  modifiedOn?: string | null;
 }
+
+const fmtDate = (d?: string | null) => d ? format(new Date(d), "dd MMM yyyy") : "—";
 
 function StatusBadge({ status }: { status: string }) {
   return (
@@ -112,15 +115,17 @@ export default function QuotesPage() {
               <SortableTh col="totalAmount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Total (AUD)</SortableTh>
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
               <SortableTh col="expiryDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Expiry</SortableTh>
+              <SortableTh col="createdOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Created</SortableTh>
+              <SortableTh col="modifiedOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Modified</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No quotes found</td></tr>
+              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">No quotes found</td></tr>
             )}
             {sorted.map(q => (
               <tr key={q.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
@@ -147,6 +152,8 @@ export default function QuotesPage() {
                 <td className="px-4 py-3 text-stone-600">
                   {q.expiryDate ? format(new Date(q.expiryDate), "MMM d, yyyy") : "—"}
                 </td>
+                <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(q.createdOn)}</td>
+                <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(q.modifiedOn)}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => navigate(`/admin/crm/quotes/${q.id}`)}

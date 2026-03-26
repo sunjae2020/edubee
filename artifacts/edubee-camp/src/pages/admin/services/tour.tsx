@@ -154,6 +154,8 @@ export default function TourManagement() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Meeting Point</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Group Size</th>
               <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
+              <SortableTh key="Created" col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Created</SortableTh>
+              <SortableTh key="Updated" col="updatedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Updated</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20" />
             </>
             </tr>
@@ -161,10 +163,10 @@ export default function TourManagement() {
           <tbody className="divide-y divide-border">
             {isLoading ? (
               [...Array(PAGE_SIZE)].map((_, i) => (
-                <tr key={i}>{[...Array(8)].map((_, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>)}</tr>
+                <tr key={i}>{[...Array(10)].map((_, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>)}</tr>
               ))
             ) : rows.length === 0 ? (
-              <tr><td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
+              <tr><td colSpan={10} className="px-4 py-16 text-center text-muted-foreground text-sm">
                 <MapIcon className="w-8 h-8 mx-auto mb-3 opacity-30" />No tour records found
               </td></tr>
             ) : sorted.map(r => (
@@ -176,6 +178,8 @@ export default function TourManagement() {
                 <td className="px-4 py-3 text-xs text-muted-foreground max-w-[120px] truncate">{r.meetingPoint ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.groupSize ?? "—"}</td>
                 <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{r.createdAt ? format(new Date(r.createdAt), "dd MMM yyyy") : "—"}</td>
+                <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{r.updatedAt ? format(new Date(r.updatedAt), "dd MMM yyyy") : "—"}</td>
                 <td className="px-4 py-3"><ChevronRight className="w-4 h-4 text-muted-foreground" /></td>
               </tr>
             ))}

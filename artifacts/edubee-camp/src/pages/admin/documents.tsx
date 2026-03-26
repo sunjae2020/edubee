@@ -231,7 +231,7 @@ export default function DocumentsPage() {
                   <SortableTh col="entityType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[120px]">Entity</SortableTh>
                   <SortableTh col="category" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[100px]">Category</SortableTh>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[100px]">Uploaded by</th>
-                  <SortableTh col="uploadedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[90px]">Uploaded</SortableTh>
+                  <SortableTh col="uploadedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[90px]">Created</SortableTh>
                   <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[90px]">Status</SortableTh>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[80px]">Size</th>
                   <th className="px-4 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase min-w-[120px]">Actions</th>

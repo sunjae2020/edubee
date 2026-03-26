@@ -206,6 +206,8 @@ export default function PickupManagement() {
               <SortableTh key="Driver" col="driverName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Driver</SortableTh>
               <SortableTh key="Vehicle" col="vehicleInfo" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vehicle</SortableTh>
               <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
+              <SortableTh key="Created" col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Created</SortableTh>
+              <SortableTh key="Updated" col="updatedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Updated</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20" />
             </>
             </tr>
@@ -214,14 +216,14 @@ export default function PickupManagement() {
             {isLoading ? (
               [...Array(PAGE_SIZE)].map((_, i) => (
                 <tr key={i}>
-                  {[...Array(9)].map((_, j) => (
+                  {[...Array(11)].map((_, j) => (
                     <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                   ))}
                 </tr>
               ))
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                <td colSpan={11} className="px-4 py-16 text-center text-muted-foreground text-sm">
                   <Car className="w-8 h-8 mx-auto mb-3 opacity-30" />
                   No pickup records found
                 </td>
@@ -261,6 +263,8 @@ export default function PickupManagement() {
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{row.vehicleInfo ?? "—"}</td>
                   <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{row.createdAt ? new Date(row.createdAt).toLocaleDateString("en-AU", { day:"2-digit", month:"short", year:"numeric" }) : "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString("en-AU", { day:"2-digit", month:"short", year:"numeric" }) : "—"}</td>
                   <td className="px-4 py-3"><ChevronRight className="w-4 h-4 text-muted-foreground" /></td>
                 </tr>
               );

@@ -153,15 +153,17 @@ export default function GuardianPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Service Period</th>
               <SortableTh key="Fee (A$)" col="fee" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Fee (A$)</SortableTh>
               <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+              <SortableTh key="Created" col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Created</SortableTh>
+              <SortableTh key="Updated" col="updatedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Updated</SortableTh>
             </>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={6} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={6} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
             )}
             {sorted.map(row => {
               const badge = STATUS_STYLE[row.status ?? "pending"] ?? STATUS_STYLE.pending;
@@ -190,6 +192,8 @@ export default function GuardianPage() {
                       {row.status ?? "—"}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(row.createdAt)}</td>
+                  <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(row.updatedAt)}</td>
                 </tr>
               );
             })}

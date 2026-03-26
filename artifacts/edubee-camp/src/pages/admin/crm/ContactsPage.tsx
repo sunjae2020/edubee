@@ -43,9 +43,12 @@ interface Contact {
   status: string;
   accountType: string;
   createdOn?: string | null;
+  modifiedOn?: string | null;
 }
 
-type FormData = Partial<Omit<Contact, "id" | "createdOn">>;
+type FormData = Partial<Omit<Contact, "id" | "createdOn" | "modifiedOn">>;
+
+const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 function Avatar({ name }: { name: string }) {
   return (
@@ -239,15 +242,17 @@ export default function ContactsPage() {
               <SortableTh col="nationality" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Nationality</SortableTh>
               <SortableTh col="primaryAccountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Account</SortableTh>
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+              <SortableTh col="createdOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Created</SortableTh>
+              <SortableTh col="modifiedOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Modified</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
+              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
             )}
             {sorted.map(c => {
               const displayName = c.fullName || `${c.firstName} ${c.lastName}`.trim();
@@ -268,6 +273,8 @@ export default function ContactsPage() {
                   <td className="px-4 py-3 text-stone-600">{c.nationality ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{c.accountType}</td>
                   <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                  <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(c.createdOn)}</td>
+                  <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(c.modifiedOn)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
                       <button

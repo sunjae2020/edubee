@@ -115,7 +115,9 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
           ARRAY(SELECT DISTINCT cp.ap_status FROM contract_products cp WHERE cp.contract_id = c.id AND cp.ap_status IS NOT NULL) AS ap_status_list,
           sa.id AS sa_id, sa.status AS sa_status,
           pk.id AS pk_id, pk.status AS pk_status,
-          ac.id AS ac_id, ac.status AS ac_status
+          ac.id AS ac_id, ac.status AS ac_status,
+          c.created_at AS created_at,
+          c.updated_at AS updated_at
         FROM contracts c
         LEFT JOIN accounts a         ON a.id = c.account_id
         LEFT JOIN users   u         ON u.id = c.owner_id
@@ -175,6 +177,8 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
         arSummary: { totalAr: arTotal, collectedAr: arCollected, statusList: row.ar_status_list ?? [] },
         apSummary: { totalAp: apTotal, remittedAp: apRemitted, statusList: row.ap_status_list ?? [] },
         collectionRate: arTotal > 0 ? Math.round((arCollected / arTotal) * 100) : 0,
+        createdAt:      row.created_at ?? null,
+        updatedAt:      row.updated_at ?? null,
       };
     });
 

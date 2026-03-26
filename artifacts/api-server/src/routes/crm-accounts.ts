@@ -105,6 +105,7 @@ router.get("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (re
         ownerId:          accounts.ownerId,
         primaryContactId: accounts.primaryContactId,
         createdOn:        accounts.createdOn,
+        modifiedOn:       accounts.modifiedOn,
         primaryContactFirstName:    contacts.firstName,
         primaryContactLastName:     contacts.lastName,
         primaryContactOriginalName: contacts.originalName,

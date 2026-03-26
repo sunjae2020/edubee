@@ -58,7 +58,10 @@ interface Account {
   primaryContactLastName?: string | null;
   primaryContactOriginalName?: string | null;
   createdOn?: string | null;
+  modifiedOn?: string | null;
 }
+
+const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 function TypeBadge({ type }: { type?: string | null }) {
   const t = type ?? "—";
@@ -180,6 +183,8 @@ export default function AccountsPage() {
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Original Name</th>
               <SortableTh col="phoneNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Phone</SortableTh>
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
+              <SortableTh col="createdOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Created</SortableTh>
+              <SortableTh col="modifiedOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Modified</SortableTh>
               <th className="px-4 py-2.5 w-20" />
             </tr>
           </thead>
@@ -187,14 +192,14 @@ export default function AccountsPage() {
             {isLoading ? (
               [...Array(6)].map((_, i) => (
                 <tr key={i} className="border-b">
-                  {[...Array(COLS + 1)].map((_, j) => (
+                  {[...Array(COLS + 3)].map((_, j) => (
                     <td key={j} className="px-4 py-3"><Skeleton className="h-4" /></td>
                   ))}
                 </tr>
               ))
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={COLS + 1} className="px-4 py-16 text-center">
+                <td colSpan={COLS + 3} className="px-4 py-16 text-center">
                   <Building2 className="w-8 h-8 mx-auto mb-3 text-muted-foreground/30" />
                   <p className="text-sm text-muted-foreground font-medium">No accounts found</p>
                   <Button size="sm" className="mt-3 bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5"
@@ -220,6 +225,8 @@ export default function AccountsPage() {
                     <td className="px-4 py-3 text-sm text-[#57534E]">{originalName}</td>
                     <td className="px-4 py-3 text-sm text-[#57534E]">{row.phoneNumber ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDate(row.createdOn)}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDate(row.modifiedOn)}</td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-1">
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0"
