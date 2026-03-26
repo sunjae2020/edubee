@@ -30,12 +30,11 @@ export const chartOfAccounts = pgTable("chart_of_accounts", {
 });
 
 // ── Product Cost Lines ─────────────────────────────────────────────────────
-// Note: partnerId references an 'accounts' entity not yet in schema — stored as plain uuid
 export const productCostLines = pgTable("product_cost_lines", {
   id:                uuid("id").primaryKey().defaultRandom(),
   contractProductId: uuid("contract_product_id").notNull().references(() => contractProducts.id),
   costType:          varchar("cost_type", { length: 50 }).notNull(),
-  partnerId:         uuid("partner_id"),
+  partnerId:         uuid("partner_id").references(() => accounts.id, { onDelete: "set null" }),
   staffId:           uuid("staff_id").references(() => users.id),
   calcType:          varchar("calc_type", { length: 20 }).notNull(),
   rate:              decimal("rate", { precision: 8, scale: 4 }),
@@ -51,8 +50,7 @@ export const productCostLines = pgTable("product_cost_lines", {
 });
 
 // ── Payment Headers ────────────────────────────────────────────────────────
-// Note: receivedFrom / paidTo reference an 'accounts' entity — stored as plain uuid
-// Note: paymentInfoId references 'payment_infos' not yet in schema — stored as plain uuid
+// Note: paymentInfoId references 'payment_infos' (future table) — stored as plain uuid
 export const paymentHeaders = pgTable("payment_headers", {
   id:            uuid("id").primaryKey().defaultRandom(),
   paymentRef:    varchar("payment_ref", { length: 50 }).unique(),
@@ -61,8 +59,8 @@ export const paymentHeaders = pgTable("payment_headers", {
   currency:      varchar("currency", { length: 10 }).notNull().default("AUD"),
   paymentMethod: varchar("payment_method", { length: 50 }),
   paymentType:   varchar("payment_type", { length: 30 }).notNull(),
-  receivedFrom:  uuid("received_from"),
-  paidTo:        uuid("paid_to"),
+  receivedFrom:  uuid("received_from").references(() => accounts.id, { onDelete: "set null" }),
+  paidTo:        uuid("paid_to").references(() => accounts.id, { onDelete: "set null" }),
   bankReference: varchar("bank_reference", { length: 100 }),
   paymentInfoId: uuid("payment_info_id"),
   notes:         text("notes"),
@@ -88,7 +86,6 @@ export const paymentLines = pgTable("payment_lines", {
 });
 
 // ── Journal Entries ────────────────────────────────────────────────────────
-// Note: studentAccountId / partnerId reference 'accounts' — stored as plain uuid
 export const journalEntries = pgTable("journal_entries", {
   id:               uuid("id").primaryKey().defaultRandom(),
   entryDate:        date("entry_date").notNull(),
@@ -98,8 +95,8 @@ export const journalEntries = pgTable("journal_entries", {
   creditCoa:        varchar("credit_coa", { length: 10 }).notNull().references(() => chartOfAccounts.code),
   amount:           decimal("amount", { precision: 12, scale: 2 }).notNull().default("0"),
   description:      text("description"),
-  studentAccountId: uuid("student_account_id"),
-  partnerId:        uuid("partner_id"),
+  studentAccountId: uuid("student_account_id").references(() => accounts.id, { onDelete: "set null" }),
+  partnerId:        uuid("partner_id").references(() => accounts.id, { onDelete: "set null" }),
   staffId:          uuid("staff_id").references(() => users.id),
   contractId:       uuid("contract_id").references(() => contracts.id),
   invoiceId:        uuid("invoice_id").references(() => invoices.id),
@@ -110,11 +107,10 @@ export const journalEntries = pgTable("journal_entries", {
 });
 
 // ── Agent Commission Configs ───────────────────────────────────────────────
-// Note: partnerId / schoolId reference 'accounts' — stored as plain uuid
 export const agentCommissionConfigs = pgTable("agent_commission_configs", {
   id:             uuid("id").primaryKey().defaultRandom(),
-  partnerId:      uuid("partner_id").notNull(),
-  schoolId:       uuid("school_id"),
+  partnerId:      uuid("partner_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
+  schoolId:       uuid("school_id").references(() => accounts.id, { onDelete: "set null" }),
   commissionType: varchar("commission_type", { length: 20 }).notNull(),
   defaultRate:    decimal("default_rate", { precision: 8, scale: 4 }),
   defaultAmount:  decimal("default_amount", { precision: 12, scale: 2 }),

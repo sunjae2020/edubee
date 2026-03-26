@@ -18,6 +18,7 @@ import { z } from "zod/v4";
 import { users } from "./users";
 import { contracts } from "./contracts";
 import { products } from "./packages";
+import { accounts, contacts } from "./crm";
 
 export const exchangeRates = pgTable(
   "exchange_rates",
@@ -64,7 +65,7 @@ export const contractFinanceItems = pgTable(
     costCenter: varchar("cost_center", { length: 30 }),
     label: varchar("label", { length: 255 }).notNull(),
     linkedProductId: uuid("linked_product_id").references(() => products.id),
-    linkedPartnerId: uuid("linked_partner_id").references(() => users.id),
+    linkedPartnerId: uuid("linked_partner_id").references(() => accounts.id, { onDelete: "set null" }),
     linkedAgentId: uuid("linked_agent_id").references(() => users.id),
     estimatedAmount: decimal("estimated_amount", { precision: 12, scale: 2 }).notNull(),
     actualAmount: decimal("actual_amount", { precision: 12, scale: 2 }),
@@ -176,8 +177,8 @@ export const transactions = pgTable("transactions", {
   createdBy: uuid("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   // Extended fields for Create Transaction form
-  accountId:       uuid("account_id"),
-  contactId:       uuid("contact_id"),
+  accountId:       uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
+  contactId:       uuid("contact_id").references(() => contacts.id, { onDelete: "set null" }),
   paymentInfoId:   uuid("payment_info_id"),
   costCenterCode:  varchar("cost_center_code", { length: 10 }),
   creditAmount:    decimal("credit_amount", { precision: 12, scale: 2 }),
@@ -212,7 +213,7 @@ export const accountLedgerEntries = pgTable(
   "account_ledger_entries",
   {
     id:               uuid("id").primaryKey().defaultRandom(),
-    accountId:        uuid("account_id").references(() => users.id).notNull(),
+    accountId:        uuid("account_id").references(() => accounts.id, { onDelete: "cascade" }).notNull(),
     sourceType:       varchar("source_type", { length: 50 }).notNull(),
     sourceId:         uuid("source_id").notNull(),
     contractId:       uuid("contract_id").references(() => contracts.id),

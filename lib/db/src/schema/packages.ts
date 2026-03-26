@@ -13,12 +13,11 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { users } from "./users";
 import { accounts } from "./crm";
 
 export const packageGroups = pgTable("package_groups", {
   id: uuid("id").primaryKey().defaultRandom(),
-  campProviderId: uuid("camp_provider_id").references(() => users.id),
+  campProviderId: uuid("camp_provider_id").references(() => accounts.id, { onDelete: "set null" }),
   nameEn: varchar("name_en", { length: 255 }).notNull(),
   nameKo: varchar("name_ko", { length: 255 }),
   nameJa: varchar("name_ja", { length: 255 }),

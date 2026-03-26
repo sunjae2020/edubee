@@ -264,7 +264,7 @@ export const settlementMgt = pgTable("settlement_mgt", {
   arrivalDate:           date("arrival_date"),
   overallStatus:         varchar("overall_status", { length: 50 }).default("pending"),
   checklist:             jsonb("checklist"),
-  checklistTemplateId:   uuid("checklist_template_id"),
+  checklistTemplateId:   uuid("checklist_template_id").references(() => settlementChecklistTemplates.id, { onDelete: "set null" }),
 });
 
 // ── Settlement Checklist Templates ─────────────────────────────────────────
