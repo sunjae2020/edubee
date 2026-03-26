@@ -285,6 +285,8 @@ export default function CampApplicationDetail() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["camp-application-detail-page", id],
     queryFn: () => axios.get(`${BASE}/api/camp-applications/${id}`).then(r => r.data),
+    enabled: !!id,
+    retry: 1,
   });
 
   const app          = data?.data ?? data;

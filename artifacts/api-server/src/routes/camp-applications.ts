@@ -44,8 +44,12 @@ router.get("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), asyn
   }
 });
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 router.get("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id))
+      return res.status(400).json({ error: "Invalid application ID format" });
     const [application] = await db.select().from(campApplications)
       .where(eq(campApplications.id, req.params.id)).limit(1);
     if (!application) return res.status(404).json({ error: "Not found" });
