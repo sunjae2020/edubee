@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -202,17 +201,17 @@ const EMPTY_CFORM = { firstName: "", lastName: "", email: "", mobile: "", nation
 function ContactLookup({ value, onChange, placeholder }: {
   value: string; onChange: (id: string, contact?: { email?: string | null; mobile?: string | null; firstName?: string; lastName?: string; fullName?: string | null; dob?: string | null }) => void; placeholder?: string;
 }) {
-  const [search, setSearch]       = useState("");
-  const [open, setOpen]           = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [creating, setCreating]   = useState(false);
-  const [cform, setCform]         = useState(EMPTY_CFORM);
+  const [search, setSearch] = useState("");
+  const [open, setOpen]     = useState(false);
+  const [mode, setMode]     = useState<"search" | "create">("search");
+  const [creating, setCreating] = useState(false);
+  const [cform, setCform]   = useState(EMPTY_CFORM);
   const qc = useQueryClient();
 
   const { data } = useQuery({
     queryKey: ["contacts-lookup", search],
     queryFn: () => axios.get(`${BASE}/api/crm/contacts?search=${encodeURIComponent(search)}&limit=10`).then(r => r.data.data ?? []),
-    enabled: open && search.length > 0,
+    enabled: open && mode === "search" && search.length > 0,
   });
 
   const { data: selected } = useQuery({
@@ -222,14 +221,18 @@ function ContactLookup({ value, onChange, placeholder }: {
   });
 
   const displayName = selected
-    ? (selected.fullName || `${selected.firstName} ${selected.lastName}`)
+    ? (selected.fullName || `${selected.firstName ?? ""} ${selected.lastName ?? ""}`.trim())
     : "";
 
-  function openCreateDialog() {
+  function openCreate() {
     const p = search.trim().length > 0 ? parseContactName(search) : { firstName: "", lastName: "" };
     setCform({ ...EMPTY_CFORM, firstName: p.firstName, lastName: p.lastName.toUpperCase() });
-    setOpen(false);
-    setCreateOpen(true);
+    setMode("create");
+  }
+
+  function backToSearch() {
+    setMode("search");
+    setCform(EMPTY_CFORM);
   }
 
   async function handleCreate() {
@@ -237,11 +240,11 @@ function ContactLookup({ value, onChange, placeholder }: {
     setCreating(true);
     try {
       const res = await axios.post(`${BASE}/api/crm/contacts`, {
-        firstName:   cform.firstName.trim(),
+        firstName:   cform.firstName.trim() || null,
         lastName:    cform.lastName.trim().toUpperCase(),
-        email:       cform.email.trim()       || undefined,
-        mobile:      cform.mobile.trim()      || undefined,
-        nationality: cform.nationality.trim() || undefined,
+        email:       cform.email.trim()       || null,
+        mobile:      cform.mobile.trim()      || null,
+        nationality: cform.nationality.trim() || null,
         status:      "Active",
         accountType: "Student",
       });
@@ -249,7 +252,8 @@ function ContactLookup({ value, onChange, placeholder }: {
       qc.invalidateQueries({ queryKey: ["contacts-lookup"] });
       qc.setQueryData(["contact-single", newContact.id], newContact);
       onChange(newContact.id, newContact);
-      setCreateOpen(false);
+      setOpen(false);
+      setMode("search");
       setSearch("");
       setCform(EMPTY_CFORM);
     } catch {
@@ -259,139 +263,166 @@ function ContactLookup({ value, onChange, placeholder }: {
     }
   }
 
-  const results: { id: string; firstName: string; lastName: string; fullName?: string | null; email?: string | null; mobile?: string | null }[] = Array.isArray(data) ? data : [];
-  const showDropdown = open && (results.length > 0 || search.trim().length > 0);
+  const results: { id: string; firstName?: string; lastName?: string; fullName?: string | null; email?: string | null; mobile?: string | null }[] = Array.isArray(data) ? data : [];
+  const showDropdown = open;
 
   return (
-    <>
-      <div className="relative">
-        <Input
-          value={open ? search : displayName}
-          placeholder={placeholder ?? "Search contacts…"}
-          onFocus={() => { setOpen(true); setSearch(""); }}
-          onBlur={() => setTimeout(() => setOpen(false), 200)}
-          onChange={e => setSearch(e.target.value)}
-          className="h-10 text-sm border-[#E8E6E2] focus:border-[#F5821F] pr-8"
-        />
-        {value && !open && (
-          <button
-            type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-300 hover:text-stone-500 transition-colors"
-            onMouseDown={e => { e.preventDefault(); onChange(""); }}
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        )}
-        {showDropdown && (
-          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-56 overflow-y-auto">
-            {results.map(c => (
-              <button
-                key={c.id}
-                type="button"
-                className="w-full px-3 py-2 text-left text-sm hover:bg-[#FEF0E3] transition-colors"
-                onMouseDown={() => { onChange(c.id, c); setOpen(false); }}
-              >
-                <span className="font-medium text-stone-800">
-                  {c.fullName || `${c.firstName} ${c.lastName}`}
-                </span>
-                {c.email && <span className="ml-2 text-xs text-stone-400">{c.email}</span>}
-              </button>
-            ))}
-            {search.trim().length > 0 && (
-              <button
-                type="button"
-                className="w-full px-3 py-2.5 text-left text-sm flex items-center gap-2 text-emerald-600 hover:bg-emerald-50 border-t border-[#F0EDE8] transition-colors font-medium"
-                onMouseDown={openCreateDialog}
-              >
-                <UserPlus className="w-4 h-4 shrink-0" />
-                Create &ldquo;{search.trim()}&rdquo;
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+    <div className="relative">
+      <Input
+        value={open ? search : displayName}
+        placeholder={placeholder ?? "Search contacts…"}
+        onFocus={() => { setOpen(true); setMode("search"); setSearch(""); }}
+        onBlur={() => setTimeout(() => { setOpen(false); setMode("search"); }, 200)}
+        onChange={e => setSearch(e.target.value)}
+        className="h-10 text-sm border-[#E8E6E2] focus:border-[#F5821F] pr-8"
+      />
+      {value && !open && (
+        <button
+          type="button"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-300 hover:text-stone-500 transition-colors"
+          onMouseDown={e => { e.preventDefault(); onChange(""); }}
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
 
-      {/* ── Create Contact Dialog ── */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-stone-800">
-              <UserPlus className="w-4 h-4 text-emerald-600" />
-              New Contact
-            </DialogTitle>
-          </DialogHeader>
+      {showDropdown && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-xl shadow-xl">
 
-          <div className="space-y-3 py-1">
-            <div className="grid grid-cols-2 gap-3">
+          {/* ── Search mode ── */}
+          {mode === "search" && (
+            <div className="max-h-56 overflow-y-auto">
+              {results.length > 0 && results.map(c => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-[#FEF0E3] transition-colors first:rounded-t-xl"
+                  onMouseDown={() => { onChange(c.id, c); setOpen(false); }}
+                >
+                  <span className="font-medium text-stone-800">
+                    {c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim()}
+                  </span>
+                  {c.email && <span className="ml-2 text-xs text-stone-400">{c.email}</span>}
+                </button>
+              ))}
+              {results.length === 0 && search.trim().length > 0 && (
+                <div className="px-3 py-2.5 text-xs text-stone-400 italic">No contacts found for &ldquo;{search.trim()}&rdquo;</div>
+              )}
+              {search.trim().length === 0 && (
+                <div className="px-3 py-2.5 text-xs text-stone-400 italic">Type a name to search…</div>
+              )}
+              {/* Create button — always visible when typing */}
+              {search.trim().length > 0 && (
+                <button
+                  type="button"
+                  className="w-full px-3 py-2.5 text-left text-sm flex items-center gap-2 text-emerald-600 hover:bg-emerald-50 border-t border-[#F0EDE8] transition-colors font-medium rounded-b-xl"
+                  onMouseDown={e => { e.preventDefault(); openCreate(); }}
+                >
+                  <UserPlus className="w-4 h-4 shrink-0" />
+                  Create &ldquo;{search.trim()}&rdquo; as new contact
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* ── Create mode (inline panel) ── */}
+          {mode === "create" && (
+            <div className="p-4 space-y-3">
+              {/* Header */}
+              <div className="flex items-center gap-2 pb-1">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <UserPlus className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <span className="text-sm font-bold text-emerald-700">New Contact</span>
+              </div>
+
+              {/* First Name + Last Name */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wide mb-1 block">
+                    First Name
+                  </Label>
+                  <Input
+                    autoFocus
+                    value={cform.firstName}
+                    onChange={e => setCform(f => ({ ...f, firstName: e.target.value }))}
+                    placeholder="e.g. Minjun"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wide mb-1 block">
+                    Last Name <span className="text-red-400">*</span>
+                  </Label>
+                  <Input
+                    value={cform.lastName}
+                    onChange={e => setCform(f => ({ ...f, lastName: e.target.value.toUpperCase() }))}
+                    placeholder="KIM"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F] uppercase"
+                  />
+                </div>
+              </div>
+
+              {/* Email + Mobile */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wide mb-1 block">Email</Label>
+                  <Input
+                    type="email"
+                    value={cform.email}
+                    onChange={e => setCform(f => ({ ...f, email: e.target.value }))}
+                    placeholder="email@example.com"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wide mb-1 block">Phone</Label>
+                  <Input
+                    value={cform.mobile}
+                    onChange={e => setCform(f => ({ ...f, mobile: e.target.value }))}
+                    placeholder="+61 4xx xxx xxx"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                  />
+                </div>
+              </div>
+
+              {/* Nationality */}
               <div>
-                <Label className="text-xs text-stone-500 mb-1 block">Last Name <span className="text-red-400">*</span></Label>
+                <Label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wide mb-1 block">Nationality</Label>
                 <Input
-                  value={cform.lastName}
-                  onChange={e => setCform(f => ({ ...f, lastName: e.target.value.toUpperCase() }))}
-                  placeholder="KIM"
-                  className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F] uppercase"
+                  value={cform.nationality}
+                  onChange={e => setCform(f => ({ ...f, nationality: e.target.value }))}
+                  placeholder="e.g. Korean"
+                  className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
                 />
               </div>
-              <div>
-                <Label className="text-xs text-stone-500 mb-1 block">First Name</Label>
-                <Input
-                  value={cform.firstName}
-                  onChange={e => {
-                    const v = e.target.value;
-                    setCform(f => ({ ...f, firstName: v.length > 0 ? v.charAt(0).toUpperCase() + v.slice(1) : v }));
-                  }}
-                  placeholder="Minjun"
-                  className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
-                />
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  className="flex-1 h-9 rounded-lg border border-[#E8E6E2] text-sm text-stone-600 hover:bg-stone-50 transition-colors font-medium"
+                  onMouseDown={e => { e.preventDefault(); backToSearch(); }}
+                >
+                  Back to search
+                </button>
+                <button
+                  type="button"
+                  disabled={!cform.lastName.trim() || creating}
+                  className="flex-1 h-9 rounded-lg text-sm text-white font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  style={{ background: "#F5821F" }}
+                  onMouseDown={e => { e.preventDefault(); handleCreate(); }}
+                >
+                  {creating
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Creating…</>
+                    : "Create & Select"}
+                </button>
               </div>
             </div>
-            <div>
-              <Label className="text-xs text-stone-500 mb-1 block">Email</Label>
-              <Input
-                type="email"
-                value={cform.email}
-                onChange={e => setCform(f => ({ ...f, email: e.target.value }))}
-                placeholder="email@example.com"
-                className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
-              />
-            </div>
-            <div>
-              <Label className="text-xs text-stone-500 mb-1 block">Mobile</Label>
-              <Input
-                value={cform.mobile}
-                onChange={e => setCform(f => ({ ...f, mobile: e.target.value }))}
-                placeholder="+82-10-0000-0000"
-                className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
-              />
-            </div>
-            <div>
-              <Label className="text-xs text-stone-500 mb-1 block">Nationality</Label>
-              <Input
-                value={cform.nationality}
-                onChange={e => setCform(f => ({ ...f, nationality: e.target.value }))}
-                placeholder="Korean"
-                className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setCreateOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              disabled={!cform.lastName.trim() || creating}
-              onClick={handleCreate}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              {creating ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Creating…</> : "Create Contact"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
