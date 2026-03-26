@@ -220,7 +220,7 @@ router.delete("/crm/contacts/:id/accounts/:accountId", authenticate, requireRole
 
 router.post("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { firstName, lastName, title, dob, gender, nationality, email, mobile,
+    const { firstName, lastName, englishName, title, dob, gender, nationality, email, mobile,
             officeNumber, snsType, snsId, influxChannel, importantDate1, importantDate2,
             originalName, fullName, description, status, accountType } = req.body;
 
@@ -229,7 +229,7 @@ router.post("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (r
     }
 
     const [created] = await db.insert(contacts).values({
-      firstName, lastName, title, dob, gender, nationality, email, mobile,
+      firstName, lastName, englishName, title, dob, gender, nationality, email, mobile,
       officeNumber, snsType, snsId, influxChannel, importantDate1, importantDate2,
       originalName, fullName, description,
       status:      status      ?? "Active",
@@ -248,12 +248,12 @@ router.put("/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async
     const [existing] = await db.select().from(contacts).where(eq(contacts.id, req.params.id));
     if (!existing) return res.status(404).json({ error: "Contact not found" });
 
-    const { firstName, lastName, title, dob, gender, nationality, email, mobile,
+    const { firstName, lastName, englishName, title, dob, gender, nationality, email, mobile,
             officeNumber, snsType, snsId, influxChannel, importantDate1, importantDate2,
             originalName, fullName, description, status, accountType } = req.body;
 
     const [updated] = await db.update(contacts)
-      .set({ firstName, lastName, title, dob, gender, nationality, email, mobile,
+      .set({ firstName, lastName, englishName, title, dob, gender, nationality, email, mobile,
              officeNumber, snsType, snsId, influxChannel, importantDate1, importantDate2,
              originalName, fullName, description, status, accountType, modifiedOn: new Date() })
       .where(eq(contacts.id, req.params.id))

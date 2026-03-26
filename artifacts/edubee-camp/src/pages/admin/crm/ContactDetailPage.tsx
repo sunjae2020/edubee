@@ -411,7 +411,7 @@ function LinkedAccountsSection({ contactId, contactName, accounts, onRefresh }: 
 
 // ─── Main Page ─────────────────────────────────────────────────────────────
 const EMPTY_FORM = {
-  firstName: "", lastName: "", originalName: "", fullName: "",
+  firstName: "", lastName: "", englishName: "", originalName: "", fullName: "",
   title: "", dob: "", gender: "", nationality: "",
   email: "", mobile: "", officeNumber: "",
   snsType: "", snsId: "", influxChannel: "",
@@ -445,6 +445,7 @@ export default function ContactDetailPage() {
     setForm({
       firstName:      contact.firstName      ?? "",
       lastName:       contact.lastName       ?? "",
+      englishName:    contact.englishName    ?? "",
       originalName:   contact.originalName   ?? "",
       fullName:       contact.fullName       ?? "",
       title:          contact.title          ?? "",
@@ -471,6 +472,7 @@ export default function ContactDetailPage() {
     setForm({
       firstName:      contact.firstName      ?? "",
       lastName:       contact.lastName       ?? "",
+      englishName:    contact.englishName    ?? "",
       originalName:   contact.originalName   ?? "",
       fullName:       contact.fullName       ?? "",
       title:          contact.title          ?? "",
@@ -498,9 +500,10 @@ export default function ContactDetailPage() {
       const ln = form.lastName.trim();
       return axios.put(`${BASE}/api/crm/contacts/${id}`, {
         ...form,
-        firstName: fn || null,
-        lastName:  ln || null,
-        fullName:  fn && ln ? `${fn} ${ln}` : (fn || ln || contact?.fullName),
+        firstName:   fn || null,
+        lastName:    ln || null,
+        fullName:    fn && ln ? `${fn} ${ln}` : (fn || ln || contact?.fullName),
+        englishName:    form.englishName    || null,
         originalName:   form.originalName   || null,
         title:          form.title          || null,
         dob:            form.dob            || null,
@@ -598,6 +601,10 @@ export default function ContactDetailPage() {
           </FieldGroup>
         </FormRow>
         <FormRow>
+          <FieldGroup label="English Name (Nickname)">
+            <Input value={form.englishName} onChange={e => set("englishName", e.target.value)}
+              placeholder="e.g. James" className={INPUT_CLS} />
+          </FieldGroup>
           <FieldGroup label="Original Name (Native)">
             <Input value={form.originalName} onChange={e => set("originalName", e.target.value)}
               placeholder="e.g. 김민준" className={INPUT_CLS} />
