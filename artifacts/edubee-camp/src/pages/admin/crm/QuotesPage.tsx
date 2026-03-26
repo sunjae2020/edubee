@@ -49,7 +49,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function QuotesPage() {
   const [, navigate] = useLocation();
-  const { sortBy, sortDir, onSort } = useSortState();
+  const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const [tab, setTab] = useState<"quotes" | "templates">("quotes");
   const [page, setPage] = useState(1);
 

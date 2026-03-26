@@ -88,7 +88,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function AccountsPage() {
   const [, navigate] = useLocation();
-  const { sortBy, sortDir, onSort } = useSortState();
+  const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const { toast } = useToast();
   const qc = useQueryClient();
 
