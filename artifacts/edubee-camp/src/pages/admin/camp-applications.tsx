@@ -146,8 +146,16 @@ export default function CampApplications() {
     queryFn: () => {
       const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) params.set("search", search);
-      if (activeStatus !== "all") params.set("status", activeStatus);
-      return axios.get(`${BASE}/api/applications?${params}`).then(r => r.data);
+      if (activeStatus !== "all") params.set("applicationStatus", activeStatus);
+      return axios.get(`${BASE}/api/camp-applications?${params}`).then(r => ({
+        ...r.data,
+        data: (r.data.data ?? []).map((a: any) => ({
+          ...a,
+          applicationNumber: a.applicationRef,
+          studentName: a.applicantName,
+          status: a.applicationStatus,
+        })),
+      }));
     },
   });
   const apps: Application[] = resp?.data ?? [];
@@ -156,7 +164,7 @@ export default function CampApplications() {
 
   const { data: appDetail } = useQuery<{ participants?: Participant[] }>({
     queryKey: ["camp-application-detail", selectedApp?.id],
-    queryFn: () => axios.get(`${BASE}/api/applications/${selectedApp!.id}`).then(r => r.data),
+    queryFn: () => axios.get(`${BASE}/api/camp-applications/${selectedApp!.id}`).then(r => r.data),
     enabled: !!selectedApp?.id && activeTab === "participants",
   });
 
@@ -211,10 +219,10 @@ export default function CampApplications() {
 
   const updateStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
-      axios.put(`${BASE}/api/applications/${id}/status`, { status }).then(r => r.data),
+      axios.patch(`${BASE}/api/camp-applications/${id}/status`, { applicationStatus: status }).then(r => r.data),
     onSuccess: (updated) => {
       qc.invalidateQueries({ queryKey: ["camp-applications"] });
-      if (selectedApp) setSelectedApp({ ...selectedApp, status: updated.status });
+      if (selectedApp) setSelectedApp({ ...selectedApp, status: updated.applicationStatus ?? updated.status });
     },
   });
 
