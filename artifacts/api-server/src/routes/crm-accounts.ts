@@ -105,8 +105,9 @@ router.get("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (re
         ownerId:          accounts.ownerId,
         primaryContactId: accounts.primaryContactId,
         createdOn:        accounts.createdOn,
-        primaryContactFirstName: contacts.firstName,
-        primaryContactLastName:  contacts.lastName,
+        primaryContactFirstName:    contacts.firstName,
+        primaryContactLastName:     contacts.lastName,
+        primaryContactOriginalName: contacts.originalName,
       })
       .from(accounts)
       .leftJoin(contacts, eq(accounts.primaryContactId, contacts.id))

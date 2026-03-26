@@ -53,6 +53,7 @@ interface Account {
   ownerId: string;
   primaryContactFirstName?: string | null;
   primaryContactLastName?: string | null;
+  primaryContactOriginalName?: string | null;
   createdOn?: string | null;
 }
 
@@ -173,7 +174,7 @@ export default function AccountsPage() {
               <SortableTh col="name" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Name</SortableTh>
               <SortableTh col="accountType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</SortableTh>
               <SortableTh col="accountCategory" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Category</SortableTh>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Primary Contact</th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Original Name</th>
               <SortableTh col="phoneNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Phone</SortableTh>
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
               <th className="px-4 py-2.5 w-20" />
@@ -201,8 +202,7 @@ export default function AccountsPage() {
               </tr>
             ) : (
               sorted.map(row => {
-                const contact = [row.primaryContactFirstName, row.primaryContactLastName]
-                  .filter(Boolean).join(" ") || "—";
+                const originalName = row.primaryContactOriginalName || "—";
                 return (
                   <tr key={row.id}
                     className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
@@ -210,7 +210,7 @@ export default function AccountsPage() {
                     <td className="px-4 py-3 font-medium text-[#1C1917]">{row.name}</td>
                     <td className="px-4 py-3"><TypeBadge type={row.accountType} /></td>
                     <td className="px-4 py-3 text-sm text-[#57534E]">{row.accountCategory ?? <span className="text-muted-foreground">—</span>}</td>
-                    <td className="px-4 py-3 text-sm text-[#57534E]">{contact}</td>
+                    <td className="px-4 py-3 text-sm text-[#57534E]">{originalName}</td>
                     <td className="px-4 py-3 text-sm text-[#57534E]">{row.phoneNumber ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>

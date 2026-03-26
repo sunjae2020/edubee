@@ -86,6 +86,7 @@ interface Account {
   modifiedOn?: string | null;
   primaryContact?: {
     id: string; firstName: string; lastName: string;
+    originalName?: string | null;
     email?: string | null; mobile?: string | null;
     nationality?: string | null; dob?: string | null;
     snsType?: string | null; snsId?: string | null;
@@ -945,33 +946,39 @@ export default function AccountDetailPage() {
                         <ExternalLink size={14} className="text-stone-300 group-hover:text-[#F5821F] transition-colors mt-1" />
                       </div>
                       <div className="space-y-1.5 text-xs">
+                        {account.primaryContact.originalName && (
+                          <div className="flex items-center gap-2">
+                            <span className="w-16 text-stone-400 flex-shrink-0">원래 이름</span>
+                            <span className="text-stone-700 font-medium">{account.primaryContact.originalName}</span>
+                          </div>
+                        )}
                         {account.primaryContact.email && (
                           <div className="flex items-center gap-2">
-                            <span className="w-12 text-stone-400 flex-shrink-0">Email</span>
+                            <span className="w-16 text-stone-400 flex-shrink-0">Email</span>
                             <span className="text-stone-700">{account.primaryContact.email}</span>
                           </div>
                         )}
                         {account.primaryContact.mobile && (
                           <div className="flex items-center gap-2">
-                            <span className="w-12 text-stone-400 flex-shrink-0">Phone</span>
+                            <span className="w-16 text-stone-400 flex-shrink-0">Phone</span>
                             <span className="text-stone-700">{account.primaryContact.mobile}</span>
                           </div>
                         )}
                         {account.primaryContact.nationality && (
                           <div className="flex items-center gap-2">
-                            <span className="w-12 text-stone-400 flex-shrink-0">Nation</span>
+                            <span className="w-16 text-stone-400 flex-shrink-0">Nation</span>
                             <span className="text-stone-700">{account.primaryContact.nationality}</span>
                           </div>
                         )}
                         {account.primaryContact.dob && (
                           <div className="flex items-center gap-2">
-                            <span className="w-12 text-stone-400 flex-shrink-0">DOB</span>
+                            <span className="w-16 text-stone-400 flex-shrink-0">DOB</span>
                             <span className="text-stone-700">{new Date(account.primaryContact.dob).toLocaleDateString()}</span>
                           </div>
                         )}
                         {account.primaryContact.snsType && (
                           <div className="flex items-center gap-2">
-                            <span className="w-12 text-stone-400 flex-shrink-0">SNS</span>
+                            <span className="w-16 text-stone-400 flex-shrink-0">SNS</span>
                             <span className="text-stone-700">{account.primaryContact.snsType}{account.primaryContact.snsId ? ` · ${account.primaryContact.snsId}` : ""}</span>
                           </div>
                         )}
