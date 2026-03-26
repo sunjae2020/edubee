@@ -637,8 +637,8 @@ export default function LeadDetailPage() {
                 <Textarea value={form.notes}
                   onChange={e => set("notes", e.target.value)}
                   placeholder="Additional notes…"
-                  rows={3}
-                  className="text-sm border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 resize-none" />
+                  rows={8}
+                  className="text-sm border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 resize-y" />
               </FieldGroup>
             </div>
           </div>
