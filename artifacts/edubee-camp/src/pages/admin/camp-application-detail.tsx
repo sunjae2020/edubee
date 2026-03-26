@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { ParticipantEditDialog, ParticipantAddDialog } from "@/components/shared/ParticipantDialogs";
 import { Pencil, Plus, Check, ArrowRight, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -303,9 +304,15 @@ export default function CampApplicationDetail() {
   const canEdit      = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "") &&
                        !isContracted && appStatus !== "cancelled";
 
+  const { data: staffData } = useQuery({
+    queryKey: ["staff-list-for-camp"],
+    queryFn: () => axios.get(`${BASE}/api/users?limit=100`).then(r => r.data?.data ?? []),
+  });
+  const staffList: any[] = staffData ?? [];
+
   const updateApp = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
-      axios.put(`${BASE}/api/applications/${id}`, payload).then(r => r.data),
+      axios.put(`${BASE}/api/camp-applications/${id}`, payload).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["camp-application-detail-page", id] });
       qc.invalidateQueries({ queryKey: ["camp-applications"] });
@@ -458,32 +465,138 @@ export default function CampApplicationDetail() {
                     </Select>
                   }
                 />
-                <DetailRow label="Nationality"      value={app.applicantNationality} />
-                <DetailRow label="Phone"            value={app.applicantPhone} />
-                <DetailRow label="Email"            value={app.applicantEmail} />
-                <DetailRow label="Adults"           value={app.adultCount} />
-                <DetailRow label="Students"         value={app.studentCount} />
-                <DetailRow label="Submitted"        value={app.createdAt ? format(new Date(app.createdAt), "PPP") : "—"} />
+                <EditableField
+                  label="Applicant Name"
+                  isEditing={isEditing}
+                  value={app.applicantName}
+                  editValue={getValue("applicantName") ?? ""}
+                  onChange={v => setField("applicantName", v)}
+                />
+                <EditableField
+                  label="Email"
+                  isEditing={isEditing}
+                  value={app.applicantEmail}
+                  editValue={getValue("applicantEmail") ?? ""}
+                  onChange={v => setField("applicantEmail", v)}
+                  inputType="email"
+                />
+                <EditableField
+                  label="Phone"
+                  isEditing={isEditing}
+                  value={app.applicantPhone}
+                  editValue={getValue("applicantPhone") ?? ""}
+                  onChange={v => setField("applicantPhone", v)}
+                />
+                <EditableField
+                  label="Nationality"
+                  isEditing={isEditing}
+                  value={app.applicantNationality}
+                  editValue={getValue("applicantNationality") ?? ""}
+                  onChange={v => setField("applicantNationality", v)}
+                />
+                <EditableField
+                  label="DOB"
+                  isEditing={isEditing}
+                  value={app.applicantDob ?? ""}
+                  editValue={getValue("applicantDob") ?? ""}
+                  onChange={v => setField("applicantDob", v)}
+                  inputType="date"
+                />
+                <EditableField
+                  label="Adults"
+                  isEditing={isEditing}
+                  value={app.adultCount}
+                  editValue={getValue("adultCount") != null ? String(getValue("adultCount")) : ""}
+                  onChange={v => setField("adultCount", v ? Number(v) : null)}
+                  inputType="number"
+                />
+                <EditableField
+                  label="Students"
+                  isEditing={isEditing}
+                  value={app.studentCount}
+                  editValue={getValue("studentCount") != null ? String(getValue("studentCount")) : ""}
+                  onChange={v => setField("studentCount", v ? Number(v) : null)}
+                  inputType="number"
+                />
+                <DetailRow label="Submitted" value={app.createdAt ? format(new Date(app.createdAt), "PPP") : "—"} />
               </DetailSection>
 
               <DetailSection title="Package Info">
-                <DetailRow label="Package Group"    value={app.packageGroupName   ?? app.packageGroupId} />
-                <DetailRow label="Package"          value={app.packageName        ?? app.packageId} />
-                <DetailRow label="Preferred Start"  value={app.preferredStartDate ? format(new Date(app.preferredStartDate), "PPP") : "—"} />
-                <DetailRow label="Special Req."     value={app.specialRequirements} />
-                <DetailRow label="Dietary"          value={app.dietaryRequirements} />
-                <DetailRow label="Medical"          value={app.medicalConditions} />
+                <DetailRow label="Package Group" value={app.packageGroupName ?? app.packageGroupId} />
+                <DetailRow label="Package"       value={app.packageName     ?? app.packageId} />
+                <EditableField
+                  label="Preferred Start"
+                  isEditing={isEditing}
+                  value={app.preferredStartDate ? format(new Date(app.preferredStartDate), "PPP") : "—"}
+                  editValue={getValue("preferredStartDate") ?? ""}
+                  onChange={v => setField("preferredStartDate", v)}
+                  inputType="date"
+                />
+                <EditableField
+                  label="Special Req."
+                  isEditing={isEditing}
+                  value={app.specialRequirements}
+                  editValue={getValue("specialRequirements") ?? ""}
+                  onChange={v => setField("specialRequirements", v)}
+                  multiline
+                />
+                <EditableField
+                  label="Dietary"
+                  isEditing={isEditing}
+                  value={app.dietaryRequirements}
+                  editValue={getValue("dietaryRequirements") ?? ""}
+                  onChange={v => setField("dietaryRequirements", v)}
+                  multiline
+                />
+                <EditableField
+                  label="Medical"
+                  isEditing={isEditing}
+                  value={app.medicalConditions}
+                  editValue={getValue("medicalConditions") ?? ""}
+                  onChange={v => setField("medicalConditions", v)}
+                  multiline
+                />
               </DetailSection>
 
               <DetailSection title="Emergency Contact">
-                <DetailRow label="Name"  value={app.emergencyContactName} />
-                <DetailRow label="Phone" value={app.emergencyContactPhone} />
+                <EditableField
+                  label="Name"
+                  isEditing={isEditing}
+                  value={app.emergencyContactName}
+                  editValue={getValue("emergencyContactName") ?? ""}
+                  onChange={v => setField("emergencyContactName", v)}
+                />
+                <EditableField
+                  label="Phone"
+                  isEditing={isEditing}
+                  value={app.emergencyContactPhone}
+                  editValue={getValue("emergencyContactPhone") ?? ""}
+                  onChange={v => setField("emergencyContactPhone", v)}
+                />
               </DetailSection>
 
               <DetailSection title="Assignment">
-                <DetailRow label="Assigned Staff" value={app.assignedStaffId} />
-                <DetailRow label="Lead ID"        value={app.leadId} />
-                <DetailRow label="Quoted At"      value={app.quotedAt ? format(new Date(app.quotedAt), "PPP p") : "—"} />
+                <EditableField
+                  label="Assigned Staff"
+                  isEditing={isEditing}
+                  value={staffList.find(s => s.id === app.assignedStaffId)?.name ?? app.assignedStaffId ?? "—"}
+                  editChildren={
+                    <Select
+                      value={getValue("assignedStaffId") ?? ""}
+                      onValueChange={v => setField("assignedStaffId", v === "__none__" ? null : v)}
+                    >
+                      <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue placeholder="Select staff..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">— Unassigned —</SelectItem>
+                        {staffList.map((s: any) => (
+                          <SelectItem key={s.id} value={s.id}>{s.name ?? s.email}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  }
+                />
+                <DetailRow label="Lead ID"   value={app.leadId} />
+                <DetailRow label="Quoted At" value={app.quotedAt ? format(new Date(app.quotedAt), "PPP p") : "—"} />
               </DetailSection>
 
               <div className="lg:col-span-2">

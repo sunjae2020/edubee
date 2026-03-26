@@ -138,6 +138,45 @@ router.patch("/camp-applications/:id/status", authenticate, requireRole(...ADMIN
   }
 });
 
+router.put("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    if (!UUID_RE.test(req.params.id))
+      return res.status(400).json({ error: "Invalid application ID format" });
+
+    const ALLOWED_FIELDS = [
+      "applicantName", "applicantEmail", "applicantPhone", "applicantNationality", "applicantDob",
+      "adultCount", "studentCount", "preferredStartDate",
+      "specialRequirements", "dietaryRequirements", "medicalConditions",
+      "emergencyContactName", "emergencyContactPhone",
+      "assignedStaffId", "applicationStatus", "notes",
+    ] as const;
+
+    const payload: Record<string, unknown> = { updatedAt: new Date() };
+    for (const key of ALLOWED_FIELDS) {
+      if (key in req.body) {
+        const val = req.body[key];
+        payload[key] = val === "" ? null : val;
+      }
+    }
+
+    if (payload.applicationStatus !== undefined) {
+      if (!(VALID_STATUSES as readonly string[]).includes(payload.applicationStatus as string))
+        return res.status(400).json({ error: `Invalid status. Allowed: ${VALID_STATUSES.join(", ")}` });
+    }
+
+    const [updated] = await db.update(campApplications)
+      .set(payload as any)
+      .where(eq(campApplications.id, req.params.id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    return res.json(updated);
+  } catch (err) {
+    console.error("[PUT /api/camp-applications/:id]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [application] = await db.select().from(campApplications)
