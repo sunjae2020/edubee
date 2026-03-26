@@ -221,7 +221,7 @@ router.post("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (r
   try {
     const { firstName, lastName, title, dob, gender, nationality, email, mobile,
             officeNumber, snsType, snsId, influxChannel, importantDate1, importantDate2,
-            description, status, accountType } = req.body;
+            originalName, description, status, accountType } = req.body;
 
     if (!firstName || !lastName) {
       return res.status(400).json({ error: "firstName and lastName are required" });
@@ -230,7 +230,7 @@ router.post("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (r
     const [created] = await db.insert(contacts).values({
       firstName, lastName, title, dob, gender, nationality, email, mobile,
       officeNumber, snsType, snsId, influxChannel, importantDate1, importantDate2,
-      description,
+      originalName, description,
       status:      status      ?? "Active",
       accountType: accountType ?? "Student",
     }).returning();
@@ -249,12 +249,12 @@ router.put("/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async
 
     const { firstName, lastName, title, dob, gender, nationality, email, mobile,
             officeNumber, snsType, snsId, influxChannel, importantDate1, importantDate2,
-            description, status, accountType } = req.body;
+            originalName, description, status, accountType } = req.body;
 
     const [updated] = await db.update(contacts)
       .set({ firstName, lastName, title, dob, gender, nationality, email, mobile,
              officeNumber, snsType, snsId, influxChannel, importantDate1, importantDate2,
-             description, status, accountType, modifiedOn: new Date() })
+             originalName, description, status, accountType, modifiedOn: new Date() })
       .where(eq(contacts.id, req.params.id))
       .returning();
 

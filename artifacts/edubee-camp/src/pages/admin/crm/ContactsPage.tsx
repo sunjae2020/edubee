@@ -37,6 +37,7 @@ interface Contact {
   influxChannel?: string | null;
   importantDate1?: string | null;
   importantDate2?: string | null;
+  originalName?: string | null;
   description?: string | null;
   status: string;
   accountType: string;
@@ -327,6 +328,10 @@ export default function ContactsPage() {
                 <Input value={form.lastName ?? ""} onChange={e => patch("lastName", e.target.value)} className="h-9 text-sm" placeholder="Doe" />
               </FormField>
             </div>
+
+            <FormField label="Original Name">
+              <Input value={form.originalName ?? ""} onChange={e => patch("originalName", e.target.value)} className="h-9 text-sm" placeholder="e.g. 김소희" />
+            </FormField>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormField label="Date of Birth">
