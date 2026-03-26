@@ -205,6 +205,17 @@ interface SARecord {
   contractCurrency?: string | null;
   contractPaidAmount?: string | null;
   contractBalanceAmount?: string | null;
+  studentFirstName?: string | null;
+  studentLastName?: string | null;
+  studentEnglishName?: string | null;
+  studentOriginalName?: string | null;
+  studentDateOfBirth?: string | null;
+  studentGender?: string | null;
+  studentNationality?: string | null;
+  studentPassportNumber?: string | null;
+  studentPassportExpiry?: string | null;
+  studentGrade?: string | null;
+  studentSchoolName?: string | null;
 }
 
 // ─── Pipeline stages ─────────────────────────────────────────────────────────
@@ -361,6 +372,17 @@ function EditSADetailsModal({
   const [orientationCompleted, setOrientationCompleted] = useState(record.orientationCompleted ?? false);
   const [notes,                setNotes]                = useState(record.notes ?? "");
   const [assignedStaffId,      setAssignedStaffId]      = useState(record.assignedStaffId ?? "");
+  const [studentFirstName,     setStudentFirstName]     = useState(record.studentFirstName ?? "");
+  const [studentLastName,      setStudentLastName]      = useState(record.studentLastName ?? "");
+  const [studentEnglishName,   setStudentEnglishName]   = useState(record.studentEnglishName ?? "");
+  const [studentOriginalName,  setStudentOriginalName]  = useState(record.studentOriginalName ?? "");
+  const [studentDateOfBirth,   setStudentDateOfBirth]   = useState(record.studentDateOfBirth ?? "");
+  const [studentGender,        setStudentGender]        = useState(record.studentGender ?? "");
+  const [studentNationality,   setStudentNationality]   = useState(record.studentNationality ?? "");
+  const [studentPassportNumber, setStudentPassportNumber] = useState(record.studentPassportNumber ?? "");
+  const [studentPassportExpiry, setStudentPassportExpiry] = useState(record.studentPassportExpiry ?? "");
+  const [studentGrade,         setStudentGrade]         = useState(record.studentGrade ?? "");
+  const [studentSchoolName,    setStudentSchoolName]    = useState(record.studentSchoolName ?? "");
 
   const { data: usersData } = useQuery({
     queryKey: ["users-list"],
@@ -425,11 +447,77 @@ function EditSADetailsModal({
             <Label className="text-xs text-stone-600">Notes</Label>
             <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="text-sm min-h-[80px] resize-none" placeholder="Internal notes…" />
           </div>
+          <div className="col-span-2 pt-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-stone-400 pb-2 border-b border-stone-100">Student Participant</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">First Name</Label>
+            <Input value={studentFirstName} onChange={e => setStudentFirstName(e.target.value)} className="h-9 text-sm" placeholder="e.g. Ji-won" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Last Name</Label>
+            <Input value={studentLastName} onChange={e => setStudentLastName(e.target.value)} className="h-9 text-sm" placeholder="e.g. Kim" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Original Name (한글이름)</Label>
+            <Input value={studentOriginalName} onChange={e => setStudentOriginalName(e.target.value)} className="h-9 text-sm" placeholder="e.g. 김지원" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">English Name (Nick Name)</Label>
+            <Input value={studentEnglishName} onChange={e => setStudentEnglishName(e.target.value)} className="h-9 text-sm" placeholder="e.g. Kevin" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Date of Birth</Label>
+            <Input type="date" value={studentDateOfBirth} onChange={e => setStudentDateOfBirth(e.target.value)} className="h-9 text-sm" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Gender</Label>
+            <Select value={studentGender || "_none"} onValueChange={v => setStudentGender(v === "_none" ? "" : v)}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select gender" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">—</SelectItem>
+                {["male", "female", "other", "prefer_not_to_say"].map(g => (
+                  <SelectItem key={g} value={g}>{g.replace(/_/g, " ")}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Nationality</Label>
+            <Input value={studentNationality} onChange={e => setStudentNationality(e.target.value)} className="h-9 text-sm" placeholder="e.g. Korean" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Grade / Year</Label>
+            <Input value={studentGrade} onChange={e => setStudentGrade(e.target.value)} className="h-9 text-sm" placeholder="e.g. Grade 7" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Passport Number</Label>
+            <Input value={studentPassportNumber} onChange={e => setStudentPassportNumber(e.target.value)} className="h-9 text-sm font-mono" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Passport Expiry</Label>
+            <Input type="date" value={studentPassportExpiry} onChange={e => setStudentPassportExpiry(e.target.value)} className="h-9 text-sm" />
+          </div>
+          <div className="col-span-2 space-y-1.5">
+            <Label className="text-xs text-stone-600">School Name</Label>
+            <Input value={studentSchoolName} onChange={e => setStudentSchoolName(e.target.value)} className="h-9 text-sm" placeholder="e.g. Seoul Elementary School" />
+          </div>
         </div>
         <div className="flex gap-3 pt-2">
           <Button
             onClick={() => {
-              onSave({ status, coeNumber: coeNumber || null, coeExpiryDate: coeExpiryDate || null, departureDate: departureDate || null, orientationCompleted, notes: notes || null, assignedStaffId: assignedStaffId || null });
+              onSave({
+                status,
+                coeNumber: coeNumber || null, coeExpiryDate: coeExpiryDate || null,
+                departureDate: departureDate || null, orientationCompleted,
+                notes: notes || null, assignedStaffId: assignedStaffId || null,
+                studentFirstName: studentFirstName || null, studentLastName: studentLastName || null,
+                studentEnglishName: studentEnglishName || null, studentOriginalName: studentOriginalName || null,
+                studentDateOfBirth: studentDateOfBirth || null, studentGender: studentGender || null,
+                studentNationality: studentNationality || null,
+                studentPassportNumber: studentPassportNumber || null, studentPassportExpiry: studentPassportExpiry || null,
+                studentGrade: studentGrade || null, studentSchoolName: studentSchoolName || null,
+              });
               onClose();
             }}
             className="flex-1 text-white" style={{ background: "#F5821F" }}
@@ -492,6 +580,33 @@ function OverviewTab({ record, onStageChange, onEdit }: { record: SARecord; onSt
             </div>
             <div className="flex justify-between"><span className="text-stone-400">COE Expiry</span><span className="text-stone-600">{fmtDate(record.coeExpiryDate)}</span></div>
           </div>
+        </div>
+      </div>
+      <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Student Participant</h3>
+          <button onClick={onEdit} className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
+            <Pencil size={12} /> Edit
+          </button>
+        </div>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-stone-400">Name</span>
+            <span className="font-medium text-stone-800">
+              {record.studentFirstName || record.studentLastName
+                ? `${record.studentFirstName ?? ""} ${record.studentLastName ? record.studentLastName.toUpperCase() : ""}`.trim()
+                : "—"}
+            </span>
+          </div>
+          <div className="flex justify-between"><span className="text-stone-400">Original Name</span><span className="text-stone-600">{record.studentOriginalName ?? "—"}</span></div>
+          <div className="flex justify-between"><span className="text-stone-400">English Name</span><span className="text-stone-600">{record.studentEnglishName ?? "—"}</span></div>
+          <div className="flex justify-between"><span className="text-stone-400">DOB</span><span className="text-stone-600">{fmtDate(record.studentDateOfBirth)}</span></div>
+          <div className="flex justify-between"><span className="text-stone-400">Gender</span><span className="text-stone-600 capitalize">{record.studentGender ?? "—"}</span></div>
+          <div className="flex justify-between"><span className="text-stone-400">Nationality</span><span className="text-stone-600">{record.studentNationality ?? "—"}</span></div>
+          <div className="flex justify-between"><span className="text-stone-400">Passport #</span><span className="font-mono text-xs text-stone-600">{record.studentPassportNumber ?? "—"}</span></div>
+          <div className="flex justify-between"><span className="text-stone-400">Passport Expiry</span><span className="text-stone-600">{fmtDate(record.studentPassportExpiry)}</span></div>
+          <div className="flex justify-between"><span className="text-stone-400">Grade</span><span className="text-stone-600">{record.studentGrade ?? "—"}</span></div>
+          <div className="flex justify-between"><span className="text-stone-400">School</span><span className="text-stone-600">{record.studentSchoolName ?? "—"}</span></div>
         </div>
       </div>
       {record.notes && (

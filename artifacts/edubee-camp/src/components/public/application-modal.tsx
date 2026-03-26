@@ -46,6 +46,7 @@ type PrimaryStudent = {
   firstName: string;
   lastName: string;
   fullNameNative: string;
+  englishName: string;
   dateOfBirth: string;
   gender: string;
   nationality: string;
@@ -64,7 +65,7 @@ type PrimaryStudent = {
 };
 
 const defaultPrimary = (): PrimaryStudent => ({
-  firstName: "", lastName: "", fullNameNative: "", dateOfBirth: "", gender: "",
+  firstName: "", lastName: "", fullNameNative: "", englishName: "", dateOfBirth: "", gender: "",
   nationality: "", passportNumber: "", passportExpiry: "", grade: "",
   enrollmentSpotId: "", schoolName: "", englishLevel: "",
   medicalConditions: "", dietaryRequirements: "", specialNeeds: "",
@@ -286,6 +287,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
           lastName: primary.lastName,
           fullName: `${primary.firstName} ${primary.lastName.toUpperCase()}`.trim(),
           fullNameNative: primary.fullNameNative || undefined,
+          englishName: primary.englishName || undefined,
           dateOfBirth: primary.dateOfBirth || undefined,
           gender: primary.gender || undefined,
           nationality: primary.nationality || undefined,
@@ -493,6 +495,9 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                       </Field>
                       <Field label={t("apply.nativeName")}>
                         <Input value={primary.fullNameNative} onChange={(v) => updatePrimary("fullNameNative", v)} placeholder="김지원" />
+                      </Field>
+                      <Field label={t("apply.englishName")}>
+                        <Input value={primary.englishName} onChange={(v) => updatePrimary("englishName", v)} placeholder="e.g. Kevin" />
                       </Field>
                       <Field label={t("apply.dateOfBirth")} required error={errors.dateOfBirth}>
                         <div className="flex items-center gap-2">
@@ -734,6 +739,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                         <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Primary Student</div>
                         <div className="font-semibold text-foreground">{primary.firstName && primary.lastName ? `${primary.firstName} ${primary.lastName.toUpperCase()}` : primary.firstName || "—"}</div>
                         {primary.fullNameNative && <div className="text-sm text-muted-foreground">{primary.fullNameNative}</div>}
+                        {primary.englishName && <div className="text-sm text-muted-foreground">{primary.englishName}</div>}
                         <div className="text-sm text-muted-foreground mt-1">
                           {[primary.nationality, primary.grade, primary.englishLevel].filter(Boolean).join(" · ")}
                         </div>

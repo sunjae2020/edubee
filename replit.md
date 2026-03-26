@@ -170,3 +170,30 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 -   **react-i18next**: For internationalization.
 -   **recharts**: For charting (if used for dashboard KPIs).
 -   **shadcn/ui**: UI component library.
+## Phase N: Original Name + English Name Fields (March 2026)
+
+### DB Changes
+- `application_participants`: Added `english_name VARCHAR(255)`, `camp_application_id UUID REFERENCES camp_applications(id) ON DELETE CASCADE`
+- `camp_applications`: Added `applicant_original_name VARCHAR(255)`, `applicant_english_name VARCHAR(255)`
+- `study_abroad_mgt`: Added student participant fields (`student_first_name`, `student_last_name`, `student_english_name`, `student_original_name`, `student_date_of_birth`, `student_gender`, `student_nationality`, `student_passport_number`, `student_passport_expiry`, `student_grade`, `student_school_name`)
+
+### Schema Changes
+- `applications.ts` `applicationParticipants`: Added `campApplicationId`, `englishName`
+- `camp.ts` `campApplications`: Added `applicantOriginalName`, `applicantEnglishName`
+- `services.ts` `studyAbroadMgt`: Added all student participant fields
+
+### API Changes
+- `camp-applications.ts` GET/:id: Now joins `application_participants` via `campApplicationId` and returns `participants` array
+- `camp-applications.ts` PUT: Added `applicantOriginalName`, `applicantEnglishName` to ALLOWED_FIELDS
+- `applications.ts` POST participants: Now accepts `campApplicationId` (stores `applicationId=null`), `englishName`
+- `applications.ts` PATCH participants: Added `englishName`
+- `services-study-abroad.ts` PATCH: Added all student participant fields
+
+### Frontend Changes
+- `ParticipantDialogs.tsx`: Renamed "Full Name (Native Script)" → "Original Name (한글이름 등)"; added "English Name (Nick Name)" field; updated both Edit and Add dialog states
+- `camp-application-detail.tsx`: Added `Original Name` + `English Name (Nick Name)` editable fields in Overview; fixed participant creation to use `campApplicationId`; added "Original Name" and "English Name" columns to participants table
+- `application-modal.tsx`: Added `englishName` to PrimaryStudent type + default + form field + submit payload + review screen; renamed "nativeName" i18n key value to "Original Name"
+- `StudyAbroadDetailPage.tsx`: Added SARecord student field types; added "Student Participant" info panel in OverviewTab; extended EditSADetailsModal with full student form (firstName, lastName, originalName, englishName, DOB, gender, nationality, passport, grade, school)
+
+### i18n
+- All 4 locales (en/ko/ja/th): `nativeName` value → "Original Name" / locale equivalent; added `englishName` key

@@ -184,6 +184,9 @@ router.patch(
         visaType, visaApplicationDate, visaDecisionDate, visaExpiryDate, visaGranted,
         departureDate, orientationCompleted, status, notes,
         assignedStaffId,
+        studentFirstName, studentLastName, studentEnglishName, studentOriginalName,
+        studentDateOfBirth, studentGender, studentNationality,
+        studentPassportNumber, studentPassportExpiry, studentGrade, studentSchoolName,
       } = req.body;
 
       const [updated] = await db
@@ -203,6 +206,17 @@ router.patch(
           ...(status              !== undefined && { status }),
           ...(notes               !== undefined && { notes }),
           ...(assignedStaffId     !== undefined && { assignedStaffId }),
+          ...(studentFirstName    !== undefined && { studentFirstName }),
+          ...(studentLastName     !== undefined && { studentLastName }),
+          ...(studentEnglishName  !== undefined && { studentEnglishName }),
+          ...(studentOriginalName !== undefined && { studentOriginalName }),
+          ...(studentDateOfBirth  !== undefined && { studentDateOfBirth: studentDateOfBirth || null }),
+          ...(studentGender       !== undefined && { studentGender }),
+          ...(studentNationality  !== undefined && { studentNationality }),
+          ...(studentPassportNumber !== undefined && { studentPassportNumber }),
+          ...(studentPassportExpiry !== undefined && { studentPassportExpiry: studentPassportExpiry || null }),
+          ...(studentGrade        !== undefined && { studentGrade }),
+          ...(studentSchoolName   !== undefined && { studentSchoolName }),
           updatedAt: new Date(),
         })
         .where(

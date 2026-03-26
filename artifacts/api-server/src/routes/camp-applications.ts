@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { campApplications } from "@workspace/db/schema";
+import { campApplications, applicationParticipants } from "@workspace/db/schema";
 import { contacts, leads, contracts, quotes } from "@workspace/db/schema";
 import { eq, ilike, or, count, and, desc, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
@@ -54,7 +54,11 @@ router.get("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
     const [application] = await db.select().from(campApplications)
       .where(eq(campApplications.id, req.params.id)).limit(1);
     if (!application) return res.status(404).json({ error: "Not found" });
-    return res.json(application);
+
+    const participants = await db.select().from(applicationParticipants)
+      .where(eq(applicationParticipants.campApplicationId, req.params.id));
+
+    return res.json({ ...application, participants });
   } catch (err) {
     console.error("[GET /api/camp-applications/:id]", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -145,6 +149,7 @@ router.put("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
 
     const ALLOWED_FIELDS = [
       "applicantFirstName", "applicantLastName",
+      "applicantOriginalName", "applicantEnglishName",
       "applicantName", "applicantEmail", "applicantPhone", "applicantNationality", "applicantDob",
       "adultCount", "studentCount", "preferredStartDate",
       "specialRequirements", "dietaryRequirements", "medicalConditions",

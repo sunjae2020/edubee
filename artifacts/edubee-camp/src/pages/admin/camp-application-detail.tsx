@@ -412,7 +412,7 @@ export default function CampApplicationDetail() {
 
   const createParticipant = useMutation({
     mutationFn: (data: Record<string, any>) =>
-      axios.post(`${BASE}/api/applications/participants`, { ...data, applicationId: id }).then(r => r.data),
+      axios.post(`${BASE}/api/applications/participants`, { ...data, campApplicationId: id }).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["camp-application-detail-page", id] });
       toast({ title: "Participant added" });
@@ -551,6 +551,20 @@ export default function CampApplicationDetail() {
                   value={app.applicantLastName ? app.applicantLastName.toUpperCase() : (app.applicantName ? app.applicantName.split(" ").slice(1).join(" ").toUpperCase() : "—")}
                   editValue={getValue("applicantLastName") ?? app.applicantLastName ?? (app.applicantName ? app.applicantName.split(" ").slice(1).join(" ") : "")}
                   onChange={v => setField("applicantLastName", v)}
+                />
+                <EditableField
+                  label="Original Name"
+                  isEditing={isEditing}
+                  value={app.applicantOriginalName ?? "—"}
+                  editValue={getValue("applicantOriginalName") ?? app.applicantOriginalName ?? ""}
+                  onChange={v => setField("applicantOriginalName", v)}
+                />
+                <EditableField
+                  label="English Name (Nick Name)"
+                  isEditing={isEditing}
+                  value={app.applicantEnglishName ?? "—"}
+                  editValue={getValue("applicantEnglishName") ?? app.applicantEnglishName ?? ""}
+                  onChange={v => setField("applicantEnglishName", v)}
                 />
                 <EditableField
                   label="Email"
@@ -712,6 +726,8 @@ export default function CampApplicationDetail() {
                   <tr className="border-b bg-muted/30 text-xs text-muted-foreground">
                     <th className="px-4 py-2.5 text-left w-8">#</th>
                     <th className="px-4 py-2.5 text-left">Name</th>
+                    <th className="px-4 py-2.5 text-left">Original Name</th>
+                    <th className="px-4 py-2.5 text-left">English Name</th>
                     <th className="px-4 py-2.5 text-left">Type</th>
                     <th className="px-4 py-2.5 text-left">DOB</th>
                     <th className="px-4 py-2.5 text-left">Gender</th>
@@ -724,7 +740,7 @@ export default function CampApplicationDetail() {
                 <tbody>
                   {participants.length === 0 ? (
                     <tr>
-                      <td colSpan={canEdit ? 9 : 8} className="px-4 py-8 text-center text-muted-foreground text-xs">
+                      <td colSpan={canEdit ? 11 : 10} className="px-4 py-8 text-center text-muted-foreground text-xs">
                         No participants on this camp application.
                       </td>
                     </tr>
@@ -733,8 +749,9 @@ export default function CampApplicationDetail() {
                       <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                       <td className="px-4 py-3">
                         <div className="font-medium">{p.fullName ?? "—"}</div>
-                        {p.fullNameNative && <div className="text-xs text-muted-foreground">{p.fullNameNative}</div>}
                       </td>
+                      <td className="px-4 py-3 text-sm">{p.fullNameNative ?? "—"}</td>
+                      <td className="px-4 py-3 text-sm">{p.englishName ?? "—"}</td>
                       <td className="px-4 py-3 capitalize">
                         <span className="px-1.5 py-0.5 bg-muted rounded text-xs">{p.participantType ?? "child"}</span>
                       </td>

@@ -242,21 +242,26 @@ router.get("/applications/:id", authenticate, async (req, res) => {
 
 router.post("/applications/participants", authenticate, async (req, res) => {
   try {
-    const { applicationId, participantType, sequenceOrder,
-      firstName, lastName, fullName: rawFullName, fullNameNative, dateOfBirth,
+    const { applicationId, campApplicationId, participantType, sequenceOrder,
+      firstName, lastName, fullName: rawFullName, fullNameNative, englishName, dateOfBirth,
       gender, nationality, passportNumber, passportExpiry, grade, schoolName, englishLevel,
       medicalConditions, dietaryRequirements, specialNeeds, relationshipToStudent,
       isEmergencyContact, email, phone, whatsapp, lineId } = req.body;
     const computedFullName = rawFullName
       || (firstName && lastName ? `${firstName} ${lastName.toUpperCase()}` : null)
       || firstName || null;
-    if (!applicationId || !computedFullName) return res.status(400).json({ error: "applicationId and name are required" });
+    if (!computedFullName) return res.status(400).json({ error: "name is required" });
+    if (!applicationId && !campApplicationId) return res.status(400).json({ error: "applicationId or campApplicationId is required" });
     const [created] = await db.insert(applicationParticipants).values({
-      applicationId, participantType: participantType ?? "child",
+      applicationId: campApplicationId ? null : (applicationId ?? null),
+      campApplicationId: campApplicationId ?? null,
+      participantType: participantType ?? "child",
       sequenceOrder: sequenceOrder ?? 1,
       firstName: firstName ?? null, lastName: lastName ?? null,
       fullName: computedFullName,
-      fullNameNative: fullNameNative ?? null, dateOfBirth: dateOfBirth ?? null,
+      fullNameNative: fullNameNative ?? null,
+      englishName: englishName ?? null,
+      dateOfBirth: dateOfBirth ?? null,
       gender: gender ?? null, nationality: nationality ?? null,
       passportNumber: passportNumber ?? null, passportExpiry: passportExpiry ?? null,
       grade: grade ?? null, schoolName: schoolName ?? null, englishLevel: englishLevel ?? null,
@@ -276,7 +281,7 @@ router.patch("/applications/participants/:id", authenticate, async (req, res) =>
   try {
     const {
       firstName, lastName,
-      fullName, fullNameNative, dateOfBirth, gender, nationality,
+      fullName, fullNameNative, englishName, dateOfBirth, gender, nationality,
       passportNumber, passportExpiry, grade, schoolName, englishLevel,
       medicalConditions, dietaryRequirements, specialNeeds,
       relationshipToStudent, isEmergencyContact, email, phone, whatsapp, lineId,
@@ -293,6 +298,7 @@ router.patch("/applications/participants/:id", authenticate, async (req, res) =>
       updates.fullName = fullName;
     }
     if (fullNameNative !== undefined) updates.fullNameNative = fullNameNative;
+    if (englishName    !== undefined) updates.englishName    = englishName;
     if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth || null;
     if (gender !== undefined) updates.gender = gender;
     if (nationality !== undefined) updates.nationality = nationality;

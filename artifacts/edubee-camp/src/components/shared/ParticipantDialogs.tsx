@@ -33,8 +33,12 @@ function ParticipantFormFields({
         <Input value={form.lastName} onChange={e => f("lastName")(e.target.value)} className="h-8 text-sm" placeholder="e.g. Kim" />
       </div>
       <div className="space-y-1">
-        <Label className="text-xs">Full Name (Native Script)</Label>
+        <Label className="text-xs">Original Name (한글이름 등)</Label>
         <Input value={form.fullNameNative} onChange={e => f("fullNameNative")(e.target.value)} className="h-8 text-sm" placeholder="e.g. 김철수" />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">English Name (Nick Name)</Label>
+        <Input value={form.englishName} onChange={e => f("englishName")(e.target.value)} className="h-8 text-sm" placeholder="e.g. Kevin" />
       </div>
       <div className="space-y-1">
         <Label className="text-xs">Participant Type</Label>
@@ -159,6 +163,7 @@ export function ParticipantEditDialog({
     firstName: participant?.firstName ?? (participant?.fullName ? participant.fullName.split(" ")[0] : ""),
     lastName:  participant?.lastName  ?? (participant?.fullName ? participant.fullName.split(" ").slice(1).join(" ") : ""),
     fullNameNative: participant?.fullNameNative ?? "",
+    englishName: participant?.englishName ?? "",
     participantType: participant?.participantType ?? "child",
     dateOfBirth: participant?.dateOfBirth ?? "",
     gender: participant?.gender || "__none",
@@ -225,6 +230,7 @@ export function ParticipantAddDialog({
     firstName: "",
     lastName: "",
     fullNameNative: "",
+    englishName: "",
     participantType: "child",
     dateOfBirth: "",
     gender: "__none",

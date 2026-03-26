@@ -140,6 +140,18 @@ export const studyAbroadMgt = pgTable("study_abroad_mgt", {
   levelAssessmentDate:     date("level_assessment_date"),
   assignedClass:           varchar("assigned_class", { length: 100 }),
   partnerCost:             decimal("partner_cost", { precision: 12, scale: 2 }),
+  // ── Student Participant Fields (for camp context child participants) ─────
+  studentFirstName:        varchar("student_first_name", { length: 255 }),
+  studentLastName:         varchar("student_last_name", { length: 255 }),
+  studentEnglishName:      varchar("student_english_name", { length: 255 }),
+  studentOriginalName:     varchar("student_original_name", { length: 255 }),
+  studentDateOfBirth:      date("student_date_of_birth"),
+  studentGender:           varchar("student_gender", { length: 50 }),
+  studentNationality:      varchar("student_nationality", { length: 100 }),
+  studentPassportNumber:   varchar("student_passport_number", { length: 100 }),
+  studentPassportExpiry:   date("student_passport_expiry"),
+  studentGrade:            varchar("student_grade", { length: 100 }),
+  studentSchoolName:       varchar("student_school_name", { length: 255 }),
 });
 
 // ── Phase 1 Type Definitions ──────────────────────────────────────────────
