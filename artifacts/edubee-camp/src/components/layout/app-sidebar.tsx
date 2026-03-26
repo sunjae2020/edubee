@@ -82,26 +82,27 @@ function buildNav(effectiveRole: string): NavGroup[] {
   }
   if (isSAorAD || isCC || effectiveRole === "partner_hotel")
     campItems.push({ icon: Building2, label: "Hotel",            href: "/admin/services/hotel"          });
-  if (isSAorAD || isCC || effectiveRole === "partner_pickup")
-    campItems.push({ icon: Car,       label: "Pickup / Transfer", href: "/admin/services/pickup"         });
-  if (isSAorAD || isCC || effectiveRole === "partner_tour")
-    campItems.push({ icon: Map,       label: "Tour",              href: "/admin/camp-services/tours"     });
   if (campItems.length > 0)
     nav.push({ key: "camp", label: "Camp", catIcon: GraduationCap, items: campItems });
 
-  if (isSAorAD || isCC) {
-    nav.push({
-      key: "services", label: "Services", catIcon: Briefcase,
-      items: [
+  if (isSAorAD || isCC || effectiveRole === "partner_pickup" || effectiveRole === "partner_tour") {
+    const serviceItems: NavItem[] = [];
+    if (isSAorAD || isCC) {
+      serviceItems.push(
         { icon: GraduationCap, label: "Study Abroad",      href: "/admin/services/study-abroad"  },
         { icon: Building2,     label: "Accommodation",     href: "/admin/services/accommodation"  },
         { icon: Briefcase,     label: "Internship",        href: "/admin/services/internship"     },
         { icon: Shield,        label: "Guardian",          href: "/admin/services/guardian"       },
         { icon: FileCheck,     label: "Settlement",        href: "/admin/services/settlement"     },
         { icon: Wrench,        label: "Other Services",    href: "/admin/services/other"          },
-        { icon: Stamp,         label: "Visa Services",     href: "/admin/services/visa"            },
-      ],
-    });
+        { icon: Stamp,         label: "Visa Services",     href: "/admin/services/visa"           },
+      );
+    }
+    if (isSAorAD || isCC || effectiveRole === "partner_pickup")
+      serviceItems.push({ icon: Car,  label: "Pickup / Transfer", href: "/admin/services/pickup" });
+    if (isSAorAD || isCC || effectiveRole === "partner_tour")
+      serviceItems.push({ icon: Map,  label: "Tour Management",   href: "/admin/services/tour"   });
+    nav.push({ key: "services", label: "Services", catIcon: Briefcase, items: serviceItems });
   }
 
   if (isSAorAD || isCC) {

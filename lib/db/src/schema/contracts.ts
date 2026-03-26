@@ -125,12 +125,18 @@ export const pickupMgt = pgTable("pickup_mgt", {
   fromLocation: varchar("from_location", { length: 255 }),
   toLocation: varchar("to_location", { length: 255 }),
   pickupDatetime: timestamp("pickup_datetime"),
+  driverName:  varchar("driver_name",    { length: 255 }),
+  driverContact: varchar("driver_contact", { length: 100 }),
   vehicleInfo: varchar("vehicle_info", { length: 100 }),
   driverNotes: text("driver_notes"),
   status: varchar("status", { length: 50 }).default("pending"),
   ledgerEntryId: uuid("ledger_entry_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // ── Phase 2: Service Module fields ──────────────────────────────────────
+  productId:   uuid("product_id").references(() => products.id),
+  serviceFee:  decimal("service_fee", { precision: 12, scale: 2 }),
+  apCost:      decimal("ap_cost",     { precision: 12, scale: 2 }),
 });
 
 export const tourMgt = pgTable("tour_mgt", {
@@ -149,6 +155,10 @@ export const tourMgt = pgTable("tour_mgt", {
   ledgerEntryId: uuid("ledger_entry_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // ── Phase 2: Service Module fields ──────────────────────────────────────
+  productId:   uuid("product_id").references(() => products.id),
+  serviceFee:  decimal("service_fee", { precision: 12, scale: 2 }),
+  apCost:      decimal("ap_cost",     { precision: 12, scale: 2 }),
 });
 
 export const settlementMgt = pgTable("settlement_mgt", {

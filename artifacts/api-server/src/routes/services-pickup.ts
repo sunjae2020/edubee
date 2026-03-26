@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { pickupMgt, contracts, users } from "@workspace/db/schema";
+import { pickupMgt, contracts, users, products } from "@workspace/db/schema";
 import { eq, and, sql, count, SQL, gte, lt, lte, isNull, isNotNull } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -17,16 +17,27 @@ const SELECT_COLS = {
   fromLocation:   pickupMgt.fromLocation,
   toLocation:     pickupMgt.toLocation,
   pickupDatetime: pickupMgt.pickupDatetime,
+  driverName:     pickupMgt.driverName,
+  driverContact:  pickupMgt.driverContact,
   vehicleInfo:    pickupMgt.vehicleInfo,
   driverNotes:    pickupMgt.driverNotes,
   status:         pickupMgt.status,
   ledgerEntryId:  pickupMgt.ledgerEntryId,
+  productId:      pickupMgt.productId,
+  serviceFee:     pickupMgt.serviceFee,
+  apCost:         pickupMgt.apCost,
   createdAt:      pickupMgt.createdAt,
   updatedAt:      pickupMgt.updatedAt,
   // joined
-  contractNumber: contracts.contractNumber,
-  studentName:    contracts.studentName,
-  agentName:      contracts.agentName,
+  contractNumber:    contracts.contractNumber,
+  studentName:       contracts.studentName,
+  clientEmail:       contracts.clientEmail,
+  agentName:         contracts.agentName,
+  contractStatus:    contracts.status,
+  contractStartDate: contracts.startDate,
+  contractEndDate:   contracts.endDate,
+  totalAmount:       contracts.totalAmount,
+  currency:          contracts.currency,
 };
 
 // ─── GET /api/services/pickup ─────────────────────────────────────────────────
@@ -156,11 +167,11 @@ router.get(
       const [row] = await db
         .select({
           ...SELECT_COLS,
-          driverName:    sql<string>`${pickupMgt}.driver_name`,
-          driverContact: sql<string>`${pickupMgt}.driver_contact`,
+          productName: sql<string>`p.name`,
         })
         .from(pickupMgt)
         .leftJoin(contracts, eq(pickupMgt.contractId, contracts.id))
+        .leftJoin(sql`products p`, sql`p.id = ${pickupMgt.productId}`)
         .where(eq(pickupMgt.id, req.params.id));
 
       if (!row) return res.status(404).json({ error: "Pickup record not found" });
@@ -188,7 +199,8 @@ router.patch(
 
       const {
         pickupType, fromLocation, toLocation, pickupDatetime,
-        vehicleInfo, driverNotes, status,
+        vehicleInfo, driverNotes, driverName, driverContact,
+        status, productId, serviceFee, apCost,
       } = req.body;
 
       const [updated] = await db
@@ -200,7 +212,12 @@ router.patch(
           ...(pickupDatetime !== undefined && { pickupDatetime: pickupDatetime ? new Date(pickupDatetime) : null }),
           ...(vehicleInfo    !== undefined && { vehicleInfo }),
           ...(driverNotes    !== undefined && { driverNotes }),
+          ...(driverName     !== undefined && { driverName }),
+          ...(driverContact  !== undefined && { driverContact }),
           ...(status         !== undefined && { status }),
+          ...(productId      !== undefined && { productId: productId || null }),
+          ...(serviceFee     !== undefined && { serviceFee: serviceFee != null ? String(serviceFee) : null }),
+          ...(apCost         !== undefined && { apCost: apCost != null ? String(apCost) : null }),
           updatedAt: new Date(),
         })
         .where(eq(pickupMgt.id, req.params.id))

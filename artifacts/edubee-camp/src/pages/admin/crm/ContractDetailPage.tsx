@@ -7,7 +7,7 @@ import {
   ArrowLeft, ExternalLink, FileText, CreditCard, GraduationCap,
   Car, Building2, Briefcase, Shield, CheckCircle2, Clock,
   AlertCircle, ChevronRight, Star, TrendingUp, TrendingDown,
-  UploadCloud, MessageSquare, Send, Download, Pencil, Plus, X, Wrench,
+  UploadCloud, MessageSquare, Send, Download, Pencil, Plus, X, Wrench, Map, Stamp,
 } from "lucide-react";
 import { format } from "date-fns";
 import PaymentStatementModal from "../../../components/finance/PaymentStatementModal";
@@ -787,29 +787,35 @@ function CommissionTab({ contract }: { contract: any }) {
 const SVC_API: Record<string, string> = {
   studyAbroad:   "/api/services/study-abroad",
   pickup:        "/api/services/pickup",
+  tour:          "/api/services/tour",
   accommodation: "/api/services/accommodation",
   internship:    "/api/services/internship",
   settlement:    "/api/services/settlement",
   guardian:      "/api/services/guardian",
   other:         "/api/services/other",
+  visa:          "/api/services/visa",
 };
 const SVC_DETAIL_ROUTE: Record<string, string> = {
   studyAbroad:   "/admin/services/study-abroad",
   pickup:        "/admin/services/pickup",
+  tour:          "/admin/services/tour",
   accommodation: "/admin/services/accommodation",
   internship:    "/admin/services/internship",
   settlement:    "/admin/services/settlement",
   guardian:      "/admin/services/guardian",
   other:         "/admin/services/other",
+  visa:          "/admin/services/visa",
 };
 const SVC_DEFS_MODAL = [
   { key: "studyAbroad",   label: "Study Abroad",   icon: GraduationCap, desc: "School application, visa & enrolment"  },
   { key: "pickup",        label: "Pickup",          icon: Car,           desc: "Airport or station transfer"            },
+  { key: "tour",          label: "Tour",            icon: Map,           desc: "Tour or excursion management"           },
   { key: "accommodation", label: "Accommodation",   icon: Building2,     desc: "Homestay, residence or rental"         },
   { key: "internship",    label: "Internship",      icon: Briefcase,     desc: "Work placement management"             },
   { key: "settlement",    label: "Settlement",      icon: CheckCircle2,  desc: "Arrival & settlement support"          },
   { key: "guardian",      label: "Guardian",        icon: Shield,        desc: "Guardian / welfare management"        },
   { key: "other",         label: "Other Service",   icon: Wrench,        desc: "Custom or miscellaneous service"       },
+  { key: "visa",          label: "Visa Service",    icon: Stamp,         desc: "Visa application & processing"         },
 ];
 const APPL_STAGES   = ["counseling","application","visa_applied","visa_granted","enrolled"];
 const PICKUP_TYPES  = ["arrival","departure","custom"];
@@ -835,6 +841,10 @@ function AddServiceModal({ contract, defaultType, onClose }: {
     fromLocation:     "",
     toLocation:       "",
     pickupDatetime:   "",
+    tourName:         "",
+    tourDate:         "",
+    meetingPoint:     "",
+    visaType:         "",
     accommodationType:"homestay",
     status:           "pending",
     serviceFee:       "",
@@ -864,6 +874,10 @@ function AddServiceModal({ contract, defaultType, onClose }: {
         body = { ...base, pickupType: form.pickupType,
           fromLocation: form.fromLocation || null, toLocation: form.toLocation || null,
           pickupDatetime: form.pickupDatetime || null, ...notes };
+      } else if (selectedType === "tour") {
+        body = { ...base, tourName: form.tourName || null,
+          tourDate: form.tourDate || null, meetingPoint: form.meetingPoint || null,
+          ...(form.serviceFee ? { serviceFee: parseFloat(form.serviceFee) } : {}), ...notes };
       } else if (selectedType === "accommodation") {
         body = { ...base, accommodationType: form.accommodationType, status: form.status, ...staff, ...notes };
       } else if (selectedType === "internship") {
@@ -877,6 +891,9 @@ function AddServiceModal({ contract, defaultType, onClose }: {
         body = { ...base, serviceType: form.serviceType, title: form.title || null,
           startDate: form.startDate || null, endDate: form.endDate || null,
           ...(form.serviceFee ? { serviceFee: parseFloat(form.serviceFee) } : {}), ...staff, ...notes };
+      } else if (selectedType === "visa") {
+        body = { ...base, visaType: form.visaType || null, ...staff,
+          ...(form.serviceFee ? { serviceFee: parseFloat(form.serviceFee) } : {}), ...notes };
       }
 
       const r = await axios.post(`${BASE}${SVC_API[selectedType]}`, body);
@@ -982,6 +999,14 @@ function AddServiceModal({ contract, defaultType, onClose }: {
                 <LabelInput label="Date & Time"   field="pickupDatetime" type="datetime-local" />
               </>)}
 
+              {/* Tour */}
+              {selectedType === "tour" && (<>
+                <LabelInput label="Tour Name"     field="tourName"     placeholder="e.g. Harbour Bridge Climb" />
+                <LabelInput label="Tour Date"     field="tourDate"     type="date" />
+                <LabelInput label="Meeting Point" field="meetingPoint" placeholder="e.g. Hotel lobby" />
+                <LabelInput label="Service Fee ($)" field="serviceFee" type="number" placeholder="0.00" />
+              </>)}
+
               {/* Accommodation */}
               {selectedType === "accommodation" && (
                 <LabelSelect label="Accommodation Type" field="accommodationType"
@@ -1066,11 +1091,13 @@ function AddServiceModal({ contract, defaultType, onClose }: {
 const SERVICE_ROUTES: Record<string, string> = {
   studyAbroad:   "/admin/services/study-abroad",
   pickup:        "/admin/services/pickup",
+  tour:          "/admin/services/tour",
   accommodation: "/admin/services/accommodation",
   internship:    "/admin/services/internship",
   settlement:    "/admin/services/settlement",
   guardian:      "/admin/services/guardian",
   other:         "/admin/services/other",
+  visa:          "/admin/services/visa",
 };
 
 const SVC_STATUS_BADGE: Record<string, string> = {
@@ -1086,11 +1113,13 @@ const SVC_STATUS_BADGE: Record<string, string> = {
 const ALL_SVC_DEFS = [
   { key: "studyAbroad",   label: "Study Abroad",   icon: GraduationCap },
   { key: "pickup",        label: "Pickup",          icon: Car           },
+  { key: "tour",          label: "Tour",            icon: Map           },
   { key: "accommodation", label: "Accommodation",   icon: Building2     },
   { key: "internship",    label: "Internship",      icon: Briefcase     },
   { key: "settlement",    label: "Settlement",      icon: CheckCircle2  },
   { key: "guardian",      label: "Guardian",        icon: Shield        },
   { key: "other",         label: "Other Service",   icon: Wrench        },
+  { key: "visa",          label: "Visa Service",    icon: Stamp         },
 ];
 
 function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType, onAddService }: {
@@ -1102,9 +1131,10 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType, on
   const [, navigate] = useLocation();
   const svcs = contract.services ?? {};
 
+  const ARRAY_KEYS = ["pickup", "tour", "other"];
   const withData = ALL_SVC_DEFS.map(d => ({
     ...d,
-    data: (d.key === "pickup" || d.key === "other")
+    data: ARRAY_KEYS.includes(d.key)
       ? (Array.isArray(svcs[d.key]) ? svcs[d.key][0] ?? null : svcs[d.key] ?? null)
       : (svcs[d.key] ?? null),
   }));
@@ -1178,11 +1208,12 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
   const [, navigate] = useLocation();
   const svcs = contract.services ?? {};
 
-  // Flatten all services into rows (supports multiple of same type, e.g. multiple pickups, other services)
+  // Flatten all services into rows (supports multiple of same type, e.g. multiple pickups, tours, other services)
+  const MULTI_KEYS = ["pickup", "tour", "other"];
   type SvcRow = { key: string; label: string; Icon: any; data: any };
   const rows: SvcRow[] = [];
   for (const def of ALL_SVC_DEFS) {
-    if (def.key === "pickup" || def.key === "other") {
+    if (MULTI_KEYS.includes(def.key)) {
       const arr: any[] = Array.isArray(svcs[def.key]) ? svcs[def.key] : svcs[def.key] ? [svcs[def.key]] : [];
       arr.forEach(d => rows.push({ key: def.key, label: def.label, Icon: def.icon, data: d }));
     } else {
