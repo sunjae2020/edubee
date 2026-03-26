@@ -302,7 +302,7 @@ export default function CampApplicationDetail() {
   const appStatus    = app?.applicationStatus ?? app?.status ?? "submitted";
   const isContracted = appStatus === "confirmed";
   const canEdit      = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "") &&
-                       !isContracted && appStatus !== "cancelled";
+                       !isContracted;
 
   const { data: staffData } = useQuery({
     queryKey: ["staff-list-for-camp"],
