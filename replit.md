@@ -99,6 +99,21 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
   - Timestamp field exceptions: `product-group-detail` and `product-type-detail` use `createdOn`/`modifiedOn`; account page uses `createdOn`/`modifiedOn`.
 - **Camp Applications Table Columns**: Removed "Application #"; added "Package" (after Client) and "Created Date" (after Start Date) columns. API enriched with LEFT JOIN on packages table for `packageName`. Column span updated to 7, min-w to 960px.
 
+## Recent Changes (2026-03-26)
+
+- **Account Service Profiles Migration (v1.1)**: 6개 신규 테이블 추가 (`lib/db/src/schema/account-service-profiles.ts`).
+  - `account_service_categories`: Account별 멀티 서비스 카테고리 태그 (UNIQUE account_id+service_type).
+  - `account_homestay_profiles`: 홈스테이 방/숙소 상세 프로필 (1:N). `accommodation_mgt` Pre-fill 소스.
+  - `account_pickup_profiles`: 픽업 드라이버/차량 상세 프로필 (1:N). `pickup_mgt` Pre-fill 소스.
+  - `account_company_profiles`: 인턴십 호스트 컴퍼니 프로필 (1:1, UNIQUE account_id). `internship_mgt` Pre-fill 소스.
+  - `account_school_profiles`: 학교 행정 추가 프로필 (1:1, UNIQUE account_id). CRICOS, 커미션, 코스 목록.
+  - `account_tour_profiles`: 투어 상품 단위 프로필 (1:N). `camp_tour_mgt` Pre-fill 소스.
+  - 총 누적 테이블: 58개. 기존 테이블 컬럼 변경 없음 (하위 호환 100%).
+- **Camp Application Pipeline 버그 수정**:
+  - `crm-quotes.ts` convert-to-contract: `hotel` 타입 상품 → `accommodation_mgt` 활성화 (fallthrough 추가).
+  - `crm-quotes.ts` convert-to-contract: quote에 `campApplicationId`가 있을 경우 `camp_applications.contract_id` 업데이트 + `application_status = 'confirmed'` (raw SQL, 순환 import 회피).
+  - `camp-applications.ts` convert-to-quote: 중복 호출 방어 로직 순서 수정 (quoteId 존재 시 409, 상태 오류 시 400).
+
 ## Recent Changes (2026-03-25)
 
 - **Visa Services Module**: New full-featured service module at `/admin/services/visa`.
