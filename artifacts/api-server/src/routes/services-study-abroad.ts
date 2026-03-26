@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { studyAbroadMgt, contracts, users } from "@workspace/db/schema";
+import { studyAbroadMgt, contracts, users, accounts } from "@workspace/db/schema";
 import { eq, and, ilike, or, lte, isNotNull, sql, count, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -31,6 +31,7 @@ const SELECT_COLS = {
   createdAt:           studyAbroadMgt.createdAt,
   updatedAt:           studyAbroadMgt.updatedAt,
   contractNumber:      contracts.contractNumber,
+  clientName:          accounts.name,
   studentName:         contracts.studentName,
   agentName:           contracts.agentName,
   staffFirstName:      users.fullName,
@@ -110,6 +111,7 @@ router.get(
         .select(SELECT_COLS)
         .from(studyAbroadMgt)
         .leftJoin(contracts, eq(studyAbroadMgt.contractId, contracts.id))
+        .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(studyAbroadMgt.assignedStaffId, users.id))
         .where(where)
         .orderBy(studyAbroadMgt.createdAt)
@@ -138,6 +140,7 @@ router.get(
         .select(SELECT_COLS)
         .from(studyAbroadMgt)
         .leftJoin(contracts, eq(studyAbroadMgt.contractId, contracts.id))
+        .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(studyAbroadMgt.assignedStaffId, users.id))
         .where(
           and(

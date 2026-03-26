@@ -15,6 +15,7 @@ interface StudyAbroadRow {
   id: string;
   contractId?: string | null;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   agentName?: string | null;
   applicationStage?: string | null;
@@ -230,7 +231,7 @@ export default function StudyAbroadPage() {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               <>
-              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
               <SortableTh key="Account / Contract" col="accountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Account / Contract</SortableTh>
               <SortableTh key="Stage" col="applicationStage" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Stage</SortableTh>
               <SortableTh key="COE #" col="coeNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">COE #</SortableTh>
@@ -281,7 +282,7 @@ export default function StudyAbroadPage() {
                   onClick={() => navigate(`/admin/services/study-abroad/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-medium text-stone-800 hover:text-[#F5821F] transition-colors">
-                    {row.studentName ?? "—"}
+                    {row.clientName ?? row.studentName ?? "—"}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-stone-500">{row.contractNumber ?? "—"}</td>
                   <td className="px-4 py-3">

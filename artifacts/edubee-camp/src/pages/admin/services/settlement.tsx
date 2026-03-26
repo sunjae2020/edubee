@@ -13,6 +13,7 @@ interface Rec {
   id: string;
   contractId?: string | null;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   clientEmail?: string | null;
   arrivalDate?: string | null;
@@ -81,7 +82,7 @@ export default function Settlement() {
   const rows: Rec[] = (data ?? []).filter((r: Rec) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return (r.studentName ?? "").toLowerCase().includes(q)
+    return (r.clientName ?? r.studentName ?? "").toLowerCase().includes(q)
         || (r.contractNumber ?? "").toLowerCase().includes(q);
   });
   const sorted = useSorted(rows, sortBy, sortDir);
@@ -180,7 +181,7 @@ export default function Settlement() {
             <thead>
               <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
                 <>
-              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Student</SortableTh>
+              <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Client</SortableTh>
               <SortableTh key="Arrival Date" col="arrivalDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Arrival Date</SortableTh>
               <SortableTh key="Assigned Consultant" col="consultantName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Assigned Consultant</SortableTh>
               <SortableTh key="Service Fee" col="serviceFee" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Service Fee</SortableTh>
@@ -196,9 +197,9 @@ export default function Settlement() {
                   className="border-b border-[#E8E6E2] cursor-pointer transition-colors hover:bg-[#FAFAF9]">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
-                      <Initials name={r.studentName} />
+                      <Initials name={r.clientName ?? r.studentName} />
                       <div>
-                        <p className="text-[13px] font-semibold text-[#1C1917]">{r.studentName ?? "—"}</p>
+                        <p className="text-[13px] font-semibold text-[#1C1917]">{r.clientName ?? r.studentName ?? "—"}</p>
                         {r.contractNumber && (
                           <p className="text-[11px] font-mono text-[#A8A29E]">{r.contractNumber}</p>
                         )}

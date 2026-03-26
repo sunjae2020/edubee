@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { visaServicesMgt, contracts, users } from "@workspace/db/schema";
+import { visaServicesMgt, contracts, users, accounts } from "@workspace/db/schema";
 import { eq, and, ilike, or, count, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -29,6 +29,7 @@ const SELECT_COLS = {
   createdAt:       visaServicesMgt.createdAt,
   updatedAt:       visaServicesMgt.updatedAt,
   contractNumber:  contracts.contractNumber,
+  clientName:      accounts.name,
   studentName:     contracts.studentName,
   agentName:       contracts.agentName,
   contractStatus:  contracts.status,
@@ -81,6 +82,7 @@ router.get(
         .select(SELECT_COLS)
         .from(visaServicesMgt)
         .leftJoin(contracts, eq(visaServicesMgt.contractId, contracts.id))
+        .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(visaServicesMgt.assignedStaffId, users.id))
         .where(where)
         .orderBy(visaServicesMgt.createdAt)
@@ -114,6 +116,7 @@ router.get(
         .select(SELECT_COLS)
         .from(visaServicesMgt)
         .leftJoin(contracts, eq(visaServicesMgt.contractId, contracts.id))
+        .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(visaServicesMgt.assignedStaffId, users.id))
         .where(eq(visaServicesMgt.id, req.params.id));
 

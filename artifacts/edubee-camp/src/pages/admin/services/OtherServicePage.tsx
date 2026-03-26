@@ -17,6 +17,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 interface OtherServiceRow {
   id: string;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   serviceType?: string | null;
   title?: string | null;
@@ -127,7 +128,7 @@ export default function OtherServicePage() {
             <tr>
               <>
               <SortableTh key="Contract" col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Contract</SortableTh>
-              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
               <SortableTh key="Service Type" col="serviceType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Service Type</SortableTh>
               <SortableTh key="Title" col="title" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Title</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Period</th>
@@ -151,7 +152,7 @@ export default function OtherServicePage() {
                   onClick={() => navigate(`/admin/services/other/${row.id}`)}
                   className="hover:bg-stone-50 cursor-pointer transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-[#F5821F] font-semibold">{row.contractNumber ?? "—"}</td>
-                  <td className="px-4 py-3 text-stone-700 font-medium">{row.studentName ?? "—"}</td>
+                  <td className="px-4 py-3 text-stone-700 font-medium">{row.clientName ?? row.studentName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{row.serviceType ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600 max-w-[160px] truncate">{row.title ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">

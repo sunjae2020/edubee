@@ -13,6 +13,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 interface InternshipRow {
   id: string;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   preferredIndustry?: string[] | null;
   positionTitle?: string | null;
@@ -187,7 +188,7 @@ export default function InternshipPage() {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               <>
-              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
               <SortableTh key="Industry" col="industry" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Industry</SortableTh>
               <SortableTh key="Position / Company" col="positionTitle" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Position / Company</SortableTh>
               <SortableTh key="Employment Type" col="employmentType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Employment Type</SortableTh>
@@ -218,7 +219,7 @@ export default function InternshipPage() {
                   className="hover:bg-stone-50 transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/services/internship/${row.id}`)}
                 >
-                  <td className="px-4 py-3 font-medium text-stone-800">{row.studentName ?? "—"}</td>
+                  <td className="px-4 py-3 font-medium text-stone-800">{row.clientName ?? row.studentName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-500 text-xs">{industries}</td>
                   <td className="px-4 py-3 text-stone-700">
                     <div className="font-medium">{row.positionTitle ?? "—"}</div>

@@ -16,6 +16,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 interface VisaServiceRow {
   id: string;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   visaType?: string | null;
   country?: string | null;
@@ -133,7 +134,7 @@ export default function VisaServicePage() {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               <SortableTh col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Contract</SortableTh>
-              <SortableTh col="studentName"    sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+              <SortableTh col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
               <SortableTh col="visaType"       sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Visa Type</SortableTh>
               <SortableTh col="country"        sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Country</SortableTh>
               <SortableTh col="applicationDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Applied</SortableTh>
@@ -157,7 +158,7 @@ export default function VisaServicePage() {
                   onClick={() => navigate(`/admin/services/visa/${row.id}`)}
                   className="hover:bg-stone-50 cursor-pointer transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-[#F5821F] font-semibold">{row.contractNumber ?? "—"}</td>
-                  <td className="px-4 py-3 text-stone-700 font-medium">{row.studentName ?? "—"}</td>
+                  <td className="px-4 py-3 text-stone-700 font-medium">{row.clientName ?? row.studentName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{row.visaType ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{row.country ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(row.applicationDate)}</td>

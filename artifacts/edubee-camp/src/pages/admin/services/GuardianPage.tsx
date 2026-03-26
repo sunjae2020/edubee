@@ -13,6 +13,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 interface GuardianRow {
   id: string;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   agentName?: string | null;
   billingCycle?: string | null;
@@ -146,7 +147,7 @@ export default function GuardianPage() {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               <>
-              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
               <SortableTh key="Guardian Staff" col="guardianName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Guardian Staff</SortableTh>
               <SortableTh key="Billing Cycle" col="billingCycle" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Billing Cycle</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Service Period</th>
@@ -174,7 +175,7 @@ export default function GuardianPage() {
                   className="hover:bg-stone-50 transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/services/guardian/${row.id}`)}
                 >
-                  <td className="px-4 py-3 font-medium text-stone-800">{row.studentName ?? "—"}</td>
+                  <td className="px-4 py-3 font-medium text-stone-800">{row.clientName ?? row.studentName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600 text-sm">{staffName}</td>
                   <td className="px-4 py-3 text-stone-500 text-xs capitalize">{row.billingCycle?.replace(/_/g, " ") ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600 text-xs whitespace-nowrap">

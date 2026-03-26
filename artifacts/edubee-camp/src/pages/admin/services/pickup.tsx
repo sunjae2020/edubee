@@ -42,6 +42,7 @@ interface PickupRow {
   id: string;
   contractId?: string | null;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   pickupType?: string | null;
   fromLocation?: string | null;
@@ -87,7 +88,7 @@ function TodayBanner({ rows, onNavigate }: { rows: PickupRow[]; onNavigate: (id:
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-semibold text-[#1C1917] text-sm">{row.studentName ?? "—"}</span>
+                  <span className="font-semibold text-[#1C1917] text-sm">{row.clientName ?? row.studentName ?? "—"}</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: badge.bg, color: badge.text }}>
                     {(row.status ?? "pending").replace(/_/g, " ")}
                   </span>
@@ -198,7 +199,7 @@ export default function PickupManagement() {
             <tr className="border-b border-border bg-muted/30">
               <>
               <SortableTh key="Contract #" col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contract #</SortableTh>
-              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Client</SortableTh>
               <SortableTh key="Type" col="pickupType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</SortableTh>
               <SortableTh key="Pickup Time" col="pickupTime" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pickup Time</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">From → To</th>
@@ -238,7 +239,7 @@ export default function PickupManagement() {
                     {row.contractNumber ?? row.contractId?.slice(0, 8) ?? "—"}
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    {row.studentName ?? "—"}
+                    {row.clientName ?? row.studentName ?? "—"}
                     {todayFlag && (
                       <span className="ml-2 text-[10px] font-bold text-[#F5821F] bg-[#FEF0E3] px-1.5 py-0.5 rounded-full">TODAY</span>
                     )}

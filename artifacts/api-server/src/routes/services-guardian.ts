@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { guardianMgt, contracts, users, invoices } from "@workspace/db/schema";
+import { guardianMgt, contracts, users, invoices, accounts } from "@workspace/db/schema";
 import { eq, and, ilike, or, count, isNotNull, lte, gte, isNull, sql, SQL, max } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -35,6 +35,7 @@ const SELECT_COLS = {
   updatedAt:                      guardianMgt.updatedAt,
   serviceFee:                     guardianMgt.serviceFee,
   contractNumber:                 contracts.contractNumber,
+  clientName:                     accounts.name,
   studentName:                    contracts.studentName,
   agentName:                      contracts.agentName,
   staffFirstName:                 users.fullName,
@@ -122,6 +123,7 @@ router.get(
         .select(SELECT_COLS)
         .from(guardianMgt)
         .leftJoin(contracts, eq(guardianMgt.contractId, contracts.id))
+        .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(guardianMgt.assignedStaffId, users.id))
         .where(where)
         .orderBy(guardianMgt.createdAt)
@@ -155,6 +157,7 @@ router.get(
         .select(SELECT_COLS)
         .from(guardianMgt)
         .leftJoin(contracts, eq(guardianMgt.contractId, contracts.id))
+        .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(guardianMgt.assignedStaffId, users.id))
         .where(eq(guardianMgt.id, req.params.id));
 

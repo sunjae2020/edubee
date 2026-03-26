@@ -36,7 +36,7 @@ function StatusBadge({ status }: { status?: string | null }) {
 }
 
 interface Rec {
-  id: string; contractId?: string | null; studentName?: string | null; clientEmail?: string | null;
+  id: string; contractId?: string | null; clientName?: string | null; studentName?: string | null; clientEmail?: string | null;
   contractNumber?: string | null; contractStatus?: string | null;
   contractStartDate?: string | null; contractEndDate?: string | null;
   totalAmount?: string | null; currency?: string | null;
@@ -69,8 +69,8 @@ function ContractCard({ rec, onViewContract }: { rec: Rec; onViewContract: () =>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
         <div>
-          <span className="text-muted-foreground">Student</span>
-          <p className="font-medium text-foreground truncate">{rec.studentName ?? "—"}</p>
+          <span className="text-muted-foreground">Client</span>
+          <p className="font-medium text-foreground truncate">{rec.clientName ?? rec.studentName ?? "—"}</p>
         </div>
         <div>
           <span className="text-muted-foreground">Client Email</span>
@@ -149,7 +149,7 @@ export default function HotelManagement() {
             <tr className="border-b border-border bg-muted/30">
               <>
               <SortableTh key="Contract #" col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contract #</SortableTh>
-              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Client</SortableTh>
               <SortableTh key="Room Type" col="roomType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Room Type</SortableTh>
               <SortableTh key="Confirmation" col="confirmationNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Confirmation</SortableTh>
               <SortableTh key="Check-in" col="checkIn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Check-in</SortableTh>
@@ -171,7 +171,7 @@ export default function HotelManagement() {
             ) : sorted.map(r => (
               <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`${BASE}/admin/services/hotel/${r.id}`)}>
                 <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F5821F]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
-                <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>
+                <td className="px-4 py-3 font-medium text-foreground">{r.clientName ?? r.studentName ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.roomType ?? "—"}</td>
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.confirmationNo ?? "—"}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{r.checkinDate ? format(new Date(r.checkinDate), "MMM d, yyyy") : "—"}</td>

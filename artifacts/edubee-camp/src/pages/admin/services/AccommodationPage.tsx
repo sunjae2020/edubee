@@ -13,6 +13,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 interface AccomRow {
   id: string;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   accommodationType?: string | null;
   hostName?: string | null;
@@ -170,7 +171,7 @@ export default function AccommodationPage() {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               <>
-              <SortableTh key="Student" col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
               <SortableTh key="Provider / Host" col="providerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Provider / Host</SortableTh>
               <SortableTh key="Type" col="accommodationType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Type</SortableTh>
               <SortableTh key="Check-in" col="checkIn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Check-in</SortableTh>
@@ -209,7 +210,7 @@ export default function AccommodationPage() {
                   className="hover:bg-stone-50 transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/services/accommodation/${row.id}`)}
                 >
-                  <td className="px-4 py-3 font-medium text-stone-800">{row.studentName ?? "—"}</td>
+                  <td className="px-4 py-3 font-medium text-stone-800">{row.clientName ?? row.studentName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600 text-xs">{row.hostName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600 text-xs capitalize">{row.accommodationType?.replace(/_/g, " ") ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600 text-xs whitespace-nowrap">{fmtDate(row.checkinDate)}</td>

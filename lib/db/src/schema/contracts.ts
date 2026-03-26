@@ -45,6 +45,7 @@ export const contracts = pgTable("contracts", {
   totalArAmount: decimal("total_ar_amount", { precision: 12, scale: 2 }),
   totalApAmount: decimal("total_ap_amount", { precision: 12, scale: 2 }),
   serviceModulesActivated: jsonb("service_modules_activated"),
+  accountId: uuid("account_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

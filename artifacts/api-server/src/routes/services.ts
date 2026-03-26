@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import {
   instituteMgt, hotelMgt, pickupMgt, tourMgt, settlementMgt,
-  settlementChecklistTemplates, contracts, applications, users
+  settlementChecklistTemplates, contracts, applications, users, accounts
 } from "@workspace/db/schema";
 import { eq, and, inArray, sql, SQL, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
@@ -31,13 +31,16 @@ async function enrichWithContractInfo(rows: any[]): Promise<any[]> {
       currency: contracts.currency,
       studentName: users.fullName,
       clientEmail: users.email,
+      clientName: accounts.name,
     })
     .from(contracts)
     .leftJoin(applications, eq(contracts.applicationId, applications.id))
     .leftJoin(users, eq(applications.clientId, users.id))
+    .leftJoin(accounts, eq(contracts.accountId, accounts.id))
     .where(inArray(contracts.id, contractIds));
 
   const contractMap = new Map(contractRows.map(c => [c.contractId, {
+    clientName: c.clientName ?? null,
     studentName: c.studentName ?? null,
     clientEmail: c.clientEmail ?? null,
     contractNumber: c.contractNumber ?? null,
