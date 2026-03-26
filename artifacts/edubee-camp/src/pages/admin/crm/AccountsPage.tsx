@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
+import { buildFullName } from "@/lib/nameUtils";
 import { Plus, Search, Building2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,8 @@ import { TableFooter } from "@/components/ui/table-footer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
+
+const INDIVIDUAL_TYPES = ["Student", "Client"];
 
 const ACCOUNT_TYPES = [
   "Student",
@@ -202,12 +205,16 @@ export default function AccountsPage() {
               </tr>
             ) : (
               sorted.map(row => {
+                const isIndividual = INDIVIDUAL_TYPES.includes(row.accountType ?? "");
+                const displayName = isIndividual
+                  ? buildFullName({ firstName: row.primaryContactFirstName, lastName: row.primaryContactLastName }, row.name)
+                  : row.name;
                 const originalName = row.primaryContactOriginalName || "—";
                 return (
                   <tr key={row.id}
                     className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                     onClick={() => navigate(`/admin/crm/accounts/${row.id}`)}>
-                    <td className="px-4 py-3 font-medium text-[#1C1917]">{row.name}</td>
+                    <td className="px-4 py-3 font-medium text-[#1C1917]">{displayName}</td>
                     <td className="px-4 py-3"><TypeBadge type={row.accountType} /></td>
                     <td className="px-4 py-3 text-sm text-[#57534E]">{row.accountCategory ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="px-4 py-3 text-sm text-[#57534E]">{originalName}</td>
