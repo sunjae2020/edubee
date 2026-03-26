@@ -196,7 +196,7 @@ function parseContactName(raw: string): { firstName: string; lastName: string } 
   return { firstName: parts.slice(0, -1).join(" "), lastName: parts[parts.length - 1] };
 }
 
-const EMPTY_CFORM = { firstName: "", lastName: "", email: "", mobile: "", nationality: "" };
+const EMPTY_CFORM = { firstName: "", lastName: "", englishName: "", originalName: "", email: "", mobile: "", nationality: "" };
 
 function ContactLookup({ value, onChange, placeholder }: {
   value: string; onChange: (id: string, contact?: { email?: string | null; mobile?: string | null; firstName?: string; lastName?: string; fullName?: string | null; dob?: string | null }) => void; placeholder?: string;
@@ -241,13 +241,15 @@ function ContactLookup({ value, onChange, placeholder }: {
     setCreating(true);
     try {
       const res = await axios.post(`${BASE}/api/crm/contacts`, {
-        firstName:   cform.firstName.trim() || null,
-        lastName:    cform.lastName.trim().toUpperCase(),
-        email:       cform.email.trim()       || null,
-        mobile:      cform.mobile.trim()      || null,
-        nationality: cform.nationality.trim() || null,
-        status:      "Active",
-        accountType: "Student",
+        firstName:    cform.firstName.trim()    || null,
+        lastName:     cform.lastName.trim().toUpperCase(),
+        englishName:  cform.englishName.trim()  || null,
+        originalName: cform.originalName.trim() || null,
+        email:        cform.email.trim()        || null,
+        mobile:       cform.mobile.trim()       || null,
+        nationality:  cform.nationality.trim()  || null,
+        status:       "Active",
+        accountType:  "Student",
       });
       const newContact = res.data;
       qc.invalidateQueries({ queryKey: ["contacts-lookup"] });
@@ -365,6 +367,32 @@ function ContactLookup({ value, onChange, placeholder }: {
                     onChange={e => setCform(f => ({ ...f, lastName: e.target.value.toUpperCase() }))}
                     placeholder="KIM"
                     className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F] uppercase"
+                  />
+                </div>
+              </div>
+
+              {/* English Name (Nickname) + Original Name */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wide mb-1 block">
+                    English Name <span className="text-stone-400 normal-case font-normal">(Nickname)</span>
+                  </Label>
+                  <Input
+                    value={cform.englishName}
+                    onChange={e => setCform(f => ({ ...f, englishName: e.target.value }))}
+                    placeholder="e.g. Alex"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wide mb-1 block">
+                    Original Name <span className="text-stone-400 normal-case font-normal">(한국어/中文)</span>
+                  </Label>
+                  <Input
+                    value={cform.originalName}
+                    onChange={e => setCform(f => ({ ...f, originalName: e.target.value }))}
+                    placeholder="e.g. 김민준"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
                   />
                 </div>
               </div>
