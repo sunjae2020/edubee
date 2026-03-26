@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes } from "@workspace/db/schema";
+import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages } from "@workspace/db/schema";
 import { eq, and, ilike, or, count, inArray, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -174,16 +174,24 @@ router.get("/applications", authenticate, async (req, res) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(applications).where(whereClause);
-    const rawData = await db.select().from(applications).where(whereClause).limit(limitNum).offset(offset).orderBy(applications.createdAt);
+    const rawData = await db
+      .select({ app: applications, packageName: packages.name })
+      .from(applications)
+      .leftJoin(packages, eq(applications.packageId, packages.id))
+      .where(whereClause)
+      .limit(limitNum)
+      .offset(offset)
+      .orderBy(applications.createdAt);
 
     // Enrich with student name (client user's fullName)
-    const clientIds = [...new Set(rawData.map(a => a.clientId).filter(Boolean))] as string[];
+    const clientIds = [...new Set(rawData.map(r => r.app.clientId).filter(Boolean))] as string[];
     const userRows = clientIds.length > 0
       ? await db.select({ id: users.id, fullName: users.fullName }).from(users).where(inArray(users.id, clientIds))
       : [];
     const userMap = new Map(userRows.map(u => [u.id, u.fullName]));
-    const data = rawData.map(a => ({
+    const data = rawData.map(({ app: a, packageName }) => ({
       ...a,
+      packageName: packageName ?? null,
       studentName: a.clientId ? (userMap.get(a.clientId) ?? a.applicantName ?? a.applicationNumber) : (a.applicantName ?? a.applicationNumber),
     }));
 

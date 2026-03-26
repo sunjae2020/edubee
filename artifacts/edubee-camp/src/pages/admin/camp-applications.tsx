@@ -33,6 +33,7 @@ interface Application {
   applicantName?: string; applicantEmail?: string; applicantPhone?: string;
   applicantNationality?: string; status: string;
   preferredStartDate?: string; participantCount?: number;
+  packageName?: string | null;
   notes?: string; createdAt: string; updatedAt: string; clientId?: string;
 }
 interface Participant {
@@ -246,14 +247,15 @@ export default function CampApplications() {
       />
 
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
-        <table className="w-full min-w-[860px] text-sm">
+        <table className="w-full min-w-[960px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
               <>
-              <SortableTh key="Application #" col="applicationNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Application #</SortableTh>
               <SortableTh key="Client" col="applicantName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Client</SortableTh>
+              <SortableTh key="Package" col="packageName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Package</SortableTh>
               <SortableTh key="Nationality" col="applicantNationality" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nationality</SortableTh>
               <SortableTh key="Start Date" col="preferredStartDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Start Date</SortableTh>
+              <SortableTh key="Created Date" col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Created Date</SortableTh>
               <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20" />
             </>
@@ -262,24 +264,27 @@ export default function CampApplications() {
           <tbody className="divide-y divide-border">
             {isLoading ? (
               [...Array(pageSize)].map((_, i) => (
-                <tr key={i}>{[...Array(6)].map((_, j) => (
+                <tr key={i}>{[...Array(7)].map((_, j) => (
                   <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                 ))}</tr>
               ))
             ) : sorted.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">No camp applications found</td></tr>
+              <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">No camp applications found</td></tr>
             ) : (
               sorted.map(app => (
                 <tr key={app.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                   onClick={() => setLocation(`${BASE}/admin/camp-applications/${app.id}`)}>
-                  <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{app.applicationNumber}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-foreground">{app.studentName ?? "—"}</div>
                     {app.applicantEmail && <div className="text-xs text-muted-foreground">{app.applicantEmail}</div>}
                   </td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{app.packageName ?? "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground">{app.applicantNationality ?? "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {app.preferredStartDate ? format(new Date(app.preferredStartDate), "MMM d, yyyy") : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {app.createdAt ? format(new Date(app.createdAt), "MMM d, yyyy") : "—"}
                   </td>
                   <td className="px-4 py-3"><AppStatusBadge status={app.status} /></td>
                   <td className="px-4 py-3"><ChevronRight className="w-4 h-4 text-muted-foreground" /></td>
