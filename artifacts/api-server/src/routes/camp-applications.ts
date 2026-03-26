@@ -144,11 +144,12 @@ router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole
       .where(eq(campApplications.id, req.params.id)).limit(1);
     if (!application) return res.status(404).json({ error: "Camp application not found" });
 
-    if (application.applicationStatus !== "reviewing")
-      return res.status(400).json({ error: "Application must be in reviewing status to convert to quote" });
-
+    // Check for existing quote first → 409 regardless of current status
     if (application.quoteId)
       return res.status(409).json({ error: "Quote already exists for this application", quoteId: application.quoteId });
+
+    if (application.applicationStatus !== "reviewing")
+      return res.status(400).json({ error: "Application must be in reviewing status to convert to quote" });
 
     const quoteRefNumber = "QTE-" + Date.now().toString().slice(-8);
 

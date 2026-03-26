@@ -284,6 +284,7 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
             await tx.insert(pickupMgt).values({ contractId });
             activatedModules.push("pickup");
             break;
+          case "hotel":
           case "accommodation":
             await tx.insert(accommodationMgt).values({ contractId });
             activatedModules.push("accommodation");
@@ -331,6 +332,19 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
       await tx.update(quotes)
         .set({ quoteStatus: "Accepted", modifiedOn: new Date() })
         .where(eq(quotes.id, req.params.id));
+
+      // 6. If quote is linked to a camp application, update its contract_id
+      //    (raw SQL to avoid circular import: camp.ts ← crm.ts)
+      if (quote.campApplicationId) {
+        await tx.execute(sql`
+          UPDATE camp_applications
+          SET contract_id = ${contractId}::uuid,
+              application_status = 'confirmed',
+              updated_at = NOW()
+          WHERE id = ${quote.campApplicationId}::uuid
+            AND contract_id IS NULL
+        `);
+      }
 
       return { contractId, contractNumber, activatedModules };
     });
