@@ -13,6 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { TableFooter } from "@/components/ui/table-footer";
+import { NameFieldGroup } from "@/components/common/NameFieldGroup";
+import { ClientNameCell } from "@/components/common/ClientNameCell";
+import { nameFromLead, buildFullName } from "@/lib/nameUtils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -38,6 +41,10 @@ interface Lead {
   id: string;
   leadRefNumber?: string | null;
   fullName: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  englishName?: string | null;
+  originalName?: string | null;
   email?: string | null;
   phone?: string | null;
   nationality?: string | null;
@@ -49,10 +56,33 @@ interface Lead {
   assignedStaffId?: string | null;
   notes?: string | null;
   contactId?: string | null;
+  accountId?: string | null;
   createdAt?: string | null;
 }
 
-type FormData = Partial<Omit<Lead, "id" | "createdAt" | "leadRefNumber">>;
+interface FormData {
+  firstName: string;
+  lastName: string;
+  englishName: string;
+  originalName: string;
+  email: string;
+  phone: string;
+  nationality: string;
+  inquiryType: string;
+  budget: string;
+  expectedStartDate: string;
+  status: string;
+  notes: string;
+  source: string;
+  contactId: string;
+  accountId: string;
+}
+
+const EMPTY_FORM: FormData = {
+  firstName: "", lastName: "", englishName: "", originalName: "",
+  email: "", phone: "", nationality: "", inquiryType: "", budget: "",
+  expectedStartDate: "", status: "new", notes: "", source: "", contactId: "", accountId: "",
+};
 
 function StatusBadge({ status }: { status?: string | null }) {
   const s = status ?? "new";
@@ -78,13 +108,18 @@ function SelectField({ value, onChange, options, placeholder }: {
 }
 
 function KanbanCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
+  const nameF = nameFromLead(lead);
+  const fullName = buildFullName(nameF, lead.fullName);
   return (
     <div
       onClick={onClick}
       className="bg-white border border-[#E8E6E2] rounded-xl p-4 cursor-pointer hover:shadow-md transition-shadow space-y-2.5"
     >
       <p className="text-[11px] text-[#A8A29E] font-mono">{lead.leadRefNumber ?? "—"}</p>
-      <p className="text-sm font-bold text-[#1C1917] leading-tight">{lead.fullName}</p>
+      <div>
+        <p className="text-sm font-bold text-[#1C1917] leading-tight">{fullName}</p>
+        {lead.originalName && <p className="text-xs text-[#57534E]">{lead.originalName}</p>}
+      </div>
       {lead.inquiryType && (
         <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#FEF0E3] text-[#F5821F]">
           {lead.inquiryType}
@@ -108,16 +143,16 @@ export default function CrmLeadsPage() {
   const [, navigate] = useLocation();
   const { sortBy, sortDir, onSort } = useSortState();
 
-  const [view, setView]               = useState<"table" | "kanban">("table");
-  const [search, setSearch]           = useState("");
-  const [statusFilter, setStatus]     = useState("all");
-  const [page, setPage]               = useState(1);
-  const [pageSize, setPageSize]       = useState(20);
-  const [sheetOpen, setSheetOpen]     = useState(false);
-  const [editLead, setEditLead]       = useState<Lead | null>(null);
-  const [form, setForm]               = useState<FormData>({});
+  const [view, setView]           = useState<"table" | "kanban">("table");
+  const [search, setSearch]       = useState("");
+  const [statusFilter, setStatus] = useState("all");
+  const [page, setPage]           = useState(1);
+  const [pageSize, setPageSize]   = useState(20);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editLead, setEditLead]   = useState<Lead | null>(null);
+  const [form, setForm]           = useState<FormData>(EMPTY_FORM);
 
-  function patch<K extends keyof FormData>(key: K, val: FormData[K]) {
+  function patchName(key: string, val: string) {
     setForm(prev => ({ ...prev, [key]: val }));
   }
 
@@ -149,13 +184,29 @@ export default function CrmLeadsPage() {
 
   function openCreate() {
     setEditLead(null);
-    setForm({ status: "new" });
+    setForm(EMPTY_FORM);
     setSheetOpen(true);
   }
 
   function openEdit(l: Lead) {
     setEditLead(l);
-    setForm({ ...l });
+    setForm({
+      firstName:        l.firstName ?? "",
+      lastName:         l.lastName ?? "",
+      englishName:      l.englishName ?? "",
+      originalName:     l.originalName ?? "",
+      email:            l.email ?? "",
+      phone:            l.phone ?? "",
+      nationality:      l.nationality ?? "",
+      inquiryType:      l.inquiryType ?? "",
+      budget:           l.budget ?? "",
+      expectedStartDate: l.expectedStartDate ?? "",
+      status:           l.status ?? "new",
+      notes:            l.notes ?? "",
+      source:           l.source ?? "",
+      contactId:        l.contactId ?? "",
+      accountId:        l.accountId ?? "",
+    });
     setSheetOpen(true);
   }
 
@@ -174,8 +225,8 @@ export default function CrmLeadsPage() {
   });
 
   function handleSave() {
-    if (!form.fullName?.trim()) {
-      toast({ title: "Full name is required", variant: "destructive" });
+    if (!form.firstName.trim()) {
+      toast({ title: "First Name is required", variant: "destructive" });
       return;
     }
     saveMutation.mutate(form);
@@ -243,33 +294,32 @@ export default function CrmLeadsPage() {
               <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
                   <SortableTh col="leadRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Lead Ref</SortableTh>
-                  <SortableTh col="contactName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Contact</SortableTh>
+                  <SortableTh col="contactName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
                   <SortableTh col="inquiryType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Inquiry Type</SortableTh>
                   <SortableTh col="budget" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Budget (AUD)</SortableTh>
                   <SortableTh col="expectedStart" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Expected Start</SortableTh>
-                  <SortableTh col="assignedStaff" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Assigned Staff</SortableTh>
                   <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {tableLoading && (
-                  <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+                  <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
                 )}
                 {!tableLoading && rows.length === 0 && (
-                  <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No leads found</td></tr>
+                  <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No leads found</td></tr>
                 )}
                 {sorted.map(l => (
                   <tr key={l.id} className="hover:bg-stone-50 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-stone-500">{l.leadRefNumber ?? "—"}</td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => navigate(`/admin/crm/leads/${l.id}`)}
-                        className="font-medium text-stone-800 hover:text-[#F5821F] transition-colors"
-                      >
-                        {l.fullName}
+                      <button onClick={() => navigate(`/admin/crm/leads/${l.id}`)} className="text-left w-full">
+                        <ClientNameCell
+                          fields={nameFromLead(l)}
+                          accountId={l.accountId}
+                          subLabel={l.email ?? undefined}
+                        />
                       </button>
-                      {l.email && <p className="text-xs text-stone-400">{l.email}</p>}
                     </td>
                     <td className="px-4 py-3 text-stone-600">{l.inquiryType ?? "—"}</td>
                     <td className="px-4 py-3 text-stone-600">
@@ -278,7 +328,6 @@ export default function CrmLeadsPage() {
                     <td className="px-4 py-3 text-stone-600">
                       {l.expectedStartDate ? format(new Date(l.expectedStartDate), "MMM d, yyyy") : "—"}
                     </td>
-                    <td className="px-4 py-3 text-stone-600">{l.assignedStaffId ? "Assigned" : "—"}</td>
                     <td className="px-4 py-3"><StatusBadge status={l.status} /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
@@ -344,47 +393,48 @@ export default function CrmLeadsPage() {
             <SheetDescription>{editLead ? "Update lead details." : "Create a new lead in the pipeline."}</SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-4 pb-6">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-stone-600">Full Name <span className="text-red-500">*</span></Label>
-              <Input value={form.fullName ?? ""} onChange={e => patch("fullName", e.target.value)} className="h-9 text-sm" placeholder="John Doe" />
-            </div>
+            <NameFieldGroup
+              values={{ firstName: form.firstName, lastName: form.lastName, englishName: form.englishName, originalName: form.originalName }}
+              onChange={patchName}
+              required
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Email</Label>
-                <Input type="email" value={form.email ?? ""} onChange={e => patch("email", e.target.value)} className="h-9 text-sm" />
+                <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="h-9 text-sm" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Phone</Label>
-                <Input value={form.phone ?? ""} onChange={e => patch("phone", e.target.value)} className="h-9 text-sm" />
+                <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="h-9 text-sm" />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Nationality</Label>
-                <Input value={form.nationality ?? ""} onChange={e => patch("nationality", e.target.value)} className="h-9 text-sm" />
+                <Input value={form.nationality} onChange={e => setForm(f => ({ ...f, nationality: e.target.value }))} className="h-9 text-sm" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Inquiry Type</Label>
-                <SelectField value={form.inquiryType} onChange={v => patch("inquiryType", v)} options={INQUIRY_TYPES} placeholder="Type" />
+                <SelectField value={form.inquiryType} onChange={v => setForm(f => ({ ...f, inquiryType: v }))} options={INQUIRY_TYPES} placeholder="Type" />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Budget (AUD)</Label>
-                <Input type="number" value={form.budget ?? ""} onChange={e => patch("budget", e.target.value)} className="h-9 text-sm" placeholder="0.00" />
+                <Input type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} className="h-9 text-sm" placeholder="0.00" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Expected Start</Label>
-                <Input type="date" value={form.expectedStartDate ?? ""} onChange={e => patch("expectedStartDate", e.target.value)} className="h-9 text-sm" />
+                <Input type="date" value={form.expectedStartDate} onChange={e => setForm(f => ({ ...f, expectedStartDate: e.target.value }))} className="h-9 text-sm" />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-stone-600">Status</Label>
-              <SelectField value={form.status} onChange={v => patch("status", v)} options={KANBAN_COLS.map(c => c.key)} placeholder="Status" />
+              <SelectField value={form.status} onChange={v => setForm(f => ({ ...f, status: v }))} options={KANBAN_COLS.map(c => c.key)} placeholder="Status" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-stone-600">Notes</Label>
-              <Textarea value={form.notes ?? ""} onChange={e => patch("notes", e.target.value)} className="text-sm min-h-[70px] resize-none" placeholder="Additional notes…" />
+              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="text-sm min-h-[70px] resize-none" placeholder="Additional notes…" />
             </div>
             <div className="flex gap-2 pt-2">
               <Button onClick={handleSave} disabled={saveMutation.isPending} className="flex-1 text-white" style={{ background: "#F5821F" }}>

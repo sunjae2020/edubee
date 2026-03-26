@@ -19,6 +19,10 @@ export const leads = pgTable("leads", {
   id: uuid("id").primaryKey().defaultRandom(),
   agentId: uuid("agent_id").references(() => users.id),
   fullName: varchar("full_name", { length: 255 }).notNull(),
+  firstName:         varchar("first_name",    { length: 100 }),
+  lastName:          varchar("last_name",     { length: 100 }),
+  englishName:       varchar("english_name",  { length: 100 }),
+  originalName:      varchar("original_name", { length: 200 }),
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   nationality: varchar("nationality", { length: 100 }),
@@ -102,6 +106,11 @@ export const applications = pgTable("applications", {
   guardianEndDate:    date("guardian_end_date"),
   studentNameForGuardian: varchar("student_name_for_guardian", { length: 255 }),
   guardianType:       varchar("guardian_type",       { length: 50  }),
+  // Name fields (통합 이름 시스템)
+  firstName:          varchar("first_name",    { length: 100 }),
+  lastName:           varchar("last_name",     { length: 100 }),
+  englishName:        varchar("english_name",  { length: 100 }),
+  originalName:       varchar("original_name", { length: 200 }),
 });
 
 export const applicationParticipants = pgTable("application_participants", {

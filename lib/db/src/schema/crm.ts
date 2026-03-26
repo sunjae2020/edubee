@@ -28,6 +28,7 @@ export const contacts = pgTable("contacts", {
   influxChannel:  varchar("influx_channel", { length: 50  }),
   importantDate1: date("important_date_1"),
   importantDate2: date("important_date_2"),
+  englishName:    varchar("english_name",  { length: 100 }),
   originalName:   varchar("original_name", { length: 200 }),
   fullName:       varchar("full_name",     { length: 200 }),
   description:    text("description"),
@@ -85,6 +86,10 @@ export const accounts = pgTable("accounts", {
   portalFailedAttempts:       integer("portal_failed_attempts").notNull().default(0),
   portalLockedUntil:          timestamp("portal_locked_until"),
   portalInvitedAt:            timestamp("portal_invited_at"),
+  firstName:                  varchar("first_name",    { length: 100 }),
+  lastName:                   varchar("last_name",     { length: 100 }),
+  englishName:                varchar("english_name",  { length: 100 }),
+  originalName:               varchar("original_name", { length: 200 }),
 });
 
 export const lead_activities = pgTable("lead_activities", {

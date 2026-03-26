@@ -32,9 +32,12 @@ router.get("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, 
     if (search) {
       conditions.push(
         or(
-          ilike(leads.fullName,      `%${search}%`),
-          ilike(leads.email,         `%${search}%`),
-          ilike(leads.leadRefNumber, `%${search}%`),
+          ilike(leads.fullName,       `%${search}%`),
+          ilike(leads.email,          `%${search}%`),
+          ilike(leads.leadRefNumber,  `%${search}%`),
+          ilike(leads.firstName,      `%${search}%`),
+          ilike(leads.lastName,       `%${search}%`),
+          ilike(leads.originalName,   `%${search}%`),
         )!
       );
     }
@@ -120,16 +123,26 @@ router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
 
 router.post("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { fullName, email, phone, nationality, source, interestedIn, notes,
+    const { firstName, lastName, englishName, originalName,
+            email, phone, nationality, source, interestedIn, notes,
             assignedStaffId, inquiryType, budget, expectedStartDate, contactId,
             accountId, status } = req.body;
+    let { fullName } = req.body;
 
-    if (!fullName) return res.status(400).json({ error: "fullName is required" });
+    if (!fullName && !firstName) return res.status(400).json({ error: "firstName or fullName is required" });
+
+    if (!fullName) {
+      const ln = lastName?.trim().toUpperCase() || "";
+      const fn = firstName?.trim() || "";
+      fullName = [fn, ln].filter(Boolean).join(" ");
+    }
 
     const leadRefNumber = genLeadRef();
 
     const [created] = await db.insert(leads).values({
-      leadRefNumber, fullName, email, phone, nationality, source, interestedIn, notes,
+      leadRefNumber, fullName, firstName: firstName || null, lastName: lastName || null,
+      englishName: englishName || null, originalName: originalName || null,
+      email, phone, nationality, source, interestedIn, notes,
       assignedStaffId, inquiryType, budget, expectedStartDate, contactId,
       accountId: accountId || null,
       status: status ?? "new",
@@ -147,15 +160,30 @@ router.put("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
     const [existing] = await db.select().from(leads).where(eq(leads.id, req.params.id));
     if (!existing) return res.status(404).json({ error: "Lead not found" });
 
-    const { fullName, email, phone, nationality, source, interestedIn, notes,
+    const { firstName, lastName, englishName, originalName,
+            email, phone, nationality, source, interestedIn, notes,
             assignedStaffId, inquiryType, budget, expectedStartDate, contactId,
             accountId, status } = req.body;
+    let { fullName } = req.body;
+
+    if (!fullName && firstName) {
+      const ln = lastName?.trim().toUpperCase() || "";
+      const fn = firstName?.trim() || "";
+      fullName = [fn, ln].filter(Boolean).join(" ");
+    }
 
     const [updated] = await db.update(leads)
-      .set({ fullName, email, phone, nationality, source, interestedIn, notes,
-             assignedStaffId, inquiryType, budget, expectedStartDate, contactId,
-             accountId: accountId || null, status,
-             updatedAt: new Date() })
+      .set({
+        fullName: fullName || existing.fullName,
+        firstName: firstName !== undefined ? (firstName || null) : existing.firstName,
+        lastName:  lastName  !== undefined ? (lastName  || null) : existing.lastName,
+        englishName: englishName !== undefined ? (englishName || null) : existing.englishName,
+        originalName: originalName !== undefined ? (originalName || null) : existing.originalName,
+        email, phone, nationality, source, interestedIn, notes,
+        assignedStaffId, inquiryType, budget, expectedStartDate, contactId,
+        accountId: accountId || null, status,
+        updatedAt: new Date(),
+      })
       .where(eq(leads.id, req.params.id))
       .returning();
 

@@ -50,7 +50,21 @@ router.get("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req,
     const enriched = await Promise.all(data.map(async q => {
       const products = await db.select().from(quote_products).where(eq(quote_products.quoteId, q.id));
       const total = products.reduce((sum, p) => sum + Number(p.total ?? 0), 0);
-      return { ...q, products, total };
+      let accountFirstName: string | null = null;
+      let accountLastName: string | null = null;
+      let accountOriginalName: string | null = null;
+      if (q.studentAccountId) {
+        const [acc] = await db.select({
+          firstName: accounts.firstName, lastName: accounts.lastName,
+          originalName: accounts.originalName, name: accounts.name,
+        }).from(accounts).where(eq(accounts.id, q.studentAccountId));
+        if (acc) {
+          accountFirstName   = acc.firstName ?? null;
+          accountLastName    = acc.lastName  ?? null;
+          accountOriginalName = acc.originalName ?? null;
+        }
+      }
+      return { ...q, products, total, accountFirstName, accountLastName, accountOriginalName };
     }));
 
     return res.json({

@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { format, differenceInWeeks } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { ClientNameCell } from "@/components/common/ClientNameCell";
+import { nameFromAccount } from "@/lib/nameUtils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -21,7 +23,7 @@ interface ContractRow {
   toDate?: string;
   contractAmount: number;
   paymentFrequency?: string;
-  account?: { id?: string; name?: string; nationality?: string };
+  account?: { id?: string; name?: string; firstName?: string | null; lastName?: string | null; originalName?: string | null; nationality?: string };
   quote?: { id: string; quoteRefNumber?: string } | null;
   owner?: { id: string; name: string } | null;
   primaryService?: { type: string; status?: string } | null;
@@ -449,10 +451,16 @@ export default function ContractListPage() {
                     <span className="font-mono text-xs font-semibold" style={{ color:"#F5821F" }}>{row.contractRefDisplay ?? "—"}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-[#1C1917] text-[13px]">{row.account?.name ?? "—"}</div>
-                    {row.quote?.quoteRefNumber && (
-                      <div className="text-[11px] text-[#A8A29E]">{row.quote.quoteRefNumber}</div>
-                    )}
+                    <ClientNameCell
+                      fields={nameFromAccount({
+                        firstName:    row.account?.firstName,
+                        lastName:     row.account?.lastName,
+                        originalName: row.account?.originalName,
+                        name:         row.account?.name,
+                      })}
+                      accountId={row.account?.id}
+                      subLabel={row.quote?.quoteRefNumber}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     {row.primaryService ? (

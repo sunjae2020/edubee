@@ -22,6 +22,9 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { ClientNameCell } from "@/components/common/ClientNameCell";
+import { nameFromCampApplication } from "@/lib/nameUtils";
+import { NameFieldGroup } from "@/components/common/NameFieldGroup";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
@@ -30,8 +33,11 @@ const APP_STATUSES = ["submitted", "reviewing", "quoted", "confirmed", "cancelle
 
 interface Application {
   id: string; applicationNumber: string; studentName?: string;
-  applicantName?: string; applicantEmail?: string; applicantPhone?: string;
-  applicantNationality?: string; status: string;
+  applicantName?: string; applicantFirstName?: string | null;
+  applicantLastName?: string | null; applicantOriginalName?: string | null;
+  applicantEnglishName?: string | null;
+  applicantEmail?: string; applicantPhone?: string;
+  applicantNationality?: string; status: string; applicationStatus?: string;
   preferredStartDate?: string; participantCount?: number;
   packageName?: string | null;
   notes?: string; createdAt: string; updatedAt: string; clientId?: string;
@@ -89,7 +95,8 @@ function DetailRow({ label, value }: { label: string; value?: string | number | 
 }
 
 const emptyForm = {
-  applicantName: "", applicantEmail: "", applicantPhone: "", applicantNationality: "",
+  applicantFirstName: "", applicantLastName: "", applicantOriginalName: "", applicantEnglishName: "",
+  applicantEmail: "", applicantPhone: "", applicantNationality: "",
   preferredStartDate: "", status: "submitted", notes: "",
 };
 
@@ -284,8 +291,16 @@ export default function CampApplications() {
                 <tr key={app.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                   onClick={() => setLocation(`${BASE}/admin/camp-applications/${app.id}`)}>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-foreground">{app.studentName ?? "—"}</div>
-                    {app.applicantEmail && <div className="text-xs text-muted-foreground">{app.applicantEmail}</div>}
+                    <ClientNameCell
+                      fields={nameFromCampApplication({
+                        applicantFirstName:   app.applicantFirstName,
+                        applicantLastName:    app.applicantLastName,
+                        applicantOriginalName: app.applicantOriginalName,
+                        applicantEnglishName: app.applicantEnglishName,
+                        applicantName:        app.applicantName,
+                      })}
+                      subLabel={app.applicantEmail}
+                    />
                   </td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{app.packageName ?? "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground">{app.applicantNationality ?? "—"}</td>
@@ -545,9 +560,21 @@ export default function CampApplications() {
                 <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Application Details</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs">Client Name <span className="text-red-500">*</span></Label>
-                  <Input className="h-9 text-sm" value={form.applicantName} onChange={e => setForm(f => ({ ...f, applicantName: e.target.value }))} placeholder="Full name" />
+                <div className="col-span-2">
+                  <NameFieldGroup
+                    firstName={form.applicantFirstName}
+                    lastName={form.applicantLastName}
+                    originalName={form.applicantOriginalName}
+                    englishName={form.applicantEnglishName}
+                    onChange={patch => setForm(f => ({
+                      ...f,
+                      ...(patch.firstName    !== undefined && { applicantFirstName:    patch.firstName }),
+                      ...(patch.lastName     !== undefined && { applicantLastName:     patch.lastName }),
+                      ...(patch.originalName !== undefined && { applicantOriginalName: patch.originalName }),
+                      ...(patch.englishName  !== undefined && { applicantEnglishName:  patch.englishName }),
+                    }))}
+                    required
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Email</Label>
@@ -728,7 +755,7 @@ export default function CampApplications() {
               <X className="w-3.5 h-3.5" /> Cancel
             </Button>
             <Button className="gap-1.5 h-9 text-sm bg-[#F5821F] hover:bg-[#d97706] text-white"
-              disabled={!form.applicantName.trim() || !wizardAgreed || createApp.isPending}
+              disabled={!form.applicantFirstName.trim() || !form.applicantLastName.trim() || !wizardAgreed || createApp.isPending}
               onClick={() => createApp.mutate({
                 ...form,
                 notes: [form.notes, wizardOptions.length > 0 ? `Options: ${wizardOptions.join(", ")}` : "", wizardPackageId ? `PackageId: ${wizardPackageId}` : ""].filter(Boolean).join("\n"),

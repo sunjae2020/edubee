@@ -6,6 +6,8 @@ import { Plus, Eye, Pencil, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { ClientNameCell } from "@/components/common/ClientNameCell";
+import { nameFromAccount } from "@/lib/nameUtils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -21,6 +23,10 @@ interface QuoteRow {
   id: string;
   quoteRefNumber?: string | null;
   accountName?: string | null;
+  accountFirstName?: string | null;
+  accountLastName?: string | null;
+  accountOriginalName?: string | null;
+  studentAccountId?: string | null;
   contactId?: string | null;
   quoteStatus: string;
   expiryDate?: string | null;
@@ -120,11 +126,17 @@ export default function QuotesPage() {
               <tr key={q.id} className="hover:bg-stone-50 transition-colors">
                 <td className="px-4 py-3 font-mono text-xs text-stone-500">{q.quoteRefNumber ?? "—"}</td>
                 <td className="px-4 py-3">
-                  <button
-                    onClick={() => navigate(`/admin/crm/quotes/${q.id}`)}
-                    className="font-medium text-stone-800 hover:text-[#F5821F] transition-colors"
-                  >
-                    {q.accountName ?? "—"}
+                  <button onClick={() => navigate(`/admin/crm/quotes/${q.id}`)} className="text-left w-full">
+                    <ClientNameCell
+                      fields={nameFromAccount({
+                        firstName: q.accountFirstName,
+                        lastName:  q.accountLastName,
+                        originalName: q.accountOriginalName,
+                        name: q.accountName,
+                      })}
+                      accountId={q.studentAccountId}
+                      subLabel={q.quoteRefNumber ?? undefined}
+                    />
                   </button>
                 </td>
                 <td className="px-4 py-3 text-stone-600">{q.products?.length ?? 0}</td>

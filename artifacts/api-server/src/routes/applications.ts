@@ -208,6 +208,9 @@ router.post("/applications", authenticate, async (req, res) => {
     const body = req.body;
     if (req.user!.role === "education_agent") body.agentId = req.user!.id;
     body.applicationNumber = generateApplicationNumber();
+    const fn = (body.applicantFirstName ?? "").trim();
+    const ln = (body.applicantLastName  ?? "").trim();
+    if (fn || ln) body.applicantName = [fn, ln].filter(Boolean).join(" ");
     const [application] = await db.insert(applications).values(body).returning();
     return res.status(201).json(application);
   } catch (err) {
