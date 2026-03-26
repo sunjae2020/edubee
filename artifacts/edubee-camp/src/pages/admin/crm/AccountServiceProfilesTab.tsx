@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Home, Car, Building2, GraduationCap, MapPin,
   Plus, Pencil, Trash2,
-  Phone, Clock, Users, DollarSign, Star,
-  CheckSquare, Square, Save, X, Globe, AlertCircle,
-  Utensils, Bed, Plane, Bus, Map,
+  Phone, Clock, Users, DollarSign,
+  CheckSquare, Square, Save, X, Wrench, Shield,
+  Utensils, Bed, Plane, Bus, Map, Stamp, CheckCircle2, Briefcase,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -22,9 +22,8 @@ function apiFetch(path: string, options?: RequestInit): Promise<Response> {
 }
 
 type ServiceType =
-  | "homestay" | "dormitory" | "pickup" | "tour_provider"
-  | "internship_host" | "school" | "camp_institute"
-  | "guardian" | "translation" | "other";
+  | "studyAbroad" | "pickup" | "tour" | "accommodation"
+  | "internship" | "settlement" | "guardian" | "other" | "visa";
 
 interface ServiceCategory {
   id: string; accountId: string; serviceType: ServiceType;
@@ -100,16 +99,15 @@ interface AccountServiceProfilesTabProps {
 const SERVICE_TYPE_CONFIG: Record<ServiceType, {
   label: string; icon: React.ReactNode; color: string; bg: string;
 }> = {
-  homestay:        { label: "Homestay",        icon: <Home size={14} />,          color: "#F5821F", bg: "#FEF0E3" },
-  dormitory:       { label: "Dormitory",        icon: <Bed size={14} />,           color: "#F5821F", bg: "#FEF0E3" },
-  pickup:          { label: "Airport Pickup",   icon: <Car size={14} />,           color: "#16A34A", bg: "#DCFCE7" },
-  tour_provider:   { label: "Tour Provider",    icon: <Map size={14} />,           color: "#0891B2", bg: "#E0F2FE" },
-  internship_host: { label: "Internship Host",  icon: <Building2 size={14} />,     color: "#7C3AED", bg: "#EDE9FE" },
-  school:          { label: "School",           icon: <GraduationCap size={14} />, color: "#CA8A04", bg: "#FEF9C3" },
-  camp_institute:  { label: "Camp Institute",   icon: <Star size={14} />,          color: "#DC2626", bg: "#FEF2F2" },
-  guardian:        { label: "Guardian",         icon: <Users size={14} />,         color: "#0284C7", bg: "#E0F2FE" },
-  translation:     { label: "Translation",      icon: <Globe size={14} />,         color: "#57534E", bg: "#F4F3F1" },
-  other:           { label: "Other",            icon: <AlertCircle size={14} />,   color: "#57534E", bg: "#F4F3F1" },
+  studyAbroad:   { label: "Study Abroad",  icon: <GraduationCap size={14} />, color: "#CA8A04", bg: "#FEF9C3" },
+  pickup:        { label: "Pickup",         icon: <Car size={14} />,           color: "#16A34A", bg: "#DCFCE7" },
+  tour:          { label: "Tour",           icon: <Map size={14} />,           color: "#0891B2", bg: "#E0F2FE" },
+  accommodation: { label: "Accommodation",  icon: <Home size={14} />,          color: "#F5821F", bg: "#FEF0E3" },
+  internship:    { label: "Internship",     icon: <Briefcase size={14} />,     color: "#7C3AED", bg: "#EDE9FE" },
+  settlement:    { label: "Settlement",     icon: <CheckCircle2 size={14} />,  color: "#0284C7", bg: "#E0F2FE" },
+  guardian:      { label: "Guardian",       icon: <Shield size={14} />,        color: "#DC2626", bg: "#FEF2F2" },
+  other:         { label: "Other Service",  icon: <Wrench size={14} />,        color: "#57534E", bg: "#F4F3F1" },
+  visa:          { label: "Visa Service",   icon: <Stamp size={14} />,         color: "#0891B2", bg: "#E0F2FE" },
 };
 
 const MEAL_OPTIONS = ["no", "breakfast", "half_board", "full_board"];
@@ -1064,11 +1062,11 @@ export const AccountServiceProfilesTab = ({
 
       <ServiceCategorySelector accountId={accountId} readOnly={readOnly} />
 
-      {has("homestay") && <HomestayProfileSection accountId={accountId} readOnly={readOnly} />}
+      {has("accommodation") && <HomestayProfileSection accountId={accountId} readOnly={readOnly} />}
       {has("pickup") && <PickupProfileSection accountId={accountId} readOnly={readOnly} />}
-      {has("tour_provider") && <TourProfileSection accountId={accountId} readOnly={readOnly} />}
-      {has("internship_host") && <CompanyProfileSection accountId={accountId} readOnly={readOnly} />}
-      {has("school") && <SchoolProfileSection accountId={accountId} readOnly={readOnly} />}
+      {has("tour") && <TourProfileSection accountId={accountId} readOnly={readOnly} />}
+      {has("internship") && <CompanyProfileSection accountId={accountId} readOnly={readOnly} />}
+      {has("studyAbroad") && <SchoolProfileSection accountId={accountId} readOnly={readOnly} />}
     </div>
   );
 };
