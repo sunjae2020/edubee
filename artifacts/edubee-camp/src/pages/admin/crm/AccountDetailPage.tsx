@@ -6,8 +6,9 @@ import axios from "axios";
 import {
   ArrowLeft, Save, Building2, Users, FileText, Briefcase,
   Plus, Loader2, ChevronRight, ExternalLink, Package, DollarSign, Shield,
-  UserPlus, X,
+  UserPlus, X, Layers,
 } from "lucide-react";
+import { AccountServiceProfilesTab } from "./AccountServiceProfilesTab";
 import { PortalAccessPanel } from "@/components/crm/PortalAccessPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,23 +107,26 @@ function getTabs(accountType?: string | null) {
     { key: "overview",  label: "Overview",  icon: Building2 },
     { key: "contacts",  label: "Contacts",  icon: Users     },
   ];
-  const leads      = { key: "leads",      label: "Leads",          icon: Briefcase  };
-  const contracts  = { key: "contracts",  label: "Contracts",      icon: FileText   };
-  const products   = { key: "products",   label: "Products",       icon: Package    };
-  const commission = { key: "commission", label: "Commission",     icon: DollarSign };
-  const portal     = { key: "portal",     label: "Portal Access",  icon: Shield     };
-  const ledger     = { key: "ledger",     label: "Ledger",         icon: DollarSign };
+  const leads          = { key: "leads",           label: "Leads",            icon: Briefcase  };
+  const contracts      = { key: "contracts",       label: "Contracts",        icon: FileText   };
+  const products       = { key: "products",        label: "Products",         icon: Package    };
+  const commission     = { key: "commission",      label: "Commission",       icon: DollarSign };
+  const portal         = { key: "portal",          label: "Portal Access",    icon: Shield     };
+  const ledger         = { key: "ledger",          label: "Ledger",           icon: DollarSign };
+  const serviceProfiles = { key: "service_profiles", label: "Service Profiles", icon: Layers  };
 
   switch (accountType) {
     case "Student":
       return [...base, leads, contracts, ledger];
     case "Supplier":
-      return [...base, products, ledger, portal];
+      return [...base, serviceProfiles, products, ledger, portal];
     case "School":
-      return [...base, leads, contracts, products, ledger, portal];
+      return [...base, leads, contracts, serviceProfiles, products, ledger, portal];
     case "Sub_Agency":
     case "Super_Agency":
       return [...base, leads, contracts, commission, ledger, portal];
+    case "Provider":
+      return [...base, serviceProfiles, leads, contracts, ledger, portal];
     default:
       return [...base, leads, contracts, ledger, portal];
   }
@@ -1266,6 +1270,13 @@ export default function AccountDetailPage() {
               <p className="text-sm font-medium text-stone-600 mb-1">Commission</p>
               <p className="text-sm">Commission records for this agency will appear here.</p>
             </div>
+          )}
+
+          {tab === "service_profiles" && account && (
+            <AccountServiceProfilesTab
+              accountId={account.id}
+              accountName={account.name}
+            />
           )}
 
           {tab === "portal" && account && (
