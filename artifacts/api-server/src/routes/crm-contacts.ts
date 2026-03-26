@@ -26,6 +26,7 @@ router.get("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (re
           ilike(contacts.firstName, `%${search}%`),
           ilike(contacts.lastName,  `%${search}%`),
           ilike(contacts.email,     `%${search}%`),
+          ilike(contacts.fullName,  `%${search}%`),
         )!
       );
     }

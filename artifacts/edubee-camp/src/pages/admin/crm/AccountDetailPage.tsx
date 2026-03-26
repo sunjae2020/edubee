@@ -215,7 +215,9 @@ function ContactLookup({ value, onChange, placeholder }: {
     enabled: !!value,
   });
 
-  const displayName = selected ? `${selected.firstName} ${selected.lastName}` : "";
+  const displayName = selected
+    ? (selected.fullName || `${selected.firstName} ${selected.lastName}`)
+    : "";
 
   function openCreateDialog() {
     const p = search.trim().length > 0 ? parseContactName(search) : { firstName: "", lastName: "" };
@@ -251,7 +253,7 @@ function ContactLookup({ value, onChange, placeholder }: {
     }
   }
 
-  const results: { id: string; firstName: string; lastName: string; email?: string | null; mobile?: string | null }[] = Array.isArray(data) ? data : [];
+  const results: { id: string; firstName: string; lastName: string; fullName?: string | null; email?: string | null; mobile?: string | null }[] = Array.isArray(data) ? data : [];
   const showDropdown = open && (results.length > 0 || search.trim().length > 0);
 
   return (
@@ -283,7 +285,9 @@ function ContactLookup({ value, onChange, placeholder }: {
                 className="w-full px-3 py-2 text-left text-sm hover:bg-[#FEF0E3] transition-colors"
                 onMouseDown={() => { onChange(c.id, c); setOpen(false); }}
               >
-                <span className="font-medium text-stone-800">{c.firstName} {c.lastName}</span>
+                <span className="font-medium text-stone-800">
+                  {c.fullName || `${c.firstName} ${c.lastName}`}
+                </span>
                 {c.email && <span className="ml-2 text-xs text-stone-400">{c.email}</span>}
               </button>
             ))}
