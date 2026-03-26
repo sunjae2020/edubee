@@ -6,6 +6,7 @@ import { Search, AlertCircle, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format, parseISO } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { TableFooter } from "@/components/ui/table-footer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -40,9 +41,10 @@ export default function GuardianPage() {
   const qc              = useQueryClient();
   const [, navigate]    = useLocation();
   const { sortBy, sortDir, onSort } = useSortState();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [page, setPage]     = useState(1);
+  const [search, setSearch]   = useState("");
+  const [status, setStatus]   = useState("");
+  const [page, setPage]       = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState<{ contractId: string; notes: string }>({ contractId: "", notes: "" });
 
@@ -52,9 +54,9 @@ export default function GuardianPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["guardian", search, status, page],
+    queryKey: ["guardian", search, status, page, pageSize],
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: "20" });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) p.set("search", search);
       if (status) p.set("status", status);
       return axios.get(`${BASE}/api/services/guardian?${p}`).then(r => r.data);
@@ -63,7 +65,7 @@ export default function GuardianPage() {
 
   const rows: GuardianRow[] = data?.data ?? [];
   const sorted = useSorted(rows, sortBy, sortDir);
-  const totalPages          = data?.meta?.totalPages ?? 1;
+  const total               = data?.meta?.total ?? 0;
   const billingDueCount     = billingData?.count ?? 0;
 
   const createMutation = useMutation({
@@ -194,15 +196,7 @@ export default function GuardianPage() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-end gap-2">
-          <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-            className="px-3 py-1.5 text-xs border border-stone-200 rounded-lg hover:bg-stone-50 disabled:opacity-40">Prev</button>
-          <span className="text-sm text-stone-500">Page {page} / {totalPages}</span>
-          <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
-            className="px-3 py-1.5 text-xs border border-stone-200 rounded-lg hover:bg-stone-50 disabled:opacity-40">Next</button>
-        </div>
-      )}
+      <TableFooter page={page} pageSize={pageSize} total={total} label="records" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       {/* Create Modal */}
       {showCreate && (

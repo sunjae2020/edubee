@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ListToolbar } from "@/components/ui/list-toolbar";
-import { ListPagination } from "@/components/ui/list-pagination";
+import { TableFooter } from "@/components/ui/table-footer";
 import { useToast } from "@/hooks/use-toast";
 import { Receipt, Send, ChevronRight, CreditCard, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -212,14 +212,15 @@ export default function ClientInvoices() {
   const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [selected, setSelected] = useState<Invoice | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Invoice | null>(null);
 
-  const queryKey = ["invoices-client", { search, status: activeStatus, page }];
+  const queryKey = ["invoices-client", { search, status: activeStatus, page, pageSize }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
-      const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), invoiceType: "client" });
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize), invoiceType: "client" });
       if (search) params.set("search", search);
       if (activeStatus !== "all") params.set("status", activeStatus);
       return axios.get(`${BASE}/api/invoices?${params}`).then(r => r.data);
@@ -306,7 +307,7 @@ export default function ClientInvoices() {
         </table>
       </div>
 
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+      <TableFooter page={page} pageSize={pageSize} total={total} label="invoices" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       {/* Record Payment Modal */}
       <RecordPaymentModal

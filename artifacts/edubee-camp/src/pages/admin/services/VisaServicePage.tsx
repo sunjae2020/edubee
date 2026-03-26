@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { format, parseISO } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { TableFooter } from "@/components/ui/table-footer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -57,13 +58,14 @@ export default function VisaServicePage() {
   const [search, setSearch]   = useState("");
   const [status, setStatus]   = useState("");
   const [page, setPage]       = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({ contractId: "", visaType: "", country: "" });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["visa-services", search, status, page],
+    queryKey: ["visa-services", search, status, page, pageSize],
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: "20" });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) p.set("search", search);
       if (status) p.set("status", status);
       return axios.get(`${BASE}/api/services/visa?${p}`).then(r => r.data);
@@ -72,7 +74,7 @@ export default function VisaServicePage() {
 
   const rows: VisaServiceRow[] = data?.data ?? [];
   const sorted = useSorted(rows, sortBy, sortDir);
-  const totalPages             = data?.meta?.totalPages ?? 1;
+  const total                  = data?.meta?.total ?? 0;
 
   const createMutation = useMutation({
     mutationFn: (payload: { contractId: string; visaType: string; country: string }) =>
@@ -177,18 +179,7 @@ export default function VisaServicePage() {
         </table>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-stone-500">
-          <span>Page {page} of {totalPages}</span>
-          <div className="flex gap-1">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
-              className="p-1.5 rounded hover:bg-stone-100 disabled:opacity-40"><ChevronLeft size={15} /></button>
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-              className="p-1.5 rounded hover:bg-stone-100 disabled:opacity-40"><ChevronRight size={15} /></button>
-          </div>
-        </div>
-      )}
+      <TableFooter page={page} pageSize={pageSize} total={total} label="records" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       {/* Create Modal */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>

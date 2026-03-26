@@ -6,6 +6,7 @@ import { Search, ChevronRight, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format, parseISO } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { TableFooter } from "@/components/ui/table-footer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -99,6 +100,7 @@ export default function InternshipPage() {
   const [activeStage, setActiveStage] = useState("");
   const [search, setSearch]           = useState("");
   const [page, setPage]               = useState(1);
+  const [pageSize, setPageSize]       = useState(20);
   const [showCreate, setShowCreate]   = useState(false);
   const [createForm, setCreateForm]   = useState<{ contractId: string; notes: string }>({ contractId: "", notes: "" });
 
@@ -108,9 +110,9 @@ export default function InternshipPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["internship", activeStage, search, page],
+    queryKey: ["internship", activeStage, search, page, pageSize],
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: "20" });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (activeStage) p.set("status", activeStage);
       if (search)      p.set("search", search);
       return axios.get(`${BASE}/api/services/internship?${p}`).then(r => r.data);
@@ -120,7 +122,7 @@ export default function InternshipPage() {
   const rows: InternshipRow[]    = data?.data ?? [];
   const sorted = useSorted(rows, sortBy, sortDir);
   const allRows: InternshipRow[] = allData?.data ?? [];
-  const totalPages               = data?.meta?.totalPages ?? 1;
+  const total                    = data?.meta?.total ?? 0;
 
   // Stage counts from all rows
   const stageCounts: Record<string, number> = {};
@@ -236,15 +238,7 @@ export default function InternshipPage() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-end gap-2">
-          <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-            className="px-3 py-1.5 text-xs border border-stone-200 rounded-lg hover:bg-stone-50 disabled:opacity-40">Prev</button>
-          <span className="text-sm text-stone-500">Page {page} / {totalPages}</span>
-          <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
-            className="px-3 py-1.5 text-xs border border-stone-200 rounded-lg hover:bg-stone-50 disabled:opacity-40">Next</button>
-        </div>
-      )}
+      <TableFooter page={page} pageSize={pageSize} total={total} label="records" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       {/* Create Modal */}
       {showCreate && (

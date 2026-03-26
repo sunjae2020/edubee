@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { TableFooter } from "@/components/ui/table-footer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -111,6 +112,7 @@ export default function CrmLeadsPage() {
   const [search, setSearch]           = useState("");
   const [statusFilter, setStatus]     = useState("all");
   const [page, setPage]               = useState(1);
+  const [pageSize, setPageSize]       = useState(20);
   const [sheetOpen, setSheetOpen]     = useState(false);
   const [editLead, setEditLead]       = useState<Lead | null>(null);
   const [form, setForm]               = useState<FormData>({});
@@ -119,11 +121,11 @@ export default function CrmLeadsPage() {
     setForm(prev => ({ ...prev, [key]: val }));
   }
 
-  const tableKey = ["crm-leads-table", { search, status: statusFilter, page }];
+  const tableKey = ["crm-leads-table", { search, status: statusFilter, page, pageSize }];
   const { data: tableResp, isLoading: tableLoading } = useQuery({
     queryKey: tableKey,
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: "20" });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search)                  p.set("search", search);
       if (statusFilter !== "all") p.set("leadStatus", statusFilter);
       return axios.get(`${BASE}/api/crm/leads?${p}`).then(r => r.data);
@@ -140,7 +142,7 @@ export default function CrmLeadsPage() {
 
   const rows: Lead[] = tableResp?.data ?? [];
   const sorted = useSorted(rows, sortBy, sortDir);
-  const totalPages   = tableResp?.meta?.totalPages ?? 1;
+  const total        = tableResp?.meta?.total ?? 0;
 
   const kanbanCols: Array<{ status: string; count: number; cards: Lead[] }> =
     kanbanResp?.columns ?? KANBAN_COLS.map(c => ({ status: c.key, count: 0, cards: [] }));
@@ -296,12 +298,7 @@ export default function CrmLeadsPage() {
             </table>
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
-              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
-            </div>
-          )}
+          <TableFooter page={page} pageSize={pageSize} total={total} label="leads" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
         </>
       )}
 

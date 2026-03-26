@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { TableFooter } from "@/components/ui/table-footer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
@@ -71,21 +72,21 @@ export default function AccountsPage() {
   const [filterType, setFilterType]     = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [page, setPage]                 = useState(1);
+  const [pageSize, setPageSize]         = useState(PAGE_SIZE);
 
-  const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+  const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
   if (search)                 params.set("search",       search);
   if (filterType !== "all")   params.set("account_type", filterType);
   if (filterStatus !== "all") params.set("status",       filterStatus);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["crm-accounts", search, filterType, filterStatus, page],
+    queryKey: ["crm-accounts", search, filterType, filterStatus, page, pageSize],
     queryFn:  () => axios.get(`${BASE}/api/crm/accounts?${params}`).then(r => r.data),
   });
 
   const rows: Account[] = data?.data  ?? [];
   const sorted = useSorted(rows, sortBy, sortDir);
   const total: number   = data?.total ?? 0;
-  const totalPages      = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => axios.delete(`${BASE}/api/crm/accounts/${id}`),
@@ -216,22 +217,7 @@ export default function AccountsPage() {
           </tbody>
         </table>
 
-        {/* ── Pagination ── */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
-            <span className="text-xs text-muted-foreground">Page {page} of {totalPages} · {total} total</span>
-            <div className="flex gap-1">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-                className="px-3 py-1.5 text-xs rounded-lg border border-border disabled:opacity-40 hover:bg-[#F4F3F1] transition-colors">
-                Prev
-              </button>
-              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
-                className="px-3 py-1.5 text-xs rounded-lg border border-border disabled:opacity-40 hover:bg-[#F4F3F1] transition-colors">
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <TableFooter page={page} pageSize={pageSize} total={total} label="accounts" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
       </div>
     </div>
   );

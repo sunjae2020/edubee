@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ListToolbar } from "@/components/ui/list-toolbar";
-import { ListPagination } from "@/components/ui/list-pagination";
+import { TableFooter } from "@/components/ui/table-footer";
 import { useToast } from "@/hooks/use-toast";
 import {
   Receipt, Send, ChevronRight, CreditCard, Loader2, FileText, Handshake,
@@ -658,11 +658,12 @@ function ClientTab() {
   const [emailTarget, setEmailTarget] = useState<Invoice | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
 
-  const queryKey = ["invoices-client", { search, status: activeStatus, page }];
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const queryKey = ["invoices-client", { search, status: activeStatus, page, pageSize }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), invoiceType: "client" });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize), invoiceType: "client" });
       if (search) p.set("search", search);
       if (activeStatus !== "all") p.set("status", activeStatus);
       return axios.get(`${BASE}/api/invoices?${p}`).then(r => r.data);
@@ -739,7 +740,7 @@ function ClientTab() {
           </tbody>
         </table>
       </div>
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+      <TableFooter page={page} pageSize={pageSize} total={total} label="invoices" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       <NewInvoiceModal open={showNewModal} onClose={() => setShowNewModal(false)} defaultType="client" onSuccess={invalidate} />
       <RecordPaymentModal invoice={paymentTarget} open={!!paymentTarget} onClose={() => setPaymentTarget(null)} onSuccess={invalidate} />
@@ -772,11 +773,12 @@ function AgentTab() {
   const [emailTarget, setEmailTarget] = useState<Invoice | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
 
-  const queryKey = ["invoices-agent", { search, status: activeStatus, page }];
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const queryKey = ["invoices-agent", { search, status: activeStatus, page, pageSize }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), invoiceType: "agent" });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize), invoiceType: "agent" });
       if (search) p.set("search", search);
       if (activeStatus !== "all") p.set("status", activeStatus);
       return axios.get(`${BASE}/api/invoices?${p}`).then(r => r.data);
@@ -841,7 +843,7 @@ function AgentTab() {
           </tbody>
         </table>
       </div>
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+      <TableFooter page={page} pageSize={pageSize} total={total} label="invoices" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       <NewInvoiceModal open={showNewModal} onClose={() => setShowNewModal(false)} defaultType="agent" onSuccess={invalidate} />
       <EmailInvoiceModal invoice={emailTarget} open={!!emailTarget} onClose={() => setEmailTarget(null)} onSuccess={invalidate} />
@@ -873,11 +875,12 @@ function PartnerTab() {
   const [emailTarget, setEmailTarget] = useState<Invoice | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
 
-  const queryKey = ["invoices-partner", { search, status: activeStatus, page }];
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const queryKey = ["invoices-partner", { search, status: activeStatus, page, pageSize }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), invoiceType: "partner" });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize), invoiceType: "partner" });
       if (search) p.set("search", search);
       if (activeStatus !== "all") p.set("status", activeStatus);
       return axios.get(`${BASE}/api/invoices?${p}`).then(r => r.data);
@@ -944,7 +947,7 @@ function PartnerTab() {
           </tbody>
         </table>
       </div>
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+      <TableFooter page={page} pageSize={pageSize} total={total} label="invoices" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       <NewInvoiceModal open={showNewModal} onClose={() => setShowNewModal(false)} defaultType="partner" onSuccess={invalidate} />
       <EmailInvoiceModal invoice={emailTarget} open={!!emailTarget} onClose={() => setEmailTarget(null)} onSuccess={invalidate} />

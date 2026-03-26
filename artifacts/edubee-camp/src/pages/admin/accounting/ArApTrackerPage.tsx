@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { TableFooter } from "@/components/ui/table-footer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -284,6 +285,7 @@ export default function ArApTrackerPage() {
   const [dateTo, setDateTo]             = useState("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [page, setPage]                 = useState(1);
+  const [pageSize, setPageSize]         = useState(20);
 
   const { data: summaryData } = useQuery({
     queryKey: ["ar-summary"],
@@ -293,9 +295,9 @@ export default function ArApTrackerPage() {
   const summary: Summary = summaryData?.summary ?? {};
 
   const { data: arData, isLoading: arLoading } = useQuery({
-    queryKey: ["ar", statusFilter, search, dateFrom, dateTo, page],
+    queryKey: ["ar", statusFilter, search, dateFrom, dateTo, page, pageSize],
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: "20" });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (statusFilter.length) p.set("ar_status", statusFilter.join(","));
       if (search) p.set("search", search);
       if (dateFrom) p.set("date_from", dateFrom);
@@ -306,9 +308,9 @@ export default function ArApTrackerPage() {
   });
 
   const { data: apData, isLoading: apLoading } = useQuery({
-    queryKey: ["ap", statusFilter, search, dateFrom, dateTo, page],
+    queryKey: ["ap", statusFilter, search, dateFrom, dateTo, page, pageSize],
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: "20" });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (statusFilter.length) p.set("ap_status", statusFilter.join(","));
       if (search) p.set("search", search);
       if (dateFrom) p.set("date_from", dateFrom);
@@ -322,7 +324,7 @@ export default function ArApTrackerPage() {
   const sortedAr = useSorted(arRows, sortBy, sortDir);
   const apRows: ApRow[] = apData?.data ?? [];
   const sortedAp = useSorted(apRows, sortBy, sortDir);
-  const totalPages = (tab === "ar" ? arData?.meta?.totalPages : apData?.meta?.totalPages) ?? 1;
+  const total = (tab === "ar" ? arData?.meta?.total : apData?.meta?.total) ?? 0;
 
   function handleTabChange(t: "ar" | "ap" | "schedule") {
     setTab(t);
@@ -567,12 +569,8 @@ export default function ArApTrackerPage() {
       {tab === "schedule" && <PaymentScheduleTab />}
 
       {/* Pagination — hidden for Payment Schedule tab */}
-      {tab !== "schedule" && totalPages > 1 && (
-        <div className="flex items-center justify-end gap-2">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
-          <span className="text-sm text-stone-500">Page {page} / {totalPages}</span>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
-        </div>
+      {tab !== "schedule" && (
+        <TableFooter page={page} pageSize={pageSize} total={total} label="records" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
       )}
     </div>
   );

@@ -5,7 +5,7 @@ import axios from "axios";
 import { format, parseISO, isToday } from "date-fns";
 import { Car, Clock, MapPin, User, ChevronRight, GraduationCap, Briefcase } from "lucide-react";
 import { ListToolbar } from "@/components/ui/list-toolbar";
-import { ListPagination } from "@/components/ui/list-pagination";
+import { TableFooter } from "@/components/ui/table-footer";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -142,6 +142,7 @@ export default function PickupManagement() {
   const [activeStatus, setActiveStatus] = useState("all");
   const [source, setSource]         = useState<Source>("all");
   const [page, setPage]             = useState(1);
+  const [pageSize, setPageSize]     = useState(PAGE_SIZE);
 
   const { data: todayData } = useQuery({
     queryKey: ["pickup-today", source],
@@ -153,9 +154,9 @@ export default function PickupManagement() {
   });
 
   const { data: resp, isLoading } = useQuery({
-    queryKey: ["pickup", { search, status: activeStatus, source, page }],
+    queryKey: ["pickup", { search, status: activeStatus, source, page, pageSize }],
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) p.set("search", search);
       if (activeStatus !== "all") p.set("status", activeStatus);
       if (source !== "all") p.set("source", source);
@@ -267,7 +268,7 @@ export default function PickupManagement() {
         </table>
       </div>
 
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+      <TableFooter page={page} pageSize={pageSize} total={total} label="records" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
     </div>
   );
 }

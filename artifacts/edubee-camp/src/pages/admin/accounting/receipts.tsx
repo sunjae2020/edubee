@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ListToolbar } from "@/components/ui/list-toolbar";
-import { ListPagination } from "@/components/ui/list-pagination";
+import { TableFooter } from "@/components/ui/table-footer";
 import { useToast } from "@/hooks/use-toast";
 import {
   ClipboardList, ChevronRight, Loader2, Mail, Printer, ExternalLink, Plus, Send,
@@ -579,15 +579,16 @@ export default function Receipts() {
   const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [selected, setSelected] = useState<Receipt | null>(null);
   const [emailTarget, setEmailTarget] = useState<Receipt | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
 
-  const queryKey = ["receipts", { search, status: activeStatus, page }];
+  const queryKey = ["receipts", { search, status: activeStatus, page, pageSize }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
-      const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) params.set("search", search);
       if (activeStatus !== "all") params.set("status", activeStatus);
       return axios.get(`${BASE}/api/receipts?${params}`).then(r => r.data);
@@ -653,7 +654,7 @@ export default function Receipts() {
         </table>
       </div>
 
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+      <TableFooter page={page} pageSize={pageSize} total={total} label="receipts" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       <NewReceiptModal open={showNewModal} onClose={() => setShowNewModal(false)} onSuccess={invalidate} />
       <EmailReceiptModal receipt={emailTarget} open={!!emailTarget} onClose={() => setEmailTarget(null)} onSuccess={invalidate} />

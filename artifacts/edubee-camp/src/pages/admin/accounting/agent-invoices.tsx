@@ -4,7 +4,7 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ListToolbar } from "@/components/ui/list-toolbar";
-import { ListPagination } from "@/components/ui/list-pagination";
+import { TableFooter } from "@/components/ui/table-footer";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Send, Download, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
@@ -57,13 +57,14 @@ export default function AgentInvoices() {
   const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [selected, setSelected] = useState<Invoice | null>(null);
 
-  const queryKey = ["invoices-agent", { search, status: activeStatus, page }];
+  const queryKey = ["invoices-agent", { search, status: activeStatus, page, pageSize }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
-      const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), invoiceType: "agent" });
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize), invoiceType: "agent" });
       if (search) params.set("search", search);
       if (activeStatus !== "all") params.set("status", activeStatus);
       return axios.get(`${BASE}/api/invoices?${params}`).then(r => r.data);
@@ -133,7 +134,7 @@ export default function AgentInvoices() {
         </table>
       </div>
 
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+      <TableFooter page={page} pageSize={pageSize} total={total} label="invoices" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       <Sheet open={!!selected} onOpenChange={o => { if (!o) setSelected(null); }}>
         <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto bg-background">

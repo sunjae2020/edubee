@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { NotePanel } from "@/components/shared/NotePanel";
 import { ListToolbar } from "@/components/ui/list-toolbar";
-import { ListPagination } from "@/components/ui/list-pagination";
+import { TableFooter } from "@/components/ui/table-footer";
 import { useToast } from "@/hooks/use-toast";
 import { GraduationCap, Pencil, ChevronRight, FileText, ArrowUpRight, CalendarRange, Banknote } from "lucide-react";
 import { format } from "date-fns";
@@ -116,16 +116,17 @@ export default function InstituteManagement() {
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [selected, setSelected] = useState<Rec | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<Rec>>({});
   const isAdmin = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
 
-  const queryKey = ["services-institute", { search, status: activeStatus, page }];
+  const queryKey = ["services-institute", { search, status: activeStatus, page, pageSize }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
-      const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) params.set("search", search);
       if (activeStatus !== "all") params.set("status", activeStatus);
       return axios.get(`${BASE}/api/services/institute?${params}`).then(r => r.data);
@@ -194,7 +195,7 @@ export default function InstituteManagement() {
         </table>
       </div>
 
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+      <TableFooter page={page} pageSize={pageSize} total={total} label="records" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       <Sheet open={!!selected} onOpenChange={o => { if (!o) { setSelected(null); setEditing(false); } }}>
         <SheetContent className="w-[520px] sm:max-w-[520px] overflow-y-auto bg-background">

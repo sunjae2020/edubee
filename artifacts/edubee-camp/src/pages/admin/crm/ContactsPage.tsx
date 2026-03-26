@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { TableFooter } from "@/components/ui/table-footer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
@@ -116,17 +117,17 @@ export default function ContactsPage() {
   const [statusFilter, setStatusFilter]       = useState("all");
   const [typeFilter, setTypeFilter]   = useState("all");
   const [page, setPage]               = useState(1);
-
+  const [pageSize, setPageSize]       = useState(PAGE_SIZE);
   const [sheetOpen, setSheetOpen]     = useState(false);
   const [editContact, setEditContact] = useState<Contact | null>(null);
   const [form, setForm]               = useState<FormData>({});
 
-  const queryKey = ["crm-contacts", { search, status: statusFilter, accountType: typeFilter, page }];
+  const queryKey = ["crm-contacts", { search, status: statusFilter, accountType: typeFilter, page, pageSize }];
 
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search)                      p.set("search", search);
       if (statusFilter !== "all")      p.set("status", statusFilter);
       if (typeFilter !== "all")        p.set("accountType", typeFilter);
@@ -137,7 +138,6 @@ export default function ContactsPage() {
   const rows: Contact[]   = resp?.data ?? [];
   const sorted = useSorted(rows, sortBy, sortDir);
   const total: number     = resp?.meta?.total ?? rows.length;
-  const totalPages: number = resp?.meta?.totalPages ?? 1;
 
   function openCreate() {
     setEditContact(null);
@@ -302,15 +302,7 @@ export default function ContactsPage() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-stone-500">
-          <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}</span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
-          </div>
-        </div>
-      )}
+      <TableFooter page={page} pageSize={pageSize} total={total} label="contacts" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
