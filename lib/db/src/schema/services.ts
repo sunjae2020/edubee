@@ -216,7 +216,7 @@ export const pickupMgt = pgTable("pickup_mgt", {
 export const tourMgt = pgTable("tour_mgt", {
   id:            uuid("id").primaryKey().defaultRandom(),
   contractId:    uuid("contract_id").references(() => contracts.id),
-  tourCompanyId: uuid("tour_company_id").references(() => users.id),
+  tourCompanyId: uuid("tour_company_id").references(() => accounts.id, { onDelete: "set null" }),
   tourName:      varchar("tour_name",    { length: 255 }),
   tourDate:      date("tour_date"),
   startTime:     varchar("start_time",   { length: 20 }),

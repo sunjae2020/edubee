@@ -75,7 +75,7 @@ export const packages = pgTable("packages", {
 
 export const products = pgTable("products", {
   id: uuid("id").primaryKey().defaultRandom(),
-  providerAccountId: uuid("provider_account_id").references(() => users.id),
+  providerAccountId: uuid("provider_account_id").references(() => accounts.id, { onDelete: "set null" }),
   productName: varchar("product_name", { length: 255 }).notNull(),
   productType: varchar("product_type", { length: 50 }).notNull(),
   description: text("description"),
