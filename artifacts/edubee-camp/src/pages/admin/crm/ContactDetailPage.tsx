@@ -534,6 +534,7 @@ export default function ContactDetailPage() {
         <div className="space-y-6">
           {/* Contact Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <DetailField label="Full Name"       value={contact.fullName} />
             <DetailField label="First Name"      value={contact.firstName} />
             <DetailField label="Last Name"       value={contact.lastName} />
             <DetailField label="Original Name"   value={contact.originalName} />

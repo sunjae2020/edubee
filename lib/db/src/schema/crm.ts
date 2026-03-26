@@ -29,6 +29,7 @@ export const contacts = pgTable("contacts", {
   importantDate1: date("important_date_1"),
   importantDate2: date("important_date_2"),
   originalName:   varchar("original_name", { length: 200 }),
+  fullName:       varchar("full_name",     { length: 200 }),
   description:    text("description"),
   status:         varchar("status",       { length: 20 }).notNull().default("Active"),
   accountType:    varchar("account_type", { length: 50 }).notNull().default("Student"),
