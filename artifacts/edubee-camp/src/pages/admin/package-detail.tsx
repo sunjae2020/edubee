@@ -5,6 +5,7 @@ import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -1068,6 +1069,7 @@ export default function PackageDetail() {
           {rec.updatedAt ? format(new Date(rec.updatedAt), "PPP p") : "—"}
         </DetailRow>
       </DetailSection>
+      <SystemInfoSection owner={null} createdAt={rec.createdAt} updatedAt={rec.updatedAt} />
     </DetailPageLayout>
   );
 }

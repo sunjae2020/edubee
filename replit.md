@@ -92,6 +92,13 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `login.tsx` — Page bg, card bg, form labels, demo account buttons, divider
 - `product-detail.tsx` — All shared components (FL, TextInput, SearchSelect, AsyncSearchSelect, Section, Btn, RadioYesNo, ToggleSwitch, page header, admin info, sticky bottom bar)
 
+## Recent Changes (2026-03-26)
+
+- **SystemInfoSection on All 26 Detail Pages**: Reusable `SystemInfoSection` component (`src/components/shared/SystemInfoSection.tsx`) added to every admin detail page app-wide. Shows Owner (UUID input-style box), Created On, and Modified On. Applied to: hotel-detail, tour-detail, institute-detail (service), pickup-detail, settlement-detail, camp-application-detail, camp-tour-detail, camp-institute-detail, application-detail, user-detail, package-detail, product-group-detail, product-type-detail, product-detail, package-group-detail, camp-contract-detail, crm/ContactDetailPage, crm/LeadDetailPage, crm/AccountDetailPage, crm/ContractDetailPage, services/StudyAbroadDetailPage, services/AccommodationDetailPage, services/GuardianDetailPage, services/InternshipDetailPage, services/OtherServiceDetailPage, services/VisaServiceDetailPage.
+  - Owner field mapping per entity: camp-application/application → `agentId`; CRM Account/Lead → `ownerId`; CRM Contact → `createdBy`; service pages → `clientId ?? null`; user-detail → `userRec.id`; package/product/group pages → `null`.
+  - Timestamp field exceptions: `product-group-detail` and `product-type-detail` use `createdOn`/`modifiedOn`; account page uses `createdOn`/`modifiedOn`.
+- **Camp Applications Table Columns**: Removed "Application #"; added "Package" (after Client) and "Created Date" (after Start Date) columns. API enriched with LEFT JOIN on packages table for `packageName`. Column span updated to 7, min-w to 960px.
+
 ## Recent Changes (2026-03-25)
 
 - **Visa Services Module**: New full-featured service module at `/admin/services/visa`.

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
   ArrowLeft, ExternalLink, FileText, CreditCard, GraduationCap,
@@ -2015,13 +2016,16 @@ export default function ContractDetailPage() {
 
         {/* Tab Content */}
         {activeTab === "overview"     && (
-          <OverviewTab
-            contract={contract}
-            onEditContract={() => setEditingContract(true)}
-            primaryServiceType={primaryServiceType}
-            setPrimaryServiceType={handleSetPrimary}
-            onAddService={openAddService}
-          />
+          <>
+            <OverviewTab
+              contract={contract}
+              onEditContract={() => setEditingContract(true)}
+              primaryServiceType={primaryServiceType}
+              setPrimaryServiceType={handleSetPrimary}
+              onAddService={openAddService}
+            />
+            <SystemInfoSection owner={contract.ownerId ?? null} createdAt={contract.createdAt} updatedAt={contract.updatedAt} />
+          </>
         )}
         {activeTab === "services"     && (
           <ServicesGridTab

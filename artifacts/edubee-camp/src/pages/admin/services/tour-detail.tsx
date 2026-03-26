@@ -5,6 +5,7 @@ import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -118,6 +119,9 @@ export default function TourMgtDetail() {
                 <p className="text-sm text-foreground whitespace-pre-wrap">{rec.tourNotes || <span className="text-muted-foreground/60">—</span>}</p>
               )}
             </DetailSection>
+            <div className="lg:col-span-2">
+              <SystemInfoSection owner={rec.clientId ?? null} createdAt={rec.createdAt} updatedAt={rec.updatedAt} />
+            </div>
           </div>
         </TabsContent>
 

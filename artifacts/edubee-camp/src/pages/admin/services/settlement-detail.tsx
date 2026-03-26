@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
   ArrowLeft, CheckCircle2, Circle, Clock, AlertCircle, Calendar, User,
@@ -599,6 +600,9 @@ export default function SettlementMgtDetail() {
               </div>
             )}
           </InfoCard>
+          <div className="sm:col-span-2">
+            <SystemInfoSection owner={rec.clientId ?? null} createdAt={rec.createdAt} updatedAt={rec.updatedAt} />
+          </div>
         </div>
       )}
 

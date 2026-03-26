@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -240,6 +241,8 @@ export default function ProductGroupDetail() {
           </div>
         )}
       </div>
+
+      <SystemInfoSection owner={null} createdAt={group.createdOn} updatedAt={group.modifiedOn} />
 
       {/* Product Types belonging to this group */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">

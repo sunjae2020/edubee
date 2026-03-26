@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
   ArrowLeft, User, FileText, Briefcase, Folder, Activity,
@@ -565,6 +566,7 @@ export default function ContactDetailPage() {
             accounts={linkedAccounts}
             onRefresh={() => refetch()}
           />
+          <SystemInfoSection owner={contact.createdBy ?? null} createdAt={contact.createdAt} updatedAt={contact.updatedAt} />
         </div>
       )}
 

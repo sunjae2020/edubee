@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import { UserRound, Mail, Phone, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -639,6 +640,9 @@ export default function PackageGroupDetail() {
                 <p className="text-sm text-muted-foreground/60 italic">No coordinator assigned to this program.</p>
               )}
             </DetailSection>
+            <div className="lg:col-span-2">
+              <SystemInfoSection owner={null} createdAt={group.createdAt} updatedAt={group.updatedAt} />
+            </div>
           </div>
         )}
 

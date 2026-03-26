@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -313,6 +314,7 @@ export default function ProductTypeDetail() {
           </div>
         )}
       </div>
+      <SystemInfoSection owner={null} createdAt={productType.createdOn} updatedAt={productType.modifiedOn} />
     </div>
   );
 }

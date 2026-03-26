@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import { ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Folder, Activity, CheckSquare, ExternalLink, Building2, Search, X, Check, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -469,6 +470,7 @@ export default function LeadDetailPage() {
               </a>
             </div>
           )}
+          <SystemInfoSection owner={lead.ownerId ?? null} createdAt={lead.createdAt} updatedAt={lead.updatedAt} />
         </div>
       )}
 

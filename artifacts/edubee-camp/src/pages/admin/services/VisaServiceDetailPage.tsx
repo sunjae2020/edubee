@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
   ArrowLeft, FileText, DollarSign, Pencil, ExternalLink, Stamp, Plus,
@@ -606,7 +607,10 @@ export default function VisaServiceDetailPage() {
       </div>
 
       {tab === "overview"  && (
-        <OverviewTab record={record} onSave={p => patchMutation.mutate(p)} />
+        <>
+          <OverviewTab record={record} onSave={p => patchMutation.mutate(p)} />
+          <SystemInfoSection owner={record.clientId ?? null} createdAt={record.createdAt} updatedAt={record.updatedAt} />
+        </>
       )}
       {tab === "timeline"  && <TimelineTab record={record} onEdit={() => setTab("overview")} />}
       {tab === "documents" && (

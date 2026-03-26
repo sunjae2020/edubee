@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import { ArrowLeft, Plus, HeartPulse, DollarSign, Home, Phone, MapPin, FileText, ExternalLink, Pencil, X } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
@@ -700,6 +701,7 @@ export default function AccommodationDetailPage() {
           />
         </div>
       )}
+      <SystemInfoSection owner={record.clientId ?? null} createdAt={record.createdAt} updatedAt={record.updatedAt} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
   ArrowLeft, Plus, Pencil, Check, AlertTriangle,
@@ -866,11 +867,14 @@ export default function StudyAbroadDetailPage() {
       {/* Tab content */}
       <div>
         {tab === "overview" && (
-          <OverviewTab
-            record={record}
-            onStageChange={stage => patchMutation.mutate({ applicationStage: stage })}
-            onEdit={() => setShowEdit(true)}
-          />
+          <>
+            <OverviewTab
+              record={record}
+              onStageChange={stage => patchMutation.mutate({ applicationStage: stage })}
+              onEdit={() => setShowEdit(true)}
+            />
+            <SystemInfoSection owner={record.clientId ?? null} createdAt={record.createdAt} updatedAt={record.updatedAt} />
+          </>
         )}
         {tab === "schools" && (
           <SchoolsTab

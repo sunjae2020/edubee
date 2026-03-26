@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { format, parseISO } from "date-fns";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import { NotePanel } from "@/components/shared/NotePanel";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -212,6 +213,7 @@ function OverviewTab({ record, canEdit, onSave }: { record: any; canEdit: boolea
           </div>
         )}
       </div>
+      <SystemInfoSection owner={record.id ?? null} createdAt={record.createdAt} updatedAt={record.updatedAt} />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import {
 } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -1227,7 +1228,11 @@ export default function ProductDetail() {
                 </div>
               </Section>
             )}
-
+            {!isNew && rec && (
+              <div className="mt-6">
+                <SystemInfoSection owner={null} createdAt={rec.createdAt} updatedAt={rec.modifiedOn ?? rec.updatedAt} />
+              </div>
+            )}
           </div>
         </div>
       </div>

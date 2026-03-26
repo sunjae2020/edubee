@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -863,6 +864,9 @@ export default function CampContractDetail() {
               <EditableField label="Notes" isEditing={isEditing} value={contract.notes}
                 editValue={getValue("notes")} onEdit={v => setField("notes", v)} />
             </DetailSection>
+            <div className="lg:col-span-2">
+              <SystemInfoSection owner={contract.agentId ?? null} createdAt={contract.createdAt} updatedAt={contract.updatedAt} />
+            </div>
           </div>
         )}
 

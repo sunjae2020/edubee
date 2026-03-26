@@ -5,6 +5,7 @@ import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -188,6 +189,9 @@ export default function PickupMgtDetail() {
               </p>
             )}
           </DetailSection>
+          <div className="lg:col-span-2">
+            <SystemInfoSection owner={rec.clientId ?? null} createdAt={rec.createdAt} updatedAt={rec.updatedAt} />
+          </div>
         </div>
       )}
 
