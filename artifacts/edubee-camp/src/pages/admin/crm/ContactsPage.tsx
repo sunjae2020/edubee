@@ -236,8 +236,6 @@ export default function ContactsPage() {
               </th>
               <SortableTh col="fullName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Full Name</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Original Name</th>
-              <SortableTh col="email" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Email</SortableTh>
-              <SortableTh col="mobile" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Mobile</SortableTh>
               <SortableTh col="nationality" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Nationality</SortableTh>
               <SortableTh col="primaryAccountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Account</SortableTh>
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
@@ -246,10 +244,10 @@ export default function ContactsPage() {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
             )}
             {sorted.map(c => {
               const avatarName = `${c.firstName} ${c.lastName}`;
@@ -271,8 +269,6 @@ export default function ContactsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-stone-600">{c.originalName ?? "—"}</td>
-                  <td className="px-4 py-3 text-stone-600">{c.email ?? "—"}</td>
-                  <td className="px-4 py-3 text-stone-600">{c.mobile ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{c.nationality ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{c.accountType}</td>
                   <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
