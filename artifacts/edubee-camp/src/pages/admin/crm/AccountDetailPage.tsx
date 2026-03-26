@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
@@ -206,6 +206,7 @@ function ContactLookup({ value, onChange, placeholder }: {
   const [mode, setMode]     = useState<"search" | "create">("search");
   const [creating, setCreating] = useState(false);
   const [cform, setCform]   = useState(EMPTY_CFORM);
+  const containerRef        = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
 
   const { data } = useQuery({
@@ -264,15 +265,20 @@ function ContactLookup({ value, onChange, placeholder }: {
   }
 
   const results: { id: string; firstName?: string; lastName?: string; fullName?: string | null; email?: string | null; mobile?: string | null }[] = Array.isArray(data) ? data : [];
-  const showDropdown = open;
+
+  function handleContainerBlur(e: React.FocusEvent<HTMLDivElement>) {
+    if (containerRef.current && !containerRef.current.contains(e.relatedTarget as Node)) {
+      setOpen(false);
+      setMode("search");
+    }
+  }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef} onBlur={handleContainerBlur}>
       <Input
         value={open ? search : displayName}
         placeholder={placeholder ?? "Search contacts…"}
         onFocus={() => { setOpen(true); setMode("search"); setSearch(""); }}
-        onBlur={() => setTimeout(() => { setOpen(false); setMode("search"); }, 200)}
         onChange={e => setSearch(e.target.value)}
         className="h-10 text-sm border-[#E8E6E2] focus:border-[#F5821F] pr-8"
       />
@@ -286,7 +292,7 @@ function ContactLookup({ value, onChange, placeholder }: {
         </button>
       )}
 
-      {showDropdown && (
+      {open && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-xl shadow-xl">
 
           {/* ── Search mode ── */}
@@ -316,7 +322,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                 <button
                   type="button"
                   className="w-full px-3 py-2.5 text-left text-sm flex items-center gap-2 text-emerald-600 hover:bg-emerald-50 border-t border-[#F0EDE8] transition-colors font-medium rounded-b-xl"
-                  onMouseDown={e => { e.preventDefault(); openCreate(); }}
+                  onClick={openCreate}
                 >
                   <UserPlus className="w-4 h-4 shrink-0" />
                   Create &ldquo;{search.trim()}&rdquo; as new contact
@@ -402,7 +408,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                 <button
                   type="button"
                   className="flex-1 h-9 rounded-lg border border-[#E8E6E2] text-sm text-stone-600 hover:bg-stone-50 transition-colors font-medium"
-                  onMouseDown={e => { e.preventDefault(); backToSearch(); }}
+                  onClick={backToSearch}
                 >
                   Back to search
                 </button>
@@ -411,7 +417,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                   disabled={!cform.lastName.trim() || creating}
                   className="flex-1 h-9 rounded-lg text-sm text-white font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
                   style={{ background: "#F5821F" }}
-                  onMouseDown={e => { e.preventDefault(); handleCreate(); }}
+                  onClick={handleCreate}
                 >
                   {creating
                     ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Creating…</>
