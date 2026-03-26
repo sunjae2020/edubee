@@ -250,23 +250,19 @@ export default function ContactsPage() {
               <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
             )}
             {sorted.map(c => {
-              const avatarName = `${c.firstName} ${c.lastName}`;
-              const displayName = c.fullName || avatarName;
+              const displayName = c.fullName || `${c.firstName} ${c.lastName}`.trim();
               return (
                 <tr key={c.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                   <td className="px-4 py-3">
                     <input type="checkbox" className="rounded" />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={avatarName} />
-                      <button
-                        onClick={() => navigate(`/admin/crm/contacts/${c.id}`)}
-                        className="font-medium text-stone-800 hover:text-[#F5821F] transition-colors text-left"
-                      >
-                        {displayName}
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => navigate(`/admin/crm/contacts/${c.id}`)}
+                      className="font-medium text-stone-800 hover:text-[#F5821F] transition-colors text-left"
+                    >
+                      {displayName}
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-stone-600">{c.originalName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{c.nationality ?? "—"}</td>
