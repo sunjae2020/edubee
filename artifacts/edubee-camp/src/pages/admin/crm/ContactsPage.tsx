@@ -326,10 +326,23 @@ export default function ContactsPage() {
                 <SelectField value={form.title} onChange={v => patch("title", v)} options={TITLES} placeholder="Title" />
               </FormField>
               <FormField label="First Name" required>
-                <Input value={form.firstName ?? ""} onChange={e => patch("firstName", e.target.value)} className="h-9 text-sm" placeholder="John" />
+                <Input
+                  value={form.firstName ?? ""}
+                  onChange={e => {
+                    const v = e.target.value;
+                    patch("firstName", v.length > 0 ? v.charAt(0).toUpperCase() + v.slice(1) : v);
+                  }}
+                  className="h-9 text-sm"
+                  placeholder="Minjun"
+                />
               </FormField>
               <FormField label="Last Name" required>
-                <Input value={form.lastName ?? ""} onChange={e => patch("lastName", e.target.value)} className="h-9 text-sm" placeholder="Doe" />
+                <Input
+                  value={form.lastName ?? ""}
+                  onChange={e => patch("lastName", e.target.value.toUpperCase())}
+                  className="h-9 text-sm uppercase"
+                  placeholder="KIM"
+                />
               </FormField>
             </div>
 

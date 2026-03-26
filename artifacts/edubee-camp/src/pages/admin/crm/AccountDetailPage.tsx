@@ -330,7 +330,10 @@ function ContactLookup({ value, onChange, placeholder }: {
                 <Label className="text-xs text-stone-500 mb-1 block">First Name</Label>
                 <Input
                   value={cform.firstName}
-                  onChange={e => setCform(f => ({ ...f, firstName: e.target.value }))}
+                  onChange={e => {
+                    const v = e.target.value;
+                    setCform(f => ({ ...f, firstName: v.length > 0 ? v.charAt(0).toUpperCase() + v.slice(1) : v }));
+                  }}
                   placeholder="Minjun"
                   className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
                 />
