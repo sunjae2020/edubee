@@ -32,19 +32,14 @@ interface ProductType {
 const SERVICE_MODULE_OPTIONS = [
   { value: "__none",        label: "— None —"              },
   { value: "study_abroad",  label: "Study Abroad"          },
-  { value: "pickup",        label: "Pickup"                 },
-  { value: "accommodation", label: "Accommodation"         },
+  { value: "accommodation", label: "Accommodation"          },
   { value: "internship",    label: "Internship"             },
-  { value: "settlement",    label: "Settlement"             },
   { value: "guardian",      label: "Guardian"               },
-  { value: "camp",          label: "Camp"                   },
-  { value: "hotel",         label: "Hotel / Accommodation" },
-  { value: "tour",          label: "Tour"                   },
-  { value: "health_exam",   label: "Health Examination"    },
-  { value: "insurance",     label: "Insurance"              },
-  { value: "migration",     label: "Migration"              },
-  { value: "visa",          label: "Visa"                   },
-  { value: "other",         label: "Other"                  },
+  { value: "settlement",    label: "Settlement"             },
+  { value: "other",         label: "Other Services"         },
+  { value: "visa",          label: "Visa Services"          },
+  { value: "pickup",        label: "Pickup / Transfer"      },
+  { value: "tour",          label: "Tour Management"        },
 ];
 
 function serviceLabel(v?: string | null) {

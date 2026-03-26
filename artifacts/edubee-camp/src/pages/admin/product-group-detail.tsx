@@ -36,12 +36,14 @@ interface ProductType {
 
 const SERVICE_MODULE_LABELS: Record<string, string> = {
   study_abroad:   "Study Abroad",
-  pickup:         "Pickup",
   accommodation:  "Accommodation",
   internship:     "Internship",
-  settlement:     "Settlement",
   guardian:       "Guardian",
-  camp:           "Camp",
+  settlement:     "Settlement",
+  other:          "Other Services",
+  visa:           "Visa Services",
+  pickup:         "Pickup / Transfer",
+  tour:           "Tour Management",
 };
 
 function StatusBadge({ status }: { status: string }) {
