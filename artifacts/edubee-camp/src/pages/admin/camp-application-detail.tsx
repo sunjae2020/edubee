@@ -282,9 +282,13 @@ export default function CampApplicationDetail() {
   const [editParticipant, setEditParticipant] = useState<any | null>(null);
   const [addParticipant,  setAddParticipant]  = useState(false);
 
-  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["camp-application-detail-page", id],
-    queryFn: () => axios.get(`${BASE}/api/camp-applications/${id}`).then(r => r.data),
+    queryFn: async () => {
+      const url = `${BASE}/api/camp-applications/${id}`;
+      const res = await axios.get(url);
+      return res.data;
+    },
     enabled: !!id,
     retry: 2,
     retryDelay: 800,
@@ -356,16 +360,30 @@ export default function CampApplicationDetail() {
   }
 
   if (isError) {
+    const errMsg = (error as any)?.response?.data?.message
+      || (error as any)?.response?.data?.error
+      || (error as any)?.message
+      || String(error);
+    const errStatus = (error as any)?.response?.status;
+    const reqUrl = `${BASE}/api/camp-applications/${id}`;
     return (
-      <div className="m-6 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-5 py-4 text-sm text-[#DC2626] flex items-center gap-4">
-        <span>Failed to load camp application.</span>
-        <button
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="ml-auto shrink-0 rounded-md bg-[#DC2626] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#b91c1c] disabled:opacity-50"
-        >
-          {isFetching ? "Retrying…" : "Try Again"}
-        </button>
+      <div className="m-6 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-4 text-sm text-[#DC2626] space-y-2">
+        <div className="flex items-center gap-4">
+          <span className="font-medium">Failed to load camp application.</span>
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="ml-auto shrink-0 rounded-md bg-[#DC2626] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#b91c1c] disabled:opacity-50"
+          >
+            {isFetching ? "Retrying…" : "Try Again"}
+          </button>
+        </div>
+        <div className="text-xs text-[#991B1B] font-mono break-all space-y-0.5">
+          {errStatus && <div>HTTP {errStatus}</div>}
+          <div>{errMsg}</div>
+          <div className="text-[#7F1D1D] opacity-70">URL: {reqUrl}</div>
+          <div className="text-[#7F1D1D] opacity-70">ID: {id ?? "(none)"}</div>
+        </div>
       </div>
     );
   }
