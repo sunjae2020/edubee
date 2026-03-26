@@ -50,6 +50,7 @@ import journalEntriesRouter from "./journal-entries.js";
 import taxInvoicesRouter from "./tax-invoices.js";
 import statementsRouter from "./statements.js";
 import menuAllocationRouter from "./menu-allocation.js";
+import accountServiceProfilesRouter from "./account-service-profiles.js";
 
 const router: IRouter = Router();
 
@@ -104,5 +105,6 @@ router.use(journalEntriesRouter);
 router.use(taxInvoicesRouter);
 router.use(statementsRouter);
 router.use(menuAllocationRouter);
+router.use(accountServiceProfilesRouter);
 
 export default router;
