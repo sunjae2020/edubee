@@ -353,7 +353,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                   <Input
                     autoFocus
                     value={cform.firstName}
-                    onChange={e => setCform(f => ({ ...f, firstName: e.target.value }))}
+                    onChange={e => { const v = e.target.value; setCform(f => ({ ...f, firstName: v.length > 0 ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : v })); }}
                     placeholder="e.g. Minjun"
                     className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
                   />
@@ -379,7 +379,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                   </Label>
                   <Input
                     value={cform.englishName}
-                    onChange={e => setCform(f => ({ ...f, englishName: e.target.value }))}
+                    onChange={e => { const v = e.target.value; setCform(f => ({ ...f, englishName: v.length > 0 ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : v })); }}
                     placeholder="e.g. Alex"
                     className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
                   />
