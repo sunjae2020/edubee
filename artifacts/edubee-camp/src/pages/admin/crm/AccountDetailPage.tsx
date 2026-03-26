@@ -180,11 +180,21 @@ function Toggle({ label, checked, onChange, description }: {
   );
 }
 
+/** Parse a raw search string into { firstName, lastName }.
+ *  Rule: last whitespace-separated token → lastName, everything before → firstName. */
+function parseContactName(raw: string): { firstName: string; lastName: string } {
+  const parts = raw.trim().split(/\s+/);
+  if (parts.length === 1) return { firstName: "", lastName: parts[0] };
+  return { firstName: parts.slice(0, -1).join(" "), lastName: parts[parts.length - 1] };
+}
+
 function ContactLookup({ value, onChange, placeholder }: {
   value: string; onChange: (id: string, contact?: { email?: string | null; mobile?: string | null; firstName?: string; lastName?: string; dob?: string | null }) => void; placeholder?: string;
 }) {
-  const [search, setSearch] = useState("");
-  const [open, setOpen]     = useState(false);
+  const [search, setSearch]       = useState("");
+  const [open, setOpen]           = useState(false);
+  const [creating, setCreating]   = useState(false);
+  const qc = useQueryClient();
 
   const { data } = useQuery({
     queryKey: ["contacts-lookup", search],
@@ -200,6 +210,38 @@ function ContactLookup({ value, onChange, placeholder }: {
 
   const displayName = selected ? `${selected.firstName} ${selected.lastName}` : "";
 
+  // Preview of the name that will be created (LASTNAME_Firstname)
+  const parsed = search.trim().length > 0 ? parseContactName(search) : null;
+  const createLabel = parsed
+    ? `${(parsed.lastName).toUpperCase()}_${parsed.firstName || ""}`.replace(/_$/, "")
+    : "";
+
+  async function handleCreate() {
+    if (!parsed || creating) return;
+    setCreating(true);
+    try {
+      const res = await axios.post(`${BASE}/api/crm/contacts`, {
+        firstName: parsed.firstName,
+        lastName:  parsed.lastName,
+        status:    "Active",
+        accountType: "Student",
+      });
+      const newContact = res.data;
+      qc.invalidateQueries({ queryKey: ["contacts-lookup"] });
+      qc.setQueryData(["contact-single", newContact.id], newContact);
+      onChange(newContact.id, newContact);
+      setOpen(false);
+      setSearch("");
+    } catch {
+      // silent — user will retry
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  const results: { id: string; firstName: string; lastName: string; email?: string | null; mobile?: string | null }[] = Array.isArray(data) ? data : [];
+  const showDropdown = open && (results.length > 0 || (search.trim().length > 0));
+
   return (
     <div className="relative">
       <Input
@@ -210,9 +252,9 @@ function ContactLookup({ value, onChange, placeholder }: {
         onChange={e => setSearch(e.target.value)}
         className="h-10 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
       />
-      {open && Array.isArray(data) && data.length > 0 && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-          {data.map((c: { id: string; firstName: string; lastName: string; email?: string | null; mobile?: string | null }) => (
+      {showDropdown && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-52 overflow-y-auto">
+          {results.map(c => (
             <button
               key={c.id}
               type="button"
@@ -226,6 +268,20 @@ function ContactLookup({ value, onChange, placeholder }: {
               {c.email && <span className="ml-2 text-xs text-stone-400">{c.email}</span>}
             </button>
           ))}
+          {/* Inline create option — always shown when there is search text */}
+          {search.trim().length > 0 && (
+            <button
+              type="button"
+              disabled={creating}
+              className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 text-[#F5821F] hover:bg-[#FEF0E3] border-t border-[#F0EDE8] transition-colors disabled:opacity-60"
+              onMouseDown={handleCreate}
+            >
+              <Plus className="w-3.5 h-3.5 shrink-0" />
+              <span>
+                {creating ? "Creating…" : <>새 Contact 생성: <strong>{createLabel}</strong></>}
+              </span>
+            </button>
+          )}
         </div>
       )}
     </div>
