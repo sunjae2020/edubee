@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
   ArrowLeft, Save, Building2, Users, FileText, Briefcase,
@@ -1092,9 +1091,6 @@ export default function AccountDetailPage() {
                   )}
                 </Section>
               </div>
-              {!isNew && account && (
-                <SystemInfoSection owner={account.ownerId ?? null} createdAt={account.createdOn} updatedAt={account.modifiedOn} />
-              )}
             </>
           )}
 
