@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
-import { ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Folder, Activity, CheckSquare, ExternalLink, Building2, Search, X, Check, Pencil } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Activity, ExternalLink, Building2, Search, X, Check, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,8 +36,6 @@ const CHANNELS = ["Call", "Email", "SMS", "Meeting", "WhatsApp", "LINE", "KakaoT
 const TABS = [
   { key: "details",  label: "Details",           icon: FileText },
   { key: "activity", label: "Activity Timeline", icon: Activity },
-  { key: "tasks",    label: "Tasks",             icon: CheckSquare },
-  { key: "files",    label: "Files",             icon: Folder },
 ];
 
 interface ActivityRecord {
@@ -543,11 +541,6 @@ export default function LeadDetailPage() {
         </div>
       )}
 
-      {(tab === "tasks" || tab === "files") && (
-        <div className="flex items-center justify-center h-40 text-stone-400 text-sm">
-          {TABS.find(t => t.key === tab)?.label} — coming soon
-        </div>
-      )}
     </div>
   );
 }
