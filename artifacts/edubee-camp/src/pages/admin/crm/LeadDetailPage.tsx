@@ -5,7 +5,7 @@ import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
   ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Activity,
-  ExternalLink, Building2, Search, X, Check, Save, RotateCcw, Loader2,
+  ExternalLink, Building2, Search, X, Check, Save, RotateCcw, Loader2, UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { NameFieldGroup } from "@/components/common/NameFieldGroup";
+import { useAuth } from "@/hooks/use-auth";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -52,6 +53,8 @@ const TABS = [
 ];
 
 const INPUT_CLS = "h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 focus-visible:ring-offset-0";
+
+const ACCOUNT_CREATE_TYPES = ["Client", "Agent", "Institute", "Hotel", "Tour Operator", "Pickup", "Other"];
 
 interface ActivityRecord {
   id: string;
@@ -147,119 +150,231 @@ function AccountLookupField({
   onSave: (accountId: string | null, accountName: string | null) => void;
   isSaving: boolean;
 }) {
+  const { user }  = useAuth();
+  const { toast } = useToast();
+  const qc        = useQueryClient();
+
   const [editing, setEditing]   = useState(false);
   const [query, setQuery]       = useState("");
   const [selected, setSelected] = useState<AccountOption | null>(
     currentId && currentName ? { id: currentId, name: currentName } : null
   );
   const [pending, setPending]   = useState<AccountOption | null>(null);
-  const inputRef                = useRef<HTMLInputElement>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName,  setNewName]  = useState("");
+  const [newType,  setNewType]  = useState("Client");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [creating, setCreating] = useState(false);
+  const inputRef  = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSelected(currentId && currentName ? { id: currentId, name: currentName } : null);
   }, [currentId, currentName]);
 
-  const { data: results = [], isFetching } = useQuery<AccountOption[]>({
-    queryKey: ["account-search", query],
+  const { data: results = [] } = useQuery<AccountOption[]>({
+    queryKey: ["account-search-lead", query],
     queryFn: () =>
       axios.get(`${BASE}/api/crm/accounts?search=${encodeURIComponent(query)}&limit=20`)
         .then(r => r.data.data ?? []),
-    enabled: editing && query.length >= 1,
+    enabled: editing && query.length >= 1 && !showCreate,
     staleTime: 10_000,
   });
+
+  // Click-outside to close
+  useEffect(() => {
+    if (!editing) return;
+    function handler(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        if (!showCreate) cancel();
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [editing, showCreate]);
+
+  const resetForm = () => { setNewName(""); setNewType("Client"); setNewEmail(""); setNewPhone(""); };
 
   const startEdit = () => {
     setPending(selected);
     setQuery(selected?.name ?? "");
     setEditing(true);
+    setShowCreate(false);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
-  const cancel = () => { setPending(null); setQuery(""); setEditing(false); };
-  const pick   = (acc: AccountOption) => { setPending(acc); setQuery(acc.name); };
-  const save   = () => {
-    setSelected(pending);
-    onSave(pending?.id ?? null, pending?.name ?? null);
-    setEditing(false);
-    setQuery("");
-    setPending(null);
+
+  const cancel = () => {
+    setPending(null); setQuery(""); setEditing(false);
+    setShowCreate(false); resetForm();
+  };
+
+  const pick = (acc: AccountOption) => {
+    setSelected(acc);
+    onSave(acc.id, acc.name);
+    setEditing(false); setQuery(""); setPending(null); setShowCreate(false);
+  };
+
+  const clear = () => {
+    setSelected(null); onSave(null, null);
+    setEditing(false); setQuery(""); setPending(null); setShowCreate(false);
+  };
+
+  const openCreate = () => { setNewName(query); setShowCreate(true); };
+
+  const handleCreate = async () => {
+    if (!newName.trim()) {
+      toast({ title: "Account name is required", variant: "destructive" }); return;
+    }
+    if (!user?.id) {
+      toast({ title: "User session not found", variant: "destructive" }); return;
+    }
+    setCreating(true);
+    try {
+      const res = await axios.post(`${BASE}/api/crm/accounts`, {
+        name:        newName.trim(),
+        accountType: newType,
+        email:       newEmail.trim() || undefined,
+        phoneNumber: newPhone.trim() || undefined,
+        ownerId:     user.id,
+        manualInput: true,
+        status:      "Active",
+      });
+      const created = res.data;
+      toast({ title: "Account created", description: `"${created.name}" has been added.` });
+      qc.invalidateQueries({ queryKey: ["account-search-lead"] });
+      pick({ id: created.id, name: created.name, accountType: created.accountType });
+      resetForm();
+    } catch (err: any) {
+      toast({ title: "Failed to create account", description: err?.response?.data?.error ?? err.message, variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
   };
 
   if (!editing) {
     return (
       <div className="flex items-center gap-2 flex-wrap">
         {selected ? (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/30">
-            <Building2 size={12} className="text-[#F5821F] shrink-0" />
-            <span className="text-sm font-medium text-[#1C1917]">{selected.name}</span>
-          </div>
+          <>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/30">
+              <Building2 size={12} className="text-[#F5821F] shrink-0" />
+              <span className="text-sm font-medium text-[#1C1917]">{selected.name}</span>
+            </div>
+            <button onClick={startEdit} className="text-xs text-[#F5821F] hover:underline font-medium">Change</button>
+            <button onClick={clear} className="text-stone-400 hover:text-red-500"><X size={13} /></button>
+          </>
         ) : (
-          <span className="text-sm text-stone-400">—</span>
+          <button
+            onClick={startEdit}
+            className="w-full text-left text-sm flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-stone-300 hover:border-[#F5821F] hover:bg-[#FEF0E3]/40 transition-colors text-stone-400 hover:text-stone-700"
+          >
+            <Search size={13} className="text-[#F5821F]" />
+            Search or create account…
+          </button>
         )}
-        <button onClick={startEdit}
-          className="text-xs text-[#F5821F] hover:underline font-medium transition-colors">
-          {selected ? "Change" : "Link account"}
-        </button>
       </div>
     );
   }
 
-  const showDropdown = editing && query.length >= 1 && (isFetching || results.length > 0);
-
   return (
-    <div className="space-y-2">
-      <div className="relative max-w-md">
-        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
-        <input
-          ref={inputRef}
-          value={query}
-          onChange={e => { setQuery(e.target.value); if (pending?.name !== e.target.value) setPending(null); }}
-          placeholder="Search accounts by name…"
-          className="w-full pl-8 pr-8 h-9 text-sm border border-[#F5821F] rounded-lg outline-none shadow-[0_0_0_3px_rgba(245,130,31,0.15)] bg-white text-[#1C1917]"
-        />
-        {query && (
-          <button onClick={() => { setPending(null); setQuery(""); }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
-            <X size={13} />
-          </button>
-        )}
-        {showDropdown && (
-          <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-white border border-[#E8E6E2] rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
-            {isFetching && !results.length ? (
-              <div className="px-4 py-3 text-sm text-stone-400">Searching…</div>
-            ) : results.length === 0 ? (
-              <div className="px-4 py-3 text-sm text-stone-400">No accounts found</div>
-            ) : results.map(acc => {
-              const isSel = pending?.id === acc.id;
-              return (
-                <button key={acc.id} onClick={() => pick(acc)}
-                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-[#FEF0E3] transition-colors ${isSel ? "bg-[#FEF0E3]" : ""}`}>
-                  <Building2 size={13} className="text-[#F5821F] shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#1C1917] truncate">{acc.name}</p>
-                    {acc.accountType && <p className="text-xs text-stone-400">{acc.accountType}</p>}
-                  </div>
-                  {isSel && <Check size={13} className="text-[#F5821F] shrink-0" />}
-                </button>
-              );
-            })}
-          </div>
-        )}
+    <div ref={dropdownRef} className="relative">
+      {/* Search row */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+          <Input
+            ref={inputRef}
+            value={query}
+            onChange={e => { setQuery(e.target.value); setShowCreate(false); }}
+            placeholder="Search account name…"
+            className="h-9 text-sm pl-8 border-[#F5821F] shadow-[0_0_0_3px_rgba(245,130,31,0.12)]"
+          />
+        </div>
+        <button onClick={cancel} className="text-stone-400 hover:text-stone-600" title="Cancel">
+          <X size={16} />
+        </button>
       </div>
-      {pending && (
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/30 w-fit">
-          <Building2 size={12} className="text-[#F5821F]" />
-          <span className="text-sm font-medium text-[#1C1917]">{pending.name}</span>
+
+      {/* Dropdown */}
+      {(results.length > 0 || query.length >= 1) && !showCreate && (
+        <div className="absolute top-10 left-0 z-50 bg-white border border-[#E8E6E2] rounded-xl shadow-lg w-full max-h-60 overflow-y-auto">
+          {results.map(acc => (
+            <button key={acc.id} onClick={() => pick(acc)}
+              className="w-full text-left px-3 py-2.5 text-sm hover:bg-[#FEF0E3] flex items-center gap-2 border-b border-stone-50 last:border-0">
+              <Building2 size={13} className="text-stone-400 shrink-0" />
+              <span className="flex-1 truncate">{acc.name}</span>
+              {acc.accountType && <span className="text-xs text-stone-400 shrink-0">({acc.accountType})</span>}
+            </button>
+          ))}
+          {/* Create new option */}
+          <button onClick={openCreate}
+            className="w-full text-left px-3 py-2.5 text-sm hover:bg-green-50 flex items-center gap-2 border-t border-stone-100 text-green-700 font-medium">
+            <UserPlus size={13} className="shrink-0" />
+            {query.trim() ? `Create "${query.trim()}"` : "Create new account…"}
+          </button>
         </div>
       )}
-      <div className="flex items-center gap-2">
-        <Button size="sm" className="h-7 px-3 bg-[#F5821F] hover:bg-[#D96A0A] text-white text-xs"
-          onClick={save} disabled={isSaving}>
-          {isSaving ? "Saving…" : "Save"}
-        </Button>
-        <Button size="sm" variant="ghost" className="h-7 px-3 text-xs" onClick={cancel}>
-          Cancel
-        </Button>
-      </div>
+
+      {/* Inline create form */}
+      {showCreate && (
+        <div className="mt-2 border border-green-200 rounded-xl bg-green-50 p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <UserPlus size={14} className="text-green-700" />
+            <span className="text-sm font-semibold text-green-800">New Account</span>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1 block">
+              Name <span className="text-red-500">*</span>
+            </label>
+            <Input value={newName} onChange={e => setNewName(e.target.value)}
+              placeholder="e.g. John Smith" className="h-8 text-sm bg-white" autoFocus />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1 block">
+              Account Type <span className="text-red-500">*</span>
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {ACCOUNT_CREATE_TYPES.map(t => (
+                <button key={t} type="button" onClick={() => setNewType(t)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    newType === t
+                      ? "bg-[#F5821F] text-white border-[#F5821F]"
+                      : "bg-white text-stone-600 border-stone-200 hover:border-orange-300"
+                  }`}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1 block">Email</label>
+              <Input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)}
+                placeholder="email@example.com" className="h-8 text-sm bg-white" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1 block">Phone</label>
+              <Input value={newPhone} onChange={e => setNewPhone(e.target.value)}
+                placeholder="+61 4xx xxx xxx" className="h-8 text-sm bg-white" />
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <button onClick={() => setShowCreate(false)}
+              className="flex-1 h-8 rounded-lg border border-stone-300 text-sm text-stone-600 hover:bg-stone-50 transition-colors">
+              Back to search
+            </button>
+            <button onClick={handleCreate} disabled={creating || !newName.trim()}
+              className="flex-1 h-8 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50 bg-[#F5821F] hover:bg-[#D96A0A]">
+              {creating ? "Creating…" : "Create & Select"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
