@@ -38,6 +38,7 @@ interface Contact {
   importantDate1?: string | null;
   importantDate2?: string | null;
   originalName?: string | null;
+  fullName?: string | null;
   description?: string | null;
   status: string;
   accountType: string;
@@ -233,7 +234,8 @@ export default function ContactsPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-8">
                 <input type="checkbox" className="rounded" />
               </th>
-              <SortableTh col="firstName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Name</SortableTh>
+              <SortableTh col="fullName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Full Name</SortableTh>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Original Name</th>
               <SortableTh col="email" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Email</SortableTh>
               <SortableTh col="mobile" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Mobile</SortableTh>
               <SortableTh col="nationality" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Nationality</SortableTh>
@@ -244,13 +246,14 @@ export default function ContactsPage() {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
+              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
             )}
             {sorted.map(c => {
-              const fullName = `${c.firstName} ${c.lastName}`;
+              const avatarName = `${c.firstName} ${c.lastName}`;
+              const displayName = c.fullName || avatarName;
               return (
                 <tr key={c.id} className="hover:bg-stone-50 transition-colors">
                   <td className="px-4 py-3">
@@ -258,15 +261,16 @@ export default function ContactsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <Avatar name={fullName} />
+                      <Avatar name={avatarName} />
                       <button
                         onClick={() => navigate(`/admin/crm/contacts/${c.id}`)}
                         className="font-medium text-stone-800 hover:text-[#F5821F] transition-colors text-left"
                       >
-                        {fullName}
+                        {displayName}
                       </button>
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-stone-600">{c.originalName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{c.email ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{c.mobile ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{c.nationality ?? "—"}</td>
