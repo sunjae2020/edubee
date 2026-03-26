@@ -59,6 +59,7 @@ interface Lead {
   contactId?: string | null;
   accountId?: string | null;
   createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 interface FormData {
@@ -307,9 +308,9 @@ export default function CrmLeadsPage() {
                   <SortableTh col="leadRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Lead Ref</SortableTh>
                   <SortableTh col="contactName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
                   <SortableTh col="inquiryType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Inquiry Type</SortableTh>
-                  <SortableTh col="budget" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Budget (AUD)</SortableTh>
-                  <SortableTh col="expectedStart" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Expected Start</SortableTh>
                   <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
+                  <SortableTh col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Created</SortableTh>
+                  <SortableTh col="updatedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Modified</SortableTh>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Assigned Staff</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
                 </tr>
@@ -334,13 +335,13 @@ export default function CrmLeadsPage() {
                       </button>
                     </td>
                     <td className="px-4 py-3 text-stone-600">{l.inquiryType ?? "—"}</td>
-                    <td className="px-4 py-3 text-stone-600">
-                      {l.budget ? `A$${Number(l.budget).toLocaleString("en-AU")}` : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-stone-600">
-                      {l.expectedStartDate ? format(new Date(l.expectedStartDate), "MMM d, yyyy") : "—"}
-                    </td>
                     <td className="px-4 py-3"><StatusBadge status={l.status} /></td>
+                    <td className="px-4 py-3 text-xs text-stone-500 whitespace-nowrap">
+                      {l.createdAt ? format(new Date(l.createdAt), "MMM d, yyyy") : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-stone-500 whitespace-nowrap">
+                      {l.updatedAt ? format(new Date(l.updatedAt), "MMM d, yyyy") : "—"}
+                    </td>
                     <td className="px-4 py-3 text-sm text-stone-600">{l.assignedStaffName ?? "—"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
