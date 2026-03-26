@@ -314,7 +314,7 @@ export default function CrmLeadsPage() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-100">
+              <tbody>
                 {tableLoading && (
                   <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
                 )}
@@ -322,7 +322,7 @@ export default function CrmLeadsPage() {
                   <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No leads found</td></tr>
                 )}
                 {sorted.map(l => (
-                  <tr key={l.id} className="hover:bg-stone-50 transition-colors">
+                  <tr key={l.id} className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer">
                     <td className="px-4 py-3 font-mono text-xs text-stone-500">{l.leadRefNumber ?? "—"}</td>
                     <td className="px-4 py-3">
                       <button onClick={() => navigate(`/admin/crm/leads/${l.id}`)} className="text-left w-full">
