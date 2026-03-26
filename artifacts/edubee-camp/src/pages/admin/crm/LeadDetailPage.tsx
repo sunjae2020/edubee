@@ -3,13 +3,15 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
-import { ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Activity, ExternalLink, Building2, Search, X, Check, Pencil } from "lucide-react";
+import {
+  ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Activity,
+  ExternalLink, Building2, Search, X, Check, Save, RotateCcw, Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { NameFieldGroup } from "@/components/common/NameFieldGroup";
@@ -35,10 +37,21 @@ const CHANNEL_ICONS: Record<string, React.ElementType> = {
 };
 const CHANNELS = ["Call", "Email", "SMS", "Meeting", "WhatsApp", "LINE", "KakaoTalk"];
 
+const INQUIRY_TYPES = [
+  "General Enquiry", "Camp Program", "Language School",
+  "Accommodation", "Airport Transfer", "Insurance", "Visa", "Other",
+];
+const SOURCES = [
+  "Website", "Referral", "Social Media", "Email", "Phone",
+  "Agent", "Camp Application", "Walk-in", "Other",
+];
+
 const TABS = [
   { key: "details",  label: "Details",           icon: FileText },
   { key: "activity", label: "Activity Timeline", icon: Activity },
 ];
+
+const INPUT_CLS = "h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 focus-visible:ring-offset-0";
 
 interface ActivityRecord {
   id: string;
@@ -89,11 +102,29 @@ interface Lead {
 
 interface StaffOption { id: string; name: string; }
 
-function DetailField({ label, value }: { label: string; value?: string | null }) {
+function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div>
-      <p className="text-xs text-stone-400 mb-0.5">{label}</p>
-      <p className="text-sm text-stone-800 font-medium">{value || "—"}</p>
+    <h3 className="text-xs font-bold text-[#F5821F] uppercase tracking-widest mb-4 pb-2 border-b border-[#F5821F]/20">
+      {children}
+    </h3>
+  );
+}
+
+function FormRow({ children, cols = 2 }: { children: React.ReactNode; cols?: number }) {
+  return (
+    <div className={`grid gap-4 ${cols === 1 ? "" : cols === 3 ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2"}`}>
+      {children}
+    </div>
+  );
+}
+
+function FieldGroup({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs font-semibold text-stone-500 uppercase tracking-wide">
+        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      </Label>
+      {children}
     </div>
   );
 }
@@ -109,25 +140,21 @@ function ChannelIcon({ channel }: { channel: string }) {
 
 // ── Account Lookup Field ──────────────────────────────────────────────────────
 function AccountLookupField({
-  currentId,
-  currentName,
-  onSave,
-  isSaving,
+  currentId, currentName, onSave, isSaving,
 }: {
   currentId?: string | null;
   currentName?: string | null;
   onSave: (accountId: string | null, accountName: string | null) => void;
   isSaving: boolean;
 }) {
-  const [editing, setEditing]         = useState(false);
-  const [query, setQuery]             = useState("");
-  const [selected, setSelected]       = useState<AccountOption | null>(
+  const [editing, setEditing]   = useState(false);
+  const [query, setQuery]       = useState("");
+  const [selected, setSelected] = useState<AccountOption | null>(
     currentId && currentName ? { id: currentId, name: currentName } : null
   );
-  const [pending, setPending]         = useState<AccountOption | null>(null);
-  const inputRef                      = useRef<HTMLInputElement>(null);
+  const [pending, setPending]   = useState<AccountOption | null>(null);
+  const inputRef                = useRef<HTMLInputElement>(null);
 
-  // Sync when parent data changes
   useEffect(() => {
     setSelected(currentId && currentName ? { id: currentId, name: currentName } : null);
   }, [currentId, currentName]);
@@ -147,19 +174,9 @@ function AccountLookupField({
     setEditing(true);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
-
-  const cancel = () => {
-    setPending(null);
-    setQuery("");
-    setEditing(false);
-  };
-
-  const pick = (acc: AccountOption) => {
-    setPending(acc);
-    setQuery(acc.name);
-  };
-
-  const save = () => {
+  const cancel = () => { setPending(null); setQuery(""); setEditing(false); };
+  const pick   = (acc: AccountOption) => { setPending(acc); setQuery(acc.name); };
+  const save   = () => {
     setSelected(pending);
     onSave(pending?.id ?? null, pending?.name ?? null);
     setEditing(false);
@@ -167,116 +184,81 @@ function AccountLookupField({
     setPending(null);
   };
 
-  const clear = () => {
-    setPending(null);
-    setQuery("");
-  };
-
-  // ── View mode ──
   if (!editing) {
     return (
-      <div>
-        <p className="text-xs text-stone-400 mb-1">Account</p>
-        <div className="flex items-center gap-2">
-          {selected ? (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/30">
-              <Building2 size={12} className="text-[#F5821F] shrink-0" />
-              <span className="text-sm font-medium text-[#1C1917]">{selected.name}</span>
-            </div>
-          ) : (
-            <span className="text-sm text-stone-400">—</span>
-          )}
-          <button
-            onClick={startEdit}
-            className="p-1 rounded hover:bg-[#F4F3F1] text-stone-400 hover:text-stone-700 transition-colors"
-            title="Change account"
-          >
-            <Pencil size={13} />
-          </button>
-        </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        {selected ? (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/30">
+            <Building2 size={12} className="text-[#F5821F] shrink-0" />
+            <span className="text-sm font-medium text-[#1C1917]">{selected.name}</span>
+          </div>
+        ) : (
+          <span className="text-sm text-stone-400">—</span>
+        )}
+        <button onClick={startEdit}
+          className="text-xs text-[#F5821F] hover:underline font-medium transition-colors">
+          {selected ? "Change" : "Link account"}
+        </button>
       </div>
     );
   }
 
-  // ── Edit mode ──
   const showDropdown = editing && query.length >= 1 && (isFetching || results.length > 0);
 
   return (
-    <div className="col-span-full">
-      <p className="text-xs text-stone-400 mb-1">Account</p>
-      <div className="flex flex-col gap-2">
-        <div className="relative max-w-md">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={e => { setQuery(e.target.value); if (pending?.name !== e.target.value) setPending(null); }}
-            placeholder="Search accounts by name…"
-            className="w-full pl-8 pr-8 h-9 text-sm border border-[#F5821F] rounded-lg outline-none shadow-[0_0_0_3px_rgba(245,130,31,0.15)] bg-white text-[#1C1917]"
-          />
-          {query && (
-            <button onClick={clear} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
-              <X size={13} />
-            </button>
-          )}
-
-          {/* Dropdown */}
-          {showDropdown && (
-            <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-white border border-[#E8E6E2] rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
-              {isFetching && !results.length ? (
-                <div className="px-4 py-3 text-sm text-stone-400">Searching…</div>
-              ) : results.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-stone-400">No accounts found</div>
-              ) : (
-                results.map(acc => {
-                  const isSelected = pending?.id === acc.id;
-                  return (
-                    <button
-                      key={acc.id}
-                      onClick={() => pick(acc)}
-                      className={`w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-[#FEF0E3] transition-colors ${isSelected ? "bg-[#FEF0E3]" : ""}`}
-                    >
-                      <Building2 size={13} className="text-[#F5821F] shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#1C1917] truncate">{acc.name}</p>
-                        {acc.accountType && (
-                          <p className="text-xs text-stone-400">{acc.accountType}</p>
-                        )}
-                      </div>
-                      {isSelected && <Check size={13} className="text-[#F5821F] shrink-0" />}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Pending selection preview */}
-        {pending && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/30 w-fit">
-            <Building2 size={12} className="text-[#F5821F]" />
-            <span className="text-sm font-medium text-[#1C1917]">{pending.name}</span>
+    <div className="space-y-2">
+      <div className="relative max-w-md">
+        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={e => { setQuery(e.target.value); if (pending?.name !== e.target.value) setPending(null); }}
+          placeholder="Search accounts by name…"
+          className="w-full pl-8 pr-8 h-9 text-sm border border-[#F5821F] rounded-lg outline-none shadow-[0_0_0_3px_rgba(245,130,31,0.15)] bg-white text-[#1C1917]"
+        />
+        {query && (
+          <button onClick={() => { setPending(null); setQuery(""); }}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+            <X size={13} />
+          </button>
+        )}
+        {showDropdown && (
+          <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-white border border-[#E8E6E2] rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+            {isFetching && !results.length ? (
+              <div className="px-4 py-3 text-sm text-stone-400">Searching…</div>
+            ) : results.length === 0 ? (
+              <div className="px-4 py-3 text-sm text-stone-400">No accounts found</div>
+            ) : results.map(acc => {
+              const isSel = pending?.id === acc.id;
+              return (
+                <button key={acc.id} onClick={() => pick(acc)}
+                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-[#FEF0E3] transition-colors ${isSel ? "bg-[#FEF0E3]" : ""}`}>
+                  <Building2 size={13} className="text-[#F5821F] shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#1C1917] truncate">{acc.name}</p>
+                    {acc.accountType && <p className="text-xs text-stone-400">{acc.accountType}</p>}
+                  </div>
+                  {isSel && <Check size={13} className="text-[#F5821F] shrink-0" />}
+                </button>
+              );
+            })}
           </div>
         )}
-
-        <div className="flex items-center gap-2">
-          <Button size="sm" className="h-7 px-3 bg-[#F5821F] hover:bg-[#D96A0A] text-white text-xs"
-            onClick={save} disabled={isSaving}>
-            {isSaving ? "Saving…" : "Save"}
-          </Button>
-          <Button size="sm" variant="ghost" className="h-7 px-3 text-xs" onClick={cancel}>
-            Cancel
-          </Button>
-          {(selected || pending) && (
-            <button
-              onClick={() => { setPending(null); setQuery(""); }}
-              className="text-xs text-stone-400 hover:text-red-500 transition-colors"
-            >
-              Clear
-            </button>
-          )}
+      </div>
+      {pending && (
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/30 w-fit">
+          <Building2 size={12} className="text-[#F5821F]" />
+          <span className="text-sm font-medium text-[#1C1917]">{pending.name}</span>
         </div>
+      )}
+      <div className="flex items-center gap-2">
+        <Button size="sm" className="h-7 px-3 bg-[#F5821F] hover:bg-[#D96A0A] text-white text-xs"
+          onClick={save} disabled={isSaving}>
+          {isSaving ? "Saving…" : "Save"}
+        </Button>
+        <Button size="sm" variant="ghost" className="h-7 px-3 text-xs" onClick={cancel}>
+          Cancel
+        </Button>
       </div>
     </div>
   );
@@ -284,21 +266,29 @@ function AccountLookupField({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function LeadDetailPage() {
-  const [, params]   = useRoute("/admin/crm/leads/:id");
-  const [, navigate] = useLocation();
-  const { toast }    = useToast();
-  const qc           = useQueryClient();
+  const [, params]    = useRoute("/admin/crm/leads/:id");
+  const [, navigate]  = useLocation();
+  const { toast }     = useToast();
+  const qc            = useQueryClient();
   const [tab, setTab] = useState("details");
   const [activityForm, setActivityForm] = useState({ channel: "Call", scheduledAt: "", description: "" });
-  const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({
+  const id = params?.id ?? "";
+
+  // ── form state ────────────────────────────────────────────────────────────
+  const [form, setForm] = useState({
     firstName: "", lastName: "", englishName: "", originalName: "",
     email: "", phone: "", nationality: "", source: "", inquiryType: "",
     budget: "", expectedStartDate: "", status: "new", notes: "",
     assignedStaffId: "",
   });
-  const id = params?.id ?? "";
+  const [isDirty, setIsDirty] = useState(false);
 
+  const set = (key: keyof typeof form, value: string) => {
+    setForm(f => ({ ...f, [key]: value }));
+    setIsDirty(true);
+  };
+
+  // ── queries ───────────────────────────────────────────────────────────────
   const { data: lead, isLoading } = useQuery<Lead>({
     queryKey: ["crm-lead", id],
     queryFn: () => axios.get(`${BASE}/api/crm/leads/${id}`).then(r => r.data),
@@ -310,10 +300,10 @@ export default function LeadDetailPage() {
     queryFn: () => axios.get(`${BASE}/api/crm/staff`).then(r => r.data),
   });
 
-  // ── Open Edit Modal ─────────────────────────────────────────────────────────
-  const openEdit = () => {
+  // Sync form when lead loads
+  useEffect(() => {
     if (!lead) return;
-    setEditForm({
+    setForm({
       firstName:         lead.firstName         ?? "",
       lastName:          lead.lastName          ?? "",
       englishName:       lead.englishName        ?? "",
@@ -329,58 +319,73 @@ export default function LeadDetailPage() {
       notes:             lead.notes             ?? "",
       assignedStaffId:   lead.assignedStaffId    ?? "",
     });
-    setEditOpen(true);
+    setIsDirty(false);
+  }, [lead]);
+
+  const cancelEdit = () => {
+    if (!lead) return;
+    setForm({
+      firstName:         lead.firstName         ?? "",
+      lastName:          lead.lastName          ?? "",
+      englishName:       lead.englishName        ?? "",
+      originalName:      lead.originalName       ?? "",
+      email:             lead.email             ?? "",
+      phone:             lead.phone             ?? "",
+      nationality:       lead.nationality        ?? "",
+      source:            lead.source            ?? "",
+      inquiryType:       lead.inquiryType        ?? "",
+      budget:            lead.budget            ?? "",
+      expectedStartDate: lead.expectedStartDate  ?? "",
+      status:            lead.status            ?? "new",
+      notes:             lead.notes             ?? "",
+      assignedStaffId:   lead.assignedStaffId    ?? "",
+    });
+    setIsDirty(false);
   };
 
-  // ── Edit Lead Mutation ───────────────────────────────────────────────────────
-  const editMutation = useMutation({
-    mutationFn: (f: typeof editForm) => {
-      const fn = f.firstName.trim();
-      const ln = f.lastName.trim();
+  // ── save mutation ─────────────────────────────────────────────────────────
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      const fn = form.firstName.trim();
+      const ln = form.lastName.trim();
       return axios.put(`${BASE}/api/crm/leads/${id}`, {
         firstName:         fn   || null,
         lastName:          ln   || null,
-        englishName:       f.englishName       || null,
-        originalName:      f.originalName      || null,
+        englishName:       form.englishName       || null,
+        originalName:      form.originalName      || null,
         fullName:          fn && ln ? `${fn} ${ln.toUpperCase()}` : (fn || ln || lead?.fullName),
-        email:             f.email             || null,
-        phone:             f.phone             || null,
-        nationality:       f.nationality        || null,
-        source:            f.source            || null,
-        inquiryType:       f.inquiryType        || null,
-        budget:            f.budget            || null,
-        expectedStartDate: f.expectedStartDate  || null,
-        status:            f.status,
-        notes:             f.notes             || null,
-        assignedStaffId:   f.assignedStaffId    || null,
+        email:             form.email             || null,
+        phone:             form.phone             || null,
+        nationality:       form.nationality        || null,
+        source:            form.source            || null,
+        inquiryType:       form.inquiryType        || null,
+        budget:            form.budget            || null,
+        expectedStartDate: form.expectedStartDate  || null,
+        status:            form.status,
+        notes:             form.notes             || null,
+        assignedStaffId:   form.assignedStaffId    || null,
       }).then(r => r.data);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["crm-lead", id] });
-      setEditOpen(false);
-      toast({ title: "Lead updated" });
+      setIsDirty(false);
+      toast({ title: "Lead saved" });
     },
-    onError: () => toast({ title: "Failed to update lead", variant: "destructive" }),
+    onError: () => toast({ title: "Failed to save lead", variant: "destructive" }),
   });
 
-  // ── Save Account ────────────────────────────────────────────────────────────
+  // ── account save ──────────────────────────────────────────────────────────
   const [savingAccount, setSavingAccount] = useState(false);
   const saveAccount = async (accountId: string | null, _name: string | null) => {
     if (!lead) return;
     setSavingAccount(true);
     try {
       await axios.put(`${BASE}/api/crm/leads/${id}`, {
-        fullName:          lead.fullName,
-        email:             lead.email,
-        phone:             lead.phone,
-        nationality:       lead.nationality,
-        source:            lead.source,
-        inquiryType:       lead.inquiryType,
-        budget:            lead.budget,
-        expectedStartDate: lead.expectedStartDate,
-        notes:             lead.notes,
-        status:            lead.status,
-        accountId:         accountId,
+        fullName: lead.fullName, email: lead.email, phone: lead.phone,
+        nationality: lead.nationality, source: lead.source,
+        inquiryType: lead.inquiryType, budget: lead.budget,
+        expectedStartDate: lead.expectedStartDate, notes: lead.notes,
+        status: lead.status, accountId,
       });
       qc.invalidateQueries({ queryKey: ["crm-lead", id] });
       toast({ title: accountId ? "Account linked" : "Account removed" });
@@ -391,7 +396,7 @@ export default function LeadDetailPage() {
     }
   };
 
-  // ── Activity ────────────────────────────────────────────────────────────────
+  // ── activity ──────────────────────────────────────────────────────────────
   const activityMutation = useMutation({
     mutationFn: (payload: typeof activityForm) =>
       axios.post(`${BASE}/api/crm/leads/${id}/activities`, payload).then(r => r.data),
@@ -403,7 +408,7 @@ export default function LeadDetailPage() {
     onError: () => toast({ title: "Failed to log activity", variant: "destructive" }),
   });
 
-  // ── Convert to Quote ────────────────────────────────────────────────────────
+  // ── convert to quote ──────────────────────────────────────────────────────
   const convertMutation = useMutation({
     mutationFn: () => axios.post(`${BASE}/api/crm/leads/${id}/convert-to-quote`).then(r => r.data),
     onSuccess: (data) => {
@@ -434,18 +439,21 @@ export default function LeadDetailPage() {
       </button>
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold text-stone-800">{lead.fullName}</h1>
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${STATUS_COLORS[status] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
-              {status.replace(/_/g, " ")}
+          <div className="flex items-center gap-3 mb-1 flex-wrap">
+            <h1 className="text-2xl font-bold text-stone-800">
+              {form.firstName || form.lastName
+                ? `${form.firstName} ${(form.lastName).toUpperCase()}`.trim()
+                : lead.fullName}
+            </h1>
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${STATUS_COLORS[form.status] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
+              {form.status.replace(/_/g, " ")}
             </span>
           </div>
           {lead.leadRefNumber && (
             <p className="font-mono text-sm text-stone-400">{lead.leadRefNumber}</p>
           )}
-          {/* Account badge under the name */}
           {lead.accountName && (
             <div className="flex items-center gap-1.5 mt-1.5">
               <Building2 size={13} className="text-[#F5821F]" />
@@ -453,16 +461,36 @@ export default function LeadDetailPage() {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {isDirty && (
+            <>
+              <Button variant="outline" size="sm" onClick={cancelEdit}
+                className="h-9 gap-1.5 text-stone-600">
+                <RotateCcw size={13} /> Discard
+              </Button>
+              <Button size="sm" disabled={saveMutation.isPending}
+                onClick={() => saveMutation.mutate()}
+                className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
+                {saveMutation.isPending
+                  ? <><Loader2 size={13} className="animate-spin" /> Saving…</>
+                  : <><Save size={13} /> Save Changes</>}
+              </Button>
+            </>
+          )}
           <Button onClick={() => convertMutation.mutate()} disabled={convertMutation.isPending}
-            className="text-white" style={{ background: "#F5821F" }}>
+            className="h-9 text-white" style={{ background: "#16A34A" }}>
             {convertMutation.isPending ? "Converting…" : "Convert to Quote"}
-          </Button>
-          <Button variant="outline" onClick={openEdit}>
-            <Pencil size={13} className="mr-1" /> Edit
           </Button>
         </div>
       </div>
+
+      {/* ── Unsaved changes banner ── */}
+      {isDirty && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-[#FEF9C3] border border-[#CA8A04]/30 rounded-xl text-sm text-[#854D0E]">
+          <span className="w-2 h-2 rounded-full bg-[#CA8A04] shrink-0" />
+          You have unsaved changes — click <strong className="mx-1">Save Changes</strong> to apply.
+        </div>
+      )}
 
       {/* ── Tabs ── */}
       <div className="flex gap-1 border-b border-stone-200 overflow-x-auto">
@@ -483,12 +511,11 @@ export default function LeadDetailPage() {
 
       {/* ── Details Tab ── */}
       {tab === "details" && (
-        <div className="space-y-6">
-          {/* Account Lookup - full width row */}
-          <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
-            <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide mb-3 flex items-center gap-1.5">
-              <Building2 size={12} /> Account
-            </p>
+        <div className="space-y-5">
+
+          {/* Account */}
+          <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
+            <SectionTitle>Account</SectionTitle>
             <AccountLookupField
               currentId={lead.accountId}
               currentName={lead.accountName}
@@ -497,39 +524,137 @@ export default function LeadDetailPage() {
             />
           </div>
 
-          {/* Info Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <DetailField label="Full Name"      value={lead.fullName} />
-            <div>
-              <p className="text-xs text-stone-400 mb-0.5">Status</p>
-              <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${STATUS_COLORS[lead.status ?? "new"] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
-                {(lead.status ?? "new").replace(/_/g, " ")}
-              </span>
+          {/* Name */}
+          <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
+            <SectionTitle>Name</SectionTitle>
+            <NameFieldGroup
+              values={{
+                firstName:    form.firstName,
+                lastName:     form.lastName,
+                englishName:  form.englishName,
+                originalName: form.originalName,
+              }}
+              onChange={(key, value) => set(key as keyof typeof form, value)}
+            />
+          </div>
+
+          {/* Contact Info */}
+          <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
+            <SectionTitle>Contact Info</SectionTitle>
+            <div className="space-y-4">
+              <FormRow>
+                <FieldGroup label="Email">
+                  <Input type="email" value={form.email}
+                    onChange={e => set("email", e.target.value)}
+                    placeholder="email@example.com" className={INPUT_CLS} />
+                </FieldGroup>
+                <FieldGroup label="Phone">
+                  <Input value={form.phone}
+                    onChange={e => set("phone", e.target.value)}
+                    placeholder="+61 4xx xxx xxx" className={INPUT_CLS} />
+                </FieldGroup>
+              </FormRow>
+              <FormRow>
+                <FieldGroup label="Nationality">
+                  <Input value={form.nationality}
+                    onChange={e => set("nationality", e.target.value)}
+                    placeholder="e.g. Korean" className={INPUT_CLS} />
+                </FieldGroup>
+              </FormRow>
             </div>
-            <DetailField label="Assigned Staff" value={lead.assignedStaffName} />
-            <DetailField label="Email"          value={lead.email} />
-            <DetailField label="Phone"          value={lead.phone} />
-            <DetailField label="Nationality"    value={lead.nationality} />
-            <DetailField label="Inquiry Type"   value={lead.inquiryType} />
-            <DetailField label="Budget"         value={lead.budget ? `A$${Number(lead.budget).toLocaleString("en-AU")}` : null} />
-            <DetailField label="Expected Start" value={lead.expectedStartDate ? format(new Date(lead.expectedStartDate), "MMM d, yyyy") : null} />
-            <DetailField label="Source"         value={lead.source} />
-            {lead.notes && (
-              <div className="col-span-full">
-                <p className="text-xs text-stone-400 mb-0.5">Notes</p>
-                <p className="text-sm text-stone-700 whitespace-pre-wrap">{lead.notes}</p>
-              </div>
-            )}
+          </div>
+
+          {/* Lead Info */}
+          <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
+            <SectionTitle>Lead Info</SectionTitle>
+            <div className="space-y-4">
+              <FormRow>
+                <FieldGroup label="Status">
+                  <Select value={form.status} onValueChange={v => set("status", v)}>
+                    <SelectTrigger className={INPUT_CLS}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="qualified">Qualified</SelectItem>
+                      <SelectItem value="unqualified">Unqualified</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldGroup>
+                <FieldGroup label="Assigned Staff">
+                  <Select value={form.assignedStaffId || "none"} onValueChange={v => set("assignedStaffId", v === "none" ? "" : v)}>
+                    <SelectTrigger className={INPUT_CLS}>
+                      <SelectValue placeholder="— unassigned —" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— unassigned —</SelectItem>
+                      {staffList.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FieldGroup>
+              </FormRow>
+              <FormRow>
+                <FieldGroup label="Inquiry Type">
+                  <Select value={form.inquiryType || "none"} onValueChange={v => set("inquiryType", v === "none" ? "" : v)}>
+                    <SelectTrigger className={INPUT_CLS}>
+                      <SelectValue placeholder="— select —" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {INQUIRY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </FieldGroup>
+                <FieldGroup label="Source">
+                  <Select value={form.source || "none"} onValueChange={v => set("source", v === "none" ? "" : v)}>
+                    <SelectTrigger className={INPUT_CLS}>
+                      <SelectValue placeholder="— select —" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      {SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </FieldGroup>
+              </FormRow>
+              <FormRow>
+                <FieldGroup label="Budget (AUD)">
+                  <Input type="number" min="0" value={form.budget}
+                    onChange={e => set("budget", e.target.value)}
+                    placeholder="0.00" className={INPUT_CLS} />
+                </FieldGroup>
+                <FieldGroup label="Expected Start Date">
+                  <Input type="date" value={form.expectedStartDate}
+                    onChange={e => set("expectedStartDate", e.target.value)}
+                    className={INPUT_CLS} />
+                </FieldGroup>
+              </FormRow>
+              <FieldGroup label="Notes">
+                <Textarea value={form.notes}
+                  onChange={e => set("notes", e.target.value)}
+                  placeholder="Additional notes…"
+                  rows={3}
+                  className="text-sm border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 resize-none" />
+              </FieldGroup>
+            </div>
           </div>
 
           {/* Linked Camp Application */}
           {lead.source === "Camp Application" && lead.campApplication && (
-            <div className="border border-[#F5821F]/30 rounded-xl p-4 bg-[#FEF0E3]/40">
-              <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide mb-3">Linked Camp Application</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
+            <div className="border border-[#F5821F]/30 rounded-xl p-5 bg-[#FEF0E3]/40">
+              <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-widest mb-4 pb-2 border-b border-[#F5821F]/20">
+                Linked Camp Application
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                 <div>
                   <p className="text-xs text-stone-400 mb-0.5">Application Ref</p>
-                  <p className="text-sm font-mono font-medium text-stone-800">{lead.campApplication.applicationRef ?? "—"}</p>
+                  <p className="text-sm font-mono font-medium text-stone-800">
+                    {lead.campApplication.applicationRef ?? "—"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-stone-400 mb-0.5">Preferred Start</p>
@@ -547,182 +672,96 @@ export default function LeadDetailPage() {
                 </div>
               </div>
               <button
-                onClick={() => navigate(`/admin/camp-applications/${lead.campApplication.id}`)}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#F5821F] hover:underline"
-              >
-                View Application <ExternalLink size={13} />
+                onClick={() => navigate(`/admin/camp-applications/${lead.campApplication!.id}`)}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#F5821F] hover:underline">
+                <ExternalLink size={13} /> View Application
               </button>
             </div>
           )}
-          <SystemInfoSection owner={(lead as any).ownerId ?? null} createdAt={(lead as any).createdAt} updatedAt={(lead as any).updatedAt} />
+
+          {/* System Info */}
+          <SystemInfoSection id={lead.id} />
         </div>
       )}
 
       {/* ── Activity Tab ── */}
       {tab === "activity" && (
         <div className="space-y-6">
-          <div className="space-y-0">
-            {(lead.activities ?? []).length === 0 && (
-              <p className="text-sm text-stone-400 text-center py-8">No activities yet. Log the first one below.</p>
-            )}
-            {(lead.activities ?? []).map((a, idx) => {
-              const isLast = idx === (lead.activities ?? []).length - 1;
-              return (
-                <div key={a.id} className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <ChannelIcon channel={a.channel} />
-                    {!isLast && <div className="w-px flex-1 bg-stone-200 mt-2" />}
-                  </div>
-                  <div className={`pb-6 flex-1`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-semibold text-stone-600">{a.channel}</span>
-                      <span className="text-[11px] text-stone-400">
-                        {format(new Date(a.createdOn), "MMM d, yyyy · h:mm a")}
-                      </span>
-                      {a.scheduledAt && (
-                        <span className="flex items-center gap-1 text-[11px] text-stone-400">
-                          <Calendar size={11} />
-                          {format(new Date(a.scheduledAt), "MMM d, yyyy · h:mm a")}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-stone-700">{a.description}</p>
-                  </div>
+          {/* Log new activity */}
+          <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
+            <SectionTitle>Log Activity</SectionTitle>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1 block">Channel</Label>
+                  <Select value={activityForm.channel}
+                    onValueChange={v => setActivityForm(f => ({ ...f, channel: v }))}>
+                    <SelectTrigger className={INPUT_CLS}><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CHANNELS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
-              );
-            })}
+                <div>
+                  <Label className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1 block">
+                    <span className="flex items-center gap-1"><Calendar size={11} /> Scheduled At</span>
+                  </Label>
+                  <Input type="datetime-local" value={activityForm.scheduledAt}
+                    onChange={e => setActivityForm(f => ({ ...f, scheduledAt: e.target.value }))}
+                    className={INPUT_CLS} />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1 block">Description</Label>
+                <Textarea value={activityForm.description}
+                  onChange={e => setActivityForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="What happened?"
+                  rows={3}
+                  className="text-sm border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 resize-none" />
+              </div>
+              <div className="flex justify-end">
+                <Button size="sm" disabled={activityMutation.isPending}
+                  onClick={handleLogActivity}
+                  className="text-white gap-1.5" style={{ background: "#F5821F" }}>
+                  {activityMutation.isPending
+                    ? <><Loader2 size={13} className="animate-spin" />Logging…</>
+                    : "Log Activity"}
+                </Button>
+              </div>
+            </div>
           </div>
 
-          <div className="border border-stone-200 rounded-xl p-4 space-y-3 bg-stone-50">
-            <p className="text-sm font-semibold text-stone-700">+ Log Activity</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-stone-600">Channel</Label>
-                <Select value={activityForm.channel} onValueChange={v => setActivityForm(f => ({ ...f, channel: v }))}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>{CHANNELS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-stone-600">Scheduled At</Label>
-                <Input type="datetime-local" value={activityForm.scheduledAt}
-                  onChange={e => setActivityForm(f => ({ ...f, scheduledAt: e.target.value }))}
-                  className="h-9 text-sm" />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-stone-600">Description <span className="text-red-500">*</span></Label>
-              <Textarea value={activityForm.description}
-                onChange={e => setActivityForm(f => ({ ...f, description: e.target.value }))}
-                className="text-sm min-h-[70px] resize-none bg-white"
-                placeholder="Describe the activity…" />
-            </div>
-            <Button onClick={handleLogActivity} disabled={activityMutation.isPending}
-              className="text-white" style={{ background: "#F5821F" }}>
-              {activityMutation.isPending ? "Saving…" : "Save Activity"}
-            </Button>
+          {/* Timeline */}
+          <div className="space-y-3">
+            {(!lead.activities || lead.activities.length === 0) ? (
+              <div className="text-center py-12 text-stone-400 text-sm">No activities yet</div>
+            ) : (
+              [...lead.activities].reverse().map(act => (
+                <div key={act.id} className="flex gap-3 bg-white border border-[#E8E6E2] rounded-xl p-4">
+                  <ChannelIcon channel={act.channel} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">
+                        {act.channel}
+                      </span>
+                      {act.scheduledAt && (
+                        <span className="flex items-center gap-1 text-xs text-stone-400">
+                          <Calendar size={10} />
+                          {format(new Date(act.scheduledAt), "MMM d, yyyy HH:mm")}
+                        </span>
+                      )}
+                      <span className="text-xs text-stone-300 ml-auto">
+                        {format(new Date(act.createdOn), "MMM d, yyyy")}
+                      </span>
+                    </div>
+                    <p className="text-sm text-stone-700 whitespace-pre-wrap">{act.description}</p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
-
-      {/* ── Edit Lead Dialog ── */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Lead</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-5 pt-1">
-            <NameFieldGroup
-              values={{
-                firstName:    editForm.firstName,
-                lastName:     editForm.lastName,
-                originalName: editForm.originalName,
-                englishName:  editForm.englishName,
-              }}
-              onChange={(key, value) => setEditForm(f => ({ ...f, [key]: value }))}
-              required
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">Email</Label>
-                <Input className="h-9 text-sm" type="email" value={editForm.email}
-                  onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Phone</Label>
-                <Input className="h-9 text-sm" value={editForm.phone}
-                  onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Nationality</Label>
-                <Input className="h-9 text-sm" value={editForm.nationality}
-                  onChange={e => setEditForm(f => ({ ...f, nationality: e.target.value }))} placeholder="e.g. Korean" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Source</Label>
-                <Input className="h-9 text-sm" value={editForm.source}
-                  onChange={e => setEditForm(f => ({ ...f, source: e.target.value }))} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Inquiry Type</Label>
-                <Select value={editForm.inquiryType || "__none__"} onValueChange={v => setEditForm(f => ({ ...f, inquiryType: v === "__none__" ? "" : v }))}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">— None —</SelectItem>
-                    {["Study Abroad","Camp","Language Course","University","Internship","Other"].map(v =>
-                      <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Status</Label>
-                <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["new","open","in_progress","converted","closed","lost"].map(v =>
-                      <SelectItem key={v} value={v}>{v.replace(/_/g, " ")}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Budget (A$)</Label>
-                <Input className="h-9 text-sm" type="number" value={editForm.budget}
-                  onChange={e => setEditForm(f => ({ ...f, budget: e.target.value }))} placeholder="0" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Expected Start Date</Label>
-                <Input className="h-9 text-sm" type="date" value={editForm.expectedStartDate}
-                  onChange={e => setEditForm(f => ({ ...f, expectedStartDate: e.target.value }))} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Assigned Staff (담당 직원)</Label>
-                <Select value={editForm.assignedStaffId || "__none__"} onValueChange={v => setEditForm(f => ({ ...f, assignedStaffId: v === "__none__" ? "" : v }))}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select staff…" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">— Unassigned —</SelectItem>
-                    {staffList.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Notes</Label>
-              <Textarea className="text-sm min-h-[80px]" value={editForm.notes}
-                onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} />
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-              <Button
-                disabled={!editForm.firstName.trim() || !editForm.lastName.trim() || editMutation.isPending}
-                className="text-white" style={{ background: "#F5821F" }}
-                onClick={() => editMutation.mutate(editForm)}>
-                {editMutation.isPending ? "Saving…" : "Save Changes"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
     </div>
   );
 }
