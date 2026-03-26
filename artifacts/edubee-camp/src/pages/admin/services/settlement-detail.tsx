@@ -39,6 +39,7 @@ interface SettlementRec {
   id: string;
   contractId?: string | null;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   clientEmail?: string | null;
   arrivalDate?: string | null;
@@ -464,7 +465,7 @@ export default function SettlementMgtDetail() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1C1917]">{rec.studentName ?? "—"}</h1>
+          <h1 className="text-2xl font-bold text-[#1C1917]">{rec.clientName ?? rec.studentName ?? "—"}</h1>
           <p className="text-sm text-[#A8A29E] mt-0.5">
             {rec.contractNumber ? `Contract ${rec.contractNumber}` : ""}
             {rec.arrivalDate ? ` · Arrival ${fmtDate(rec.arrivalDate)}` : ""}
@@ -504,9 +505,9 @@ export default function SettlementMgtDetail() {
       {/* Overview Tab */}
       {activeTab === "overview" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Student / Contract */}
-          <InfoCard label="Student & Contract">
-            <InfoRow label="Student" value={rec.studentName} />
+          {/* Client / Contract */}
+          <InfoCard label="Client & Contract">
+            <InfoRow label="Client" value={rec.clientName ?? rec.studentName} />
             <InfoRow label="Contract" value={
               rec.contractId ? (
                 <button onClick={() => navigate(`/admin/crm/contracts/${rec.contractId}`)}

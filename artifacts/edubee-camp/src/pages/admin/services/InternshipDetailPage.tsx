@@ -19,6 +19,7 @@ interface InternshipDetail {
   id: string;
   contractId?: string | null;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   agentName?: string | null;
   staffFirstName?: string | null;
@@ -186,7 +187,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide flex items-center gap-1.5">
-              <User size={13} /> Student Info
+              <User size={13} /> Client Info
             </h3>
             {!editing && (
               <button onClick={() => setEditing(true)}
@@ -197,7 +198,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
           </div>
           {!editing ? (
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.studentName ?? "—"}</span></div>
+              <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
               <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
               <div className="flex justify-between"><span className="text-stone-400">Contract</span><span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span></div>
               <div className="flex justify-between"><span className="text-stone-400">English Level</span>
@@ -462,7 +463,7 @@ export default function InternshipDetailPage() {
   if (!record)  return <div className="p-6 text-stone-500">Record not found.</div>;
 
   const TABS = [
-    { key: "profile",   label: "Student Profile"  },
+    { key: "profile",   label: "Client Profile"  },
     { key: "company",   label: "Host Company"      },
     { key: "progress",  label: "Progress"          },
     { key: "payments",  label: "Payments"          },
@@ -490,7 +491,7 @@ export default function InternshipDetailPage() {
 
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-stone-800">{record.studentName ?? "—"}</h1>
+          <h1 className="text-2xl font-bold text-stone-800">{record.clientName ?? record.studentName ?? "—"}</h1>
           <p className="text-sm text-stone-500 mt-0.5">
             {record.positionTitle ?? "No position assigned"}
           </p>

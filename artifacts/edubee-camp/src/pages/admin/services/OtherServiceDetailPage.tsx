@@ -35,6 +35,7 @@ interface OtherServiceRecord {
   id: string;
   contractId?: string | null;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   agentName?: string | null;
   contractStatus?: string | null;
@@ -248,8 +249,8 @@ function OverviewTab({
                 </a>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-stone-400">Student</span>
-                <span className="text-stone-700 font-medium">{record.studentName ?? "—"}</span>
+                <span className="text-stone-400">Client</span>
+                <span className="text-stone-700 font-medium">{record.clientName ?? record.studentName ?? "—"}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-stone-400">Status</span>
@@ -404,7 +405,7 @@ export default function OtherServiceDetailPage() {
           <h1 className="text-2xl font-bold text-stone-800">{record.title ?? record.serviceType ?? "Other Service"}</h1>
           <p className="text-sm text-stone-500 mt-0.5">
             {record.contractNumber ? `Contract ${record.contractNumber}` : ""}
-            {record.studentName ? ` · ${record.studentName}` : ""}
+            {(record.clientName ?? record.studentName) ? ` · ${record.clientName ?? record.studentName}` : ""}
             {record.serviceType ? ` · ${record.serviceType}` : ""}
           </p>
         </div>

@@ -59,7 +59,7 @@ export default function InstituteMgtDetail() {
 
   return (
     <DetailPageLayout
-      title={rec.studentName ?? "Institute Record"}
+      title={rec.clientName ?? rec.studentName ?? "Institute Record"}
       subtitle={rec.contractNumber ?? ""}
       badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[rec.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{rec.status ?? "—"}</span>}
       backPath="/admin/services/institute"
@@ -82,7 +82,7 @@ export default function InstituteMgtDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <DetailSection title="Contract Info">
               <DetailRow label="Contract #" value={rec.contractNumber} />
-              <DetailRow label="Student" value={rec.studentName} />
+              <DetailRow label="Client" value={rec.clientName ?? rec.studentName} />
               <DetailRow label="Email" value={rec.clientEmail} />
               <DetailRow label="Start Date" value={rec.contractStartDate ? format(new Date(rec.contractStartDate), "PPP") : "—"} />
               <DetailRow label="End Date" value={rec.contractEndDate ? format(new Date(rec.contractEndDate), "PPP") : "—"} />

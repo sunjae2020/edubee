@@ -30,6 +30,7 @@ interface SARecord {
   id: string;
   contractId?: string | null;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   agentName?: string | null;
   assignedStaffId?: string | null;
@@ -306,13 +307,13 @@ function OverviewTab({ record, onStageChange, onEdit }: { record: SARecord; onSt
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Student</h3>
+            <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Client</h3>
             <button onClick={onEdit} className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
               <Pencil size={12} /> Edit
             </button>
           </div>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.studentName ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Status</span>
               <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F4F3F1] text-[#57534E] capitalize">{record.status ?? "—"}</span>
@@ -580,7 +581,7 @@ export default function StudyAbroadDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-stone-800">{record.studentName ?? "—"}</h1>
+          <h1 className="text-2xl font-bold text-stone-800">{record.clientName ?? record.studentName ?? "—"}</h1>
           <p className="text-sm text-stone-500 mt-0.5">
             {record.contractNumber ?? ""}{record.agentName ? ` · via ${record.agentName}` : ""}
           </p>

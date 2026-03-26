@@ -55,6 +55,7 @@ interface GuardianDetail {
   id: string;
   contractId?: string | null;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   agentName?: string | null;
   staffFirstName?: string | null;
@@ -188,9 +189,9 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</h3>
+          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.studentName ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Contract</span><span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Staff</span>
@@ -551,7 +552,7 @@ export default function GuardianDetailPage() {
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-800">{record.studentName ?? "—"}</h1>
+          <h1 className="text-2xl font-bold text-stone-800">{record.clientName ?? record.studentName ?? "—"}</h1>
           <p className="text-sm text-stone-500 mt-0.5">
             {record.contractNumber ?? ""}
             {record.billingCycle ? ` · ${record.billingCycle} billing` : ""}

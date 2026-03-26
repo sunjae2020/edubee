@@ -57,7 +57,7 @@ export default function HotelMgtDetail() {
 
   return (
     <DetailPageLayout
-      title={rec.studentName ?? "Hotel Record"}
+      title={rec.clientName ?? rec.studentName ?? "Hotel Record"}
       subtitle={rec.contractNumber ?? ""}
       badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[rec.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{(rec.status ?? "—").replace(/_/g, " ")}</span>}
       backPath="/admin/services/hotel"
@@ -99,7 +99,7 @@ export default function HotelMgtDetail() {
             </DetailSection>
 
             <DetailSection title="Guest Info">
-              <DetailRow label="Student" value={rec.studentName} />
+              <DetailRow label="Client" value={rec.clientName ?? rec.studentName} />
               <DetailRow label="Email" value={rec.clientEmail} />
               <DetailRow label="Contract #" value={rec.contractNumber} />
               <DetailRow label="Actual Checkin" value={rec.actualCheckin ? format(new Date(rec.actualCheckin), "PPp") : "—"} />

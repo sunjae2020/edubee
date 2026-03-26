@@ -78,7 +78,7 @@ export default function PickupMgtDetail() {
 
   return (
     <DetailPageLayout
-      title={rec.studentName ?? "Pickup Record"}
+      title={rec.clientName ?? rec.studentName ?? "Pickup Record"}
       subtitle={rec.contractNumber ? `Contract ${rec.contractNumber}` : (rec.pickupType?.replace(/_/g, " ") ?? "Airport Transfer")}
       badge={
         <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[rec.status ?? ""] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
@@ -144,8 +144,8 @@ export default function PickupMgtDetail() {
             />
           </DetailSection>
 
-          <DetailSection title="Student Info">
-            <DetailRow label="Student Name" value={rec.studentName} />
+          <DetailSection title="Client Info">
+            <DetailRow label="Client Name" value={rec.clientName ?? rec.studentName} />
             <DetailRow label="Client Email" value={rec.clientEmail} />
             <DetailRow label="Contract #" value={rec.contractNumber} />
           </DetailSection>

@@ -115,7 +115,7 @@ export default function Settlement() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-[#1C1917]">Settlement</h1>
-            <p className="text-xs text-[#A8A29E]">Student arrival & settling-in service management</p>
+            <p className="text-xs text-[#A8A29E]">Client arrival & settling-in service management</p>
           </div>
         </div>
         {canCreate && (

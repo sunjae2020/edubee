@@ -57,7 +57,7 @@ export default function TourMgtDetail() {
 
   return (
     <DetailPageLayout
-      title={rec.studentName ?? "Tour Record"}
+      title={rec.clientName ?? rec.studentName ?? "Tour Record"}
       subtitle={rec.contractNumber ?? ""}
       badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[rec.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{(rec.status ?? "—").replace(/_/g, " ")}</span>}
       backPath="/admin/services/tour"
@@ -94,7 +94,7 @@ export default function TourMgtDetail() {
             </DetailSection>
 
             <DetailSection title="Client Info">
-              <DetailRow label="Student" value={rec.studentName} />
+              <DetailRow label="Client" value={rec.clientName ?? rec.studentName} />
               <DetailRow label="Email" value={rec.clientEmail} />
               <DetailRow label="Contract #" value={rec.contractNumber} />
               <EditableField label="Guide Info" isEditing={isEditing} value={rec.guideInfo}

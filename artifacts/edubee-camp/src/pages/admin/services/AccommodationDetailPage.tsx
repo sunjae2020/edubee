@@ -26,6 +26,7 @@ interface AccomDetail {
   id: string;
   contractId?: string | null;
   contractNumber?: string | null;
+  clientName?: string | null;
   studentName?: string | null;
   agentName?: string | null;
   accommodationType?: string | null;
@@ -146,11 +147,11 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        {/* Student & Contract */}
+        {/* Client & Contract */}
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</h3>
+          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.studentName ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Contract</span><span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Staff</span><span className="text-stone-600">{record.staffFirstName ? `${record.staffFirstName} ${record.staffLastName ?? ""}`.trim() : "—"}</span></div>
@@ -471,7 +472,7 @@ function BillingTab({ record, onEditRates }: { record: AccomDetail; onEditRates:
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Stay Duration", value: nights > 0 ? `${nights} nights (${weeks.toFixed(1)} wks)` : "—", icon: <Home size={16} />, color: "#F5821F", bg: "#FEF0E3" },
-          { label: "Charge to Student", value: total, icon: <DollarSign size={16} />, color: "#16A34A", bg: "#DCFCE7" },
+          { label: "Charge to Client", value: total, icon: <DollarSign size={16} />, color: "#16A34A", bg: "#DCFCE7" },
           { label: "Partner Cost", value: partnerCost, icon: <DollarSign size={16} />, color: "#CA8A04", bg: "#FEF9C3" },
         ].map(card => (
           <div key={card.label} className="bg-white border border-stone-200 rounded-xl p-4 flex items-center gap-3">
@@ -583,7 +584,7 @@ export default function AccommodationDetailPage() {
 
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-stone-800">{record.studentName ?? "—"}</h1>
+          <h1 className="text-2xl font-bold text-stone-800">{record.clientName ?? record.studentName ?? "—"}</h1>
           <p className="text-sm text-stone-500 mt-0.5">
             {record.hostName ?? "No host assigned"}{record.accommodationType ? ` · ${record.accommodationType.replace(/_/g, " ")}` : ""}
           </p>

@@ -56,6 +56,7 @@ router.get(
         .select(SELECT_COLS)
         .from(studyAbroadMgt)
         .leftJoin(contracts, eq(studyAbroadMgt.contractId, contracts.id))
+        .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(studyAbroadMgt.assignedStaffId, users.id))
         .where(
           and(
