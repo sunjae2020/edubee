@@ -114,6 +114,7 @@ export const quotes = pgTable("quotes", {
   createdBy:           uuid("created_by").references(() => users.id),
   createdOn:           timestamp("created_on").notNull().defaultNow(),
   modifiedOn:          timestamp("modified_on").notNull().defaultNow(),
+  campApplicationId:   uuid("camp_application_id"),
 });
 
 export const quote_products = pgTable("quote_products", {

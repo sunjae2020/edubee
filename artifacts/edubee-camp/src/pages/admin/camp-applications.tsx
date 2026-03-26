@@ -26,7 +26,7 @@ import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
 
-const APP_STATUSES = ["draft", "submitted", "under_review", "approved", "rejected", "contracted", "cancelled"];
+const APP_STATUSES = ["submitted", "reviewing", "quoted", "confirmed", "cancelled"];
 
 interface Application {
   id: string; applicationNumber: string; studentName?: string;
@@ -50,10 +50,11 @@ interface Interview {
 
 function AppStatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    draft: "bg-[#F4F3F1] text-[#57534E]", submitted: "bg-[#FEF0E3] text-[#F5821F]",
-    under_review: "bg-[#FEF9C3] text-[#CA8A04]", approved: "bg-[#DCFCE7] text-[#16A34A]",
-    rejected: "bg-[#FEF2F2] text-[#DC2626]", contracted: "bg-[#DCFCE7] text-[#16A34A]",
-    cancelled: "bg-[#FEF2F2] text-[#DC2626]",
+    submitted:  "bg-[#F4F3F1] text-[#57534E]",
+    reviewing:  "bg-[#FEF0E3] text-[#F5821F]",
+    quoted:     "bg-[#FEF9C3] text-[#CA8A04]",
+    confirmed:  "bg-[#DCFCE7] text-[#16A34A]",
+    cancelled:  "bg-[#FEF2F2] text-[#DC2626]",
   };
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${map[status] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>

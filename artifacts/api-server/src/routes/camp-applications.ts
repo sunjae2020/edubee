@@ -8,6 +8,7 @@ import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
+const VALID_STATUSES = ["submitted", "reviewing", "quoted", "confirmed", "cancelled"] as const;
 
 router.get("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
@@ -59,6 +60,8 @@ router.patch("/camp-applications/:id/status", authenticate, requireRole(...ADMIN
   try {
     const { applicationStatus: newStatus } = req.body;
     if (!newStatus) return res.status(400).json({ error: "applicationStatus is required" });
+    if (!(VALID_STATUSES as readonly string[]).includes(newStatus))
+      return res.status(400).json({ error: `Invalid status. Allowed: ${VALID_STATUSES.join(", ")}` });
 
     const [application] = await db.select().from(campApplications)
       .where(eq(campApplications.id, req.params.id)).limit(1);

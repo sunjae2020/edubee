@@ -18,7 +18,7 @@ import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const APP_STATUSES = ["pending", "reviewing", "interview_scheduled", "interview_done", "approved", "rejected", "cancelled", "converted"];
+const APP_STATUSES = ["submitted", "reviewing", "quoted", "confirmed", "cancelled"];
 const GENDERS = ["male", "female", "other", "prefer_not_to_say"];
 const ENGLISH_LEVELS = ["beginner", "elementary", "pre_intermediate", "intermediate", "upper_intermediate", "advanced", "proficient"];
 
@@ -30,17 +30,11 @@ const TABS = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700",
-  reviewing: "bg-blue-100 text-blue-700",
-  interview_scheduled: "bg-orange-100 text-orange-700",
-  interview_done: "bg-purple-100 text-purple-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
-  cancelled: "bg-gray-100 text-gray-600",
-  converted: "bg-teal-100 text-teal-700",
-  completed: "bg-teal-100 text-teal-700",
-  scheduled: "bg-blue-100 text-blue-700",
-  rescheduled: "bg-orange-100 text-orange-700",
+  submitted:  "bg-[#F4F3F1] text-[#57534E]",
+  reviewing:  "bg-[#FEF0E3] text-[#F5821F]",
+  quoted:     "bg-[#FEF9C3] text-[#CA8A04]",
+  confirmed:  "bg-[#DCFCE7] text-[#16A34A]",
+  cancelled:  "bg-[#FEF2F2] text-[#DC2626]",
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────

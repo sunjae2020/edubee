@@ -13,6 +13,7 @@ import {
 import { users } from "./users";
 import { contracts } from "./contracts";
 import { leads } from "./applications";
+import { quotes } from "./crm";
 import { products } from "./packages";
 
 // ── Camp Package Groups ────────────────────────────────────────────────────
@@ -106,6 +107,8 @@ export const campApplications = pgTable("camp_applications", {
   agentAccountId:        uuid("agent_account_id"),
   applicationStatus:     varchar("application_status", { length: 50 }).notNull().default("submitted"),
   status:                varchar("status", { length: 20 }).notNull().default("Active"),
+  quoteId:               uuid("quote_id").references(() => quotes.id),
+  quotedAt:              timestamp("quoted_at"),
   createdAt:             timestamp("created_at").notNull().defaultNow(),
   updatedAt:             timestamp("updated_at").notNull().defaultNow(),
 });
