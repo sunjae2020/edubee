@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
-  ArrowLeft, User, FileText, Briefcase, Folder, Activity,
+  ArrowLeft,
   Plus, Pencil, Trash2, ExternalLink, Search, X, Check, Building2,
   ChevronDown, Loader2,
 } from "lucide-react";
@@ -17,13 +17,6 @@ import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const TABS = [
-  { key: "details",   label: "Details",   icon: User },
-  { key: "leads",     label: "Leads",     icon: Briefcase },
-  { key: "contracts", label: "Contracts", icon: FileText },
-  { key: "files",     label: "Files",     icon: Folder },
-  { key: "activity",  label: "Activity",  icon: Activity },
-];
 
 const ACCOUNT_TYPES = ["Student", "Organisation", "Agent", "School", "Staff", "Other"];
 const ACCOUNT_STATUSES = ["Active", "Inactive"];
@@ -449,7 +442,6 @@ function LinkedAccountsSection({ contactId, contactName, accounts, onRefresh }: 
 export default function ContactDetailPage() {
   const [, params] = useRoute("/admin/crm/contacts/:id");
   const [, navigate] = useLocation();
-  const [tab, setTab] = useState("details");
   const id = params?.id ?? "";
   const qc = useQueryClient();
 
@@ -508,73 +500,43 @@ export default function ContactDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-stone-200 overflow-x-auto">
-        {TABS.map(t => {
-          const Icon = t.icon;
-          const active = tab === t.key;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                active
-                  ? "border-[#F5821F] text-[#F5821F]"
-                  : "border-transparent text-stone-500 hover:text-stone-800"
-              }`}
-            >
-              <Icon size={14} />
-              {t.label}
-            </button>
-          );
-        })}
+      {/* Details */}
+      <div className="space-y-6">
+        {/* Contact Info */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <DetailField label="Full Name"        value={contact.fullName} />
+          <DetailField label="First Name"       value={contact.firstName} />
+          <DetailField label="Last Name"        value={contact.lastName} />
+          <DetailField label="Original Name"    value={contact.originalName} />
+          <DetailField label="Title"            value={contact.title} />
+          <DetailField label="Date of Birth"    value={contact.dob} />
+          <DetailField label="Gender"           value={contact.gender} />
+          <DetailField label="Nationality"      value={contact.nationality} />
+          <DetailField label="Email"            value={contact.email} />
+          <DetailField label="Mobile"           value={contact.mobile} />
+          <DetailField label="Office Number"    value={contact.officeNumber} />
+          <DetailField label="SNS Type"         value={contact.snsType} />
+          <DetailField label="SNS ID"           value={contact.snsId} />
+          <DetailField label="Influx Channel"   value={contact.influxChannel} />
+          <DetailField label="Important Date 1" value={contact.importantDate1} />
+          <DetailField label="Important Date 2" value={contact.importantDate2} />
+          {contact.description && (
+            <div className="col-span-full">
+              <p className="text-xs text-stone-400 mb-0.5">Notes</p>
+              <p className="text-sm text-stone-700 whitespace-pre-wrap">{contact.description}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Linked Accounts */}
+        <LinkedAccountsSection
+          contactId={id}
+          contactName={fullName}
+          accounts={linkedAccounts}
+          onRefresh={() => refetch()}
+        />
+        <SystemInfoSection owner={contact.createdBy ?? null} createdAt={contact.createdAt} updatedAt={contact.updatedAt} />
       </div>
-
-      {/* Details Tab */}
-      {tab === "details" && (
-        <div className="space-y-6">
-          {/* Contact Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <DetailField label="Full Name"       value={contact.fullName} />
-            <DetailField label="First Name"      value={contact.firstName} />
-            <DetailField label="Last Name"       value={contact.lastName} />
-            <DetailField label="Original Name"   value={contact.originalName} />
-            <DetailField label="Title"           value={contact.title} />
-            <DetailField label="Date of Birth"   value={contact.dob} />
-            <DetailField label="Gender"          value={contact.gender} />
-            <DetailField label="Nationality"     value={contact.nationality} />
-            <DetailField label="Email"           value={contact.email} />
-            <DetailField label="Mobile"          value={contact.mobile} />
-            <DetailField label="Office Number"   value={contact.officeNumber} />
-            <DetailField label="SNS Type"        value={contact.snsType} />
-            <DetailField label="SNS ID"          value={contact.snsId} />
-            <DetailField label="Influx Channel"  value={contact.influxChannel} />
-            <DetailField label="Important Date 1" value={contact.importantDate1} />
-            <DetailField label="Important Date 2" value={contact.importantDate2} />
-            {contact.description && (
-              <div className="col-span-full">
-                <p className="text-xs text-stone-400 mb-0.5">Notes</p>
-                <p className="text-sm text-stone-700 whitespace-pre-wrap">{contact.description}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Linked Accounts */}
-          <LinkedAccountsSection
-            contactId={id}
-            contactName={fullName}
-            accounts={linkedAccounts}
-            onRefresh={() => refetch()}
-          />
-          <SystemInfoSection owner={contact.createdBy ?? null} createdAt={contact.createdAt} updatedAt={contact.updatedAt} />
-        </div>
-      )}
-
-      {tab !== "details" && (
-        <div className="flex items-center justify-center h-40 text-stone-400 text-sm">
-          {TABS.find(t => t.key === tab)?.label} — coming soon
-        </div>
-      )}
     </div>
   );
 }
