@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const ACCOUNT_TYPES = [
-  "Student", "Client", "School",
+  "Student", "Client", "Company", "School",
   "Sub_Agency", "Super_Agency",
   "Supplier", "Staff", "Branch",
   "Agent", "Provider", "Organisation",
@@ -29,6 +29,7 @@ const INDIVIDUAL_TYPES = ["Student", "Client"];
 const CATEGORY_MAP: Record<string, string[]> = {
   Student:      [],
   Client:       [],
+  Company:      [],
   School:       ["Language School", "University", "TAFE", "High School", "Other"],
   Sub_Agency:   [],
   Super_Agency: [],
@@ -44,6 +45,7 @@ function getAccountTypeBadge(accountType?: string | null): { bg: string; text: s
   switch (accountType) {
     case "Student":      return { bg: "#FEF0E3", text: "#F5821F", label: "Student" };
     case "Client":       return { bg: "#FCE7F3", text: "#BE185D", label: "Client" };
+    case "Company":      return { bg: "#E0F2FE", text: "#0369A1", label: "Company" };
     case "School":       return { bg: "#DCFCE7", text: "#16A34A", label: "School" };
     case "Sub_Agency":   return { bg: "#EDE9FE", text: "#7C3AED", label: "Sub Agency" };
     case "Super_Agency": return { bg: "#EDE9FE", text: "#7C3AED", label: "Super Agency" };
@@ -120,6 +122,8 @@ function getTabs(accountType?: string | null) {
   switch (accountType) {
     case "Student":
     case "Client":
+      return [...base, leads, contracts, ledger];
+    case "Company":
       return [...base, leads, contracts, ledger];
     case "Supplier":
       return [...base, serviceProfiles, products, ledger, portal];
@@ -1002,7 +1006,7 @@ export default function AccountDetailPage() {
               </div>
 
               {/* Organisation — conditional by type */}
-              {["School","Sub_Agency","Super_Agency","Supplier","Branch","Agent","Provider","Organisation"].includes(form.accountType ?? "") && (
+              {["Company","School","Sub_Agency","Super_Agency","Supplier","Branch","Agent","Provider","Organisation"].includes(form.accountType ?? "") && (
                 <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
                   <Section title="Organisation">
                     {["Branch","Super_Agency"].includes(form.accountType ?? "") && (
@@ -1015,7 +1019,7 @@ export default function AccountDetailPage() {
                         />
                       </Field>
                     )}
-                    {["School","Sub_Agency","Super_Agency","Supplier","Agent","Provider","Organisation"].includes(form.accountType ?? "") && (
+                    {["Company","School","Sub_Agency","Super_Agency","Supplier","Agent","Provider","Organisation"].includes(form.accountType ?? "") && (
                       <Field label="ABN">
                         <Input value={form.abn ?? ""} onChange={e => set("abn", e.target.value)} placeholder="ABN" className={INPUT_CLS} />
                       </Field>
