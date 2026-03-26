@@ -1815,13 +1815,33 @@ export default function ContractDetailPage() {
   const primDates = calcPrimDates(primData);
 
   // Counts for tab badges
+  const svcsForCount = contract.services ?? {};
+  const servicesCount =
+    (svcsForCount.studyAbroad ? 1 : 0) +
+    (Array.isArray(svcsForCount.pickup) ? svcsForCount.pickup.length : svcsForCount.pickup ? 1 : 0) +
+    (svcsForCount.accommodation ? 1 : 0) +
+    (svcsForCount.internship ? 1 : 0) +
+    (svcsForCount.guardian ? 1 : 0) +
+    (Array.isArray(svcsForCount.other) ? svcsForCount.other.length : svcsForCount.other ? 1 : 0) +
+    (svcsForCount.settlement ? 1 : 0) +
+    (svcsForCount.hotel ? 1 : 0) +
+    (Array.isArray(svcsForCount.tour) ? svcsForCount.tour.length : svcsForCount.tour ? 1 : 0) +
+    (svcsForCount.visa ? 1 : 0) +
+    (Array.isArray(svcsForCount.camp) ? svcsForCount.camp.length : svcsForCount.camp ? 1 : 0);
+
+  const commissionCount = (contract.contractProducts ?? [])
+    .flatMap((cp: any) => cp.costLines ?? []).length;
+
   const counts: Partial<Record<TabKey, number>> = {
+    services:     servicesCount,
     schedule:     contract.contractProducts?.length ?? 0,
     invoices:     contract.invoices?.length          ?? 0,
+    payments:     contract.paymentsCount             ?? 0,
     transactions: contract.transactions?.length      ?? 0,
+    commission:   commissionCount,
+    activity:     contract.activityCount             ?? 0,
     documents:    0,
   };
-  // payments count fetched separately via query — rendered by PaymentsTab itself
 
   return (
     <div className="min-h-screen bg-[#FAFAF9]">

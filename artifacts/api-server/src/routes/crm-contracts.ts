@@ -251,7 +251,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     const { id } = req.params;
     const r = (x: any) => x.rows ?? (x as any[]);
 
-    const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, otRes, clRes, htRes, trRes, stRes, vsRes, ctRes] = await Promise.all([
+    const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, otRes, clRes, htRes, trRes, stRes, vsRes, ctRes, phCountRes, actCountRes] = await Promise.all([
       db.execute(sql`
         SELECT c.*,
                a.id           AS account_id_val,
@@ -308,6 +308,28 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       db.execute(sql`SELECT * FROM settlement_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
       db.execute(sql`SELECT * FROM visa_services_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
       db.execute(sql`SELECT * FROM camp_tour_mgt WHERE contract_id = ${id}::uuid ORDER BY created_at`),
+      db.execute(sql`
+        SELECT COUNT(DISTINCT ph.id)::int AS cnt
+        FROM payment_lines pl
+        JOIN payment_headers ph ON ph.id = pl.payment_header_id
+        JOIN contract_products cp ON cp.id = pl.contract_product_id
+        WHERE cp.contract_id = ${id}::uuid AND ph.status != 'Void'
+      `),
+      db.execute(sql`
+        SELECT (
+          (SELECT COUNT(*) FROM transactions     WHERE contract_id = ${id}::uuid) +
+          (SELECT COUNT(*) FROM study_abroad_mgt WHERE contract_id = ${id}::uuid) +
+          (SELECT COUNT(*) FROM pickup_mgt       WHERE contract_id = ${id}::uuid) +
+          (SELECT COUNT(*) FROM accommodation_mgt WHERE contract_id = ${id}::uuid) +
+          (SELECT COUNT(*) FROM hotel_mgt        WHERE contract_id = ${id}::uuid) +
+          (SELECT COUNT(*) FROM tour_mgt         WHERE contract_id = ${id}::uuid) +
+          (SELECT COUNT(*) FROM settlement_mgt   WHERE contract_id = ${id}::uuid) +
+          (SELECT COUNT(*) FROM guardian_mgt     WHERE contract_id = ${id}::uuid) +
+          (SELECT COUNT(*) FROM internship_mgt   WHERE contract_id = ${id}::uuid) +
+          (SELECT COUNT(*) FROM camp_tour_mgt    WHERE contract_id = ${id}::uuid) +
+          (SELECT COUNT(*) FROM other_services_mgt WHERE contract_id = ${id}::uuid)
+        )::int AS cnt
+      `),
     ]);
 
     const contractArr = r(cRes);
@@ -497,6 +519,8 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
         })) : null,
       },
       documents: [],
+      paymentsCount:  parseInt(r(phCountRes)[0]?.cnt ?? "0", 10),
+      activityCount:  parseInt(r(actCountRes)[0]?.cnt ?? "0", 10),
     });
   } catch (err) {
     console.error("GET /crm/contracts/:id error:", err);
