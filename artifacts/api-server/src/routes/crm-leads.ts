@@ -303,12 +303,34 @@ router.post("/crm/leads/:id/convert-to-quote", authenticate, requireRole(...ADMI
     const user = (req as any).user;
     const quoteRefNumber = genQuoteRef();
 
+    // Build client name from lead: "FirstName LASTNAME"
+    const fn = (lead.firstName ?? "").trim();
+    const ln = (lead.lastName  ?? "").trim().toUpperCase();
+    const customerName = fn && ln ? `${fn} ${ln}` : (fn || ln || lead.fullName || null);
+
+    // Lookup account name if accountId is set
+    let accountName: string | null = null;
+    if (lead.accountId) {
+      const [acct] = await db.select({ name: accounts.name })
+        .from(accounts).where(eq(accounts.id, lead.accountId));
+      accountName = acct?.name ?? null;
+    }
+
+    // Expiry date = today + 7 days
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + 7);
+    const expiryDate = expiry.toISOString().slice(0, 10); // YYYY-MM-DD
+
     const [newQuote] = await db.insert(quotes).values({
       quoteRefNumber,
-      leadId:      lead.id,
-      contactId:   lead.contactId ?? null,
-      quoteStatus: "Draft",
-      createdBy:   user?.id ?? null,
+      leadId:           lead.id,
+      contactId:        lead.contactId    || null,
+      customerName:     customerName      || null,
+      studentAccountId: lead.accountId    || null,
+      accountName:      accountName       || null,
+      expiryDate:       expiryDate,
+      quoteStatus:      "Draft",
+      createdBy:        user?.id          ?? null,
     }).returning();
 
     return res.status(201).json({ quoteId: newQuote.id, quoteRefNumber: newQuote.quoteRefNumber,
