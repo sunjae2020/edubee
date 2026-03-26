@@ -593,7 +593,8 @@ export default function LeadDetailPage() {
             </>
           )}
           <Button onClick={() => convertMutation.mutate()} disabled={convertMutation.isPending}
-            className="h-9 text-white" style={{ background: "#16A34A" }}>
+            className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
+            <FileText size={14} />
             {convertMutation.isPending ? "Converting…" : "Convert to Quote"}
           </Button>
         </div>
