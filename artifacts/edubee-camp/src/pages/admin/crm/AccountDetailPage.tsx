@@ -89,6 +89,7 @@ interface Account {
   primaryContact?: {
     id: string; firstName: string; lastName: string;
     originalName?: string | null;
+    fullName?: string | null;
     email?: string | null; mobile?: string | null;
     nationality?: string | null; dob?: string | null;
     snsType?: string | null; snsId?: string | null;
@@ -194,7 +195,7 @@ function parseContactName(raw: string): { firstName: string; lastName: string } 
 const EMPTY_CFORM = { firstName: "", lastName: "", email: "", mobile: "", nationality: "" };
 
 function ContactLookup({ value, onChange, placeholder }: {
-  value: string; onChange: (id: string, contact?: { email?: string | null; mobile?: string | null; firstName?: string; lastName?: string; dob?: string | null }) => void; placeholder?: string;
+  value: string; onChange: (id: string, contact?: { email?: string | null; mobile?: string | null; firstName?: string; lastName?: string; fullName?: string | null; dob?: string | null }) => void; placeholder?: string;
 }) {
   const [search, setSearch]       = useState("");
   const [open, setOpen]           = useState(false);
@@ -609,8 +610,11 @@ export default function AccountDetailPage() {
 
   useEffect(() => {
     if (account && !isNew) {
+      const autoName = !account.manualInput && account.primaryContact?.fullName
+        ? account.primaryContact.fullName
+        : (account.name ?? "");
       setForm({
-        name:                       account.name ?? "",
+        name:                       autoName,
         manualInput:                account.manualInput ?? false,
         accountType:                account.accountType ?? "Student",
         accountCategory:            account.accountCategory ?? undefined,
@@ -845,13 +849,16 @@ export default function AccountDetailPage() {
                         if (contact) {
                           if (!form.email && contact.email)       set("email",       contact.email);
                           if (!form.phoneNumber && contact.mobile) set("phoneNumber", contact.mobile);
-                          // Auto-name preview for Student accounts (LASTNAME_Firstname)
-                          // Duplicate suffix (_YYMM) is resolved server-side on save
+                          // Auto-name: use contact's fullName if available, else build LAST_First
                           if (form.accountType === "Student" && !form.manualInput) {
-                            const last  = (contact.lastName  ?? "").toUpperCase().trim();
-                            const first = (contact.firstName ?? "").trim();
-                            const base  = last && first ? `${last}_${first}` : last || first;
-                            if (base) set("name", base);
+                            if (contact.fullName) {
+                              set("name", contact.fullName);
+                            } else {
+                              const last  = (contact.lastName  ?? "").toUpperCase().trim();
+                              const first = (contact.firstName ?? "").trim();
+                              const base  = last && first ? `${last}_${first}` : last || first;
+                              if (base) set("name", base);
+                            }
                           }
                         }
                       }}
