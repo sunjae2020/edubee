@@ -1,0 +1,98 @@
+artifacts/api-server/src/routes/camp-applications.ts 파일에만
+아래 엔드포인트를 추가해줘. 다른 파일 수정하지 마.
+
+=====================================================
+POST /api/camp-applications/:id/convert-to-quote
+=====================================================
+
+처리 로직 (순서대로):
+
+1. camp_applications에서 해당 id 조회
+   → 없으면 404: { error: 'Camp application not found' }
+
+2. application_status !== 'reviewing' 이면 400:
+   → { error: 'Application must be in reviewing status to convert to quote' }
+
+3. quote_id 가 이미 있으면 409:
+   → { error: 'Quote already exists for this application',
+       quoteId: existingQuoteId }
+
+4. quotes 테이블에 새 Quote INSERT:
+   - camp_application_id : camp_application.id
+   - lead_id             : camp_application.lead_id
+   - student_account_id  : camp_application.agent_account_id (있으면)
+   - customer_name       : camp_application.applicant_name
+   - customer_contact_id : null
+   - quote_status        : 'Draft'
+   - is_template         : false
+   - created_by          : req.user?.id ?? null
+   - owner_id            : camp_application.assigned_staff_id ?? null
+   - notes               : 'Created from Camp Application: '
+                           + camp_application.application_ref
+   - quote_ref_number    : 'QTE-' + 현재시각 밀리초 (임시 채번)
+                           예: 'QTE-' + Date.now().toString().slice(-8)
+
+5. camp_applications 업데이트:
+   - quote_id            : 새로 생성된 quote.id
+   - application_status  : 'quoted'
+   - quoted_at           : new Date()
+   - updated_at          : new Date()
+
+6. 성공 응답 반환:
+   {
+     success: true,
+     quoteId: quote.id,
+     quoteRefNumber: quote.quote_ref_number,
+     campApplicationId: camp_application.id,
+     message: 'Quote created successfully'
+   }
+
+=====================================================
+에러 핸들링
+=====================================================
+
+전체 로직을 try/catch로 감싸고
+catch에서: 500 { error: 'Failed to convert to quote', detail: err.message }
+
+트랜잭션 처리:
+quotes INSERT와 camp_applications UPDATE를
+하나의 DB 트랜잭션으로 묶어줘.
+(둘 중 하나 실패 시 전체 롤백)
+
+=====================================================
+수정 후 검증
+=====================================================
+
+1. npx tsc --noEmit → 오류 0개 확인
+
+2. 서버 재시작 → 정상 기동 확인
+
+3. 라우트 등록 확인:
+   서버 로그 또는 라우트 목록에서
+   POST /api/camp-applications/:id/convert-to-quote
+   가 등록되어 있는지 확인
+
+4. 간단한 동작 테스트:
+   DB에서 application_status = 'reviewing' 인
+   테스트 레코드 1개 준비:
+
+   UPDATE camp_applications
+   SET application_status = 'reviewing'
+   WHERE application_ref = 'CAMP-TST-002'
+   RETURNING id, application_ref, application_status;
+
+   → 반환된 id로 아래 API 호출 테스트:
+   POST /api/camp-applications/{id}/convert-to-quote
+
+   성공 응답에서 quoteId 확인
+   DB 확인:
+   SELECT id, application_status, quote_id, quoted_at
+   FROM camp_applications
+   WHERE application_ref = 'CAMP-TST-002';
+   → application_status = 'quoted', quote_id 값 존재 확인
+
+완료 보고 형식:
+✅ 수정된 파일: [목록]
+✅ 수정 내용: [설명]
+✅ 검증 결과: [tsc / 서버 / API 테스트 각각 결과]
+⚠️ 다음 작업: [있는 경우]

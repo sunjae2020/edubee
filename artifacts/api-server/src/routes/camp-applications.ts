@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { campApplications } from "@workspace/db/schema";
-import { contacts, leads, contracts } from "@workspace/db/schema";
+import { contacts, leads, contracts, quotes } from "@workspace/db/schema";
 import { eq, ilike, or, count, and, desc, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -130,6 +130,58 @@ router.patch("/camp-applications/:id/status", authenticate, requireRole(...ADMIN
   } catch (err) {
     console.error("[PATCH /api/camp-applications/:id/status]", err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const [application] = await db.select().from(campApplications)
+      .where(eq(campApplications.id, req.params.id)).limit(1);
+    if (!application) return res.status(404).json({ error: "Camp application not found" });
+
+    if (application.applicationStatus !== "reviewing")
+      return res.status(400).json({ error: "Application must be in reviewing status to convert to quote" });
+
+    if (application.quoteId)
+      return res.status(409).json({ error: "Quote already exists for this application", quoteId: application.quoteId });
+
+    const quoteRefNumber = "QTE-" + Date.now().toString().slice(-8);
+
+    const result = await db.transaction(async (tx) => {
+      const [newQuote] = await tx.insert(quotes).values({
+        quoteRefNumber,
+        campApplicationId: application.id,
+        leadId:            application.leadId           ?? null,
+        studentAccountId:  application.agentAccountId   ?? null,
+        customerName:      application.applicantName,
+        customerContactId: null,
+        quoteStatus:       "Draft",
+        isTemplate:        false,
+        createdBy:         req.user?.id                 ?? null,
+        ownerId:           application.assignedStaffId  ?? null,
+        notes:             `Created from Camp Application: ${application.applicationRef ?? ""}`,
+      }).returning();
+
+      await tx.update(campApplications).set({
+        quoteId:           newQuote.id,
+        applicationStatus: "quoted",
+        quotedAt:          new Date(),
+        updatedAt:         new Date(),
+      }).where(eq(campApplications.id, application.id));
+
+      return newQuote;
+    });
+
+    return res.json({
+      success:          true,
+      quoteId:          result.id,
+      quoteRefNumber:   result.quoteRefNumber,
+      campApplicationId: application.id,
+      message:          "Quote created successfully",
+    });
+  } catch (err: any) {
+    console.error("[POST /api/camp-applications/:id/convert-to-quote]", err);
+    return res.status(500).json({ error: "Failed to convert to quote", detail: err.message });
   }
 });
 
