@@ -255,7 +255,7 @@ export default function ContactsPage() {
               const avatarName = `${c.firstName} ${c.lastName}`;
               const displayName = c.fullName || avatarName;
               return (
-                <tr key={c.id} className="hover:bg-stone-50 transition-colors">
+                <tr key={c.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                   <td className="px-4 py-3">
                     <input type="checkbox" className="rounded" />
                   </td>

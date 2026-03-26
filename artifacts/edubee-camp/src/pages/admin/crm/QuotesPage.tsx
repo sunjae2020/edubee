@@ -123,7 +123,7 @@ export default function QuotesPage() {
               <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No quotes found</td></tr>
             )}
             {sorted.map(q => (
-              <tr key={q.id} className="hover:bg-stone-50 transition-colors">
+              <tr key={q.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                 <td className="px-4 py-3 font-mono text-xs text-stone-500">{q.quoteRefNumber ?? "—"}</td>
                 <td className="px-4 py-3">
                   <button onClick={() => navigate(`/admin/crm/quotes/${q.id}`)} className="text-left w-full">
