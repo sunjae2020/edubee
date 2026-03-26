@@ -5,6 +5,7 @@ import axios from "axios";
 import {
   ArrowLeft, Save, Building2, Users, FileText, Briefcase,
   Plus, Loader2, ChevronRight, ExternalLink, Package, DollarSign, Shield,
+  UserPlus, X,
 } from "lucide-react";
 import { PortalAccessPanel } from "@/components/crm/PortalAccessPanel";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -189,12 +191,16 @@ function parseContactName(raw: string): { firstName: string; lastName: string } 
   return { firstName: parts.slice(0, -1).join(" "), lastName: parts[parts.length - 1] };
 }
 
+const EMPTY_CFORM = { firstName: "", lastName: "", email: "", mobile: "", nationality: "" };
+
 function ContactLookup({ value, onChange, placeholder }: {
   value: string; onChange: (id: string, contact?: { email?: string | null; mobile?: string | null; firstName?: string; lastName?: string; dob?: string | null }) => void; placeholder?: string;
 }) {
   const [search, setSearch]       = useState("");
   const [open, setOpen]           = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating]   = useState(false);
+  const [cform, setCform]         = useState(EMPTY_CFORM);
   const qc = useQueryClient();
 
   const { data } = useQuery({
@@ -211,28 +217,33 @@ function ContactLookup({ value, onChange, placeholder }: {
 
   const displayName = selected ? `${selected.firstName} ${selected.lastName}` : "";
 
-  // Preview of the name that will be created (LASTNAME_Firstname)
-  const parsed = search.trim().length > 0 ? parseContactName(search) : null;
-  const createLabel = parsed
-    ? `${(parsed.lastName).toUpperCase()}_${parsed.firstName || ""}`.replace(/_$/, "")
-    : "";
+  function openCreateDialog() {
+    const p = search.trim().length > 0 ? parseContactName(search) : { firstName: "", lastName: "" };
+    setCform({ ...EMPTY_CFORM, firstName: p.firstName, lastName: p.lastName.toUpperCase() });
+    setOpen(false);
+    setCreateOpen(true);
+  }
 
   async function handleCreate() {
-    if (!parsed || creating) return;
+    if (!cform.lastName.trim() || creating) return;
     setCreating(true);
     try {
       const res = await axios.post(`${BASE}/api/crm/contacts`, {
-        firstName: parsed.firstName,
-        lastName:  parsed.lastName,
-        status:    "Active",
+        firstName:   cform.firstName.trim(),
+        lastName:    cform.lastName.trim().toUpperCase(),
+        email:       cform.email.trim()       || undefined,
+        mobile:      cform.mobile.trim()      || undefined,
+        nationality: cform.nationality.trim() || undefined,
+        status:      "Active",
         accountType: "Student",
       });
       const newContact = res.data;
       qc.invalidateQueries({ queryKey: ["contacts-lookup"] });
       qc.setQueryData(["contact-single", newContact.id], newContact);
       onChange(newContact.id, newContact);
-      setOpen(false);
+      setCreateOpen(false);
       setSearch("");
+      setCform(EMPTY_CFORM);
     } catch {
       // silent — user will retry
     } finally {
@@ -241,51 +252,133 @@ function ContactLookup({ value, onChange, placeholder }: {
   }
 
   const results: { id: string; firstName: string; lastName: string; email?: string | null; mobile?: string | null }[] = Array.isArray(data) ? data : [];
-  const showDropdown = open && (results.length > 0 || (search.trim().length > 0));
+  const showDropdown = open && (results.length > 0 || search.trim().length > 0);
 
   return (
-    <div className="relative">
-      <Input
-        value={open ? search : displayName}
-        placeholder={placeholder ?? "Search contacts…"}
-        onFocus={() => { setOpen(true); setSearch(""); }}
-        onBlur={() => setTimeout(() => setOpen(false), 200)}
-        onChange={e => setSearch(e.target.value)}
-        className="h-10 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
-      />
-      {showDropdown && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-52 overflow-y-auto">
-          {results.map(c => (
-            <button
-              key={c.id}
+    <>
+      <div className="relative">
+        <Input
+          value={open ? search : displayName}
+          placeholder={placeholder ?? "Search contacts…"}
+          onFocus={() => { setOpen(true); setSearch(""); }}
+          onBlur={() => setTimeout(() => setOpen(false), 200)}
+          onChange={e => setSearch(e.target.value)}
+          className="h-10 text-sm border-[#E8E6E2] focus:border-[#F5821F] pr-8"
+        />
+        {value && !open && (
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-300 hover:text-stone-500 transition-colors"
+            onMouseDown={e => { e.preventDefault(); onChange(""); }}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
+        {showDropdown && (
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-56 overflow-y-auto">
+            {results.map(c => (
+              <button
+                key={c.id}
+                type="button"
+                className="w-full px-3 py-2 text-left text-sm hover:bg-[#FEF0E3] transition-colors"
+                onMouseDown={() => { onChange(c.id, c); setOpen(false); }}
+              >
+                <span className="font-medium text-stone-800">{c.firstName} {c.lastName}</span>
+                {c.email && <span className="ml-2 text-xs text-stone-400">{c.email}</span>}
+              </button>
+            ))}
+            {search.trim().length > 0 && (
+              <button
+                type="button"
+                className="w-full px-3 py-2.5 text-left text-sm flex items-center gap-2 text-emerald-600 hover:bg-emerald-50 border-t border-[#F0EDE8] transition-colors font-medium"
+                onMouseDown={openCreateDialog}
+              >
+                <UserPlus className="w-4 h-4 shrink-0" />
+                Create &ldquo;{search.trim()}&rdquo;
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Create Contact Dialog ── */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-stone-800">
+              <UserPlus className="w-4 h-4 text-emerald-600" />
+              New Contact
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3 py-1">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-stone-500 mb-1 block">Last Name <span className="text-red-400">*</span></Label>
+                <Input
+                  value={cform.lastName}
+                  onChange={e => setCform(f => ({ ...f, lastName: e.target.value.toUpperCase() }))}
+                  placeholder="KIM"
+                  className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F] uppercase"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-stone-500 mb-1 block">First Name</Label>
+                <Input
+                  value={cform.firstName}
+                  onChange={e => setCform(f => ({ ...f, firstName: e.target.value }))}
+                  placeholder="Minjun"
+                  className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-stone-500 mb-1 block">Email</Label>
+              <Input
+                type="email"
+                value={cform.email}
+                onChange={e => setCform(f => ({ ...f, email: e.target.value }))}
+                placeholder="email@example.com"
+                className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-stone-500 mb-1 block">Mobile</Label>
+              <Input
+                value={cform.mobile}
+                onChange={e => setCform(f => ({ ...f, mobile: e.target.value }))}
+                placeholder="+82-10-0000-0000"
+                className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-stone-500 mb-1 block">Nationality</Label>
+              <Input
+                value={cform.nationality}
+                onChange={e => setCform(f => ({ ...f, nationality: e.target.value }))}
+                placeholder="Korean"
+                className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button
               type="button"
-              className="w-full px-3 py-2 text-left text-sm hover:bg-[#FEF0E3] transition-colors"
-              onMouseDown={() => {
-                onChange(c.id, c);
-                setOpen(false);
-              }}
+              size="sm"
+              disabled={!cform.lastName.trim() || creating}
+              onClick={handleCreate}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              <span className="font-medium text-stone-800">{c.firstName} {c.lastName}</span>
-              {c.email && <span className="ml-2 text-xs text-stone-400">{c.email}</span>}
-            </button>
-          ))}
-          {/* Inline create option — always shown when there is search text */}
-          {search.trim().length > 0 && (
-            <button
-              type="button"
-              disabled={creating}
-              className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 text-[#F5821F] hover:bg-[#FEF0E3] border-t border-[#F0EDE8] transition-colors disabled:opacity-60"
-              onMouseDown={handleCreate}
-            >
-              <Plus className="w-3.5 h-3.5 shrink-0" />
-              <span>
-                {creating ? "Creating…" : <>새 Contact 생성: <strong>{createLabel}</strong></>}
-              </span>
-            </button>
-          )}
-        </div>
-      )}
-    </div>
+              {creating ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Creating…</> : "Create Contact"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
