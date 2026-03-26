@@ -149,6 +149,14 @@ export const quote_products = pgTable("quote_products", {
   sortOrder:         integer("sort_order").notNull().default(0),
 });
 
+export const account_contacts = pgTable("account_contacts", {
+  id:        uuid("id").primaryKey().defaultRandom(),
+  accountId: uuid("account_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
+  contactId: uuid("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  role:      varchar("role", { length: 100 }),
+  createdOn: timestamp("created_on").notNull().defaultNow(),
+});
+
 export type Contact         = typeof contacts.$inferSelect;
 export type NewContact      = typeof contacts.$inferInsert;
 export type Account         = typeof accounts.$inferSelect;

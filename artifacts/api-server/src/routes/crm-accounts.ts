@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { accounts, contacts, authLogs } from "@workspace/db/schema";
+import { accounts, contacts, authLogs, account_contacts } from "@workspace/db/schema";
 import { eq, ilike, and, or, count, ne, SQL, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { authenticate } from "../middleware/authenticate.js";
@@ -491,6 +491,76 @@ router.get("/crm/accounts-search", authenticate, requireRole(...ADMIN_ROLES), as
   } catch (err) {
     console.error("[GET /crm/accounts-search]", err);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── Account Additional Contacts ─────────────────────────────────────────────
+
+// GET: list additional contacts linked to an account
+router.get("/crm/accounts/:id/contacts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const rows = await db
+      .select({
+        linkId:      account_contacts.id,
+        role:        account_contacts.role,
+        createdOn:   account_contacts.createdOn,
+        id:          contacts.id,
+        firstName:   contacts.firstName,
+        lastName:    contacts.lastName,
+        englishName: contacts.englishName,
+        originalName:contacts.originalName,
+        email:       contacts.email,
+        mobile:      contacts.mobile,
+        nationality: contacts.nationality,
+        dob:         contacts.dob,
+        snsType:     contacts.snsType,
+        snsId:       contacts.snsId,
+      })
+      .from(account_contacts)
+      .innerJoin(contacts, eq(account_contacts.contactId, contacts.id))
+      .where(eq(account_contacts.accountId, req.params.id))
+      .orderBy(account_contacts.createdOn);
+    return res.json(rows);
+  } catch (err) {
+    console.error("[GET /crm/accounts/:id/contacts]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST: link a contact to an account
+router.post("/crm/accounts/:id/contacts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { contactId, role } = req.body;
+    if (!contactId) return res.status(400).json({ error: "contactId is required" });
+
+    // Prevent duplicates
+    const [existing] = await db
+      .select()
+      .from(account_contacts)
+      .where(and(eq(account_contacts.accountId, req.params.id), eq(account_contacts.contactId, contactId)));
+    if (existing) return res.status(409).json({ error: "Contact already linked" });
+
+    const [created] = await db.insert(account_contacts).values({
+      accountId: req.params.id,
+      contactId,
+      role: role || null,
+    }).returning();
+    return res.status(201).json(created);
+  } catch (err) {
+    console.error("[POST /crm/accounts/:id/contacts]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE: unlink a contact from an account
+router.delete("/crm/accounts/:id/contacts/:linkId", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    await db.delete(account_contacts)
+      .where(and(eq(account_contacts.id, req.params.linkId), eq(account_contacts.accountId, req.params.id)));
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("[DELETE /crm/accounts/:id/contacts/:linkId]", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

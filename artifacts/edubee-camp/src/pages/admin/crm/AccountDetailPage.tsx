@@ -668,6 +668,45 @@ export default function AccountDetailPage() {
     queryFn: () => axios.get(`${BASE}/api/auth/me`).then(r => r.data),
   });
 
+  // ── Additional Contacts ───────────────────────────────────────────────────
+  const [showAddContact, setShowAddContact]   = useState(false);
+  const [contactSearch, setContactSearch]     = useState("");
+
+  const { data: additionalContacts = [], isLoading: addlLoading } = useQuery<any[]>({
+    queryKey: ["crm-account-additional-contacts", id],
+    queryFn: () => axios.get(`${BASE}/api/crm/accounts/${id}/contacts`).then(r => r.data),
+    enabled: !!id && !isNew,
+  });
+
+  const { data: contactSearchResults = [] } = useQuery<any[]>({
+    queryKey: ["crm-contacts-search-inline", contactSearch],
+    queryFn: () => axios.get(`${BASE}/api/crm/contacts?search=${encodeURIComponent(contactSearch)}&limit=10`).then(r => r.data?.data ?? r.data),
+    enabled: showAddContact && contactSearch.length >= 1,
+  });
+
+  const addContactMut = useMutation({
+    mutationFn: (contactId: string) =>
+      axios.post(`${BASE}/api/crm/accounts/${id}/contacts`, { contactId }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crm-account-additional-contacts", id] });
+      setContactSearch("");
+      setShowAddContact(false);
+      toast({ title: "Contact linked" });
+    },
+    onError: (err: any) => {
+      toast({ title: err?.response?.data?.error ?? "Failed to link contact", variant: "destructive" });
+    },
+  });
+
+  const removeContactMut = useMutation({
+    mutationFn: (linkId: string) =>
+      axios.delete(`${BASE}/api/crm/accounts/${id}/contacts/${linkId}`).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crm-account-additional-contacts", id] });
+      toast({ title: "Contact removed" });
+    },
+  });
+
   const emptyForm: FormData = {
     name: "", manualInput: false, accountType: "Student", accountCategory: undefined as any,
     parentAccountId: undefined as any, primaryContactId: undefined as any, secondaryContactId: undefined as any,
@@ -1095,112 +1134,197 @@ export default function AccountDetailPage() {
           )}
 
           {tab === "contacts" && (
-            <div className="space-y-4">
-              {/* Contact cards */}
-              {!account.primaryContact && !account.secondaryContact ? (
-                <div className="bg-white rounded-xl border border-[#E8E6E2] p-8 text-center text-stone-400">
-                  <Users size={32} strokeWidth={1.5} className="mx-auto mb-3" />
-                  <p className="text-sm font-medium text-stone-500">No contacts linked yet</p>
-                  <p className="text-xs text-stone-400 mt-1">
-                    Add a Primary or Secondary Contact in the Overview tab.
+            <div className="space-y-5">
+
+              {/* ── Primary / Secondary ─────────────────────────────────── */}
+              <div>
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">Primary &amp; Secondary</p>
+                {!account.primaryContact && !account.secondaryContact ? (
+                  <div className="bg-white rounded-xl border border-[#E8E6E2] p-6 text-center text-stone-400">
+                    <Users size={28} strokeWidth={1.5} className="mx-auto mb-2" />
+                    <p className="text-sm font-medium text-stone-500">No primary/secondary contact linked</p>
+                    <p className="text-xs text-stone-400 mt-0.5">Set them in the Overview tab.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {account.primaryContact && (
+                      <div
+                        className="bg-white rounded-xl border border-[#E8E6E2] p-5 flex flex-col gap-3 hover:shadow-sm transition-shadow cursor-pointer group"
+                        onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[#FEF0E3] flex items-center justify-center text-[#F5821F] font-semibold text-sm flex-shrink-0">
+                              {account.primaryContact.firstName?.[0]}{account.primaryContact.lastName?.[0]}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-stone-800 text-sm group-hover:text-[#F5821F] transition-colors">
+                                {account.primaryContact.firstName} {account.primaryContact.lastName?.toUpperCase()}
+                              </p>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 mt-0.5">Primary</span>
+                            </div>
+                          </div>
+                          <ExternalLink size={14} className="text-stone-300 group-hover:text-[#F5821F] transition-colors mt-1" />
+                        </div>
+                        <div className="space-y-1.5 text-xs">
+                          {account.primaryContact.originalName && (
+                            <div className="flex items-center gap-2">
+                              <span className="w-16 text-stone-400 flex-shrink-0">원래 이름</span>
+                              <span className="text-stone-700 font-medium">{account.primaryContact.originalName}</span>
+                            </div>
+                          )}
+                          {account.primaryContact.email && (
+                            <div className="flex items-center gap-2">
+                              <span className="w-16 text-stone-400 flex-shrink-0">Email</span>
+                              <span className="text-stone-700">{account.primaryContact.email}</span>
+                            </div>
+                          )}
+                          {account.primaryContact.mobile && (
+                            <div className="flex items-center gap-2">
+                              <span className="w-16 text-stone-400 flex-shrink-0">Phone</span>
+                              <span className="text-stone-700">{account.primaryContact.mobile}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {account.secondaryContact && (
+                      <div
+                        className="bg-white rounded-xl border border-[#E8E6E2] p-5 flex flex-col gap-3 hover:shadow-sm transition-shadow cursor-pointer group"
+                        onClick={() => navigate(`/admin/crm/contacts/${account.secondaryContact!.id}`)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[#EFF6FF] flex items-center justify-center text-blue-600 font-semibold text-sm flex-shrink-0">
+                              {account.secondaryContact.firstName?.[0]}{account.secondaryContact.lastName?.[0]}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-stone-800 text-sm group-hover:text-blue-600 transition-colors">
+                                {account.secondaryContact.firstName} {account.secondaryContact.lastName?.toUpperCase()}
+                              </p>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 mt-0.5">Secondary</span>
+                            </div>
+                          </div>
+                          <ExternalLink size={14} className="text-stone-300 group-hover:text-blue-500 transition-colors mt-1" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Additional Contacts ──────────────────────────────────── */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide">
+                    Additional Contacts
+                    {additionalContacts.length > 0 && (
+                      <span className="ml-1.5 text-[10px] bg-stone-100 text-stone-500 rounded-full px-1.5 py-0.5">{additionalContacts.length}</span>
+                    )}
                   </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1 border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"
+                    onClick={() => { setShowAddContact(v => !v); setContactSearch(""); }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Contact
+                  </Button>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Primary Contact */}
-                  {account.primaryContact && (
-                    <div
-                      className="bg-white rounded-xl border border-[#E8E6E2] p-5 flex flex-col gap-3 hover:shadow-sm transition-shadow cursor-pointer group"
-                      onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#FEF0E3] flex items-center justify-center text-[#F5821F] font-semibold text-sm flex-shrink-0">
-                            {account.primaryContact.firstName?.[0]}{account.primaryContact.lastName?.[0]}
+
+                {/* Search dropdown */}
+                {showAddContact && (
+                  <div className="bg-white border border-[#E8E6E2] rounded-xl p-4 mb-3 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Input
+                        autoFocus
+                        value={contactSearch}
+                        onChange={e => setContactSearch(e.target.value)}
+                        placeholder="Search contacts by name…"
+                        className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                      />
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-stone-400 hover:text-stone-600"
+                        onClick={() => { setShowAddContact(false); setContactSearch(""); }}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {contactSearch.length >= 1 && (
+                      <div className="space-y-1 max-h-52 overflow-y-auto">
+                        {contactSearchResults.length === 0 ? (
+                          <p className="text-xs text-stone-400 text-center py-3">No contacts found</p>
+                        ) : contactSearchResults.map((c: any) => {
+                          const alreadyLinked = additionalContacts.some((a: any) => a.id === c.id)
+                            || account.primaryContactId === c.id
+                            || account.secondaryContactId === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              disabled={alreadyLinked || addContactMut.isPending}
+                              onClick={() => addContactMut.mutate(c.id)}
+                              className="w-full text-left px-3 py-2 rounded-lg hover:bg-[#FEF0E3] transition-colors flex items-center justify-between group disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <div>
+                                <span className="text-sm font-medium text-stone-800 group-hover:text-[#F5821F]">
+                                  {c.firstName} {c.lastName?.toUpperCase()}
+                                </span>
+                                {c.originalName && <span className="text-xs text-stone-400 ml-1.5">({c.originalName})</span>}
+                                {c.email && <p className="text-xs text-stone-400">{c.email}</p>}
+                              </div>
+                              {alreadyLinked
+                                ? <span className="text-xs text-stone-400">Already linked</span>
+                                : <Plus className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#F5821F]" />
+                              }
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {contactSearch.length === 0 && (
+                      <p className="text-xs text-stone-400 text-center">Type a name to search contacts</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Additional contacts list */}
+                {addlLoading ? (
+                  <div className="flex justify-center py-6"><Loader2 size={18} className="animate-spin text-stone-300" /></div>
+                ) : additionalContacts.length === 0 ? (
+                  <div className="bg-white border border-dashed border-[#E8E6E2] rounded-xl p-5 text-center text-stone-400">
+                    <p className="text-sm">No additional contacts yet</p>
+                    <p className="text-xs mt-0.5">Use the button above to link contacts.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {additionalContacts.map((c: any) => (
+                      <div key={c.linkId}
+                        className="bg-white border border-[#E8E6E2] rounded-xl px-4 py-3 flex items-center justify-between group hover:border-stone-300 transition-colors">
+                        <div
+                          className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
+                          onClick={() => navigate(`/admin/crm/contacts/${c.id}`)}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 font-semibold text-xs flex-shrink-0">
+                            {c.firstName?.[0]}{c.lastName?.[0]}
                           </div>
-                          <div>
-                            <p className="font-semibold text-stone-800 text-sm group-hover:text-[#F5821F] transition-colors">
-                              {account.primaryContact.firstName} {account.primaryContact.lastName}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-stone-800 group-hover:text-[#F5821F] truncate">
+                              {c.firstName} {c.lastName?.toUpperCase()}
+                              {c.originalName && <span className="text-stone-400 font-normal ml-1.5">({c.originalName})</span>}
                             </p>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 mt-0.5">
-                              Primary
-                            </span>
+                            <p className="text-xs text-stone-400 truncate">{c.email || c.mobile || ""}</p>
                           </div>
                         </div>
-                        <ExternalLink size={14} className="text-stone-300 group-hover:text-[#F5821F] transition-colors mt-1" />
+                        <button
+                          onClick={() => { if (confirm(`Remove ${c.firstName} ${c.lastName} from this account?`)) removeContactMut.mutate(c.linkId); }}
+                          className="ml-3 flex-shrink-0 p-1.5 rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Remove"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                      <div className="space-y-1.5 text-xs">
-                        {account.primaryContact.originalName && (
-                          <div className="flex items-center gap-2">
-                            <span className="w-16 text-stone-400 flex-shrink-0">원래 이름</span>
-                            <span className="text-stone-700 font-medium">{account.primaryContact.originalName}</span>
-                          </div>
-                        )}
-                        {account.primaryContact.email && (
-                          <div className="flex items-center gap-2">
-                            <span className="w-16 text-stone-400 flex-shrink-0">Email</span>
-                            <span className="text-stone-700">{account.primaryContact.email}</span>
-                          </div>
-                        )}
-                        {account.primaryContact.mobile && (
-                          <div className="flex items-center gap-2">
-                            <span className="w-16 text-stone-400 flex-shrink-0">Phone</span>
-                            <span className="text-stone-700">{account.primaryContact.mobile}</span>
-                          </div>
-                        )}
-                        {account.primaryContact.nationality && (
-                          <div className="flex items-center gap-2">
-                            <span className="w-16 text-stone-400 flex-shrink-0">Nation</span>
-                            <span className="text-stone-700">{account.primaryContact.nationality}</span>
-                          </div>
-                        )}
-                        {account.primaryContact.dob && (
-                          <div className="flex items-center gap-2">
-                            <span className="w-16 text-stone-400 flex-shrink-0">DOB</span>
-                            <span className="text-stone-700">{new Date(account.primaryContact.dob).toLocaleDateString()}</span>
-                          </div>
-                        )}
-                        {account.primaryContact.snsType && (
-                          <div className="flex items-center gap-2">
-                            <span className="w-16 text-stone-400 flex-shrink-0">SNS</span>
-                            <span className="text-stone-700">{account.primaryContact.snsType}{account.primaryContact.snsId ? ` · ${account.primaryContact.snsId}` : ""}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Secondary Contact */}
-                  {account.secondaryContact && (
-                    <div
-                      className="bg-white rounded-xl border border-[#E8E6E2] p-5 flex flex-col gap-3 hover:shadow-sm transition-shadow cursor-pointer group"
-                      onClick={() => navigate(`/admin/crm/contacts/${account.secondaryContact!.id}`)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#EFF6FF] flex items-center justify-center text-blue-600 font-semibold text-sm flex-shrink-0">
-                            {account.secondaryContact.firstName?.[0]}{account.secondaryContact.lastName?.[0]}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-stone-800 text-sm group-hover:text-blue-600 transition-colors">
-                              {account.secondaryContact.firstName} {account.secondaryContact.lastName}
-                            </p>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 mt-0.5">
-                              Secondary
-                            </span>
-                          </div>
-                        </div>
-                        <ExternalLink size={14} className="text-stone-300 group-hover:text-blue-500 transition-colors mt-1" />
-                      </div>
-                      <p className="text-xs text-stone-400 italic">Click to view full contact details</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Info note */}
-              <div className="bg-[#FAFAF9] rounded-lg border border-[#E8E6E2] px-4 py-3 text-xs text-stone-400">
-                To add or change contacts, use the <strong className="text-stone-500">Primary / Secondary Contact</strong> fields in the Overview tab.
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
