@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
@@ -13,51 +13,287 @@ import { NotePanel } from "@/components/shared/NotePanel";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import { Button } from "@/components/ui/button";
 import { ParticipantEditDialog, ParticipantAddDialog } from "@/components/shared/ParticipantDialogs";
-import { Pencil, Plus, ClipboardList, ExternalLink } from "lucide-react";
+import { Pencil, Plus, Check, ArrowRight, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const APP_STATUSES = ["submitted", "reviewing", "quoted", "confirmed", "cancelled"];
-const GENDERS = ["male", "female", "other", "prefer_not_to_say"];
-const ENGLISH_LEVELS = ["beginner", "elementary", "pre_intermediate", "intermediate", "upper_intermediate", "advanced", "proficient"];
 
 const TABS = [
-  { key: "overview", label: "Overview" },
+  { key: "overview",     label: "Overview" },
   { key: "participants", label: "Participants" },
-  { key: "documents", label: "Documents" },
-  { key: "notes", label: "Notes" },
+  { key: "documents",    label: "Documents" },
+  { key: "notes",        label: "Notes" },
 ];
 
-const STATUS_COLORS: Record<string, string> = {
-  submitted:  "bg-[#F4F3F1] text-[#57534E]",
-  reviewing:  "bg-[#FEF0E3] text-[#F5821F]",
-  quoted:     "bg-[#FEF9C3] text-[#CA8A04]",
-  confirmed:  "bg-[#DCFCE7] text-[#16A34A]",
-  cancelled:  "bg-[#FEF2F2] text-[#DC2626]",
+const STATUS_LABELS: Record<string, string> = {
+  submitted: "Submitted",
+  reviewing: "Reviewing",
+  quoted:    "Quoted",
+  confirmed: "Confirmed",
+  cancelled: "Cancelled",
 };
+
+const STATUS_BADGE: Record<string, string> = {
+  submitted: "bg-[#F4F3F1] text-[#57534E]",
+  reviewing: "bg-[#FEF0E3] text-[#F5821F]",
+  quoted:    "bg-[#FEF9C3] text-[#CA8A04]",
+  confirmed: "bg-[#DCFCE7] text-[#16A34A]",
+  cancelled: "bg-[#FEF2F2] text-[#DC2626]",
+};
+
+const WORKFLOW_STEPS = ["submitted", "reviewing", "quoted", "confirmed"] as const;
+
+// ─── Workflow Progress Bar ────────────────────────────────────────────────────
+function WorkflowBar({ status }: { status: string }) {
+  const isCancelled = status === "cancelled";
+  const currentIdx  = WORKFLOW_STEPS.indexOf(status as typeof WORKFLOW_STEPS[number]);
+
+  return (
+    <div className="mb-6 rounded-xl border border-[#E8E6E2] bg-white px-6 py-4">
+      {isCancelled && (
+        <div className="mb-3 flex items-center gap-2">
+          <span className="rounded-full bg-[#FEF2F2] px-3 py-0.5 text-xs font-medium text-[#DC2626]">
+            Cancelled
+          </span>
+          <span className="text-xs text-[#A8A29E]">This application has been cancelled.</span>
+        </div>
+      )}
+      <div className="flex items-center gap-0">
+        {WORKFLOW_STEPS.map((step, i) => {
+          const isDone    = !isCancelled && currentIdx > i;
+          const isCurrent = !isCancelled && currentIdx === i;
+          const label     = STATUS_LABELS[step];
+
+          let circleStyle = "bg-[#F4F3F1] text-[#A8A29E]";
+          let textStyle   = "text-[#A8A29E]";
+          if (isCancelled) {
+            circleStyle = "bg-[#F4F3F1] text-[#A8A29E]";
+            textStyle   = "text-[#A8A29E]";
+          } else if (isDone) {
+            circleStyle = "bg-[#DCFCE7] text-[#16A34A]";
+            textStyle   = "text-[#16A34A] font-medium";
+          } else if (isCurrent) {
+            circleStyle = "bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F]";
+            textStyle   = "text-[#F5821F] font-semibold";
+          }
+
+          return (
+            <div key={step} className="flex items-center flex-1 min-w-0">
+              <div className="flex flex-col items-center gap-1.5">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 ${circleStyle}`}>
+                  {isDone ? <Check className="w-4 h-4" /> : isCurrent ? "●" : "○"}
+                </div>
+                <span className={`text-xs whitespace-nowrap ${textStyle}`}>{label}</span>
+              </div>
+              {i < WORKFLOW_STEPS.length - 1 && (
+                <div className="flex-1 h-px bg-[#E8E6E2] mx-2 mb-4" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Action Buttons ───────────────────────────────────────────────────────────
+function ActionButtons({
+  app,
+  id,
+  onStatusChange,
+  statusChanging,
+}: {
+  app: any;
+  id: string;
+  onStatusChange: (s: string) => void;
+  statusChanging: boolean;
+}) {
+  const [, navigate]        = useLocation();
+  const { toast }           = useToast();
+  const [converting, setConverting] = useState(false);
+  const status = app.applicationStatus ?? app.status;
+
+  if (status === "submitted") {
+    return (
+      <Button
+        variant="outline"
+        disabled={statusChanging}
+        onClick={() => onStatusChange("reviewing")}
+        className="border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1]"
+      >
+        {statusChanging ? "Updating..." : "Mark as Reviewing"}
+      </Button>
+    );
+  }
+
+  if (status === "reviewing") {
+    return (
+      <button
+        disabled={converting}
+        onClick={async () => {
+          setConverting(true);
+          try {
+            const res = await axios.post(`${BASE}/api/camp-applications/${id}/convert-to-quote`);
+            toast({ title: "Quote created successfully!" });
+            navigate(`/admin/crm/quotes/${res.data.quoteId}`);
+          } catch (err: any) {
+            const msg = err?.response?.data?.error ?? "Failed to convert to quote";
+            toast({ variant: "destructive", title: msg });
+          } finally {
+            setConverting(false);
+          }
+        }}
+        style={{
+          background: converting ? "#D96A0A" : "#F5821F",
+          color: "white",
+          border: "none",
+          borderRadius: 8,
+          padding: "10px 20px",
+          fontWeight: 600,
+          fontSize: 14,
+          cursor: converting ? "not-allowed" : "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          transition: "background 0.15s, transform 0.15s",
+        }}
+        onMouseEnter={e => { if (!converting) (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "none"; }}
+      >
+        {converting && <Loader2 className="w-4 h-4 animate-spin" />}
+        {converting ? "Converting..." : "Convert to Quote"}
+      </button>
+    );
+  }
+
+  if (status === "quoted") {
+    return (
+      <Button
+        variant="outline"
+        disabled={!app.quoteId}
+        title={!app.quoteId ? "Quote ID not found" : undefined}
+        onClick={() => app.quoteId && navigate(`/admin/crm/quotes/${app.quoteId}`)}
+        className="border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1] gap-1"
+      >
+        View Quote <ArrowRight className="w-4 h-4" />
+      </Button>
+    );
+  }
+
+  if (status === "confirmed") {
+    return (
+      <div className="flex gap-2">
+        {app.quoteId && (
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/admin/crm/quotes/${app.quoteId}`)}
+            className="border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1] gap-1"
+          >
+            View Quote <ArrowRight className="w-4 h-4" />
+          </Button>
+        )}
+        {app.contractId && (
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/admin/crm/contracts/${app.contractId}`)}
+            className="border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1] gap-1"
+          >
+            View Contract <ArrowRight className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  if (status === "cancelled") {
+    return (
+      <span className="text-sm text-[#A8A29E]">This application has been cancelled.</span>
+    );
+  }
+
+  return null;
+}
+
+// ─── Linked Records Card ──────────────────────────────────────────────────────
+function LinkedRecordsCard({ app }: { app: any }) {
+  const [, navigate] = useLocation();
+
+  return (
+    <div style={{
+      background: "white",
+      border: "1px solid #E8E6E2",
+      borderRadius: 12,
+      padding: "20px 24px",
+    }}>
+      <div className="text-sm font-semibold text-[#1A1917] mb-4">Linked Records</div>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-[#57534E] w-20">Quote</span>
+            {app.quoteId ? (
+              <span className="text-sm font-medium text-[#1A1917]">{app.quoteRefNumber ?? app.quoteId}</span>
+            ) : (
+              <span className="text-sm text-[#A8A29E]">Not created yet</span>
+            )}
+          </div>
+          {app.quoteId && (
+            <button
+              onClick={() => navigate(`/admin/crm/quotes/${app.quoteId}`)}
+              style={{ color: "#F5821F", fontWeight: 500, fontSize: 14, background: "none", border: "none", cursor: "pointer" }}
+            >
+              View →
+            </button>
+          )}
+        </div>
+        <div className="h-px bg-[#F4F3F1]" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-[#57534E] w-20">Contract</span>
+            {app.contractId ? (
+              <span className="text-sm font-medium text-[#1A1917]">{app.contractNumber ?? app.contractId}</span>
+            ) : (
+              <span className="text-sm text-[#A8A29E]">Not created yet</span>
+            )}
+          </div>
+          {app.contractId && (
+            <button
+              onClick={() => navigate(`/admin/crm/contracts/${app.contractId}`)}
+              style={{ color: "#F5821F", fontWeight: 500, fontSize: 14, background: "none", border: "none", cursor: "pointer" }}
+            >
+              View →
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CampApplicationDetail() {
-  const { id } = useParams<{ id: string }>();
-  const qc = useQueryClient();
-  const { toast } = useToast();
-  const { user } = useAuth();
+  const { id }           = useParams<{ id: string }>();
+  const qc               = useQueryClient();
+  const { toast }        = useToast();
+  const { user }         = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
 
   const [editParticipant, setEditParticipant] = useState<any | null>(null);
-  const [addParticipant, setAddParticipant] = useState(false);
+  const [addParticipant,  setAddParticipant]  = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["camp-application-detail-page", id],
-    queryFn: () => axios.get(`${BASE}/api/applications/${id}`).then(r => r.data),
+    queryFn: () => axios.get(`${BASE}/api/camp-applications/${id}`).then(r => r.data),
   });
 
-  const app = data?.data ?? data;
+  const app          = data?.data ?? data;
   const participants: any[] = app?.participants ?? [];
 
-  const isContracted = app?.status === "contracted";
-  const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "") && !isContracted;
+  const appStatus    = app?.applicationStatus ?? app?.status ?? "submitted";
+  const isContracted = appStatus === "confirmed";
+  const canEdit      = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "") &&
+                       !isContracted && appStatus !== "cancelled";
 
   const updateApp = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
@@ -68,6 +304,16 @@ export default function CampApplicationDetail() {
       toast({ title: "Camp Application updated" });
     },
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
+  });
+
+  const changeStatus = useMutation({
+    mutationFn: (newStatus: string) =>
+      axios.patch(`${BASE}/api/camp-applications/${id}/status`, { applicationStatus: newStatus }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["camp-application-detail-page", id] });
+      qc.invalidateQueries({ queryKey: ["camp-applications"] });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to update status" }),
   });
 
   const updateParticipant = useMutation({
@@ -97,17 +343,49 @@ export default function CampApplicationDetail() {
     onSave: async (data) => { await updateApp.mutateAsync(data); },
   });
 
-  if (isLoading) return <div className="p-6 space-y-4">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-12" />)}</div>;
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-4">
+        <div className="h-20 rounded-xl bg-[#F4F3F1] animate-pulse" />
+        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12" />)}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="m-6 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-5 py-4 text-sm text-[#DC2626]">
+        Failed to load camp application. Please refresh the page.
+      </div>
+    );
+  }
+
   if (!app) return <div className="p-6 text-muted-foreground">Camp Application not found.</div>;
 
-  const statusColor = STATUS_COLORS[app.status ?? "pending"] ?? "bg-gray-100 text-gray-600";
+  const badgeCls = STATUS_BADGE[appStatus] ?? "bg-[#F4F3F1] text-[#57534E]";
+
+  const badge = (
+    <span style={{ borderRadius: 999, padding: "3px 12px", fontSize: 12, fontWeight: 500 }}
+      className={badgeCls}>
+      {STATUS_LABELS[appStatus] ?? appStatus}
+    </span>
+  );
+
+  const headerActions = (
+    <ActionButtons
+      app={app}
+      id={id!}
+      onStatusChange={(s) => changeStatus.mutate(s)}
+      statusChanging={changeStatus.isPending}
+    />
+  );
 
   return (
     <>
       <DetailPageLayout
-        title={app.applicationNumber ?? "Camp Application"}
-        subtitle={app.studentName ?? ""}
-        badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>{(app.status ?? "pending").replace(/_/g, " ")}</span>}
+        title={app.applicationRef ?? app.applicationNumber ?? "Camp Application"}
+        subtitle={app.applicantName ?? app.studentName ?? ""}
+        badge={badge}
         backPath="/admin/camp-applications"
         backLabel="Camp Applications"
         tabs={TABS}
@@ -119,68 +397,69 @@ export default function CampApplicationDetail() {
         onEdit={startEdit}
         onSave={saveEdit}
         onCancel={cancelEdit}
+        headerExtra={headerActions}
       >
-        {/* ── Contracted Banner ── */}
-        {app.status === "contracted" && app.contractId && (
-          <div className="mb-4 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-            <div className="flex items-center gap-2 text-sm text-green-800">
-              <ClipboardList className="w-4 h-4 flex-shrink-0" />
-              <span>
-                Converted to Contract <strong>{app.contractNumber}</strong> — manage services in Contracts.
-              </span>
-            </div>
-            <a
-              href={`${BASE}/admin/crm/contracts/${app.contractId}`}
-              className="flex items-center gap-1 rounded-md border border-green-300 bg-white px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-50 transition-colors"
-            >
-              View Contract <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-        )}
+        {/* ── Workflow Progress Bar ── */}
+        <WorkflowBar status={appStatus} />
 
         {/* ── Overview ── */}
         {activeTab === "overview" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <DetailSection title="Camp Application Info">
-              <DetailRow label="Application #" value={app.applicationNumber} />
-              <EditableField label="Status" isEditing={isEditing} value={app.status?.replace(/_/g, " ")}
-                editChildren={
-                  <Select value={getValue("status")} onValueChange={v => setField("status", v)}>
-                    <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {APP_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                } />
-              <DetailRow label="Primary Language" value={app.primaryLanguage} />
-              <DetailRow label="Referral Source" value={app.referralSource} />
-              <DetailRow label="Total Children" value={app.totalChildren} />
-              <DetailRow label="Total Adults" value={app.totalAdults} />
-              <DetailRow label="Submitted" value={app.createdAt ? format(new Date(app.createdAt), "PPP") : "—"} />
-            </DetailSection>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <DetailSection title="Camp Application Info">
+                <DetailRow label="Application #" value={app.applicationRef ?? app.applicationNumber} />
+                <EditableField
+                  label="Status"
+                  isEditing={isEditing}
+                  value={STATUS_LABELS[appStatus] ?? appStatus}
+                  editChildren={
+                    <Select value={getValue("applicationStatus")} onValueChange={v => setField("applicationStatus", v)}>
+                      <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {APP_STATUSES.map(s => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  }
+                />
+                <DetailRow label="Nationality"      value={app.applicantNationality} />
+                <DetailRow label="Phone"            value={app.applicantPhone} />
+                <DetailRow label="Email"            value={app.applicantEmail} />
+                <DetailRow label="Adults"           value={app.adultCount} />
+                <DetailRow label="Students"         value={app.studentCount} />
+                <DetailRow label="Submitted"        value={app.createdAt ? format(new Date(app.createdAt), "PPP") : "—"} />
+              </DetailSection>
 
-            <DetailSection title="Package Info">
-              <DetailRow label="Package Group" value={app.packageGroupName ?? app.packageGroupId} />
-              <DetailRow label="Package" value={app.packageName ?? app.packageId} />
-              <DetailRow label="Preferred Start" value={app.preferredStartDate ? format(new Date(app.preferredStartDate), "PPP") : "—"} />
-              <DetailRow label="Currency" value={app.currency} />
-              <DetailRow label="Total Amount" value={app.totalAmount ? `${app.currency ?? ""} ${Number(app.totalAmount).toLocaleString()}` : "—"} />
-            </DetailSection>
+              <DetailSection title="Package Info">
+                <DetailRow label="Package Group"    value={app.packageGroupName   ?? app.packageGroupId} />
+                <DetailRow label="Package"          value={app.packageName        ?? app.packageId} />
+                <DetailRow label="Preferred Start"  value={app.preferredStartDate ? format(new Date(app.preferredStartDate), "PPP") : "—"} />
+                <DetailRow label="Special Req."     value={app.specialRequirements} />
+                <DetailRow label="Dietary"          value={app.dietaryRequirements} />
+                <DetailRow label="Medical"          value={app.medicalConditions} />
+              </DetailSection>
 
-            <DetailSection title="Student Info">
-              <DetailRow label="Student Name" value={app.studentName} />
-              <DetailRow label="Email" value={app.clientEmail} />
-              <DetailRow label="Phone" value={app.clientPhone} />
-              <DetailRow label="Country" value={app.clientCountry} />
-            </DetailSection>
+              <DetailSection title="Emergency Contact">
+                <DetailRow label="Name"  value={app.emergencyContactName} />
+                <DetailRow label="Phone" value={app.emergencyContactPhone} />
+              </DetailSection>
 
-            <DetailSection title="Agent Info">
-              <DetailRow label="Agent" value={app.agentName ?? app.agentId} />
-              <DetailRow label="Referral Code" value={app.referralAgentCode} />
-              <DetailRow label="Special Requests" value={app.specialRequests} />
-            </DetailSection>
-            <div className="lg:col-span-2">
-              <SystemInfoSection owner={app.agentId ?? null} createdAt={app.createdAt} updatedAt={app.updatedAt} />
+              <DetailSection title="Assignment">
+                <DetailRow label="Assigned Staff" value={app.assignedStaffId} />
+                <DetailRow label="Lead ID"        value={app.leadId} />
+                <DetailRow label="Quoted At"      value={app.quotedAt ? format(new Date(app.quotedAt), "PPP p") : "—"} />
+              </DetailSection>
+
+              <div className="lg:col-span-2">
+                <SystemInfoSection
+                  owner={app.assignedStaffId ?? null}
+                  createdAt={app.createdAt}
+                  updatedAt={app.updatedAt}
+                />
+              </div>
+
+              <div className="lg:col-span-2">
+                <LinkedRecordsCard app={app} />
+              </div>
             </div>
           </div>
         )}
@@ -197,55 +476,55 @@ export default function CampApplicationDetail() {
             ) : isContracted ? (
               <p className="text-xs text-muted-foreground text-right">Participants are read-only after contract conversion.</p>
             ) : null}
-          <div className="bg-card rounded-xl border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30 text-xs text-muted-foreground">
-                  <th className="px-4 py-2.5 text-left w-8">#</th>
-                  <th className="px-4 py-2.5 text-left">Name</th>
-                  <th className="px-4 py-2.5 text-left">Type</th>
-                  <th className="px-4 py-2.5 text-left">DOB</th>
-                  <th className="px-4 py-2.5 text-left">Gender</th>
-                  <th className="px-4 py-2.5 text-left">Nationality</th>
-                  <th className="px-4 py-2.5 text-left">Grade</th>
-                  <th className="px-4 py-2.5 text-left">Passport #</th>
-                  {canEdit && <th className="px-4 py-2.5 w-10" />}
-                </tr>
-              </thead>
-              <tbody>
-                {participants.length === 0 ? (
-                  <tr>
-                    <td colSpan={canEdit ? 9 : 8} className="px-4 py-8 text-center text-muted-foreground text-xs">
-                      No participants on this camp application.
-                    </td>
+            <div className="bg-card rounded-xl border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30 text-xs text-muted-foreground">
+                    <th className="px-4 py-2.5 text-left w-8">#</th>
+                    <th className="px-4 py-2.5 text-left">Name</th>
+                    <th className="px-4 py-2.5 text-left">Type</th>
+                    <th className="px-4 py-2.5 text-left">DOB</th>
+                    <th className="px-4 py-2.5 text-left">Gender</th>
+                    <th className="px-4 py-2.5 text-left">Nationality</th>
+                    <th className="px-4 py-2.5 text-left">Grade</th>
+                    <th className="px-4 py-2.5 text-left">Passport #</th>
+                    {canEdit && <th className="px-4 py-2.5 w-10" />}
                   </tr>
-                ) : participants.map((p: any, i: number) => (
-                  <tr key={p.id} className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors">
-                    <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{p.fullName ?? "—"}</div>
-                      {p.fullNameNative && <div className="text-xs text-muted-foreground">{p.fullNameNative}</div>}
-                    </td>
-                    <td className="px-4 py-3 capitalize">
-                      <span className="px-1.5 py-0.5 bg-muted rounded text-xs">{p.participantType ?? "child"}</span>
-                    </td>
-                    <td className="px-4 py-3 text-sm">{p.dateOfBirth ? format(new Date(p.dateOfBirth), "MMM d, yyyy") : "—"}</td>
-                    <td className="px-4 py-3 capitalize text-sm">{p.gender ?? "—"}</td>
-                    <td className="px-4 py-3 text-sm">{p.nationality ?? "—"}</td>
-                    <td className="px-4 py-3 text-sm">{p.grade ?? "—"}</td>
-                    <td className="px-4 py-3 text-sm font-mono text-xs text-muted-foreground">{p.passportNumber ?? "—"}</td>
-                    {canEdit && (
-                      <td className="px-4 py-3">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditParticipant(p)} title="Edit participant">
-                          <Pencil className="w-3 h-3" />
-                        </Button>
+                </thead>
+                <tbody>
+                  {participants.length === 0 ? (
+                    <tr>
+                      <td colSpan={canEdit ? 9 : 8} className="px-4 py-8 text-center text-muted-foreground text-xs">
+                        No participants on this camp application.
                       </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </tr>
+                  ) : participants.map((p: any, i: number) => (
+                    <tr key={p.id} className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors">
+                      <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{p.fullName ?? "—"}</div>
+                        {p.fullNameNative && <div className="text-xs text-muted-foreground">{p.fullNameNative}</div>}
+                      </td>
+                      <td className="px-4 py-3 capitalize">
+                        <span className="px-1.5 py-0.5 bg-muted rounded text-xs">{p.participantType ?? "child"}</span>
+                      </td>
+                      <td className="px-4 py-3 text-sm">{p.dateOfBirth ? format(new Date(p.dateOfBirth), "MMM d, yyyy") : "—"}</td>
+                      <td className="px-4 py-3 capitalize text-sm">{p.gender ?? "—"}</td>
+                      <td className="px-4 py-3 text-sm">{p.nationality ?? "—"}</td>
+                      <td className="px-4 py-3 text-sm">{p.grade ?? "—"}</td>
+                      <td className="px-4 py-3 text-sm font-mono text-xs text-muted-foreground">{p.passportNumber ?? "—"}</td>
+                      {canEdit && (
+                        <td className="px-4 py-3">
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditParticipant(p)}>
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -260,7 +539,6 @@ export default function CampApplicationDetail() {
         )}
       </DetailPageLayout>
 
-      {/* ── Participant Edit Dialog ── */}
       {editParticipant && (
         <ParticipantEditDialog
           participant={editParticipant}
@@ -271,7 +549,6 @@ export default function CampApplicationDetail() {
         />
       )}
 
-      {/* ── Add Participant Dialog ── */}
       <ParticipantAddDialog
         applicationId={id!}
         open={addParticipant}
@@ -279,7 +556,6 @@ export default function CampApplicationDetail() {
         onSave={(data) => createParticipant.mutate(data)}
         saving={createParticipant.isPending}
       />
-
     </>
   );
 }

@@ -1,0 +1,136 @@
+artifacts/edubee-camp/src/pages/admin/camp-application-detail.tsx
+파일만 수정해줘. 다른 파일 절대 수정하지 마.
+
+현재 291줄짜리 페이지를 아래 사양으로 업그레이드.
+
+=====================================================
+1. 워크플로우 진행 표시바 (페이지 최상단)
+=====================================================
+
+페이지 헤더 바로 아래에 4단계 진행 표시 추가:
+
+[✓ Submitted] → [✓ Reviewing] → [● Quoted] → [○ Confirmed]
+
+각 단계 스타일:
+- 완료 단계 : 원형 아이콘 체크(✓), bg #DCFCE7, text #16A34A
+- 현재 단계 : 원형 아이콘 점(●), bg #FEF0E3, text #F5821F,
+              테두리 1.5px solid #F5821F
+- 미완료 단계: 원형 아이콘 빈원(○), bg #F4F3F1, text #A8A29E
+- 단계 사이 연결선: 1px solid #E8E6E2
+- cancelled 상태일 때: 모든 단계 회색 + "Cancelled" 배지 표시
+
+=====================================================
+2. 상태 배지 (페이지 제목 옆)
+=====================================================
+
+submitted  → bg #F4F3F1, text #57534E,  "Submitted"
+reviewing  → bg #FEF0E3, text #F5821F,  "Reviewing"
+quoted     → bg #FEF9C3, text #CA8A04,  "Quoted"
+confirmed  → bg #DCFCE7, text #16A34A,  "Confirmed"
+cancelled  → bg #FEF2F2, text #DC2626,  "Cancelled"
+
+border-radius: 999px, padding: 3px 12px, font-size: 12px, font-weight: 500
+
+=====================================================
+3. 액션 버튼 (상태별 조건부 표시 — 페이지 우측 상단)
+=====================================================
+
+[A] application_status === 'submitted' 일 때:
+    [Mark as Reviewing] 버튼
+    - 스타일: Secondary (bg white, border 1.5px solid #E8E6E2)
+    - 클릭: PATCH /api/camp-applications/:id
+            body: { application_status: 'reviewing' }
+    - 성공: 페이지 데이터 리프레시 (리로드 아님, 상태만 갱신)
+    - 로딩 중: disabled + "Updating..."
+
+[B] application_status === 'reviewing' 일 때:
+    [Convert to Quote] 버튼
+    - 스타일: Primary (bg #F5821F, color white,
+              border-radius 8px, padding 10px 20px,
+              font-weight 600, font-size 14px)
+    - hover: bg #D96A0A, translateY(-1px)
+    - 클릭: POST /api/camp-applications/:id/convert-to-quote
+    - 로딩 중: disabled + 스피너 + "Converting..."
+    - 성공: navigate('/admin/crm/quotes/' + quoteId)
+    - 실패: 에러 토스트 메시지 표시
+
+[C] application_status === 'quoted' 일 때:
+    [View Quote →] 버튼
+    - 스타일: Secondary
+    - 클릭: navigate('/admin/crm/quotes/' + quote_id)
+    - quote_id 없으면: 버튼 비활성화 + tooltip "Quote ID not found"
+
+[D] application_status === 'confirmed' 일 때:
+    [View Quote →] 버튼 (Secondary, quote_id 있으면)
+    [View Contract →] 버튼 (Secondary, contract_id 있으면)
+    두 버튼 나란히 표시
+
+[E] application_status === 'cancelled' 일 때:
+    버튼 없음, "This application has been cancelled." 안내 텍스트만
+
+=====================================================
+4. 연결 정보 카드 (페이지 하단 섹션)
+=====================================================
+
+"Linked Records" 섹션 추가:
+
+┌─────────────────────────────────────────────┐
+│  Linked Records                              │
+│                                              │
+│  Quote      QTE-XXXXXXXX  [View →]           │
+│             (없으면 "Not created yet" 회색)  │
+│                                              │
+│  Contract   CT-XXXXXXXX   [View →]           │
+│             (없으면 "Not created yet" 회색)  │
+└─────────────────────────────────────────────┘
+
+- 카드 스타일: bg white, border 1px solid #E8E6E2,
+               border-radius 12px, padding 20px 24px
+- [View →] 링크: color #F5821F, font-weight 500
+
+=====================================================
+5. API 호출 방식
+=====================================================
+
+페이지 로드 시 camp_application 데이터 fetch:
+GET /api/camp-applications/:id
+
+응답 데이터에 quote_id, quoted_at, contract_id 포함되어야 함.
+현재 API가 이 필드를 반환하지 않으면
+camp-applications.ts 의 GET /:id 엔드포인트도
+이 3개 필드를 포함하도록 수정.
+(단, 이 경우에만 camp-applications.ts 수정 허용)
+
+=====================================================
+6. 에러/로딩 처리
+=====================================================
+
+- 페이지 로딩 중: 스켈레톤 UI (shimmer 효과)
+  bg #F4F3F1 → #E8E6E2 애니메이션
+- API 에러: 빨간 배너 (bg #FEF2F2, text #DC2626)
+- Convert 성공: 초록 토스트 "Quote created successfully!"
+- Convert 실패: 빨간 토스트 에러 메시지
+
+=====================================================
+수정 후 검증
+=====================================================
+
+1. npx tsc --noEmit → 오류 0개 확인
+
+2. 서버 재시작 → 정상 기동 확인
+
+3. UI 동작 확인:
+   /admin/camp-applications/{id} 접속
+   (CAMP-TST-002 — 현재 'quoted' 상태)
+
+   확인 항목:
+   - 워크플로우 진행바에서 'Quoted' 단계 강조 표시
+   - 상태 배지 노란색 "Quoted" 표시
+   - [View Quote →] 버튼 표시
+   - Linked Records 섹션에 Quote 링크 표시
+
+완료 보고 형식:
+✅ 수정된 파일: [목록]
+✅ 수정 내용: [설명]
+✅ 검증 결과: [tsc / 서버 / UI 각각 결과]
+⚠️ 다음 작업: [있는 경우]
