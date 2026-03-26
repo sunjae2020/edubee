@@ -1911,6 +1911,34 @@ export default function ContractDetailPage() {
         </div>
       </div>
 
+      {/* Camp Application Badge */}
+      {contract.applicationId && (
+        <div className="bg-white border-b border-[#F4F3F1] px-6 py-2.5">
+          <div style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            background: "#FEF0E3",
+            border: "1px solid rgba(245,130,31,0.3)",
+            borderRadius: 8,
+            padding: "8px 16px",
+            fontSize: 13,
+            color: "#F5821F",
+          }}>
+            <span>📋</span>
+            <span>Camp Application: <strong>{contract.applicationRef ?? contract.applicationId}</strong></span>
+            <button
+              onClick={() => navigate(`/admin/camp-applications/${contract.applicationId}`)}
+              style={{ fontWeight: 600, cursor: "pointer", background: "none", border: "none", color: "#F5821F", padding: 0 }}
+              onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+              onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
+            >
+              View →
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="p-6 space-y-5">
 
         {/* 3 Info Cards */}

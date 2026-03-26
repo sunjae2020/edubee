@@ -25,6 +25,8 @@ interface ContractRow {
   quote?: { id: string; quoteRefNumber?: string } | null;
   owner?: { id: string; name: string } | null;
   primaryService?: { type: string; status?: string } | null;
+  primaryServiceModule?: string | null;
+  applicationId?: string | null;
   arSummary?: { totalAr: number; collectedAr: number; statusList: string[] };
   apSummary?: { totalAp: number; remittedAp: number; statusList: string[] };
   collectionRate: number;
@@ -133,6 +135,8 @@ export default function ContractListPage() {
   const [page,      setPage]      = useState(1);
   const [pageSize,  setPageSize]  = useState(10);
 
+  const [typeFilter, setTypeFilter] = useState<"all" | "camp" | "study_abroad" | "internship" | "other">("all");
+
   // Applied filters (on Apply click)
   const [applied, setApplied] = useState<Record<string, string>>({});
 
@@ -186,7 +190,24 @@ export default function ContractListPage() {
   });
 
   const rows: ContractRow[]    = resp?.data       ?? [];
-  const sorted = useSorted(rows, sortBy, sortDir);
+  const sortedAll = useSorted(rows, sortBy, sortDir);
+  const sorted = useMemo(() => {
+    if (typeFilter === "all") return sortedAll;
+    if (typeFilter === "camp") return sortedAll.filter(r =>
+      !!r.applicationId || r.primaryServiceModule === "camp"
+    );
+    if (typeFilter === "study_abroad") return sortedAll.filter(r =>
+      r.primaryServiceModule === "study_abroad" || r.primaryServiceModule === "studyAbroad"
+    );
+    if (typeFilter === "internship") return sortedAll.filter(r =>
+      r.primaryServiceModule === "internship"
+    );
+    if (typeFilter === "other") return sortedAll.filter(r => {
+      const m = r.primaryServiceModule ?? "";
+      return !r.applicationId && m !== "camp" && m !== "study_abroad" && m !== "studyAbroad" && m !== "internship";
+    });
+    return sortedAll;
+  }, [sortedAll, typeFilter]);
   const pagination: Pagination = resp?.pagination ?? { total: 0, page: 1, pageSize: 10, totalPages: 1 };
   const summary: Summary       = resp?.summary    ?? { activeCount: 0, arOutstanding: 0, apPayable: 0, commissionEstimate: 0 };
 
@@ -233,6 +254,28 @@ export default function ContractListPage() {
         <StatCard label="AR Outstanding"   value={fmtMoney(summary.arOutstanding)}  accent="#F5821F" />
         <StatCard label="AP Payable"        value={fmtMoney(summary.apPayable)}       accent="#DC2626" />
         <StatCard label="Commission Est."   value={fmtMoney(summary.commissionEstimate)} accent="#16A34A" />
+      </div>
+
+      {/* Type Filter Tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {([
+          { key: "all",         label: "All"          },
+          { key: "camp",        label: "Camp"         },
+          { key: "study_abroad",label: "Study Abroad" },
+          { key: "internship",  label: "Internship"   },
+          { key: "other",       label: "Other"        },
+        ] as const).map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setTypeFilter(key)}
+            style={typeFilter === key
+              ? { background: "#FEF0E3", borderColor: "#F5821F", color: "#F5821F", fontWeight: 600 }
+              : { background: "white",   borderColor: "#E8E6E2", color: "#57534E" }}
+            className="px-4 py-1.5 rounded-lg border-[1.5px] text-[13px] hover:bg-[#FAFAF9] transition-colors"
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Filter Card */}

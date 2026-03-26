@@ -47,6 +47,7 @@ interface Quote {
   customerName?: string;
   studentAccountId?: string;
   leadId?: string;
+  campApplicationId?: string | null;
 }
 
 interface QuoteProduct {
@@ -1095,6 +1096,15 @@ export default function QuoteBuilderPage() {
     setStudentAccountName(quote.accountName ?? null);
   }, [quote]);
 
+  // ── Fetch linked Camp Application (if any) ──────────────────────────────────
+  const { data: campAppData } = useQuery({
+    queryKey: ["camp-application-for-quote", quote?.campApplicationId],
+    queryFn: () =>
+      axios.get(`${BASE}/api/camp-applications/${quote!.campApplicationId}`).then(r => r.data),
+    enabled: !!quote?.campApplicationId && isValidUuid(quote?.campApplicationId),
+  });
+  const campApp = campAppData?.data ?? campAppData;
+
   // ── Fetch Quote Products ────────────────────────────────────────────────────
   // Use a stable module-level constant as default — an inline [] creates a new
   // reference every render, causing this useEffect to fire in an infinite loop.
@@ -1253,6 +1263,7 @@ export default function QuoteBuilderPage() {
 
   // ── Print / PDF ──────────────────────────────────────────────────────────────
   const printQuote = () => {
+    if (!quote) return;
     const total = activeLines.reduce((s, l) => s + Number(l.price ?? 0) * (l.quantity ?? 1), 0);
     const rows = activeLines.map((l) => `
       <tr>
@@ -1531,6 +1542,38 @@ export default function QuoteBuilderPage() {
           </Button>
         </div>
       </div>
+
+      {/* Camp Application Badge */}
+      {quote?.campApplicationId && (
+        <div className="bg-white border-b border-gray-100 px-6 py-2">
+          <div style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            background: "#FEF0E3",
+            border: "1px solid rgba(245,130,31,0.3)",
+            borderRadius: 8,
+            padding: "8px 16px",
+            fontSize: 13,
+            color: "#F5821F",
+          }}>
+            <span>📋</span>
+            <span>
+              From Camp Application:{" "}
+              <strong>{campApp?.applicationRef ?? "Loading…"}</strong>
+              {campApp?.applicantName ? ` (${campApp.applicantName})` : ""}
+            </span>
+            <button
+              onClick={() => navigate(`/admin/camp-applications/${quote.campApplicationId}`)}
+              style={{ fontWeight: 600, cursor: "pointer", background: "none", border: "none", color: "#F5821F", padding: 0 }}
+              onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+              onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
+            >
+              View →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Content — single column, sections in order */}
       <div className="max-w-5xl mx-auto px-6 py-6 space-y-5">
