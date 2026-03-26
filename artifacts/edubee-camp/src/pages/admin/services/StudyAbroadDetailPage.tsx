@@ -1,10 +1,11 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   ArrowLeft, Plus, Pencil, Check, AlertTriangle,
   ChevronRight, FileText, ExternalLink, DollarSign, X,
+  Calendar, Video, MapPin, User, Loader2,
 } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
@@ -12,11 +13,156 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { NotePanel } from "@/components/shared/NotePanel";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// ─── Interview constants ──────────────────────────────────────────────────────
+const INTERVIEW_STATUSES = ["pending", "scheduled", "completed", "cancelled", "rescheduled"];
+const INTERVIEW_RESULTS = ["__none", "pass", "fail", "pending"];
+const INTERVIEW_FORMATS = ["online", "in_person", "phone"];
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-700",
+  scheduled: "bg-blue-100 text-blue-700",
+  completed: "bg-teal-100 text-teal-700",
+  cancelled: "bg-gray-100 text-gray-600",
+  rescheduled: "bg-orange-100 text-orange-700",
+};
+
+const RESULT_COLORS: Record<string, string> = {
+  pass: "bg-green-100 text-green-700",
+  fail: "bg-red-100 text-red-700",
+  pending: "bg-yellow-100 text-yellow-700",
+};
+
+const FORMAT_ICONS: Record<string, React.ReactNode> = {
+  online: <Video className="w-3.5 h-3.5" />,
+  in_person: <MapPin className="w-3.5 h-3.5" />,
+  phone: <User className="w-3.5 h-3.5" />,
+};
+
+// ─── Interview Dialog ─────────────────────────────────────────────────────────
+function InterviewDialog({
+  interview,
+  studyAbroadId,
+  open,
+  onClose,
+  onSave,
+  saving,
+}: {
+  interview: any | null;
+  studyAbroadId: string;
+  open: boolean;
+  onClose: () => void;
+  onSave: (data: Record<string, any>) => void;
+  saving: boolean;
+}) {
+  const isNew = !interview;
+  const [form, setForm] = useState({
+    scheduledDatetime: interview?.scheduledDatetime
+      ? new Date(interview.scheduledDatetime).toISOString().slice(0, 16)
+      : "",
+    timezone: interview?.timezone ?? "Asia/Seoul",
+    format: interview?.format ?? "online",
+    meetingLink: interview?.meetingLink ?? "",
+    location: interview?.location ?? "",
+    status: interview?.status ?? "scheduled",
+    result: interview?.result || "__none",
+    interviewerNotes: interview?.interviewerNotes ?? "",
+    candidateNotes: interview?.candidateNotes ?? "",
+  });
+  const f = (k: string) => (v: string) => setForm(p => ({ ...p, [k]: v }));
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[#F5821F]" />
+            {isNew ? "Schedule Interview" : "Edit Interview"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1 col-span-2">
+              <Label className="text-xs">Date & Time *</Label>
+              <Input type="datetime-local" value={form.scheduledDatetime} onChange={e => f("scheduledDatetime")(e.target.value)} className="h-8 text-sm" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Timezone</Label>
+              <Input value={form.timezone} onChange={e => f("timezone")(e.target.value)} className="h-8 text-sm" placeholder="Asia/Seoul" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Format</Label>
+              <Select value={form.format} onValueChange={f("format")}>
+                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {INTERVIEW_FORMATS.map(fmt => <SelectItem key={fmt} value={fmt}>{fmt.replace(/_/g, " ")}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1 col-span-2">
+              <Label className="text-xs">Meeting Link</Label>
+              <Input value={form.meetingLink} onChange={e => f("meetingLink")(e.target.value)} className="h-8 text-sm" placeholder="https://zoom.us/j/..." />
+            </div>
+            <div className="space-y-1 col-span-2">
+              <Label className="text-xs">Location (for in-person)</Label>
+              <Input value={form.location} onChange={e => f("location")(e.target.value)} className="h-8 text-sm" placeholder="Office address or room" />
+            </div>
+            {!isNew && (
+              <>
+                <div className="space-y-1">
+                  <Label className="text-xs">Status</Label>
+                  <Select value={form.status} onValueChange={f("status")}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {INTERVIEW_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Result</Label>
+                  <Select value={form.result} onValueChange={f("result")}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Not set" /></SelectTrigger>
+                    <SelectContent>
+                      {INTERVIEW_RESULTS.map(r => <SelectItem key={r} value={r}>{r === "__none" ? "Not set" : r}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+            <div className="space-y-1 col-span-2">
+              <Label className="text-xs">Candidate Notes</Label>
+              <Textarea value={form.candidateNotes} onChange={e => f("candidateNotes")(e.target.value)} className="text-sm min-h-[60px]" />
+            </div>
+            {!isNew && (
+              <div className="space-y-1 col-span-2">
+                <Label className="text-xs">Interviewer Notes</Label>
+                <Textarea value={form.interviewerNotes} onChange={e => f("interviewerNotes")(e.target.value)} className="text-sm min-h-[60px]" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4 border-t mt-2">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5"
+            onClick={() => onSave({ ...form, studyAbroadId })}
+            disabled={saving || !form.scheduledDatetime}>
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+            {isNew ? "Schedule" : "Save Changes"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface TargetSchool {
@@ -525,8 +671,10 @@ export default function StudyAbroadDetailPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"overview" | "schools" | "visa" | "docs" | "notes">("overview");
+  const [tab, setTab] = useState<"overview" | "schools" | "visa" | "payments" | "docs" | "notes" | "interview">("overview");
   const [showEdit, setShowEdit] = useState(false);
+  const [editInterview, setEditInterview] = useState<any | null>(null);
+  const [newInterview, setNewInterview] = useState(false);
 
   const id = params?.id;
 
@@ -548,6 +696,42 @@ export default function StudyAbroadDetailPage() {
     onError: () => toast({ title: "Save failed", variant: "destructive" }),
   });
 
+  const { data: interviewData, isLoading: interviewLoading } = useQuery({
+    queryKey: ["sa-interviews", id],
+    queryFn: () => axios.get(`${BASE}/api/interview-schedules?studyAbroadId=${id}`).then(r => r.data),
+    enabled: tab === "interview" && !!id,
+  });
+
+  const interviews: any[] = interviewData?.data ?? [];
+
+  const updateInterview = useMutation({
+    mutationFn: ({ iid, data }: { iid: string; data: Record<string, any> }) =>
+      axios.patch(`${BASE}/api/interview-schedules/${iid}`, {
+        ...data,
+        scheduledDatetime: data.scheduledDatetime ? new Date(data.scheduledDatetime).toISOString() : undefined,
+      }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sa-interviews", id] });
+      toast({ title: "Interview updated" });
+      setEditInterview(null);
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to update interview" }),
+  });
+
+  const createInterview = useMutation({
+    mutationFn: (data: Record<string, any>) =>
+      axios.post(`${BASE}/api/interview-schedules`, {
+        ...data,
+        scheduledDatetime: data.scheduledDatetime ? new Date(data.scheduledDatetime).toISOString() : undefined,
+      }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sa-interviews", id] });
+      toast({ title: "Interview scheduled" });
+      setNewInterview(false);
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to schedule interview" }),
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-stone-400 text-sm">Loading…</div>
@@ -560,12 +744,13 @@ export default function StudyAbroadDetailPage() {
   }
 
   const TABS = [
-    { key: "overview",  label: "Overview"            },
-    { key: "schools",   label: "School Applications" },
-    { key: "visa",      label: "Visa"                },
-    { key: "payments",  label: "Payments"            },
-    { key: "docs",      label: "Documents"           },
-    { key: "notes",     label: "Notes"               },
+    { key: "overview",   label: "Overview"            },
+    { key: "schools",    label: "School Applications" },
+    { key: "interview",  label: "Interview"           },
+    { key: "visa",       label: "Visa"                },
+    { key: "payments",   label: "Payments"            },
+    { key: "docs",       label: "Documents"           },
+    { key: "notes",      label: "Notes"               },
   ] as const;
 
   return (
@@ -705,6 +890,92 @@ export default function StudyAbroadDetailPage() {
             contractNumber={record.contractNumber}
           />
         )}
+        {tab === "interview" && (
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setNewInterview(true)}>
+                <Plus size={14} /> Schedule Interview
+              </Button>
+            </div>
+
+            {interviewLoading ? (
+              <div className="space-y-3">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-28" />)}</div>
+            ) : interviews.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-stone-400">
+                <Calendar className="w-8 h-8 mb-3 opacity-20" />
+                <p className="text-sm">No interview schedules yet.</p>
+                <p className="text-xs mt-1">Click "Schedule Interview" to add one.</p>
+              </div>
+            ) : interviews.map((iv: any) => (
+              <div key={iv.id} className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-800">
+                      <Calendar className="w-3.5 h-3.5 text-[#F5821F]" />
+                      {iv.scheduledDatetime
+                        ? format(new Date(iv.scheduledDatetime), "PPP · HH:mm")
+                        : "Date TBD"}
+                    </div>
+                    {iv.timezone && (
+                      <span className="text-[10px] text-stone-400 bg-stone-100 rounded px-1.5 py-0.5">{iv.timezone}</span>
+                    )}
+                    {iv.status && (
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[iv.status] ?? "bg-gray-100 text-gray-600"}`}>
+                        {iv.status}
+                      </span>
+                    )}
+                    {iv.result && iv.result !== "__none" && (
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${RESULT_COLORS[iv.result] ?? "bg-gray-100 text-gray-600"}`}>
+                        Result: {iv.result}
+                      </span>
+                    )}
+                  </div>
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs gap-1 shrink-0" onClick={() => setEditInterview(iv)}>
+                    <Pencil size={11} /> Edit
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                  {iv.format && (
+                    <div className="flex items-center gap-1.5 text-stone-500">
+                      {FORMAT_ICONS[iv.format] ?? null}
+                      <span className="capitalize">{iv.format.replace(/_/g, " ")}</span>
+                    </div>
+                  )}
+                  {iv.meetingLink && (
+                    <a href={iv.meetingLink} target="_blank" rel="noopener noreferrer"
+                      className="text-[#F5821F] hover:underline text-xs truncate flex items-center gap-1">
+                      <Video className="w-3 h-3 shrink-0" />
+                      {iv.meetingLink}
+                    </a>
+                  )}
+                  {iv.location && (
+                    <div className="flex items-center gap-1.5 text-stone-500 text-xs">
+                      <MapPin className="w-3 h-3" /> {iv.location}
+                    </div>
+                  )}
+                </div>
+
+                {(iv.candidateNotes || iv.interviewerNotes) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-stone-100">
+                    {iv.candidateNotes && (
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-1">Candidate Notes</p>
+                        <p className="text-xs text-stone-700">{iv.candidateNotes}</p>
+                      </div>
+                    )}
+                    {iv.interviewerNotes && (
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-1">Interviewer Notes</p>
+                        <p className="text-xs text-stone-700">{iv.interviewerNotes}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
         {tab === "docs" && (
           <div className="flex items-center justify-center h-40 text-stone-400 text-sm gap-2">
             <FileText size={20} /> Document management coming soon
@@ -730,6 +1001,26 @@ export default function StudyAbroadDetailPage() {
           onClose={() => setShowEdit(false)}
         />
       )}
+
+      {editInterview && (
+        <InterviewDialog
+          interview={editInterview}
+          studyAbroadId={id!}
+          open={!!editInterview}
+          onClose={() => setEditInterview(null)}
+          onSave={(data) => updateInterview.mutate({ iid: editInterview.id, data: { ...data, result: data.result === "__none" ? "" : data.result } })}
+          saving={updateInterview.isPending}
+        />
+      )}
+
+      <InterviewDialog
+        interview={null}
+        studyAbroadId={id!}
+        open={newInterview}
+        onClose={() => setNewInterview(false)}
+        onSave={(data) => createInterview.mutate(data)}
+        saving={createInterview.isPending}
+      />
     </div>
   );
 }

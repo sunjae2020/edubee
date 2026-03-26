@@ -148,6 +148,7 @@ export const applicationGrade = pgTable("application_grade", {
 export const interviewSchedules = pgTable("interview_schedules", {
   id: uuid("id").primaryKey().defaultRandom(),
   applicationId: uuid("application_id").references(() => applications.id),
+  studyAbroadId: uuid("study_abroad_id"),
   packageGroupId: uuid("package_group_id").references(() => packageGroups.id),
   interviewerId: uuid("interviewer_id").references(() => users.id),
   scheduledDatetime: timestamp("scheduled_datetime").notNull(),

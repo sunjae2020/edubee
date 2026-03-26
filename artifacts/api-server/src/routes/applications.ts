@@ -467,9 +467,10 @@ router.post("/applications/:id/convert-to-quote", authenticate, requireRole("sup
 // ── Interview Schedules ───────────────────────────────────────
 router.get("/interview-schedules", authenticate, async (req, res) => {
   try {
-    const { applicationId, status } = req.query as Record<string, string>;
+    const { applicationId, studyAbroadId, status } = req.query as Record<string, string>;
     const conditions: any[] = [];
     if (applicationId) conditions.push(eq(interviewSchedules.applicationId, applicationId));
+    if (studyAbroadId) conditions.push(eq(interviewSchedules.studyAbroadId, studyAbroadId));
     if (status) conditions.push(eq(interviewSchedules.status, status));
 
     const rows = conditions.length > 0
@@ -485,10 +486,11 @@ router.get("/interview-schedules", authenticate, async (req, res) => {
 
 router.post("/interview-schedules", authenticate, async (req, res) => {
   try {
-    const { applicationId, packageGroupId, interviewerId, scheduledDatetime, timezone, format, meetingLink, location, candidateNotes } = req.body;
+    const { applicationId, studyAbroadId, packageGroupId, interviewerId, scheduledDatetime, timezone, format, meetingLink, location, candidateNotes } = req.body;
     if (!scheduledDatetime) return res.status(400).json({ error: "scheduledDatetime is required" });
     const [created] = await db.insert(interviewSchedules).values({
       applicationId: applicationId || null,
+      studyAbroadId: studyAbroadId || null,
       packageGroupId: packageGroupId || null,
       interviewerId: interviewerId || null,
       scheduledDatetime: new Date(scheduledDatetime),
