@@ -688,7 +688,8 @@ export default function AccountDetailPage() {
                         if (contact) {
                           if (!form.email && contact.email)       set("email",       contact.email);
                           if (!form.phoneNumber && contact.mobile) set("phoneNumber", contact.mobile);
-                          // Auto-name preview for Student accounts
+                          // Auto-name preview for Student accounts (LASTNAME_Firstname)
+                          // Duplicate suffix (_YYMM) is resolved server-side on save
                           if (form.accountType === "Student" && !form.manualInput) {
                             const last  = (contact.lastName  ?? "").toUpperCase().trim();
                             const first = (contact.firstName ?? "").trim();

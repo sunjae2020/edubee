@@ -8,9 +8,10 @@ import { requireRole } from "../middleware/requireRole.js";
 
 // ── Auto-naming helper for Student accounts ──────────────────────────────────
 // Rule: LASTNAME_Firstname  (Primary Contact, LASTNAME in uppercase)
-// If that name is already taken: LASTNAME_Firstname_YYYYMM  (birth date)
+// If that name is already taken: LASTNAME_Firstname_YYMM  (signup year/month)
+// e.g. KIM_Sohee_2601  (created Jan 2026)
 async function buildStudentAutoName(
-  contact: { firstName: string; lastName: string; dob?: string | null },
+  contact: { firstName: string; lastName: string },
   excludeAccountId?: string,
 ): Promise<string> {
   const last  = (contact.lastName  ?? "").toUpperCase().trim();
@@ -30,20 +31,28 @@ async function buildStudentAutoName(
 
   if (!dup) return base;
 
-  // Name taken — try appending YYYYMM from dob
-  if (contact.dob) {
-    const d = new Date(contact.dob);
-    if (!isNaN(d.getTime())) {
-      const yyyy = d.getUTCFullYear();
-      const mm   = String(d.getUTCMonth() + 1).padStart(2, "0");
-      return `${base}_${yyyy}${mm}`;
-    }
-  }
+  // Name taken — append YYMM based on current signup date
+  const now  = new Date();
+  const yy   = String(now.getFullYear()).slice(2);   // "26"
+  const mm   = String(now.getMonth() + 1).padStart(2, "0"); // "01"
+  const withDate = `${base}_${yy}${mm}`;             // e.g. "KIM_Sohee_2601"
 
-  // Fallback: append a numeric counter
+  const [dup2] = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(
+      and(
+        eq(accounts.name, withDate),
+        ...(excludeAccountId ? [ne(accounts.id, excludeAccountId)] : []),
+      ),
+    );
+
+  if (!dup2) return withDate;
+
+  // Still taken — append a numeric counter
   for (let i = 2; i <= 99; i++) {
-    const candidate = `${base}_${i}`;
-    const [dup2] = await db
+    const candidate = `${withDate}_${i}`;
+    const [dup3] = await db
       .select({ id: accounts.id })
       .from(accounts)
       .where(
@@ -52,9 +61,9 @@ async function buildStudentAutoName(
           ...(excludeAccountId ? [ne(accounts.id, excludeAccountId)] : []),
         ),
       );
-    if (!dup2) return candidate;
+    if (!dup3) return candidate;
   }
-  return base; // last resort
+  return withDate; // last resort
 }
 
 const router = Router();
