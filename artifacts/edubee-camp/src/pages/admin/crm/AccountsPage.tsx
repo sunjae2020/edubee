@@ -14,16 +14,33 @@ import { TableFooter } from "@/components/ui/table-footer";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
 
-const ACCOUNT_TYPES = ["Company", "Institute", "Agency", "Accommodation", "Private", "Others", "School"];
+const ACCOUNT_TYPES = [
+  "Student",
+  "Agent", "School",
+  "Sub_Agency", "Super_Agency",
+  "Supplier", "Staff", "Branch",
+  "Provider", "Organisation",
+  // legacy types still in DB
+  "Company", "Institute", "Agency", "Accommodation", "Private",
+];
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
+  Student:       { bg: "#FEF0E3", text: "#F5821F" },
+  Agent:         { bg: "#F4F3F1", text: "#57534E" },
+  School:        { bg: "#DCFCE7", text: "#15803D" },
+  Sub_Agency:    { bg: "#EDE9FE", text: "#7C3AED" },
+  Super_Agency:  { bg: "#EDE9FE", text: "#7C3AED" },
+  Supplier:      { bg: "#F0F9FF", text: "#0369A1" },
+  Staff:         { bg: "#F4F3F1", text: "#57534E" },
+  Branch:        { bg: "#FEF9C3", text: "#CA8A04" },
+  Provider:      { bg: "#F4F3F1", text: "#57534E" },
+  Organisation:  { bg: "#F4F3F1", text: "#57534E" },
+  // legacy
   Company:       { bg: "#E0F2FE", text: "#0369A1" },
   Institute:     { bg: "#DCFCE7", text: "#16A34A" },
   Agency:        { bg: "#F3E8FF", text: "#7C3AED" },
   Accommodation: { bg: "#FEF0E3", text: "#F5821F" },
   Private:       { bg: "#FFF7ED", text: "#C2410C" },
-  Others:        { bg: "#F4F3F1", text: "#57534E" },
-  School:        { bg: "#DCFCE7", text: "#15803D" },
 };
 
 interface Account {

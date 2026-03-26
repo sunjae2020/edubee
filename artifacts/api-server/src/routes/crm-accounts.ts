@@ -113,7 +113,7 @@ router.get("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (re
       .where(whereClause)
       .limit(limitNum)
       .offset(offset)
-      .orderBy(accounts.createdOn);
+      .orderBy(accounts.accountType, accounts.name);
 
     return res.json({
       data:  rows,
