@@ -20,13 +20,15 @@ import { useToast } from "@/hooks/use-toast";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const ACCOUNT_TYPES = [
-  "Student", "School",
+  "Student", "Client", "School",
   "Sub_Agency", "Super_Agency",
   "Supplier", "Staff", "Branch",
   "Agent", "Provider", "Organisation",
 ];
+const INDIVIDUAL_TYPES = ["Student", "Client"];
 const CATEGORY_MAP: Record<string, string[]> = {
   Student:      [],
+  Client:       [],
   School:       ["Language School", "University", "TAFE", "High School", "Other"],
   Sub_Agency:   [],
   Super_Agency: [],
@@ -41,6 +43,7 @@ const CATEGORY_MAP: Record<string, string[]> = {
 function getAccountTypeBadge(accountType?: string | null): { bg: string; text: string; label: string } {
   switch (accountType) {
     case "Student":      return { bg: "#FEF0E3", text: "#F5821F", label: "Student" };
+    case "Client":       return { bg: "#FCE7F3", text: "#BE185D", label: "Client" };
     case "School":       return { bg: "#DCFCE7", text: "#16A34A", label: "School" };
     case "Sub_Agency":   return { bg: "#EDE9FE", text: "#7C3AED", label: "Sub Agency" };
     case "Super_Agency": return { bg: "#EDE9FE", text: "#7C3AED", label: "Super Agency" };
@@ -116,6 +119,7 @@ function getTabs(accountType?: string | null) {
 
   switch (accountType) {
     case "Student":
+    case "Client":
       return [...base, leads, contracts, ledger];
     case "Supplier":
       return [...base, serviceProfiles, products, ledger, portal];
@@ -815,8 +819,8 @@ export default function AccountDetailPage() {
               {/* Basic Info */}
               <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
                 <Section title="Basic Info">
-                  {/* Manual Name toggle — Student accounts only */}
-                  {form.accountType === "Student" && (
+                  {/* Manual Name toggle — Individual accounts (Student / Client) */}
+                  {INDIVIDUAL_TYPES.includes(form.accountType ?? "") && (
                     <div className="col-span-2 flex items-center gap-3 py-1">
                       <button
                         type="button"
@@ -836,13 +840,13 @@ export default function AccountDetailPage() {
                       <span className="text-sm text-stone-600">
                         Manual Name&nbsp;
                         <span className="text-stone-400 text-xs">
-                          — Override auto-naming for Student accounts
+                          — Override auto-naming for individual accounts
                         </span>
                       </span>
                     </div>
                   )}
                   <Field label="Account Name" span={2} required>
-                    {form.accountType === "Student" && !form.manualInput ? (
+                    {INDIVIDUAL_TYPES.includes(form.accountType ?? "") && !form.manualInput ? (
                       <div className="flex items-center gap-2">
                         <Input
                           value={form.name}
@@ -920,7 +924,7 @@ export default function AccountDetailPage() {
                           if (!form.email && contact.email)       set("email",       contact.email);
                           if (!form.phoneNumber && contact.mobile) set("phoneNumber", contact.mobile);
                           // Auto-name: use contact's fullName if available, else build LAST_First
-                          if (form.accountType === "Student" && !form.manualInput) {
+                          if (INDIVIDUAL_TYPES.includes(form.accountType ?? "") && !form.manualInput) {
                             if (contact.fullName) {
                               set("name", contact.fullName);
                             } else {
