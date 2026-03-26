@@ -584,19 +584,12 @@ export default function AccountDetailPage() {
               {/* Basic Info */}
               <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
                 <Section title="Basic Info">
-                  <Toggle
-                    label="Manual Name"
-                    description="Override auto-naming for Student accounts"
-                    checked={form.manualInput}
-                    onChange={v => set("manualInput", v)}
-                  />
-                  <Field label="Account Name" span={form.manualInput || form.accountType !== "Student" ? 2 : 1} required>
+                  <Field label="Account Name" span={2} required>
                     <Input
                       value={form.name}
                       onChange={e => set("name", e.target.value)}
                       placeholder="Account name"
                       className={INPUT_CLS}
-                      readOnly={!form.manualInput && form.accountType === "Student"}
                     />
                   </Field>
                   <Field label="Account Type" required>
@@ -653,9 +646,6 @@ export default function AccountDetailPage() {
                       value={form.primaryContactId ?? ""}
                       onChange={(id, contact) => {
                         set("primaryContactId", id);
-                        if (!form.manualInput && form.accountType === "Student") {
-                          // Name will be auto-set on save
-                        }
                         if (contact) {
                           if (!form.email && contact.email)   set("email",       contact.email);
                           if (!form.phoneNumber && contact.mobile) set("phoneNumber", contact.mobile);
