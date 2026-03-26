@@ -181,7 +181,7 @@ function Toggle({ label, checked, onChange, description }: {
 }
 
 function ContactLookup({ value, onChange, placeholder }: {
-  value: string; onChange: (id: string, contact?: { email?: string | null; mobile?: string | null }) => void; placeholder?: string;
+  value: string; onChange: (id: string, contact?: { email?: string | null; mobile?: string | null; firstName?: string; lastName?: string; dob?: string | null }) => void; placeholder?: string;
 }) {
   const [search, setSearch] = useState("");
   const [open, setOpen]     = useState(false);
@@ -584,13 +584,52 @@ export default function AccountDetailPage() {
               {/* Basic Info */}
               <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
                 <Section title="Basic Info">
+                  {/* Manual Name toggle — Student accounts only */}
+                  {form.accountType === "Student" && (
+                    <div className="col-span-2 flex items-center gap-3 py-1">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={form.manualInput}
+                        onClick={() => set("manualInput", !form.manualInput)}
+                        className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none ${
+                          form.manualInput ? "bg-[#F5821F]" : "bg-stone-300"
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform ${
+                            form.manualInput ? "translate-x-4" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                      <span className="text-sm text-stone-600">
+                        Manual Name&nbsp;
+                        <span className="text-stone-400 text-xs">
+                          — Override auto-naming for Student accounts
+                        </span>
+                      </span>
+                    </div>
+                  )}
                   <Field label="Account Name" span={2} required>
-                    <Input
-                      value={form.name}
-                      onChange={e => set("name", e.target.value)}
-                      placeholder="Account name"
-                      className={INPUT_CLS}
-                    />
+                    {form.accountType === "Student" && !form.manualInput ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={form.name}
+                          readOnly
+                          disabled
+                          placeholder="Auto-generated from Primary Contact"
+                          className={`${INPUT_CLS} bg-stone-50 text-stone-400 cursor-not-allowed`}
+                        />
+                        <span className="text-xs text-stone-400 shrink-0">Auto</span>
+                      </div>
+                    ) : (
+                      <Input
+                        value={form.name}
+                        onChange={e => set("name", e.target.value)}
+                        placeholder="Account name"
+                        className={INPUT_CLS}
+                      />
+                    )}
                   </Field>
                   <Field label="Account Type" required>
                     <Select value={form.accountType ?? ""} onValueChange={v => { set("accountType", v); set("accountCategory", undefined as any); }}>
@@ -647,8 +686,15 @@ export default function AccountDetailPage() {
                       onChange={(id, contact) => {
                         set("primaryContactId", id);
                         if (contact) {
-                          if (!form.email && contact.email)   set("email",       contact.email);
+                          if (!form.email && contact.email)       set("email",       contact.email);
                           if (!form.phoneNumber && contact.mobile) set("phoneNumber", contact.mobile);
+                          // Auto-name preview for Student accounts
+                          if (form.accountType === "Student" && !form.manualInput) {
+                            const last  = (contact.lastName  ?? "").toUpperCase().trim();
+                            const first = (contact.firstName ?? "").trim();
+                            const base  = last && first ? `${last}_${first}` : last || first;
+                            if (base) set("name", base);
+                          }
                         }
                       }}
                     />

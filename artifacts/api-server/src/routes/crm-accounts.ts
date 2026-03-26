@@ -6,6 +6,57 @@ import bcrypt from "bcryptjs";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
+// ── Auto-naming helper for Student accounts ──────────────────────────────────
+// Rule: LASTNAME_Firstname  (Primary Contact, LASTNAME in uppercase)
+// If that name is already taken: LASTNAME_Firstname_YYYYMM  (birth date)
+async function buildStudentAutoName(
+  contact: { firstName: string; lastName: string; dob?: string | null },
+  excludeAccountId?: string,
+): Promise<string> {
+  const last  = (contact.lastName  ?? "").toUpperCase().trim();
+  const first = (contact.firstName ?? "").trim();
+  const base  = last && first ? `${last}_${first}` : last || first || "Student";
+
+  // Check if base name is already used (by a different account)
+  const [dup] = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(
+      and(
+        eq(accounts.name, base),
+        ...(excludeAccountId ? [ne(accounts.id, excludeAccountId)] : []),
+      ),
+    );
+
+  if (!dup) return base;
+
+  // Name taken — try appending YYYYMM from dob
+  if (contact.dob) {
+    const d = new Date(contact.dob);
+    if (!isNaN(d.getTime())) {
+      const yyyy = d.getUTCFullYear();
+      const mm   = String(d.getUTCMonth() + 1).padStart(2, "0");
+      return `${base}_${yyyy}${mm}`;
+    }
+  }
+
+  // Fallback: append a numeric counter
+  for (let i = 2; i <= 99; i++) {
+    const candidate = `${base}_${i}`;
+    const [dup2] = await db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(
+        and(
+          eq(accounts.name, candidate),
+          ...(excludeAccountId ? [ne(accounts.id, excludeAccountId)] : []),
+        ),
+      );
+    if (!dup2) return candidate;
+  }
+  return base; // last resort
+}
+
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
 
@@ -108,7 +159,7 @@ router.post("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (r
 
     if (!body.manualInput && body.accountType === "Student" && body.primaryContactId) {
       const [c] = await db.select().from(contacts).where(eq(contacts.id, body.primaryContactId as string));
-      if (c) name = `Student_${c.firstName} ${c.lastName}`.trim();
+      if (c) name = await buildStudentAutoName(c);
     }
 
     if (!name) return res.status(400).json({ error: "name is required" });
@@ -166,7 +217,7 @@ router.put("/crm/accounts/:id", authenticate, requireRole(...ADMIN_ROLES), async
 
     if (!body.manualInput && body.accountType === "Student" && body.primaryContactId) {
       const [c] = await db.select().from(contacts).where(eq(contacts.id, body.primaryContactId as string));
-      if (c) name = `${c.firstName} ${c.lastName}`.trim();
+      if (c) name = await buildStudentAutoName(c, id);
     }
 
     const [updated] = await db.update(accounts).set({
