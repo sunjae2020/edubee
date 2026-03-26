@@ -85,7 +85,7 @@ export const guardianMgt = pgTable("guardian_mgt", {
   serviceStartDate:               date("service_start_date"),
   serviceEndDate:                 date("service_end_date"),
   billingCycle:                   varchar("billing_cycle", { length: 20 }),
-  schoolId:                       uuid("school_id"),
+  schoolId:                       uuid("school_id").references(() => accounts.id, { onDelete: "set null" }),
   officialGuardianRegistered:     boolean("official_guardian_registered").notNull().default(false),
   schoolGuardianRegistrationDate: date("school_guardian_registration_date"),
   monthlyReports:                 jsonb("monthly_reports"),
@@ -152,7 +152,7 @@ export const visaServicesMgt = pgTable("visa_services_mgt", {
   id:              uuid("id").primaryKey().defaultRandom(),
   contractId:      uuid("contract_id").notNull().references(() => contracts.id),
   assignedStaffId: uuid("assigned_staff_id").references(() => users.id),
-  partnerId:       uuid("partner_id"),
+  partnerId:       uuid("partner_id").references(() => accounts.id, { onDelete: "set null" }),
   visaType:        varchar("visa_type", { length: 100 }),
   country:         varchar("country", { length: 100 }),
   applicationDate: date("application_date"),
@@ -171,12 +171,11 @@ export const visaServicesMgt = pgTable("visa_services_mgt", {
 });
 
 // ── Other Service Management ────────────────────────────────────────────────
-// Note: partnerId references future 'accounts' table — plain uuid
 export const otherServicesMgt = pgTable("other_services_mgt", {
   id:              uuid("id").primaryKey().defaultRandom(),
   contractId:      uuid("contract_id").notNull().references(() => contracts.id),
   assignedStaffId: uuid("assigned_staff_id").references(() => users.id),
-  partnerId:       uuid("partner_id"),
+  partnerId:       uuid("partner_id").references(() => accounts.id, { onDelete: "set null" }),
   serviceType:     varchar("service_type", { length: 100 }),
   title:           varchar("title", { length: 255 }),
   startDate:       date("start_date"),

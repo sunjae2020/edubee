@@ -14,6 +14,7 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { users } from "./users";
+import { accounts } from "./crm";
 
 export const packageGroups = pgTable("package_groups", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -91,7 +92,7 @@ export const products = pgTable("products", {
   toDate:             date("to_date"),
   durationWeeks:      integer("duration_weeks"),
   category1Id:        uuid("category_1_id"),
-  category2Id:        uuid("category_2_id"),
+  category2Id:        uuid("category_2_id").references(() => accounts.id),
   itemDescription:    text("item_description"),
   price:              numeric("price", { precision: 12, scale: 2 }),
   isGstIncluded:      boolean("is_gst_included").default(false),
@@ -104,7 +105,7 @@ export const products = pgTable("products", {
   isVetInSchools:     boolean("is_vet_in_schools").default(false),
   productGrade:       varchar("product_grade", { length: 50 }),
   isRecommend:        boolean("is_recommend").default(false),
-  providerId:         uuid("provider_id"),
+  providerId:         uuid("provider_id").references(() => accounts.id),
   commissionId:       uuid("commission_id"),
   promotionId:        uuid("promotion_id"),
   displayOnQuote:     boolean("display_on_quote").default(true),

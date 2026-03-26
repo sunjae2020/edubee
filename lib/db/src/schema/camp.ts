@@ -13,7 +13,7 @@ import {
 import { users } from "./users";
 import { contracts } from "./contracts";
 import { leads } from "./applications";
-import { quotes } from "./crm";
+import { quotes, accounts } from "./crm";
 import { products } from "./packages";
 
 // ── Camp Package Groups ────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ export const campApplications = pgTable("camp_applications", {
   leadId:                uuid("lead_id").references(() => leads.id),
   contractId:            uuid("contract_id").references(() => contracts.id),
   assignedStaffId:       uuid("assigned_staff_id").references(() => users.id),
-  agentAccountId:        uuid("agent_account_id"),
+  agentAccountId:        uuid("agent_account_id").references(() => accounts.id, { onDelete: "set null" }),
   applicationStatus:     varchar("application_status", { length: 50 }).notNull().default("submitted"),
   status:                varchar("status", { length: 20 }).notNull().default("Active"),
   quoteId:               uuid("quote_id").references(() => quotes.id),
@@ -119,12 +119,11 @@ export const campApplications = pgTable("camp_applications", {
 //     Use studyAbroadMgt (services.ts) with programContext filter instead.
 
 // ── Camp Tour Management ───────────────────────────────────────────────────
-// Note: tourProviderAccountId references future 'accounts' table — plain uuid
 export const campTourMgt = pgTable("camp_tour_mgt", {
   id:                    uuid("id").primaryKey().defaultRandom(),
   contractId:            uuid("contract_id").notNull().references(() => contracts.id),
   campApplicationId:     uuid("camp_application_id").references(() => campApplications.id),
-  tourProviderAccountId: uuid("tour_provider_account_id"),
+  tourProviderAccountId: uuid("tour_provider_account_id").references(() => accounts.id, { onDelete: "set null" }),
   tourName:              varchar("tour_name", { length: 255 }),
   tourType:              varchar("tour_type", { length: 50 }),
   tourDate:              date("tour_date"),
