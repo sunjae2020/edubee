@@ -250,7 +250,7 @@ export default function CampApplications() {
             <tr className="border-b border-border bg-muted/30">
               <>
               <SortableTh key="Application #" col="applicationNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Application #</SortableTh>
-              <SortableTh key="Student" col="applicantName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Student</SortableTh>
+              <SortableTh key="Client" col="applicantName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Client</SortableTh>
               <SortableTh key="Nationality" col="applicantNationality" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nationality</SortableTh>
               <SortableTh key="Start Date" col="preferredStartDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Start Date</SortableTh>
               <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
@@ -345,7 +345,7 @@ export default function CampApplications() {
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="col-span-2 space-y-1">
-                            <Label className="text-xs">Student Name</Label>
+                            <Label className="text-xs">Client Name</Label>
                             <Input className="h-8 text-sm" value={editForm.applicantName ?? ""} onChange={e => setEditForm(f => ({ ...f, applicantName: e.target.value }))} />
                           </div>
                           <div className="space-y-1">
@@ -373,7 +373,7 @@ export default function CampApplications() {
                     ) : (
                       <>
                         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <DetailRow label="Student Name" value={selectedApp.studentName} />
+                          <DetailRow label="Client Name" value={selectedApp.studentName} />
                           <DetailRow label="Nationality" value={selectedApp.applicantNationality} />
                           <DetailRow label="Email" value={selectedApp.applicantEmail} />
                           <DetailRow label="Phone" value={selectedApp.applicantPhone} />
@@ -531,7 +531,7 @@ export default function CampApplications() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs">Student Name <span className="text-red-500">*</span></Label>
+                  <Label className="text-xs">Client Name <span className="text-red-500">*</span></Label>
                   <Input className="h-9 text-sm" value={form.applicantName} onChange={e => setForm(f => ({ ...f, applicantName: e.target.value }))} placeholder="Full name" />
                 </div>
                 <div className="space-y-1.5">
