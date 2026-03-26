@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import PaymentStatementModal from "../../../components/finance/PaymentStatementModal";
+import { ClientNameDisplay } from "@/components/common/ClientNameDisplay";
+import { nameFromAccount } from "@/lib/nameUtils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -1972,7 +1974,18 @@ export default function ContractDetailPage() {
               </div>
             </div>
             {/* Name — always */}
-            <InfoRow label="Name" value={contract.studentAccount?.name ?? contract.account?.name} />
+            <div className="mb-2">
+              <span className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-0.5">Name</span>
+              <ClientNameDisplay
+                fields={nameFromAccount({
+                  firstName:    contract.studentAccount?.firstName  ?? contract.account?.firstName,
+                  lastName:     contract.studentAccount?.lastName   ?? contract.account?.lastName,
+                  originalName: contract.studentAccount?.originalName ?? contract.account?.originalName,
+                  name:         contract.studentAccount?.name       ?? contract.account?.name,
+                })}
+                size="md"
+              />
+            </div>
             {/* Type-specific middle rows */}
             {(() => {
               const aType = contract.studentAccount?.accountType ?? contract.account?.accountType;
