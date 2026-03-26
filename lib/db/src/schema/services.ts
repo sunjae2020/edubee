@@ -14,17 +14,17 @@ import { users } from "./users";
 import { contracts } from "./contracts";
 import { leads } from "./applications";
 import { products } from "./packages";
+import { accounts } from "./crm";
 
 // ── Accommodation Management ───────────────────────────────────────────────
-// Note: studentAccountId, providerAccountId reference future 'accounts' table — plain uuid
-// Note: settlementId references settlement_mgt which exists with a different structure — plain uuid
+// Note: settlementId references settlement_mgt — plain uuid (same-file circular ref avoided)
 export const accommodationMgt = pgTable("accommodation_mgt", {
   id:                uuid("id").primaryKey().defaultRandom(),
   contractId:        uuid("contract_id").notNull().references(() => contracts.id),
   leadId:            uuid("lead_id").references(() => leads.id),
-  studentAccountId:  uuid("student_account_id"),
+  studentAccountId:  uuid("student_account_id").references(() => accounts.id, { onDelete: "set null" }),
   assignedStaffId:   uuid("assigned_staff_id").references(() => users.id),
-  providerAccountId: uuid("provider_account_id"),
+  providerAccountId: uuid("provider_account_id").references(() => accounts.id, { onDelete: "set null" }),
   accommodationType: varchar("accommodation_type", { length: 50 }),
   checkinDate:       date("checkin_date"),
   checkoutDate:      date("checkout_date"),
@@ -46,18 +46,17 @@ export const accommodationMgt = pgTable("accommodation_mgt", {
 });
 
 // ── Internship Management ──────────────────────────────────────────────────
-// Note: studentAccountId, hostCompanyId reference future 'accounts' table — plain uuid
 export const internshipMgt = pgTable("internship_mgt", {
   id:                    uuid("id").primaryKey().defaultRandom(),
   contractId:            uuid("contract_id").notNull().references(() => contracts.id),
   leadId:                uuid("lead_id").references(() => leads.id),
-  studentAccountId:      uuid("student_account_id"),
+  studentAccountId:      uuid("student_account_id").references(() => accounts.id, { onDelete: "set null" }),
   assignedStaffId:       uuid("assigned_staff_id").references(() => users.id),
   englishLevel:          varchar("english_level", { length: 50 }),
   workExperience:        jsonb("work_experience"),
   preferredIndustry:     jsonb("preferred_industry"),
   availableHoursPerWeek: integer("available_hours_per_week"),
-  hostCompanyId:         uuid("host_company_id"),
+  hostCompanyId:         uuid("host_company_id").references(() => accounts.id, { onDelete: "set null" }),
   positionTitle:         varchar("position_title", { length: 200 }),
   employmentType:        varchar("employment_type", { length: 50 }),
   hourlyRate:            decimal("hourly_rate", { precision: 8, scale: 2 }),
@@ -76,12 +75,11 @@ export const internshipMgt = pgTable("internship_mgt", {
 });
 
 // ── Guardian Management ────────────────────────────────────────────────────
-// Note: studentAccountId, schoolId reference future 'accounts' table — plain uuid
 export const guardianMgt = pgTable("guardian_mgt", {
   id:                             uuid("id").primaryKey().defaultRandom(),
   contractId:                     uuid("contract_id").notNull().references(() => contracts.id),
   leadId:                         uuid("lead_id").references(() => leads.id),
-  studentAccountId:               uuid("student_account_id"),
+  studentAccountId:               uuid("student_account_id").references(() => accounts.id, { onDelete: "set null" }),
   assignedStaffId:                uuid("assigned_staff_id").references(() => users.id),
   guardianStaffId:                uuid("guardian_staff_id").references(() => users.id),
   serviceStartDate:               date("service_start_date"),
@@ -104,14 +102,12 @@ export const guardianMgt = pgTable("guardian_mgt", {
 });
 
 // ── Study Abroad Management ────────────────────────────────────────────────
-// Note: studentAccountId references future 'accounts' table — plain uuid
 // Note: coeDocumentId, visaDocumentId reference future 'files' table — plain uuid
-// Note: instituteAccountId — camp 전용, accounts 테이블 참조 (plain uuid)
 export const studyAbroadMgt = pgTable("study_abroad_mgt", {
   id:                      uuid("id").primaryKey().defaultRandom(),
   contractId:              uuid("contract_id").notNull().references(() => contracts.id),
   leadId:                  uuid("lead_id").references(() => leads.id),
-  studentAccountId:        uuid("student_account_id"),
+  studentAccountId:        uuid("student_account_id").references(() => accounts.id, { onDelete: "set null" }),
   assignedStaffId:         uuid("assigned_staff_id").references(() => users.id),
   applicationStage:        varchar("application_stage", { length: 50 }),
   targetSchools:           jsonb("target_schools"),
@@ -132,7 +128,7 @@ export const studyAbroadMgt = pgTable("study_abroad_mgt", {
   updatedAt:               timestamp("updated_at").notNull().defaultNow(),
   // ── Phase 1 Migration: Camp integration fields ─────────────────────────
   programContext:          varchar("program_context", { length: 50 }).notNull().default("study_abroad"),
-  instituteAccountId:      uuid("institute_account_id"),
+  instituteAccountId:      uuid("institute_account_id").references(() => accounts.id, { onDelete: "set null" }),
   programName:             varchar("program_name", { length: 255 }),
   programType:             varchar("program_type", { length: 50 }),
   programStartDate:        date("program_start_date"),
@@ -264,7 +260,7 @@ export const settlementMgt = pgTable("settlement_mgt", {
   createdAt:             timestamp("created_at").defaultNow(),
   updatedAt:             timestamp("updated_at").defaultNow(),
   // ── Arrival Settlement Service fields ─────────────────────────────────
-  studentAccountId:      uuid("student_account_id"),
+  studentAccountId:      uuid("student_account_id").references(() => accounts.id, { onDelete: "set null" }),
   assignedConsultantId:  uuid("assigned_consultant_id").references(() => users.id),
   arrivalDate:           date("arrival_date"),
   overallStatus:         varchar("overall_status", { length: 50 }).default("pending"),

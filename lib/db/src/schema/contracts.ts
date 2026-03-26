@@ -15,6 +15,7 @@ import { z } from "zod/v4";
 import { users } from "./users";
 import { applications } from "./applications";
 import { products } from "./packages";
+import { accounts } from "./crm";
 
 export const contracts = pgTable("contracts", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -45,7 +46,7 @@ export const contracts = pgTable("contracts", {
   totalArAmount: decimal("total_ar_amount", { precision: 12, scale: 2 }),
   totalApAmount: decimal("total_ap_amount", { precision: 12, scale: 2 }),
   serviceModulesActivated: jsonb("service_modules_activated"),
-  accountId: uuid("account_id"),
+  accountId: uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
