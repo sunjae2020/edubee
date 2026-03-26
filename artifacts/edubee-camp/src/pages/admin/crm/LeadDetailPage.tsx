@@ -9,8 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { NameFieldGroup } from "@/components/common/NameFieldGroup";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -64,6 +66,10 @@ interface Lead {
   id: string;
   leadRefNumber?: string | null;
   fullName: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  englishName?: string | null;
+  originalName?: string | null;
   email?: string | null;
   phone?: string | null;
   nationality?: string | null;
@@ -280,12 +286,69 @@ export default function LeadDetailPage() {
   const qc           = useQueryClient();
   const [tab, setTab] = useState("details");
   const [activityForm, setActivityForm] = useState({ channel: "Call", scheduledAt: "", description: "" });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    firstName: "", lastName: "", englishName: "", originalName: "",
+    email: "", phone: "", nationality: "", source: "", inquiryType: "",
+    budget: "", expectedStartDate: "", status: "new", notes: "",
+  });
   const id = params?.id ?? "";
 
   const { data: lead, isLoading } = useQuery<Lead>({
     queryKey: ["crm-lead", id],
     queryFn: () => axios.get(`${BASE}/api/crm/leads/${id}`).then(r => r.data),
     enabled: !!id,
+  });
+
+  // ── Open Edit Modal ─────────────────────────────────────────────────────────
+  const openEdit = () => {
+    if (!lead) return;
+    setEditForm({
+      firstName:         lead.firstName         ?? "",
+      lastName:          lead.lastName          ?? "",
+      englishName:       lead.englishName        ?? "",
+      originalName:      lead.originalName       ?? "",
+      email:             lead.email             ?? "",
+      phone:             lead.phone             ?? "",
+      nationality:       lead.nationality        ?? "",
+      source:            lead.source            ?? "",
+      inquiryType:       lead.inquiryType        ?? "",
+      budget:            lead.budget            ?? "",
+      expectedStartDate: lead.expectedStartDate  ?? "",
+      status:            lead.status            ?? "new",
+      notes:             lead.notes             ?? "",
+    });
+    setEditOpen(true);
+  };
+
+  // ── Edit Lead Mutation ───────────────────────────────────────────────────────
+  const editMutation = useMutation({
+    mutationFn: (f: typeof editForm) => {
+      const fn = f.firstName.trim();
+      const ln = f.lastName.trim();
+      return axios.put(`${BASE}/api/crm/leads/${id}`, {
+        firstName:         fn   || null,
+        lastName:          ln   || null,
+        englishName:       f.englishName       || null,
+        originalName:      f.originalName      || null,
+        fullName:          fn && ln ? `${fn} ${ln.toUpperCase()}` : (fn || ln || lead?.fullName),
+        email:             f.email             || null,
+        phone:             f.phone             || null,
+        nationality:       f.nationality        || null,
+        source:            f.source            || null,
+        inquiryType:       f.inquiryType        || null,
+        budget:            f.budget            || null,
+        expectedStartDate: f.expectedStartDate  || null,
+        status:            f.status,
+        notes:             f.notes             || null,
+      }).then(r => r.data);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crm-lead", id] });
+      setEditOpen(false);
+      toast({ title: "Lead updated" });
+    },
+    onError: () => toast({ title: "Failed to update lead", variant: "destructive" }),
   });
 
   // ── Save Account ────────────────────────────────────────────────────────────
@@ -383,7 +446,9 @@ export default function LeadDetailPage() {
             className="text-white" style={{ background: "#F5821F" }}>
             {convertMutation.isPending ? "Converting…" : "Convert to Quote"}
           </Button>
-          <Button variant="outline">Edit</Button>
+          <Button variant="outline" onClick={openEdit}>
+            <Pencil size={13} className="mr-1" /> Edit
+          </Button>
         </div>
       </div>
 
@@ -540,6 +605,94 @@ export default function LeadDetailPage() {
           </div>
         </div>
       )}
+
+      {/* ── Edit Lead Dialog ── */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Lead</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 pt-1">
+            <NameFieldGroup
+              values={{
+                firstName:    editForm.firstName,
+                lastName:     editForm.lastName,
+                originalName: editForm.originalName,
+                englishName:  editForm.englishName,
+              }}
+              onChange={(key, value) => setEditForm(f => ({ ...f, [key]: value }))}
+              required
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Email</Label>
+                <Input className="h-9 text-sm" type="email" value={editForm.email}
+                  onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Phone</Label>
+                <Input className="h-9 text-sm" value={editForm.phone}
+                  onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Nationality</Label>
+                <Input className="h-9 text-sm" value={editForm.nationality}
+                  onChange={e => setEditForm(f => ({ ...f, nationality: e.target.value }))} placeholder="e.g. Korean" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Source</Label>
+                <Input className="h-9 text-sm" value={editForm.source}
+                  onChange={e => setEditForm(f => ({ ...f, source: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Inquiry Type</Label>
+                <Select value={editForm.inquiryType || "__none__"} onValueChange={v => setEditForm(f => ({ ...f, inquiryType: v === "__none__" ? "" : v }))}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— None —</SelectItem>
+                    {["Study Abroad","Camp","Language Course","University","Internship","Other"].map(v =>
+                      <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Status</Label>
+                <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["new","open","in_progress","converted","closed","lost"].map(v =>
+                      <SelectItem key={v} value={v}>{v.replace(/_/g, " ")}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Budget (A$)</Label>
+                <Input className="h-9 text-sm" type="number" value={editForm.budget}
+                  onChange={e => setEditForm(f => ({ ...f, budget: e.target.value }))} placeholder="0" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Expected Start Date</Label>
+                <Input className="h-9 text-sm" type="date" value={editForm.expectedStartDate}
+                  onChange={e => setEditForm(f => ({ ...f, expectedStartDate: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Notes</Label>
+              <Textarea className="text-sm min-h-[80px]" value={editForm.notes}
+                onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+              <Button
+                disabled={!editForm.firstName.trim() || !editForm.lastName.trim() || editMutation.isPending}
+                className="text-white" style={{ background: "#F5821F" }}
+                onClick={() => editMutation.mutate(editForm)}>
+                {editMutation.isPending ? "Saving…" : "Save Changes"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
