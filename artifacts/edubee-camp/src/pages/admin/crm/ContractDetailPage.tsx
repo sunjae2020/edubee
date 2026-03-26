@@ -119,6 +119,12 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
           } />
           <InfoRow label="Contract From"   value={fmtDate(contract.fromDate)} />
           <InfoRow label="Contract To"     value={fmtDate(contract.toDate)} />
+          {contract.fromDate && contract.toDate && (() => {
+            const days = Math.round((new Date(contract.toDate).getTime() - new Date(contract.fromDate).getTime()) / 86400000) + 1;
+            return <InfoRow label="Duration" value={
+              <span className="font-semibold" style={{ color:"#F5821F" }}>{days === 1 ? "1 day" : `${days} days`}</span>
+            } />;
+          })()}
           <InfoRow label="Notes"           value={contract.notes} />
         </div>
       </div>
@@ -1186,19 +1192,44 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
 
   const getInfo = (key: string, data: any): string => {
     if (!data) return "—";
-    if (key === "pickup")        return [data.pickupType, data.airportName, data.pickupDate].filter(Boolean).join(" · ") || "—";
-    if (key === "accommodation") return [data.accommodationType, data.hostName].filter(Boolean).join(" · ") || "—";
-    if (key === "studyAbroad")   return [data.schoolName, data.courseName].filter(Boolean).join(" · ") || "—";
-    if (key === "internship")    return [data.companyName, data.position].filter(Boolean).join(" · ") || "—";
-    if (key === "settlement")    return data.settlementDate ?? "—";
-    if (key === "guardian")      return [data.guardianName, data.relationship].filter(Boolean).join(" · ") || "—";
+    if (key === "pickup")        return [data.pickupType, data.from].filter(Boolean).join(" · ") || "—";
+    if (key === "accommodation") return [data.type, data.hostName].filter(Boolean).join(" · ") || "—";
+    if (key === "studyAbroad")   return [data.programName, data.programType].filter(Boolean).join(" · ") || "—";
+    if (key === "internship")    return [data.positionTitle, data.employmentType].filter(Boolean).join(" · ") || "—";
+    if (key === "settlement")    return data.serviceDescription ?? "—";
+    if (key === "guardian")      return [data.billingCycle].filter(Boolean).join(" · ") || "—";
     if (key === "other")         return [data.serviceType, data.title].filter(Boolean).join(" · ") || "—";
+    if (key === "hotel")         return [data.roomType, data.confirmationNo].filter(Boolean).join(" · ") || "—";
+    if (key === "tour")          return [data.tourName].filter(Boolean).join(" · ") || "—";
+    if (key === "camp")          return [data.tourName, data.tourType].filter(Boolean).join(" · ") || "—";
     return "—";
+  };
+
+  const fmtDateShort = (raw: string | null | undefined) => {
+    if (!raw) return "—";
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "2-digit" });
   };
 
   const fmtDate = (raw: string | null | undefined) => {
     if (!raw) return "—";
     return new Date(raw).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
+  };
+
+  const getServiceDates = (key: string, data: any): { from: string | null; to: string | null; dur: string | null } => {
+    if (!data) return { from: null, to: null, dur: null };
+    const from = data.fromDate ?? null;
+    const to   = data.toDate   ?? null;
+    let dur: string | null = null;
+    if (from && to) {
+      const f = new Date(from), t = new Date(to);
+      const days = Math.round((t.getTime() - f.getTime()) / 86400000) + 1;
+      dur = days === 1 ? "1 day" : `${days} days`;
+    } else if (from || to) {
+      dur = "1 day";
+    }
+    return { from, to, dur };
   };
 
   return (
@@ -1227,8 +1258,8 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
       ) : (
         <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
           {/* Table header */}
-          <div className="grid grid-cols-[2fr_3fr_1.5fr_1.5fr_32px] gap-0 border-b border-[#E8E6E2] px-5 py-2.5">
-            {["Service", "Details", "Status", "Applied", ""].map((h, i) => (
+          <div className="grid grid-cols-[2fr_2.2fr_1fr_1fr_72px_1fr_32px] gap-0 border-b border-[#E8E6E2] px-5 py-2.5">
+            {["Service", "Details", "From", "To", "Dur", "Status", ""].map((h, i) => (
               <span key={i} className="text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide">{h}</span>
             ))}
           </div>
@@ -1240,11 +1271,11 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
               const status    = data?.status ?? null;
               const statusCls = status ? (SVC_STATUS_BADGE[status] ?? "bg-[#F4F3F1] text-[#57534E]") : "bg-[#F4F3F1] text-[#A8A29E]";
               const info      = getInfo(key, data);
-              const applied   = fmtDate(data?.createdAt);
+              const { from, to, dur } = getServiceDates(key, data);
 
               return (
                 <div key={`${key}-${idx}`}
-                  className="grid grid-cols-[2fr_3fr_1.5fr_1.5fr_32px] gap-0 px-5 py-3.5 items-center hover:bg-[#FAFAF9] cursor-pointer group transition-colors"
+                  className="grid grid-cols-[2fr_2.2fr_1fr_1fr_72px_1fr_32px] gap-0 px-5 py-3.5 items-center hover:bg-[#FAFAF9] cursor-pointer group transition-colors"
                   onClick={() => data?.id && navigate(`${SERVICE_ROUTES[key]}/${data.id}`)}>
 
                   {/* Service name */}
@@ -1269,7 +1300,16 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
                   </div>
 
                   {/* Details */}
-                  <span className="text-xs text-[#57534E] truncate pr-4">{info}</span>
+                  <span className="text-xs text-[#57534E] truncate pr-2">{info}</span>
+
+                  {/* From */}
+                  <span className="text-xs text-[#57534E]">{fmtDateShort(from)}</span>
+
+                  {/* To */}
+                  <span className="text-xs text-[#57534E]">{fmtDateShort(to)}</span>
+
+                  {/* Dur */}
+                  <span className={`text-xs font-medium ${dur ? "text-[#F5821F]" : "text-[#D6D3D1]"}`}>{dur ?? "—"}</span>
 
                   {/* Status */}
                   <div>
@@ -1277,9 +1317,6 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
                       {status ? status.replace(/_/g, " ") : "—"}
                     </span>
                   </div>
-
-                  {/* Applied date */}
-                  <span className="text-xs text-[#A8A29E]">{applied}</span>
 
                   {/* Arrow */}
                   <ChevronRight size={14} className="text-[#D6D3D1] group-hover:text-[#A8A29E] transition-colors" />
@@ -1748,11 +1785,34 @@ export default function ContractDetailPage() {
   // Determine primary service data for the info card
   const svcs = contract.services ?? {};
   const primData = (() => {
-    if (primaryServiceType === "studyAbroad" || primaryServiceType === "study_abroad") return svcs.studyAbroad;
-    if (primaryServiceType === "pickup")        return svcs.pickup?.[0];
-    if (primaryServiceType === "accommodation") return svcs.accommodation;
+    const t = primaryServiceType;
+    if (t === "studyAbroad" || t === "study_abroad") return svcs.studyAbroad;
+    if (t === "pickup")        return svcs.pickup?.[0];
+    if (t === "accommodation") return svcs.accommodation;
+    if (t === "internship")    return svcs.internship;
+    if (t === "guardian")      return svcs.guardian;
+    if (t === "other")         return svcs.other?.[0];
+    if (t === "settlement")    return svcs.settlement;
+    if (t === "hotel")         return svcs.hotel;
+    if (t === "tour")          return svcs.tour?.[0];
+    if (t === "visa")          return svcs.visa;
+    if (t === "camp")          return svcs.camp?.[0];
     return null;
   })();
+
+  const calcPrimDates = (data: any) => {
+    if (!data) return { from: null, to: null, dur: null };
+    const from = data.fromDate ?? null;
+    const to   = data.toDate   ?? null;
+    let dur: string | null = null;
+    if (from && to) {
+      const f = new Date(from), t2 = new Date(to);
+      const days = Math.round((t2.getTime() - f.getTime()) / 86400000) + 1;
+      dur = days === 1 ? "1 day" : `${days} days`;
+    } else if (from || to) { dur = "1 day"; }
+    return { from, to, dur };
+  };
+  const primDates = calcPrimDates(primData);
 
   // Counts for tab badges
   const counts: Partial<Record<TabKey, number>> = {
@@ -1868,12 +1928,22 @@ export default function ContractDetailPage() {
             </div>
             {primData ? (
               <>
-                {"coeNumber" in primData && primData.coeNumber && <InfoRow label="COE" value={primData.coeNumber} />}
-                {"visaType"  in primData && primData.visaType  && <InfoRow label="Visa" value={primData.visaType} />}
-                {"type"      in primData && primData.type      && <InfoRow label="Type" value={primData.type} />}
-                {"hostName"  in primData && primData.hostName  && <InfoRow label="Host" value={primData.hostName} />}
-                {"checkin"   in primData && primData.checkin   && <InfoRow label="Check-in" value={fmtDate(primData.checkin)} />}
-                {"checkout"  in primData && primData.checkout  && <InfoRow label="Check-out" value={fmtDate(primData.checkout)} />}
+                {primDates.from && <InfoRow label="From" value={<span className="font-medium">{fmtDate(primDates.from)}</span>} />}
+                {primDates.to   && <InfoRow label="To"   value={<span className="font-medium">{fmtDate(primDates.to)}</span>} />}
+                {primDates.dur  && (
+                  <InfoRow label="Duration" value={
+                    <span className="font-semibold" style={{ color:"#F5821F" }}>{primDates.dur}</span>
+                  } />
+                )}
+                {"programName"   in primData && primData.programName   && <InfoRow label="Program" value={primData.programName} />}
+                {"type"          in primData && primData.type          && <InfoRow label="Type"    value={primData.type} />}
+                {"hostName"      in primData && primData.hostName      && <InfoRow label="Host"    value={primData.hostName} />}
+                {"positionTitle" in primData && primData.positionTitle && <InfoRow label="Position" value={primData.positionTitle} />}
+                {"tourName"      in primData && primData.tourName      && <InfoRow label="Tour"    value={primData.tourName} />}
+                {"roomType"      in primData && primData.roomType      && <InfoRow label="Room"    value={primData.roomType} />}
+                {"title"         in primData && primData.title         && <InfoRow label="Service" value={primData.title} />}
+                {"coeNumber"     in primData && primData.coeNumber     && <InfoRow label="COE"     value={primData.coeNumber} />}
+                {"visaType"      in primData && primData.visaType      && <InfoRow label="Visa"    value={primData.visaType} />}
               </>
             ) : (
               <p className="text-sm text-[#A8A29E]">No primary service data</p>
