@@ -5,8 +5,6 @@ import {
   applicationParticipants,
   packages,
   packageGroups,
-  instituteMgt,
-  hotelMgt,
   pickupMgt,
   tourMgt,
   users,
@@ -181,86 +179,20 @@ export async function autoPopulateSections(contractId: string): Promise<SectionD
   }
 
   // ── 3. accommodation ─────────────────────────────────────────────
-  try {
-    const hotelRows = await db
-      .select({
-        h: hotelMgt,
-        hotelName: users.fullName,
-      })
-      .from(hotelMgt)
-      .leftJoin(users, eq(users.id, hotelMgt.hotelId))
-      .where(eq(hotelMgt.contractId, contractId))
-      .limit(1);
-
-    const h = hotelRows[0];
-    sections.push({
-      sectionType: "accommodation",
-      sectionTitle: DEFAULT_TITLES.accommodation,
-      displayOrder: 2,
-      content: h
-        ? {
-            hotelName: h.hotelName,
-            roomType: h.h.roomType,
-            checkinDate: h.h.checkinDate,
-            checkinTime: h.h.checkinTime,
-            checkoutDate: h.h.checkoutDate,
-            checkoutTime: h.h.checkoutTime,
-            confirmationNo: h.h.confirmationNo,
-            guestNotes: h.h.guestNotes,
-            status: h.h.status,
-          }
-        : {},
-    });
-  } catch {
-    sections.push({
-      sectionType: "accommodation",
-      sectionTitle: DEFAULT_TITLES.accommodation,
-      displayOrder: 2,
-      content: {},
-    });
-  }
+  sections.push({
+    sectionType: "accommodation",
+    sectionTitle: DEFAULT_TITLES.accommodation,
+    displayOrder: 2,
+    content: {},
+  });
 
   // ── 4. academic ──────────────────────────────────────────────────
-  try {
-    const instRows = await db
-      .select({
-        im: instituteMgt,
-        instituteName: users.fullName,
-      })
-      .from(instituteMgt)
-      .leftJoin(users, eq(users.id, instituteMgt.instituteId))
-      .where(eq(instituteMgt.contractId, contractId))
-      .limit(1);
-
-    const im = instRows[0];
-    sections.push({
-      sectionType: "academic",
-      sectionTitle: DEFAULT_TITLES.academic,
-      displayOrder: 3,
-      content: im
-        ? {
-            instituteName: im.instituteName,
-            programDetails: im.im.programDetails,
-            startDate: im.im.startDate,
-            endDate: im.im.endDate,
-            totalHours: im.im.totalHours,
-            englishLevelStart: im.im.englishLevelStart,
-            englishLevelEnd: im.im.englishLevelEnd,
-            schedule: im.im.schedule ?? [],
-            teacherComments: im.im.teacherComments,
-            progressNotes: im.im.progressNotes,
-            status: im.im.status,
-          }
-        : { schedule: [] },
-    });
-  } catch {
-    sections.push({
-      sectionType: "academic",
-      sectionTitle: DEFAULT_TITLES.academic,
-      displayOrder: 3,
-      content: { schedule: [] },
-    });
-  }
+  sections.push({
+    sectionType: "academic",
+    sectionTitle: DEFAULT_TITLES.academic,
+    displayOrder: 3,
+    content: { schedule: [] },
+  });
 
   // ── 5. tour ──────────────────────────────────────────────────────
   try {

@@ -14,8 +14,6 @@ import {
 import {
   applications,
   contracts,
-  instituteMgt,
-  hotelMgt,
   pickupMgt,
   tourMgt,
   users,
@@ -391,7 +389,7 @@ router.get("/documents/by-entity", async (req, res) => {
     if (!entityType || !entityId) return res.status(400).json({ error: "entityType and entityId are required" });
 
     let rawDocs: any[] = [];
-    const SERVICE_TYPES = ["institute_mgt", "hotel_mgt", "pickup_mgt", "tour_mgt"];
+    const SERVICE_TYPES = ["pickup_mgt", "tour_mgt"];
 
     if (entityType === "application" || entityType === "contract") {
       const conds: SQL[] = [
@@ -402,8 +400,6 @@ router.get("/documents/by-entity", async (req, res) => {
       rawDocs = await db.select().from(documents).where(and(...conds)).orderBy(documents.createdAt);
     } else if (SERVICE_TYPES.includes(entityType)) {
       const tableMap: Record<string, any> = {
-        institute_mgt: instituteMgt,
-        hotel_mgt: hotelMgt,
         pickup_mgt: pickupMgt,
         tour_mgt: tourMgt,
       };

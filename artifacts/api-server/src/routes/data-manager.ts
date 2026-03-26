@@ -4,7 +4,7 @@ import { parse } from "csv-parse/sync";
 import { db } from "@workspace/db";
 import {
   users, leads, applications, applicationParticipants, contracts,
-  contractProducts, instituteMgt, hotelMgt, pickupMgt, tourMgt,
+  contractProducts, pickupMgt, tourMgt,
   settlementMgt, exchangeRates, packageGroups, packages, products,
   enrollmentSpots, importHistory,
 } from "@workspace/db/schema";
@@ -102,16 +102,6 @@ const EXPORT_CONFIGS: Record<string, ExportConfig> = {
     table: contractProducts,
     columns: ["contract_id", "product_id", "quantity", "unit_price", "total_price", "status"],
     dbColumns: ["contractId", "productId", "quantity", "unitPrice", "totalPrice", "status"],
-  },
-  institute_mgt: {
-    table: instituteMgt,
-    columns: ["contract_id", "institute_id", "start_date", "end_date", "total_hours", "english_level_start", "english_level_end", "status", "progress_notes"],
-    dbColumns: ["contractId", "instituteId", "startDate", "endDate", "totalHours", "englishLevelStart", "englishLevelEnd", "status", "progressNotes"],
-  },
-  hotel_mgt: {
-    table: hotelMgt,
-    columns: ["contract_id", "hotel_id", "room_type", "checkin_date", "checkout_date", "confirmation_no", "status", "guest_notes"],
-    dbColumns: ["contractId", "hotelId", "roomType", "checkinDate", "checkoutDate", "confirmationNo", "status", "guestNotes"],
   },
   pickup_mgt: {
     table: pickupMgt,

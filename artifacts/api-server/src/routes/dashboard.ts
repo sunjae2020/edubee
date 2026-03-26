@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { applications, contracts, leads, notifications, users, instituteMgt, hotelMgt, pickupMgt, tourMgt } from "@workspace/db/schema";
+import { applications, contracts, leads, notifications, users, pickupMgt, tourMgt } from "@workspace/db/schema";
 import { eq, count, ne, sql, and, inArray } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 
@@ -108,9 +108,6 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
       const [myApps] = await db.select({ count: count() }).from(applications);
       const [myContracts] = await db.select({ count: count() }).from(contracts);
       const [activeContracts] = await db.select({ count: count() }).from(contracts).where(eq(contracts.status, "active"));
-      const [institutes] = await db.select({ count: count() }).from(instituteMgt);
-      const [hotels] = await db.select({ count: count() }).from(hotelMgt);
-
       const recentApplications = await db.select({
         id: applications.id,
         applicationNumber: applications.applicationNumber,
@@ -128,8 +125,6 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
         totalApplications: Number(myApps.count),
         totalContracts: Number(myContracts.count),
         activeContracts: Number(activeContracts.count),
-        instituteBookings: Number(institutes.count),
-        hotelBookings: Number(hotels.count),
         recentApplications,
         recentLeads: [],
         applicationsByStatus: (appsByStatus.rows as any[]).map(r => ({ status: r.status, count: r.count })),
@@ -141,15 +136,7 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
       const partnerType = role.replace("partner_", "");
       let bookings = 0;
       let active = 0;
-      if (partnerType === "institute") {
-        const [b] = await db.select({ count: count() }).from(instituteMgt).where(eq(instituteMgt.partnerId, userId));
-        const [a] = await db.select({ count: count() }).from(instituteMgt).where(and(eq(instituteMgt.partnerId, userId), eq(instituteMgt.status, "confirmed")));
-        bookings = Number(b.count); active = Number(a.count);
-      } else if (partnerType === "hotel") {
-        const [b] = await db.select({ count: count() }).from(hotelMgt).where(eq(hotelMgt.partnerId, userId));
-        const [a] = await db.select({ count: count() }).from(hotelMgt).where(and(eq(hotelMgt.partnerId, userId), eq(hotelMgt.status, "confirmed")));
-        bookings = Number(b.count); active = Number(a.count);
-      } else if (partnerType === "pickup") {
+      if (partnerType === "pickup") {
         const [b] = await db.select({ count: count() }).from(pickupMgt).where(eq(pickupMgt.partnerId, userId));
         const [a] = await db.select({ count: count() }).from(pickupMgt).where(and(eq(pickupMgt.partnerId, userId), eq(pickupMgt.status, "confirmed")));
         bookings = Number(b.count); active = Number(a.count);

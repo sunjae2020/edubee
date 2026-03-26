@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown,
   LayoutDashboard, Layers, Package, ShoppingBag, ListChecks,
   Target, ClipboardList, FileText,
-  GraduationCap, Building2, Car, Map, CalendarCheck,
+  GraduationCap, Building2, Car, Map,
   Receipt, FileCheck, ArrowLeftRight, RefreshCw,
   Wallet, BarChart2,
   Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
@@ -69,19 +69,9 @@ function buildNav(effectiveRole: string): NavGroup[] {
   if (isSAorAD || isCC) {
     campItems.push(
       { icon: ClipboardList, label: "Camp Application", href: "/admin/camp-applications" },
-      { icon: FileText,      label: "Camp Contract",    href: "/admin/camp-contracts"    },
+      { icon: ListChecks,    label: "Enrollment Spots", href: "/admin/enrollment-spots"  },
     );
   }
-  if (isSAorAD || isCC || effectiveRole === "partner_institute")
-    campItems.push({ icon: GraduationCap, label: "Institute", href: "/admin/camp-services/institutes" });
-  if (isSAorAD || isCC) {
-    campItems.push(
-      { icon: ListChecks,   label: "Enrollment Spots",  href: "/admin/enrollment-spots"       },
-      { icon: CalendarCheck, label: "Interviews",        href: "/admin/services/interviews"     },
-    );
-  }
-  if (isSAorAD || isCC || effectiveRole === "partner_hotel")
-    campItems.push({ icon: Building2, label: "Hotel",            href: "/admin/services/hotel"          });
   if (campItems.length > 0)
     nav.push({ key: "camp", label: "Camp", catIcon: GraduationCap, items: campItems });
 

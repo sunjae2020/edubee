@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import {
   contracts, applications,
-  instituteMgt, hotelMgt, pickupMgt, tourMgt, settlementMgt,
+  pickupMgt, tourMgt, settlementMgt,
   invoices, receipts, transactions, users,
 } from "@workspace/db/schema";
 import { eq, and, ilike, count, inArray, SQL, exists } from "drizzle-orm";
@@ -145,8 +145,6 @@ router.put("/contracts/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coo
 router.get("/contracts/:id/services", authenticate, async (req, res) => {
   try {
     const cid = req.params.id;
-    const [instituteRec] = await db.select().from(instituteMgt).where(eq(instituteMgt.contractId, cid)).limit(1);
-    const [hotelRec] = await db.select().from(hotelMgt).where(eq(hotelMgt.contractId, cid)).limit(1);
     const [pickupRec] = await db.select().from(pickupMgt).where(eq(pickupMgt.contractId, cid)).limit(1);
     const [tourRec] = await db.select().from(tourMgt).where(eq(tourMgt.contractId, cid)).limit(1);
     const settlements = await db.select().from(settlementMgt).where(eq(settlementMgt.contractId, cid));
@@ -161,60 +159,12 @@ router.get("/contracts/:id/services", authenticate, async (req, res) => {
     }));
 
     return res.json({
-      institute: instituteRec ?? null,
-      hotel: hotelRec ?? null,
       pickup: pickupRec ?? null,
       tour: tourRec ?? null,
       settlements: enrichSettlements,
     });
   } catch (err) {
     console.error("Contract services error:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-router.patch("/contracts/:id/services/institute", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
-  try {
-    const cid = req.params.id;
-    const { programDetails, startDate, endDate, schedule, totalHours, englishLevelStart, englishLevelEnd, teacherComments, status, progressNotes } = req.body;
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    if (programDetails !== undefined) updates.programDetails = programDetails;
-    if (startDate !== undefined) updates.startDate = startDate || null;
-    if (endDate !== undefined) updates.endDate = endDate || null;
-    if (schedule !== undefined) updates.schedule = schedule;
-    if (totalHours !== undefined) updates.totalHours = totalHours ? Number(totalHours) : null;
-    if (englishLevelStart !== undefined) updates.englishLevelStart = englishLevelStart;
-    if (englishLevelEnd !== undefined) updates.englishLevelEnd = englishLevelEnd;
-    if (teacherComments !== undefined) updates.teacherComments = teacherComments;
-    if (status !== undefined) updates.status = status;
-    if (progressNotes !== undefined) updates.progressNotes = progressNotes;
-    const [updated] = await db.update(instituteMgt).set(updates).where(eq(instituteMgt.contractId, cid)).returning();
-    if (!updated) return res.status(404).json({ error: "No institute service found for this contract" });
-    return res.json(updated);
-  } catch (err) {
-    console.error("PATCH institute error:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-router.patch("/contracts/:id/services/hotel", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
-  try {
-    const cid = req.params.id;
-    const { roomType, checkinDate, checkinTime, checkoutDate, checkoutTime, confirmationNo, guestNotes, status } = req.body;
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    if (roomType !== undefined) updates.roomType = roomType;
-    if (checkinDate !== undefined) updates.checkinDate = checkinDate || null;
-    if (checkinTime !== undefined) updates.checkinTime = checkinTime;
-    if (checkoutDate !== undefined) updates.checkoutDate = checkoutDate || null;
-    if (checkoutTime !== undefined) updates.checkoutTime = checkoutTime;
-    if (confirmationNo !== undefined) updates.confirmationNo = confirmationNo;
-    if (guestNotes !== undefined) updates.guestNotes = guestNotes;
-    if (status !== undefined) updates.status = status;
-    const [updated] = await db.update(hotelMgt).set(updates).where(eq(hotelMgt.contractId, cid)).returning();
-    if (!updated) return res.status(404).json({ error: "No hotel service found for this contract" });
-    return res.json(updated);
-  } catch (err) {
-    console.error("PATCH hotel error:", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

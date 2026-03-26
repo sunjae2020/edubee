@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import {
-  instituteMgt, hotelMgt, pickupMgt, tourMgt, settlementMgt,
+  pickupMgt, tourMgt, settlementMgt,
   settlementChecklistTemplates, contracts, applications, users, accounts
 } from "@workspace/db/schema";
 import { eq, and, inArray, sql, SQL, desc } from "drizzle-orm";
@@ -65,133 +65,6 @@ async function enrichSettlementConsultants(rows: any[]): Promise<any[]> {
   const map = new Map(consultantRows.map(u => [u.id, u.fullName]));
   return rows.map(r => ({ ...r, consultantName: map.get(r.assignedConsultantId) ?? null }));
 }
-
-// ── Institute Management ─────────────────────────────────────────────
-
-router.get("/services/institute", authenticate, async (req, res) => {
-  try {
-    const role = req.user!.role;
-    const uid = req.user!.id;
-    let query = db.select().from(instituteMgt);
-    const data = role === "partner_institute"
-      ? await query.where(eq(instituteMgt.instituteId, uid))
-      : await query;
-    return res.json({ data: await enrichWithContractInfo(data) });
-  } catch (err) {
-    console.error("Institute list error:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-router.get("/services/institute/:id", authenticate, async (req, res) => {
-  try {
-    const role = req.user!.role;
-    const uid = req.user!.id;
-    const [rec] = await db.select().from(instituteMgt).where(eq(instituteMgt.id, req.params.id)).limit(1);
-    if (!rec) return res.status(404).json({ error: "Not Found" });
-    if (role === "partner_institute" && rec.instituteId !== uid) return res.status(403).json({ error: "Forbidden" });
-    const [enriched] = await enrichWithContractInfo([rec]);
-    return res.json({ data: enriched });
-  } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-router.put("/services/institute/:id", authenticate, async (req, res) => {
-  try {
-    const role = req.user!.role;
-    const uid = req.user!.id;
-    const [rec] = await db.select().from(instituteMgt).where(eq(instituteMgt.id, req.params.id)).limit(1);
-    if (!rec) return res.status(404).json({ error: "Not Found" });
-    if (role === "partner_institute" && rec.instituteId !== uid) return res.status(403).json({ error: "Forbidden" });
-
-    const { schedule, teacherComments, englishLevelEnd, status, progressNotes,
-      programDetails, startDate, endDate, totalHours, englishLevelStart, instituteId } = req.body;
-
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    if (schedule !== undefined) updates.schedule = schedule;
-    if (teacherComments !== undefined) updates.teacherComments = teacherComments;
-    if (englishLevelEnd !== undefined) updates.englishLevelEnd = englishLevelEnd;
-    if (status !== undefined) updates.status = status;
-    if (progressNotes !== undefined) updates.progressNotes = progressNotes;
-
-    if (isAdminOrCC(role)) {
-      if (programDetails !== undefined) updates.programDetails = programDetails;
-      if (startDate !== undefined) updates.startDate = startDate;
-      if (endDate !== undefined) updates.endDate = endDate;
-      if (totalHours !== undefined) updates.totalHours = totalHours;
-      if (englishLevelStart !== undefined) updates.englishLevelStart = englishLevelStart;
-      if (instituteId !== undefined) updates.instituteId = instituteId;
-    }
-
-    const [updated] = await db.update(instituteMgt).set(updates).where(eq(instituteMgt.id, req.params.id)).returning();
-    return res.json(updated);
-  } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-// ── Hotel Management ─────────────────────────────────────────────────
-
-router.get("/services/hotel", authenticate, async (req, res) => {
-  try {
-    const role = req.user!.role;
-    const uid = req.user!.id;
-    let query = db.select().from(hotelMgt);
-    const data = role === "partner_hotel"
-      ? await query.where(eq(hotelMgt.hotelId, uid))
-      : await query;
-    return res.json({ data: await enrichWithContractInfo(data) });
-  } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-router.get("/services/hotel/:id", authenticate, async (req, res) => {
-  try {
-    const role = req.user!.role;
-    const uid = req.user!.id;
-    const [rec] = await db.select().from(hotelMgt).where(eq(hotelMgt.id, req.params.id)).limit(1);
-    if (!rec) return res.status(404).json({ error: "Not Found" });
-    if (role === "partner_hotel" && rec.hotelId !== uid) return res.status(403).json({ error: "Forbidden" });
-    const [enriched] = await enrichWithContractInfo([rec]);
-    return res.json({ data: enriched });
-  } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-router.put("/services/hotel/:id", authenticate, async (req, res) => {
-  try {
-    const role = req.user!.role;
-    const uid = req.user!.id;
-    const [rec] = await db.select().from(hotelMgt).where(eq(hotelMgt.id, req.params.id)).limit(1);
-    if (!rec) return res.status(404).json({ error: "Not Found" });
-    if (role === "partner_hotel" && rec.hotelId !== uid) return res.status(403).json({ error: "Forbidden" });
-
-    const { roomType, checkinTime, checkoutTime, confirmationNo, guestNotes, status,
-      checkinDate, checkoutDate, hotelId } = req.body;
-
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    if (roomType !== undefined) updates.roomType = roomType;
-    if (checkinTime !== undefined) updates.checkinTime = checkinTime;
-    if (checkoutTime !== undefined) updates.checkoutTime = checkoutTime;
-    if (confirmationNo !== undefined) updates.confirmationNo = confirmationNo;
-    if (guestNotes !== undefined) updates.guestNotes = guestNotes;
-    if (status !== undefined) updates.status = status;
-
-    if (isAdminOrCC(role)) {
-      if (checkinDate !== undefined) updates.checkinDate = checkinDate;
-      if (checkoutDate !== undefined) updates.checkoutDate = checkoutDate;
-      if (hotelId !== undefined) updates.hotelId = hotelId;
-    }
-
-    const [updated] = await db.update(hotelMgt).set(updates).where(eq(hotelMgt.id, req.params.id)).returning();
-    return res.json(updated);
-  } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
 
 // ── Pickup Management ────────────────────────────────────────────────
 // NOTE: GET /services/pickup list is handled by services-pickup.ts (supports source/search/pagination filters)

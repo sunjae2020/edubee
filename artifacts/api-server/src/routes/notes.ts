@@ -8,7 +8,7 @@ const router = Router();
 
 const ALLOWED_ENTITY_TYPES = [
   "task", "lead", "application", "contract",
-  "institute_mgt", "hotel_mgt", "pickup_mgt",
+  "pickup_mgt",
   "tour_mgt", "settlement_mgt", "interview_schedule",
   "other_services_mgt",
 ] as const;
@@ -18,8 +18,6 @@ const ALLOWED_NOTE_TYPES: Record<string, string[]> = {
   lead:               ["internal"],
   application:        ["internal", "special_request"],
   contract:           ["internal"],
-  institute_mgt:      ["internal", "teacher", "progress"],
-  hotel_mgt:          ["internal", "guest"],
   pickup_mgt:         ["internal", "driver"],
   tour_mgt:           ["internal", "guide"],
   settlement_mgt:     ["internal"],

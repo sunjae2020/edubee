@@ -251,7 +251,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     const { id } = req.params;
     const r = (x: any) => x.rows ?? (x as any[]);
 
-    const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, otRes, clRes, htRes, trRes, stRes, vsRes, ctRes, phCountRes, actCountRes] = await Promise.all([
+    const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, otRes, clRes, trRes, stRes, vsRes, ctRes, phCountRes, actCountRes] = await Promise.all([
       db.execute(sql`
         SELECT c.*,
                a.id           AS account_id_val,
@@ -303,7 +303,6 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
         )
         ORDER BY pcl.created_on
       `),
-      db.execute(sql`SELECT * FROM hotel_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
       db.execute(sql`SELECT * FROM tour_mgt WHERE contract_id = ${id}::uuid ORDER BY created_at`),
       db.execute(sql`SELECT * FROM settlement_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
       db.execute(sql`SELECT * FROM visa_services_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
@@ -321,7 +320,6 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
           (SELECT COUNT(*) FROM study_abroad_mgt WHERE contract_id = ${id}::uuid) +
           (SELECT COUNT(*) FROM pickup_mgt       WHERE contract_id = ${id}::uuid) +
           (SELECT COUNT(*) FROM accommodation_mgt WHERE contract_id = ${id}::uuid) +
-          (SELECT COUNT(*) FROM hotel_mgt        WHERE contract_id = ${id}::uuid) +
           (SELECT COUNT(*) FROM tour_mgt         WHERE contract_id = ${id}::uuid) +
           (SELECT COUNT(*) FROM settlement_mgt   WHERE contract_id = ${id}::uuid) +
           (SELECT COUNT(*) FROM guardian_mgt     WHERE contract_id = ${id}::uuid) +
@@ -388,7 +386,6 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     const inArr = r(inRes); const intern = inArr[0] ?? null;
     const gdArr = r(gdRes); const gd = gdArr[0] ?? null;
     const otArr = r(otRes);
-    const htArr = r(htRes); const ht = htArr[0] ?? null;
     const trArr = r(trRes);
     const stArr = r(stRes); const st = stArr[0] ?? null;
     const vsArr = r(vsRes); const vs = vsArr[0] ?? null;
@@ -491,13 +488,6 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
           serviceDescription: st.service_description, grossAmount: st.gross_amount,
           fromDate: st.arrival_date, toDate: st.arrival_date,
           arrivalDate: st.arrival_date, settlementDate: st.settlement_date,
-        } : null,
-        hotel: ht ? {
-          id: ht.id, status: ht.status,
-          roomType: ht.room_type, checkin: ht.checkin_date, checkout: ht.checkout_date,
-          fromDate: ht.checkin_date, toDate: ht.checkout_date,
-          confirmationNo: ht.confirmation_no,
-          checkinTime: ht.checkin_time, checkoutTime: ht.checkout_time,
         } : null,
         tour: trArr.length ? trArr.map((t: any) => ({
           id: t.id, status: t.status, tourName: t.tour_name, tourDate: t.tour_date,

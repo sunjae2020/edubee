@@ -1,0 +1,133 @@
+테스트 DB이므로 아래 내용을 전부 삭제해줘.
+순서대로 진행하고, 각 단계 완료 후 결과 보고해줘.
+
+=====================================================
+STEP A — DB 고아 테이블 삭제
+=====================================================
+
+DROP TABLE IF EXISTS hotel_mgt CASCADE;
+DROP TABLE IF EXISTS institute_mgt CASCADE;
+
+-- 구 CAMP 플랫폼 테이블 (혹시 남아있으면 삭제)
+DROP TABLE IF EXISTS hotel_management CASCADE;
+DROP TABLE IF EXISTS institute_management CASCADE;
+DROP TABLE IF EXISTS pickup_management CASCADE;
+DROP TABLE IF EXISTS tour_management CASCADE;
+DROP TABLE IF EXISTS settlement_management CASCADE;
+
+-- 삭제 확인
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN (
+    'hotel_mgt', 'institute_mgt',
+    'hotel_management', 'institute_management',
+    'pickup_management', 'tour_management', 'settlement_management'
+  );
+-- 결과 0행이어야 함
+
+=====================================================
+STEP B — 프론트엔드 페이지 파일 삭제
+=====================================================
+
+아래 파일들을 찾아서 삭제해줘.
+(파일명이 정확히 일치하지 않아도 유사한 이름이면 삭제)
+
+삭제 대상:
+- CampContracts.tsx
+- CampContractDetail.tsx
+- CampInstitutes.tsx
+- CampInstituteDetail.tsx
+- CampTours.tsx (구 캠프 전용 투어 페이지)
+- CampTourDetail.tsx
+- Interviews.tsx 또는 InterviewSchedules.tsx
+- HotelService.tsx 또는 Hotel.tsx (hotel_mgt 연결 페이지)
+- InstituteService.tsx 또는 Institute.tsx (institute_mgt 연결 페이지)
+
+⚠️ 아래 파일은 절대 삭제하지 마:
+- EnrollmentSpots.tsx (계속 사용)
+
+각 파일을 import 하는 곳도 모두 함께 제거.
+
+=====================================================
+STEP C — App.tsx Route 삭제
+=====================================================
+
+아래 경로의 Route 정의를 App.tsx에서 삭제:
+
+- /admin/camp-contracts
+- /admin/camp-contracts/:id
+- /admin/camp-services/institutes
+- /admin/camp-services/institutes/:id
+- /admin/camp-services/tours  (구 경로)
+- /admin/camp-services/tours/:id
+- /admin/services/interviews
+- /admin/services/hotel
+
+⚠️ 아래 Route는 절대 삭제하지 마:
+- /admin/enrollment-spots  (계속 사용)
+
+=====================================================
+STEP D — 사이드바 메뉴 항목 삭제
+=====================================================
+
+app-sidebar.tsx 에서 아래 메뉴 항목만 삭제:
+
+Camp 카테고리에서:
+- Camp Contract  (/admin/camp-contracts)
+- Institute  (/admin/camp-services/institutes)
+- Interviews  (/admin/services/interviews)
+- Hotel  (/admin/services/hotel)
+- 구 Tour 경로  (/admin/camp-services/tours)
+
+⚠️ 아래 항목은 절대 삭제하지 마:
+- Enrollment Spots (/admin/enrollment-spots)  (계속 사용)
+
+=====================================================
+STEP E — 스키마 파일 정의 삭제
+=====================================================
+
+아래 테이블의 Drizzle 스키마 정의가 있으면 삭제:
+- hotelMgt (hotel_mgt)
+- instituteMgt (institute_mgt)
+
+관련 export, type 정의, relation 정의 모두 함께 삭제.
+
+⚠️ 아래는 절대 삭제하지 마:
+- enrollmentSpots (enrollment_spots) 스키마 정의
+
+=====================================================
+STEP F — 최종 검증
+=====================================================
+
+1. npx tsc --noEmit → TypeScript 오류 0개 확인
+
+2. 서버 재시작 → import 오류, 런타임 오류 없음 확인
+
+3. DB 최종 확인:
+   SELECT table_name
+   FROM information_schema.tables
+   WHERE table_schema = 'public'
+   ORDER BY table_name;
+   → 삭제된 테이블 없음 확인
+
+4. 남아있어야 할 서비스 모듈 테이블 확인:
+   SELECT table_name
+   FROM information_schema.tables
+   WHERE table_schema = 'public'
+     AND table_name IN (
+       'study_abroad_mgt', 'pickup_mgt', 'accommodation_mgt',
+       'settlement_mgt', 'guardian_mgt', 'internship_mgt',
+       'camp_tour_mgt', 'tour_mgt', 'enrollment_spots'
+     )
+   ORDER BY table_name;
+   -- 9개 모두 존재해야 함
+
+=====================================================
+완료 보고 형식:
+=====================================================
+✅ 수정된 파일: [목록]
+✅ 삭제된 DB 테이블: [목록]
+✅ 삭제된 Route: [목록]
+✅ 검증 결과: [tsc / 서버 / DB 각각 결과]
+⚠️ 주의사항: [있는 경우]

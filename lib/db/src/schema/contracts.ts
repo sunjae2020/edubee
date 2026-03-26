@@ -81,41 +81,6 @@ export const contractProducts = pgTable("contract_products", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const instituteMgt = pgTable("institute_mgt", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  contractId: uuid("contract_id").references(() => contracts.id),
-  instituteId: uuid("institute_id").references(() => users.id),
-  programDetails: text("program_details"),
-  startDate: date("start_date"),
-  endDate: date("end_date"),
-  schedule: jsonb("schedule"),
-  totalHours: integer("total_hours"),
-  englishLevelStart: varchar("english_level_start", { length: 50 }),
-  englishLevelEnd: varchar("english_level_end", { length: 50 }),
-  teacherComments: text("teacher_comments"),
-  status: varchar("status", { length: 50 }).default("pending"),
-  progressNotes: text("progress_notes"),
-  ledgerEntryId: uuid("ledger_entry_id"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export const hotelMgt = pgTable("hotel_mgt", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  contractId: uuid("contract_id").references(() => contracts.id),
-  hotelId: uuid("hotel_id").references(() => users.id),
-  roomType: varchar("room_type", { length: 100 }),
-  checkinDate: date("checkin_date"),
-  checkinTime: varchar("checkin_time", { length: 20 }),
-  checkoutDate: date("checkout_date"),
-  checkoutTime: varchar("checkout_time", { length: 20 }),
-  confirmationNo: varchar("confirmation_no", { length: 100 }),
-  guestNotes: text("guest_notes"),
-  status: varchar("status", { length: 50 }).default("pending"),
-  ledgerEntryId: uuid("ledger_entry_id"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
 
 export const pickupMgt = pgTable("pickup_mgt", {
   id: uuid("id").primaryKey().defaultRandom(),

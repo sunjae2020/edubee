@@ -19,12 +19,6 @@ import PackageGroups from "@/pages/admin/package-groups";
 import Packages from "@/pages/packages";
 import PackageDetail from "@/pages/admin/package-detail";
 import Leads from "@/pages/admin/leads";
-import CampContracts from "@/pages/admin/camp-contracts";
-import CampContractDetail from "@/pages/admin/camp-contract-detail";
-import CampInstituteDetail from "@/pages/admin/camp-institute-detail";
-import CampTourDetail from "@/pages/admin/camp-tour-detail";
-import CampInstitutes from "@/pages/admin/camp-services/camp-institutes";
-import CampTours from "@/pages/admin/camp-services/camp-tours";
 import AdminStub from "@/pages/admin/stub";
 import NotFound from "@/pages/not-found";
 
@@ -33,19 +27,14 @@ import PackageGroupDetail from "@/pages/admin/package-group-detail";
 import NewPackageGroup from "@/pages/admin/new-package-group";
 import ApplicationDetail from "@/pages/admin/application-detail";
 import ApplicationForm from "@/pages/admin/application-form";
-import InstituteMgtDetail from "@/pages/admin/services/institute-detail";
-import HotelMgtDetail from "@/pages/admin/services/hotel-detail";
 import PickupMgtDetail from "@/pages/admin/services/pickup-detail";
 import TourMgtDetail from "@/pages/admin/services/tour-detail";
 import SettlementMgtDetail from "@/pages/admin/services/settlement-detail";
 import UserDetail from "@/pages/admin/user-detail";
 
 // Services
-import InstituteManagement from "@/pages/admin/services/institute";
-import HotelManagement from "@/pages/admin/services/hotel";
 import PickupManagement from "@/pages/admin/services/pickup";
 import TourManagement from "@/pages/admin/services/tour";
-import Interviews from "@/pages/admin/services/interviews";
 import Settlement from "@/pages/admin/services/settlement";
 import TasksCS from "@/pages/admin/services/tasks";
 
@@ -199,24 +188,6 @@ function Router() {
       <Route path="/admin/camp-applications">
         <AdminRoute title="Camp Applications"><CampApplications /></AdminRoute>
       </Route>
-      <Route path="/admin/camp-contracts/:id">
-        <AdminRoute title="Camp Contract Detail"><CampContractDetail /></AdminRoute>
-      </Route>
-      <Route path="/admin/camp-contracts">
-        <AdminRoute title="Camp Contract"><CampContracts /></AdminRoute>
-      </Route>
-      <Route path="/admin/camp-services/institutes/:id">
-        <AdminRoute title="Camp Institute Detail"><CampInstituteDetail /></AdminRoute>
-      </Route>
-      <Route path="/admin/camp-services/institutes">
-        <AdminRoute title="Camp Institutes"><CampInstitutes /></AdminRoute>
-      </Route>
-      <Route path="/admin/camp-services/tours/:id">
-        <AdminRoute title="Camp Tour Detail"><CampTourDetail /></AdminRoute>
-      </Route>
-      <Route path="/admin/camp-services/tours">
-        <AdminRoute title="Camp Tours"><CampTours /></AdminRoute>
-      </Route>
       <Route path="/admin/product-groups/:id">
         <AdminRoute title="Product Group Detail"><ProductGroupDetail /></AdminRoute>
       </Route>
@@ -237,18 +208,6 @@ function Router() {
       </Route>
 
       {/* Service Pages */}
-      <Route path="/admin/services/institute/:id">
-        <AdminRoute title="Institute Detail"><InstituteMgtDetail /></AdminRoute>
-      </Route>
-      <Route path="/admin/services/institute">
-        <AdminRoute title="Institute Management"><InstituteManagement /></AdminRoute>
-      </Route>
-      <Route path="/admin/services/hotel/:id">
-        <AdminRoute title="Hotel Detail"><HotelMgtDetail /></AdminRoute>
-      </Route>
-      <Route path="/admin/services/hotel">
-        <AdminRoute title="Hotel Management"><HotelManagement /></AdminRoute>
-      </Route>
       <Route path="/admin/services/pickup/:id">
         <AdminRoute title="Pickup Detail"><PickupMgtDetail /></AdminRoute>
       </Route>
@@ -260,9 +219,6 @@ function Router() {
       </Route>
       <Route path="/admin/services/tour">
         <AdminRoute title="Tour Management"><TourManagement /></AdminRoute>
-      </Route>
-      <Route path="/admin/services/interviews">
-        <AdminRoute title="Interviews"><Interviews /></AdminRoute>
       </Route>
       <Route path="/admin/services/settlement/:id">
         <AdminRoute title="Settlement Detail"><SettlementMgtDetail /></AdminRoute>

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leads, applications, applicationParticipants, contracts, instituteMgt, hotelMgt, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages } from "@workspace/db/schema";
+import { leads, applications, applicationParticipants, contracts, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages } from "@workspace/db/schema";
 import { eq, and, ilike, or, count, inArray, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -354,8 +354,6 @@ router.post("/applications/:id/convert-contract", authenticate, requireRole("sup
         currency: "AUD",
       }).returning();
 
-      await tx.insert(instituteMgt).values({ contractId: contract.id, status: "pending" });
-      await tx.insert(hotelMgt).values({ contractId: contract.id, status: "pending" });
       await tx.insert(pickupMgt).values({ contractId: contract.id, status: "pending" });
       await tx.insert(tourMgt).values({ contractId: contract.id, status: "pending" });
 

@@ -4,7 +4,7 @@ import {
   quotes, quote_products, contracts, contractProducts,
   pickupMgt, settlementMgt,
   accommodationMgt, internshipMgt, guardianMgt, studyAbroadMgt,
-  hotelMgt, tourMgt, accounts,
+  tourMgt, accounts,
   visaServicesMgt, campTourMgt, otherServicesMgt,
 } from "@workspace/db/schema";
 import { eq, and, count, sql, SQL } from "drizzle-orm";
@@ -299,10 +299,6 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
           case "guardian":
             await tx.insert(guardianMgt).values({ contractId, officialGuardianRegistered: false, status: "pending" });
             activatedModules.push("guardian");
-            break;
-          case "hotel":
-            await tx.insert(hotelMgt).values({ contractId });
-            activatedModules.push("hotel");
             break;
           case "tour":
             await tx.insert(tourMgt).values({ contractId });
