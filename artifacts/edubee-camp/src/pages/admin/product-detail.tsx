@@ -1174,9 +1174,9 @@ export default function ProductDetail() {
                                 <div className="flex items-center justify-center gap-1">
                                   <button
                                     type="button"
-                                    onClick={() => navigate(`${BASE}/admin/package-groups/${row.packageGroupId}`)}
+                                    onClick={() => navigate(`${BASE}/admin/packages/${row.packageId}`)}
                                     className="text-muted-foreground hover:text-[#F5821F] transition-colors"
-                                    title="Open package group"
+                                    title="Open package"
                                   >
                                     <ExternalLink className="w-3.5 h-3.5" />
                                   </button>
