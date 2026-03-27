@@ -483,6 +483,13 @@ export default function ProductDetail() {
     enabled: !isNew,
   });
 
+  const { data: linkedPackagesData = [] } = useQuery({
+    queryKey: ["product-linked-packages", id],
+    queryFn: () => api(`/api/products/${id}/linked-packages`).then(r => r.data),
+    enabled: !isNew,
+  });
+  const linkedPackages: any[] = Array.isArray(linkedPackagesData) ? linkedPackagesData : [];
+
   const { data: productGroups = [], isLoading: groupsLoading } = useQuery({
     queryKey: ["lookup-product-groups"],
     queryFn: () => api(`/api/product-groups`).then(r => r.data),
@@ -1165,6 +1172,69 @@ export default function ProductDetail() {
                 />
               </div>
             </Section>
+
+            {/* [8b] LINKED PACKAGES — read-only */}
+            {!isNew && (
+              <Section title="Linked Packages">
+                <div className="space-y-3">
+                  <p className="text-xs text-[#57534E]">
+                    Packages that currently include this product. Manage from each package's detail page.
+                  </p>
+                  {linkedPackages.length === 0 ? (
+                    <p className="text-xs text-[#A8A29E] py-1">This product is not linked to any packages yet.</p>
+                  ) : (
+                    <div className="rounded-lg border overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-muted/30 border-b">
+                            <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Package</th>
+                            <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Program Group</th>
+                            <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Inclusion</th>
+                            <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Qty</th>
+                            <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+                            <th className="w-10 px-3 py-2" />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {linkedPackages.map((row: any) => (
+                            <tr key={row.linkId} className="border-b last:border-0 hover:bg-[#FEF0E3]/40 transition-colors">
+                              <td className="px-3 py-2 font-medium text-sm">{row.packageName}</td>
+                              <td className="px-3 py-2 text-xs text-muted-foreground">
+                                <div>{row.groupNameEn ?? "—"}</div>
+                                {row.groupNameKo && <div className="text-[10px] text-muted-foreground/60">{row.groupNameKo}</div>}
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${row.isOptional ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-700"}`}>
+                                  {row.isOptional ? "Optional" : "Included"}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-right font-mono text-xs">{row.quantity ?? 1}</td>
+                              <td className="px-3 py-2 text-center">
+                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium capitalize ${
+                                  row.packageStatus === "active"   ? "bg-green-50 text-green-700" :
+                                  row.packageStatus === "inactive" ? "bg-amber-50 text-amber-700" :
+                                  "bg-gray-100 text-gray-600"
+                                }`}>{row.packageStatus ?? "—"}</span>
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`${BASE}/admin/packages/${row.packageId}`)}
+                                  className="text-muted-foreground hover:text-[#F5821F] transition-colors"
+                                  title="Open package"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </Section>
+            )}
 
             {/* [9] PRODUCT IMAGES */}
             <Section title="Product Images">

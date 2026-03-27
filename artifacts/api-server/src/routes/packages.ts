@@ -792,6 +792,36 @@ router.get("/products/:id/linked-groups", authenticate, async (req, res) => {
   }
 });
 
+router.get("/products/:id/linked-packages", authenticate, async (req, res) => {
+  try {
+    const rows = await db
+      .select({
+        linkId:         packageProducts.id,
+        isOptional:     packageProducts.isOptional,
+        quantity:       packageProducts.quantity,
+        unitPrice:      packageProducts.unitPrice,
+        packageId:      packages.id,
+        packageName:    packages.name,
+        packageStatus:  packages.status,
+        durationDays:   packages.durationDays,
+        packageGroupId: packages.packageGroupId,
+        groupNameEn:    packageGroups.nameEn,
+        groupNameKo:    packageGroups.nameKo,
+        groupLocation:  packageGroups.location,
+        groupCountryCode: packageGroups.countryCode,
+      })
+      .from(packageProducts)
+      .innerJoin(packages, eq(packageProducts.packageId, packages.id))
+      .leftJoin(packageGroups, eq(packages.packageGroupId, packageGroups.id))
+      .where(eq(packageProducts.productId, req.params.id))
+      .orderBy(asc(packageGroups.nameEn), asc(packages.name));
+    return res.json(rows);
+  } catch (err) {
+    console.error("[GET /products/:id/linked-packages]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.put("/products/:id/linked-groups", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const productId = req.params.id;
