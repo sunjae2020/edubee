@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Package, Pencil, Trash2, RefreshCw, Plus, Search, X, Building2 } from "lucide-react";
+import { Package, RefreshCw, Plus, Search, X, Building2 } from "lucide-react";
 import ProductDrawer from "@/components/shared/ProductDrawer";
 import ProductAdvancedSearch, { type ProductSearchFilters } from "@/components/shared/ProductAdvancedSearch";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
@@ -312,7 +312,7 @@ export default function Products() {
     });
   }
 
-  const COLS = 11;
+  const COLS = 9;
 
   return (
     <div className="space-y-4">
@@ -373,8 +373,6 @@ export default function Products() {
               <SortableTh col="country" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Country</SortableTh>
               <SortableTh col="city" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">City</SortableTh>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Location</th>
-              <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
-              <th className="px-4 py-2.5 w-20" />
             </tr>
           </thead>
           <tbody>
@@ -428,28 +426,6 @@ export default function Products() {
                     {p.location
                       ? <span className="truncate block">{p.location}</span>
                       : <span className="text-muted-foreground">—</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    {p.status && (
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                        p.status === "active" ? "bg-green-100 text-green-700" :
-                        p.status === "inactive" ? "bg-gray-100 text-gray-600" :
-                        "bg-red-100 text-red-700"}`}>
-                        {p.status}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openDrawer(p.id)}>
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                      {canEdit && (
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:text-red-600" onClick={() => handleDelete(p)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
                   </td>
                 </tr>
               ))
