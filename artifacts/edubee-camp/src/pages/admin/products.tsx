@@ -364,14 +364,14 @@ export default function Products() {
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full text-sm table-fixed">
           <colgroup>
-            <col className="w-[18%]" />  {/* Provider */}
-            <col className="w-[28%]" />  {/* Product Name */}
-            <col className="w-[10%]" />  {/* Price */}
-            <col className="w-[6%]" />   {/* Grade */}
-            <col className="w-[6%]" />   {/* Priority */}
-            <col className="w-[14%]" />  {/* Location */}
-            <col className="w-[9%]" />   {/* Created */}
-            <col className="w-[9%]" />   {/* Modified */}
+            <col className="w-[18%]" />
+            <col className="w-[28%]" />
+            <col className="w-[10%]" />
+            <col className="w-[6%]" />
+            <col className="w-[6%]" />
+            <col className="w-[14%]" />
+            <col className="w-[9%]" />
+            <col className="w-[9%]" />
           </colgroup>
           <thead>
             <tr className="border-b bg-muted/30">

@@ -481,7 +481,6 @@ function AccountLookupField({
 
 function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
   const [open, setOpen] = useState(true);
-  // Filter state (draft — applied on button click)
   const [search,       setSearch]       = useState("");
   const [productGroup, setProductGroup] = useState("");
   const [productType,  setProductType]  = useState("");
@@ -491,8 +490,12 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
   const [country,      setCountry]      = useState("");
   const [location,     setLocation]     = useState("");
 
-  // Committed params — query only runs when this changes (on button click)
-  const [committed, setCommitted] = useState<null | Record<string, string>>(null);
+  // Debounced search text (300ms) — prevents API call on every keystroke
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   // Lookup data
   const { data: groupsData = [] } = useQuery<{ id: string; name: string }[]>({
@@ -527,34 +530,25 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
     )
   ).sort() as string[];
 
-  // Search results — only fetched when committed !== null
+  // Real-time search — re-fetches whenever any filter changes
   const { data: productData, isFetching } = useQuery<{ data: Product[]; total: number }>({
-    queryKey: ["products-quote-search", committed],
+    queryKey: ["products-quote-search", { debouncedSearch, productGroup, productType, priority, grade, status, country, location }],
     queryFn: () => {
       const params = new URLSearchParams({ display_on_quote: "true", limit: "100" });
-      if (committed!.search)       params.set("search",        committed!.search);
-      if (committed!.productGroup) params.set("productGroup",  committed!.productGroup);
-      if (committed!.productType)  params.set("productTypeId", committed!.productType);
-      if (committed!.priority)     params.set("productPriority", committed!.priority);
-      if (committed!.grade)        params.set("productGrade",  committed!.grade);
-      if (committed!.status)       params.set("status",        committed!.status);
-      if (committed!.country)      params.set("country",       committed!.country);
-      if (committed!.location)     params.set("location",      committed!.location);
+      if (debouncedSearch) params.set("search",          debouncedSearch);
+      if (productGroup)    params.set("productGroup",    productGroup);
+      if (productType)     params.set("productTypeId",   productType);
+      if (priority)        params.set("productPriority", priority);
+      if (grade)           params.set("productGrade",    grade);
+      if (status)          params.set("status",          status);
+      if (country)         params.set("country",         country);
+      if (location)        params.set("location",        location);
       return axios.get(`${BASE}/api/products?${params}`).then((r) => r.data);
     },
-    enabled: committed !== null,
-    staleTime: 30_000,
+    staleTime: 0,
   });
 
   const products = productData?.data ?? [];
-
-  const handleSearch = () => {
-    setCommitted({ search, productGroup, productType, priority, grade, status, country, location });
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") handleSearch();
-  };
 
   // Reset productType when group changes
   const handleGroupChange = (v: string) => {
@@ -696,37 +690,28 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
             </div>
           </div>
 
-          {/* Row 4: Text search + Search button */}
-          <div className="flex gap-2 items-end">
-            <div className="flex-1 space-y-1">
-              <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Search</label>
-              <Input
-                placeholder="Search by product name or provider…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="h-8 text-xs"
-              />
-            </div>
-            <button
-              onClick={handleSearch}
-              className="flex items-center gap-1.5 px-4 h-8 rounded border text-xs font-medium transition-colors whitespace-nowrap"
-              style={{ borderColor: PRIMARY, color: PRIMARY }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#FEF0E3"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}
-            >
-              <Search size={13} />
-              Product Search
-            </button>
+          {/* Row 4: Text search */}
+          <div className="relative">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <Input
+              placeholder="Search by product name or provider…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-8 text-xs pl-7"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={13} />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Results */}
-        {committed === null ? (
-          <p className="text-sm text-gray-400 text-center py-6">
-            Set filters and click <strong>Product Search</strong> to find products.
-          </p>
-        ) : isFetching ? (
+        {isFetching ? (
           <div className="py-6 flex justify-center">
             <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-200" style={{ borderTopColor: PRIMARY }} />
           </div>
