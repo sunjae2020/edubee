@@ -113,7 +113,24 @@ router.get("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (
       linkedLead = ld ?? null;
     }
 
-    return res.json({ ...quote, products, total, lead: linkedLead });
+    // Attach linked contract ID (if any)
+    const contractRes = await db.execute(sql`
+      SELECT id, contract_number AS contract_number
+      FROM contracts
+      WHERE quote_id = ${req.params.id}::uuid
+      ORDER BY created_at DESC
+      LIMIT 1
+    `);
+    const linkedContract = (contractRes.rows ?? (contractRes as any[]))[0] ?? null;
+
+    return res.json({
+      ...quote,
+      products,
+      total,
+      lead: linkedLead,
+      contractId:     linkedContract?.id ?? null,
+      contractNumber: linkedContract?.contract_number ?? null,
+    });
   } catch (err) {
     console.error("[GET /api/crm/quotes/:id]", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -282,9 +299,13 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
             const dueDateStr = rawDue
               ? new Date(rawDue).toISOString().split("T")[0]
               : null;
+            // manual_input items use a virtual UUID for grouping (not in products table)
+            // → must not pass that UUID as productId (FK constraint violation)
+            const isManual = p.manual_input ?? false;
+            const realProductId = isManual ? null : (p.product_id ?? p.productId ?? null);
             return {
               contractId,
-              productId:         p.product_id ?? p.productId ?? null,
+              productId:         realProductId,
               name:              p.name ?? p.product_name ?? null,
               quantity:          qty,
               unitPrice:         String(unitAmt),

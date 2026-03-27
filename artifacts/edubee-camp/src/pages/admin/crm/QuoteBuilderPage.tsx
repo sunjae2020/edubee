@@ -48,6 +48,8 @@ interface Quote {
   studentAccountId?: string;
   leadId?: string;
   campApplicationId?: string | null;
+  contractId?: string | null;
+  contractNumber?: string | null;
 }
 
 interface QuoteProduct {
@@ -1065,6 +1067,8 @@ export default function QuoteBuilderPage() {
   const [studentAccountId, setStudentAccountId] = useState<string | null>(null);
   const [studentAccountName, setStudentAccountName] = useState<string | null>(null);
   const [clientAccountEmail, setClientAccountEmail] = useState<string | null>(null);
+  const [linkedContractId, setLinkedContractId] = useState<string | null>(null);
+  const [linkedContractNumber, setLinkedContractNumber] = useState<string | null>(null);
 
   // Email dialog
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -1090,6 +1094,8 @@ export default function QuoteBuilderPage() {
     setCustomerName(quote.customerName ?? "");
     setStudentAccountId(quote.studentAccountId ?? null);
     setStudentAccountName(quote.accountName ?? null);
+    setLinkedContractId(quote.contractId ?? null);
+    setLinkedContractNumber(quote.contractNumber ?? null);
   }, [quote]);
 
   // ── Fetch linked Camp Application (if any) ──────────────────────────────────
@@ -1373,7 +1379,11 @@ export default function QuoteBuilderPage() {
       toast({ title: "Quote converted to contract" });
       qc.invalidateQueries({ queryKey: ["quote", quoteId] });
       const contractId = res.data?.contractId;
-      if (contractId) navigate(`/admin/crm/contracts/${contractId}`);
+      if (contractId) {
+        setLinkedContractId(contractId);
+        setLinkedContractNumber(res.data?.contractNumber ?? null);
+        navigate(`/admin/crm/contracts/${contractId}`);
+      }
     },
     onError: (err: any) =>
       toast({
@@ -1516,7 +1526,17 @@ export default function QuoteBuilderPage() {
             Print PDF
           </Button>
 
-          {quoteStatus !== "Declined" && quoteStatus !== "Expired" && (
+          {quoteStatus === "Accepted" && linkedContractId ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/admin/crm/contracts/${linkedContractId}`)}
+              className="text-sm border-green-500 text-green-700 hover:bg-green-50 gap-1.5"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              {linkedContractNumber ?? "View Contract"}
+            </Button>
+          ) : quoteStatus !== "Declined" && quoteStatus !== "Expired" && quoteStatus !== "Accepted" && (
             <Button
               variant="outline"
               size="sm"
