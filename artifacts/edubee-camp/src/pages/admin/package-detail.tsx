@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
+import { NotePanel } from "@/components/shared/NotePanel";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -1055,6 +1056,13 @@ export default function PackageDetail() {
           </DetailSection>
         );
       })()}
+
+      {/* ── Notes ─────────────────────────────────────────────────────── */}
+      <DetailSection title="Notes">
+        <div className="px-4 py-3">
+          <NotePanel entityType="package" entityId={rec.id} />
+        </div>
+      </DetailSection>
 
       <SystemInfoSection owner={null} createdAt={rec.createdAt} updatedAt={rec.updatedAt} />
     </DetailPageLayout>

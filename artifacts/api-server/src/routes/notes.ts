@@ -11,6 +11,7 @@ const ALLOWED_ENTITY_TYPES = [
   "pickup_mgt",
   "tour_mgt", "settlement_mgt", "interview_schedule",
   "other_services_mgt",
+  "package",
 ] as const;
 
 const ALLOWED_NOTE_TYPES: Record<string, string[]> = {
@@ -23,6 +24,7 @@ const ALLOWED_NOTE_TYPES: Record<string, string[]> = {
   settlement_mgt:     ["internal"],
   interview_schedule: ["internal", "interviewer", "candidate"],
   other_services_mgt: ["internal"],
+  package:            ["internal"],
 };
 
 function getAllowedVisibility(role: string): string[] {
