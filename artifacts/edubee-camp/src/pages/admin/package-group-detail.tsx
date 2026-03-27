@@ -109,7 +109,7 @@ export default function PackageGroupDetail() {
 
   const { data: allActiveProductsData } = useQuery({
     queryKey: ["all-active-products"],
-    queryFn: () => axios.get(`${BASE}/api/products?status=active&limit=200`).then(r => r.data?.data ?? r.data),
+    queryFn: () => axios.get(`${BASE}/api/products?status=active&limit=200`).then(r => { const d = r.data?.data ?? r.data; return Array.isArray(d) ? d : []; }),
     enabled: showPkgAddProduct,
   });
   const allActiveProducts: any[] = Array.isArray(allActiveProductsData) ? allActiveProductsData : (allActiveProductsData?.data ?? []);

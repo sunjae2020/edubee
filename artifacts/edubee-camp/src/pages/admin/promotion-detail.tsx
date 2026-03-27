@@ -94,7 +94,7 @@ export default function PromotionDetail() {
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["products-active"],
-    queryFn: () => axios.get(`${BASE}/api/products?status=active`).then(r => r.data?.data ?? r.data),
+    queryFn: () => axios.get(`${BASE}/api/products?status=active`).then(r => { const d = r.data?.data ?? r.data; return Array.isArray(d) ? d : []; }),
   });
 
   const discard = () => { setForm(original); setNameError(""); };

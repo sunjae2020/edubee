@@ -67,10 +67,11 @@ export default function Promotions() {
   const [form, setForm]            = useState<FormState>(EMPTY_FORM);
   const [nameError, setNameError]  = useState("");
 
-  const { data: products = [] } = useQuery<Product[]>({
+  const { data: _rawProducts } = useQuery({
     queryKey: ["products-active"],
-    queryFn: () => axios.get(`${BASE}/api/products?status=active`).then(r => r.data?.data ?? r.data),
+    queryFn: () => axios.get(`${BASE}/api/products?status=active`).then(r => { const d = r.data?.data ?? r.data; return Array.isArray(d) ? d : []; }),
   });
+  const products: Product[] = Array.isArray(_rawProducts) ? _rawProducts : [];
 
   const queryKey = ["promotions", search, statusFilter, productFilter];
   const { data: promos = [], isLoading } = useQuery<Promotion[]>({
