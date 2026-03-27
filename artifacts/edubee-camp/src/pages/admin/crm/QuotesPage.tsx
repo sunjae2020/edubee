@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
-import { Plus, Eye, Pencil, FileText } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
@@ -117,15 +117,14 @@ export default function QuotesPage() {
               <SortableTh col="expiryDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Expiry</SortableTh>
               <SortableTh col="createdOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Created</SortableTh>
               <SortableTh col="modifiedOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Modified</SortableTh>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">No quotes found</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No quotes found</td></tr>
             )}
             {sorted.map(q => (
               <tr key={q.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
@@ -154,18 +153,6 @@ export default function QuotesPage() {
                 </td>
                 <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(q.createdOn)}</td>
                 <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(q.modifiedOn)}</td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1.5">
-                    <button onClick={() => navigate(`/admin/crm/quotes/${q.id}`)}
-                      className="p-1.5 rounded hover:bg-stone-100 text-stone-500 hover:text-stone-800" title="View">
-                      <Eye size={14} />
-                    </button>
-                    <button onClick={() => navigate(`/admin/crm/quotes/${q.id}/edit`)}
-                      className="p-1.5 rounded hover:bg-stone-100 text-stone-500 hover:text-stone-800" title="Edit">
-                      <Pencil size={14} />
-                    </button>
-                  </div>
-                </td>
               </tr>
             ))}
           </tbody>
