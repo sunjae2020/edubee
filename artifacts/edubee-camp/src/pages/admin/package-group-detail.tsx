@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
 import { ThumbnailUploader } from "@/components/shared/ThumbnailUploader";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -531,10 +532,23 @@ export default function PackageGroupDetail() {
             </DetailSection>
             <DetailSection title="Description (EN)" className="lg:col-span-2">
               {isEditing ? (
-                <textarea value={getValue("descriptionEn") ?? ""} onChange={e => setField("descriptionEn", e.target.value)}
-                  className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+                <RichTextEditor
+                  value={getValue("descriptionEn") ?? ""}
+                  onChange={(html) => setField("descriptionEn", html)}
+                  placeholder="Write a detailed description for customers…"
+                  minHeight={220}
+                />
+              ) : group.descriptionEn ? (
+                group.descriptionEn.trimStart().startsWith("<") ? (
+                  <div
+                    className="tiptap prose prose-sm max-w-none text-sm text-foreground"
+                    dangerouslySetInnerHTML={{ __html: group.descriptionEn }}
+                  />
+                ) : (
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{group.descriptionEn}</p>
+                )
               ) : (
-                <p className="text-sm text-foreground whitespace-pre-wrap">{group.descriptionEn || <span className="text-muted-foreground/60">—</span>}</p>
+                <span className="text-muted-foreground/60 text-sm">—</span>
               )}
             </DetailSection>
 
