@@ -292,7 +292,7 @@ export default function Products() {
 
   const fmtPrice = (p: Product) => {
     if (!p.price) return "—";
-    return `${p.currency ?? "AUD"} ${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `${p.currency ?? "AUD"} ${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
   function handleCreate() {
