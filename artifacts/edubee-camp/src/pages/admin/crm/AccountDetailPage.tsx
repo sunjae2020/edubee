@@ -820,15 +820,57 @@ export default function AccountDetailPage() {
             }`}>{account.status}</span>
           )}
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={saveMut.isPending}
-          className="flex items-center gap-1.5 text-sm"
-          style={{ background: "#F5821F", color: "#fff" }}
-        >
-          {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-          {isNew ? "Create Account" : "Save Changes"}
-        </Button>
+        {(isNew || dirty) && (
+          <div className="flex items-center gap-2">
+            {!isNew && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!account) return;
+                  const autoName = !account.manualInput && account.primaryContact?.fullName
+                    ? account.primaryContact.fullName
+                    : (account.name ?? "");
+                  setForm({
+                    name: autoName, manualInput: account.manualInput ?? false,
+                    accountType: account.accountType ?? "Student",
+                    accountCategory: account.accountCategory ?? undefined,
+                    parentAccountId: account.parentAccountId ?? undefined,
+                    primaryContactId: account.primaryContactId ?? undefined,
+                    secondaryContactId: account.secondaryContactId ?? undefined,
+                    phoneNumber: account.phoneNumber ?? undefined,
+                    phoneNumber2: account.phoneNumber2 ?? undefined,
+                    fax: account.fax ?? undefined, email: account.email ?? undefined,
+                    website: account.website ?? undefined, websiteUrl2: account.websiteUrl2 ?? undefined,
+                    address: account.address ?? undefined, secondaryAddress: account.secondaryAddress ?? undefined,
+                    country: account.country ?? undefined, state: account.state ?? undefined,
+                    city: account.city ?? undefined, postalCode: account.postalCode ?? undefined,
+                    location: account.location ?? undefined, abn: account.abn ?? undefined,
+                    isProductSource: account.isProductSource ?? false,
+                    isProductProvider: account.isProductProvider ?? false,
+                    foundYear: account.foundYear ?? undefined,
+                    totalCapacity: account.totalCapacity ?? undefined,
+                    avetmissDeliveryLocationId: account.avetmissDeliveryLocationId ?? undefined,
+                    description: account.description ?? undefined,
+                    ownerId: account.ownerId ?? meData?.id ?? "", status: account.status ?? "Active",
+                  });
+                  setDirty(false);
+                }}
+                className="flex items-center gap-1.5 text-sm"
+              >
+                Discard
+              </Button>
+            )}
+            <Button
+              onClick={handleSave}
+              disabled={saveMut.isPending}
+              className="flex items-center gap-1.5 text-sm"
+              style={{ background: "#F5821F", color: "#fff" }}
+            >
+              {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              {isNew ? "Create Account" : "Save Changes"}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

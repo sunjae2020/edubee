@@ -5,7 +5,7 @@ import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
   ArrowLeft, Plus, FileText, CalendarDays, HeartPulse,
-  DollarSign, Check, X, ExternalLink,
+  DollarSign, Check, X, ExternalLink, RotateCcw, Save,
 } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
@@ -177,6 +177,7 @@ function AddReportModal({
 
 // ─── Details Tab ──────────────────────────────────────────────────────────────
 function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: object) => void }) {
+  const [isDirty,        setIsDirty]        = useState(false);
   const [status,         setStatus]         = useState(record.status         ?? "pending");
   const [billingCycle,   setBillingCycle]   = useState(record.billingCycle   ?? "");
   const [serviceStart,   setServiceStart]   = useState(record.serviceStartDate ?? "");
@@ -185,6 +186,20 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
   const [notes,          setNotes]          = useState(record.notes          ?? "");
   const [regDate,        setRegDate]        = useState(record.schoolGuardianRegistrationDate ?? "");
   const [registered,     setRegistered]     = useState(record.officialGuardianRegistered ?? false);
+
+  const mark = () => setIsDirty(true);
+
+  const discard = () => {
+    setStatus(record.status ?? "pending");
+    setBillingCycle(record.billingCycle ?? "");
+    setServiceStart(record.serviceStartDate ?? "");
+    setServiceEnd(record.serviceEndDate ?? "");
+    setEmergencyContact(record.emergencyContact ?? "");
+    setNotes(record.notes ?? "");
+    setRegDate(record.schoolGuardianRegistrationDate ?? "");
+    setRegistered(record.officialGuardianRegistered ?? false);
+    setIsDirty(false);
+  };
 
   return (
     <div className="space-y-5">
@@ -205,7 +220,7 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
           <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">School Registration</h3>
           <div
             className="flex items-center gap-2 p-2.5 rounded-lg border border-stone-200 cursor-pointer"
-            onClick={() => setRegistered(!registered)}
+            onClick={() => { setRegistered(!registered); mark(); }}
           >
             <div
               className="w-5 h-5 rounded flex items-center justify-center"
@@ -217,25 +232,46 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Registration Date</Label>
-            <Input type="date" value={regDate} onChange={e => setRegDate(e.target.value)} className="h-9 text-sm" />
+            <Input type="date" value={regDate} onChange={e => { setRegDate(e.target.value); mark(); }} className="h-9 text-sm" />
           </div>
         </div>
       </div>
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
-        <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Service Details</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Service Details</h3>
+          {isDirty && (
+            <div className="flex items-center gap-2">
+              <button onClick={discard}
+                className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 border border-stone-200 rounded-md px-2.5 py-1 transition-colors">
+                <RotateCcw size={11} /> Discard
+              </button>
+              <button onClick={() => { onSave({ status, billingCycle: billingCycle || null, serviceStartDate: serviceStart || null, serviceEndDate: serviceEnd || null, emergencyContact: emergencyContact || null, notes, officialGuardianRegistered: registered, schoolGuardianRegistrationDate: regDate || null }); setIsDirty(false); }}
+                className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
+                style={{ background: "#F5821F" }}>
+                <Save size={11} /> Save Changes
+              </button>
+            </div>
+          )}
+        </div>
+        {isDirty && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 flex items-center gap-1.5">
+            <span className="text-amber-500">●</span>
+            Unsaved changes — click <strong className="mx-0.5">Save Changes</strong> to apply.
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Service Start</Label>
-            <Input type="date" value={serviceStart} onChange={e => setServiceStart(e.target.value)} className="h-9 text-sm" />
+            <Input type="date" value={serviceStart} onChange={e => { setServiceStart(e.target.value); mark(); }} className="h-9 text-sm" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Service End</Label>
-            <Input type="date" value={serviceEnd} onChange={e => setServiceEnd(e.target.value)} className="h-9 text-sm" />
+            <Input type="date" value={serviceEnd} onChange={e => { setServiceEnd(e.target.value); mark(); }} className="h-9 text-sm" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Billing Cycle</Label>
-            <Select value={billingCycle} onValueChange={setBillingCycle}>
+            <Select value={billingCycle} onValueChange={v => { setBillingCycle(v); mark(); }}>
               <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
               <SelectContent>
                 {["monthly", "term", "annual"].map(c => (
@@ -246,7 +282,7 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={v => { setStatus(v); mark(); }}>
               <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {["pending", "active", "on_hold", "completed", "cancelled"].map(s => (
@@ -257,19 +293,13 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
           </div>
           <div className="col-span-2 space-y-1.5">
             <Label className="text-xs text-stone-600">Emergency Contact</Label>
-            <Input value={emergencyContact} onChange={e => setEmergencyContact(e.target.value)} className="h-9 text-sm" placeholder="Name + phone" />
+            <Input value={emergencyContact} onChange={e => { setEmergencyContact(e.target.value); mark(); }} className="h-9 text-sm" placeholder="Name + phone" />
           </div>
           <div className="col-span-2 space-y-1.5">
             <Label className="text-xs text-stone-600">Notes</Label>
-            <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="text-sm min-h-[60px] resize-none" />
+            <Textarea value={notes} onChange={e => { setNotes(e.target.value); mark(); }} className="text-sm min-h-[60px] resize-none" />
           </div>
         </div>
-        <Button
-          onClick={() => onSave({ status, billingCycle: billingCycle || null, serviceStartDate: serviceStart || null, serviceEndDate: serviceEnd || null, emergencyContact: emergencyContact || null, notes, officialGuardianRegistered: registered, schoolGuardianRegistrationDate: regDate || null })}
-          className="text-white" style={{ background: "#F5821F" }}
-        >
-          Save Details
-        </Button>
       </div>
     </div>
   );

@@ -421,9 +421,10 @@ export default function CampApplicationDetail() {
     onError: () => toast({ variant: "destructive", title: "Failed to add participant" }),
   });
 
-  const { isEditing, isSaving, startEdit, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
+  const { isEditing, isDirty, isSaving, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
     initialData: app ?? {},
     onSave: async (data) => { await updateApp.mutateAsync(data); },
+    alwaysEdit: true,
   });
 
   if (isLoading) {
@@ -507,11 +508,9 @@ export default function CampApplicationDetail() {
         backLabel="Camp Applications"
         tabs={TABS}
         activeTab={activeTab}
-        onTabChange={(t) => { setActiveTab(t); if (isEditing) cancelEdit(); }}
-        canEdit={canEdit && activeTab === "overview"}
-        isEditing={isEditing}
+        onTabChange={setActiveTab}
+        isDirty={canEdit && activeTab === "overview" && isDirty}
         isSaving={isSaving}
-        onEdit={startEdit}
         onSave={saveEdit}
         onCancel={cancelEdit}
         headerExtra={headerActions}

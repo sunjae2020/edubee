@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
-import { ArrowLeft, Check, FileText, Briefcase, User, ChevronRight, Building2, ExternalLink, DollarSign, Pencil, X, Plus } from "lucide-react";
+import { ArrowLeft, Check, FileText, Briefcase, User, ChevronRight, Building2, ExternalLink, DollarSign, X, Plus, RotateCcw, Save } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,7 +138,7 @@ function ToggleRow({
 
 // ─── Student Profile Tab ──────────────────────────────────────────────────────
 function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSave: (p: object) => void }) {
-  const [editing, setEditing] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   const initIndustries = Array.isArray(record.preferredIndustry)
     ? record.preferredIndustry.join(", ")
@@ -153,11 +153,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
   const [newExpDesc,     setNewExpDesc]     = useState("");
   const [showAddExp,     setShowAddExp]     = useState(false);
 
-  const industries = Array.isArray(record.preferredIndustry)
-    ? record.preferredIndustry
-    : record.preferredIndustry
-      ? [record.preferredIndustry as string]
-      : [];
+  const mark = () => setIsDirty(true);
 
   const workExp = Array.isArray(record.workExperience) ? record.workExperience : [];
 
@@ -171,8 +167,15 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
       availableHoursPerWeek: availableHours ? Number(availableHours) : null,
       preferredIndustry:     industries.length > 0 ? industries : null,
     });
-    setEditing(false);
+    setIsDirty(false);
   }
+
+  const discard = () => {
+    setEnglishLevel(record.englishLevel ?? "");
+    setAvailableHours(String(record.availableHoursPerWeek ?? ""));
+    setPreferredIndustryStr(initIndustries);
+    setIsDirty(false);
+  };
 
   function handleAddExp() {
     if (!newExpRole.trim()) return;
@@ -190,73 +193,56 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
             <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide flex items-center gap-1.5">
               <User size={13} /> Client Info
             </h3>
-            {!editing && (
-              <button onClick={() => setEditing(true)}
-                className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
-                <Pencil size={12} /> Edit
-              </button>
+            {isDirty && (
+              <div className="flex items-center gap-2">
+                <button onClick={discard}
+                  className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 border border-stone-200 rounded-md px-2 py-0.5 transition-colors">
+                  <RotateCcw size={10} /> Discard
+                </button>
+                <button onClick={handleSaveProfile}
+                  className="flex items-center gap-1 text-xs text-white rounded-md px-2 py-0.5 font-semibold"
+                  style={{ background: "#F5821F" }}>
+                  <Save size={10} /> Save
+                </button>
+              </div>
             )}
           </div>
-          {!editing ? (
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
-              <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
-              <div className="flex justify-between"><span className="text-stone-400">Contract</span><span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span></div>
-              <div className="flex justify-between"><span className="text-stone-400">English Level</span>
-                <span className="px-2 py-0.5 rounded text-xs font-medium bg-[#FEF0E3] text-[#F5821F]">{record.englishLevel ?? "—"}</span>
-              </div>
-              <div className="flex justify-between"><span className="text-stone-400">Avail. Hours/Wk</span><span className="text-stone-700">{record.availableHoursPerWeek ?? "—"}</span></div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-600">English Level</Label>
-                <Select value={englishLevel || "_none"} onValueChange={v => setEnglishLevel(v === "_none" ? "" : v)}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_none">— Not set —</SelectItem>
-                    {["beginner", "elementary", "intermediate", "upper_intermediate", "advanced", "native"].map(l => (
-                      <SelectItem key={l} value={l} className="capitalize">{l.replace(/_/g, " ")}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-600">Available Hours / Week</Label>
-                <Input type="number" value={availableHours} onChange={e => setAvailableHours(e.target.value)} className="h-9 text-sm" placeholder="e.g. 20" />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleSaveProfile} className="text-white text-xs h-8" style={{ background: "#F5821F" }}>Save</Button>
-                <Button variant="outline" onClick={() => setEditing(false)} className="text-xs h-8">Cancel</Button>
-              </div>
+          {isDirty && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 flex items-center gap-1.5">
+              <span className="text-amber-500">●</span> Unsaved changes
             </div>
           )}
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-stone-400">Contract</span><span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span></div>
+          </div>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-600">English Level</Label>
+              <Select value={englishLevel || "_none"} onValueChange={v => { setEnglishLevel(v === "_none" ? "" : v); mark(); }}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">— Not set —</SelectItem>
+                  {["beginner", "elementary", "intermediate", "upper_intermediate", "advanced", "native"].map(l => (
+                    <SelectItem key={l} value={l} className="capitalize">{l.replace(/_/g, " ")}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-600">Available Hours / Week</Label>
+              <Input type="number" value={availableHours} onChange={e => { setAvailableHours(e.target.value); mark(); }} className="h-9 text-sm" placeholder="e.g. 20" />
+            </div>
+          </div>
         </div>
 
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Preferred Industry</h3>
-            {!editing && (
-              <button onClick={() => setEditing(true)}
-                className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
-                <Pencil size={12} /> Edit
-              </button>
-            )}
+          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Preferred Industry</h3>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Industries (comma-separated)</Label>
+            <Input value={preferredIndustryStr} onChange={e => { setPreferredIndustryStr(e.target.value); mark(); }} className="h-9 text-sm" placeholder="e.g. IT, Finance, Marketing" />
           </div>
-          {editing ? (
-            <div className="space-y-1.5">
-              <Label className="text-xs text-stone-600">Industries (comma-separated)</Label>
-              <Input value={preferredIndustryStr} onChange={e => setPreferredIndustryStr(e.target.value)} className="h-9 text-sm" placeholder="e.g. IT, Finance, Marketing" />
-            </div>
-          ) : industries.length === 0 ? (
-            <p className="text-sm text-stone-400">No preferences set</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {industries.map((ind, i) => (
-                <span key={i} className="px-3 py-1 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#C2410C]">{ind}</span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
@@ -323,6 +309,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
 
 // ─── Company Match Tab ────────────────────────────────────────────────────────
 function CompanyMatchTab({ record, onSave }: { record: InternshipDetail; onSave: (p: object) => void }) {
+  const [isDirty,         setIsDirty]         = useState(false);
   const [positionTitle,   setPositionTitle]   = useState(record.positionTitle   ?? "");
   const [employmentType,  setEmploymentType]  = useState(record.employmentType  ?? "");
   const [hourlyRate,      setHourlyRate]      = useState(record.hourlyRate      ?? "");
@@ -331,17 +318,50 @@ function CompanyMatchTab({ record, onSave }: { record: InternshipDetail; onSave:
   const [endDate,         setEndDate]         = useState(record.endDate         ?? "");
   const [notes,           setNotes]           = useState(record.notes           ?? "");
 
+  const mark = () => setIsDirty(true);
+  const discard = () => {
+    setPositionTitle(record.positionTitle ?? "");
+    setEmploymentType(record.employmentType ?? "");
+    setHourlyRate(record.hourlyRate ?? "");
+    setPlacementFeeType(record.placementFeeType ?? "");
+    setStartDate(record.startDate ?? "");
+    setEndDate(record.endDate ?? "");
+    setNotes(record.notes ?? "");
+    setIsDirty(false);
+  };
+
   return (
     <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
-      <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Company & Placement Details</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Company & Placement Details</h3>
+        {isDirty && (
+          <div className="flex items-center gap-2">
+            <button onClick={discard}
+              className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 border border-stone-200 rounded-md px-2.5 py-1 transition-colors">
+              <RotateCcw size={11} /> Discard
+            </button>
+            <button onClick={() => { onSave({ positionTitle, employmentType, hourlyRate: hourlyRate || null, placementFeeType, startDate: startDate || null, endDate: endDate || null, notes }); setIsDirty(false); }}
+              className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
+              style={{ background: "#F5821F" }}>
+              <Save size={11} /> Save Changes
+            </button>
+          </div>
+        )}
+      </div>
+      {isDirty && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 flex items-center gap-1.5">
+          <span className="text-amber-500">●</span>
+          Unsaved changes — click <strong className="mx-0.5">Save Changes</strong> to apply.
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label className="text-xs text-stone-600">Position Title</Label>
-          <Input value={positionTitle} onChange={e => setPositionTitle(e.target.value)} className="h-9 text-sm" placeholder="e.g. Marketing Assistant" />
+          <Input value={positionTitle} onChange={e => { setPositionTitle(e.target.value); mark(); }} className="h-9 text-sm" placeholder="e.g. Marketing Assistant" />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs text-stone-600">Employment Type</Label>
-          <Select value={employmentType} onValueChange={setEmploymentType}>
+          <Select value={employmentType} onValueChange={v => { setEmploymentType(v); mark(); }}>
             <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
             <SelectContent>
               {["full_time", "part_time", "casual", "volunteer"].map(t => (
@@ -352,37 +372,32 @@ function CompanyMatchTab({ record, onSave }: { record: InternshipDetail; onSave:
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs text-stone-600">Hourly Rate ($)</Label>
-          <Input type="number" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} className="h-9 text-sm" placeholder="0.00" />
+          <Input type="number" value={hourlyRate} onChange={e => { setHourlyRate(e.target.value); mark(); }} className="h-9 text-sm" placeholder="0.00" />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs text-stone-600">Placement Fee Type</Label>
-          <Input value={placementFeeType} onChange={e => setPlacementFeeType(e.target.value)} className="h-9 text-sm" placeholder="e.g. flat_fee" />
+          <Input value={placementFeeType} onChange={e => { setPlacementFeeType(e.target.value); mark(); }} className="h-9 text-sm" placeholder="e.g. flat_fee" />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs text-stone-600">Start Date</Label>
-          <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="h-9 text-sm" />
+          <Input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); mark(); }} className="h-9 text-sm" />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs text-stone-600">End Date</Label>
-          <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="h-9 text-sm" />
+          <Input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); mark(); }} className="h-9 text-sm" />
         </div>
         <div className="col-span-2 space-y-1.5">
           <Label className="text-xs text-stone-600">Notes</Label>
-          <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="text-sm min-h-[60px] resize-none" />
+          <Textarea value={notes} onChange={e => { setNotes(e.target.value); mark(); }} className="text-sm min-h-[60px] resize-none" />
         </div>
       </div>
-      <Button
-        onClick={() => onSave({ positionTitle, employmentType, hourlyRate: hourlyRate || null, placementFeeType, startDate: startDate || null, endDate: endDate || null, notes })}
-        className="text-white" style={{ background: "#F5821F" }}
-      >
-        Save Company Details
-      </Button>
     </div>
   );
 }
 
 // ─── Progress Tab ─────────────────────────────────────────────────────────────
 function ProgressTab({ record, onSave }: { record: InternshipDetail; onSave: (p: object) => void }) {
+  const [isDirty,               setIsDirty]               = useState(false);
   const [resumePrepared,        setResumePrepared]        = useState(record.resumePrepared        ?? false);
   const [coverLetterPrepared,   setCoverLetterPrepared]   = useState(record.coverLetterPrepared   ?? false);
   const [referenceLetterIssued, setReferenceLetterIssued] = useState(record.referenceLetterIssued ?? false);
@@ -391,27 +406,58 @@ function ProgressTab({ record, onSave }: { record: InternshipDetail; onSave: (p:
   );
   const [interviewResult,       setInterviewResult]       = useState(record.interviewResult ?? "");
 
+  const mark = () => setIsDirty(true);
+  const discard = () => {
+    setResumePrepared(record.resumePrepared ?? false);
+    setCoverLetterPrepared(record.coverLetterPrepared ?? false);
+    setReferenceLetterIssued(record.referenceLetterIssued ?? false);
+    setInterviewDate(record.interviewDate ? format(parseISO(record.interviewDate), "yyyy-MM-dd") : "");
+    setInterviewResult(record.interviewResult ?? "");
+    setIsDirty(false);
+  };
+
   return (
     <div className="space-y-5">
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
         <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Document Readiness</h3>
         <div className="space-y-2">
-          <ToggleRow label="Resume Prepared"        checked={resumePrepared}        onChange={setResumePrepared} />
-          <ToggleRow label="Cover Letter Prepared"  checked={coverLetterPrepared}   onChange={setCoverLetterPrepared} />
-          <ToggleRow label="Reference Letter Issued" checked={referenceLetterIssued} onChange={setReferenceLetterIssued} />
+          <ToggleRow label="Resume Prepared"        checked={resumePrepared}        onChange={v => { setResumePrepared(v); mark(); }} />
+          <ToggleRow label="Cover Letter Prepared"  checked={coverLetterPrepared}   onChange={v => { setCoverLetterPrepared(v); mark(); }} />
+          <ToggleRow label="Reference Letter Issued" checked={referenceLetterIssued} onChange={v => { setReferenceLetterIssued(v); mark(); }} />
         </div>
       </div>
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
-        <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Interview</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Interview</h3>
+          {isDirty && (
+            <div className="flex items-center gap-2">
+              <button onClick={discard}
+                className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 border border-stone-200 rounded-md px-2.5 py-1 transition-colors">
+                <RotateCcw size={11} /> Discard
+              </button>
+              <button onClick={() => { onSave({ resumePrepared, coverLetterPrepared, referenceLetterIssued, interviewDate: interviewDate || null, interviewResult: interviewResult || null }); setIsDirty(false); }}
+                className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
+                style={{ background: "#F5821F" }}>
+                <Save size={11} /> Save Changes
+              </button>
+            </div>
+          )}
+        </div>
+        {isDirty && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 flex items-center gap-1.5">
+            <span className="text-amber-500">●</span>
+            Unsaved changes — click <strong className="mx-0.5">Save Changes</strong> to apply.
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Interview Date</Label>
-            <Input type="date" value={interviewDate} onChange={e => setInterviewDate(e.target.value)} className="h-9 text-sm" />
+            <Input type="date" value={interviewDate} onChange={e => { setInterviewDate(e.target.value); mark(); }} className="h-9 text-sm" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Interview Result</Label>
-            <Select value={interviewResult} onValueChange={setInterviewResult}>
+            <Select value={interviewResult} onValueChange={v => { setInterviewResult(v); mark(); }}>
               <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
               <SelectContent>
                 {["pending", "passed", "failed", "rescheduled"].map(r => (
@@ -421,12 +467,6 @@ function ProgressTab({ record, onSave }: { record: InternshipDetail; onSave: (p:
             </Select>
           </div>
         </div>
-        <Button
-          onClick={() => onSave({ resumePrepared, coverLetterPrepared, referenceLetterIssued, interviewDate: interviewDate || null, interviewResult: interviewResult || null })}
-          className="text-white" style={{ background: "#F5821F" }}
-        >
-          Save Progress
-        </Button>
       </div>
     </div>
   );

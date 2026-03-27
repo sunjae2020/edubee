@@ -180,9 +180,10 @@ export default function PickupMgtDetail() {
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
   });
 
-  const { isEditing, isSaving, startEdit, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
+  const { isEditing, isDirty, isSaving, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
     initialData: rec ?? {},
     onSave: async (d) => { await updateRec.mutateAsync(d); },
+    alwaysEdit: true,
   });
 
   const fmtDt = (d?: string | null) => {
@@ -206,10 +207,8 @@ export default function PickupMgtDetail() {
       }
       backPath="/admin/services/pickup"
       backLabel="Pickup Management"
-      canEdit={canEdit && activeTab === "overview"}
-      isEditing={isEditing}
+      isDirty={canEdit && activeTab === "overview" && isDirty}
       isSaving={isSaving}
-      onEdit={startEdit}
       onSave={saveEdit}
       onCancel={cancelEdit}
       tabs={TABS}

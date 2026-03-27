@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Pencil, Save, X, Loader2 } from "lucide-react";
+import { ChevronLeft, Pencil, Save, X, Loader2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Tab {
@@ -20,6 +20,7 @@ interface DetailPageLayoutProps {
   onTabChange?: (tab: string) => void;
   canEdit?: boolean;
   isEditing?: boolean;
+  isDirty?: boolean;
   isSaving?: boolean;
   onEdit?: () => void;
   onSave?: () => void;
@@ -39,6 +40,7 @@ export function DetailPageLayout({
   onTabChange,
   canEdit = false,
   isEditing = false,
+  isDirty = false,
   isSaving = false,
   onEdit,
   onSave,
@@ -72,13 +74,42 @@ export function DetailPageLayout({
           {/* Right: actions */}
           <div className="flex items-center gap-2 shrink-0">
             {headerExtra}
-            {canEdit && !isEditing && (
+            {/* Always-edit mode: show Discard + Save Changes only when dirty */}
+            {isDirty && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onCancel}
+                  disabled={isSaving}
+                  className="gap-1.5"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Discard
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={onSave}
+                  disabled={isSaving}
+                  className="gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white"
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Save className="h-3.5 w-3.5" />
+                  )}
+                  {isSaving ? "Saving…" : "Save Changes"}
+                </Button>
+              </>
+            )}
+            {/* Toggle-edit mode (legacy): Edit / Cancel+Save */}
+            {!isDirty && canEdit && !isEditing && (
               <Button size="sm" variant="outline" onClick={onEdit} className="gap-1.5">
                 <Pencil className="h-3.5 w-3.5" />
                 Edit
               </Button>
             )}
-            {isEditing && (
+            {!isDirty && isEditing && (
               <>
                 <Button
                   size="sm"
@@ -128,6 +159,14 @@ export function DetailPageLayout({
           </div>
         )}
       </div>
+
+      {/* Unsaved changes banner */}
+      {isDirty && (
+        <div className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 flex items-center gap-2 text-sm text-amber-700">
+          <span className="text-amber-500 text-base">●</span>
+          You have unsaved changes — click <strong className="mx-1">Save Changes</strong> to apply.
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-6">{children}</div>

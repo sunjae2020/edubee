@@ -355,16 +355,13 @@ function AddSchoolModal({
   );
 }
 
-// ─── Edit SA Details Modal ────────────────────────────────────────────────────
-function EditSADetailsModal({
-  record,
-  onSave,
-  onClose,
-}: {
+// ─── Overview Tab (inline editable) ──────────────────────────────────────────
+function OverviewTab({ record, onStageChange, onSave }: {
   record: SARecord;
+  onStageChange: (s: string) => void;
   onSave: (patch: object) => void;
-  onClose: () => void;
 }) {
+  const [isDirty, setIsDirty] = useState(false);
   const [status,               setStatus]               = useState(record.status ?? "active");
   const [coeNumber,            setCoeNumber]            = useState(record.coeNumber ?? "");
   const [coeExpiryDate,        setCoeExpiryDate]        = useState(record.coeExpiryDate ?? "");
@@ -390,90 +387,168 @@ function EditSADetailsModal({
   });
   const usersList: { id: string; fullName?: string | null }[] = usersData?.data ?? usersData ?? [];
 
+  const mark = () => setIsDirty(true);
+
+  const discard = () => {
+    setStatus(record.status ?? "active");
+    setCoeNumber(record.coeNumber ?? "");
+    setCoeExpiryDate(record.coeExpiryDate ?? "");
+    setDepartureDate(record.departureDate ?? "");
+    setOrientationCompleted(record.orientationCompleted ?? false);
+    setNotes(record.notes ?? "");
+    setAssignedStaffId(record.assignedStaffId ?? "");
+    setStudentFirstName(record.studentFirstName ?? "");
+    setStudentLastName(record.studentLastName ?? "");
+    setStudentEnglishName(record.studentEnglishName ?? "");
+    setStudentOriginalName(record.studentOriginalName ?? "");
+    setStudentDateOfBirth(record.studentDateOfBirth ?? "");
+    setStudentGender(record.studentGender ?? "");
+    setStudentNationality(record.studentNationality ?? "");
+    setStudentPassportNumber(record.studentPassportNumber ?? "");
+    setStudentPassportExpiry(record.studentPassportExpiry ?? "");
+    setStudentGrade(record.studentGrade ?? "");
+    setStudentSchoolName(record.studentSchoolName ?? "");
+    setIsDirty(false);
+  };
+
+  const handleSave = () => {
+    onSave({
+      status,
+      coeNumber: coeNumber || null, coeExpiryDate: coeExpiryDate || null,
+      departureDate: departureDate || null, orientationCompleted,
+      notes: notes || null, assignedStaffId: assignedStaffId || null,
+      studentFirstName: studentFirstName || null, studentLastName: studentLastName || null,
+      studentEnglishName: studentEnglishName || null, studentOriginalName: studentOriginalName || null,
+      studentDateOfBirth: studentDateOfBirth || null, studentGender: studentGender || null,
+      studentNationality: studentNationality || null,
+      studentPassportNumber: studentPassportNumber || null, studentPassportExpiry: studentPassportExpiry || null,
+      studentGrade: studentGrade || null, studentSchoolName: studentSchoolName || null,
+    });
+    setIsDirty(false);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-stone-800">Edit Record Details</h3>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-stone-100 text-stone-500"><X size={16} /></button>
+    <div className="space-y-6">
+      {isDirty && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 flex items-center justify-between gap-3">
+          <span className="text-xs text-amber-700 flex items-center gap-1.5">
+            <span className="text-amber-500">●</span>
+            Unsaved changes — click <strong className="mx-0.5">Save Changes</strong> to apply.
+          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={discard}
+              className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 border border-stone-200 bg-white rounded-md px-2.5 py-1 transition-colors">
+              <X size={11} /> Discard
+            </button>
+            <button onClick={handleSave}
+              className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
+              style={{ background: "#F5821F" }}>
+              <Check size={11} /> Save Changes
+            </button>
+          </div>
         </div>
+      )}
+
+      <div className="bg-white border border-stone-200 rounded-xl p-5 overflow-x-auto">
+        <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-4">Application Progress</h3>
+        <StageStepper current={record.applicationStage ?? "counseling"} onSelect={onStageChange} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
+          <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Client</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
+          </div>
+          <div className="space-y-3 pt-2 border-t border-stone-100">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Status</Label>
+              <Select value={status} onValueChange={v => { setStatus(v); mark(); }}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["active", "completed", "cancelled", "on_hold"].map(s => (
+                    <SelectItem key={s} value={s} className="capitalize">{s.replace(/_/g, " ")}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Assigned Staff</Label>
+              <Select value={assignedStaffId || "_none"} onValueChange={v => { setAssignedStaffId(v === "_none" ? "" : v); mark(); }}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">— Unassigned —</SelectItem>
+                  {usersList.map(u => (
+                    <SelectItem key={u.id} value={u.id}>{u.fullName ?? u.id}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Departure Date</Label>
+              <Input type="date" value={departureDate} onChange={e => { setDepartureDate(e.target.value); mark(); }} className="h-8 text-xs" />
+            </div>
+            <div
+              className="flex items-center gap-2 p-2.5 rounded-lg border border-stone-200 cursor-pointer"
+              onClick={() => { setOrientationCompleted(!orientationCompleted); mark(); }}
+            >
+              <div className="w-4 h-4 rounded flex items-center justify-center shrink-0"
+                style={{ background: orientationCompleted ? "#16A34A" : "#F4F3F1", border: `2px solid ${orientationCompleted ? "#16A34A" : "#E7E5E4"}` }}>
+                {orientationCompleted && <Check size={9} className="text-white" />}
+              </div>
+              <span className="text-xs text-stone-700">Orientation Completed</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
+          <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Contract & COE</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-stone-400">Contract #</span>
+              <span className="font-mono text-xs text-stone-600">{record.contractNumber ?? "—"}</span>
+            </div>
+          </div>
+          <div className="space-y-3 pt-2 border-t border-stone-100">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">COE Number</Label>
+              <Input value={coeNumber} onChange={e => { setCoeNumber(e.target.value); mark(); }} className="h-8 text-xs font-mono" placeholder="e.g. COE2024XXXXX" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">COE Expiry Date</Label>
+              <Input type="date" value={coeExpiryDate} onChange={e => { setCoeExpiryDate(e.target.value); mark(); }} className="h-8 text-xs" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
+        <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Student Participant</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {["active", "completed", "cancelled", "on_hold"].map(s => (
-                  <SelectItem key={s} value={s} className="capitalize">{s.replace(/_/g, " ")}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs text-stone-500">First Name</Label>
+            <Input value={studentFirstName} onChange={e => { setStudentFirstName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Ji-won" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Assigned Staff</Label>
-            <Select value={assignedStaffId || "_none"} onValueChange={v => setAssignedStaffId(v === "_none" ? "" : v)}>
-              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select staff" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">— Unassigned —</SelectItem>
-                {usersList.map(u => (
-                  <SelectItem key={u.id} value={u.id}>{u.fullName ?? u.id}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs text-stone-500">Last Name</Label>
+            <Input value={studentLastName} onChange={e => { setStudentLastName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Kim" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">COE Number</Label>
-            <Input value={coeNumber} onChange={e => setCoeNumber(e.target.value)} className="h-9 text-sm font-mono" placeholder="e.g. COE2024XXXXX" />
+            <Label className="text-xs text-stone-500">Original Name (한글이름)</Label>
+            <Input value={studentOriginalName} onChange={e => { setStudentOriginalName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. 김지원" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">COE Expiry Date</Label>
-            <Input type="date" value={coeExpiryDate} onChange={e => setCoeExpiryDate(e.target.value)} className="h-9 text-sm" />
+            <Label className="text-xs text-stone-500">English Name (Nick Name)</Label>
+            <Input value={studentEnglishName} onChange={e => { setStudentEnglishName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Kevin" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Departure Date</Label>
-            <Input type="date" value={departureDate} onChange={e => setDepartureDate(e.target.value)} className="h-9 text-sm" />
-          </div>
-          <div className="col-span-2 flex items-center gap-3 p-3 rounded-lg border border-stone-200 bg-stone-50">
-            <input
-              type="checkbox" id="sa-orientation"
-              checked={orientationCompleted}
-              onChange={e => setOrientationCompleted(e.target.checked)}
-              className="w-4 h-4 rounded"
-            />
-            <label htmlFor="sa-orientation" className="text-sm font-medium text-stone-700">Orientation Completed</label>
-            {orientationCompleted && <span className="ml-auto text-xs font-semibold text-[#16A34A]">Done ✓</span>}
-          </div>
-          <div className="col-span-2 space-y-1.5">
-            <Label className="text-xs text-stone-600">Notes</Label>
-            <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="text-sm min-h-[80px] resize-none" placeholder="Internal notes…" />
-          </div>
-          <div className="col-span-2 pt-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-stone-400 pb-2 border-b border-stone-100">Student Participant</p>
+            <Label className="text-xs text-stone-500">Date of Birth</Label>
+            <Input type="date" value={studentDateOfBirth} onChange={e => { setStudentDateOfBirth(e.target.value); mark(); }} className="h-8 text-xs" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">First Name</Label>
-            <Input value={studentFirstName} onChange={e => setStudentFirstName(e.target.value)} className="h-9 text-sm" placeholder="e.g. Ji-won" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Last Name</Label>
-            <Input value={studentLastName} onChange={e => setStudentLastName(e.target.value)} className="h-9 text-sm" placeholder="e.g. Kim" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Original Name (한글이름)</Label>
-            <Input value={studentOriginalName} onChange={e => setStudentOriginalName(e.target.value)} className="h-9 text-sm" placeholder="e.g. 김지원" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">English Name (Nick Name)</Label>
-            <Input value={studentEnglishName} onChange={e => setStudentEnglishName(e.target.value)} className="h-9 text-sm" placeholder="e.g. Kevin" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Date of Birth</Label>
-            <Input type="date" value={studentDateOfBirth} onChange={e => setStudentDateOfBirth(e.target.value)} className="h-9 text-sm" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Gender</Label>
-            <Select value={studentGender || "_none"} onValueChange={v => setStudentGender(v === "_none" ? "" : v)}>
-              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select gender" /></SelectTrigger>
+            <Label className="text-xs text-stone-500">Gender</Label>
+            <Select value={studentGender || "_none"} onValueChange={v => { setStudentGender(v === "_none" ? "" : v); mark(); }}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select gender" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="_none">—</SelectItem>
                 {["male", "female", "other", "prefer_not_to_say"].map(g => (
@@ -483,138 +558,31 @@ function EditSADetailsModal({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Nationality</Label>
-            <Input value={studentNationality} onChange={e => setStudentNationality(e.target.value)} className="h-9 text-sm" placeholder="e.g. Korean" />
+            <Label className="text-xs text-stone-500">Nationality</Label>
+            <Input value={studentNationality} onChange={e => { setStudentNationality(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Korean" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Grade / Year</Label>
-            <Input value={studentGrade} onChange={e => setStudentGrade(e.target.value)} className="h-9 text-sm" placeholder="e.g. Grade 7" />
+            <Label className="text-xs text-stone-500">Grade / Year</Label>
+            <Input value={studentGrade} onChange={e => { setStudentGrade(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Grade 7" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Passport Number</Label>
-            <Input value={studentPassportNumber} onChange={e => setStudentPassportNumber(e.target.value)} className="h-9 text-sm font-mono" />
+            <Label className="text-xs text-stone-500">Passport Number</Label>
+            <Input value={studentPassportNumber} onChange={e => { setStudentPassportNumber(e.target.value); mark(); }} className="h-8 text-xs font-mono" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Passport Expiry</Label>
-            <Input type="date" value={studentPassportExpiry} onChange={e => setStudentPassportExpiry(e.target.value)} className="h-9 text-sm" />
+            <Label className="text-xs text-stone-500">Passport Expiry</Label>
+            <Input type="date" value={studentPassportExpiry} onChange={e => { setStudentPassportExpiry(e.target.value); mark(); }} className="h-8 text-xs" />
           </div>
           <div className="col-span-2 space-y-1.5">
-            <Label className="text-xs text-stone-600">School Name</Label>
-            <Input value={studentSchoolName} onChange={e => setStudentSchoolName(e.target.value)} className="h-9 text-sm" placeholder="e.g. Seoul Elementary School" />
+            <Label className="text-xs text-stone-500">School Name</Label>
+            <Input value={studentSchoolName} onChange={e => { setStudentSchoolName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Seoul Elementary School" />
           </div>
-        </div>
-        <div className="flex gap-3 pt-2">
-          <Button
-            onClick={() => {
-              onSave({
-                status,
-                coeNumber: coeNumber || null, coeExpiryDate: coeExpiryDate || null,
-                departureDate: departureDate || null, orientationCompleted,
-                notes: notes || null, assignedStaffId: assignedStaffId || null,
-                studentFirstName: studentFirstName || null, studentLastName: studentLastName || null,
-                studentEnglishName: studentEnglishName || null, studentOriginalName: studentOriginalName || null,
-                studentDateOfBirth: studentDateOfBirth || null, studentGender: studentGender || null,
-                studentNationality: studentNationality || null,
-                studentPassportNumber: studentPassportNumber || null, studentPassportExpiry: studentPassportExpiry || null,
-                studentGrade: studentGrade || null, studentSchoolName: studentSchoolName || null,
-              });
-              onClose();
-            }}
-            className="flex-1 text-white" style={{ background: "#F5821F" }}
-          >
-            Save Changes
-          </Button>
-          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Overview Tab ─────────────────────────────────────────────────────────────
-function OverviewTab({ record, onStageChange, onEdit }: { record: SARecord; onStageChange: (s: string) => void; onEdit: () => void }) {
-  return (
-    <div className="space-y-6">
-      <div className="bg-white border border-stone-200 rounded-xl p-5 overflow-x-auto">
-        <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-4">Application Progress</h3>
-        <StageStepper current={record.applicationStage ?? "counseling"} onSelect={onStageChange} />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Client</h3>
-            <button onClick={onEdit} className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
-              <Pencil size={12} /> Edit
-            </button>
-          </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
-            <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
-            <div className="flex justify-between"><span className="text-stone-400">Status</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F4F3F1] text-[#57534E] capitalize">{record.status ?? "—"}</span>
-            </div>
-            <div className="flex justify-between"><span className="text-stone-400">Staff</span>
-              <span className="text-stone-600">{record.staffFirstName ? `${record.staffFirstName} ${record.staffLastName ?? ""}`.trim() : "—"}</span>
-            </div>
-            <div className="flex justify-between"><span className="text-stone-400">Departure</span><span className="text-stone-600">{fmtDate(record.departureDate)}</span></div>
-            <div className="flex justify-between items-center"><span className="text-stone-400">Orientation</span>
-              <span className={`flex items-center gap-1 text-xs font-medium ${record.orientationCompleted ? "text-[#16A34A]" : "text-stone-400"}`}>
-                {record.orientationCompleted ? <><Check size={11} /> Done</> : "Pending"}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Contract & COE</h3>
-            <button onClick={onEdit} className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
-              <Pencil size={12} /> Edit
-            </button>
-          </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-stone-400">Contract #</span>
-              <span className="font-mono text-xs text-stone-600">{record.contractNumber ?? "—"}</span>
-            </div>
-            <div className="flex justify-between"><span className="text-stone-400">COE Number</span>
-              <span className="font-mono text-xs text-stone-600">{record.coeNumber ?? "—"}</span>
-            </div>
-            <div className="flex justify-between"><span className="text-stone-400">COE Expiry</span><span className="text-stone-600">{fmtDate(record.coeExpiryDate)}</span></div>
+          <div className="col-span-2 space-y-1.5">
+            <Label className="text-xs text-stone-500">Notes</Label>
+            <Textarea value={notes} onChange={e => { setNotes(e.target.value); mark(); }} className="text-xs min-h-[60px] resize-none" placeholder="Internal notes…" />
           </div>
         </div>
       </div>
-      <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Student Participant</h3>
-          <button onClick={onEdit} className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
-            <Pencil size={12} /> Edit
-          </button>
-        </div>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-stone-400">Name</span>
-            <span className="font-medium text-stone-800">
-              {record.studentFirstName || record.studentLastName
-                ? `${record.studentFirstName ?? ""} ${record.studentLastName ? record.studentLastName.toUpperCase() : ""}`.trim()
-                : "—"}
-            </span>
-          </div>
-          <div className="flex justify-between"><span className="text-stone-400">Original Name</span><span className="text-stone-600">{record.studentOriginalName ?? "—"}</span></div>
-          <div className="flex justify-between"><span className="text-stone-400">English Name</span><span className="text-stone-600">{record.studentEnglishName ?? "—"}</span></div>
-          <div className="flex justify-between"><span className="text-stone-400">DOB</span><span className="text-stone-600">{fmtDate(record.studentDateOfBirth)}</span></div>
-          <div className="flex justify-between"><span className="text-stone-400">Gender</span><span className="text-stone-600 capitalize">{record.studentGender ?? "—"}</span></div>
-          <div className="flex justify-between"><span className="text-stone-400">Nationality</span><span className="text-stone-600">{record.studentNationality ?? "—"}</span></div>
-          <div className="flex justify-between"><span className="text-stone-400">Passport #</span><span className="font-mono text-xs text-stone-600">{record.studentPassportNumber ?? "—"}</span></div>
-          <div className="flex justify-between"><span className="text-stone-400">Passport Expiry</span><span className="text-stone-600">{fmtDate(record.studentPassportExpiry)}</span></div>
-          <div className="flex justify-between"><span className="text-stone-400">Grade</span><span className="text-stone-600">{record.studentGrade ?? "—"}</span></div>
-          <div className="flex justify-between"><span className="text-stone-400">School</span><span className="text-stone-600">{record.studentSchoolName ?? "—"}</span></div>
-        </div>
-      </div>
-      {record.notes && (
-        <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
-          <p className="text-xs text-stone-400 mb-1">Notes</p>
-          <p className="text-sm text-stone-700">{record.notes}</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -623,8 +591,6 @@ function OverviewTab({ record, onStageChange, onEdit }: { record: SARecord; onSt
 function SchoolsTab({ record, onUpdate }: { record: SARecord; onUpdate: (schools: TargetSchool[]) => void }) {
   const [showAdd, setShowAdd]         = useState(false);
   const schools: TargetSchool[]       = (record.targetSchools as TargetSchool[] | null) ?? [];
-  const [editingIdx, setEditingIdx]   = useState<number | null>(null);
-  const [editStatus, setEditStatus]   = useState("");
 
   const SCHOOL_STATUS_STYLE: Record<string, { bg: string; text: string }> = {
     researching:    { bg: "#F4F3F1", text: "#57534E" },
@@ -634,12 +600,6 @@ function SchoolsTab({ record, onUpdate }: { record: SARecord; onUpdate: (schools
     rejected:       { bg: "#FEF2F2", text: "#DC2626" },
     enrolled:       { bg: "#F0FDF4", text: "#15803D" },
   };
-
-  function saveStatus(idx: number) {
-    const updated = schools.map((s, i) => i === idx ? { ...s, status: editStatus } : s);
-    onUpdate(updated);
-    setEditingIdx(null);
-  }
 
   return (
     <div className="space-y-4">
@@ -656,7 +616,7 @@ function SchoolsTab({ record, onUpdate }: { record: SARecord; onUpdate: (schools
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              {["School Name", "Status", "Applied Date", "Actions"].map(h => (
+              {["School Name", "Status", "Applied Date", "Remove"].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
@@ -666,36 +626,30 @@ function SchoolsTab({ record, onUpdate }: { record: SARecord; onUpdate: (schools
               <tr><td colSpan={4} className="text-center py-10 text-stone-400 text-sm">No schools added yet</td></tr>
             )}
             {schools.map((school, idx) => {
-              const badge = SCHOOL_STATUS_STYLE[school.status] ?? SCHOOL_STATUS_STYLE.researching;
               return (
-                <tr key={idx} className="hover:bg-stone-50 transition-colors">
+                <tr key={idx} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                   <td className="px-4 py-3 font-medium text-stone-800">{school.schoolName}</td>
                   <td className="px-4 py-3">
-                    {editingIdx === idx ? (
-                      <div className="flex items-center gap-2">
-                        <Select value={editStatus} onValueChange={setEditStatus}>
-                          <SelectTrigger className="h-7 text-xs w-36"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {SCHOOL_STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s.replace(/_/g, " ")}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                        <button onClick={() => saveStatus(idx)} className="p-1 rounded bg-[#DCFCE7] text-[#16A34A]"><Check size={12} /></button>
-                      </div>
-                    ) : (
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
-                        style={{ background: badge.bg, color: badge.text }}>
-                        {school.status.replace(/_/g, " ")}
-                      </span>
-                    )}
+                    <Select
+                      value={school.status}
+                      onValueChange={v => {
+                        const updated = schools.map((s, i) => i === idx ? { ...s, status: v } : s);
+                        onUpdate(updated);
+                      }}
+                    >
+                      <SelectTrigger className="h-7 text-xs w-36"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {SCHOOL_STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s.replace(/_/g, " ")}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </td>
                   <td className="px-4 py-3 text-stone-500 text-xs">{fmtDate(school.appliedDate)}</td>
                   <td className="px-4 py-3">
-                    {editingIdx !== idx && (
-                      <button onClick={() => { setEditingIdx(idx); setEditStatus(school.status); }}
-                        className="p-1.5 rounded hover:bg-stone-100 text-stone-400 hover:text-stone-700">
-                        <Pencil size={13} />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => onUpdate(schools.filter((_, i) => i !== idx))}
+                      className="p-1.5 rounded hover:bg-stone-100 text-stone-300 hover:text-red-500 transition-colors">
+                      <X size={13} />
+                    </button>
                   </td>
                 </tr>
               );
@@ -716,59 +670,80 @@ function SchoolsTab({ record, onUpdate }: { record: SARecord; onUpdate: (schools
 
 // ─── Visa Tab ─────────────────────────────────────────────────────────────────
 function VisaTab({ record, onSave }: { record: SARecord; onSave: (patch: Partial<SARecord>) => void }) {
+  const [isDirty,             setIsDirty]             = useState(false);
   const [visaType,            setVisaType]            = useState(record.visaType            ?? "");
   const [visaApplicationDate, setVisaApplicationDate] = useState(record.visaApplicationDate ?? "");
   const [visaDecisionDate,    setVisaDecisionDate]    = useState(record.visaDecisionDate    ?? "");
   const [visaExpiryDate,      setVisaExpiryDate]      = useState(record.visaExpiryDate      ?? "");
   const [visaGranted,         setVisaGranted]         = useState(record.visaGranted         ?? false);
 
+  const mark = () => setIsDirty(true);
+  const discard = () => {
+    setVisaType(record.visaType ?? "");
+    setVisaApplicationDate(record.visaApplicationDate ?? "");
+    setVisaDecisionDate(record.visaDecisionDate ?? "");
+    setVisaExpiryDate(record.visaExpiryDate ?? "");
+    setVisaGranted(record.visaGranted ?? false);
+    setIsDirty(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Visa Information</h3>
-          {visaExpiryDate && <VisaExpiryBadge expiryDate={visaExpiryDate} />}
+          <div className="flex items-center gap-2">
+            {visaExpiryDate && <VisaExpiryBadge expiryDate={visaExpiryDate} />}
+            {isDirty && (
+              <>
+                <button onClick={discard}
+                  className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 border border-stone-200 rounded-md px-2.5 py-1 transition-colors">
+                  <X size={11} /> Discard
+                </button>
+                <button onClick={() => { onSave({ visaType, visaApplicationDate, visaDecisionDate, visaExpiryDate, visaGranted }); setIsDirty(false); }}
+                  className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
+                  style={{ background: "#F5821F" }}>
+                  <Check size={11} /> Save Changes
+                </button>
+              </>
+            )}
+          </div>
         </div>
+        {isDirty && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 flex items-center gap-1.5">
+            <span className="text-amber-500">●</span>
+            Unsaved changes — click <strong className="mx-0.5">Save Changes</strong> to apply.
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-stone-600">Visa Type</Label>
-            <Input value={visaType} onChange={e => setVisaType(e.target.value)} className="h-9 text-sm" placeholder="e.g. Student Visa 500" />
+            <Input value={visaType} onChange={e => { setVisaType(e.target.value); mark(); }} className="h-9 text-sm" placeholder="e.g. Student Visa 500" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-stone-600">Application Date</Label>
-            <Input type="date" value={visaApplicationDate} onChange={e => setVisaApplicationDate(e.target.value)} className="h-9 text-sm" />
+            <Input type="date" value={visaApplicationDate} onChange={e => { setVisaApplicationDate(e.target.value); mark(); }} className="h-9 text-sm" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-stone-600">Decision Date</Label>
-            <Input type="date" value={visaDecisionDate} onChange={e => setVisaDecisionDate(e.target.value)} className="h-9 text-sm" />
+            <Input type="date" value={visaDecisionDate} onChange={e => { setVisaDecisionDate(e.target.value); mark(); }} className="h-9 text-sm" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-stone-600">Expiry Date</Label>
-            <Input type="date" value={visaExpiryDate} onChange={e => setVisaExpiryDate(e.target.value)} className="h-9 text-sm" />
+            <Input type="date" value={visaExpiryDate} onChange={e => { setVisaExpiryDate(e.target.value); mark(); }} className="h-9 text-sm" />
           </div>
-          <div className="col-span-2 flex items-center gap-3 p-3 rounded-lg border border-stone-200">
-            <input
-              type="checkbox"
-              id="visa-granted"
-              checked={visaGranted}
-              onChange={e => setVisaGranted(e.target.checked)}
-              className="w-4 h-4 rounded"
-            />
-            <label htmlFor="visa-granted" className="text-sm font-medium text-stone-700 flex items-center gap-2">
-              <Check size={14} className={visaGranted ? "text-[#16A34A]" : "text-stone-300"} />
-              Visa Granted
-            </label>
+          <div className="col-span-2 flex items-center gap-3 p-3 rounded-lg border border-stone-200 cursor-pointer"
+            onClick={() => { setVisaGranted(!visaGranted); mark(); }}>
+            <div className="w-5 h-5 rounded flex items-center justify-center shrink-0"
+              style={{ background: visaGranted ? "#16A34A" : "#F4F3F1", border: `2px solid ${visaGranted ? "#16A34A" : "#E7E5E4"}` }}>
+              {visaGranted && <Check size={10} className="text-white" />}
+            </div>
+            <span className="text-sm font-medium text-stone-700">Visa Granted</span>
             {visaGranted && (
               <span className="ml-auto px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#DCFCE7] text-[#16A34A]">Granted ✓</span>
             )}
           </div>
         </div>
-        <Button
-          onClick={() => onSave({ visaType, visaApplicationDate, visaDecisionDate, visaExpiryDate, visaGranted })}
-          className="text-white" style={{ background: "#F5821F" }}
-        >
-          Save Visa Details
-        </Button>
       </div>
 
       <div className="bg-stone-50 border border-stone-200 rounded-xl p-5">
@@ -788,7 +763,6 @@ export default function StudyAbroadDetailPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"overview" | "schools" | "visa" | "payments" | "docs" | "notes" | "interview">("overview");
-  const [showEdit, setShowEdit] = useState(false);
   const [editInterview, setEditInterview] = useState<any | null>(null);
   const [newInterview, setNewInterview] = useState(false);
 
@@ -891,14 +865,6 @@ export default function StudyAbroadDetailPage() {
           <span className="px-3 py-1 rounded-full text-sm font-medium bg-[#F4F3F1] text-[#57534E] capitalize">
             {record.status ?? "—"}
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowEdit(true)}
-            className="flex items-center gap-1.5 h-8 text-sm border-stone-300"
-          >
-            <Pencil size={13} /> Edit Details
-          </Button>
         </div>
       </div>
 
@@ -986,7 +952,7 @@ export default function StudyAbroadDetailPage() {
             <OverviewTab
               record={record}
               onStageChange={stage => patchMutation.mutate({ applicationStage: stage })}
-              onEdit={() => setShowEdit(true)}
+              onSave={patch => patchMutation.mutate(patch)}
             />
             <SystemInfoSection owner={record.clientId ?? null} createdAt={record.createdAt} updatedAt={record.updatedAt} />
           </>
@@ -1112,14 +1078,6 @@ export default function StudyAbroadDetailPage() {
           </div>
         )}
       </div>
-
-      {showEdit && (
-        <EditSADetailsModal
-          record={record}
-          onSave={patch => patchMutation.mutate(patch)}
-          onClose={() => setShowEdit(false)}
-        />
-      )}
 
       {editInterview && (
         <InterviewDialog

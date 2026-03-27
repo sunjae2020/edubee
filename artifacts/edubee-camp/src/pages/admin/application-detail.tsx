@@ -249,9 +249,10 @@ export default function ApplicationDetail() {
   });
 
   // ── Overview edit ─────────────────────────────────────────────────────────
-  const { isEditing, isSaving, startEdit, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
+  const { isEditing, isDirty, isSaving, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
     initialData: app ?? {},
     onSave: async (data) => { await updateApp.mutateAsync(data); },
+    alwaysEdit: true,
   });
 
   // ── Open service edit dialog ───────────────────────────────────────────────
@@ -311,11 +312,9 @@ export default function ApplicationDetail() {
         backLabel="Applications"
         tabs={TABS}
         activeTab={activeTab}
-        onTabChange={(t) => { setActiveTab(t); if (isEditing) cancelEdit(); }}
-        canEdit={canEdit && activeTab === "overview"}
-        isEditing={isEditing}
+        onTabChange={setActiveTab}
+        isDirty={canEdit && activeTab === "overview" && isDirty}
         isSaving={isSaving}
-        onEdit={startEdit}
         onSave={saveEdit}
         onCancel={cancelEdit}
         headerExtra={

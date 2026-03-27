@@ -145,14 +145,15 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - **Bug Fix — Contract Number Generation**: `genContractNumber()` introduced in `crm-quotes.ts` to replace `CT-{accountName}-{date}` format. New format: `CT-YYYYMMDD-XXXXX` (max 18 chars, unique). Fixes both duplicate key and varchar(50) overflow errors.
 - **10-Case E2E CRM Test**: Full end-to-end workflow created for 10 students (5 general CRM + 5 camp CRM). Each case covers: Contact → Lead → Consultation → Quote → Contract → Services → AR Payment → AP Payment → Journal Entries. Total: 10 contacts, 10 leads, 10 quotes, 10 contracts, 15 service records, 25 payment headers, 25 journal entries automatically generated.
 
-## Recent Changes (2026-03-25)
+## Recent Changes (2026-03-27)
 
-- **Edit/Add Buttons on Service Detail Pages** (StudyAbroad, Accommodation, Internship, VisaService):
-  - All 4 detail pages now have an **"Edit Details" / "Edit Host" / "Edit Profile" button** in the main page header.
-  - **StudyAbroadDetailPage**: Added `EditSADetailsModal` (edits status, COE number/expiry, departure date, orientation, staff, notes). Overview tab Student & Contract cards have inline "Edit" buttons. Schools tab already has "Add School" + row edit icons.
-  - **AccommodationDetailPage**: Extracted inline host tab to `HostTab` component with full edit form (host name, contact, address, distance, accommodation type, room type, meal, partner cost). Billing tab has "Edit Rates" button → navigates to Details tab.
-  - **InternshipDetailPage**: `StudentProfileTab` now has inline edit mode (English level, hours/week, preferred industry as comma-list) + "Add Experience" button to add work experience entries. Header has "Edit Profile" button.
-  - **VisaServiceDetailPage**: Timeline tab has "Edit Dates" button → switches to Overview tab. Bill tab has "Edit Fees" button → switches to Overview tab. Header has "Edit Details" button.
+- **Always-Editable Inline Edit Pattern** (all detail pages):
+  - All detail pages converted to always-editable inline edit mode (Lead Detail pattern).
+  - **Pattern**: `isDirty` state + `mark()` setter + `discard()` reset. Discard/Save buttons and amber unsaved banner appear **only when dirty**. No "Edit Mode" toggle.
+  - **Converted pages**: pickup-detail, tour-detail, application-detail, camp-application-detail, OtherServiceDetailPage, VisaServiceDetailPage, AccommodationDetailPage (DetailsTab + HostTab), InternshipDetailPage (StudentProfileTab + CompanyMatchTab + ProgressTab), GuardianDetailPage (DetailsTab), ContactDetailPage, AccountDetailPage, StudyAbroadDetailPage (OverviewTab inline — removed `EditSADetailsModal` dialog; SchoolsTab now always-visible status select; VisaTab isDirty).
+  - **settlement-detail ChecklistRow**: Removed `editingNote` toggle → textarea always visible when expanded; Save/Cancel shown only when value changed.
+  - **ContractDetailPage**: Retains modal dialog pattern (editingContract/editingAccount) — modal dialogs inherently have Cancel so the pattern is consistent.
+  - `useDetailEdit` hook updated with `alwaysEdit: true` + `isDirty` support. `DetailPageLayout` accepts `isDirty` prop for unsaved banner.
 
 ## External Dependencies
 

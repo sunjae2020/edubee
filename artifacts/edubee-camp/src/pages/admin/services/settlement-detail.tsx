@@ -101,8 +101,8 @@ function ChecklistRow({
   onDelete: (key: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [editingNote, setEditingNote] = useState(false);
   const [noteVal, setNoteVal] = useState(item.itemNotes ?? "");
+  const noteChanged = noteVal !== (item.itemNotes ?? "");
 
   const cfg = ITEM_STATUS_CFG[item.status] ?? ITEM_STATUS_CFG.pending;
   const Icon = cfg.icon;
@@ -169,35 +169,25 @@ function ChecklistRow({
         <div className="px-4 pb-3 pt-1 border-t border-[#F4F3F1] space-y-2">
           <div className="flex items-start gap-2">
             <p className="text-[11px] font-semibold text-[#57534E] mt-1 shrink-0">Notes:</p>
-            {editingNote ? (
-              <div className="flex-1 flex gap-2">
-                <textarea rows={2} value={noteVal}
-                  onChange={e => setNoteVal(e.target.value)}
-                  className="flex-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-xs resize-none focus:outline-none focus:border-[#F5821F]" />
-                <div className="flex flex-col gap-1">
-                  <button onClick={() => { onUpdate(item.key, { itemNotes: noteVal }); setEditingNote(false); }}
-                    className="p-1.5 rounded-lg text-white text-xs" style={{ background:"#16A34A" }}>
-                    <Check size={12} />
+            <div className="flex-1 space-y-1.5">
+              <textarea rows={2} value={noteVal}
+                onChange={e => setNoteVal(e.target.value)}
+                disabled={!isAdmin}
+                className="w-full px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-xs resize-none focus:outline-none focus:border-[#F5821F] disabled:bg-[#F9F9F8] disabled:text-[#A8A29E]"
+                placeholder="Add notes…" />
+              {isAdmin && noteChanged && (
+                <div className="flex gap-1.5">
+                  <button onClick={() => { onUpdate(item.key, { itemNotes: noteVal }); }}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded text-white text-[10px] font-semibold" style={{ background: "#16A34A" }}>
+                    <Check size={10} /> Save
                   </button>
-                  <button onClick={() => { setNoteVal(item.itemNotes ?? ""); setEditingNote(false); }}
-                    className="p-1.5 rounded-lg border border-[#E8E6E2] text-[#57534E]">
-                    <X size={12} />
+                  <button onClick={() => setNoteVal(item.itemNotes ?? "")}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded border border-[#E8E6E2] text-[#57534E] text-[10px]">
+                    <X size={10} /> Cancel
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex items-start gap-2">
-                <p className="text-[12px] text-[#57534E] flex-1">
-                  {item.itemNotes ? item.itemNotes : <span className="text-[#A8A29E] italic">No notes</span>}
-                </p>
-                {isAdmin && (
-                  <button onClick={() => setEditingNote(true)}
-                    className="shrink-0 p-1 rounded hover:bg-[#F4F3F1] text-[#A8A29E]">
-                    <Edit3 size={12} />
-                  </button>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

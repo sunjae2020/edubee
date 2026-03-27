@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
-import { ArrowLeft, Plus, HeartPulse, DollarSign, Home, Phone, MapPin, FileText, ExternalLink, Pencil, X } from "lucide-react";
+import { ArrowLeft, Plus, HeartPulse, DollarSign, Home, Phone, MapPin, FileText, ExternalLink, X, RotateCcw, Save } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,11 +139,23 @@ function AddWelfareModal({
 
 // ─── Details Tab ──────────────────────────────────────────────────────────────
 function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: object) => void }) {
+  const [isDirty, setIsDirty] = useState(false);
   const [status, setStatus]   = useState(record.status ?? "searching");
   const [checkin, setCheckin] = useState(record.checkinDate ?? "");
   const [checkout, setCheckout] = useState(record.checkoutDate ?? "");
   const [weeklyRate, setWeeklyRate] = useState(record.weeklyRate ?? "");
   const [notes, setNotes]     = useState(record.notes ?? "");
+
+  const mark = () => setIsDirty(true);
+
+  const discard = () => {
+    setStatus(record.status ?? "searching");
+    setCheckin(record.checkinDate ?? "");
+    setCheckout(record.checkoutDate ?? "");
+    setWeeklyRate(record.weeklyRate ?? "");
+    setNotes(record.notes ?? "");
+    setIsDirty(false);
+  };
 
   return (
     <div className="space-y-5">
@@ -173,23 +185,44 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
 
       {/* Editable fields */}
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
-        <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Booking Details</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Booking Details</h3>
+          {isDirty && (
+            <div className="flex items-center gap-2">
+              <button onClick={discard}
+                className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 border border-stone-200 rounded-md px-2.5 py-1 transition-colors">
+                <RotateCcw size={11} /> Discard
+              </button>
+              <button onClick={() => { onSave({ checkinDate: checkin || null, checkoutDate: checkout || null, weeklyRate: weeklyRate || null, status, notes }); setIsDirty(false); }}
+                className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
+                style={{ background: "#F5821F" }}>
+                <Save size={11} /> Save Changes
+              </button>
+            </div>
+          )}
+        </div>
+        {isDirty && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 flex items-center gap-1.5">
+            <span className="text-amber-500">●</span>
+            Unsaved changes — click <strong className="mx-0.5">Save Changes</strong> to apply.
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Check-in Date</Label>
-            <Input type="date" value={checkin} onChange={e => setCheckin(e.target.value)} className="h-9 text-sm" />
+            <Input type="date" value={checkin} onChange={e => { setCheckin(e.target.value); mark(); }} className="h-9 text-sm" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Check-out Date</Label>
-            <Input type="date" value={checkout} onChange={e => setCheckout(e.target.value)} className="h-9 text-sm" />
+            <Input type="date" value={checkout} onChange={e => { setCheckout(e.target.value); mark(); }} className="h-9 text-sm" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Weekly Rate ($)</Label>
-            <Input type="number" value={weeklyRate} onChange={e => setWeeklyRate(e.target.value)} className="h-9 text-sm" placeholder="0.00" />
+            <Input type="number" value={weeklyRate} onChange={e => { setWeeklyRate(e.target.value); mark(); }} className="h-9 text-sm" placeholder="0.00" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={v => { setStatus(v); mark(); }}>
               <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {["searching", "confirmed", "checked_in", "checked_out", "cancelled"].map(s => (
@@ -200,13 +233,9 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
           </div>
           <div className="col-span-2 space-y-1.5">
             <Label className="text-xs text-stone-600">Notes</Label>
-            <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="text-sm min-h-[36px] resize-none" />
+            <Textarea value={notes} onChange={e => { setNotes(e.target.value); mark(); }} className="text-sm min-h-[36px] resize-none" />
           </div>
         </div>
-        <Button onClick={() => onSave({ checkinDate: checkin || null, checkoutDate: checkout || null, weeklyRate: weeklyRate || null, status, notes })}
-          className="text-white" style={{ background: "#F5821F" }}>
-          Save Details
-        </Button>
       </div>
     </div>
   );
@@ -287,17 +316,19 @@ function WelfareTab({ record, id }: { record: AccomDetail; id: string }) {
 
 // ─── Host Tab ─────────────────────────────────────────────────────────────────
 function HostTab({ record, onSave }: { record: AccomDetail; onSave: (p: object) => void }) {
-  const [editing,          setEditing]          = useState(false);
-  const [hostName,         setHostName]         = useState(record.hostName         ?? "");
-  const [hostContact,      setHostContact]      = useState(record.hostContact      ?? "");
-  const [hostAddress,      setHostAddress]      = useState(record.hostAddress      ?? "");
-  const [distanceToSchool, setDistanceToSchool] = useState(record.distanceToSchool ?? "");
-  const [mealIncluded,     setMealIncluded]     = useState(record.mealIncluded     ?? "");
-  const [roomType,         setRoomType]         = useState(record.roomType         ?? "");
-  const [accommodationType, setAccommodationType] = useState(record.accommodationType ?? "");
-  const [partnerWeeklyCost, setPartnerWeeklyCost] = useState(record.partnerWeeklyCost ?? "");
+  const [isDirty,           setIsDirty]           = useState(false);
+  const [hostName,          setHostName]           = useState(record.hostName          ?? "");
+  const [hostContact,       setHostContact]        = useState(record.hostContact       ?? "");
+  const [hostAddress,       setHostAddress]        = useState(record.hostAddress       ?? "");
+  const [distanceToSchool,  setDistanceToSchool]   = useState(record.distanceToSchool  ?? "");
+  const [mealIncluded,      setMealIncluded]       = useState(record.mealIncluded      ?? "");
+  const [roomType,          setRoomType]           = useState(record.roomType          ?? "");
+  const [accommodationType, setAccommodationType]  = useState(record.accommodationType ?? "");
+  const [partnerWeeklyCost, setPartnerWeeklyCost]  = useState(record.partnerWeeklyCost ?? "");
 
-  function startEdit() {
+  const mark = () => setIsDirty(true);
+
+  const discard = () => {
     setHostName(record.hostName ?? "");
     setHostContact(record.hostContact ?? "");
     setHostAddress(record.hostAddress ?? "");
@@ -306,141 +337,94 @@ function HostTab({ record, onSave }: { record: AccomDetail; onSave: (p: object) 
     setRoomType(record.roomType ?? "");
     setAccommodationType(record.accommodationType ?? "");
     setPartnerWeeklyCost(record.partnerWeeklyCost ?? "");
-    setEditing(true);
-  }
-
-  if (editing) {
-    return (
-      <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Home size={16} style={{ color: "#F5821F" }} />
-            <h3 className="text-sm font-bold text-stone-800">Edit Host / Provider</h3>
-          </div>
-          <button onClick={() => setEditing(false)} className="p-1.5 rounded hover:bg-stone-100 text-stone-500"><X size={16} /></button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Host Name</Label>
-            <Input value={hostName} onChange={e => setHostName(e.target.value)} className="h-9 text-sm" placeholder="Host family name" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600"><Phone size={10} className="inline mr-1" />Contact</Label>
-            <Input value={hostContact} onChange={e => setHostContact(e.target.value)} className="h-9 text-sm" placeholder="Phone / Email" />
-          </div>
-          <div className="col-span-2 space-y-1.5">
-            <Label className="text-xs text-stone-600"><MapPin size={10} className="inline mr-1" />Address</Label>
-            <Input value={hostAddress} onChange={e => setHostAddress(e.target.value)} className="h-9 text-sm" placeholder="Full address" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Distance to School</Label>
-            <Input value={distanceToSchool} onChange={e => setDistanceToSchool(e.target.value)} className="h-9 text-sm" placeholder="e.g. 2.5 km" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Accommodation Type</Label>
-            <Select value={accommodationType || "_none"} onValueChange={v => setAccommodationType(v === "_none" ? "" : v)}>
-              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">— Not set —</SelectItem>
-                {["homestay", "private_rental", "student_residence", "shared_house"].map(t => (
-                  <SelectItem key={t} value={t} className="capitalize">{t.replace(/_/g, " ")}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Room Type</Label>
-            <Select value={roomType || "_none"} onValueChange={v => setRoomType(v === "_none" ? "" : v)}>
-              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">— Not set —</SelectItem>
-                {["single", "shared", "ensuite", "studio"].map(t => (
-                  <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Meal Included</Label>
-            <Select value={mealIncluded || "_none"} onValueChange={v => setMealIncluded(v === "_none" ? "" : v)}>
-              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">— Not set —</SelectItem>
-                {["none", "breakfast", "half_board", "full_board"].map(t => (
-                  <SelectItem key={t} value={t} className="capitalize">{t.replace(/_/g, " ")}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Partner Weekly Cost ($)</Label>
-            <Input type="number" value={partnerWeeklyCost} onChange={e => setPartnerWeeklyCost(e.target.value)} className="h-9 text-sm" placeholder="0.00" />
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            onClick={() => {
-              onSave({ hostName: hostName || null, hostContact: hostContact || null, hostAddress: hostAddress || null, distanceToSchool: distanceToSchool || null, mealIncluded: mealIncluded || null, roomType: roomType || null, accommodationType: accommodationType || null, partnerWeeklyCost: partnerWeeklyCost || null });
-              setEditing(false);
-            }}
-            className="text-white" style={{ background: "#F5821F" }}
-          >
-            Save Host Details
-          </Button>
-          <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
-        </div>
-      </div>
-    );
-  }
+    setIsDirty(false);
+  };
 
   return (
-    <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
+    <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Home size={16} style={{ color: "#F5821F" }} />
           <h3 className="text-sm font-bold text-stone-800">Host Family Information</h3>
         </div>
-        <button
-          onClick={startEdit}
-          className="flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:underline"
-        >
-          <Pencil size={13} /> Edit Host
-        </button>
+        {isDirty && (
+          <div className="flex items-center gap-2">
+            <button onClick={discard}
+              className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 border border-stone-200 rounded-md px-2.5 py-1 transition-colors">
+              <RotateCcw size={11} /> Discard
+            </button>
+            <button onClick={() => { onSave({ hostName: hostName || null, hostContact: hostContact || null, hostAddress: hostAddress || null, distanceToSchool: distanceToSchool || null, mealIncluded: mealIncluded || null, roomType: roomType || null, accommodationType: accommodationType || null, partnerWeeklyCost: partnerWeeklyCost || null }); setIsDirty(false); }}
+              className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
+              style={{ background: "#F5821F" }}>
+              <Save size={11} /> Save Changes
+            </button>
+          </div>
+        )}
       </div>
+
+      {isDirty && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 flex items-center gap-1.5">
+          <span className="text-amber-500">●</span>
+          Unsaved changes — click <strong className="mx-0.5">Save Changes</strong> to apply.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Host Name</p>
-          <p className="text-sm text-stone-800">{record.hostName ?? <span className="text-stone-400 italic">Not assigned</span>}</p>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-stone-600">Host Name</Label>
+          <Input value={hostName} onChange={e => { setHostName(e.target.value); mark(); }} className="h-9 text-sm" placeholder="Host family name" />
         </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1 flex items-center gap-1"><Phone size={10} /> Contact</p>
-          <p className="text-sm text-stone-800">{record.hostContact ?? "—"}</p>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-stone-600 flex items-center gap-1"><Phone size={10} />Contact</Label>
+          <Input value={hostContact} onChange={e => { setHostContact(e.target.value); mark(); }} className="h-9 text-sm" placeholder="Phone / Email" />
         </div>
-        <div className="col-span-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1 flex items-center gap-1"><MapPin size={10} /> Address</p>
-          <p className="text-sm text-stone-800">{record.hostAddress ?? "—"}</p>
+        <div className="col-span-2 space-y-1.5">
+          <Label className="text-xs text-stone-600 flex items-center gap-1"><MapPin size={10} />Address</Label>
+          <Input value={hostAddress} onChange={e => { setHostAddress(e.target.value); mark(); }} className="h-9 text-sm" placeholder="Full address" />
         </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Distance to School</p>
-          <p className="text-sm text-stone-800">{record.distanceToSchool ?? "—"}</p>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-stone-600">Distance to School</Label>
+          <Input value={distanceToSchool} onChange={e => { setDistanceToSchool(e.target.value); mark(); }} className="h-9 text-sm" placeholder="e.g. 2.5 km" />
         </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Meal Included</p>
-          <p className="text-sm text-stone-800 capitalize">{record.mealIncluded?.replace(/_/g, " ") ?? "—"}</p>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-stone-600">Accommodation Type</Label>
+          <Select value={accommodationType || "_none"} onValueChange={v => { setAccommodationType(v === "_none" ? "" : v); mark(); }}>
+            <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_none">— Not set —</SelectItem>
+              {["homestay", "private_rental", "student_residence", "shared_house"].map(t => (
+                <SelectItem key={t} value={t} className="capitalize">{t.replace(/_/g, " ")}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Room Type</p>
-          <p className="text-sm text-stone-800 capitalize">{record.roomType?.replace(/_/g, " ") ?? "—"}</p>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-stone-600">Room Type</Label>
+          <Select value={roomType || "_none"} onValueChange={v => { setRoomType(v === "_none" ? "" : v); mark(); }}>
+            <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_none">— Not set —</SelectItem>
+              {["single", "shared", "ensuite", "studio"].map(t => (
+                <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Weekly Rate</p>
-          <p className="text-sm font-semibold" style={{ color: "#F5821F" }}>
-            {record.weeklyRate ? `A$${Number(record.weeklyRate).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
-          </p>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-stone-600">Meal Included</Label>
+          <Select value={mealIncluded || "_none"} onValueChange={v => { setMealIncluded(v === "_none" ? "" : v); mark(); }}>
+            <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_none">— Not set —</SelectItem>
+              {["none", "breakfast", "half_board", "full_board"].map(t => (
+                <SelectItem key={t} value={t} className="capitalize">{t.replace(/_/g, " ")}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1">Accommodation Type</p>
-          <p className="text-sm text-stone-800 capitalize">{record.accommodationType?.replace(/_/g, " ") ?? "—"}</p>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-stone-600">Partner Weekly Cost ($)</Label>
+          <Input type="number" value={partnerWeeklyCost} onChange={e => { setPartnerWeeklyCost(e.target.value); mark(); }} className="h-9 text-sm" placeholder="0.00" />
         </div>
       </div>
     </div>

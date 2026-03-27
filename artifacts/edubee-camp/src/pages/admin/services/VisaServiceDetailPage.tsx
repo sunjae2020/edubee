@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
-  ArrowLeft, FileText, DollarSign, Pencil, ExternalLink, Stamp, Plus,
+  ArrowLeft, FileText, DollarSign, ExternalLink, Stamp, Plus, RotateCcw, Save,
 } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
@@ -90,7 +90,7 @@ function OverviewTab({
   record: VisaServiceRecord;
   onSave: (patch: object) => void;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [form, setForm] = useState({
     visaType:        record.visaType ?? "",
     country:         record.country ?? "",
@@ -115,6 +115,31 @@ function OverviewTab({
 
   const [assignedStaffId, setAssignedStaffId] = useState(record.assignedStaffId ?? "");
 
+  const set = <K extends keyof typeof form>(key: K, value: string) => {
+    setForm(f => ({ ...f, [key]: value }));
+    setIsDirty(true);
+  };
+
+  const discard = () => {
+    setForm({
+      visaType:        record.visaType ?? "",
+      country:         record.country ?? "",
+      applicationDate: record.applicationDate ?? "",
+      appointmentDate: record.appointmentDate ?? "",
+      submissionDate:  record.submissionDate ?? "",
+      decisionDate:    record.decisionDate ?? "",
+      visaNumber:      record.visaNumber ?? "",
+      startDate:       record.startDate ?? "",
+      endDate:         record.endDate ?? "",
+      status:          record.status ?? "pending",
+      serviceFee:      record.serviceFee ?? "",
+      apCost:          record.apCost ?? "",
+      notes:           record.notes ?? "",
+    });
+    setAssignedStaffId(record.assignedStaffId ?? "");
+    setIsDirty(false);
+  };
+
   function handleSave() {
     onSave({
       visaType:        form.visaType || null,
@@ -132,30 +157,8 @@ function OverviewTab({
       notes:           form.notes || null,
       assignedStaffId: assignedStaffId || null,
     });
-    setEditing(false);
+    setIsDirty(false);
   }
-
-  function startEdit() {
-    setForm({
-      visaType:        record.visaType ?? "",
-      country:         record.country ?? "",
-      applicationDate: record.applicationDate ?? "",
-      appointmentDate: record.appointmentDate ?? "",
-      submissionDate:  record.submissionDate ?? "",
-      decisionDate:    record.decisionDate ?? "",
-      visaNumber:      record.visaNumber ?? "",
-      startDate:       record.startDate ?? "",
-      endDate:         record.endDate ?? "",
-      status:          record.status ?? "pending",
-      serviceFee:      record.serviceFee ?? "",
-      apCost:          record.apCost ?? "",
-      notes:           record.notes ?? "",
-    });
-    setAssignedStaffId(record.assignedStaffId ?? "");
-    setEditing(true);
-  }
-
-  const statusStyle = STATUS_COLORS[record.status] ?? { bg: "#F4F3F1", color: "#57534E" };
 
   return (
     <div className="space-y-4">
@@ -166,153 +169,101 @@ function OverviewTab({
             <Stamp size={14} style={{ color: "#F5821F" }} />
             <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Visa Details</h3>
           </div>
-          {!editing && (
-            <button onClick={startEdit}
-              className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 transition-colors">
-              <Pencil size={12} /> Edit
-            </button>
+          {isDirty && (
+            <div className="flex items-center gap-2">
+              <button onClick={discard}
+                className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 border border-stone-200 rounded-md px-2.5 py-1 transition-colors">
+                <RotateCcw size={11} /> Discard
+              </button>
+              <button onClick={handleSave}
+                className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
+                style={{ background: "#F5821F" }}>
+                <Save size={11} /> Save Changes
+              </button>
+            </div>
           )}
         </div>
 
-        {!editing ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Visa Type</span>
-              <span className="text-stone-700 font-medium">{record.visaType || "—"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Country</span>
-              <span className="text-stone-700 font-medium">{record.country || "—"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Application Date</span>
-              <span className="text-stone-700">{fmtDate(record.applicationDate)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Appointment Date</span>
-              <span className="text-stone-700">{fmtDate(record.appointmentDate)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Submission Date</span>
-              <span className="text-stone-700">{fmtDate(record.submissionDate)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Decision Date</span>
-              <span className="text-stone-700">{fmtDate(record.decisionDate)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Visa Grant #</span>
-              <span className="text-stone-700 font-mono text-xs">{record.visaNumber || "—"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Status</span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                style={{ background: statusStyle.bg, color: statusStyle.color }}>
-                {STATUS_LABEL[record.status] ?? record.status}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Visa Valid From</span>
-              <span className="text-stone-700">{fmtDate(record.startDate)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Visa Expires</span>
-              <span className="text-stone-700">{fmtDate(record.endDate)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Assigned Staff</span>
-              <span className="text-stone-700">{record.staffFullName || "—"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-400">Service Fee</span>
-              <span className="font-semibold text-stone-800">{fmtMoney(record.serviceFee)}</span>
-            </div>
-            {record.notes && (
-              <div className="col-span-2">
-                <p className="text-stone-400 mb-1 text-xs">Notes</p>
-                <p className="text-stone-700 text-sm whitespace-pre-wrap">{record.notes}</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Visa Type</Label>
-                <Input value={form.visaType} onChange={e => setForm(f => ({ ...f, visaType: e.target.value }))} placeholder="e.g. Student Visa, Working Holiday" className="h-9 text-sm" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Destination Country</Label>
-                <Input value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. Australia" className="h-9 text-sm" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Application Date</Label>
-                <Input type="date" value={form.applicationDate} onChange={e => setForm(f => ({ ...f, applicationDate: e.target.value }))} className="h-9 text-sm" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Appointment Date</Label>
-                <Input type="date" value={form.appointmentDate} onChange={e => setForm(f => ({ ...f, appointmentDate: e.target.value }))} className="h-9 text-sm" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Submission Date</Label>
-                <Input type="date" value={form.submissionDate} onChange={e => setForm(f => ({ ...f, submissionDate: e.target.value }))} className="h-9 text-sm" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Decision Date</Label>
-                <Input type="date" value={form.decisionDate} onChange={e => setForm(f => ({ ...f, decisionDate: e.target.value }))} className="h-9 text-sm" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Visa Grant Number</Label>
-                <Input value={form.visaNumber} onChange={e => setForm(f => ({ ...f, visaNumber: e.target.value }))} placeholder="Grant number after approval" className="h-9 text-sm font-mono" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Status</Label>
-                <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {STATUSES.map(s => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Visa Valid From</Label>
-                <Input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className="h-9 text-sm" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Visa Expires</Label>
-                <Input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className="h-9 text-sm" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Assigned Staff</Label>
-                <Select value={assignedStaffId || "_none"} onValueChange={v => setAssignedStaffId(v === "_none" ? "" : v)}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select staff" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_none">— Unassigned —</SelectItem>
-                    {usersList.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>{u.fullName ?? u.id}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-stone-500">Service Fee (AUD)</Label>
-                <Input type="number" step="0.01" value={form.serviceFee} onChange={e => setForm(f => ({ ...f, serviceFee: e.target.value }))} placeholder="0.00" className="h-9 text-sm" />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-stone-500">AP Cost (AUD)</Label>
-                <Input type="number" step="0.01" value={form.apCost} onChange={e => setForm(f => ({ ...f, apCost: e.target.value }))} placeholder="0.00" className="h-9 text-sm" />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-stone-500">Notes</Label>
-              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} className="text-sm resize-none" placeholder="Internal notes about this visa application…" />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setEditing(false)} className="h-9 text-sm">Cancel</Button>
-              <Button onClick={handleSave} className="h-9 text-sm text-white" style={{ background: "#F5821F" }}>Save Changes</Button>
-            </div>
+        {isDirty && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 flex items-center gap-1.5">
+            <span className="text-amber-500">●</span>
+            Unsaved changes — click <strong className="mx-0.5">Save Changes</strong> to apply.
           </div>
         )}
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Visa Type</Label>
+              <Input value={form.visaType} onChange={e => set("visaType", e.target.value)} placeholder="e.g. Student Visa, Working Holiday" className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Destination Country</Label>
+              <Input value={form.country} onChange={e => set("country", e.target.value)} placeholder="e.g. Australia" className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Application Date</Label>
+              <Input type="date" value={form.applicationDate} onChange={e => set("applicationDate", e.target.value)} className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Appointment Date</Label>
+              <Input type="date" value={form.appointmentDate} onChange={e => set("appointmentDate", e.target.value)} className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Submission Date</Label>
+              <Input type="date" value={form.submissionDate} onChange={e => set("submissionDate", e.target.value)} className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Decision Date</Label>
+              <Input type="date" value={form.decisionDate} onChange={e => set("decisionDate", e.target.value)} className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Visa Grant Number</Label>
+              <Input value={form.visaNumber} onChange={e => set("visaNumber", e.target.value)} placeholder="Grant number after approval" className="h-9 text-sm font-mono" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Status</Label>
+              <Select value={form.status} onValueChange={v => set("status", v)}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map(s => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Visa Valid From</Label>
+              <Input type="date" value={form.startDate} onChange={e => set("startDate", e.target.value)} className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Visa Expires</Label>
+              <Input type="date" value={form.endDate} onChange={e => set("endDate", e.target.value)} className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Assigned Staff</Label>
+              <Select value={assignedStaffId || "_none"} onValueChange={v => { setAssignedStaffId(v === "_none" ? "" : v); setIsDirty(true); }}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select staff" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">— Unassigned —</SelectItem>
+                  {usersList.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>{u.fullName ?? u.id}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Service Fee (AUD)</Label>
+              <Input type="number" step="0.01" value={form.serviceFee} onChange={e => set("serviceFee", e.target.value)} placeholder="0.00" className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label className="text-xs text-stone-500">AP Cost (AUD)</Label>
+              <Input type="number" step="0.01" value={form.apCost} onChange={e => set("apCost", e.target.value)} placeholder="0.00" className="h-9 text-sm" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-500">Notes</Label>
+            <Textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={3} className="text-sm resize-none" placeholder="Internal notes about this visa application…" />
+          </div>
+        </div>
       </div>
 
       {/* Related Contract Card */}

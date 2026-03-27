@@ -163,9 +163,10 @@ export default function TourMgtDetail() {
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
   });
 
-  const { isEditing, isSaving, startEdit, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
+  const { isEditing, isDirty, isSaving, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
     initialData: rec ?? {},
     onSave: async (data) => { await updateRec.mutateAsync(data); },
+    alwaysEdit: true,
   });
 
   if (isLoading) return <div className="p-6 space-y-4">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12" />)}</div>;
@@ -178,10 +179,8 @@ export default function TourMgtDetail() {
       badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[rec.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{(rec.status ?? "—").replace(/_/g, " ")}</span>}
       backPath="/admin/services/tour"
       backLabel="Tour Management"
-      canEdit={canEdit && tab === "details"}
-      isEditing={isEditing}
+      isDirty={canEdit && tab === "details" && isDirty}
       isSaving={isSaving}
-      onEdit={startEdit}
       onSave={saveEdit}
       onCancel={cancelEdit}
     >
