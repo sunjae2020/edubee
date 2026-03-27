@@ -1100,6 +1100,7 @@ const SERVICE_ROUTES: Record<string, string> = {
   guardian:      "/admin/services/guardian",
   other:         "/admin/services/other",
   visa:          "/admin/services/visa",
+  camp:          "/admin/services/camp-tour",
 };
 
 const SVC_STATUS_BADGE: Record<string, string> = {
@@ -1115,6 +1116,7 @@ const SVC_STATUS_BADGE: Record<string, string> = {
 const ALL_SVC_DEFS = [
   { key: "studyAbroad",   label: "Study Abroad",   icon: GraduationCap },
   { key: "pickup",        label: "Pickup",          icon: Car           },
+  { key: "camp",          label: "Camp / Tour",     icon: GraduationCap },
   { key: "tour",          label: "Tour",            icon: Map           },
   { key: "accommodation", label: "Accommodation",   icon: Building2     },
   { key: "internship",    label: "Internship",      icon: Briefcase     },
@@ -1133,7 +1135,7 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType, on
   const [, navigate] = useLocation();
   const svcs = contract.services ?? {};
 
-  const ARRAY_KEYS = ["pickup", "tour", "other"];
+  const ARRAY_KEYS = ["pickup", "camp", "tour", "accommodation", "other"];
   const withData = ALL_SVC_DEFS.map(d => ({
     ...d,
     data: ARRAY_KEYS.includes(d.key)
@@ -1210,8 +1212,8 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
   const [, navigate] = useLocation();
   const svcs = contract.services ?? {};
 
-  // Flatten all services into rows (supports multiple of same type, e.g. multiple pickups, tours, other services)
-  const MULTI_KEYS = ["pickup", "tour", "other"];
+  // Flatten all services into rows (supports multiple of same type, e.g. multiple pickups, tours, camp sessions, accommodations)
+  const MULTI_KEYS = ["pickup", "camp", "tour", "accommodation", "other"];
   type SvcRow = { key: string; label: string; Icon: any; data: any };
   const rows: SvcRow[] = [];
   for (const def of ALL_SVC_DEFS) {
@@ -1858,18 +1860,19 @@ export default function ContractDetailPage() {
 
   // Counts for tab badges
   const svcsForCount = contract.services ?? {};
+  const countArr = (v: any) => Array.isArray(v) ? v.length : v ? 1 : 0;
+  const countOne = (v: any) => v ? 1 : 0;
   const servicesCount =
-    (svcsForCount.studyAbroad ? 1 : 0) +
-    (Array.isArray(svcsForCount.pickup) ? svcsForCount.pickup.length : svcsForCount.pickup ? 1 : 0) +
-    (svcsForCount.accommodation ? 1 : 0) +
-    (svcsForCount.internship ? 1 : 0) +
-    (svcsForCount.guardian ? 1 : 0) +
-    (Array.isArray(svcsForCount.other) ? svcsForCount.other.length : svcsForCount.other ? 1 : 0) +
-    (svcsForCount.settlement ? 1 : 0) +
-    (svcsForCount.hotel ? 1 : 0) +
-    (Array.isArray(svcsForCount.tour) ? svcsForCount.tour.length : svcsForCount.tour ? 1 : 0) +
-    (svcsForCount.visa ? 1 : 0) +
-    (Array.isArray(svcsForCount.camp) ? svcsForCount.camp.length : svcsForCount.camp ? 1 : 0);
+    countOne(svcsForCount.studyAbroad) +
+    countArr(svcsForCount.pickup) +
+    countArr(svcsForCount.camp) +
+    countArr(svcsForCount.tour) +
+    countArr(svcsForCount.accommodation) +
+    countOne(svcsForCount.internship) +
+    countOne(svcsForCount.guardian) +
+    countArr(svcsForCount.other) +
+    countOne(svcsForCount.settlement) +
+    countOne(svcsForCount.visa);
 
   const commissionCount = (contract.contractProducts ?? [])
     .flatMap((cp: any) => cp.costLines ?? []).length;

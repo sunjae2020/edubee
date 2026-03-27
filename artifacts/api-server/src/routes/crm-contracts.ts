@@ -303,7 +303,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       `),
       db.execute(sql`SELECT * FROM study_abroad_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
       db.execute(sql`SELECT * FROM pickup_mgt WHERE contract_id = ${id}::uuid`),
-      db.execute(sql`SELECT * FROM accommodation_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
+      db.execute(sql`SELECT * FROM accommodation_mgt WHERE contract_id = ${id}::uuid ORDER BY created_at`),
       db.execute(sql`SELECT id, status, position_title, hourly_rate, employment_type, start_date, end_date, english_level, employment_type FROM internship_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
       db.execute(sql`SELECT id, status, service_fee, billing_cycle, service_start_date, service_end_date, emergency_contact FROM guardian_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
       db.execute(sql`SELECT id, status, service_type, title, start_date, end_date, service_fee, ap_cost FROM other_services_mgt WHERE contract_id = ${id}::uuid ORDER BY created_at`),
@@ -395,7 +395,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
 
     const saArr = r(saRes); const sa = saArr[0] ?? null;
     const pkArr = r(pkRes);
-    const acArr = r(acRes); const ac = acArr[0] ?? null;
+    const acArr = r(acRes);
     const inArr = r(inRes); const intern = inArr[0] ?? null;
     const gdArr = r(gdRes); const gd = gdArr[0] ?? null;
     const otArr = r(otRes);
@@ -474,7 +474,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
           driverName: p.driver_name, driverContact: p.driver_contact,
           vehicleInfo: p.vehicle_info,
         })) : null,
-        accommodation: ac ? {
+        accommodation: acArr.length ? acArr.map((ac: any) => ({
           id: ac.id, status: ac.status, type: ac.accommodation_type,
           checkin: ac.checkin_date, checkout: ac.checkout_date,
           fromDate: ac.checkin_date, toDate: ac.checkout_date,
@@ -482,7 +482,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
           hostContact: ac.host_contact,
           roomType: ac.room_type, weeklyRate: ac.weekly_rate,
           mealIncluded: ac.meal_included, distanceToSchool: ac.distance_to_school,
-        } : null,
+        })) : null,
         internship: intern ? {
           id: intern.id, status: intern.status,
           positionTitle: intern.position_title,
