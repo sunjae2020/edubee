@@ -466,4 +466,33 @@ router.post(
   }
 );
 
+// ─── PATCH /api/tax-invoices/:id ─────────────────────────────────────────────
+router.patch(
+  "/tax-invoices/:id",
+  authenticate,
+  requireRole(...STAFF),
+  async (req, res) => {
+    try {
+      const { status, dueDate } = req.body as { status?: string; dueDate?: string | null };
+      const now = new Date();
+      const updatePayload: Record<string, unknown> = { modifiedOn: now };
+      if (status !== undefined) updatePayload.status = status;
+      if (dueDate !== undefined) updatePayload.dueDate = dueDate ? new Date(dueDate) : null;
+
+      const [updated] = await db
+        .update(taxInvoices)
+        .set(updatePayload)
+        .where(eq(taxInvoices.id, req.params.id))
+        .returning();
+
+      if (!updated) return res.status(404).json({ error: "Tax invoice not found" });
+
+      return res.json({ data: updated });
+    } catch (err) {
+      console.error("[PATCH /api/tax-invoices/:id]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 export default router;

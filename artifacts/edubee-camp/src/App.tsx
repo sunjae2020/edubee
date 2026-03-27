@@ -73,7 +73,9 @@ import ProductGroupDetail from "@/pages/admin/product-group-detail";
 import ProductTypes from "@/pages/admin/product-types";
 import ProductTypeDetail from "@/pages/admin/product-type-detail";
 import PromotionsPage from "@/pages/admin/promotions";
+import PromotionDetail from "@/pages/admin/promotion-detail";
 import CommissionsPage from "@/pages/admin/commissions";
+import CommissionDetail from "@/pages/admin/commission-detail";
 
 // CRM
 import ContactsPage from "@/pages/admin/crm/ContactsPage";
@@ -89,10 +91,14 @@ import ContractDetailPage from "@/pages/admin/crm/ContractDetailPage";
 
 // Accounting (new)
 import ChartOfAccountsPage from "@/pages/admin/accounting/ChartOfAccountsPage";
+import CoaDetailPage from "@/pages/admin/accounting/CoaDetailPage";
 import ArApTrackerPage from "@/pages/admin/accounting/ArApTrackerPage";
 import PaymentsPage from "@/pages/admin/accounting/PaymentsPage";
+import PaymentDetailPage from "@/pages/admin/accounting/PaymentDetailPage";
 import JournalEntriesPage from "@/pages/admin/accounting/JournalEntriesPage";
+import JournalEntryDetailPage from "@/pages/admin/accounting/JournalEntryDetailPage";
 import TaxInvoiceListPage from "@/pages/admin/accounting/TaxInvoiceListPage";
+import TaxInvoiceDetailPage from "@/pages/admin/accounting/TaxInvoiceDetailPage";
 
 // Services (new)
 import StudyAbroadPage from "@/pages/admin/services/StudyAbroadPage";
@@ -200,8 +206,14 @@ function Router() {
       <Route path="/admin/product-types">
         <AdminRoute title="Products Type"><ProductTypes /></AdminRoute>
       </Route>
+      <Route path="/admin/promotions/:id">
+        <AdminRoute title="Promotion Detail"><PromotionDetail /></AdminRoute>
+      </Route>
       <Route path="/admin/promotions">
         <AdminRoute title="Promotions"><PromotionsPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/commissions/:id">
+        <AdminRoute title="Commission Detail"><CommissionDetail /></AdminRoute>
       </Route>
       <Route path="/admin/commissions">
         <AdminRoute title="Commissions"><CommissionsPage /></AdminRoute>
@@ -326,17 +338,29 @@ function Router() {
       <Route path="/admin/accounting/exchange-rates">
         <AdminRoute title="Exchange Rates"><ExchangeRates /></AdminRoute>
       </Route>
+      <Route path="/admin/accounting/coa/:code">
+        <AdminRoute title="Account Detail"><CoaDetailPage /></AdminRoute>
+      </Route>
       <Route path="/admin/accounting/coa">
         <AdminRoute title="Chart of Accounts"><ChartOfAccountsPage /></AdminRoute>
       </Route>
       <Route path="/admin/accounting/ar-ap">
         <AdminRoute title="AR / AP Tracker"><ArApTrackerPage /></AdminRoute>
       </Route>
+      <Route path="/admin/accounting/payments/:id">
+        <AdminRoute title="Payment Detail"><PaymentDetailPage /></AdminRoute>
+      </Route>
       <Route path="/admin/accounting/payments">
         <AdminRoute title="Payments"><PaymentsPage /></AdminRoute>
       </Route>
+      <Route path="/admin/accounting/journal/:id">
+        <AdminRoute title="Journal Entry"><JournalEntryDetailPage /></AdminRoute>
+      </Route>
       <Route path="/admin/accounting/journal">
         <AdminRoute title="Journal Entries"><JournalEntriesPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/accounting/tax-invoices/:id">
+        <AdminRoute title="Tax Invoice Detail"><TaxInvoiceDetailPage /></AdminRoute>
       </Route>
       <Route path="/admin/accounting/tax-invoices">
         <AdminRoute title="Tax Invoices"><TaxInvoiceListPage /></AdminRoute>

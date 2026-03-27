@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Percent, Pencil, Plus, Loader2, Search } from "lucide-react";
+import { Percent, Plus, Loader2, Search } from "lucide-react";
 import { format, isAfter, isBefore, parseISO } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
@@ -55,6 +56,7 @@ const EMPTY_FORM: FormState = { name: "", productId: "__none", accountName: "", 
 export default function Promotions() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [, navigate] = useLocation();
 
   const [search, setSearch]        = useState("");
   const { sortBy, sortDir, onSort } = useSortState();
@@ -204,7 +206,9 @@ export default function Promotions() {
             ) : promos.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No promotions found</td></tr>
             ) : promos.map(p => (
-              <tr key={p.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
+              <tr key={p.id}
+                className="hover:bg-[#FEF0E3] cursor-pointer transition-colors"
+                onClick={() => navigate(`/admin/promotions/${p.id}`)}>
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <div className="flex items-center gap-2">
                     <Percent className="w-4 h-4 text-[#F5821F] shrink-0" strokeWidth={1.5} />
@@ -220,18 +224,13 @@ export default function Promotions() {
                 </td>
                 <td className="px-4 py-3 text-[#1C1917] font-medium">{p.promotionPrice ?? "—"}</td>
                 <td className="px-4 py-3"><PromoBadge p={p} /></td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-[#57534E] hover:bg-[#F4F3F1]" onClick={() => openEdit(p)}>
-                      <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
+                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                  {p.status === "Active" && (
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-[#DC2626] hover:bg-[#FEF2F2]"
+                      onClick={() => deactivate.mutate(p.id)} disabled={deactivate.isPending}>
+                      Deactivate
                     </Button>
-                    {p.status === "Active" && (
-                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-[#DC2626] hover:bg-[#FEF2F2]"
-                        onClick={() => deactivate.mutate(p.id)} disabled={deactivate.isPending}>
-                        Deactivate
-                      </Button>
-                    )}
-                  </div>
+                  )}
                 </td>
               </tr>
             ))}

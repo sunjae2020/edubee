@@ -9,38 +9,50 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, RotateCcw, Loader2, Tag } from "lucide-react";
-import { format } from "date-fns";
+import { ArrowLeft, Save, RotateCcw, Loader2, BadgeDollarSign } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-interface ProductGroup { id: string; name: string; status: string }
-interface ProductType {
+interface Commission {
   id: string;
   name: string;
-  productGroupId?: string | null;
-  productGroupName?: string | null;
-  serviceModuleType?: string | null;
+  commissionType: string;
+  rateValue?: string | null;
   description?: string | null;
   status: string;
   createdOn?: string | null;
   modifiedOn?: string | null;
 }
 
-const SERVICE_MODULE_OPTIONS = [
-  { value: "__none",        label: "— None —"         },
-  { value: "study_abroad",  label: "Study Abroad"     },
-  { value: "accommodation", label: "Accommodation"    },
-  { value: "internship",    label: "Internship"       },
-  { value: "guardian",      label: "Guardian"         },
-  { value: "settlement",    label: "Settlement"       },
-  { value: "other",         label: "Other Services"   },
-  { value: "visa",          label: "Visa Services"    },
-  { value: "pickup",        label: "Pickup / Transfer"},
-  { value: "tour",          label: "Tour Management"  },
+interface FormState {
+  name: string;
+  commissionType: string;
+  rateValue: string;
+  description: string;
+  status: string;
+}
+
+const EMPTY_FORM: FormState = {
+  name: "", commissionType: "rate", rateValue: "", description: "", status: "Active",
+};
+
+const TYPE_OPTIONS = [
+  { value: "nil",   label: "Nil"   },
+  { value: "fixed", label: "Fixed" },
+  { value: "rate",  label: "Rate"  },
 ];
 
-const EMPTY_FORM = { name: "", productGroupId: "__none", serviceModuleType: "__none", description: "", status: "Active" };
+function TypeBadge({ type }: { type: string }) {
+  const map: Record<string, string> = {
+    nil:   "bg-[#F4F3F1] text-[#57534E]",
+    fixed: "bg-[#EFF6FF] text-[#3B82F6]",
+    rate:  "bg-[#FEF0E3] text-[#F5821F]",
+  };
+  const cls = map[type] ?? "bg-[#F4F3F1] text-[#57534E]";
+  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cls}`}>
+    {type.charAt(0).toUpperCase() + type.slice(1)}
+  </span>;
+}
 
 function StatusBadge({ status }: { status: string }) {
   if (status?.toLowerCase() === "active")
@@ -48,71 +60,58 @@ function StatusBadge({ status }: { status: string }) {
   return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#F4F3F1] text-[#57534E]">Inactive</span>;
 }
 
-export default function ProductTypeDetail() {
+export default function CommissionDetail() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const [form, setForm]         = useState(EMPTY_FORM);
-  const [original, setOriginal] = useState(EMPTY_FORM);
-  const [nameError, setNameError]   = useState("");
-  const [smodError, setSmodError]   = useState("");
+  const [form, setForm]         = useState<FormState>(EMPTY_FORM);
+  const [original, setOriginal] = useState<FormState>(EMPTY_FORM);
+  const [nameError, setNameError] = useState("");
 
   const isDirty = JSON.stringify(form) !== JSON.stringify(original);
 
-  const { data: productType, isLoading } = useQuery<ProductType>({
-    queryKey: ["product-type", id],
-    queryFn: () => axios.get(`${BASE}/api/product-types/${id}`).then(r => r.data),
+  const { data: commission, isLoading } = useQuery<Commission>({
+    queryKey: ["commission", id],
+    queryFn: () => axios.get(`${BASE}/api/commissions/${id}`).then(r => r.data),
     enabled: !!id,
   });
 
   useEffect(() => {
-    if (!productType) return;
-    const snap = {
-      name:              productType.name,
-      productGroupId:    productType.productGroupId    ?? "__none",
-      serviceModuleType: productType.serviceModuleType ?? "__none",
-      description:       productType.description       ?? "",
-      status:            productType.status,
+    if (!commission) return;
+    const snap: FormState = {
+      name:           commission.name,
+      commissionType: commission.commissionType,
+      rateValue:      commission.rateValue ?? "",
+      description:    commission.description ?? "",
+      status:         commission.status,
     };
     setForm(snap);
     setOriginal(snap);
-  }, [productType]);
+  }, [commission]);
 
-  const { data: groups = [] } = useQuery<ProductGroup[]>({
-    queryKey: ["product-groups-active"],
-    queryFn: () => axios.get(`${BASE}/api/product-groups?status=Active`).then(r => r.data),
-  });
-
-  const discard = () => {
-    setForm(original);
-    setNameError("");
-    setSmodError("");
-  };
-
-  const toPayload = () => ({
-    name:              form.name,
-    productGroupId:    form.productGroupId    === "__none" ? null : form.productGroupId,
-    serviceModuleType: form.serviceModuleType === "__none" ? null : form.serviceModuleType,
-    description:       form.description,
-    status:            form.status,
-  });
+  const discard = () => { setForm(original); setNameError(""); };
 
   const save = useMutation({
     mutationFn: () => {
-      let valid = true;
-      if (!form.name.trim()) { setNameError("Name is required"); valid = false; } else setNameError("");
-      if (form.serviceModuleType === "__none") { setSmodError("Service Module is required"); valid = false; } else setSmodError("");
-      if (!valid) return Promise.reject();
-      return axios.put(`${BASE}/api/product-types/${id}`, toPayload()).then(r => r.data);
+      if (!form.name.trim()) { setNameError("Name is required"); return Promise.reject(); }
+      setNameError("");
+      const payload = {
+        name:           form.name,
+        commissionType: form.commissionType,
+        rateValue:      form.commissionType === "rate" && form.rateValue ? form.rateValue : null,
+        description:    form.description,
+        status:         form.status,
+      };
+      return axios.put(`${BASE}/api/commissions/${id}`, payload).then(r => r.data);
     },
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ["product-type", id] });
-      qc.invalidateQueries({ queryKey: ["product-types"] });
-      toast({ title: "Product type saved" });
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["commission", id] });
+      qc.invalidateQueries({ queryKey: ["commissions"] });
+      toast({ title: "Commission saved" });
     },
-    onError: () => toast({ variant: "destructive", title: "Failed to save" }),
+    onError: () => toast({ variant: "destructive", title: "Failed to save commission" }),
   });
 
   if (isLoading) {
@@ -124,12 +123,12 @@ export default function ProductTypeDetail() {
     );
   }
 
-  if (!productType) {
+  if (!commission) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-[#A8A29E]">
-        <Tag className="w-10 h-10 mb-3" strokeWidth={1} />
-        <p className="text-sm">Product type not found.</p>
-        <Button variant="link" className="text-[#F5821F] mt-2" onClick={() => navigate("/admin/product-types")}>
+        <BadgeDollarSign className="w-10 h-10 mb-3" strokeWidth={1} />
+        <p className="text-sm">Commission not found.</p>
+        <Button variant="link" className="text-[#F5821F] mt-2" onClick={() => navigate("/admin/commissions")}>
           Back to list
         </Button>
       </div>
@@ -144,13 +143,14 @@ export default function ProductTypeDetail() {
           <Button
             variant="ghost" size="icon"
             className="h-8 w-8 text-[#57534E] hover:bg-[#F4F3F1] rounded-lg"
-            onClick={() => navigate("/admin/product-types")}
+            onClick={() => navigate("/admin/commissions")}
           >
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-2 flex-wrap">
-            <Tag className="w-5 h-5 text-[#F5821F]" strokeWidth={1.5} />
-            <h1 className="text-xl font-bold text-[#1C1917] leading-none">{productType.name}</h1>
+            <BadgeDollarSign className="w-5 h-5 text-[#F5821F]" strokeWidth={1.5} />
+            <h1 className="text-xl font-bold text-[#1C1917] leading-none">{commission.name}</h1>
+            <TypeBadge type={commission.commissionType} />
             <StatusBadge status={form.status} />
           </div>
         </div>
@@ -181,7 +181,7 @@ export default function ProductTypeDetail() {
       {/* Detail card */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-6 space-y-5">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-[#A8A29E] border-b border-[#F4F3F1] pb-3">
-          Product Type Info
+          Commission Info
         </h2>
 
         <div className="space-y-1.5">
@@ -191,50 +191,47 @@ export default function ProductTypeDetail() {
           <Input
             value={form.name}
             onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setNameError(""); }}
+            placeholder="e.g. Rate25"
             className={`h-10 border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 ${nameError ? "border-[#DC2626]" : ""}`}
           />
           {nameError && <p className="text-xs text-[#DC2626]">{nameError}</p>}
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Product Group</Label>
-          <Select value={form.productGroupId} onValueChange={v => setForm(f => ({ ...f, productGroupId: v }))}>
-            <SelectTrigger className="h-10 border-[#E8E6E2] focus:ring-0">
-              <SelectValue placeholder="Select group..." />
+          <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">
+            Commission Type <span className="text-[#DC2626]">*</span>
+          </Label>
+          <Select value={form.commissionType} onValueChange={v => setForm(f => ({ ...f, commissionType: v, rateValue: "" }))}>
+            <SelectTrigger className="h-10 border-[#E8E6E2] focus:ring-0 w-48">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none">— None —</SelectItem>
-              {groups.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+              {TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
 
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">
-            Service Module Type <span className="text-[#DC2626]">*</span>
-          </Label>
-          <Select value={form.serviceModuleType} onValueChange={v => { setForm(f => ({ ...f, serviceModuleType: v })); setSmodError(""); }}>
-            <SelectTrigger className={`h-10 border-[#E8E6E2] focus:ring-0 ${smodError ? "border-[#DC2626]" : ""}`}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SERVICE_MODULE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          {smodError
-            ? <p className="text-xs text-[#DC2626]">{smodError}</p>
-            : <p className="text-xs text-[#A8A29E]">When a contract is created with this product type, the corresponding service record will be auto-generated.</p>
-          }
-        </div>
+        {form.commissionType === "rate" && (
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Rate Value (%)</Label>
+            <Input
+              type="number" min={0} max={100} step={0.01}
+              value={form.rateValue}
+              onChange={e => setForm(f => ({ ...f, rateValue: e.target.value }))}
+              placeholder="e.g. 25"
+              className="h-10 border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 w-48"
+            />
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Description</Label>
           <Textarea
             value={form.description}
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+            placeholder="Describe this commission..."
             rows={3}
             className="border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 text-sm resize-none"
-            placeholder="Describe this product type..."
           />
         </div>
 
@@ -252,7 +249,7 @@ export default function ProductTypeDetail() {
         </div>
       </div>
 
-      <SystemInfoSection owner={null} createdAt={productType.createdOn} updatedAt={productType.modifiedOn} />
+      <SystemInfoSection owner={null} createdAt={commission.createdOn} updatedAt={commission.modifiedOn} />
     </div>
   );
 }

@@ -784,7 +784,7 @@ export default function PaymentsPage() {
                   const statusStyle = STATUS_STYLE[p.status] ?? STATUS_STYLE.Active;
                   const typeBg = TYPE_STYLE[p.paymentType] ?? "#F4F3F1";
                   return (
-                    <tr key={p.id} className={`hover:bg-[#FEF0E3] cursor-pointer transition-colors ${p.status === "Void" ? "opacity-50" : ""}`}>
+                    <tr key={p.id} className={`hover:bg-[#FEF0E3] cursor-pointer transition-colors ${p.status === "Void" ? "opacity-50" : ""}`} onClick={() => navigate(`/admin/accounting/payments/${p.id}`)}>
                       <td className="px-4 py-3 font-mono text-xs text-stone-500">{p.paymentRef ?? "—"}</td>
                       <td className="px-4 py-3 text-stone-700">{fmtDate(p.paymentDate)}</td>
                       <td className="px-4 py-3">
@@ -865,7 +865,7 @@ export default function PaymentsPage() {
                 <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No journal entries yet</td></tr>
               )}
               {sortedJes.map(je => (
-                <tr key={je.id} className={`hover:bg-[#FEF0E3] cursor-pointer transition-colors ${je.paymentStatus === "Void" ? "opacity-50" : ""}`}>
+                <tr key={je.id} className={`hover:bg-[#FEF0E3] cursor-pointer transition-colors ${je.paymentStatus === "Void" ? "opacity-50" : ""}`} onClick={() => navigate(`/admin/accounting/journal/${je.id}`)}>
                   <td className="px-4 py-3 text-stone-700">{fmtDate(je.entryDate)}</td>
                   <td className="px-4 py-3">
                     <span className="font-mono text-xs text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded mr-1">{je.debitCoa}</span>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,7 @@ const EMPTY_FORM: FormState = { name: "", commissionType: "rate", rateValue: "",
 export default function Commissions() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [, navigate] = useLocation();
   const { sortBy, sortDir, onSort } = useSortState();
 
   const [search, setSearch]       = useState("");
@@ -180,7 +182,7 @@ export default function Commissions() {
               <tr
                 key={c.id}
                 className="hover:bg-[#FEF0E3] cursor-pointer transition-colors"
-                onClick={() => openEdit(c)}
+                onClick={() => navigate(`/admin/commissions/${c.id}`)}
               >
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <div className="flex items-center gap-2">

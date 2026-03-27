@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -143,6 +144,7 @@ function CoaCell({ code, name, side }: { code: string; name?: string; side: "DR"
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function JournalEntriesPage() {
+  const [, navigate] = useLocation();
   const [fromDate,   setFromDate]   = useState("");
   const { sortBy, sortDir, onSort } = useSortState();
   const [toDate,     setToDate]     = useState("");
@@ -385,7 +387,7 @@ export default function JournalEntriesPage() {
               sorted.map(je => {
                 const typeStyle = ENTRY_TYPE_STYLE[je.entryType ?? ""] ?? { bg: "#F4F3F1", text: "#57534E" };
                 return (
-                  <tr key={je.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
+                  <tr key={je.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors" onClick={() => navigate(`/admin/accounting/journal/${je.id}`)}>
                     {/* Date */}
                     <td className="px-4 py-3 text-stone-700 tabular-nums text-xs whitespace-nowrap">
                       {fmtDate(je.entryDate)}

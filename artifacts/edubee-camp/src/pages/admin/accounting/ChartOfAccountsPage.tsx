@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Pencil, Plus, X, Check } from "lucide-react";
@@ -143,6 +144,7 @@ function EditSheet({ account, onClose, isNew, isSuperAdmin }: EditSheetProps) {
 }
 
 export default function ChartOfAccountsPage() {
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("asset");
   const { sortBy, sortDir, onSort } = useSortState();
   const [editAccount, setEditAccount] = useState<CoaRow | null>(null);
@@ -229,7 +231,7 @@ export default function ChartOfAccountsPage() {
               <tr><td colSpan={5} className="text-center py-12 text-stone-400 text-sm">No accounts in this category</td></tr>
             )}
             {sorted.map(row => (
-              <tr key={row.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
+              <tr key={row.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors" onClick={() => navigate(`/admin/accounting/coa/${row.code}`)}>
                 <td className="px-4 py-3">
                   <span
                     className="inline-block px-2.5 py-0.5 rounded text-xs font-mono font-bold"
@@ -255,7 +257,7 @@ export default function ChartOfAccountsPage() {
                 {isSuperAdmin && (
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => setEditAccount(row)}
+                      onClick={e => { e.stopPropagation(); setEditAccount(row); }}
                       className="p-1.5 rounded hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition-colors"
                       title="Edit"
                     >

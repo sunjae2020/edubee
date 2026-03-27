@@ -153,4 +153,42 @@ router.get(
   }
 );
 
+// ─── GET /api/journal-entries/:id ────────────────────────────────────────────
+router.get(
+  "/journal-entries/:id",
+  authenticate,
+  requireRole(...STAFF_ROLES),
+  async (req, res) => {
+    try {
+      const [row] = await db
+        .select()
+        .from(journalEntries)
+        .where(eq(journalEntries.id, req.params.id))
+        .limit(1);
+
+      if (!row) return res.status(404).json({ error: "Journal entry not found" });
+
+      const allCodes = [row.debitCoa, row.creditCoa].filter(Boolean) as string[];
+      const coaRows = allCodes.length
+        ? await db
+            .select({ code: chartOfAccounts.code, name: chartOfAccounts.name })
+            .from(chartOfAccounts)
+            .where(inArray(chartOfAccounts.code, allCodes))
+        : [];
+      const coaMap = Object.fromEntries(coaRows.map(c => [c.code, c.name]));
+
+      return res.json({
+        data: {
+          ...row,
+          debitCoaName:  coaMap[row.debitCoa]  ?? row.debitCoa,
+          creditCoaName: coaMap[row.creditCoa] ?? row.creditCoa,
+        },
+      });
+    } catch (err) {
+      console.error("[GET /api/journal-entries/:id]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 export default router;
