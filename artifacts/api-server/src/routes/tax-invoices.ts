@@ -32,10 +32,11 @@ router.get(
   requireRole(...STAFF),
   async (req, res) => {
     try {
-      const { type, status } = req.query as Record<string, string>;
+      const { type, status, contractId } = req.query as Record<string, string>;
       const conds: SQL[] = [];
-      if (type)   conds.push(eq(taxInvoices.invoiceType, type));
-      if (status) conds.push(eq(taxInvoices.status, status));
+      if (type)       conds.push(eq(taxInvoices.invoiceType, type));
+      if (status)     conds.push(eq(taxInvoices.status, status));
+      if (contractId) conds.push(eq(taxInvoices.contractId, contractId));
 
       const rows = await db
         .select({

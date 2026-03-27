@@ -432,7 +432,7 @@ router.get("/accounting/payments/by-contract/:contractId", authenticate, async (
         pl.amount          AS line_amount,
         pl.split_type,
         pl.description     AS line_description,
-        COALESCE(cp.name, cp.product_name) AS product_name,
+        cp.name AS product_name,
         cp.ar_status,
         cp.ap_status
       FROM payment_lines pl

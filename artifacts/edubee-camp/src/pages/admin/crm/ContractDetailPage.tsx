@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
@@ -474,31 +474,51 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
 }
 
 // ── Invoices Tab ───────────────────────────────────────────────────────────
-function InvoicesTab({ contract }: { contract: any }) {
-  const invoices: any[] = contract.invoices ?? [];
+function InvoicesTab({ contract, onGenerateInvoice }: { contract: any; onGenerateInvoice: () => void }) {
+  const { data: taxInvData, isLoading: loadingInv } = useQuery<any[]>({
+    queryKey: ["tax-invoices-contract", contract.id],
+    queryFn: () =>
+      axios.get(`${BASE}/api/tax-invoices?contractId=${contract.id}`).then(r => r.data.data ?? []),
+    enabled: !!contract.id,
+  });
+  const invoices: any[] = taxInvData ?? [];
   const INV_BADGE: Record<string, string> = {
-    paid:     "bg-[#DCFCE7] text-[#16A34A]",
-    active:   "bg-[#F4F3F1] text-[#57534E]",
-    draft:    "bg-[#F4F3F1] text-[#A8A29E]",
-    overdue:  "bg-[#FEF2F2] text-[#DC2626]",
+    paid:    "bg-[#DCFCE7] text-[#16A34A]",
+    active:  "bg-[#F4F3F1] text-[#57534E]",
+    draft:   "bg-[#F4F3F1] text-[#A8A29E]",
+    overdue: "bg-[#FEF2F2] text-[#DC2626]",
+    sent:    "bg-[#EFF6FF] text-[#1D4ED8]",
   };
+  const totalInvoiced = invoices.reduce((s: number, inv: any) => s + parseFloat(inv.totalAmount ?? "0"), 0);
   return (
     <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
       <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#1C1917]">Invoices ({invoices.length})</h3>
-        <button disabled className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs text-[#A8A29E] cursor-not-allowed">+ Generate Invoice</button>
+        <div className="flex items-center gap-3">
+          <h3 className="text-sm font-semibold text-[#1C1917]">Tax Invoices ({invoices.length})</h3>
+          {invoices.length > 0 && (
+            <span className="text-xs text-[#A8A29E]">Total: <span className="font-semibold text-[#1C1917]">{fmtMoney(totalInvoiced)}</span></span>
+          )}
+        </div>
+        <button onClick={onGenerateInvoice}
+          className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+          style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
+          <Plus size={12} /> Generate Invoice
+        </button>
       </div>
-      {invoices.length === 0 ? (
+      {loadingInv ? (
+        <div className="text-center py-10 text-[#A8A29E] text-sm">Loading…</div>
+      ) : invoices.length === 0 ? (
         <div className="text-center py-10 text-[#A8A29E]">
           <FileText size={28} className="mx-auto mb-2 opacity-40" />
-          <p className="text-sm">No invoices yet</p>
+          <p className="text-sm">No tax invoices yet</p>
+          <button onClick={onGenerateInvoice} className="mt-2 text-xs underline" style={{ color:"#F5821F" }}>Generate first invoice</button>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
-                {["Invoice Ref","Issued","Due Date","Amount","Paid","Balance","Status","PDF"].map(h => (
+                {["Invoice Ref","Type","Issued","Due Date","Commission","GST","Total","School","Status","PDF"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">{h}</th>
                 ))}
               </tr>
@@ -506,15 +526,24 @@ function InvoicesTab({ contract }: { contract: any }) {
             <tbody>
               {invoices.map((inv: any) => (
                 <tr key={inv.id} className="border-b border-[#E8E6E2] hover:bg-[#FAFAF9]">
-                  <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color:"#F5821F" }}>{inv.invoiceRefNumber ?? "—"}</td>
-                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(inv.createdOn)}</td>
+                  <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color:"#F5821F" }}>{inv.invoiceRef ?? "—"}</td>
+                  <td className="px-4 py-3 text-[12px] text-[#57534E] capitalize">{inv.invoiceType ?? "—"}</td>
+                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(inv.invoiceDate ?? inv.createdOn)}</td>
                   <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(inv.dueDate)}</td>
-                  <td className="px-4 py-3 text-[13px] font-semibold">{fmtMoney(inv.totalPrice)}</td>
-                  <td className="px-4 py-3 text-[13px] text-[#16A34A] font-medium">{fmtMoney(inv.paidAmount)}</td>
-                  <td className="px-4 py-3 text-[13px]" style={{ color: inv.balance > 0 ? "#DC2626" : "#57534E" }}>{fmtMoney(inv.balance)}</td>
+                  <td className="px-4 py-3 text-[13px] font-semibold">{fmtMoney(parseFloat(inv.commissionAmount ?? "0"))}</td>
+                  <td className="px-4 py-3 text-[13px] text-[#57534E]">{inv.isGstFree ? <span className="text-[#A8A29E]">GST Free</span> : fmtMoney(parseFloat(inv.gstAmount ?? "0"))}</td>
+                  <td className="px-4 py-3 text-[13px] font-bold" style={{ color:"#F5821F" }}>{fmtMoney(parseFloat(inv.totalAmount ?? "0"))}</td>
+                  <td className="px-4 py-3 text-[12px] text-[#57534E] max-w-[120px] truncate">{inv.schoolName ?? "—"}</td>
                   <td className="px-4 py-3"><Badge s={inv.status} map={INV_BADGE} /></td>
                   <td className="px-4 py-3">
-                    <button disabled className="h-7 px-2 rounded border border-[#E8E6E2] text-[11px] text-[#A8A29E] cursor-not-allowed">PDF</button>
+                    {inv.pdfUrl ? (
+                      <a href={`${BASE}/api/tax-invoices/${inv.id}/pdf`} target="_blank" rel="noreferrer"
+                        className="inline-flex items-center gap-1 h-7 px-2 rounded border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors">
+                        <Download size={11} /> PDF
+                      </a>
+                    ) : (
+                      <span className="text-[11px] text-[#A8A29E]">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -655,7 +684,7 @@ function PaymentsTab({ contractId }: { contractId: string }) {
 }
 
 // ── Transactions Tab ───────────────────────────────────────────────────────
-function TransactionsTab({ contract }: { contract: any }) {
+function TransactionsTab({ contract, onRecordPayment }: { contract: any; onRecordPayment: () => void }) {
   const txns: any[] = contract.transactions ?? [];
   const totalCredit = txns.reduce((s: number, t: any) => s + (t.creditAmount ?? 0), 0);
   const totalDebit  = txns.reduce((s: number, t: any) => s + (t.debitAmount ?? 0), 0);
@@ -664,7 +693,11 @@ function TransactionsTab({ contract }: { contract: any }) {
     <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
       <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#1C1917]">Transactions ({txns.length})</h3>
-        <button disabled className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs text-[#A8A29E] cursor-not-allowed">+ Record Payment</button>
+        <button onClick={onRecordPayment}
+          className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+          style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
+          <Plus size={12} /> Record Payment
+        </button>
       </div>
       {txns.length === 0 ? (
         <div className="text-center py-10 text-[#A8A29E]">
@@ -780,6 +813,271 @@ function CommissionTab({ contract }: { contract: any }) {
             </tbody>
           </table>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Record Payment Modal ──────────────────────────────────────────────────────
+const PAYMENT_TYPES = [
+  { value: "trust_receipt",     label: "Trust Receipt (Client pays in)"      },
+  { value: "trust_transfer",    label: "Trust Transfer (Pay out supplier)"   },
+  { value: "commission",        label: "Commission"                           },
+  { value: "service_fee_camp",  label: "Service Fee (Camp)"                  },
+  { value: "camp_tour_ap",      label: "Tour AP"                             },
+  { value: "camp_institute_ap", label: "Institute AP"                        },
+  { value: "direct",            label: "Direct"                              },
+];
+const PAYMENT_METHODS = [
+  { value: "bank_transfer", label: "Bank Transfer" },
+  { value: "cash",          label: "Cash"          },
+  { value: "cheque",        label: "Cheque"        },
+  { value: "card",          label: "Card"          },
+];
+function RecordPaymentModal({ contract, onClose }: { contract: any; onClose: () => void }) {
+  const qc = useQueryClient();
+  const products: any[] = contract.contractProducts ?? [];
+  const arProducts = products.filter((p: any) => p.arAmount > 0);
+  const apProducts = products.filter((p: any) => p.apAmount > 0);
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [paymentType,   setPaymentType]   = useState("trust_receipt");
+  const [paymentDate,   setPaymentDate]   = useState(today);
+  const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
+  const [bankReference, setBankReference] = useState("");
+  const [notes,         setNotes]         = useState("");
+  const [cpId,          setCpId]          = useState(arProducts[0]?.id ?? products[0]?.id ?? "");
+  const [amount,        setAmount]        = useState("");
+
+  const isAR = ["trust_receipt", "service_fee_camp"].includes(paymentType);
+  const pool  = isAR ? arProducts : apProducts;
+
+  useEffect(() => {
+    const p = isAR ? arProducts : apProducts;
+    if (p.length > 0) setCpId(p[0].id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentType]);
+
+  useEffect(() => {
+    const cp = products.find((p: any) => p.id === cpId);
+    if (!cp) return;
+    const val = isAR ? cp.arAmount : cp.apAmount;
+    if (val) setAmount(String(val));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cpId, isAR]);
+
+  const mut = useMutation({
+    mutationFn: () => axios.post(`${BASE}/api/accounting/payments`, {
+      paymentDate, paymentMethod, paymentType,
+      bankReference: bankReference || null,
+      notes: notes || null,
+      receivedFromName: isAR ? (contract.studentAccount?.name ?? contract.account?.name ?? null) : null,
+      receivedFromId:   isAR ? (contract.studentAccount?.id   ?? contract.account?.id   ?? null) : null,
+      lines: [{ contractProductId: cpId, amount: parseFloat(amount) || 0, contractId: contract.id }],
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] });
+      qc.invalidateQueries({ queryKey: ["contract-payments", contract.id] });
+      onClose();
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
+          <h2 className="text-base font-semibold text-[#1C1917]">Record Payment</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F4F3F1] text-[#A8A29E]"><X size={16} /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Payment Type</label>
+            <select value={paymentType} onChange={e => setPaymentType(e.target.value)}
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[#F5821F]">
+              {PAYMENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Date</label>
+              <input type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)}
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Method</label>
+              <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[#F5821F]">
+                {PAYMENT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">{isAR ? "AR Installment" : "AP Line"}</label>
+            <select value={cpId} onChange={e => setCpId(e.target.value)}
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[#F5821F]">
+              {pool.length === 0 && <option value="">No products for this type</option>}
+              {pool.map((cp: any) => (
+                <option key={cp.id} value={cp.id}>
+                  {cp.name} — {isAR ? fmtMoney(cp.arAmount) : fmtMoney(cp.apAmount)} ({isAR ? cp.arStatus : cp.apStatus})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Amount (AUD)</label>
+            <input type="number" min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]" placeholder="0.00" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Bank Reference / Receipt No.</label>
+            <input type="text" value={bankReference} onChange={e => setBankReference(e.target.value)}
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]" placeholder="Optional" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Notes</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#F5821F] resize-none" placeholder="Optional" />
+          </div>
+          {mut.isError && <p className="text-xs text-red-600">저장 실패. 다시 시도해 주세요.</p>}
+        </div>
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E8E6E2]">
+          <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
+          <button onClick={() => mut.mutate()} disabled={!cpId || !amount || mut.isPending}
+            className="h-9 px-5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+            style={{ background: "#F5821F" }}>
+            {mut.isPending ? "Saving…" : "Record Payment"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Generate Invoice Modal ────────────────────────────────────────────────────
+function GenerateInvoiceModal({ contract, onClose }: { contract: any; onClose: () => void }) {
+  const qc = useQueryClient();
+  const products: any[] = contract.contractProducts ?? [];
+
+  const [cpId,          setCpId]          = useState(products[0]?.id ?? "");
+  const [invoiceType,   setInvoiceType]   = useState<"net"|"gross">("net");
+  const [schoolSearch,  setSchoolSearch]  = useState("");
+  const [schoolId,      setSchoolId]      = useState("");
+  const [schoolName,    setSchoolName]    = useState("");
+  const [commissionAmt, setCommissionAmt] = useState("");
+  const [isGstFree,     setIsGstFree]     = useState(false);
+  const [dueDate,       setDueDate]       = useState("");
+
+  const { data: schoolResults = [] } = useQuery<any[]>({
+    queryKey: ["school-acct-search", schoolSearch],
+    queryFn: () => axios.get(`${BASE}/api/accounting/payments-lookup/accounts?search=${encodeURIComponent(schoolSearch)}`).then(r => r.data),
+    enabled: schoolSearch.length >= 2,
+  });
+
+  useEffect(() => {
+    const cp = products.find((p: any) => p.id === cpId);
+    if (!cp) return;
+    if (cp.commissionAmount) setCommissionAmt(String(cp.commissionAmount));
+    else if (cp.apAmount)    setCommissionAmt(String(cp.apAmount));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cpId]);
+
+  const mut = useMutation({
+    mutationFn: () => axios.post(`${BASE}/api/tax-invoices`, {
+      contractProductId: cpId,
+      schoolAccountId:   schoolId,
+      invoiceType,
+      commissionAmount:  parseFloat(commissionAmt) || 0,
+      isGstFree,
+      dueDate: dueDate || undefined,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tax-invoices-contract", contract.id] });
+      onClose();
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
+          <h2 className="text-base font-semibold text-[#1C1917]">Generate Tax Invoice</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F4F3F1] text-[#A8A29E]"><X size={16} /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Contract Product / Installment</label>
+            <select value={cpId} onChange={e => setCpId(e.target.value)}
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[#F5821F]">
+              {products.length === 0 && <option value="">No products</option>}
+              {products.map((cp: any) => (
+                <option key={cp.id} value={cp.id}>{cp.name} — AP {fmtMoney(cp.apAmount)}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Invoice Type</label>
+            <div className="flex gap-3">
+              {(["net","gross"] as const).map(t => (
+                <button key={t} onClick={() => setInvoiceType(t)}
+                  className="flex-1 h-9 rounded-lg border text-sm font-medium transition-colors"
+                  style={invoiceType === t ? { background:"#FEF0E3", borderColor:"#F5821F", color:"#F5821F" } : { borderColor:"#E8E6E2", color:"#57534E" }}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="relative">
+            <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">School / Agent Account</label>
+            {schoolId ? (
+              <div className="flex items-center gap-2 h-9 border border-[#F5821F] rounded-lg px-3 bg-[#FEF0E3]">
+                <span className="text-sm text-[#F5821F] font-medium flex-1">{schoolName}</span>
+                <button onClick={() => { setSchoolId(""); setSchoolName(""); setSchoolSearch(""); }} className="text-[#A8A29E] hover:text-[#F5821F]"><X size={13} /></button>
+              </div>
+            ) : (
+              <>
+                <input type="text" value={schoolSearch} onChange={e => setSchoolSearch(e.target.value)}
+                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]"
+                  placeholder="Search by account name (min 2 chars)…" />
+                {(schoolResults as any[]).length > 0 && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-[#E8E6E2] rounded-xl mt-1 shadow-lg z-10 max-h-40 overflow-y-auto">
+                    {(schoolResults as any[]).map((a: any) => (
+                      <button key={a.id} onClick={() => { setSchoolId(a.id); setSchoolName(a.name); setSchoolSearch(""); }}
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#FEF0E3] text-[#1C1917]">
+                        <span className="font-medium">{a.name}</span>
+                        <span className="text-[11px] text-[#A8A29E] ml-2">{a.accountType}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Commission Amount (AUD)</label>
+              <input type="number" min="0" step="0.01" value={commissionAmt} onChange={e => setCommissionAmt(e.target.value)}
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]" placeholder="0.00" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Due Date</label>
+              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]" />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" checked={isGstFree} onChange={e => setIsGstFree(e.target.checked)} className="w-4 h-4 accent-[#F5821F]" />
+            <span className="text-sm text-[#57534E]">GST Free</span>
+          </label>
+          {mut.isError && <p className="text-xs text-red-600">생성 실패. 다시 시도해 주세요.</p>}
+        </div>
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E8E6E2]">
+          <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
+          <button onClick={() => mut.mutate()} disabled={!cpId || !schoolId || !commissionAmt || mut.isPending}
+            className="h-9 px-5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+            style={{ background: "#F5821F" }}>
+            {mut.isPending ? "Generating…" : "Generate Invoice"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1653,18 +1951,160 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
 }
 
 // ── Documents Tab ──────────────────────────────────────────────────────────
-function DocumentsTab() {
+const DOC_CATS = [
+  { value: "CONTRACT_DOC",  label: "Contract Document" },
+  { value: "QUOTATION",     label: "Quotation"         },
+  { value: "CORRESPONDENCE",label: "Email / Memo"      },
+  { value: "FINANCIAL",     label: "Financial"         },
+  { value: "PASSPORT",      label: "Passport"          },
+  { value: "VISA_DOC",      label: "Visa Document"     },
+  { value: "COE",           label: "COE"               },
+  { value: "OFFER_LETTER",  label: "Offer Letter"      },
+  { value: "OTHER",         label: "Other"             },
+];
+function DocumentsTab({ contractId }: { contractId: string }) {
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [category, setCategory]  = useState("CONTRACT_DOC");
+  const [docName,  setDocName]   = useState("");
+  const [showForm, setShowForm]  = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
+
+  const { data: docsData, isLoading } = useQuery<any>({
+    queryKey: ["contract-docs", contractId],
+    queryFn: () =>
+      axios.get(`${BASE}/api/documents/by-entity?entityType=contract&entityId=${contractId}`)
+        .then(r => r.data),
+    enabled: !!contractId,
+  });
+  const docs: any[] = docsData?.documents ?? docsData ?? [];
+
+  const handleUpload = async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadErr("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("referenceType", "contract");
+      fd.append("referenceId", contractId);
+      fd.append("documentCategory", category);
+      fd.append("documentName", docName || file.name);
+      fd.append("status", "active");
+      await axios.post(`${BASE}/api/documents`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      qc.invalidateQueries({ queryKey: ["contract-docs", contractId] });
+      setShowForm(false);
+      setDocName("");
+      if (fileRef.current) fileRef.current.value = "";
+    } catch {
+      setUploadErr("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const EXT_BADGE: Record<string, string> = {
+    pdf: "bg-[#FEF2F2] text-[#DC2626]",
+    doc: "bg-[#EFF6FF] text-[#1D4ED8]", docx: "bg-[#EFF6FF] text-[#1D4ED8]",
+    xls: "bg-[#F0FDF4] text-[#16A34A]", xlsx: "bg-[#F0FDF4] text-[#16A34A]",
+    jpg: "bg-[#FEF0E3] text-[#F5821F]", jpeg: "bg-[#FEF0E3] text-[#F5821F]", png: "bg-[#FEF0E3] text-[#F5821F]",
+  };
+
   return (
-    <div className="bg-white border border-[#E8E6E2] rounded-xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-[#1C1917]">Documents (0)</h3>
-        <button disabled className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs text-[#A8A29E] flex items-center gap-1.5 cursor-not-allowed">
-          <UploadCloud size={13} /> Upload
-        </button>
-      </div>
-      <div className="text-center py-10 text-[#A8A29E]">
-        <FileText size={28} className="mx-auto mb-2 opacity-40" />
-        <p className="text-sm">No documents uploaded yet</p>
+    <div className="space-y-4">
+      <div className="bg-white border border-[#E8E6E2] rounded-xl">
+        <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[#1C1917]">Documents ({isLoading ? "…" : docs.length})</h3>
+          <button onClick={() => setShowForm(v => !v)}
+            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+            style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
+            <UploadCloud size={13} /> Upload
+          </button>
+        </div>
+
+        {/* Upload form */}
+        {showForm && (
+          <div className="p-5 border-b border-[#E8E6E2] bg-[#FAFAF9] space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Category</label>
+                <select value={category} onChange={e => setCategory(e.target.value)}
+                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[#F5821F]">
+                  {DOC_CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Document Name (optional)</label>
+                <input type="text" value={docName} onChange={e => setDocName(e.target.value)}
+                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]"
+                  placeholder="Leave blank to use filename" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">File</label>
+              <input ref={fileRef} type="file"
+                className="block w-full text-sm text-[#57534E] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[#E8E6E2] file:text-xs file:font-medium file:bg-white file:text-[#57534E] hover:file:bg-[#FEF0E3] cursor-pointer" />
+            </div>
+            {uploadErr && <p className="text-xs text-red-600">{uploadErr}</p>}
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowForm(false)} className="h-8 px-4 rounded-lg border border-[#E8E6E2] text-xs text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
+              <button onClick={handleUpload} disabled={uploading}
+                className="h-8 px-4 rounded-lg text-xs font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+                style={{ background:"#F5821F" }}>
+                {uploading ? "Uploading…" : "Upload"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Document list */}
+        {isLoading ? (
+          <div className="text-center py-10 text-[#A8A29E] text-sm">Loading…</div>
+        ) : docs.length === 0 ? (
+          <div className="text-center py-10 text-[#A8A29E]">
+            <FileText size={28} className="mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No documents uploaded yet</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
+                  {["Name","Category","Type","Size","Uploaded","Download"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {docs.map((doc: any) => (
+                  <tr key={doc.id} className="border-b border-[#E8E6E2] hover:bg-[#FAFAF9]">
+                    <td className="px-4 py-3 text-[13px] text-[#1C1917] max-w-[180px] truncate font-medium">{doc.documentName ?? doc.originalFilename ?? "—"}</td>
+                    <td className="px-4 py-3 text-[12px] text-[#57534E]">{doc.documentCategory ?? doc.categoryNameEn ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${EXT_BADGE[doc.fileExtension] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
+                        {doc.fileExtension ?? "—"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-[12px] text-[#A8A29E]">
+                      {doc.fileSizeBytes ? `${(doc.fileSizeBytes / 1024).toFixed(0)} KB` : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(doc.createdAt)}</td>
+                    <td className="px-4 py-3">
+                      <a href={`${BASE}/api/documents/${doc.id}/download`} target="_blank" rel="noreferrer"
+                        className="inline-flex items-center gap-1 h-7 px-2 rounded border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors">
+                        <Download size={11} /> Download
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1757,9 +2197,11 @@ export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [editingContract, setEditingContract] = useState(false);
-  const [editingAccount,  setEditingAccount]  = useState(false);
-  const [addingService,   setAddingService]   = useState<string | null>(null);
+  const [editingContract,  setEditingContract]  = useState(false);
+  const [editingAccount,   setEditingAccount]   = useState(false);
+  const [addingService,    setAddingService]    = useState<string | null>(null);
+  const [recordingPayment, setRecordingPayment] = useState(false);
+  const [generatingInvoice,setGeneratingInvoice]= useState(false);
 
   const openAddService = (defaultType?: string) =>
     setAddingService(defaultType ?? "");
@@ -1915,10 +2357,12 @@ export default function ContractDetailPage() {
               <ExternalLink size={13} /> View Quote
             </button>
           )}
-          <button disabled className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#A8A29E] flex items-center gap-1.5 cursor-not-allowed">
+          <button onClick={() => setGeneratingInvoice(true)}
+            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors">
             <FileText size={13} /> Generate Invoice
           </button>
-          <button disabled className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#A8A29E] flex items-center gap-1.5 cursor-not-allowed">
+          <button onClick={() => setRecordingPayment(true)}
+            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors">
             <CreditCard size={13} /> Record Payment
           </button>
         </div>
@@ -2123,11 +2567,11 @@ export default function ContractDetailPage() {
           />
         )}
         {activeTab === "schedule"     && <PaymentScheduleTab contract={contract} />}
-        {activeTab === "invoices"     && <InvoicesTab        contract={contract} />}
+        {activeTab === "invoices"     && <InvoicesTab        contract={contract} onGenerateInvoice={() => setGeneratingInvoice(true)} />}
         {activeTab === "payments"     && <PaymentsTab        contractId={contract.id} />}
-        {activeTab === "transactions" && <TransactionsTab    contract={contract} />}
+        {activeTab === "transactions" && <TransactionsTab    contract={contract} onRecordPayment={() => setRecordingPayment(true)} />}
         {activeTab === "commission"   && <CommissionTab      contract={contract} />}
-        {activeTab === "documents"    && <DocumentsTab />}
+        {activeTab === "documents"    && <DocumentsTab contractId={String(contract.id)} />}
         {activeTab === "activity"     && <ActivityTab contractId={id!} />}
 
       </div>
@@ -2149,6 +2593,18 @@ export default function ContractDetailPage() {
         <EditContractModal
           contract={contract}
           onClose={() => setEditingContract(false)}
+        />
+      )}
+      {recordingPayment && (
+        <RecordPaymentModal
+          contract={contract}
+          onClose={() => setRecordingPayment(false)}
+        />
+      )}
+      {generatingInvoice && (
+        <GenerateInvoiceModal
+          contract={contract}
+          onClose={() => setGeneratingInvoice(false)}
         />
       )}
     </div>
