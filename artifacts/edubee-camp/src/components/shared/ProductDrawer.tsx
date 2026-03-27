@@ -39,13 +39,6 @@ const COUNTRY_FLAGS: Record<string, string> = {
   NZ: "🇳🇿", IE: "🇮🇪", CA: "🇨🇦",
 };
 
-interface LinkedGroup {
-  linkId: string;
-  packageGroupId: string;
-  nameEn: string;
-  countryCode?: string | null;
-}
-
 export interface ProductDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -79,12 +72,6 @@ export default function ProductDrawer({
     queryKey: ["user-detail", rec?.providerAccountId ?? lockedProviderId],
     queryFn: () => axios.get(`${BASE}/api/users/${rec?.providerAccountId ?? lockedProviderId}`).then(r => r.data?.data ?? r.data),
     enabled: open && !!(rec?.providerAccountId ?? lockedProviderId),
-  });
-
-  const { data: linkedGroups = [], isLoading: groupsLoading } = useQuery<LinkedGroup[]>({
-    queryKey: ["product-linked-groups", productId],
-    queryFn: () => axios.get(`${BASE}/api/products/${productId}/linked-groups`).then(r => r.data),
-    enabled: !!productId && open,
   });
 
   useEffect(() => {
@@ -317,29 +304,6 @@ export default function ProductDrawer({
             )}
           </div>
 
-          {/* LINKED PACKAGE GROUPS */}
-          {!isCreate && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider mb-3">Linked Package Groups</p>
-              {groupsLoading ? (
-                <div className="flex gap-2 flex-wrap">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-6 w-32 rounded-full" />)}</div>
-              ) : linkedGroups.length === 0 ? (
-                <p className="text-sm text-muted-foreground">연결된 Package Group 없음</p>
-              ) : (
-                <div className="flex gap-2 flex-wrap">
-                  {linkedGroups.map(g => (
-                    <button
-                      key={g.linkId}
-                      onClick={() => setLocation(`${BASE}/admin/package-groups?highlight=${g.packageGroupId}`)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#D96A0A] border border-[#F5821F33] hover:bg-[#F5821F]/20 transition-colors"
-                    >
-                      {COUNTRY_FLAGS[g.countryCode ?? ""] ?? "🌐"} {g.nameEn}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Footer */}

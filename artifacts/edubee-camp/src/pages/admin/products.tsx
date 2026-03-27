@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -65,36 +64,6 @@ const emptyFilters: ProductSearchFilters = {
   productType: "", productPriority: "", productGrade: "", status: "",
   country: "", location: "",
 };
-
-// ── LinkedGroupsCell ─────────────────────────────────────────────────────────
-function LinkedGroupsCell({ productId }: { productId: string }) {
-  const { data = [], isLoading } = useQuery<{ nameEn: string }[]>({
-    queryKey: ["product-linked-groups", productId],
-    queryFn: () => axios.get(`${BASE}/api/products/${productId}/linked-groups`).then(r => r.data),
-    staleTime: 30_000,
-  });
-
-  if (isLoading) return <span className="text-muted-foreground text-xs">…</span>;
-  if (!data.length) return <span className="text-muted-foreground">—</span>;
-
-  const label = `${data.length} group${data.length !== 1 ? "s" : ""}`;
-  const names = data.map(g => `• ${g.nameEn}`).join("\n");
-
-  return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F33] cursor-default">
-            {label}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="whitespace-pre-line max-w-[200px]">
-          {names}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
 
 // ── ProviderCombobox ─────────────────────────────────────────────────────────
 function ProviderCombobox({

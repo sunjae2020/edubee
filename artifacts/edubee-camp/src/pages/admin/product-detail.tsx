@@ -1,5 +1,5 @@
 import {
-  useState, useEffect, useRef, useCallback,
+  useState, useEffect, useRef,
 } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -289,100 +289,6 @@ function SearchSelect({
   );
 }
 
-// ─── AsyncSearchSelect (server-side, for package groups) ──────────────────────
-function AsyncSearchSelect({
-  selectedIds, onToggle, fetchFn, placeholder,
-}: {
-  selectedIds: string[];
-  onToggle: (id: string, name: string) => void;
-  fetchFn: (q: string) => Promise<SelectOption[]>;
-  placeholder?: string;
-}) {
-  const [q, setQ] = useState("");
-  const [open, setOpen] = useState(false);
-  const [results, setResults] = useState<SelectOption[]>([]);
-  const [loading, setLoading] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const doFetch = useCallback(async (query: string) => {
-    setLoading(true);
-    try {
-      const data = await fetchFn(query);
-      setResults(data);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchFn]);
-
-  useEffect(() => {
-    if (open) {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => doFetch(q), 300);
-    }
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [q, open, doFetch]);
-
-  useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
-
-  return (
-    <div className="relative" ref={containerRef}>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--e-text-3)" }} />
-        {loading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin" style={{ color: "var(--e-text-3)" }} />
-        )}
-        <input
-          value={q}
-          onChange={e => setQ(e.target.value)}
-          onFocus={() => { setOpen(true); if (results.length === 0) doFetch(""); }}
-          placeholder={placeholder ?? "Search…"}
-          style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", color: "var(--e-text-1)" }}
-          className="w-full h-10 pl-9 pr-3 border rounded-lg text-sm
-            focus:outline-none focus:border-[#F5821F]
-            focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]"
-        />
-      </div>
-      {open && (
-        <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg shadow-lg max-h-52 overflow-y-auto"
-          style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}>
-          {loading && results.length === 0 ? (
-            <p className="px-3 py-2.5 text-sm" style={{ color: "var(--e-text-3)" }}>Loading…</p>
-          ) : results.length === 0 ? (
-            <p className="px-3 py-2.5 text-sm" style={{ color: "var(--e-text-3)" }}>No results found</p>
-          ) : (
-            results.map(o => {
-              const isSelected = selectedIds.includes(o.id);
-              return (
-                <button
-                  key={o.id}
-                  type="button"
-                  onMouseDown={() => { onToggle(o.id, o.name); }}
-                  className="w-full text-left px-3 py-2 flex items-center justify-between gap-3 transition-colors hover:opacity-80"
-                  style={{ background: isSelected ? "var(--e-orange-lt)" : undefined }}
-                >
-                  <span className="text-sm truncate" style={{ color: "var(--e-text-1)" }}>{o.name}</span>
-                  <span className="text-xs shrink-0" style={{ color: isSelected ? "var(--e-orange)" : "var(--e-text-3)", fontWeight: isSelected ? 600 : 400 }}>
-                    {isSelected ? "Added ✓" : (o.sub ?? "")}
-                  </span>
-                </button>
-              );
-            })
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Section card ─────────────────────────────────────────────────────────────
 function Section({ title, children, description }: {
   title: string; children: React.ReactNode; description?: string;
@@ -450,8 +356,6 @@ export default function ProductDetail() {
   });
   const [originalForm, setOriginalForm] = useState<Record<string, any>>({});
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
-  const [linkedGroupIds, setLinkedGroupIds] = useState<string[]>([]);
-  const [linkedGroupNames, setLinkedGroupNames] = useState<Record<string, string>>({});
   const [copiedId, setCopiedId] = useState(false);
   const [showPkgLinker, setShowPkgLinker] = useState(false);
   const [pkgLinkSearch, setPkgLinkSearch] = useState("");
@@ -483,12 +387,6 @@ export default function ProductDetail() {
   const { data: rec, isLoading } = useQuery({
     queryKey: ["product-detail", id],
     queryFn: () => api(`/api/products/${id}`).then(r => r.data),
-    enabled: !isNew,
-  });
-
-  const { data: linkedGroupsData = [] } = useQuery({
-    queryKey: ["product-linked-groups", id],
-    queryFn: () => api(`/api/products/${id}/linked-groups`).then(r => r.data),
     enabled: !isNew,
   });
 
@@ -623,16 +521,6 @@ export default function ProductDetail() {
     }
   }, [form["productTypeId"], allProductTypes]);
 
-  useEffect(() => {
-    if (linkedGroupsData.length > 0) {
-      const ids = linkedGroupsData.map((g: any) => g.packageGroupId);
-      const names: Record<string, string> = {};
-      linkedGroupsData.forEach((g: any) => { names[g.packageGroupId] = g.nameEn; });
-      setLinkedGroupIds(ids);
-      setLinkedGroupNames(names);
-    }
-  }, [linkedGroupsData]);
-
   // ── Duration auto-calc ────────────────────────────────────────────────────
   useEffect(() => {
     const from = form.fromDate;
@@ -678,19 +566,7 @@ export default function ProductDetail() {
     },
     onSuccess: async (saved) => {
       const savedId = saved.id ?? id;
-      if (linkedGroupIds.length >= 0 && !isNew) {
-        try {
-          await axios.put(
-            `${BASE}/api/products/${savedId}/linked-groups`,
-            { packageGroupIds: linkedGroupIds },
-            { headers: getAuthHeaders() }
-          );
-        } catch {
-          // non-fatal
-        }
-      }
       qc.invalidateQueries({ queryKey: ["product-detail", id] });
-      qc.invalidateQueries({ queryKey: ["product-linked-groups", id] });
       qc.invalidateQueries({ queryKey: ["products"] });
       setOriginalForm(form);
       toast({
@@ -747,14 +623,6 @@ export default function ProductDetail() {
     setForm(f => ({ ...f, productTypeId: "" }));
   };
 
-  const handleLinkedGroupToggle = (id: string, name: string) => {
-    setLinkedGroupIds(prev => {
-      if (prev.includes(id)) return prev.filter(x => x !== id);
-      setLinkedGroupNames(n => ({ ...n, [id]: name }));
-      return [...prev, id];
-    });
-  };
-
   const copyId = () => {
     if (rec?.id) {
       navigator.clipboard.writeText(rec.id);
@@ -762,11 +630,6 @@ export default function ProductDetail() {
       setTimeout(() => setCopiedId(false), 2000);
     }
   };
-
-  const fetchPackageGroups = useCallback(async (q: string): Promise<SelectOption[]> => {
-    const r = await api(`/api/products-lookup/package-groups${q ? `?search=${encodeURIComponent(q)}` : ""}`);
-    return r.data.map((g: any) => ({ id: g.id, name: g.name ?? "", sub: g.countryCode }));
-  }, []);
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (!isNew && isLoading) {
@@ -1224,63 +1087,6 @@ export default function ProductDetail() {
                   onChange={sf("displayOnInvoice")}
                   label="Display on Invoice"
                   helperText="Show this product line on the Invoice PDF"
-                />
-              </div>
-            </Section>
-
-            {/* [8] LINKED PACKAGE GROUPS */}
-            <Section title="Linked Package Groups">
-              <div className="space-y-3">
-                <p className="text-xs text-[#57534E]">
-                  This product can belong to multiple package groups. It will appear as an included item or optional add-on within those groups.
-                </p>
-                {linkedGroupIds.length > 0 ? (
-                  <div className="flex flex-col gap-2">
-                    {linkedGroupIds.map(gid => {
-                      const name = linkedGroupNames[gid] ?? gid;
-                      const linkData = linkedGroupsData.find((lg: any) => lg.packageGroupId === gid);
-                      return (
-                        <div
-                          key={gid}
-                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg"
-                          style={{ background: "var(--e-orange-lt)", border: "1px solid rgba(245,130,31,0.2)" }}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Package className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--e-orange)" }} />
-                            <span className="text-sm font-medium truncate" style={{ color: "var(--e-text-1)" }}>{name}</span>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {linkData?.packageGroupId && (
-                              <button
-                                type="button"
-                                onClick={() => navigate(`${BASE}/admin/package-groups/${linkData.packageGroupId}`)}
-                                className="w-6 h-6 flex items-center justify-center rounded text-[#A8A29E] hover:text-[#F5821F] transition-colors"
-                                title="Open package group"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => setLinkedGroupIds(prev => prev.filter(x => x !== gid))}
-                              className="w-6 h-6 flex items-center justify-center rounded text-[#A8A29E] hover:text-[#DC2626] transition-colors"
-                              title="Remove link"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-xs text-[#A8A29E] py-1">No package groups linked. Search to add.</p>
-                )}
-                <AsyncSearchSelect
-                  selectedIds={linkedGroupIds}
-                  onToggle={handleLinkedGroupToggle}
-                  fetchFn={fetchPackageGroups}
-                  placeholder="Search package groups to link…"
                 />
               </div>
             </Section>
