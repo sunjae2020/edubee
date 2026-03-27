@@ -6,7 +6,6 @@ import axios from "axios";
 import {
   ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Activity,
   ExternalLink, Building2, Search, X, Check, Save, RotateCcw, Loader2, UserPlus,
-  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -531,11 +530,7 @@ export default function LeadDetailPage() {
     onSuccess: (data) => {
       setShowConvertConfirm(false);
       qc.invalidateQueries({ queryKey: ["lead", id] });
-      if (data.alreadyExists) {
-        toast({ title: `Quote already exists: ${data.quoteRefNumber}` });
-      } else {
-        toast({ title: `Quote created: ${data.quoteRefNumber}` });
-      }
+      toast({ title: `Quote created: ${data.quoteRefNumber}` });
       navigate(data.redirectTo ?? "/admin/crm/quotes");
     },
     onError: () => {
@@ -603,19 +598,11 @@ export default function LeadDetailPage() {
               </Button>
             </>
           )}
-          {lead.quote ? (
-            <Button onClick={() => navigate(`/admin/crm/quotes/${lead.quote!.id}`)}
-              className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
-              <ExternalLink size={14} />
-              View Quote
-            </Button>
-          ) : (
-            <Button onClick={() => setShowConvertConfirm(true)} disabled={convertMutation.isPending}
-              className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
-              <FileText size={14} />
-              Convert to Quote
-            </Button>
-          )}
+          <Button onClick={() => setShowConvertConfirm(true)} disabled={convertMutation.isPending}
+            className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
+            <FileText size={14} />
+            Convert to Quote
+          </Button>
         </div>
       </div>
 
@@ -678,26 +665,29 @@ export default function LeadDetailPage() {
       {tab === "details" && (
         <div className="space-y-5">
 
-          {/* Linked Quote */}
-          {lead.quote && (
-            <div className="bg-[#FEF0E3] border border-[#F5821F]/20 rounded-xl p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-white shrink-0">
-                  <FileText size={16} className="text-[#F5821F]" />
-                </div>
-                <div>
-                  <p className="text-xs text-[#A8603A] font-medium uppercase tracking-wide">Linked Quote</p>
-                  <p className="text-sm font-semibold text-[#1C1917]">{lead.quote.quoteRefNumber}</p>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-white text-[#57534E] border border-[#E8E6E2]">
-                  {lead.quote.quoteStatus}
-                </span>
+          {/* Linked Quotes */}
+          {lead.quotes && lead.quotes.length > 0 && (
+            <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
+              <SectionTitle>Quotes ({lead.quotes.length})</SectionTitle>
+              <div className="space-y-2 mt-2">
+                {lead.quotes.map((q: { id: string; quoteRefNumber: string; quoteStatus: string; createdOn: string }) => (
+                  <div key={q.id}
+                    className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-[#F4F3F1] hover:bg-[#FEF0E3] transition-colors">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <FileText size={14} className="text-[#F5821F] shrink-0" />
+                      <span className="font-mono text-sm text-[#1C1917] font-medium">{q.quoteRefNumber}</span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F4F3F1] text-[#57534E]">
+                        {q.quoteStatus}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/admin/crm/quotes/${q.id}`)}
+                      className="flex items-center gap-1 text-xs font-medium text-[#F5821F] hover:underline shrink-0">
+                      <ExternalLink size={12} /> View
+                    </button>
+                  </div>
+                ))}
               </div>
-              <button
-                onClick={() => navigate(`/admin/crm/quotes/${lead.quote!.id}`)}
-                className="flex items-center gap-1.5 text-sm font-medium text-[#F5821F] hover:underline shrink-0">
-                <ExternalLink size={14} /> View Quote
-              </button>
             </div>
           )}
 

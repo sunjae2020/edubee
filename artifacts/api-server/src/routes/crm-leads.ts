@@ -149,12 +149,14 @@ router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
       assignedStaffName = (staffResult.rows?.[0] as any)?.full_name ?? null;
     }
 
-    // Fetch linked quote (if any)
-    const [linkedQuote] = await db.select({
+    // Fetch all quotes linked to this lead
+    const linkedQuotes = await db.select({
       id:             quotes.id,
       quoteRefNumber: quotes.quoteRefNumber,
       quoteStatus:    quotes.quoteStatus,
-    }).from(quotes).where(eq(quotes.leadId, req.params.id)).limit(1);
+      createdOn:      quotes.createdOn,
+    }).from(quotes).where(eq(quotes.leadId, req.params.id))
+      .orderBy(desc(quotes.createdOn));
 
     return res.json({
       ...lead,
@@ -162,7 +164,7 @@ router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
       assignedStaffName,
       activities,
       campApplication,
-      quote: linkedQuote ?? null,
+      quotes: linkedQuotes,
     });
   } catch (err) {
     console.error("[GET /api/crm/leads/:id]", err);
@@ -307,23 +309,6 @@ router.post("/crm/leads/:id/convert-to-quote", authenticate, requireRole(...ADMI
   try {
     const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id));
     if (!lead) return res.status(404).json({ error: "Lead not found" });
-
-    // Check if a quote already exists for this lead
-    const [existing] = await db.select({
-      id:             quotes.id,
-      quoteRefNumber: quotes.quoteRefNumber,
-      quoteStatus:    quotes.quoteStatus,
-    }).from(quotes).where(eq(quotes.leadId, req.params.id)).limit(1);
-
-    if (existing) {
-      return res.status(200).json({
-        quoteId:        existing.id,
-        quoteRefNumber: existing.quoteRefNumber,
-        quoteStatus:    existing.quoteStatus,
-        redirectTo:     `/admin/crm/quotes/${existing.id}`,
-        alreadyExists:  true,
-      });
-    }
 
     const user = (req as any).user;
     const quoteRefNumber = genQuoteRef();
