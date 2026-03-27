@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { buildFullName } from "@/lib/nameUtils";
-import { Plus, Search, Building2, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { TableFooter } from "@/components/ui/table-footer";
 
@@ -89,9 +88,6 @@ function StatusBadge({ status }: { status: string }) {
 export default function AccountsPage() {
   const [, navigate] = useLocation();
   const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
-  const { toast } = useToast();
-  const qc = useQueryClient();
-
   const [search, setSearch]             = useState("");
   const [filterType, setFilterType]     = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -112,16 +108,7 @@ export default function AccountsPage() {
   const sorted = useSorted(rows, sortBy, sortDir);
   const total: number   = data?.total ?? 0;
 
-  const deleteMut = useMutation({
-    mutationFn: (id: string) => axios.delete(`${BASE}/api/crm/accounts/${id}`),
-    onSuccess: () => {
-      toast({ title: "Account deactivated" });
-      qc.invalidateQueries({ queryKey: ["crm-accounts"] });
-    },
-    onError: () => toast({ title: "Failed to deactivate", variant: "destructive" }),
-  });
-
-  const COLS = 6;
+  const COLS = 7;
 
   return (
     <div className="space-y-4">
@@ -181,25 +168,23 @@ export default function AccountsPage() {
               <SortableTh col="accountType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</SortableTh>
               <SortableTh col="accountCategory" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Category</SortableTh>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Original Name</th>
-              <SortableTh col="phoneNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Phone</SortableTh>
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
               <SortableTh col="createdOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Created</SortableTh>
               <SortableTh col="modifiedOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Modified</SortableTh>
-              <th className="px-4 py-2.5 w-20" />
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               [...Array(6)].map((_, i) => (
                 <tr key={i} className="border-b">
-                  {[...Array(COLS + 3)].map((_, j) => (
+                  {[...Array(COLS)].map((_, j) => (
                     <td key={j} className="px-4 py-3"><Skeleton className="h-4" /></td>
                   ))}
                 </tr>
               ))
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={COLS + 3} className="px-4 py-16 text-center">
+                <td colSpan={COLS} className="px-4 py-16 text-center">
                   <Building2 className="w-8 h-8 mx-auto mb-3 text-muted-foreground/30" />
                   <p className="text-sm text-muted-foreground font-medium">No accounts found</p>
                   <Button size="sm" className="mt-3 bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5"
@@ -223,24 +208,9 @@ export default function AccountsPage() {
                     <td className="px-4 py-3"><TypeBadge type={row.accountType} /></td>
                     <td className="px-4 py-3 text-sm text-[#57534E]">{row.accountCategory ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="px-4 py-3 text-sm text-[#57534E]">{originalName}</td>
-                    <td className="px-4 py-3 text-sm text-[#57534E]">{row.phoneNumber ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
                     <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDate(row.createdOn)}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDate(row.modifiedOn)}</td>
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      <div className="flex items-center gap-1">
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0"
-                          onClick={() => navigate(`/admin/crm/accounts/${row.id}`)}>
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        {row.status === "Active" && (
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400 hover:text-red-600"
-                            onClick={() => { if (confirm(`Deactivate "${row.name}"?`)) deleteMut.mutate(row.id); }}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
                   </tr>
                 );
               })
