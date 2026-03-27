@@ -414,13 +414,49 @@ export default function ProductDetail() {
   });
   const pkgRepResults: any[] = Array.isArray((pkgRepSearchRaw as any)?.data) ? (pkgRepSearchRaw as any).data : [];
 
-  // ── Lookup linked package name from campPackageId ──────────────────────────
+  // ── Lookup linked package data from campPackageId ─────────────────────────
   const { data: linkedPkgRep } = useQuery({
     queryKey: ["pkg-rep-lookup", form["campPackageId"]],
     queryFn: () => api(`/api/packages/${form["campPackageId"]}`).then(r => r.data),
-    enabled: !!(form["campPackageId"]) && !isNew,
+    enabled: !!(form["campPackageId"]),
     staleTime: 30000,
   });
+
+  // ── Currency mapping by country code ──────────────────────────────────────
+  const COUNTRY_CURRENCY: Record<string, string> = {
+    AU: "AUD", US: "USD", KR: "KRW", JP: "JPY",
+    TH: "THB", PH: "PHP", SG: "SGD", GB: "GBP",
+  };
+  const CURRENCY_PRICE_FIELD: Record<string, string> = {
+    AUD: "priceAud", USD: "priceUsd", KRW: "priceKrw", JPY: "priceJpy",
+    THB: "priceThb", PHP: "pricePhp", SGD: "priceSgd", GBP: "priceGbp",
+  };
+
+  const handlePushFromPackage = () => {
+    const pkg = linkedPkgRep as any;
+    if (!pkg) return;
+    const currency = COUNTRY_CURRENCY[pkg.groupCountryCode ?? ""] ?? "AUD";
+    const priceField = CURRENCY_PRICE_FIELD[currency] ?? "priceAud";
+    const rawPrice = pkg[priceField];
+    const groupName = pkg.groupNameEn ?? "";
+    const pkgName   = pkg.name ?? "";
+    const newName   = groupName && pkgName ? `${groupName}-${pkgName}` : form["productName"] ?? "";
+    setForm(f => ({
+      ...f,
+      productName:        newName,
+      price:              rawPrice != null ? String(rawPrice) : f.price,
+      currency,
+      productPriority:    3,
+      defaultPaymentTerm: "Multiple Times",
+      numberOfPayments:   2,
+      minimumPayment:     "1000",
+      country:            pkg.groupCountryCode ?? f.country,
+      location:           pkg.groupLocation   ?? f.location,
+      unit:               "per package",
+    }));
+    if (pkg.groupProductGroupId) setSelectedGroupId(pkg.groupProductGroupId);
+    toast({ title: "패키지 정보 적용 완료", description: "패키지 데이터로 상품 정보가 업데이트됐습니다." });
+  };
 
   const { data: productGroups = [], isLoading: groupsLoading } = useQuery({
     queryKey: ["lookup-product-groups"],
@@ -836,15 +872,28 @@ export default function ProductDetail() {
                     <div className="relative">
                       <FL>Represents Package</FL>
                       {g("campPackageId") ? (
-                        <div className="flex items-center gap-2 px-3 py-2 border border-[#E7E5E4] rounded-md bg-[#FEF0E3]">
-                          <span className="flex-1 text-sm text-[#1C1917] truncate">
-                            {(linkedPkgRep as any)?.packageName ?? (linkedPkgRep as any)?.name ?? g("campPackageId")}
-                          </span>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 px-3 py-2 border border-[#E7E5E4] rounded-md bg-[#FEF0E3]">
+                            <span className="flex-1 text-sm text-[#1C1917] truncate">
+                              {(linkedPkgRep as any)?.name ?? g("campPackageId")}
+                              {(linkedPkgRep as any)?.groupNameEn && (
+                                <span className="ml-1.5 text-xs text-[#A8A29E]">({(linkedPkgRep as any).groupNameEn})</span>
+                              )}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => { sf("campPackageId")(null); setPkgRepSearch(""); setShowPkgRepDropdown(false); }}
+                              className="text-[#A8A29E] hover:text-[#F97316] text-xs font-bold flex-shrink-0"
+                            >✕</button>
+                          </div>
                           <button
                             type="button"
-                            onClick={() => { sf("campPackageId")(null); setPkgRepSearch(""); setShowPkgRepDropdown(false); }}
-                            className="text-[#A8A29E] hover:text-[#F97316] text-xs font-bold flex-shrink-0"
-                          >✕</button>
+                            onClick={handlePushFromPackage}
+                            disabled={!linkedPkgRep}
+                            className="w-full h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 border border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            ↓ 패키지 정보 자동 입력 (Push)
+                          </button>
                         </div>
                       ) : (
                         <div className="relative">
@@ -1247,7 +1296,7 @@ export default function ProductDetail() {
                     onChange={sf("unit")}
                     options={[
                       { value: NONE, label: "— No unit —" },
-                      ...["per person","per night","per day","per session","per trip","per group","per week","per transfer","per meal","per semester","per annual","per course","flat fee"]
+                      ...["per package","per person","per night","per day","per session","per trip","per group","per week","per transfer","per meal","per semester","per annual","per course","flat fee"]
                         .map(u => ({ value: u, label: u }))
                     ]}
                   />

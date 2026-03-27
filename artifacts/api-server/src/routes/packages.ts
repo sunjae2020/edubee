@@ -380,6 +380,8 @@ router.get("/packages/:id", authenticate, async (req, res) => {
         groupCountryCode: packageGroups.countryCode,
         groupStatus: packageGroups.status,
         groupCampProviderId: packageGroups.campProviderId,
+        groupTypeId: packageGroups.typeId,
+        groupProductGroupId: productTypes.productGroupId,
         durationDays: packages.durationDays,
         status: packages.status,
         coordinatorName: users.fullName,
@@ -387,6 +389,7 @@ router.get("/packages/:id", authenticate, async (req, res) => {
       })
       .from(packages)
       .leftJoin(packageGroups, eq(packages.packageGroupId, packageGroups.id))
+      .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
       .leftJoin(users, eq(packageGroups.campProviderId, users.id))
       .where(eq(packages.id, req.params.id))
       .limit(1);
