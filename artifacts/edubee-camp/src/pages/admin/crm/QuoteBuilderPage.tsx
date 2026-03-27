@@ -480,6 +480,7 @@ function AccountLookupField({
 // ─── Product Search Panel ─────────────────────────────────────────────────────
 
 function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
+  const [open, setOpen] = useState(true);
   // Filter state (draft — applied on button click)
   const [search,       setSearch]       = useState("");
   const [productGroup, setProductGroup] = useState("");
@@ -563,12 +564,21 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-      {/* Header — always visible, no toggle */}
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-        <Plus size={15} style={{ color: PRIMARY }} />
-        <span className="text-sm font-medium text-gray-700">Add Products from Catalog</span>
-      </div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700"
+      >
+        <span className="flex items-center gap-2">
+          <Plus size={15} style={{ color: PRIMARY }} />
+          Add Products from Catalog
+        </span>
+        <ChevronDown
+          size={15}
+          className={`transition-transform text-gray-400 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
 
+      {open && (
       <div className="p-4 space-y-4">
         {/* Advanced Search Filters */}
         <div className="space-y-3">
@@ -757,6 +767,7 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
