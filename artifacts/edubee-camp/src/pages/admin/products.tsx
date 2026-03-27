@@ -1,4 +1,4 @@
-import { useState, Fragment } from "react";
+import { useState, useRef, useEffect, Fragment } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ListPagination } from "@/components/ui/list-pagination";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Package, Pencil, Trash2, RefreshCw, Plus } from "lucide-react";
+import { Package, Pencil, Trash2, RefreshCw, Plus, Search, X, Building2 } from "lucide-react";
 import ProductDrawer from "@/components/shared/ProductDrawer";
 import ProductAdvancedSearch, { type ProductSearchFilters } from "@/components/shared/ProductAdvancedSearch";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
@@ -34,9 +34,14 @@ interface Product {
   status?: string | null;
   providerId?: string | null;
   providerName?: string | null;
+  country?: string | null;
+  city?: string | null;
+  location?: string | null;
   convertedCost?: Record<string, number | null>;
   createdAt?: string;
 }
+
+interface AccountOption { id: string; name: string }
 
 const PRODUCT_TYPES = ["institute", "hotel", "pickup", "tour", "settlement", "program"];
 const DISPLAY_CURRENCIES = ["AUD", "KRW", "JPY", "THB", "USD", "SGD", "GBP", "EUR", "PHP"];
@@ -45,15 +50,13 @@ const CCY_FLAGS: Record<string, string> = {
   USD: "🇺🇸", SGD: "🇸🇬", GBP: "🇬🇧", EUR: "🇪🇺", PHP: "🇵🇭",
 };
 const STATUSES = ["active", "inactive", "archived"];
-const STATUS_COLORS: Record<string, string> = {
-  active: "bg-green-100 text-green-700",
-  inactive: "bg-gray-100 text-gray-600",
-  archived: "bg-red-100 text-red-700",
-};
 
 const emptyForm = {
   productName: "", productType: "institute", description: "",
   cost: "", currency: "AUD", status: "active",
+  price: "", productGrade: "", productPriority: "",
+  country: "", city: "", location: "",
+  providerId: "", providerName: "",
 };
 
 const emptyFilters: ProductSearchFilters = {
@@ -92,6 +95,82 @@ function LinkedGroupsCell({ productId }: { productId: string }) {
   );
 }
 
+// ── ProviderCombobox ─────────────────────────────────────────────────────────
+function ProviderCombobox({
+  accounts,
+  value, label,
+  onChange,
+  onCreateNew,
+}: {
+  accounts: AccountOption[];
+  value: string; label: string;
+  onChange: (id: string, name: string) => void;
+  onCreateNew: (name: string) => void;
+}) {
+  const [query, setQuery] = useState(label);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setQuery(label); }, [label]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = query.trim()
+    ? accounts.filter(a => a.name.toLowerCase().includes(query.toLowerCase())).slice(0, 8)
+    : accounts.slice(0, 8);
+
+  const showCreate = query.trim() && !accounts.some(a => a.name.toLowerCase() === query.toLowerCase());
+
+  return (
+    <div ref={ref} className="relative">
+      <div className="relative mt-1">
+        <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true); if (!e.target.value) onChange("", ""); }}
+          onFocus={() => setOpen(true)}
+          className="h-8 text-sm pl-7 pr-7"
+          placeholder="Search or type new provider…"
+        />
+        {value && (
+          <button className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            onClick={() => { onChange("", ""); setQuery(""); }}>
+            <X size={12} />
+          </button>
+        )}
+      </div>
+      {open && (filtered.length > 0 || showCreate) && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {filtered.map(a => (
+            <button key={a.id}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-[#FEF0E3] transition-colors flex items-center gap-2"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => { onChange(a.id, a.name); setQuery(a.name); setOpen(false); }}>
+              <Building2 size={12} className="text-[#F5821F] shrink-0" />
+              {a.name}
+            </button>
+          ))}
+          {showCreate && (
+            <button
+              className="w-full text-left px-3 py-2 text-sm text-[#F5821F] hover:bg-[#FEF0E3] transition-colors flex items-center gap-2 border-t border-[#F4F3F1]"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => { onCreateNew(query.trim()); setOpen(false); }}>
+              <Plus size={12} className="shrink-0" />
+              Create "{query.trim()}" as new Provider
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function Products() {
   const [, setLocation] = useLocation();
@@ -126,22 +205,22 @@ export default function Products() {
     queryFn: () => axios.get(`${BASE}/api/products-lookup/product-types`).then(r => r.data),
     staleTime: 60_000,
   });
-  const { data: accountsLookup = [] } = useQuery<{ id: string; name: string; country?: string | null; city?: string | null; location?: string | null }[]>({
+  const { data: accountsLookup = [], refetch: refetchAccounts } = useQuery<AccountOption[]>({
     queryKey: ["lookup-accounts"],
     queryFn: () => axios.get(`${BASE}/api/products-lookup/accounts`).then(r => r.data),
     staleTime: 120_000,
   });
 
   const countryOpts = Array.from(
-    new Map(accountsLookup.filter(a => a.country).map(a => [a.country!, a.country!]))
+    new Map(accountsLookup.filter((a: any) => a.country).map((a: any) => [a.country!, a.country!]))
   ).sort().map(([v]) => ({ value: v, label: v }));
 
   const locationOpts: { value: string; label: string }[] = Array.from(
     new Set(
       accountsLookup
-        .flatMap(a => (a.location ?? "").split(",").map(s => s.trim()).filter(Boolean))
+        .flatMap((a: any) => ((a.location ?? "") as string).split(",").map((s: string) => s.trim()).filter(Boolean))
     )
-  ).sort().map(v => ({ value: v, label: v }));
+  ).sort().map((v: any) => ({ value: v, label: v }));
 
   // ── Products query ────────────────────────────────────────────────────────
   const queryKey = ["products", { filters, page }];
@@ -183,6 +262,17 @@ export default function Products() {
     onError: () => toast({ variant: "destructive", title: "Failed to create product" }),
   });
 
+  const createAccount = useMutation({
+    mutationFn: (name: string) =>
+      axios.post(`${BASE}/api/crm/accounts`, { name, accountType: "Provider" }).then(r => r.data),
+    onSuccess: (acct) => {
+      refetchAccounts();
+      setForm(f => ({ ...f, providerId: acct.id, providerName: acct.name }));
+      toast({ title: `Provider "${acct.name}" created` });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to create provider" }),
+  });
+
   const deleteProduct = useMutation({
     mutationFn: (id: string) => axios.delete(`${BASE}/api/products/${id}`).then(r => r.data),
     onSuccess: () => {
@@ -204,7 +294,25 @@ export default function Products() {
     return `${p.currency ?? "AUD"} ${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  const COLS = 8;
+  function handleCreate() {
+    createProduct.mutate({
+      productName:     form.productName,
+      productType:     form.productType,
+      description:     form.description || null,
+      cost:            form.cost || null,
+      currency:        form.currency,
+      status:          form.status,
+      price:           form.price || null,
+      productGrade:    form.productGrade || null,
+      productPriority: form.productPriority ? parseInt(form.productPriority) : null,
+      country:         form.country || null,
+      city:            form.city || null,
+      location:        form.location || null,
+      providerId:      form.providerId || null,
+    });
+  }
+
+  const COLS = 11;
 
   return (
     <div className="space-y-4">
@@ -259,10 +367,13 @@ export default function Products() {
               <SortableTh col="providerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provider</SortableTh>
               <SortableTh col="productName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Name</SortableTh>
               <SortableTh col="productType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</SortableTh>
-              <SortableTh col="currency" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Currency</SortableTh>
               <SortableTh col="price" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Price</SortableTh>
               <SortableTh col="productGrade" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Grade</SortableTh>
               <SortableTh col="productPriority" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Priority</SortableTh>
+              <SortableTh col="country" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Country</SortableTh>
+              <SortableTh col="city" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">City</SortableTh>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Location</th>
+              <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
               <th className="px-4 py-2.5 w-20" />
             </tr>
           </thead>
@@ -294,9 +405,6 @@ export default function Products() {
                   <td className="px-4 py-3 text-xs text-[#57534E] capitalize">
                     {p.productType ?? <span className="text-muted-foreground">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm font-mono text-[#57534E]">
-                    {p.currency ?? "—"}
-                  </td>
                   <td className="px-4 py-3 text-sm font-mono font-semibold text-[#1C1917]">
                     {fmtPrice(p)}
                   </td>
@@ -309,6 +417,27 @@ export default function Products() {
                         {p.productPriority}
                       </span>
                     ) : <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[#57534E]">
+                    {p.country ?? <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[#57534E]">
+                    {p.city ?? <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[#57534E] max-w-[160px]">
+                    {p.location
+                      ? <span className="truncate block">{p.location}</span>
+                      : <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {p.status && (
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                        p.status === "active" ? "bg-green-100 text-green-700" :
+                        p.status === "inactive" ? "bg-gray-100 text-gray-600" :
+                        "bg-red-100 text-red-700"}`}>
+                        {p.status}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
@@ -340,18 +469,22 @@ export default function Products() {
         onSaved={() => qc.invalidateQueries({ queryKey: ["products"] })}
       />
 
-      {/* Create Dialog */}
+      {/* ── Create Dialog ── */}
       <Dialog open={showCreateDialog} onOpenChange={o => { if (!o) { setShowCreateDialog(false); setForm(emptyForm); } }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Product</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-1">
+          <div className="space-y-4 mt-1">
+
+            {/* Product Name */}
             <div>
               <Label className="text-xs">Product Name *</Label>
               <Input value={form.productName} onChange={e => setForm(f => ({ ...f, productName: e.target.value }))} className="mt-1 h-8 text-sm" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+            {/* Type + Status */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Type *</Label>
                 <Select value={form.productType} onValueChange={v => setForm(f => ({ ...f, productType: v }))}>
@@ -367,10 +500,31 @@ export default function Products() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+            {/* Provider */}
+            <div>
+              <Label className="text-xs">Provider (Account)</Label>
+              <ProviderCombobox
+                accounts={accountsLookup}
+                value={form.providerId}
+                label={form.providerName}
+                onChange={(id, name) => setForm(f => ({ ...f, providerId: id, providerName: name }))}
+                onCreateNew={name => createAccount.mutate(name)}
+              />
+              {form.providerName && (
+                <p className="text-xs text-[#57534E] mt-1 flex items-center gap-1">
+                  <Building2 size={11} className="text-[#F5821F]" /> {form.providerName}
+                </p>
+              )}
+            </div>
+
+            {/* Cost + Currency + Price */}
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs">Cost</Label>
-                <Input type="number" step="0.01" value={form.cost} onChange={e => setForm(f => ({ ...f, cost: e.target.value }))} className="mt-1 h-8 text-sm font-mono" placeholder="0.00" />
+                <Input type="number" step="0.01" value={form.cost}
+                  onChange={e => setForm(f => ({ ...f, cost: e.target.value }))}
+                  className="mt-1 h-8 text-sm font-mono" placeholder="0.00" />
               </div>
               <div>
                 <Label className="text-xs">Currency</Label>
@@ -381,16 +535,75 @@ export default function Products() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label className="text-xs">Price</Label>
+                <Input type="number" step="0.01" value={form.price}
+                  onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                  className="mt-1 h-8 text-sm font-mono" placeholder="0.00" />
+              </div>
             </div>
+
+            {/* Grade + Priority */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Grade</Label>
+                <Input value={form.productGrade}
+                  onChange={e => setForm(f => ({ ...f, productGrade: e.target.value }))}
+                  className="mt-1 h-8 text-sm" placeholder="e.g. A, B, Premium" />
+              </div>
+              <div>
+                <Label className="text-xs">Priority</Label>
+                <Input type="number" min="1" max="999" value={form.productPriority}
+                  onChange={e => setForm(f => ({ ...f, productPriority: e.target.value }))}
+                  className="mt-1 h-8 text-sm font-mono" placeholder="1" />
+              </div>
+            </div>
+
+            {/* Country + City */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Country</Label>
+                <Input value={form.country}
+                  onChange={e => setForm(f => ({ ...f, country: e.target.value }))}
+                  className="mt-1 h-8 text-sm" placeholder="e.g. Australia" />
+              </div>
+              <div>
+                <Label className="text-xs">City</Label>
+                <Input value={form.city}
+                  onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
+                  className="mt-1 h-8 text-sm" placeholder="e.g. Sydney" />
+              </div>
+            </div>
+
+            {/* Location (multi, comma-separated) */}
+            <div>
+              <Label className="text-xs">Location <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
+              <Input value={form.location}
+                onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+                className="mt-1 h-8 text-sm" placeholder="e.g. City Centre, Airport, Suburb" />
+              {form.location && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {form.location.split(",").map(s => s.trim()).filter(Boolean).map((loc, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-[#F4F3F1] text-[#57534E]">{loc}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
             <div>
               <Label className="text-xs">Description</Label>
-              <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="mt-1 text-sm resize-none h-16" />
+              <Textarea value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                className="mt-1 text-sm resize-none h-16" />
             </div>
+
+            {/* Actions */}
             <div className="flex gap-2 pt-1">
               <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white"
-                onClick={() => createProduct.mutate({ ...form, cost: form.cost || null })}
+                onClick={handleCreate}
                 disabled={createProduct.isPending || !form.productName}>
-                {createProduct.isPending ? "Creating…" : "Create"}
+                {createProduct.isPending ? "Creating…" : "Create Product"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
             </div>

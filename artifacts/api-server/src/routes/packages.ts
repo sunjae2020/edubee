@@ -701,6 +701,9 @@ router.get("/products", authenticate, async (req, res) => {
       campPackageId:     products.campPackageId,
       productTypeId:     products.productTypeId,
       serviceModuleType: products.serviceModuleType,
+      country:           products.country,
+      city:              products.city,
+      location:          products.location,
       createdAt:         products.createdAt,
       updatedAt:         products.updatedAt,
     })

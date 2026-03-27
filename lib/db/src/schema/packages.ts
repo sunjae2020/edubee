@@ -112,6 +112,9 @@ export const products = pgTable("products", {
   taxRateId:          uuid("tax_rate_id"),
   productTypeId:      uuid("product_type_id"),
   modifiedOn:         timestamp("modified_on").defaultNow(),
+  country:            varchar("country", { length: 100 }),
+  city:               varchar("city", { length: 100 }),
+  location:           text("location"),
   // ── Phase 1 Migration: Camp integration fields ─────────────────────────
   // Note: campPackageId references camp_packages.id — plain uuid to avoid circular import
   productContext:     varchar("product_context", { length: 50 }).notNull().default("general"),
