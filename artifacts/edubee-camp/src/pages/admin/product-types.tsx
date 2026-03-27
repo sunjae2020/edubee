@@ -197,7 +197,7 @@ export default function ProductTypes() {
             ) : types.map(t => (
               <tr
                 key={t.id}
-                className="hover:bg-[#FAFAF9] cursor-pointer transition-colors"
+                className="hover:bg-[#FEF0E3] cursor-pointer transition-colors"
                 onClick={() => navigate(`/admin/product-types/${t.id}`)}
               >
                 <td className="px-4 py-3 font-medium text-[#1C1917]">

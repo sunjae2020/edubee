@@ -379,7 +379,7 @@ export default function PaymentScheduleTab() {
                       borderBottom: i < rows.length - 1 ? "1px solid #F4F3F1" : "none",
                       transition: "background 200ms",
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#FAFAF9")}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#FEF0E3")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   >
                     {/* Student / School */}

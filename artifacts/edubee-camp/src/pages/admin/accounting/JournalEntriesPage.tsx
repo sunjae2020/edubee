@@ -385,7 +385,7 @@ export default function JournalEntriesPage() {
               sorted.map(je => {
                 const typeStyle = ENTRY_TYPE_STYLE[je.entryType ?? ""] ?? { bg: "#F4F3F1", text: "#57534E" };
                 return (
-                  <tr key={je.id} className="hover:bg-stone-50 transition-colors">
+                  <tr key={je.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                     {/* Date */}
                     <td className="px-4 py-3 text-stone-700 tabular-nums text-xs whitespace-nowrap">
                       {fmtDate(je.entryDate)}

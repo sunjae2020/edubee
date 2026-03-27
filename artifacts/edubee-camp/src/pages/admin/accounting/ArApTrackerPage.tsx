@@ -473,8 +473,10 @@ export default function ArApTrackerPage() {
                 const badge = AR_BADGE[row.arStatus ?? "scheduled"] ?? AR_BADGE.scheduled;
                 return (
                   <tr key={row.id}
-                    className="transition-colors hover:brightness-95"
-                    style={isOverdue ? { backgroundColor: "#FEF2F2" } : undefined}>
+                    className="transition-colors"
+                    style={isOverdue ? { backgroundColor: "#FEF2F2" } : undefined}
+                    onMouseEnter={e => { if (!isOverdue) e.currentTarget.style.backgroundColor = "#FEF0E3"; }}
+                    onMouseLeave={e => { if (!isOverdue) e.currentTarget.style.backgroundColor = ""; }}>
                     <td className="px-4 py-3 font-mono text-xs text-stone-500">
                       {row.contractNumber ?? "—"}
                     </td>
@@ -534,7 +536,7 @@ export default function ArApTrackerPage() {
               {sortedAp.map(row => {
                 const badge = AP_BADGE[row.apStatus ?? "pending"] ?? AP_BADGE.pending;
                 return (
-                  <tr key={row.id} className="hover:bg-stone-50 transition-colors">
+                  <tr key={row.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-stone-500">
                       {row.contractNumber ?? "—"}
                     </td>

@@ -146,7 +146,7 @@ export default function ProductGroups() {
             ) : groups.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No product groups found</td></tr>
             ) : groups.map(g => (
-              <tr key={g.id} className="hover:bg-[#FAFAF9] transition-colors">
+              <tr key={g.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <button
                     onClick={() => navigate(`/admin/product-groups/${g.id}`)}

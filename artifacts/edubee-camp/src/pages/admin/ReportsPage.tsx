@@ -240,7 +240,7 @@ export default function ReportsPage() {
         {!isLoading && filtered.map(report => (
           <div
             key={report.id}
-            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-4 py-3 items-center border-b border-[#F4F3F1] hover:bg-[#FEF9F5] transition-colors"
+            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-4 py-3 items-center border-b border-[#F4F3F1] hover:bg-[#FEF0E3] transition-colors"
           >
             {/* Student/Program */}
             <div className="min-w-0">

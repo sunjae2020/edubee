@@ -204,7 +204,7 @@ export default function Promotions() {
             ) : promos.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No promotions found</td></tr>
             ) : promos.map(p => (
-              <tr key={p.id} className="hover:bg-[#FAFAF9] transition-colors">
+              <tr key={p.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <div className="flex items-center gap-2">
                     <Percent className="w-4 h-4 text-[#F5821F] shrink-0" strokeWidth={1.5} />

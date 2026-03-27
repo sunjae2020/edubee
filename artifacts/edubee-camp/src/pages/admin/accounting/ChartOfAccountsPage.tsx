@@ -229,7 +229,7 @@ export default function ChartOfAccountsPage() {
               <tr><td colSpan={5} className="text-center py-12 text-stone-400 text-sm">No accounts in this category</td></tr>
             )}
             {sorted.map(row => (
-              <tr key={row.id} className="hover:bg-stone-50 transition-colors">
+              <tr key={row.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                 <td className="px-4 py-3">
                   <span
                     className="inline-block px-2.5 py-0.5 rounded text-xs font-mono font-bold"

@@ -842,7 +842,7 @@ export default function TaxInvoiceListPage() {
               {sorted.map(row => (
                 <tr
                   key={row.id}
-                  className="border-b border-[#F5F4F2] hover:bg-[#FAFAF9] transition-colors cursor-pointer"
+                  className="border-b border-[#F5F4F2] hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                   onClick={() => openDetail(row)}
                 >
                   <td className="px-4 py-3 font-mono text-xs text-[#1C1917] font-semibold whitespace-nowrap">{row.invoiceRef}</td>
