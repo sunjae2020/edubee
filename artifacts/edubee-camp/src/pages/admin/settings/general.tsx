@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Mail, Globe, Phone, Send, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { Settings, Mail, Globe, Phone, Send, Loader2, CheckCircle2, Eye, EyeOff, ExternalLink, Key } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const CURRENCIES = ["AUD", "USD", "SGD", "PHP", "THB", "KRW", "JPY", "GBP"];
@@ -28,17 +28,13 @@ export default function GeneralSettings() {
     activeLanguages: ["en", "ko", "ja", "th"] as string[],
   });
 
-  const [smtp, setSmtp] = useState({
-    host: "",
-    port: "587",
-    user: "",
-    password: "",
+  const [resend, setResend] = useState({
+    apiKey: "",
     from: "",
     fromName: "Edubee Camp",
-    secure: "false",
   });
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
   const [testTarget, setTestTarget] = useState("");
 
   const { data: generalData, isLoading: loadingGeneral } = useQuery({
@@ -46,9 +42,9 @@ export default function GeneralSettings() {
     queryFn: () => axios.get(`${BASE}/api/settings/general`).then(r => r.data),
   });
 
-  const { data: smtpData, isLoading: loadingSmtp } = useQuery({
-    queryKey: ["settings-smtp"],
-    queryFn: () => axios.get(`${BASE}/api/settings/smtp`).then(r => r.data),
+  const { data: resendData, isLoading: loadingResend } = useQuery({
+    queryKey: ["settings-resend"],
+    queryFn: () => axios.get(`${BASE}/api/settings/resend`).then(r => r.data),
   });
 
   useEffect(() => {
@@ -65,19 +61,14 @@ export default function GeneralSettings() {
   }, [generalData]);
 
   useEffect(() => {
-    if (smtpData) {
-      setSmtp(s => ({
+    if (resendData) {
+      setResend(s => ({
         ...s,
-        host: smtpData.host ?? "",
-        port: smtpData.port ?? "587",
-        user: smtpData.user ?? "",
-        from: smtpData.from ?? "",
-        fromName: smtpData.fromName ?? "Edubee Camp",
-        secure: smtpData.secure ?? "false",
+        from: resendData.from ?? "",
+        fromName: resendData.fromName ?? "Edubee Camp",
       }));
-      if (!testTarget && smtpData.user) setTestTarget(smtpData.user);
     }
-  }, [smtpData]);
+  }, [resendData]);
 
   const saveGeneral = useMutation({
     mutationFn: () => axios.put(`${BASE}/api/settings/general`, general).then(r => r.data),
@@ -85,28 +76,24 @@ export default function GeneralSettings() {
     onError: () => toast({ variant: "destructive", title: "Failed to save settings" }),
   });
 
-  const saveSmtp = useMutation({
-    mutationFn: () => axios.put(`${BASE}/api/settings/smtp`, {
-      host: smtp.host,
-      port: smtp.port,
-      user: smtp.user,
-      password: smtp.password || undefined,
-      from: smtp.from,
-      fromName: smtp.fromName,
-      secure: smtp.secure,
+  const saveResend = useMutation({
+    mutationFn: () => axios.put(`${BASE}/api/settings/resend`, {
+      apiKey: resend.apiKey || undefined,
+      from: resend.from,
+      fromName: resend.fromName,
     }).then(r => r.data),
     onSuccess: () => {
-      toast({ title: "SMTP settings saved" });
-      setSmtp(s => ({ ...s, password: "" }));
+      toast({ title: "Resend settings saved" });
+      setResend(s => ({ ...s, apiKey: "" }));
     },
-    onError: () => toast({ variant: "destructive", title: "Failed to save SMTP settings" }),
+    onError: () => toast({ variant: "destructive", title: "Failed to save Resend settings" }),
   });
 
   const sendTestEmail = useMutation({
-    mutationFn: () => axios.post(`${BASE}/api/settings/test-email`, { to: testTarget || smtp.user }).then(r => r.data),
+    mutationFn: () => axios.post(`${BASE}/api/settings/test-email`, { to: testTarget || resend.from }).then(r => r.data),
     onSuccess: (data) => toast({
       title: "✉️ Test email sent!",
-      description: `Delivered to ${data.sentTo} via ${data.host}`,
+      description: `Delivered to ${data.sentTo} via Resend`,
     }),
     onError: (err: any) => {
       const detail = err?.response?.data?.detail ?? err?.response?.data?.error ?? err.message;
@@ -123,7 +110,7 @@ export default function GeneralSettings() {
     }));
   }
 
-  const loading = loadingGeneral || loadingSmtp;
+  const loading = loadingGeneral || loadingResend;
 
   return (
     <div className="p-6 space-y-6 max-w-2xl">
@@ -182,79 +169,99 @@ export default function GeneralSettings() {
         </Button>
       </section>
 
-      {/* SMTP */}
+      {/* Resend Email */}
       <section className="bg-white rounded-xl border p-5 space-y-4">
-        <h2 className="text-sm font-semibold flex items-center gap-2">
-          <Mail className="w-4 h-4 text-[#F5821F]" /> Email (SMTP)
-        </h2>
+        <div className="flex items-start justify-between">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <Mail className="w-4 h-4 text-[#F5821F]" /> Email (Resend)
+          </h2>
+          <a
+            href="https://resend.com/api-keys"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-[#F5821F] hover:underline"
+          >
+            <Key className="w-3 h-3" /> Get API Key
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+
+        <div className="rounded-lg bg-[#FEF0E3] border border-[#F5821F]/20 px-4 py-3 text-xs text-[#92400E] space-y-1">
+          <p className="font-medium">Resend 설정 방법</p>
+          <ol className="list-decimal list-inside space-y-0.5 text-[#A16207]">
+            <li><a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="underline">resend.com</a>에서 계정 생성</li>
+            <li>Domains 메뉴에서 발송 도메인 추가 및 인증 (DNS 설정)</li>
+            <li>API Keys 메뉴에서 API 키 생성</li>
+            <li>아래 필드에 API 키와 발송 이메일 주소를 입력 후 저장</li>
+          </ol>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <Label className="text-xs">SMTP Host</Label>
-            <Input value={smtp.host} onChange={e => setSmtp(s => ({ ...s, host: e.target.value }))} className="mt-1 h-8 text-sm" placeholder="smtp.gmail.com" />
-          </div>
-          <div>
-            <Label className="text-xs">SMTP Port</Label>
-            <Input value={smtp.port} onChange={e => setSmtp(s => ({ ...s, port: e.target.value }))} className="mt-1 h-8 text-sm" placeholder="587" />
-          </div>
-          <div>
-            <Label className="text-xs">Username</Label>
-            <Input value={smtp.user} onChange={e => setSmtp(s => ({ ...s, user: e.target.value }))} className="mt-1 h-8 text-sm" placeholder="you@gmail.com" />
-          </div>
-          <div>
-            <Label className="text-xs">Password / App Password</Label>
+          <div className="sm:col-span-2">
+            <Label className="text-xs">API Key</Label>
             <div className="relative mt-1">
               <Input
-                type={showPassword ? "text" : "password"}
-                value={smtp.password}
-                onChange={e => setSmtp(s => ({ ...s, password: e.target.value }))}
-                className="h-8 text-sm pr-9"
-                placeholder={smtpData?.hasPassword ? "••••••••••••••••  (saved)" : "Enter app password"}
+                type={showApiKey ? "text" : "password"}
+                value={resend.apiKey}
+                onChange={e => setResend(s => ({ ...s, apiKey: e.target.value }))}
+                className="h-8 text-sm pr-9 font-mono"
+                placeholder={resendData?.hasApiKey ? "re_••••••••  (저장됨)" : "re_xxxxxxxxxxxxxxxxxxxx"}
               />
               <button
                 type="button"
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                onClick={() => setShowPassword(v => !v)}
+                onClick={() => setShowApiKey(v => !v)}
               >
-                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                {showApiKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
+            {resendData?.hasApiKey && (
+              <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                <CheckCircle2 className="w-3 h-3" /> API 키가 저장되어 있습니다. 변경하려면 새 키를 입력하세요.
+              </p>
+            )}
           </div>
           <div>
-            <Label className="text-xs">From Email Address</Label>
-            <Input value={smtp.from} onChange={e => setSmtp(s => ({ ...s, from: e.target.value }))} className="mt-1 h-8 text-sm" placeholder="noreply@yourdomain.com" />
+            <Label className="text-xs">발송 이메일 주소 (From)</Label>
+            <Input
+              value={resend.from}
+              onChange={e => setResend(s => ({ ...s, from: e.target.value }))}
+              className="mt-1 h-8 text-sm"
+              placeholder="noreply@yourdomain.com"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">Resend에서 인증된 도메인의 이메일이어야 합니다.</p>
           </div>
           <div>
-            <Label className="text-xs">From Name</Label>
-            <Input value={smtp.fromName} onChange={e => setSmtp(s => ({ ...s, fromName: e.target.value }))} className="mt-1 h-8 text-sm" placeholder="Edubee Camp" />
+            <Label className="text-xs">발송자 이름 (From Name)</Label>
+            <Input
+              value={resend.fromName}
+              onChange={e => setResend(s => ({ ...s, fromName: e.target.value }))}
+              className="mt-1 h-8 text-sm"
+              placeholder="Edubee Camp"
+            />
           </div>
         </div>
 
         <div className="flex items-center gap-2 pt-1 flex-wrap">
-          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => saveSmtp.mutate()} disabled={saveSmtp.isPending || loading}>
-            {saveSmtp.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saveSmtp.isSuccess ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
-            Save SMTP Settings
+          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => saveResend.mutate()} disabled={saveResend.isPending || loading}>
+            {saveResend.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saveResend.isSuccess ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
+            저장
           </Button>
 
           <div className="flex items-center gap-1.5 ml-auto">
             <Input
               value={testTarget}
               onChange={e => setTestTarget(e.target.value)}
-              placeholder="Send test to..."
-              className="h-8 text-xs w-48"
+              placeholder="테스트 수신 이메일..."
+              className="h-8 text-xs w-52"
               type="email"
             />
             <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs shrink-0" onClick={() => sendTestEmail.mutate()} disabled={sendTestEmail.isPending}>
               {sendTestEmail.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              Send Test
+              테스트 발송
             </Button>
           </div>
         </div>
-
-        {smtpData?.hasPassword && (
-          <p className="text-xs text-green-600 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> SMTP password is saved. Leave the password field blank to keep the current password.
-          </p>
-        )}
       </section>
 
       {/* Languages */}

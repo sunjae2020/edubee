@@ -1,41 +1,20 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { db } from "@workspace/db";
 import { platformSettings } from "@workspace/db/schema";
 import { inArray } from "drizzle-orm";
 
-const SMTP_KEYS = ["smtp.host", "smtp.port", "smtp.user", "smtp.pass", "smtp.from", "smtp.fromName", "smtp.secure"];
+const RESEND_KEYS = ["resend.apiKey", "resend.from", "resend.fromName"];
 
-export async function getSmtpConfig(): Promise<Record<string, string>> {
+export async function getResendConfig(): Promise<Record<string, string>> {
   const rows = await db
     .select()
     .from(platformSettings)
-    .where(inArray(platformSettings.key, SMTP_KEYS));
+    .where(inArray(platformSettings.key, RESEND_KEYS));
   const config: Record<string, string> = {};
   for (const row of rows) {
     config[row.key] = row.value ?? "";
   }
   return config;
-}
-
-export async function createTransporter() {
-  const cfg = await getSmtpConfig();
-  const host = cfg["smtp.host"] || process.env.SMTP_HOST || "";
-  const port = parseInt(cfg["smtp.port"] || process.env.SMTP_PORT || "587", 10);
-  const user = cfg["smtp.user"] || process.env.SMTP_USER || "";
-  const pass = cfg["smtp.pass"] || process.env.SMTP_PASS || "";
-  const secure = (cfg["smtp.secure"] || "false") === "true";
-
-  if (!host || !user || !pass) {
-    throw new Error("SMTP configuration is incomplete. Please configure host, username, and password in Settings.");
-  }
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: { user, pass },
-    tls: { rejectUnauthorized: false },
-  });
 }
 
 export async function sendMail(options: {
@@ -44,26 +23,37 @@ export async function sendMail(options: {
   html: string;
   text?: string;
 }) {
-  // CHECK 1.4 — Email mock for test environments (set EMAIL_ENABLED=false in Secrets)
   if (process.env.EMAIL_ENABLED === "false") {
     console.log("[NOTIFICATION MOCK]", { to: options.to, subject: options.subject });
     return { success: true, mocked: true };
   }
 
   try {
-    const cfg = await getSmtpConfig();
-    const fromName = cfg["smtp.fromName"] || "Edubee Camp";
-    const fromEmail = cfg["smtp.from"] || cfg["smtp.user"] || "";
-    const transporter = await createTransporter();
-    return transporter.sendMail({
-      from: `"${fromName}" <${fromEmail}>`,
+    const cfg = await getResendConfig();
+    const apiKey = cfg["resend.apiKey"] || process.env.RESEND_API_KEY || "";
+    const fromEmail = cfg["resend.from"] || process.env.RESEND_FROM || "";
+    const fromName = cfg["resend.fromName"] || "Edubee Camp";
+
+    if (!apiKey || !fromEmail) {
+      throw new Error("Resend configuration is incomplete. Please configure API Key and From Email in Settings.");
+    }
+
+    const resend = new Resend(apiKey);
+
+    const result = await resend.emails.send({
+      from: `${fromName} <${fromEmail}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,
       text: options.text ?? options.html.replace(/<[^>]+>/g, ""),
     });
+
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
+    return { success: true, id: result.data?.id };
   } catch (err) {
-    // R-8: Email failures must NEVER block the main workflow
     console.error("[EMAIL FAILED — non-blocking]", String(err));
     return { success: false, error: String(err) };
   }

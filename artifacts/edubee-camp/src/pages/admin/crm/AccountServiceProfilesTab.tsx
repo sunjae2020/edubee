@@ -4,7 +4,7 @@ import {
   Plus, Pencil, Trash2,
   Phone, Clock, Users, DollarSign, Star,
   CheckSquare, Square, Save, X, Globe, AlertCircle,
-  Utensils, Bed, Plane, Bus, Map,
+  Utensils, Bed, Plane, Bus, Map, Layers,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
