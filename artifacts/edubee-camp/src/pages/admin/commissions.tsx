@@ -179,7 +179,8 @@ export default function Commissions() {
             ) : commissions.map(c => (
               <tr
                 key={c.id}
-                className="transition-colors"
+                className="hover:bg-[#FEF0E3] cursor-pointer transition-colors"
+                onClick={() => openEdit(c)}
               >
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <div className="flex items-center gap-2">
