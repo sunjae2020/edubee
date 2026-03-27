@@ -608,9 +608,8 @@ export default function PackageDetail() {
                   setAddIsOptional(false);
                   setAddError(null);
                   setShowAdvanced(false);
-                  setAdvCurrency("all");
-                  setAdvMinPrice("");
-                  setAdvMaxPrice("");
+                  setAdvCountry("all");
+                  setAdvLocation("all");
                   setAdvSortBy("name");
                   setShowAddProd(v => !v);
                 }}

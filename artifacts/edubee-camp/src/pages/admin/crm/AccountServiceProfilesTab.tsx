@@ -328,21 +328,17 @@ const ServiceCategorySelector = ({
     const isSelected = selected.includes(type);
     if (isSelected) {
       await apiFetch(`/api/accounts/${accountId}/service-categories/${type}`, { method: "DELETE" });
-      setSelected(prev => {
-        const next = prev.filter(t => t !== type);
-        onCategoriesChange?.(next);
-        return next;
-      });
+      const next = selected.filter(t => t !== type);
+      setSelected(next);
+      onCategoriesChange?.(next);
     } else {
       await apiFetch(`/api/accounts/${accountId}/service-categories`, {
         method: "POST",
         body: JSON.stringify({ serviceType: type }),
       });
-      setSelected(prev => {
-        const next = [...prev, type];
-        onCategoriesChange?.(next);
-        return next;
-      });
+      const next = [...selected, type];
+      setSelected(next);
+      onCategoriesChange?.(next);
     }
   };
 
