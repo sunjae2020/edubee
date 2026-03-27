@@ -562,16 +562,18 @@ export default function CampApplications() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <NameFieldGroup
-                    firstName={form.applicantFirstName}
-                    lastName={form.applicantLastName}
-                    originalName={form.applicantOriginalName}
-                    englishName={form.applicantEnglishName}
-                    onChange={patch => setForm(f => ({
+                    values={{
+                      firstName:    form.applicantFirstName    ?? "",
+                      lastName:     form.applicantLastName     ?? "",
+                      originalName: form.applicantOriginalName ?? undefined,
+                      englishName:  form.applicantEnglishName  ?? undefined,
+                    }}
+                    onChange={(key, value) => setForm(f => ({
                       ...f,
-                      ...(patch.firstName    !== undefined && { applicantFirstName:    patch.firstName }),
-                      ...(patch.lastName     !== undefined && { applicantLastName:     patch.lastName }),
-                      ...(patch.originalName !== undefined && { applicantOriginalName: patch.originalName }),
-                      ...(patch.englishName  !== undefined && { applicantEnglishName:  patch.englishName }),
+                      ...(key === "firstName"    && { applicantFirstName:    value }),
+                      ...(key === "lastName"     && { applicantLastName:     value }),
+                      ...(key === "originalName" && { applicantOriginalName: value }),
+                      ...(key === "englishName"  && { applicantEnglishName:  value }),
                     }))}
                     required
                   />
