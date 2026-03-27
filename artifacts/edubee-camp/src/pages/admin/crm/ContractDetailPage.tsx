@@ -1952,7 +1952,7 @@ export default function ContractDetailPage() {
         </div>
       )}
 
-      <div className="p-6 space-y-5">
+      <div className="p-6 pb-0">
 
         {/* 3 Info Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -2073,15 +2073,17 @@ export default function ContractDetailPage() {
             } />
           </div>
         </div>
+      </div>
 
-        {/* Tab Bar */}
-        <div className="flex gap-0 border-b border-[#E8E6E2]">
+      {/* Tab Bar — sticky below top bar, full-width, horizontally scrollable */}
+      <div className="sticky top-[65px] z-20 bg-white border-b border-[#E8E6E2] overflow-x-auto mt-5">
+        <div className="flex gap-0 px-6">
           {TABS.map(tab => {
             const count = counts[tab.key];
             return (
               <button key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0"
                 style={activeTab === tab.key
                   ? { borderColor:"#F5821F", color:"#F5821F" }
                   : { borderColor:"transparent", color:"#57534E" }}>
@@ -2096,8 +2098,10 @@ export default function ContractDetailPage() {
             );
           })}
         </div>
+      </div>
 
-        {/* Tab Content */}
+      {/* Tab Content */}
+      <div className="p-6 pt-5">
         {activeTab === "overview"     && (
           <>
             <OverviewTab
