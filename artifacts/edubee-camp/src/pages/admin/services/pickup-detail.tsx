@@ -295,10 +295,10 @@ export default function PickupMgtDetail() {
           <DetailSection title="Product Linkage">
             <EditableField label="Product" isEditing={isEditing} value={rec.productName ?? "—"}
               editChildren={
-                <Select value={getValue("productId") ?? ""} onValueChange={v => setField("productId", v || null)}>
+                <Select value={getValue("productId") || "__none__"} onValueChange={v => setField("productId", v === "__none__" ? null : v)}>
                   <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue placeholder="Select product…" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">— None —</SelectItem>
+                    <SelectItem value="__none__">— None —</SelectItem>
                     {productsList.map((p: any) => (
                       <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                     ))}
