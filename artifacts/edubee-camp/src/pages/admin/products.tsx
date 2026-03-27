@@ -362,17 +362,27 @@ export default function Products() {
 
       {/* ── Table ── */}
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm table-fixed">
+          <colgroup>
+            <col className="w-[18%]" />  {/* Provider */}
+            <col className="w-[28%]" />  {/* Product Name */}
+            <col className="w-[10%]" />  {/* Price */}
+            <col className="w-[6%]" />   {/* Grade */}
+            <col className="w-[6%]" />   {/* Priority */}
+            <col className="w-[14%]" />  {/* Location */}
+            <col className="w-[9%]" />   {/* Created */}
+            <col className="w-[9%]" />   {/* Modified */}
+          </colgroup>
           <thead>
             <tr className="border-b bg-muted/30">
               <SortableTh col="providerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provider</SortableTh>
               <SortableTh col="productName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Name</SortableTh>
               <SortableTh col="price" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Price</SortableTh>
-              <SortableTh col="productGrade" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Grade</SortableTh>
-              <SortableTh col="productPriority" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Priority</SortableTh>
+              <SortableTh col="productGrade" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-2 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Grade</SortableTh>
+              <SortableTh col="productPriority" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-2 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pri.</SortableTh>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Location</th>
-              <SortableTh col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Created</SortableTh>
-              <SortableTh col="updatedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Modified</SortableTh>
+              <SortableTh col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Created</SortableTh>
+              <SortableTh col="updatedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Modified</SortableTh>
             </tr>
           </thead>
           <tbody>
@@ -394,34 +404,34 @@ export default function Products() {
                 <tr key={p.id}
                   className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                   onClick={() => setLocation(`${BASE}/admin/products/${p.id}`)}>
-                  <td className="px-4 py-3 text-sm text-[#57534E]">
+                  <td className="px-4 py-3 text-sm text-[#57534E] truncate">
                     {p.providerName ?? <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-foreground">{p.productName}</div>
+                    <div className="font-medium text-foreground truncate">{p.productName}</div>
                   </td>
-                  <td className="px-4 py-3 text-sm font-mono font-semibold text-[#1C1917]">
+                  <td className="px-4 py-3 text-sm font-mono font-semibold text-[#1C1917] whitespace-nowrap">
                     {fmtPrice(p)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#57534E]">
-                    {p.productGrade ?? <span className="text-muted-foreground">—</span>}
+                  <td className="px-2 py-3 text-center">
+                    {p.productGrade
+                      ? <span className="inline-block text-xs font-semibold text-[#57534E]">{p.productGrade}</span>
+                      : <span className="text-muted-foreground">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm text-center text-[#57534E]">
+                  <td className="px-2 py-3 text-center">
                     {p.productPriority != null ? (
-                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#F4F3F1] text-xs font-semibold text-[#1C1917]">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#F4F3F1] text-xs font-semibold text-[#1C1917]">
                         {p.productPriority}
                       </span>
                     ) : <span className="text-muted-foreground">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#57534E] max-w-[160px]">
-                    {p.location
-                      ? <span className="truncate block">{p.location}</span>
-                      : <span className="text-muted-foreground">—</span>}
+                  <td className="px-4 py-3 text-sm text-[#57534E] truncate">
+                    {p.location ?? <span className="text-muted-foreground">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-xs text-[#57534E] whitespace-nowrap">
+                  <td className="px-3 py-3 text-xs text-[#57534E] whitespace-nowrap">
                     {p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : <span className="text-muted-foreground">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-xs text-[#57534E] whitespace-nowrap">
+                  <td className="px-3 py-3 text-xs text-[#57534E] whitespace-nowrap">
                     {p.updatedAt ? new Date(p.updatedAt).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : <span className="text-muted-foreground">—</span>}
                   </td>
                 </tr>
