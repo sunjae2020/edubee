@@ -270,7 +270,7 @@ router.post(
           description:      `${paymentType} — ${result.header.paymentRef} — ${totalAmount.toFixed(2)}`,
           bankReference:    bankReference ?? null,
           accountId:        receivedFromId ?? paidToId ?? null,
-          paymentInfoId:    (req.body.paymentInfoId as string | undefined) ?? null,
+          paymentInfoId:    result.header.id,
           contractId:       firstLine?.contractId ?? null,
           invoiceId:        firstLine?.invoiceId  ?? null,
           createdBy:        userId(req),
@@ -331,6 +331,19 @@ router.patch(
         .set({ status: "Void", modifiedOn: new Date() })
         .where(eq(paymentHeaders.id, req.params.id))
         .returning();
+
+      // Cascade: also deactivate any linked transaction records
+      try {
+        await db
+          .update(transactions)
+          .set({ status: "Inactive" })
+          .where(and(
+            eq(transactions.paymentInfoId, req.params.id),
+            eq(transactions.status, "Active"),
+          ));
+      } catch (cascadeErr) {
+        console.error("[PATCH /payments/:id/void] cascade transaction deactivation failed:", cascadeErr);
+      }
 
       return res.json(updated);
     } catch (err) {

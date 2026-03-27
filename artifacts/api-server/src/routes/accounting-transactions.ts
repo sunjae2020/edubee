@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { transactions } from "@workspace/db/schema";
+import { transactions, paymentHeaders } from "@workspace/db/schema";
 import { eq, ilike, and, desc, SQL, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -141,7 +141,7 @@ router.put("/transactions/:id", authenticate, requireRole(...ADMIN_ROLES), async
   }
 });
 
-// ─── DEACTIVATE ───────────────────────────────────────────────────────────────
+// ─── DEACTIVATE (+ cascade void linked payment header) ───────────────────────
 
 router.delete("/transactions/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
@@ -151,6 +151,25 @@ router.delete("/transactions/:id", authenticate, requireRole(...ADMIN_ROLES), as
       .where(eq(transactions.id, req.params.id))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
+
+    // Cascade: void the linked payment_header if one exists
+    if (row.paymentInfoId) {
+      try {
+        const [ph] = await db
+          .select({ id: paymentHeaders.id, status: paymentHeaders.status })
+          .from(paymentHeaders)
+          .where(eq(paymentHeaders.id, row.paymentInfoId));
+        if (ph && ph.status !== "Void") {
+          await db
+            .update(paymentHeaders)
+            .set({ status: "Void", modifiedOn: new Date() })
+            .where(eq(paymentHeaders.id, ph.id));
+        }
+      } catch (cascadeErr) {
+        console.error("[DELETE /transactions/:id] cascade void payment header failed:", cascadeErr);
+      }
+    }
+
     res.json(row);
   } catch (err) {
     console.error("[DELETE /transactions/:id]", err);
