@@ -3,6 +3,35 @@ import { Upload, X, ImageIcon, Loader2 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+const MAX_WIDTH = 1280;
+const MAX_HEIGHT = 720;
+const JPEG_QUALITY = 0.82;
+
+async function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+        const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Canvas context 오류")); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("이미지 로드 실패")); };
+    img.src = url;
+  });
+}
+
 interface ThumbnailUploaderProps {
   currentUrl?: string | null;
   onUploaded: (objectPath: string) => void;
@@ -19,6 +48,7 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
   const getImageSrc = () => {
     if (preview) return preview;
     if (!currentUrl) return null;
+    if (currentUrl.startsWith("data:")) return currentUrl;
     if (currentUrl.startsWith("/objects/")) return `${BASE}/api/storage${currentUrl}`;
     if (currentUrl.startsWith("http")) return currentUrl;
     return currentUrl;
@@ -36,37 +66,13 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
 
     setError(null);
     setIsUploading(true);
-    setProgress(0);
-
-    const localPreview = URL.createObjectURL(file);
-    setPreview(localPreview);
+    setProgress(20);
 
     try {
-      const urlRes = await fetch(`${BASE}/api/storage/uploads/request-url`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("edubee_token")}`,
-        },
-        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
-      });
-
-      if (!urlRes.ok) throw new Error("업로드 URL 생성 실패");
-      const { uploadURL, objectPath } = await urlRes.json();
-
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
-        };
-        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`)));
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.open("PUT", uploadURL);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.send(file);
-      });
-
-      onUploaded(objectPath);
+      const dataUrl = await compressImage(file);
+      setProgress(90);
+      setPreview(dataUrl);
+      onUploaded(dataUrl);
       setProgress(100);
     } catch (e: any) {
       setError(e.message ?? "업로드 실패");

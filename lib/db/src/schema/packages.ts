@@ -31,7 +31,7 @@ export const packageGroups = pgTable("package_groups", {
   exclusionsEn: text("exclusions_en"),
   exclusionsKo: text("exclusions_ko"),
   durationText: varchar("duration_text", { length: 100 }),
-  thumbnailUrl: varchar("thumbnail_url", { length: 500 }),
+  thumbnailUrl: text("thumbnail_url"),
   location: varchar("location", { length: 255 }),
   countryCode: varchar("country_code", { length: 10 }),
   status: varchar("status", { length: 20 }).default("draft"),
