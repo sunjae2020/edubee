@@ -676,6 +676,9 @@ export default function LeadDetailPage() {
                     <div className="flex items-center gap-2.5 min-w-0">
                       <FileText size={14} className="text-[#F5821F] shrink-0" />
                       <span className="font-mono text-sm text-[#1C1917] font-medium">{q.quoteRefNumber}</span>
+                      {q.createdOn && (
+                        <span className="text-xs text-muted-foreground">{format(new Date(q.createdOn), "MMM d, yyyy")}</span>
+                      )}
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F4F3F1] text-[#57534E]">
                         {q.quoteStatus}
                       </span>
