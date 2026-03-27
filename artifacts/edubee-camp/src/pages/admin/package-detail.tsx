@@ -259,14 +259,36 @@ export default function PackageDetail() {
     ...activeCurrencies.filter(c => c.ccy !== primaryCcy),
   ];
 
-  // Products total (included only)
-  const includedTotal = linkedProds
-    .filter((r: any) => !r.isOptional)
-    .reduce((sum: number, r: any) => {
-      const price = parseFloat(r.unitPrice ?? r.cost ?? "0") || 0;
-      const qty   = r.quantity ?? 1;
-      return sum + price * qty;
-    }, 0);
+  // Build a toAud map: { [CCY]: rate_to_convert_1_CCY_to_AUD }
+  const toAudRates: Record<string, number> = { AUD: 1 };
+  for (const [ccy, info] of Object.entries(dbRates as Record<string, any>)) {
+    if (info?.rate && typeof info.rate === "number") {
+      toAudRates[ccy] = info.rate;
+    }
+  }
+
+  // Convert a product line total to primaryCcy via AUD
+  function convertToPrimary(amount: number, fromCcy: string): number {
+    const audRate  = toAudRates[fromCcy] ?? null;
+    const primRate = toAudRates[primaryCcy] ?? 1;
+    if (audRate === null) return NaN; // unknown currency — skip
+    const audAmount = amount * audRate;
+    return audAmount / primRate;
+  }
+
+  const hasRates = Object.keys(toAudRates).length > 1;
+
+  // Products total (included only) — converted to primaryCcy
+  const includedLines = linkedProds.filter((r: any) => !r.isOptional);
+  const allSameCcy = includedLines.every((r: any) => (r.currency ?? "AUD") === (includedLines[0]?.currency ?? "AUD"));
+  const needsConversion = !allSameCcy;
+  const includedTotal = includedLines.reduce((sum: number, r: any) => {
+    const price = parseFloat(r.unitPrice ?? r.cost ?? "0") || 0;
+    const qty   = r.quantity ?? 1;
+    const lineCcy = r.currency ?? "AUD";
+    const converted = convertToPrimary(price * qty, lineCcy);
+    return isNaN(converted) ? sum : sum + converted;
+  }, 0);
 
   // ── Advanced search computed values ────────────────────────────────
   const availableCountries = Array.from(
@@ -960,14 +982,24 @@ export default function PackageDetail() {
                   })}
                 </tbody>
                 {/* Totals footer */}
-                {linkedProds.length > 0 && (
+                {includedLines.length > 0 && (
                   <tfoot>
                     <tr className="border-t bg-muted/20">
-                      <td colSpan={5} className="px-3 py-2 text-xs text-muted-foreground font-medium text-right">
-                        Included Total
+                      <td colSpan={5} className="px-3 py-2 text-right">
+                        <div className="text-xs text-muted-foreground font-medium">Included Total</div>
+                        {needsConversion && hasRates && (
+                          <div className="text-[10px] text-muted-foreground/60 mt-0.5">
+                            converted to {primaryCcy}
+                          </div>
+                        )}
+                        {needsConversion && !hasRates && (
+                          <div className="text-[10px] text-amber-500 mt-0.5">
+                            mixed currencies — add exchange rates for accurate total
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-sm font-bold text-[#F5821F]">
-                        AUD {includedTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}
+                        {primaryCcy} {includedTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}
                       </td>
                       {canEdit && <td />}
                     </tr>

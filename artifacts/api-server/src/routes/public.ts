@@ -343,11 +343,19 @@ router.get("/public/exchange-rates", async (_req, res) => {
       .from(exchangeRates)
       .orderBy(desc(exchangeRates.effectiveDate));
 
-    // Build latest rate map: only X→AUD rows, pick most recent per fromCurrency
+    // Build latest rate map: prefer X→AUD rows, fall back to inverse of AUD→X rows
+    // latestMap[CCY].rate = how many AUD is 1 unit of CCY
     const latestMap: Record<string, { rate: number; date: string }> = {};
     for (const r of allRates) {
       if (r.toCurrency === "AUD" && !latestMap[r.fromCurrency]) {
+        // Direct X→AUD: 1 X = rate AUD
         latestMap[r.fromCurrency] = { rate: parseFloat(r.rate), date: r.effectiveDate };
+      } else if (r.fromCurrency === "AUD" && !latestMap[r.toCurrency]) {
+        // Inverse AUD→X: 1 AUD = rate X, so 1 X = 1/rate AUD
+        const rawRate = parseFloat(r.rate);
+        if (rawRate > 0) {
+          latestMap[r.toCurrency] = { rate: 1 / rawRate, date: r.effectiveDate };
+        }
       }
     }
 
