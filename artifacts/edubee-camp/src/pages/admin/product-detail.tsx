@@ -15,7 +15,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChevronLeft, Save, X, Search, Copy, Check, Loader2,
-  Package, ExternalLink,
+  Package, ExternalLink, Plus,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -453,6 +453,13 @@ export default function ProductDetail() {
   const [linkedGroupIds, setLinkedGroupIds] = useState<string[]>([]);
   const [linkedGroupNames, setLinkedGroupNames] = useState<Record<string, string>>({});
   const [copiedId, setCopiedId] = useState(false);
+  const [showPkgLinker, setShowPkgLinker] = useState(false);
+  const [pkgLinkSearch, setPkgLinkSearch] = useState("");
+  const [selectedPkgToLink, setSelectedPkgToLink] = useState<string | null>(null);
+  const [pkgLinkQty, setPkgLinkQty] = useState(1);
+  const [pkgLinkIsOptional, setPkgLinkIsOptional] = useState(false);
+  const [pkgLinkUnitPrice, setPkgLinkUnitPrice] = useState("");
+  const [pkgLinkError, setPkgLinkError] = useState<string | null>(null);
   const [topBarVisible, setTopBarVisible] = useState(true);
   const topBarRef = useRef<HTMLDivElement>(null);
 
@@ -489,6 +496,14 @@ export default function ProductDetail() {
     enabled: !isNew,
   });
   const linkedPackages: any[] = Array.isArray(linkedPackagesData) ? linkedPackagesData : [];
+
+  const { data: pkgSearchRaw } = useQuery({
+    queryKey: ["pkg-search-for-product", pkgLinkSearch],
+    queryFn: () => api(`/api/packages?search=${encodeURIComponent(pkgLinkSearch)}&status=active&limit=30`).then(r => r.data),
+    enabled: showPkgLinker,
+    staleTime: 10000,
+  });
+  const pkgSearchResults: any[] = Array.isArray((pkgSearchRaw as any)?.data) ? (pkgSearchRaw as any).data : [];
 
   const { data: productGroups = [], isLoading: groupsLoading } = useQuery({
     queryKey: ["lookup-product-groups"],
@@ -670,6 +685,32 @@ export default function ProductDetail() {
         className: "border-[#DC2626] bg-[#FEF2F2] text-[#DC2626]",
       });
     },
+  });
+
+  const linkToPackage = useMutation({
+    mutationFn: (pkgId: string) =>
+      axios.post(
+        `${BASE}/api/packages/${pkgId}/products`,
+        { productId: id, isOptional: pkgLinkIsOptional, quantity: pkgLinkQty, unitPrice: pkgLinkUnitPrice || null },
+        { headers: getAuthHeaders() }
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["product-linked-packages", id] });
+      setShowPkgLinker(false);
+      setPkgLinkSearch("");
+      setSelectedPkgToLink(null);
+      setPkgLinkQty(1);
+      setPkgLinkIsOptional(false);
+      setPkgLinkUnitPrice("");
+      setPkgLinkError(null);
+    },
+    onError: (e: any) => setPkgLinkError(e?.response?.data?.error ?? "Failed to link"),
+  });
+
+  const unlinkFromPackage = useMutation({
+    mutationFn: ({ packageId, productId: pid }: { packageId: string; productId: string }) =>
+      axios.delete(`${BASE}/api/packages/${packageId}/products/${pid}`, { headers: getAuthHeaders() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["product-linked-packages", id] }),
   });
 
   const handleCancel = () => {
@@ -1173,13 +1214,134 @@ export default function ProductDetail() {
               </div>
             </Section>
 
-            {/* [8b] LINKED PACKAGES — read-only */}
+            {/* [8b] LINKED PACKAGES */}
             {!isNew && (
               <Section title="Linked Packages">
                 <div className="space-y-3">
-                  <p className="text-xs text-[#57534E]">
-                    Packages that currently include this product. Manage from each package's detail page.
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-[#57534E]">
+                      Packages that include this product as an item.
+                    </p>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPkgLinkSearch("");
+                          setSelectedPkgToLink(null);
+                          setPkgLinkQty(1);
+                          setPkgLinkIsOptional(false);
+                          setPkgLinkUnitPrice("");
+                          setPkgLinkError(null);
+                          setShowPkgLinker(v => !v);
+                        }}
+                        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border transition-colors"
+                        style={{ borderColor: "rgba(245,130,31,0.35)", color: "var(--e-orange)", background: showPkgLinker ? "var(--e-orange-lt)" : "transparent" }}
+                      >
+                        <Plus className="w-3 h-3" /> Add to Package
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Package picker */}
+                  {showPkgLinker && (
+                    <div className="border rounded-lg p-3 space-y-2.5" style={{ borderColor: "rgba(245,130,31,0.3)", background: "var(--e-orange-lt)" }}>
+                      {/* Search input */}
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none text-muted-foreground" />
+                        <input
+                          type="text"
+                          placeholder="Search packages…"
+                          value={pkgLinkSearch}
+                          onChange={e => { setPkgLinkSearch(e.target.value); setSelectedPkgToLink(null); }}
+                          className="w-full pl-8 pr-3 h-8 text-xs border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[#F5821F]"
+                        />
+                      </div>
+                      {/* Package list */}
+                      <div className="max-h-40 overflow-y-auto border rounded-md divide-y bg-white">
+                        {pkgSearchResults
+                          .filter((p: any) => !linkedPackages.some((l: any) => l.packageId === p.id))
+                          .map((p: any) => (
+                            <label key={p.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/40">
+                              <input
+                                type="radio"
+                                name="pkg-link-sel"
+                                value={p.id}
+                                checked={selectedPkgToLink === p.id}
+                                onChange={() => setSelectedPkgToLink(p.id)}
+                                className="shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <span className="text-xs font-medium block truncate">{p.name}</span>
+                                <span className="text-[11px] text-muted-foreground">{p.groupNameEn ?? ""}</span>
+                              </div>
+                            </label>
+                          ))}
+                        {pkgSearchResults.filter((p: any) => !linkedPackages.some((l: any) => l.packageId === p.id)).length === 0 && (
+                          <p className="text-xs text-muted-foreground px-3 py-2 italic">
+                            {pkgLinkSearch ? "No packages found" : "Type to search packages"}
+                          </p>
+                        )}
+                      </div>
+                      {/* Options row */}
+                      {selectedPkgToLink && (
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <p className="text-[11px] font-semibold mb-0.5 text-muted-foreground">Qty</p>
+                            <input
+                              type="number"
+                              min={1}
+                              value={pkgLinkQty}
+                              onChange={e => setPkgLinkQty(Number(e.target.value))}
+                              className="w-full h-7 px-2 text-xs border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[#F5821F]"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-semibold mb-0.5 text-muted-foreground">Unit Price</p>
+                            <input
+                              type="number"
+                              step="0.01"
+                              placeholder="—"
+                              value={pkgLinkUnitPrice}
+                              onChange={e => setPkgLinkUnitPrice(e.target.value)}
+                              className="w-full h-7 px-2 text-xs border rounded-md bg-white font-mono focus:outline-none focus:ring-1 focus:ring-[#F5821F]"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-semibold mb-0.5 text-muted-foreground">Inclusion</p>
+                            <Select value={pkgLinkIsOptional ? "optional" : "included"} onValueChange={v => setPkgLinkIsOptional(v === "optional")}>
+                              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="included">Included</SelectItem>
+                                <SelectItem value="optional">Optional</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+                      {pkgLinkError && <p className="text-xs text-red-500">{pkgLinkError}</p>}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={!selectedPkgToLink || linkToPackage.isPending}
+                          onClick={() => selectedPkgToLink && linkToPackage.mutate(selectedPkgToLink)}
+                          className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg text-white transition-colors disabled:opacity-50"
+                          style={{ background: "var(--e-orange)" }}
+                        >
+                          {linkToPackage.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
+                          Add
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowPkgLinker(false)}
+                          className="text-xs px-3 py-1.5 rounded-lg border transition-colors hover:bg-muted/40"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Linked packages table */}
                   {linkedPackages.length === 0 ? (
                     <p className="text-xs text-[#A8A29E] py-1">This product is not linked to any packages yet.</p>
                   ) : (
@@ -1192,7 +1354,7 @@ export default function ProductDetail() {
                             <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Inclusion</th>
                             <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Qty</th>
                             <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
-                            <th className="w-10 px-3 py-2" />
+                            <th className="w-16 px-3 py-2" />
                           </tr>
                         </thead>
                         <tbody>
@@ -1217,14 +1379,26 @@ export default function ProductDetail() {
                                 }`}>{row.packageStatus ?? "—"}</span>
                               </td>
                               <td className="px-3 py-2 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => navigate(`${BASE}/admin/packages/${row.packageId}`)}
-                                  className="text-muted-foreground hover:text-[#F5821F] transition-colors"
-                                  title="Open package"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </button>
+                                <div className="flex items-center justify-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => navigate(`${BASE}/admin/package-groups/${row.packageGroupId}`)}
+                                    className="text-muted-foreground hover:text-[#F5821F] transition-colors"
+                                    title="Open package group"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </button>
+                                  {canEdit && (
+                                    <button
+                                      type="button"
+                                      onClick={() => { if (window.confirm("Remove this product from the package?")) unlinkFromPackage.mutate({ packageId: row.packageId, productId: id }); }}
+                                      className="text-muted-foreground hover:text-red-500 transition-colors"
+                                      title="Remove link"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))}
