@@ -256,7 +256,12 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
 
     const contractNumber = genContractNumber();
 
-    const totalAmount = products.reduce((sum: number, p: any) => sum + parseFloat(p.total ?? p.price ?? "0"), 0);
+    // Use price * qty as fallback when total field is 0 or missing
+    const totalAmount = products.reduce((sum: number, p: any) => {
+      const t = parseFloat(p.total ?? "0");
+      const amt = t > 0 ? t : parseFloat(p.price ?? p.unit_price ?? "0") * (p.quantity ?? p.qty ?? 1);
+      return sum + amt;
+    }, 0);
 
     const result = await db.transaction(async (tx) => {
       // 1. Create contract — copy all transferable quote fields
@@ -388,6 +393,26 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
           }
         }
       }
+
+      // 2c. Recalculate contract financial totals from actual inserted contract_products
+      const [arApTotals] = await tx.execute(sql`
+        SELECT
+          COALESCE(SUM(ar_amount), 0) AS total_ar,
+          COALESCE(SUM(ap_amount), 0) AS total_ap,
+          COALESCE(SUM(total_price), 0) AS total_val
+        FROM contract_products
+        WHERE contract_id = ${contractId}::uuid
+      `);
+      const computedAr = parseFloat(String((arApTotals as any).total_ar ?? "0"));
+      const computedAp = parseFloat(String((arApTotals as any).total_ap ?? "0"));
+      const computedTotal = parseFloat(String((arApTotals as any).total_val ?? "0"));
+      await tx.execute(sql`
+        UPDATE contracts
+        SET total_ar_amount = ${computedAr > 0 ? String(computedAr) : null},
+            total_ap_amount = ${computedAp > 0 ? String(computedAp) : null},
+            total_amount    = ${computedTotal > 0 ? String(computedTotal) : null}
+        WHERE id = ${contractId}::uuid
+      `);
 
       // 3. Activate service modules (use resolved_smt from the JOIN query + sub-product SMTs)
       const moduleTypes = [
