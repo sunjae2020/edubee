@@ -460,6 +460,8 @@ export default function ProductDetail() {
   const [pkgLinkIsOptional, setPkgLinkIsOptional] = useState(false);
   const [pkgLinkUnitPrice, setPkgLinkUnitPrice] = useState("");
   const [pkgLinkError, setPkgLinkError] = useState<string | null>(null);
+  const [pkgRepSearch, setPkgRepSearch] = useState("");
+  const [showPkgRepDropdown, setShowPkgRepDropdown] = useState(false);
   const [topBarVisible, setTopBarVisible] = useState(true);
   const topBarRef = useRef<HTMLDivElement>(null);
 
@@ -504,6 +506,23 @@ export default function ProductDetail() {
     staleTime: 10000,
   });
   const pkgSearchResults: any[] = Array.isArray((pkgSearchRaw as any)?.data) ? (pkgSearchRaw as any).data : [];
+
+  // ── Package-as-Product: search when productContext = "camp_package"
+  const { data: pkgRepSearchRaw } = useQuery({
+    queryKey: ["pkg-rep-search", pkgRepSearch],
+    queryFn: () => api(`/api/packages?search=${encodeURIComponent(pkgRepSearch)}&status=active&limit=20`).then(r => r.data),
+    enabled: form["productContext"] === "camp_package",
+    staleTime: 10000,
+  });
+  const pkgRepResults: any[] = Array.isArray((pkgRepSearchRaw as any)?.data) ? (pkgRepSearchRaw as any).data : [];
+
+  // ── Lookup linked package name from campPackageId ──────────────────────────
+  const { data: linkedPkgRep } = useQuery({
+    queryKey: ["pkg-rep-lookup", form["campPackageId"]],
+    queryFn: () => api(`/api/packages/${form["campPackageId"]}`).then(r => r.data),
+    enabled: !!(form["campPackageId"]) && !isNew,
+    staleTime: 30000,
+  });
 
   const { data: productGroups = [], isLoading: groupsLoading } = useQuery({
     queryKey: ["lookup-product-groups"],
@@ -940,10 +959,59 @@ export default function ProductDetail() {
                     <FL>Product Context</FL>
                     <SelectField
                       value={g("productContext") || "general"}
-                      onChange={sf("productContext")}
+                      onChange={(v: any) => {
+                        sf("productContext")(v);
+                        if (v !== "camp_package") sf("campPackageId")(null);
+                      }}
                       options={PRODUCT_CONTEXTS}
                     />
                   </div>
+                  {g("productContext") === "camp_package" && (
+                    <div className="relative">
+                      <FL>Represents Package</FL>
+                      {g("campPackageId") ? (
+                        <div className="flex items-center gap-2 px-3 py-2 border border-[#E7E5E4] rounded-md bg-[#FEF0E3]">
+                          <span className="flex-1 text-sm text-[#1C1917] truncate">
+                            {(linkedPkgRep as any)?.packageName ?? (linkedPkgRep as any)?.name ?? g("campPackageId")}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => { sf("campPackageId")(null); setPkgRepSearch(""); setShowPkgRepDropdown(false); }}
+                            className="text-[#A8A29E] hover:text-[#F97316] text-xs font-bold flex-shrink-0"
+                          >✕</button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <input
+                            className="w-full border border-[#E7E5E4] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+                            placeholder="Search packages…"
+                            value={pkgRepSearch}
+                            onChange={e => { setPkgRepSearch(e.target.value); setShowPkgRepDropdown(true); }}
+                            onFocus={() => setShowPkgRepDropdown(true)}
+                            onBlur={() => setTimeout(() => setShowPkgRepDropdown(false), 200)}
+                          />
+                          {showPkgRepDropdown && pkgRepResults.length > 0 && (
+                            <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-white border border-[#E7E5E4] rounded-md shadow-lg max-h-48 overflow-y-auto">
+                              {pkgRepResults.map((pkg: any) => (
+                                <div
+                                  key={pkg.id}
+                                  className="px-3 py-2 text-sm hover:bg-[#FEF0E3] cursor-pointer transition-colors text-[#1C1917]"
+                                  onMouseDown={() => {
+                                    sf("campPackageId")(pkg.id);
+                                    setPkgRepSearch("");
+                                    setShowPkgRepDropdown(false);
+                                  }}
+                                >
+                                  <span className="font-medium">{pkg.packageName ?? pkg.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <p className="text-xs text-[#A8A29E] mt-1">The package whose items will be expanded when converting to contract</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </Section>

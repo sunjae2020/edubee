@@ -243,7 +243,9 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
           NULLIF(p.service_module_type, ''),
           NULLIF(pt.service_module_type, ''),
           'other'
-        ) AS resolved_smt
+        ) AS resolved_smt,
+        p.product_context,
+        p.camp_package_id
       FROM quote_products qp
       LEFT JOIN products     p  ON p.id  = qp.product_id
       LEFT JOIN product_types pt ON pt.id = p.product_type_id
@@ -320,8 +322,77 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
         );
       }
 
-      // 3. Activate service modules (use resolved_smt from the JOIN query)
-      const moduleTypes = [...new Set(products.map((p: any) => p.resolved_smt).filter(Boolean))] as string[];
+      // 2b. Auto-expand Package products → add linked sub-products to contract_products
+      //     A product with product_context='camp_package' and camp_package_id set represents a Package.
+      //     Its linked sub-products (from package_products) are auto-added to the contract.
+      const extraSmts: string[] = [];
+      const existingProductIds = new Set(
+        products.map((p: any) => p.product_id ?? p.productId).filter(Boolean)
+      );
+
+      const pkgItems = products.filter(
+        (p: any) => p.product_context === "camp_package" && p.camp_package_id
+      );
+
+      for (const pkgItem of pkgItems) {
+        const subRows = await tx.execute(sql`
+          SELECT
+            pp.quantity,
+            pp.unit_price,
+            pp.is_optional,
+            p.id          AS product_id,
+            p.product_name AS name,
+            p.currency,
+            COALESCE(
+              NULLIF(p.service_module_type, ''),
+              NULLIF(pt.service_module_type, ''),
+              'other'
+            ) AS sub_smt
+          FROM package_products pp
+          JOIN products p ON p.id = pp.product_id
+          LEFT JOIN product_types pt ON pt.id = p.product_type_id
+          WHERE pp.package_id = ${pkgItem.camp_package_id}::uuid
+        `);
+        const subProducts: any[] = subRows.rows ?? (subRows as any[]);
+
+        const toInsert = subProducts.filter(
+          (s: any) => !existingProductIds.has(s.product_id)
+        );
+
+        if (toInsert.length > 0) {
+          await tx.insert(contractProducts).values(
+            toInsert.map((s: any, idx: number) => {
+              const uPrice = parseFloat(s.unit_price ?? "0");
+              const qty    = s.quantity ?? 1;
+              return {
+                contractId,
+                productId:         s.product_id,
+                name:              s.name,
+                quantity:          qty,
+                unitPrice:         String(uPrice),
+                totalPrice:        String(uPrice * qty),
+                arAmount:          null,
+                arDueDate:         null,
+                isInitialPayment:  false,
+                serviceModuleType: s.sub_smt ?? null,
+                sortIndex:         products.length + (pkgItems.indexOf(pkgItem) * 100) + idx,
+              };
+            })
+          );
+          // Collect new SMTs for module activation
+          for (const s of toInsert) {
+            if (s.sub_smt) extraSmts.push(s.sub_smt);
+          }
+        }
+      }
+
+      // 3. Activate service modules (use resolved_smt from the JOIN query + sub-product SMTs)
+      const moduleTypes = [
+        ...new Set([
+          ...products.map((p: any) => p.resolved_smt),
+          ...extraSmts,
+        ].filter(Boolean)),
+      ] as string[];
       const activatedModules: string[] = [];
 
       for (const mod of moduleTypes) {
