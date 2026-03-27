@@ -11,6 +11,7 @@ import {
   applicationParticipants,
   applicationGrade,
   exchangeRates,
+  campApplications,
 } from "@workspace/db/schema";
 import { eq, and, inArray, sql, desc, isNotNull, asc } from "drizzle-orm";
 import {
@@ -320,6 +321,39 @@ router.post("/public/applications", async (req, res) => {
           .update(enrollmentSpots)
           .set({ reservedSpots: sql`reserved_spots + 1`, updatedAt: new Date() })
           .where(eq(enrollmentSpots.id, enrollmentSpotId));
+      }
+    }
+
+    // Mirror into camp_applications so admin view can see landing-page submissions
+    if (data.packageId) {
+      try {
+        const emergencyContact = data.participants.find(p => p.isEmergencyContact && p.participantType === "adult");
+        const adult = emergencyContact ?? data.participants.find(p => p.participantType === "adult");
+        const primary = data.participants.find(p => p.participantType === "primary_student");
+        const applicantName = adult?.fullName ?? primary?.fullName ?? "Unknown";
+        const applicantEmail = adult?.email ?? primary?.email ?? "";
+        const applicantPhone = adult?.phone ?? primary?.phone ?? null;
+        const applicantNationality = adult?.nationality ?? primary?.nationality ?? null;
+        const studentCount = data.participants.filter(p => p.participantType !== "adult").length;
+        const adultCount = data.participants.filter(p => p.participantType === "adult").length;
+
+        await db.insert(campApplications).values({
+          applicationRef: applicationNumber,
+          packageGroupId: data.packageGroupId,
+          packageId: data.packageId,
+          applicantName,
+          applicantEmail,
+          applicantPhone,
+          applicantNationality,
+          studentCount,
+          adultCount,
+          preferredStartDate: data.preferredStartDate ?? null,
+          specialRequirements: data.specialRequests ?? null,
+          applicationStatus: "submitted",
+          status: "Active",
+        });
+      } catch (mirrorErr) {
+        console.error("[public/applications] camp_applications mirror failed:", mirrorErr);
       }
     }
 
