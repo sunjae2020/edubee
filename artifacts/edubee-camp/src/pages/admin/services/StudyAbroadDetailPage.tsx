@@ -505,8 +505,13 @@ function OverviewTab({ record, onStageChange, onSave }: {
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
           <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Contract & COE</h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-stone-400">Contract #</span>
-              <span className="font-mono text-xs text-stone-600">{record.contractNumber ?? "—"}</span>
+            <div className="flex justify-between items-center"><span className="text-stone-400">Contract #</span>
+              {record.contractId ? (
+                <button onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
+                  className="font-mono text-xs text-[#F5821F] hover:underline flex items-center gap-1">
+                  {record.contractNumber ?? "View"} <ExternalLink size={10} />
+                </button>
+              ) : <span className="font-mono text-xs text-stone-600">{record.contractNumber ?? "—"}</span>}
             </div>
           </div>
           <div className="space-y-3 pt-2 border-t border-stone-100">

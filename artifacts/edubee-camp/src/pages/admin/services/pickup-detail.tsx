@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +13,7 @@ import { NotePanel } from "@/components/shared/NotePanel";
 import { ArTimeline } from "@/components/shared/ArTimeline";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
-import { DollarSign, Car } from "lucide-react";
+import { DollarSign, Car, ExternalLink } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -149,6 +149,7 @@ function BillTab({ record }: { record: any }) {
 
 export default function PickupMgtDetail() {
   const { id } = useParams<{ id: string }>();
+  const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -265,7 +266,14 @@ export default function PickupMgtDetail() {
           <DetailSection title="Client Info">
             <DetailRow label="Client Name" value={rec.clientName ?? rec.studentName} />
             <DetailRow label="Client Email" value={rec.clientEmail} />
-            <DetailRow label="Contract #" value={rec.contractNumber} />
+            <DetailRow label="Contract #">
+              {rec.contractId ? (
+                <button onClick={() => navigate(`/admin/crm/contracts/${rec.contractId}`)}
+                  className="font-mono text-xs text-[#F5821F] hover:underline flex items-center gap-1">
+                  {rec.contractNumber ?? "View"} <ExternalLink size={10} />
+                </button>
+              ) : <span>{rec.contractNumber ?? "—"}</span>}
+            </DetailRow>
           </DetailSection>
 
           <DetailSection title="Driver / Vehicle">

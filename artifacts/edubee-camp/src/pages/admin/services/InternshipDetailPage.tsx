@@ -215,7 +215,14 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
-            <div className="flex justify-between"><span className="text-stone-400">Contract</span><span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span></div>
+            <div className="flex justify-between items-center"><span className="text-stone-400">Contract #</span>
+              {record.contractId ? (
+                <button onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
+                  className="font-mono text-xs text-[#F5821F] hover:underline flex items-center gap-1">
+                  {record.contractNumber ?? "View"} <ExternalLink size={10} />
+                </button>
+              ) : <span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span>}
+            </div>
           </div>
           <div className="space-y-3">
             <div className="space-y-1.5">

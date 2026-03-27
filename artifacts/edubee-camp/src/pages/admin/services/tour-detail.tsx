@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,7 @@ import { ArTimeline } from "@/components/shared/ArTimeline";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import { NotePanel } from "@/components/shared/NotePanel";
-import { DollarSign, Map } from "lucide-react";
+import { DollarSign, Map, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -134,6 +134,7 @@ function BillTab({ record }: { record: any }) {
 
 export default function TourMgtDetail() {
   const { id } = useParams<{ id: string }>();
+  const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -219,7 +220,14 @@ export default function TourMgtDetail() {
             <DetailSection title="Client Info">
               <DetailRow label="Client" value={rec.clientName ?? rec.studentName} />
               <DetailRow label="Email" value={rec.clientEmail} />
-              <DetailRow label="Contract #" value={rec.contractNumber} />
+              <DetailRow label="Contract #">
+                {rec.contractId ? (
+                  <button onClick={() => navigate(`/admin/crm/contracts/${rec.contractId}`)}
+                    className="font-mono text-xs text-[#F5821F] hover:underline flex items-center gap-1">
+                    {rec.contractNumber ?? "View"} <ExternalLink size={10} />
+                  </button>
+                ) : <span>{rec.contractNumber ?? "—"}</span>}
+              </DetailRow>
             </DetailSection>
 
             <DetailSection title="Product Linkage">
