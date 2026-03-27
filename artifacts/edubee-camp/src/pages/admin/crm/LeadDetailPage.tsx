@@ -6,6 +6,7 @@ import axios from "axios";
 import {
   ArrowLeft, Phone, Mail, MessageSquare, Calendar, Users, FileText, Activity,
   ExternalLink, Building2, Search, X, Check, Save, RotateCcw, Loader2, UserPlus,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -386,6 +387,7 @@ export default function LeadDetailPage() {
   const { toast }     = useToast();
   const qc            = useQueryClient();
   const [tab, setTab] = useState("details");
+  const [showConvertConfirm, setShowConvertConfirm] = useState(false);
   const [activityForm, setActivityForm] = useState({ channel: "Call", scheduledAt: "", description: "" });
   const id = params?.id ?? "";
 
@@ -527,10 +529,19 @@ export default function LeadDetailPage() {
   const convertMutation = useMutation({
     mutationFn: () => axios.post(`${BASE}/api/crm/leads/${id}/convert-to-quote`).then(r => r.data),
     onSuccess: (data) => {
-      toast({ title: `Quote created: ${data.quoteRefNumber}` });
+      setShowConvertConfirm(false);
+      qc.invalidateQueries({ queryKey: ["lead", id] });
+      if (data.alreadyExists) {
+        toast({ title: `Quote already exists: ${data.quoteRefNumber}` });
+      } else {
+        toast({ title: `Quote created: ${data.quoteRefNumber}` });
+      }
       navigate(data.redirectTo ?? "/admin/crm/quotes");
     },
-    onError: () => toast({ title: "Conversion failed", variant: "destructive" }),
+    onError: () => {
+      setShowConvertConfirm(false);
+      toast({ title: "Conversion failed", variant: "destructive" });
+    },
   });
 
   function handleLogActivity() {
@@ -592,11 +603,19 @@ export default function LeadDetailPage() {
               </Button>
             </>
           )}
-          <Button onClick={() => convertMutation.mutate()} disabled={convertMutation.isPending}
-            className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
-            <FileText size={14} />
-            {convertMutation.isPending ? "Converting…" : "Convert to Quote"}
-          </Button>
+          {lead.quote ? (
+            <Button onClick={() => navigate(`/admin/crm/quotes/${lead.quote!.id}`)}
+              className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
+              <ExternalLink size={14} />
+              View Quote
+            </Button>
+          ) : (
+            <Button onClick={() => setShowConvertConfirm(true)} disabled={convertMutation.isPending}
+              className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
+              <FileText size={14} />
+              Convert to Quote
+            </Button>
+          )}
         </div>
       </div>
 
@@ -625,9 +644,62 @@ export default function LeadDetailPage() {
         })}
       </div>
 
+      {/* ── Confirm Convert Dialog ── */}
+      {showConvertConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 rounded-full bg-[#FEF0E3] shrink-0">
+                <FileText size={18} className="text-[#F5821F]" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-[#1C1917] text-base">Convert to Quote</h3>
+                <p className="text-sm text-stone-500 mt-0.5">
+                  A new quote will be created and linked to this lead.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setShowConvertConfirm(false)}
+                className="h-9">Cancel</Button>
+              <Button size="sm" disabled={convertMutation.isPending}
+                onClick={() => convertMutation.mutate()}
+                className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
+                {convertMutation.isPending
+                  ? <><Loader2 size={13} className="animate-spin" /> Converting…</>
+                  : "Confirm"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Details Tab ── */}
       {tab === "details" && (
         <div className="space-y-5">
+
+          {/* Linked Quote */}
+          {lead.quote && (
+            <div className="bg-[#FEF0E3] border border-[#F5821F]/20 rounded-xl p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-white shrink-0">
+                  <FileText size={16} className="text-[#F5821F]" />
+                </div>
+                <div>
+                  <p className="text-xs text-[#A8603A] font-medium uppercase tracking-wide">Linked Quote</p>
+                  <p className="text-sm font-semibold text-[#1C1917]">{lead.quote.quoteRefNumber}</p>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-white text-[#57534E] border border-[#E8E6E2]">
+                  {lead.quote.quoteStatus}
+                </span>
+              </div>
+              <button
+                onClick={() => navigate(`/admin/crm/quotes/${lead.quote!.id}`)}
+                className="flex items-center gap-1.5 text-sm font-medium text-[#F5821F] hover:underline shrink-0">
+                <ExternalLink size={14} /> View Quote
+              </button>
+            </div>
+          )}
 
           {/* Account */}
           <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
