@@ -364,6 +364,7 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
             toInsert.map((s: any, idx: number) => {
               const uPrice = parseFloat(s.unit_price ?? "0");
               const qty    = s.quantity ?? 1;
+              const apAmt  = uPrice * qty;
               return {
                 contractId,
                 productId:         s.product_id,
@@ -373,6 +374,8 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
                 totalPrice:        String(uPrice * qty),
                 arAmount:          null,
                 arDueDate:         null,
+                apAmount:          apAmt > 0 ? String(apAmt) : null,
+                apStatus:          apAmt > 0 ? "pending" : null,
                 isInitialPayment:  false,
                 serviceModuleType: s.sub_smt ?? null,
                 sortIndex:         products.length + (pkgItems.indexOf(pkgItem) * 100) + idx,
