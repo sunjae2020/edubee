@@ -4,7 +4,7 @@ import {
   quotes, quote_products, contracts, contractProducts,
   pickupMgt, settlementMgt,
   accommodationMgt, internshipMgt, guardianMgt, studyAbroadMgt,
-  tourMgt, accounts,
+  tourMgt, accounts, leads,
   visaServicesMgt, campTourMgt, otherServicesMgt,
 } from "@workspace/db/schema";
 import { eq, and, count, sql, SQL } from "drizzle-orm";
@@ -98,7 +98,22 @@ router.get("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (
       .where(eq(quote_products.quoteId, req.params.id))
       .orderBy(quote_products.sortOrder);
     const total = products.reduce((sum, p) => sum + Number(p.total ?? 0), 0);
-    return res.json({ ...quote, products, total });
+
+    // Fetch linked lead info (if any)
+    let linkedLead: { id: string; leadRefNumber: string | null; firstName: string | null; lastName: string | null; fullName: string | null; status: string | null } | null = null;
+    if (quote.leadId) {
+      const [ld] = await db.select({
+        id:             leads.id,
+        leadRefNumber:  leads.leadRefNumber,
+        firstName:      leads.firstName,
+        lastName:       leads.lastName,
+        fullName:       leads.fullName,
+        status:         leads.status,
+      }).from(leads).where(eq(leads.id, quote.leadId)).limit(1);
+      linkedLead = ld ?? null;
+    }
+
+    return res.json({ ...quote, products, total, lead: linkedLead });
   } catch (err) {
     console.error("[GET /api/crm/quotes/:id]", err);
     return res.status(500).json({ error: "Internal server error" });

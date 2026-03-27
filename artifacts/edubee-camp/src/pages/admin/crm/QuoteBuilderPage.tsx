@@ -12,7 +12,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Plus, Trash2, ArrowLeft, GripVertical, Search, X, Check, ChevronDown,
-  Mail, Printer, UserPlus, Building2,
+  Mail, Printer, UserPlus, Building2, ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1779,16 +1779,38 @@ export default function QuoteBuilderPage() {
               {quote.quoteRefNumber ?? "—"}
             </span>
           </div>
-          {quote.leadId && (
-            <div className="flex justify-between text-gray-500">
-              <span>Lead</span>
-              <button
-                onClick={() => navigate(`/admin/crm/leads/${quote.leadId}`)}
-                className="text-xs underline"
-                style={{ color: PRIMARY }}
-              >
-                View Lead
-              </button>
+          {quote.leadId && quote.lead && (
+            <div className="rounded-lg border p-3 space-y-2 mt-1" style={{ borderColor: "#F5821F", background: "#FEF0E3" }}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#A8603A" }}>Linked Lead</p>
+                <button
+                  onClick={() => navigate(`/admin/crm/leads/${quote.leadId}`)}
+                  className="flex items-center gap-1 text-xs font-medium underline-offset-2 hover:underline"
+                  style={{ color: PRIMARY }}
+                >
+                  <ExternalLink size={11} /> View Lead
+                </button>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Ref</span>
+                <span className="font-mono text-gray-700">{quote.lead.leadRefNumber ?? "—"}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Name</span>
+                <span className="text-gray-800 font-medium">
+                  {quote.lead.firstName && quote.lead.lastName
+                    ? `${quote.lead.firstName} ${quote.lead.lastName.toUpperCase()}`
+                    : (quote.lead.fullName ?? "—")}
+                </span>
+              </div>
+              {quote.lead.status && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-500">Status</span>
+                  <span className="capitalize px-1.5 py-0.5 rounded-full bg-white border text-gray-600" style={{ borderColor: "#F5821F33" }}>
+                    {quote.lead.status.replace(/_/g, " ")}
+                  </span>
+                </div>
+              )}
             </div>
           )}
           <div className="flex justify-between text-gray-500">
