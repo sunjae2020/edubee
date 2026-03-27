@@ -97,6 +97,7 @@ interface Lead {
   notes?: string | null;
   accountId?: string | null;
   accountName?: string | null;
+  accountType?: string | null;
   assignedStaffId?: string | null;
   assignedStaffName?: string | null;
   activities?: ActivityRecord[];
@@ -143,10 +144,11 @@ function ChannelIcon({ channel }: { channel: string }) {
 
 // ── Account Lookup Field ──────────────────────────────────────────────────────
 function AccountLookupField({
-  currentId, currentName, onSave, isSaving,
+  currentId, currentName, defaultAccountType, onSave, isSaving,
 }: {
   currentId?: string | null;
   currentName?: string | null;
+  defaultAccountType?: string | null;
   onSave: (accountId: string | null, accountName: string | null) => void;
   isSaving: boolean;
 }) {
@@ -162,7 +164,7 @@ function AccountLookupField({
   const [pending, setPending]   = useState<AccountOption | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newName,  setNewName]  = useState("");
-  const [newType,  setNewType]  = useState("Client");
+  const [newType,  setNewType]  = useState(defaultAccountType ?? "Client");
   const [newEmail, setNewEmail] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [creating, setCreating] = useState(false);
@@ -172,6 +174,10 @@ function AccountLookupField({
   useEffect(() => {
     setSelected(currentId && currentName ? { id: currentId, name: currentName } : null);
   }, [currentId, currentName]);
+
+  useEffect(() => {
+    if (defaultAccountType) setNewType(defaultAccountType);
+  }, [defaultAccountType]);
 
   const { data: results = [] } = useQuery<AccountOption[]>({
     queryKey: ["account-search-lead", query],
@@ -194,7 +200,7 @@ function AccountLookupField({
     return () => document.removeEventListener("mousedown", handler);
   }, [editing, showCreate]);
 
-  const resetForm = () => { setNewName(""); setNewType("Client"); setNewEmail(""); setNewPhone(""); };
+  const resetForm = () => { setNewName(""); setNewType(defaultAccountType ?? "Client"); setNewEmail(""); setNewPhone(""); };
 
   const startEdit = () => {
     setPending(selected);
@@ -700,6 +706,7 @@ export default function LeadDetailPage() {
             <AccountLookupField
               currentId={lead.accountId}
               currentName={lead.accountName}
+              defaultAccountType={lead.accountType}
               onSave={saveAccount}
               isSaving={savingAccount}
             />

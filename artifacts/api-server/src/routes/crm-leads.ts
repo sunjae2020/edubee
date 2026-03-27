@@ -114,6 +114,7 @@ router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
       .select({
         lead: leads,
         accountName: accounts.name,
+        accountType: accounts.accountType,
       })
       .from(leads)
       .leftJoin(accounts, eq(leads.accountId, accounts.id))
@@ -121,7 +122,7 @@ router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
       .limit(1);
 
     if (!rows.length) return res.status(404).json({ error: "Lead not found" });
-    const { lead, accountName } = rows[0];
+    const { lead, accountName, accountType } = rows[0];
 
     const activities = await db.select().from(lead_activities)
       .where(eq(lead_activities.leadId, req.params.id))
@@ -161,6 +162,7 @@ router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
     return res.json({
       ...lead,
       accountName: accountName ?? null,
+      accountType: accountType ?? null,
       assignedStaffName,
       activities,
       campApplication,
