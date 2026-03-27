@@ -404,11 +404,11 @@ export default function Products() {
                 <tr key={p.id}
                   className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                   onClick={() => setLocation(`${BASE}/admin/products/${p.id}`)}>
-                  <td className="px-4 py-3 text-sm text-[#57534E] truncate">
-                    {p.providerName ?? <span className="text-muted-foreground">—</span>}
+                  <td className="px-4 py-3 text-sm text-[#57534E]">
+                    <div className="line-clamp-2">{p.providerName ?? <span className="text-muted-foreground">—</span>}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-foreground truncate">{p.productName}</div>
+                    <div className="font-medium text-foreground line-clamp-2">{p.productName}</div>
                   </td>
                   <td className="px-4 py-3 text-sm font-mono font-semibold text-[#1C1917] whitespace-nowrap">
                     {fmtPrice(p)}
