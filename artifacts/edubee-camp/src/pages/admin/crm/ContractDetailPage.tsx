@@ -911,70 +911,224 @@ function PaymentsTab({ contractId }: { contractId: string }) {
   );
 }
 
-// ── Transactions Tab ───────────────────────────────────────────────────────
-function TransactionsTab({ contract, onRecordPayment }: { contract: any; onRecordPayment: () => void }) {
-  const txns: any[] = contract.transactions ?? [];
-  const totalCredit = txns.reduce((s: number, t: any) => s + (t.creditAmount ?? 0), 0);
-  const totalDebit  = txns.reduce((s: number, t: any) => s + (t.debitAmount ?? 0), 0);
+// ── Transaction Edit Modal ──────────────────────────────────────────────────
+function TxnEditModal({ txn, contractId, onClose }: { txn: any; contractId: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({
+    transactionDate: txn.transactionDate?.slice(0, 10) ?? "",
+    transactionType: txn.transactionType ?? "Credit",
+    creditAmount:    txn.creditAmount != null ? String(txn.creditAmount) : (txn.amount != null ? String(txn.amount) : ""),
+    bankReference:   txn.bankReference ?? "",
+    description:     txn.description ?? "",
+    status:          txn.status ?? "Active",
+  });
+  const [saving, setSaving] = useState(false);
+  const [err,    setErr]    = useState("");
+
+  const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
+  const inp = "w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]";
+  const sel = inp + " bg-white";
+
+  const handleSave = async () => {
+    setSaving(true); setErr("");
+    try {
+      await axios.put(`${BASE}/api/transactions/${txn.id}`, {
+        transactionType:  form.transactionType,
+        creditAmount:     form.creditAmount !== "" ? parseFloat(form.creditAmount) : null,
+        transactionDate:  form.transactionDate || null,
+        bankReference:    form.bankReference || null,
+        description:      form.description || null,
+        status:           form.status,
+      });
+      qc.invalidateQueries({ queryKey: ["crm-contract", contractId] });
+      onClose();
+    } catch (e: any) {
+      setErr(e?.response?.data?.error ?? "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
-      <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#1C1917]">Transactions ({txns.length})</h3>
-        <button onClick={onRecordPayment}
-          className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
-          style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
-          <Plus size={12} /> Record Payment
-        </button>
-      </div>
-      {txns.length === 0 ? (
-        <div className="text-center py-10 text-[#A8A29E]">
-          <CreditCard size={28} className="mx-auto mb-2 opacity-40" />
-          <p className="text-sm">No transactions yet</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
+          <h2 className="text-base font-semibold text-[#1C1917]">Edit Transaction</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F4F3F1] text-[#A8A29E]"><X size={16} /></button>
         </div>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
-                  {["Txn Ref","Date","Type","Credit","Debit","Status","Note"].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {txns.map((t: any) => (
-                  <tr key={t.id} className="border-b border-[#E8E6E2] hover:bg-[#FAFAF9]">
-                    <td className="px-4 py-3 font-mono text-xs text-[#57534E]">{t.bankReference ?? "—"}</td>
-                    <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(t.transactionDate)}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${t.transactionType === "Credit" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#FEF2F2] text-[#DC2626]"}`}>
-                        {t.transactionType}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-[13px] font-semibold" style={{ color:"#16A34A" }}>
-                      {t.creditAmount > 0 ? fmtMoney(t.creditAmount) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-[13px] font-semibold" style={{ color:"#DC2626" }}>
-                      {t.debitAmount > 0 ? fmtMoney(t.debitAmount) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-[12px] text-[#57534E]">{t.status ?? "—"}</td>
-                    <td className="px-4 py-3 text-[12px] text-[#A8A29E] max-w-[140px] truncate">{t.description ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Date</label>
+              <input type="date" className={inp} value={form.transactionDate} onChange={e => set("transactionDate", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Type</label>
+              <select className={sel} value={form.transactionType} onChange={e => set("transactionType", e.target.value)}>
+                <option value="Credit">Credit</option>
+                <option value="Debit">Debit</option>
+                <option value="payment_received">Payment Received</option>
+                <option value="payment_sent">Payment Sent</option>
+                <option value="adjustment">Adjustment</option>
+              </select>
+            </div>
           </div>
-          {/* Summary */}
-          <div className="px-5 py-3 border-t border-[#E8E6E2] flex gap-6" style={{ background:"#FAFAF9" }}>
-            <div><span className="text-xs text-[#A8A29E]">Total Credits </span><span className="text-sm font-bold text-[#16A34A]">{fmtMoney(totalCredit)}</span></div>
-            <div><span className="text-xs text-[#A8A29E]">Total Debits </span><span className="text-sm font-bold text-[#DC2626]">{fmtMoney(totalDebit)}</span></div>
-            <div><span className="text-xs text-[#A8A29E]">Net </span><span className="text-sm font-bold" style={{ color:"#F5821F" }}>{fmtMoney(totalCredit - totalDebit)}</span></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Amount (AUD)</label>
+              <input type="number" min="0" step="0.01" className={inp} value={form.creditAmount} onChange={e => set("creditAmount", e.target.value)} placeholder="0.00" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Status</label>
+              <select className={sel} value={form.status} onChange={e => set("status", e.target.value)}>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive (Voided)</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
           </div>
-        </>
-      )}
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Bank Reference / Txn Ref</label>
+            <input type="text" className={inp} value={form.bankReference} onChange={e => set("bankReference", e.target.value)} placeholder="Optional" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Description / Note</label>
+            <textarea rows={2} className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#F5821F] resize-none"
+              value={form.description} onChange={e => set("description", e.target.value)} placeholder="Optional" />
+          </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
+        </div>
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E8E6E2]">
+          <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
+          <button onClick={handleSave} disabled={saving}
+            className="h-9 px-5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+            style={{ background:"#F5821F" }}>
+            {saving ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </div>
     </div>
+  );
+}
+
+// ── Transactions Tab ───────────────────────────────────────────────────────
+function TransactionsTab({ contract, onRecordPayment }: { contract: any; onRecordPayment: () => void }) {
+  const qc = useQueryClient();
+  const txns: any[] = contract.transactions ?? [];
+  const totalCredit = txns.reduce((s: number, t: any) => s + parseFloat(t.creditAmount ?? t.amount ?? "0"), 0);
+  const totalDebit  = txns.filter((t: any) => ["Debit","payment_sent","adjustment"].includes(t.transactionType))
+                          .reduce((s: number, t: any) => s + parseFloat(t.creditAmount ?? t.amount ?? "0"), 0);
+
+  const [editingTxn, setEditingTxn] = useState<any | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleVoid = async (txnId: string) => {
+    if (!window.confirm("이 트랜잭션을 비활성화(Void)하시겠습니까? 취소할 수 없습니다.")) return;
+    setDeletingId(txnId);
+    try {
+      await axios.delete(`${BASE}/api/transactions/${txnId}`);
+      qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] });
+    } catch (e: any) {
+      alert(e?.response?.data?.error ?? "Void failed");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  return (
+    <>
+      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
+        <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[#1C1917]">Transactions ({txns.length})</h3>
+          <button onClick={onRecordPayment}
+            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+            style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
+            <Plus size={12} /> Record Payment
+          </button>
+        </div>
+        {txns.length === 0 ? (
+          <div className="text-center py-10 text-[#A8A29E]">
+            <CreditCard size={28} className="mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No transactions yet</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
+                    {["Txn Ref","Date","Type","Amount","Status","Note","Actions"].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {txns.map((t: any) => {
+                    const isInactive = t.status === "Inactive";
+                    return (
+                      <tr key={t.id}
+                        className={`border-b border-[#E8E6E2] transition-colors ${isInactive ? "opacity-40 bg-[#FAFAF9]" : "hover:bg-[#FAFAF9]"}`}>
+                        <td className="px-4 py-3 font-mono text-xs text-[#57534E]">{t.bankReference ?? "—"}</td>
+                        <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(t.transactionDate)}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                            ["Credit","payment_received"].includes(t.transactionType)
+                              ? "bg-[#DCFCE7] text-[#16A34A]"
+                              : "bg-[#FEF2F2] text-[#DC2626]"
+                          }`}>
+                            {t.transactionType === "payment_received" ? "Payment In"
+                              : t.transactionType === "payment_sent" ? "Payment Out"
+                              : t.transactionType}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-[13px] font-semibold" style={{
+                          color: ["Credit","payment_received"].includes(t.transactionType) ? "#16A34A" : "#DC2626"
+                        }}>
+                          {fmtMoney(parseFloat(t.creditAmount ?? t.amount ?? "0"))}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            isInactive ? "bg-[#F4F3F1] text-[#A8A29E]" : "bg-[#DCFCE7] text-[#16A34A]"
+                          }`}>{t.status ?? "—"}</span>
+                        </td>
+                        <td className="px-4 py-3 text-[12px] text-[#A8A29E] max-w-[140px] truncate" title={t.description ?? ""}>{t.description ?? "—"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <button onClick={() => setEditingTxn(t)} disabled={isInactive}
+                              className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-[#EFF6FF] hover:border-[#3B82F6] hover:text-[#2563EB] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                              title="Edit">
+                              <Pencil size={11} />
+                            </button>
+                            <button onClick={() => handleVoid(t.id)} disabled={isInactive || deletingId === t.id}
+                              className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-red-50 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                              title="Void">
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {/* Summary */}
+            <div className="px-5 py-3 border-t border-[#E8E6E2] flex gap-6" style={{ background:"#FAFAF9" }}>
+              <div><span className="text-xs text-[#A8A29E]">Total In </span><span className="text-sm font-bold text-[#16A34A]">{fmtMoney(totalCredit)}</span></div>
+              <div><span className="text-xs text-[#A8A29E]">Total Out </span><span className="text-sm font-bold text-[#DC2626]">{fmtMoney(totalDebit)}</span></div>
+              <div><span className="text-xs text-[#A8A29E]">Net </span><span className="text-sm font-bold" style={{ color:"#F5821F" }}>{fmtMoney(totalCredit - totalDebit)}</span></div>
+            </div>
+          </>
+        )}
+      </div>
+      {editingTxn && (
+        <TxnEditModal
+          txn={editingTxn}
+          contractId={contract.id}
+          onClose={() => setEditingTxn(null)}
+        />
+      )}
+    </>
   );
 }
 
