@@ -698,6 +698,7 @@ export default function ProductDetail() {
       if (isNew) navigate(`${BASE}/admin/products/${savedId}`);
     },
     onError: (err: any) => {
+      if (err?.message === "validation") return;
       const msg = err?.response?.data?.error ?? err.message ?? "Unknown error";
       toast({
         title: `Failed to save product: ${msg}`,
