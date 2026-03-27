@@ -305,7 +305,9 @@ const Grid2 = ({ children }: { children: React.ReactNode }) => (
 
 const Divider = () => <div style={{ height: 1, background: "#F4F3F1", margin: "20px 0" }} />;
 
-const ServiceCategorySelector = ({ accountId, readOnly }: { accountId: string; readOnly?: boolean }) => {
+const ServiceCategorySelector = ({
+  accountId, readOnly, onCategoriesChange,
+}: { accountId: string; readOnly?: boolean; onCategoriesChange?: (cats: ServiceType[]) => void }) => {
   const [selected, setSelected] = useState<ServiceType[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -313,7 +315,9 @@ const ServiceCategorySelector = ({ accountId, readOnly }: { accountId: string; r
     apiFetch(`/api/accounts/${accountId}/service-categories`)
       .then(r => r.json())
       .then(d => {
-        setSelected(d.data.filter((c: ServiceCategory) => c.isActive).map((c: ServiceCategory) => c.serviceType));
+        const cats = d.data.filter((c: ServiceCategory) => c.isActive).map((c: ServiceCategory) => c.serviceType);
+        setSelected(cats);
+        onCategoriesChange?.(cats);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -324,13 +328,21 @@ const ServiceCategorySelector = ({ accountId, readOnly }: { accountId: string; r
     const isSelected = selected.includes(type);
     if (isSelected) {
       await apiFetch(`/api/accounts/${accountId}/service-categories/${type}`, { method: "DELETE" });
-      setSelected(prev => prev.filter(t => t !== type));
+      setSelected(prev => {
+        const next = prev.filter(t => t !== type);
+        onCategoriesChange?.(next);
+        return next;
+      });
     } else {
       await apiFetch(`/api/accounts/${accountId}/service-categories`, {
         method: "POST",
         body: JSON.stringify({ serviceType: type }),
       });
-      setSelected(prev => [...prev, type]);
+      setSelected(prev => {
+        const next = [...prev, type];
+        onCategoriesChange?.(next);
+        return next;
+      });
     }
   };
 
@@ -1036,20 +1048,6 @@ export const AccountServiceProfilesTab = ({
 }: AccountServiceProfilesTabProps) => {
   const [activeCategories, setActiveCategories] = useState<ServiceType[]>([]);
 
-  useEffect(() => {
-    const poll = () => {
-      apiFetch(`/api/accounts/${accountId}/service-categories`)
-        .then(r => r.json())
-        .then(d => setActiveCategories(
-          d.data.filter((c: ServiceCategory) => c.isActive).map((c: ServiceCategory) => c.serviceType)
-        ))
-        .catch(() => {});
-    };
-    poll();
-    const interval = setInterval(poll, 3000);
-    return () => clearInterval(interval);
-  }, [accountId]);
-
   const has = (type: ServiceType) => activeCategories.includes(type);
 
   return (
@@ -1062,8 +1060,19 @@ export const AccountServiceProfilesTab = ({
         </p>
       </div>
 
-      <ServiceCategorySelector accountId={accountId} readOnly={readOnly} />
+      <ServiceCategorySelector accountId={accountId} readOnly={readOnly} onCategoriesChange={setActiveCategories} />
 
+      {activeCategories.length === 0 && (
+        <div style={{
+          textAlign: "center", padding: "48px 24px", background: "#FAFAF9",
+          border: "1px dashed #D6D3D1", borderRadius: 12, marginTop: 16,
+          color: "#A8A29E",
+        }}>
+          <Layers size={32} style={{ margin: "0 auto 12px", display: "block", opacity: 0.4 }} />
+          <p style={{ fontSize: 15, fontWeight: 500, margin: "0 0 4px", color: "#78716C" }}>No service categories selected</p>
+          <p style={{ fontSize: 13, margin: 0 }}>Select one or more service types above to configure profile details.</p>
+        </div>
+      )}
       {(has("homestay") || has("dormitory")) && <HomestayProfileSection accountId={accountId} readOnly={readOnly} />}
       {has("pickup") && <PickupProfileSection accountId={accountId} readOnly={readOnly} />}
       {has("tour_provider") && <TourProfileSection accountId={accountId} readOnly={readOnly} />}

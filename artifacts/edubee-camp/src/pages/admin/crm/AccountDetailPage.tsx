@@ -123,7 +123,7 @@ function getTabs(accountType?: string | null) {
     case "Client":
       return [...base, leads, contracts, ledger];
     case "Company":
-      return [...base, leads, contracts, ledger];
+      return [...base, leads, contracts, serviceProfiles, ledger];
     case "Supplier":
       return [...base, serviceProfiles, products, ledger, portal];
     case "School":
