@@ -666,19 +666,19 @@ export default function PackageGroupDetail() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground">
-                  환율 기준일: <strong>{rateDate}</strong>
-                  {Object.keys(liveRates).length > 0 && <span className="ml-1 text-xs text-green-600">(DB 최신)</span>}
+                  Exchange rate as of: <strong>{rateDate}</strong>
+                  {Object.keys(liveRates).length > 0 && <span className="ml-1 text-xs text-green-600">(Up to date)</span>}
                 </span>
                 <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
                   <a href={`${BASE}/admin/accounting/exchange-rates`}>
-                    <RefreshCw className="h-3 w-3" /> 환율 업데이트
+                    <RefreshCw className="h-3 w-3" /> Update Rates
                   </a>
                 </Button>
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 text-sm">
                   <Switch id="auto-convert" checked={autoConvert} onCheckedChange={setAutoConvert} />
-                  <label htmlFor="auto-convert" className="text-xs text-muted-foreground cursor-pointer">AUD 기준 자동 환산</label>
+                  <label htmlFor="auto-convert" className="text-xs text-muted-foreground cursor-pointer">Auto-convert from AUD</label>
                 </div>
                 {canEdit && (
                   <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1" onClick={() => openPkgDialog()}>
@@ -693,8 +693,8 @@ export default function PackageGroupDetail() {
                 <thead>
                   <tr className="border-b bg-muted/30 text-xs text-muted-foreground">
                     <th className="px-4 py-2.5 text-left">Package</th>
-                    <th className="px-4 py-2.5 text-right">어른</th>
-                    <th className="px-4 py-2.5 text-right">학생</th>
+                    <th className="px-4 py-2.5 text-right">Adults</th>
+                    <th className="px-4 py-2.5 text-right">Students</th>
                     <th className="px-4 py-2.5 text-right">Max</th>
                     {activeCurrencies.map(c => <th key={c.ccy} className="px-3 py-2.5 text-right">{c.flag} {c.ccy}</th>)}
                     <th className="px-4 py-2.5 text-center">Status</th>
@@ -879,17 +879,17 @@ export default function PackageGroupDetail() {
           <div className="space-y-4 mt-1">
             {/* Basic Info */}
             <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">기본 정보</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Basic Information</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="col-span-2"><Label className="text-xs">Package Name</Label>
                   <Input value={pkgForm.name} onChange={e => setPkgForm(f => ({ ...f, name: e.target.value }))} className="mt-1 h-8 text-sm" /></div>
-                <div><Label className="text-xs">기간 (Duration Days)</Label>
+                <div><Label className="text-xs">Duration (Days)</Label>
                   <Input type="number" value={pkgForm.durationDays} onChange={e => setPkgForm(f => ({ ...f, durationDays: e.target.value }))} className="mt-1 h-8 text-sm" /></div>
-                <div><Label className="text-xs">전체 인원 (Max Participants)</Label>
+                <div><Label className="text-xs">Max Participants</Label>
                   <Input type="number" value={pkgForm.maxParticipants} onChange={e => setPkgForm(f => ({ ...f, maxParticipants: e.target.value }))} className="mt-1 h-8 text-sm" /></div>
-                <div><Label className="text-xs">어른 인원 (Max Adults)</Label>
+                <div><Label className="text-xs">Max Adults</Label>
                   <Input type="number" value={pkgForm.maxAdults} onChange={e => setPkgForm(f => ({ ...f, maxAdults: e.target.value }))} className="mt-1 h-8 text-sm" placeholder="—" /></div>
-                <div><Label className="text-xs">학생 인원 (Max Students)</Label>
+                <div><Label className="text-xs">Max Students</Label>
                   <Input type="number" value={pkgForm.maxStudents} onChange={e => setPkgForm(f => ({ ...f, maxStudents: e.target.value }))} className="mt-1 h-8 text-sm" placeholder="—" /></div>
               </div>
             </div>
@@ -897,10 +897,10 @@ export default function PackageGroupDetail() {
             {/* Pricing */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">가격 (Pricing)</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pricing</p>
                 <div className="flex items-center gap-2">
                   <Switch id="ac-pkg" checked={autoConvert} onCheckedChange={setAutoConvert} />
-                  <label htmlFor="ac-pkg" className="text-xs text-muted-foreground cursor-pointer">AUD 기준 자동 환산</label>
+                  <label htmlFor="ac-pkg" className="text-xs text-muted-foreground cursor-pointer">Auto-convert from AUD</label>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -920,16 +920,16 @@ export default function PackageGroupDetail() {
             {editingPkg && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">추가 상품 (Add-on Products)</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Add-on Products</p>
                   <Button size="sm" variant="outline" className="h-6 text-xs gap-1 border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
                     onClick={() => { setPkgProdTypeFilter("all"); setSelectedPkgProdId(null); setPkgAddQty(1); setPkgAddUnitPrice(""); setPkgAddIsOptional(false); setPkgAddError(null); setShowPkgAddProduct(true); }}>
-                    <Plus className="h-3 w-3" /> 상품 추가
+                    <Plus className="h-3 w-3" /> Add Product
                   </Button>
                 </div>
                 {pkgProductsLoading ? (
                   <div className="h-10 bg-muted/30 rounded animate-pulse" />
                 ) : pkgLinkedProducts.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic py-2">연결된 상품 없음</p>
+                  <p className="text-xs text-muted-foreground italic py-2">No products linked</p>
                 ) : (
                   <div className="rounded-lg border overflow-hidden">
                     <table className="w-full text-xs">
@@ -937,7 +937,7 @@ export default function PackageGroupDetail() {
                         <tr className="bg-muted/30 border-b text-muted-foreground">
                           <th className="px-3 py-2 text-left">Product</th>
                           <th className="px-3 py-2 text-left">Type</th>
-                          <th className="px-3 py-2 text-center">구분</th>
+                          <th className="px-3 py-2 text-center">Inclusion</th>
                           <th className="px-3 py-2 text-right">Qty</th>
                           <th className="px-3 py-2 text-right">Price</th>
                           <th className="px-3 py-2 w-8" />
@@ -950,7 +950,7 @@ export default function PackageGroupDetail() {
                             <td className="px-3 py-2 text-muted-foreground capitalize">{row.productType}</td>
                             <td className="px-3 py-2 text-center">
                               <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${row.isOptional ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-700"}`}>
-                                {row.isOptional ? "선택" : "포함"}
+                                {row.isOptional ? "Optional" : "Included"}
                               </span>
                             </td>
                             <td className="px-3 py-2 text-right">{row.quantity ?? 1}</td>
@@ -1009,12 +1009,12 @@ export default function PackageGroupDetail() {
                           <Input type="number" step="0.01" value={pkgAddUnitPrice} onChange={e => setPkgAddUnitPrice(e.target.value)} className="mt-0.5 h-7 text-xs font-mono" />
                         </div>
                         <div>
-                          <Label className="text-[11px]">구분</Label>
+                          <Label className="text-[11px]">Inclusion</Label>
                           <Select value={pkgAddIsOptional ? "optional" : "included"} onValueChange={v => setPkgAddIsOptional(v === "optional")}>
                             <SelectTrigger className="mt-0.5 h-7 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="included">포함</SelectItem>
-                              <SelectItem value="optional">선택</SelectItem>
+                              <SelectItem value="included">Included</SelectItem>
+                              <SelectItem value="optional">Optional</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -1025,9 +1025,9 @@ export default function PackageGroupDetail() {
                       <Button size="sm" className="h-7 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
                         disabled={!selectedPkgProdId || linkPkgProduct.isPending}
                         onClick={() => linkPkgProduct.mutate({ productId: selectedPkgProdId, isOptional: pkgAddIsOptional, quantity: pkgAddQty, unitPrice: pkgAddUnitPrice || null })}>
-                        {linkPkgProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} 추가
+                        {linkPkgProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Add
                       </Button>
-                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowPkgAddProduct(false)}>취소</Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowPkgAddProduct(false)}>Cancel</Button>
                     </div>
                   </div>
                 )}
