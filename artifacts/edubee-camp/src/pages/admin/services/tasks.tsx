@@ -288,7 +288,7 @@ export default function TasksPage() {
                 <tr
                   key={t.id}
                   onClick={() => openDetail(t)}
-                  className="border-b border-[#F4F3F1] hover:bg-[#FAFAF9] cursor-pointer"
+                  className="border-b border-[#F4F3F1] hover:bg-[#FEF0E3] cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-2.5 font-mono text-xs font-semibold text-[#F5821F] whitespace-nowrap">{t.taskNumber}</td>
                   <td className="px-4 py-2.5"><TypeBadge type={t.taskType} /></td>

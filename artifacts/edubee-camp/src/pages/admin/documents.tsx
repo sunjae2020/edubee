@@ -239,7 +239,7 @@ export default function DocumentsPage() {
               </thead>
               <tbody>
                 {sorted.map((doc: any) => (
-                  <tr key={doc.id} className="border-t hover:bg-[#FEF0E3] transition-colors">
+                  <tr key={doc.id} className="border-t hover:bg-[#FEF0E3] transition-colors cursor-pointer">
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
                         <DocFileIcon ext={doc.fileExtension} />

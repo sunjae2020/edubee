@@ -152,7 +152,7 @@ export default function OtherServicePage() {
               return (
                 <tr key={row.id}
                   onClick={() => navigate(`/admin/services/other/${row.id}`)}
-                  className="hover:bg-stone-50 cursor-pointer transition-colors">
+                  className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-[#F5821F] font-semibold">{row.contractNumber ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-700 font-medium">{row.clientName ?? row.studentName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{row.serviceType ?? "—"}</td>

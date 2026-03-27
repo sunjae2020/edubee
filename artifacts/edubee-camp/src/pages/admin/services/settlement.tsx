@@ -194,7 +194,7 @@ export default function Settlement() {
               {sorted.map(r => (
                 <tr key={r.id}
                   onClick={() => navigate(`${BASE}/admin/services/settlement/${r.id}`)}
-                  className="border-b border-[#E8E6E2] cursor-pointer transition-colors hover:bg-[#FAFAF9]">
+                  className="border-b border-[#E8E6E2] cursor-pointer transition-colors hover:bg-[#FEF0E3]">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       <Initials name={r.clientName ?? r.studentName} />

@@ -209,7 +209,7 @@ export default function AccommodationPage() {
               return (
                 <tr
                   key={row.id}
-                  className="hover:bg-stone-50 transition-colors cursor-pointer"
+                  className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/services/accommodation/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-medium text-stone-800">{row.clientName ?? row.studentName ?? "—"}</td>

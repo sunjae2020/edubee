@@ -447,7 +447,7 @@ export default function ContractListPage() {
               )}
               {!isLoading && sorted.map(row => (
                 <tr key={row.id}
-                  className="border-b border-[#E8E6E2] cursor-pointer hover:bg-[#FAFAF9] transition-colors"
+                  className="border-b border-[#E8E6E2] cursor-pointer hover:bg-[#FEF0E3] transition-colors"
                   onClick={() => navigate(`/admin/crm/contracts/${row.id}`)}
                 >
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}><input type="checkbox" /></td>

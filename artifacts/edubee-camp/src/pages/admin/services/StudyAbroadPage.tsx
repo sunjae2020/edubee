@@ -280,7 +280,7 @@ export default function StudyAbroadPage() {
               return (
                 <tr
                   key={row.id}
-                  className="hover:bg-stone-50 transition-colors cursor-pointer"
+                  className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/services/study-abroad/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-medium text-stone-800 hover:text-[#F5821F] transition-colors">
