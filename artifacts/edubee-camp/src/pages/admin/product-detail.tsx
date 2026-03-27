@@ -652,19 +652,21 @@ export default function ProductDetail() {
   // ── Save mutations ────────────────────────────────────────────────────────
   const saveMutation = useMutation({
     mutationFn: async () => {
-      // ── Required field validation ────────────────────────────────────────
-      if (!selectedGroupId) {
-        toast({ title: "Product Group is required", className: "border-[#DC2626] bg-[#FEF2F2] text-[#DC2626]" });
-        return Promise.reject(new Error("validation"));
-      }
-      if (!form["productTypeId"]) {
-        toast({ title: "Product Type is required", className: "border-[#DC2626] bg-[#FEF2F2] text-[#DC2626]" });
-        return Promise.reject(new Error("validation"));
-      }
-      const smt = form["serviceModuleType"] || inheritedServiceModule;
-      if (!smt) {
-        toast({ title: "Service Module is required — ensure the selected Product Type has a Service Module assigned", className: "border-[#DC2626] bg-[#FEF2F2] text-[#DC2626]" });
-        return Promise.reject(new Error("validation"));
+      // ── Required field validation (hard block for new products only) ──────
+      if (isNew) {
+        if (!selectedGroupId) {
+          toast({ title: "Product Group is required", className: "border-[#DC2626] bg-[#FEF2F2] text-[#DC2626]" });
+          return Promise.reject(new Error("validation"));
+        }
+        if (!form["productTypeId"]) {
+          toast({ title: "Product Type is required", className: "border-[#DC2626] bg-[#FEF2F2] text-[#DC2626]" });
+          return Promise.reject(new Error("validation"));
+        }
+        const smt = form["serviceModuleType"] || inheritedServiceModule;
+        if (!smt) {
+          toast({ title: "Service Module is required — ensure the selected Product Type has a Service Module assigned", className: "border-[#DC2626] bg-[#FEF2F2] text-[#DC2626]" });
+          return Promise.reject(new Error("validation"));
+        }
       }
       const { id: _id, createdAt: _ca, updatedAt: _ua, convertedCost: _cc, ...body } = form;
       // Ensure serviceModuleType is set from the product type if not already set
