@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { BadgeDollarSign, Pencil, Plus, Loader2, Search } from "lucide-react";
+import { BadgeDollarSign, Plus, Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
@@ -23,6 +23,7 @@ interface Commission {
   description?: string | null;
   status: string;
   createdOn?: string;
+  modifiedOn?: string | null;
 }
 
 const TYPE_OPTIONS = [
@@ -164,7 +165,7 @@ export default function Commissions() {
               <SortableTh key="Description" col="description" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Description</SortableTh>
               <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Status</SortableTh>
               <SortableTh key="Created" col="createdOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Created</SortableTh>
-              <th className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Actions</th>
+              <SortableTh key="Modified" col="modifiedOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Modified</SortableTh>
             </>
             </tr>
           </thead>
@@ -198,19 +199,7 @@ export default function Commissions() {
                 </td>
                 <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                 <td className="px-4 py-3 text-[#A8A29E] text-xs">{c.createdOn ? format(new Date(c.createdOn), "dd MMM yyyy") : "—"}</td>
-                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-[#57534E] hover:bg-[#F4F3F1]" onClick={() => openEdit(c)}>
-                      <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
-                    </Button>
-                    {c.status === "Active" && (
-                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-[#DC2626] hover:bg-[#FEF2F2]"
-                        onClick={() => deactivate.mutate(c.id)} disabled={deactivate.isPending}>
-                        Deactivate
-                      </Button>
-                    )}
-                  </div>
-                </td>
+                <td className="px-4 py-3 text-[#A8A29E] text-xs">{c.modifiedOn ? format(new Date(c.modifiedOn), "dd MMM yyyy") : "—"}</td>
               </tr>
             ))}
           </tbody>
