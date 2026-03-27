@@ -39,6 +39,7 @@ interface Product {
   location?: string | null;
   convertedCost?: Record<string, number | null>;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 interface AccountOption { id: string; name: string }
@@ -312,7 +313,7 @@ export default function Products() {
     });
   }
 
-  const COLS = 9;
+  const COLS = 8;
 
   return (
     <div className="space-y-4">
@@ -366,13 +367,12 @@ export default function Products() {
             <tr className="border-b bg-muted/30">
               <SortableTh col="providerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provider</SortableTh>
               <SortableTh col="productName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product Name</SortableTh>
-              <SortableTh col="productType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</SortableTh>
               <SortableTh col="price" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Price</SortableTh>
               <SortableTh col="productGrade" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Grade</SortableTh>
               <SortableTh col="productPriority" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Priority</SortableTh>
-              <SortableTh col="country" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Country</SortableTh>
-              <SortableTh col="city" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">City</SortableTh>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Location</th>
+              <SortableTh col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Created</SortableTh>
+              <SortableTh col="updatedAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Modified</SortableTh>
             </tr>
           </thead>
           <tbody>
@@ -400,9 +400,6 @@ export default function Products() {
                   <td className="px-4 py-3">
                     <div className="font-medium text-foreground">{p.productName}</div>
                   </td>
-                  <td className="px-4 py-3 text-xs text-[#57534E] capitalize">
-                    {p.productType ?? <span className="text-muted-foreground">—</span>}
-                  </td>
                   <td className="px-4 py-3 text-sm font-mono font-semibold text-[#1C1917]">
                     {fmtPrice(p)}
                   </td>
@@ -416,16 +413,16 @@ export default function Products() {
                       </span>
                     ) : <span className="text-muted-foreground">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#57534E]">
-                    {p.country ?? <span className="text-muted-foreground">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-[#57534E]">
-                    {p.city ?? <span className="text-muted-foreground">—</span>}
-                  </td>
                   <td className="px-4 py-3 text-sm text-[#57534E] max-w-[160px]">
                     {p.location
                       ? <span className="truncate block">{p.location}</span>
                       : <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[#57534E] whitespace-nowrap">
+                    {p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[#57534E] whitespace-nowrap">
+                    {p.updatedAt ? new Date(p.updatedAt).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : <span className="text-muted-foreground">—</span>}
                   </td>
                 </tr>
               ))
