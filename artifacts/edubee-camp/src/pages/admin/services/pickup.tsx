@@ -74,7 +74,7 @@ function TodayBanner({ rows, onNavigate }: { rows: PickupRow[]; onNavigate: (id:
         </h2>
       </div>
       <div className="space-y-2">
-        {sorted.map(row => {
+        {rows.map(row => {
           const { time } = fmtDatetime(row.pickupDatetime);
           const badge = STATUS_STYLE[row.status ?? "pending"] ?? STATUS_STYLE.pending;
           return (

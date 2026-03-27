@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
-import { ArrowLeft, Check, FileText, Briefcase, User, ChevronRight, Building2, ExternalLink, DollarSign, X, Plus, RotateCcw, Save } from "lucide-react";
+import { ArrowLeft, Check, FileText, Briefcase, User, ChevronRight, Building2, ExternalLink, DollarSign, X, Plus, RotateCcw, Save, Pencil } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,6 +138,7 @@ function ToggleRow({
 
 // ─── Student Profile Tab ──────────────────────────────────────────────────────
 function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSave: (p: object) => void }) {
+  const [, navigate] = useLocation();
   const [isDirty, setIsDirty] = useState(false);
 
   const initIndustries = Array.isArray(record.preferredIndustry)
@@ -485,7 +486,7 @@ export default function InternshipDetailPage() {
   const [, navigate] = useLocation();
   const { toast }    = useToast();
   const qc           = useQueryClient();
-  const [tab, setTab] = useState<"profile" | "company" | "progress" | "docs" | "notes">("profile");
+  const [tab, setTab] = useState<"profile" | "company" | "progress" | "docs" | "notes" | "payments">("profile");
 
   const id = params?.id;
 

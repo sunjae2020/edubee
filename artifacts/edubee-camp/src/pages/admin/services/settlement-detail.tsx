@@ -388,7 +388,7 @@ export default function SettlementMgtDetail() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"overview" | "checklist" | "notes">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "checklist" | "notes" | "payments">("overview");
   const [editField, setEditField] = useState<string | null>(null);
   const [editVal, setEditVal] = useState<string>("");
 

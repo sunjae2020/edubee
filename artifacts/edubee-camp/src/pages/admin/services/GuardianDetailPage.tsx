@@ -177,6 +177,7 @@ function AddReportModal({
 
 // ─── Details Tab ──────────────────────────────────────────────────────────────
 function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: object) => void }) {
+  const [, navigate] = useLocation();
   const [isDirty,        setIsDirty]        = useState(false);
   const [status,         setStatus]         = useState(record.status         ?? "pending");
   const [billingCycle,   setBillingCycle]   = useState(record.billingCycle   ?? "");
@@ -547,7 +548,7 @@ export default function GuardianDetailPage() {
   const [, navigate]  = useLocation();
   const { toast }     = useToast();
   const qc            = useQueryClient();
-  const [tab, setTab] = useState<"details" | "reports" | "events" | "medical" | "billing">("details");
+  const [tab, setTab] = useState<"details" | "reports" | "events" | "medical" | "billing" | "payments">("details");
 
   const id = params?.id;
 

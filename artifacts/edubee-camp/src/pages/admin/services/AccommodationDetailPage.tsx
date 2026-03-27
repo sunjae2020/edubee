@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
-import { ArrowLeft, Plus, HeartPulse, DollarSign, Home, Phone, MapPin, FileText, ExternalLink, X, RotateCcw, Save } from "lucide-react";
+import { ArrowLeft, Plus, HeartPulse, DollarSign, Home, Phone, MapPin, FileText, ExternalLink, X, RotateCcw, Save, Pencil } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,6 +139,7 @@ function AddWelfareModal({
 
 // ─── Details Tab ──────────────────────────────────────────────────────────────
 function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: object) => void }) {
+  const [, navigate] = useLocation();
   const [isDirty, setIsDirty] = useState(false);
   const [status, setStatus]   = useState(record.status ?? "searching");
   const [checkin, setCheckin] = useState(record.checkinDate ?? "");
@@ -533,7 +534,7 @@ export default function AccommodationDetailPage() {
   const [, navigate] = useLocation();
   const { toast }    = useToast();
   const qc           = useQueryClient();
-  const [tab, setTab] = useState<"details" | "welfare" | "billing" | "host" | "notes">("details");
+  const [tab, setTab] = useState<"details" | "welfare" | "billing" | "host" | "notes" | "payments">("details");
 
   const id = params?.id;
 

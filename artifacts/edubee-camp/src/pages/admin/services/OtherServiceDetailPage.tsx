@@ -346,7 +346,7 @@ export default function OtherServiceDetailPage() {
   const [, navigate]  = useLocation();
   const { toast }     = useToast();
   const qc            = useQueryClient();
-  const [tab, setTab] = useState<"overview" | "documents" | "bill" | "notes">("overview");
+  const [tab, setTab] = useState<"overview" | "documents" | "bill" | "notes" | "payments">("overview");
 
   const id = params?.id;
 

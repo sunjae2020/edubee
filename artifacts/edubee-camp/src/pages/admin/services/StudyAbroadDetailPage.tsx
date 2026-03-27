@@ -361,6 +361,7 @@ function OverviewTab({ record, onStageChange, onSave }: {
   onStageChange: (s: string) => void;
   onSave: (patch: object) => void;
 }) {
+  const [, navigate] = useLocation();
   const [isDirty, setIsDirty] = useState(false);
   const [status,               setStatus]               = useState(record.status ?? "active");
   const [coeNumber,            setCoeNumber]            = useState(record.coeNumber ?? "");

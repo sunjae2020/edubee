@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
-  ArrowLeft, FileText, DollarSign, ExternalLink, Stamp, Plus, RotateCcw, Save,
+  ArrowLeft, FileText, DollarSign, ExternalLink, Stamp, Plus, RotateCcw, Save, Pencil,
 } from "lucide-react";
 import { ContractPaymentsPanel } from "@/components/finance/ContractPaymentsPanel";
 import { Button } from "@/components/ui/button";

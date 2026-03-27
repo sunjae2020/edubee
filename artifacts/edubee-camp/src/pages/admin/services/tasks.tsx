@@ -322,7 +322,7 @@ export default function TasksPage() {
                 <span className="text-xs text-[#A8A29E] bg-[#F4F3F1] px-1.5 rounded-full">{col.tasks.length}</span>
               </div>
               <div className="space-y-2">
-                {col.sorted.map(t => (
+                {col.tasks.map(t => (
                   <div
                     key={t.id}
                     onClick={() => openDetail(t)}
