@@ -221,6 +221,8 @@ export const pickupMgt = pgTable("pickup_mgt", {
   productId:     uuid("product_id").references(() => products.id),
   serviceFee:    decimal("service_fee", { precision: 12, scale: 2 }),
   apCost:        decimal("ap_cost",     { precision: 12, scale: 2 }),
+  flightNo:      varchar("flight_no",   { length: 50 }),
+  timezone:      varchar("timezone",    { length: 100 }),
 });
 
 // ── Tour Management ────────────────────────────────────────────────────────

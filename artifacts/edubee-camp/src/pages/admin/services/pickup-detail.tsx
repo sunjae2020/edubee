@@ -20,6 +20,11 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUSES = ["pending", "driver_assigned", "en_route", "completed", "cancelled"];
 const PICKUP_TYPES = ["airport_pickup", "airport_dropoff", "hotel_to_school", "school_to_hotel", "custom"];
+const TIMEZONES = [
+  "Australia/Sydney", "Australia/Melbourne", "Australia/Brisbane", "Australia/Adelaide",
+  "Australia/Perth", "Asia/Seoul", "Asia/Tokyo", "Asia/Singapore",
+  "Asia/Bangkok", "Asia/Manila", "Asia/Hong_Kong", "UTC",
+];
 
 const STATUS_COLORS: Record<string, string> = {
   pending:         "bg-[#F4F3F1] text-[#57534E]",
@@ -187,9 +192,17 @@ export default function PickupMgtDetail() {
     alwaysEdit: true,
   });
 
-  const fmtDt = (d?: string | null) => {
+  const fmtDt = (d?: string | null, tz?: string | null) => {
     if (!d) return "—";
-    try { return format(parseISO(d), "PPp"); } catch { return d; }
+    try {
+      const formatted = format(parseISO(d), "PPp");
+      return tz ? `${formatted} (${tz})` : formatted;
+    } catch { return d; }
+  };
+
+  const toDatetimeLocal = (d?: string | null) => {
+    if (!d) return "";
+    try { return format(parseISO(d), "yyyy-MM-dd'T'HH:mm"); } catch { return d ?? ""; }
   };
 
   if (isLoading) {
@@ -246,7 +259,40 @@ export default function PickupMgtDetail() {
                 </Select>
               }
             />
-            <DetailRow label="Pickup Date & Time" value={fmtDt(rec.pickupDatetime)} />
+            <EditableField
+              label="Pickup Date & Time"
+              isEditing={isEditing}
+              value={fmtDt(rec.pickupDatetime, rec.timezone)}
+              editChildren={
+                <input
+                  type="datetime-local"
+                  value={toDatetimeLocal(getValue("pickupDatetime"))}
+                  onChange={e => setField("pickupDatetime", e.target.value)}
+                  className="w-full h-8 text-sm border border-[#F5821F] rounded-md px-2 focus:outline-none focus:ring-1 focus:ring-[#F5821F]"
+                />
+              }
+            />
+            <EditableField
+              label="Timezone"
+              isEditing={isEditing}
+              value={rec.timezone ?? "—"}
+              editChildren={
+                <Select value={getValue("timezone") || "__none__"} onValueChange={v => setField("timezone", v === "__none__" ? null : v)}>
+                  <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue placeholder="Select timezone…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— None —</SelectItem>
+                    {TIMEZONES.map(tz => <SelectItem key={tz} value={tz}>{tz}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              }
+            />
+            <EditableField
+              label="Flight No"
+              isEditing={isEditing}
+              value={rec.flightNo}
+              editValue={getValue("flightNo")}
+              onEdit={v => setField("flightNo", v)}
+            />
             <EditableField
               label="From Location"
               isEditing={isEditing}
