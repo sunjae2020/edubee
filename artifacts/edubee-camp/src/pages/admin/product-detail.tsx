@@ -1006,91 +1006,6 @@ export default function ProductDetail() {
               </div>
             </Section>
 
-          </div>
-
-          {/* ════ RIGHT COLUMN ════ */}
-          <div>
-
-            {/* [6] PRICING & TAX */}
-            <Section title="Pricing & Tax">
-              <div className="space-y-4">
-                <div>
-                  <FL>Item Description</FL>
-                  <Textarea
-                    rows={3}
-                    value={g("itemDescription")}
-                    onChange={e => sf("itemDescription")(e.target.value)}
-                    placeholder="Brief description shown on quote/invoice line item"
-                    className="border-[#E8E6E2] text-sm resize-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <FL>Price</FL>
-                    <TextInput
-                      type="number"
-                      value={String(g("price") ?? "")}
-                      onChange={sf("price")}
-                      placeholder="0.00"
-                      prefix="$"
-                    />
-                  </div>
-                  <div>
-                    <FL>Currency</FL>
-                    <SelectField
-                      value={g("currency") || "AUD"}
-                      onChange={sf("currency")}
-                      options={CURRENCIES.map(c => ({ value: c, label: c }))}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <FL>Unit</FL>
-                  <SelectField
-                    value={g("unit") || ""}
-                    onChange={sf("unit")}
-                    options={[
-                      { value: NONE, label: "— No unit —" },
-                      ...["per person","per night","per day","per session","per trip","per group","per week","per transfer","per meal","per semester","per annual","per course","flat fee"]
-                        .map(u => ({ value: u, label: u }))
-                    ]}
-                  />
-                </div>
-                <div>
-                  <FL>GST Included</FL>
-                  <RadioYesNo value={gb("isGstIncluded")} onChange={sf("isGstIncluded")} />
-                </div>
-                <div>
-                  <FL>Tax Rate</FL>
-                  <SearchSelect
-                    value={g("taxRateId")}
-                    onChange={sf("taxRateId")}
-                    options={taxSelectOpts}
-                    placeholder="Search tax rates…"
-                    loading={taxLoading}
-                  />
-                </div>
-              </div>
-            </Section>
-
-            {/* [7] DISPLAY & SETUP */}
-            <Section title="Display & Setup">
-              <div className="space-y-4">
-                <ToggleSwitch
-                  value={gb("displayOnQuote", true)}
-                  onChange={sf("displayOnQuote")}
-                  label="Display on Quote"
-                  helperText="Show this product line on the Quote PDF"
-                />
-                <ToggleSwitch
-                  value={gb("displayOnInvoice", true)}
-                  onChange={sf("displayOnInvoice")}
-                  label="Display on Invoice"
-                  helperText="Show this product line on the Invoice PDF"
-                />
-              </div>
-            </Section>
-
             {/* [8b] LINKED PACKAGES */}
             {!isNew && (
               <Section title="Linked Packages">
@@ -1286,6 +1201,91 @@ export default function ProductDetail() {
                 </div>
               </Section>
             )}
+
+          </div>
+
+          {/* ════ RIGHT COLUMN ════ */}
+          <div>
+
+            {/* [6] PRICING & TAX */}
+            <Section title="Pricing & Tax">
+              <div className="space-y-4">
+                <div>
+                  <FL>Item Description</FL>
+                  <Textarea
+                    rows={3}
+                    value={g("itemDescription")}
+                    onChange={e => sf("itemDescription")(e.target.value)}
+                    placeholder="Brief description shown on quote/invoice line item"
+                    className="border-[#E8E6E2] text-sm resize-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <FL>Price</FL>
+                    <TextInput
+                      type="number"
+                      value={String(g("price") ?? "")}
+                      onChange={sf("price")}
+                      placeholder="0.00"
+                      prefix="$"
+                    />
+                  </div>
+                  <div>
+                    <FL>Currency</FL>
+                    <SelectField
+                      value={g("currency") || "AUD"}
+                      onChange={sf("currency")}
+                      options={CURRENCIES.map(c => ({ value: c, label: c }))}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <FL>Unit</FL>
+                  <SelectField
+                    value={g("unit") || ""}
+                    onChange={sf("unit")}
+                    options={[
+                      { value: NONE, label: "— No unit —" },
+                      ...["per person","per night","per day","per session","per trip","per group","per week","per transfer","per meal","per semester","per annual","per course","flat fee"]
+                        .map(u => ({ value: u, label: u }))
+                    ]}
+                  />
+                </div>
+                <div>
+                  <FL>GST Included</FL>
+                  <RadioYesNo value={gb("isGstIncluded")} onChange={sf("isGstIncluded")} />
+                </div>
+                <div>
+                  <FL>Tax Rate</FL>
+                  <SearchSelect
+                    value={g("taxRateId")}
+                    onChange={sf("taxRateId")}
+                    options={taxSelectOpts}
+                    placeholder="Search tax rates…"
+                    loading={taxLoading}
+                  />
+                </div>
+              </div>
+            </Section>
+
+            {/* [7] DISPLAY & SETUP */}
+            <Section title="Display & Setup">
+              <div className="space-y-4">
+                <ToggleSwitch
+                  value={gb("displayOnQuote", true)}
+                  onChange={sf("displayOnQuote")}
+                  label="Display on Quote"
+                  helperText="Show this product line on the Quote PDF"
+                />
+                <ToggleSwitch
+                  value={gb("displayOnInvoice", true)}
+                  onChange={sf("displayOnInvoice")}
+                  label="Display on Invoice"
+                  helperText="Show this product line on the Invoice PDF"
+                />
+              </div>
+            </Section>
 
             {/* [9] PRODUCT IMAGES */}
             <Section title="Product Images">
