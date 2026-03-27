@@ -1057,18 +1057,6 @@ export default function PackageDetail() {
         );
       })()}
 
-      {/* ── Metadata ─────────────────────────────────────────────────────── */}
-      <DetailSection title="Metadata">
-        <DetailRow label="Package ID">
-          <span className="font-mono text-xs text-muted-foreground">{rec.id}</span>
-        </DetailRow>
-        <DetailRow label="Created">
-          {rec.createdAt ? format(new Date(rec.createdAt), "PPP p") : "—"}
-        </DetailRow>
-        <DetailRow label="Updated">
-          {rec.updatedAt ? format(new Date(rec.updatedAt), "PPP p") : "—"}
-        </DetailRow>
-      </DetailSection>
       <SystemInfoSection owner={null} createdAt={rec.createdAt} updatedAt={rec.updatedAt} />
     </DetailPageLayout>
   );
