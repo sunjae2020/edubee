@@ -7,7 +7,7 @@ import {
   ArrowLeft, ExternalLink, FileText, CreditCard, GraduationCap,
   Car, Building2, Briefcase, Shield, CheckCircle2, Clock,
   AlertCircle, ChevronRight, Star, TrendingUp, TrendingDown,
-  UploadCloud, MessageSquare, Send, Download, Pencil, Plus, X, Wrench, Map, Stamp,
+  UploadCloud, MessageSquare, Send, Download, Pencil, Plus, X, Wrench, Map, Stamp, Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import PaymentStatementModal from "../../../components/finance/PaymentStatementModal";
@@ -373,18 +373,214 @@ function printInstalment(cp: any, contract: any, idx: number) {
 }
 
 // ── Payment Schedule Tab ───────────────────────────────────────────────────
+const AR_STATUS_OPTIONS = ["scheduled","paid","partial","overdue","waived"];
+const AP_STATUS_OPTIONS = ["pending","ready","sent","paid","partial"];
+
+type CpDraft = {
+  id: string | null;
+  name: string;
+  isInitialPayment: boolean;
+  arDueDate: string;
+  arAmount: string;
+  arStatus: string;
+  apDueDate: string;
+  apAmount: string;
+  apStatus: string;
+};
+
+function ScheduleEditRow({
+  draft,
+  onChange,
+  onSave,
+  onCancel,
+  saving,
+  errMsg,
+}: {
+  draft: CpDraft;
+  onChange: (k: keyof CpDraft, v: any) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saving: boolean;
+  errMsg: string;
+}) {
+  const inp = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[#F5821F] w-full";
+  const sel = inp + " bg-white";
+  return (
+    <>
+      <tr className="border-b border-[#E8E6E2] bg-[#FFFCF9]">
+        <td className="px-2 py-2 text-xs text-[#A8A29E]">—</td>
+        {/* Label + Initial */}
+        <td className="px-2 py-2">
+          <div className="flex flex-col gap-1">
+            <input className={inp} value={draft.name} onChange={e => onChange("name", e.target.value)} placeholder="Label" />
+            <label className="flex items-center gap-1 text-[11px] text-[#A8A29E] cursor-pointer select-none">
+              <input type="checkbox" checked={draft.isInitialPayment} onChange={e => onChange("isInitialPayment", e.target.checked)} />
+              Initial
+            </label>
+          </div>
+        </td>
+        {/* AR */}
+        <td className="px-2 py-2"><input type="date" className={inp} value={draft.arDueDate} onChange={e => onChange("arDueDate", e.target.value)} /></td>
+        <td className="px-2 py-2"><input type="number" min="0" step="0.01" className={inp} value={draft.arAmount} onChange={e => onChange("arAmount", e.target.value)} placeholder="0.00" /></td>
+        <td className="px-2 py-2">
+          <select className={sel} value={draft.arStatus} onChange={e => onChange("arStatus", e.target.value)}>
+            {AR_STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </td>
+        {/* AP */}
+        <td className="px-2 py-2"><input type="date" className={inp} value={draft.apDueDate} onChange={e => onChange("apDueDate", e.target.value)} /></td>
+        <td className="px-2 py-2"><input type="number" min="0" step="0.01" className={inp} value={draft.apAmount} onChange={e => onChange("apAmount", e.target.value)} placeholder="0.00" /></td>
+        <td className="px-2 py-2">
+          <select className={sel} value={draft.apStatus} onChange={e => onChange("apStatus", e.target.value)}>
+            {AP_STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </td>
+        {/* Actions */}
+        <td className="px-2 py-2">
+          <div className="flex items-center gap-1">
+            <button onClick={onSave} disabled={saving}
+              className="h-7 px-3 rounded-lg text-[11px] font-semibold text-white disabled:opacity-50"
+              style={{ background:"#F5821F" }}>
+              {saving ? "…" : "Save"}
+            </button>
+            <button onClick={onCancel} className="h-7 px-2 rounded-lg text-[11px] border border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1]">
+              ✕
+            </button>
+          </div>
+        </td>
+      </tr>
+      {errMsg && (
+        <tr className="bg-red-50">
+          <td colSpan={9} className="px-4 py-1 text-[11px] text-red-600">{errMsg}</td>
+        </tr>
+      )}
+    </>
+  );
+}
+
 function PaymentScheduleTab({ contract }: { contract: any }) {
   const products: any[] = contract.contractProducts ?? [];
   const totalAr = products.reduce((s: number, p: any) => s + (p.arAmount ?? 0), 0);
   const totalAp = products.reduce((s: number, p: any) => s + (p.apAmount ?? 0), 0);
-  const [showModal, setShowModal] = useState(false);
-  const queryClient = useQueryClient();
+  const [showStatementModal, setShowStatementModal] = useState(false);
+  const qc = useQueryClient();
+
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [draft,     setDraft]       = useState<CpDraft | null>(null);
+  const [saving,    setSaving]      = useState(false);
+  const [errMsg,    setErrMsg]      = useState("");
+  const [addingNew, setAddingNew]   = useState(false);
+  const [newDraft,  setNewDraft]    = useState<CpDraft | null>(null);
+  const [deleting,  setDeleting]    = useState<string | null>(null);
+
+  const makeDraft = (cp: any): CpDraft => ({
+    id: cp.id,
+    name: cp.name ?? "",
+    isInitialPayment: cp.isInitialPayment ?? false,
+    arDueDate: cp.arDueDate?.slice(0, 10) ?? "",
+    arAmount: cp.arAmount != null ? String(cp.arAmount) : "",
+    arStatus: cp.arStatus ?? "scheduled",
+    apDueDate: cp.apDueDate?.slice(0, 10) ?? "",
+    apAmount: cp.apAmount != null ? String(cp.apAmount) : "",
+    apStatus: cp.apStatus ?? "pending",
+  });
+
+  const startEdit = (cp: any) => {
+    setEditingId(cp.id);
+    setDraft(makeDraft(cp));
+    setErrMsg("");
+    setAddingNew(false);
+    setNewDraft(null);
+  };
+
+  const cancelEdit = () => { setEditingId(null); setDraft(null); setErrMsg(""); };
+
+  const startAdd = () => {
+    setAddingNew(true);
+    setNewDraft({ id: null, name: "", isInitialPayment: false, arDueDate: "", arAmount: "", arStatus: "scheduled", apDueDate: "", apAmount: "", apStatus: "pending" });
+    setEditingId(null);
+    setDraft(null);
+    setErrMsg("");
+  };
+
+  const cancelAdd = () => { setAddingNew(false); setNewDraft(null); setErrMsg(""); };
+
+  const saveEdit = async () => {
+    if (!draft) return;
+    setSaving(true); setErrMsg("");
+    try {
+      await axios.patch(`${BASE}/api/crm/contract-products/${draft.id}`, {
+        name: draft.name || null,
+        isInitialPayment: draft.isInitialPayment,
+        arDueDate: draft.arDueDate || null,
+        arAmount: draft.arAmount !== "" ? draft.arAmount : null,
+        arStatus: draft.arStatus,
+        apDueDate: draft.apDueDate || null,
+        apAmount: draft.apAmount !== "" ? draft.apAmount : null,
+        apStatus: draft.apStatus,
+      });
+      qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] });
+      cancelEdit();
+    } catch (e: any) {
+      setErrMsg(e?.response?.data?.error ?? "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveNew = async () => {
+    if (!newDraft) return;
+    setSaving(true); setErrMsg("");
+    try {
+      await axios.post(`${BASE}/api/crm/contract-products`, {
+        contractId: contract.id,
+        name: newDraft.name || null,
+        isInitialPayment: newDraft.isInitialPayment,
+        sortIndex: products.length,
+        arDueDate: newDraft.arDueDate || null,
+        arAmount: newDraft.arAmount !== "" ? newDraft.arAmount : null,
+        arStatus: newDraft.arStatus,
+        apDueDate: newDraft.apDueDate || null,
+        apAmount: newDraft.apAmount !== "" ? newDraft.apAmount : null,
+        apStatus: newDraft.apStatus,
+      });
+      qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] });
+      cancelAdd();
+    } catch (e: any) {
+      setErrMsg(e?.response?.data?.error ?? "Add failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (cpId: string) => {
+    if (!window.confirm("이 인스톨먼트를 삭제하시겠습니까?")) return;
+    setDeleting(cpId);
+    try {
+      await axios.delete(`${BASE}/api/crm/contract-products/${cpId}`);
+      qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] });
+    } catch (e: any) {
+      alert(e?.response?.data?.error ?? "Delete failed");
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const changeDraft = (k: keyof CpDraft, v: any) => setDraft(prev => prev ? { ...prev, [k]: v } : prev);
+  const changeNew   = (k: keyof CpDraft, v: any) => setNewDraft(prev => prev ? { ...prev, [k]: v } : prev);
 
   return (
     <div className="space-y-4">
       <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
         <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[#1C1917]">Payment Schedule ({products.length})</h3>
+          {!addingNew && (
+            <button onClick={startAdd}
+              className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+              style={{ color:"#57534E" }}>
+              <Plus size={12} /> Add Instalment
+            </button>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -398,45 +594,78 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Due Date</th>
                 <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Amount</th>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Status</th>
-                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Invoice</th>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {products.map((cp: any, i: number) => (
-                <tr key={cp.id}
-                  className="border-b border-[#E8E6E2] transition-colors"
-                  style={cp.apStatus === "ready" ? { background:"#FFFCF9" } : {}}>
-                  <td className="px-4 py-3 text-xs text-[#A8A29E]">{i + 1}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
-                      {cp.isInitialPayment && <span className="text-[#CA8A04] text-xs">★ Initial</span>}
-                      {cp.apStatus === "ready" && <AlertCircle size={12} style={{ color:"#F5821F" }} />}
-                      <span className="text-[13px] text-[#1C1917] font-medium">{cp.name ?? `Instalment ${i + 1}`}</span>
-                    </div>
-                    {cp.serviceModuleType && (
-                      <div className="text-[11px] text-[#A8A29E] mt-0.5">{cp.serviceModuleType}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.arDueDate)}</td>
-                  <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.arAmount)}</td>
-                  <td className="px-4 py-3"><Badge s={cp.arStatus} map={AR_BADGE} /></td>
-                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.apDueDate)}</td>
-                  <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.apAmount)}</td>
-                  <td className="px-4 py-3"><Badge s={cp.apStatus} map={AP_BADGE} /></td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => printInstalment(cp, contract, i)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
-                    >
-                      <Download size={11} /> Invoice
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {products.map((cp: any, i: number) =>
+                editingId === cp.id && draft ? (
+                  <ScheduleEditRow key={cp.id}
+                    draft={draft}
+                    onChange={changeDraft}
+                    onSave={saveEdit}
+                    onCancel={cancelEdit}
+                    saving={saving}
+                    errMsg={errMsg}
+                  />
+                ) : (
+                  <tr key={cp.id}
+                    className="border-b border-[#E8E6E2] transition-colors group"
+                    style={cp.apStatus === "ready" ? { background:"#FFFCF9" } : {}}>
+                    <td className="px-4 py-3 text-xs text-[#A8A29E]">{i + 1}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        {cp.isInitialPayment && <span className="text-[#CA8A04] text-xs">★</span>}
+                        {cp.apStatus === "ready" && <AlertCircle size={12} style={{ color:"#F5821F" }} />}
+                        <span className="text-[13px] text-[#1C1917] font-medium">{cp.name ?? `Instalment ${i + 1}`}</span>
+                      </div>
+                      {cp.serviceModuleType && (
+                        <div className="text-[11px] text-[#A8A29E] mt-0.5">{cp.serviceModuleType}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.arDueDate)}</td>
+                    <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.arAmount)}</td>
+                    <td className="px-4 py-3"><Badge s={cp.arStatus} map={AR_BADGE} /></td>
+                    <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.apDueDate)}</td>
+                    <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.apAmount)}</td>
+                    <td className="px-4 py-3"><Badge s={cp.apStatus} map={AP_BADGE} /></td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => printInstalment(cp, contract, i)}
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+                          title="Invoice">
+                          <Download size={11} />
+                        </button>
+                        <button onClick={() => startEdit(cp)}
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-[#EFF6FF] hover:border-[#3B82F6] hover:text-[#2563EB] transition-colors"
+                          title="Edit">
+                          <Pencil size={11} />
+                        </button>
+                        <button onClick={() => handleDelete(cp.id)} disabled={deleting === cp.id}
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-red-50 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-40"
+                          title="Delete">
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              )}
+              {addingNew && newDraft && (
+                <ScheduleEditRow
+                  draft={newDraft}
+                  onChange={changeNew}
+                  onSave={saveNew}
+                  onCancel={cancelAdd}
+                  saving={saving}
+                  errMsg={errMsg}
+                />
+              )}
             </tbody>
             <tfoot>
               <tr style={{ background:"#FAFAF9" }}>
-                <td colSpan={3} className="px-4 py-3 text-right text-xs font-semibold text-[#57534E]">Total</td>
+                <td colSpan={3} className="px-4 py-3 text-right text-xs font-semibold text-[#57534E]">Total AR</td>
                 <td className="px-4 py-3 text-right">
                   <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background:"#F5821F" }}>{fmtMoney(totalAr)}</span>
                 </td>
@@ -454,18 +683,17 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
       {/* Statement History Section */}
       <StatementHistorySection
         contractId={contract.id}
-        onGenerate={() => setShowModal(true)}
+        onGenerate={() => setShowStatementModal(true)}
       />
 
-      {/* Modal */}
-      {showModal && (
+      {showStatementModal && (
         <PaymentStatementModal
           contractId={contract.id}
           studentName={contract.studentName ?? contract.account?.name ?? "Student"}
           studentEmail={contract.clientEmail ?? contract.account?.email ?? null}
-          onClose={() => setShowModal(false)}
+          onClose={() => setShowStatementModal(false)}
           onGenerated={() => {
-            queryClient.invalidateQueries({ queryKey: ["payment-statements", contract.id] });
+            qc.invalidateQueries({ queryKey: ["payment-statements", contract.id] });
           }}
         />
       )}

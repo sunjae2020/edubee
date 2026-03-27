@@ -574,4 +574,85 @@ router.patch("/crm/contracts/:id", authenticate, async (req, res) => {
   }
 });
 
+// ─── POST /crm/contract-products  (add instalment) ──────────────────────────
+router.post("/crm/contract-products", authenticate, async (req, res) => {
+  try {
+    const {
+      contractId, name, sortIndex, isInitialPayment,
+      arDueDate, arAmount, arStatus,
+      apDueDate, apAmount, apStatus,
+      serviceModuleType,
+    } = req.body;
+    if (!contractId) return res.status(400).json({ error: "contractId required" });
+    const r = (x: any) => x.rows ?? (x as any[]);
+    const rows = await db.execute(sql`
+      INSERT INTO contract_products
+        (contract_id, name, sort_index, is_initial_payment,
+         ar_due_date, ar_amount, ar_status,
+         ap_due_date, ap_amount, ap_status,
+         service_module_type)
+      VALUES
+        (${contractId}::uuid, ${name ?? null}, ${sortIndex ?? 0}, ${isInitialPayment ?? false},
+         ${arDueDate || null}, ${arAmount != null ? Number(arAmount) : null}, ${arStatus ?? "scheduled"},
+         ${apDueDate || null}, ${apAmount != null ? Number(apAmount) : null}, ${apStatus ?? "pending"},
+         ${serviceModuleType ?? null})
+      RETURNING id
+    `);
+    return res.json({ ok: true, id: r(rows)[0]?.id });
+  } catch (err) {
+    console.error("POST /crm/contract-products error:", err);
+    return res.status(500).json({ error: "Insert failed" });
+  }
+});
+
+// ─── PATCH /crm/contract-products/:id  (update instalment) ──────────────────
+router.patch("/crm/contract-products/:id", authenticate, async (req, res) => {
+  try {
+    const {
+      name, sortIndex, isInitialPayment,
+      arDueDate, arAmount, arStatus,
+      apDueDate, apAmount, apStatus,
+      serviceModuleType,
+    } = req.body;
+    const parts: ReturnType<typeof sql>[] = [];
+    if (name              !== undefined) parts.push(sql`name                 = ${name ?? null}`);
+    if (sortIndex         !== undefined) parts.push(sql`sort_index           = ${Number(sortIndex)}`);
+    if (isInitialPayment  !== undefined) parts.push(sql`is_initial_payment   = ${Boolean(isInitialPayment)}`);
+    if (arDueDate         !== undefined) parts.push(sql`ar_due_date          = ${arDueDate || null}`);
+    if (arAmount          !== undefined) parts.push(sql`ar_amount            = ${arAmount !== "" ? Number(arAmount) : null}`);
+    if (arStatus          !== undefined) parts.push(sql`ar_status            = ${arStatus}`);
+    if (apDueDate         !== undefined) parts.push(sql`ap_due_date          = ${apDueDate || null}`);
+    if (apAmount          !== undefined) parts.push(sql`ap_amount            = ${apAmount !== "" ? Number(apAmount) : null}`);
+    if (apStatus          !== undefined) parts.push(sql`ap_status            = ${apStatus}`);
+    if (serviceModuleType !== undefined) parts.push(sql`service_module_type  = ${serviceModuleType ?? null}`);
+    if (parts.length === 0) return res.status(400).json({ error: "No fields provided" });
+    const setSql = sql.join(parts, sql.raw(", "));
+    await db.execute(sql`UPDATE contract_products SET ${setSql} WHERE id = ${req.params.id}::uuid`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("PATCH /crm/contract-products/:id error:", err);
+    return res.status(500).json({ error: "Update failed" });
+  }
+});
+
+// ─── DELETE /crm/contract-products/:id  (remove instalment) ─────────────────
+router.delete("/crm/contract-products/:id", authenticate, async (req, res) => {
+  try {
+    const r = (x: any) => x.rows ?? (x as any[]);
+    // Guard: do not delete if payment lines already reference this product
+    const linked = await db.execute(sql`
+      SELECT COUNT(*) AS cnt FROM payment_lines WHERE contract_product_id = ${req.params.id}::uuid
+    `);
+    const cnt = Number(r(linked)[0]?.cnt ?? 0);
+    if (cnt > 0) {
+      return res.status(409).json({ error: `Cannot delete: ${cnt} payment line(s) already linked to this instalment.` });
+    }
+    await db.execute(sql`DELETE FROM contract_products WHERE id = ${req.params.id}::uuid`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("DELETE /crm/contract-products/:id error:", err);
+    return res.status(500).json({ error: "Delete failed" });
+  }
+});
+
 export default router;
