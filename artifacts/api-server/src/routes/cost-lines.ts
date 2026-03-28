@@ -10,12 +10,15 @@ const STAFF_ROLES = ["super_admin", "admin", "camp_coordinator"];
 const ADMIN_ROLES = ["super_admin", "admin"];
 
 // ─── Helper: recalculate apAmount for a contractProduct ──────────────────────
+const r = (x: any): any[] => x?.rows ?? (Array.isArray(x) ? x : []);
+
 async function syncApAmount(contractProductId: string) {
-  const [res] = await db.execute(sql`
+  const result = await db.execute(sql`
     SELECT COALESCE(SUM(calculated_amount), 0) AS total
     FROM product_cost_lines
     WHERE contract_product_id = ${contractProductId}::uuid
   `);
+  const res = r(result)[0] ?? {};
   const total = parseFloat((res as any).total ?? "0");
   await db
     .update(contractProducts)
@@ -44,15 +47,14 @@ async function syncApAmount(contractProductId: string) {
 router.get("/cost-lines/lookup/partners", authenticate, async (req, res) => {
   try {
     const q = (req.query.q as string | undefined) ?? "";
-    const rows = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT id, name, account_type
       FROM accounts
-      WHERE (name ILIKE ${"%" + q + "%"})
-        AND account_type IN ('agent','school','partner','supplier','company','individual')
+      WHERE name ILIKE ${"%" + q + "%"}
       ORDER BY name
-      LIMIT 30
+      LIMIT 40
     `);
-    res.json(Array.isArray(rows) ? rows : (rows as any).rows ?? []);
+    res.json(r(result));
   } catch (err) {
     console.error("[GET /cost-lines/lookup/partners]", err);
     res.status(500).json({ error: "Lookup failed" });
@@ -62,14 +64,14 @@ router.get("/cost-lines/lookup/partners", authenticate, async (req, res) => {
 // ─── GET /api/cost-lines/lookup/staff ────────────────────────────────────────
 router.get("/cost-lines/lookup/staff", authenticate, async (req, res) => {
   try {
-    const rows = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT id, first_name, last_name, email
       FROM users
       WHERE status = 'active'
       ORDER BY first_name, last_name
       LIMIT 50
     `);
-    res.json(Array.isArray(rows) ? rows : (rows as any).rows ?? []);
+    res.json(r(result));
   } catch (err) {
     console.error("[GET /cost-lines/lookup/staff]", err);
     res.status(500).json({ error: "Lookup failed" });
