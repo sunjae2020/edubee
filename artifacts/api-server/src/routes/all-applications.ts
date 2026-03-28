@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { applications, campApplications, packageGroups, packages } from "@workspace/db/schema";
+import { quotes }    from "@workspace/db/schema";
+import { contracts } from "@workspace/db/schema";
 import { sql, ilike, eq, or, desc, and } from "drizzle-orm";
 
 const router = Router();
@@ -15,7 +17,7 @@ router.get("/admin/all-applications", async (req, res) => {
     const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize) || 20));
     const offset   = (page - 1) * pageSize;
 
-    // ── 1. camp_applications (with package group + package name) ──────────
+    // ── 1. camp_applications (with package group + package name + quote + contract) ──
     let campRows: any[] = [];
     if (type === "all" || type === "camp") {
       const q = db
@@ -33,7 +35,11 @@ router.get("/admin/all-applications", async (req, res) => {
           nationality:      campApplications.applicantNationality,
           status:           campApplications.applicationStatus,
           quoteId:          campApplications.quoteId,
+          quoteRef:         quotes.quoteRefNumber,
+          quoteStatus:      quotes.quoteStatus,
           contractId:       campApplications.contractId,
+          contractRef:      contracts.contractNumber,
+          contractStatus:   contracts.status,
           packageGroupId:   campApplications.packageGroupId,
           packageId:        campApplications.packageId,
           packageGroupName: packageGroups.nameEn,
@@ -44,6 +50,8 @@ router.get("/admin/all-applications", async (req, res) => {
         .from(campApplications)
         .leftJoin(packageGroups, eq(campApplications.packageGroupId, packageGroups.id))
         .leftJoin(packages,      eq(campApplications.packageId,      packages.id))
+        .leftJoin(quotes,        eq(campApplications.quoteId,        quotes.id))
+        .leftJoin(contracts,     eq(campApplications.contractId,     contracts.id))
         .orderBy(desc(campApplications.createdAt));
 
       const where: any[] = [];
@@ -81,7 +89,11 @@ router.get("/admin/all-applications", async (req, res) => {
           nationality:      applications.applicantNationality,
           status:           applications.applicationStatus,
           quoteId:          applications.quoteId,
-          contractId:       sql<null>`NULL`,
+          quoteRef:         quotes.quoteRefNumber,
+          quoteStatus:      quotes.quoteStatus,
+          contractId:       contracts.id,
+          contractRef:      contracts.contractNumber,
+          contractStatus:   contracts.status,
           packageGroupId:   applications.packageGroupId,
           packageId:        applications.packageId,
           packageGroupName: sql<null>`NULL`,
@@ -90,6 +102,8 @@ router.get("/admin/all-applications", async (req, res) => {
           createdAt:        applications.createdAt,
         })
         .from(applications)
+        .leftJoin(quotes,    eq(applications.quoteId,    quotes.id))
+        .leftJoin(contracts, eq(contracts.applicationId, applications.id))
         .orderBy(desc(applications.createdAt));
 
       const where: any[] = [];

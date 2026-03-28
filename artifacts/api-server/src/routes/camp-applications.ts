@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { campApplications, applicationParticipants, applications } from "@workspace/db/schema";
-import { contacts, leads, contracts, quotes } from "@workspace/db/schema";
+import { contacts, leads, contracts, quotes, quote_products } from "@workspace/db/schema";
+import { packageProducts, products } from "@workspace/db/schema";
 import { eq, ilike, or, count, and, desc, SQL, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -295,6 +296,41 @@ router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole
         quotedAt:          new Date(),
         updatedAt:         new Date(),
       }).where(eq(campApplications.id, application.id));
+
+      // ── Add package products to the quote ──────────────────────────────
+      if (application.packageId) {
+        const pkgProds = await tx
+          .select({
+            productId:   packageProducts.productId,
+            isOptional:  packageProducts.isOptional,
+            quantity:    packageProducts.quantity,
+            unitPrice:   packageProducts.unitPrice,
+            productName: products.productName,
+            price:       products.price,
+          })
+          .from(packageProducts)
+          .leftJoin(products, eq(packageProducts.productId, products.id))
+          .where(eq(packageProducts.packageId, application.packageId));
+
+        if (pkgProds.length > 0) {
+          await tx.insert(quote_products).values(
+            pkgProds.map((pp, i) => ({
+              quoteId:    newQuote.id,
+              productId:  pp.productId ?? undefined,
+              name:       pp.productName ?? "Product",
+              price:      pp.price ?? pp.unitPrice ?? "0",
+              quantity:   pp.quantity ?? 1,
+              unitPrice:  pp.unitPrice ?? pp.price ?? "0",
+              total:      String(
+                (Number(pp.unitPrice ?? pp.price ?? 0)) * (pp.quantity ?? 1)
+              ),
+              sortOrder:  i,
+              sortIndex:  i,
+              manualInput: false,
+            }))
+          );
+        }
+      }
 
       return newQuote;
     });

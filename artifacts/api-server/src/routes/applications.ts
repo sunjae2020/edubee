@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leads, applications, applicationParticipants, contracts, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages } from "@workspace/db/schema";
+import { leads, applications, applicationParticipants, contracts, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages, quote_products } from "@workspace/db/schema";
+import { packageProducts, products } from "@workspace/db/schema";
 import { eq, and, ilike, or, count, inArray, sql, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -474,21 +475,57 @@ router.post("/applications/:id/convert-to-quote", authenticate, requireRole("sup
       application.notes ? `Notes: ${application.notes}` : "",
     ].filter(Boolean).join("\n");
 
-    const [newQuote] = await db.insert(quotes).values({
-      quoteRefNumber,
-      leadId: application.agentId ?? null,
-      quoteStatus: "Draft",
-      notes: noteLines,
-      createdBy: req.user!.id,
-    }).returning();
+    const result = await db.transaction(async (tx) => {
+      const [newQuote] = await tx.insert(quotes).values({
+        quoteRefNumber,
+        leadId: application.agentId ?? null,
+        quoteStatus: "Draft",
+        notes: noteLines,
+        createdBy: req.user!.id,
+      }).returning();
 
-    await db.update(applications).set({
-      applicationStatus: "quoted",
-      quoteId: newQuote.id,
-      updatedAt: new Date(),
-    }).where(eq(applications.id, req.params.id));
+      await tx.update(applications).set({
+        applicationStatus: "quoted",
+        quoteId: newQuote.id,
+        updatedAt: new Date(),
+      }).where(eq(applications.id, req.params.id));
 
-    return res.status(201).json({ quoteId: newQuote.id, quoteRefNumber: newQuote.quoteRefNumber });
+      // ── Add package products to the quote (if packageId linked) ──────────
+      if (application.packageId) {
+        const pkgProds = await tx
+          .select({
+            productId:   packageProducts.productId,
+            quantity:    packageProducts.quantity,
+            unitPrice:   packageProducts.unitPrice,
+            productName: products.productName,
+            price:       products.price,
+          })
+          .from(packageProducts)
+          .leftJoin(products, eq(packageProducts.productId, products.id))
+          .where(eq(packageProducts.packageId, application.packageId));
+
+        if (pkgProds.length > 0) {
+          await tx.insert(quote_products).values(
+            pkgProds.map((pp, i) => ({
+              quoteId:     newQuote.id,
+              productId:   pp.productId ?? undefined,
+              name:        pp.productName ?? "Product",
+              price:       pp.price ?? pp.unitPrice ?? "0",
+              quantity:    pp.quantity ?? 1,
+              unitPrice:   pp.unitPrice ?? pp.price ?? "0",
+              total:       String((Number(pp.unitPrice ?? pp.price ?? 0)) * (pp.quantity ?? 1)),
+              sortOrder:   i,
+              sortIndex:   i,
+              manualInput: false,
+            }))
+          );
+        }
+      }
+
+      return newQuote;
+    });
+
+    return res.status(201).json({ quoteId: result.id, quoteRefNumber: result.quoteRefNumber });
   } catch (err) {
     console.error("[convert-to-quote]", err);
     return res.status(500).json({ error: "Internal Server Error" });
