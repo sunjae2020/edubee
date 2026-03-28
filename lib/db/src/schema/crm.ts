@@ -111,6 +111,7 @@ export const quotes = pgTable("quotes", {
   studentAccountId:    uuid("student_account_id").references(() => accounts.id, { onDelete: "set null" }),
   accountName:         varchar("account_name",        { length: 255 }),
   customerName:        varchar("customer_name",       { length: 255 }),
+  originalName:        varchar("original_name",       { length: 255 }),
   quoteStatus:         varchar("quote_status",        { length: 30  }).notNull().default("Draft"),
   expiryDate:          date("expiry_date"),
   isTemplate:          boolean("is_template").notNull().default(false),

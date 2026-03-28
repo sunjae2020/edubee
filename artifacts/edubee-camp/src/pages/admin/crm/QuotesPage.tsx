@@ -26,6 +26,7 @@ interface QuoteRow {
   id: string;
   quoteRefNumber?: string | null;
   accountName?: string | null;
+  originalName?: string | null;
   accountFirstName?: string | null;
   accountLastName?: string | null;
   accountOriginalName?: string | null;
@@ -186,7 +187,7 @@ export default function QuotesPage() {
                       fields={nameFromAccount({
                         firstName: q.accountFirstName,
                         lastName:  q.accountLastName,
-                        originalName: q.accountOriginalName,
+                        originalName: q.originalName ?? q.accountOriginalName,
                         name: q.accountName,
                       })}
                       accountId={q.studentAccountId}

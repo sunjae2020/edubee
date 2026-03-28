@@ -478,10 +478,12 @@ router.post("/applications/:id/convert-to-quote", authenticate, requireRole("sup
     const result = await db.transaction(async (tx) => {
       const [newQuote] = await tx.insert(quotes).values({
         quoteRefNumber,
-        leadId: application.agentId ?? null,
-        quoteStatus: "Draft",
-        notes: noteLines,
-        createdBy: req.user!.id,
+        leadId:        application.agentId ?? null,
+        customerName:  application.applicantName ?? null,
+        originalName:  application.applicantOriginalName ?? null,
+        quoteStatus:   "Draft",
+        notes:         noteLines,
+        createdBy:     req.user!.id,
       }).returning();
 
       await tx.update(applications).set({

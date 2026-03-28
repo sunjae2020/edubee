@@ -45,6 +45,7 @@ interface Quote {
   notes?: string;
   accountName?: string;
   customerName?: string;
+  originalName?: string;
   studentAccountId?: string;
   leadId?: string;
   campApplicationId?: string | null;
@@ -1069,6 +1070,7 @@ export default function QuoteBuilderPage() {
   const [expiryDate, setExpiryDate] = useState("");
   const [notes, setNotes] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [originalName, setOriginalName] = useState("");
   const [studentAccountId, setStudentAccountId] = useState<string | null>(null);
   const [studentAccountName, setStudentAccountName] = useState<string | null>(null);
   const [clientAccountEmail, setClientAccountEmail] = useState<string | null>(null);
@@ -1097,6 +1099,7 @@ export default function QuoteBuilderPage() {
     setExpiryDate(quote.expiryDate ?? "");
     setNotes(quote.notes ?? "");
     setCustomerName(quote.customerName ?? "");
+    setOriginalName(quote.originalName ?? "");
     setStudentAccountId(quote.studentAccountId ?? null);
     setStudentAccountName(quote.accountName ?? null);
     setLinkedContractId(quote.contractId ?? null);
@@ -1342,6 +1345,7 @@ export default function QuoteBuilderPage() {
         expiryDate: expiryDate || null,
         notes,
         customerName,
+        originalName: originalName || null,
         studentAccountId,
         accountName: studentAccountName,
       });
@@ -1614,6 +1618,17 @@ export default function QuoteBuilderPage() {
                 className="h-8 text-sm mt-1"
               />
             </div>
+            <div>
+              <Label className="text-xs text-gray-500">Original Name</Label>
+              <Input
+                value={originalName}
+                onChange={(e) => setOriginalName(e.target.value)}
+                placeholder="e.g. 홍길동"
+                className="h-8 text-sm mt-1"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-xs text-gray-500">Status</Label>
               <Select value={quoteStatus} onValueChange={setQuoteStatus}>
