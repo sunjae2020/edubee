@@ -290,53 +290,40 @@ function LinkedRecordsCard({ app }: { app: any }) {
   const [, navigate] = useLocation();
 
   return (
-    <div style={{
-      background: "white",
-      border: "1px solid #E8E6E2",
-      borderRadius: 12,
-      padding: "20px 24px",
-    }}>
-      <div className="text-sm font-semibold text-[#1A1917] mb-4">Linked Records</div>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-[#57534E] w-20">Quote</span>
-            {app.quoteId ? (
-              <span className="text-sm font-medium text-[#1A1917]">{app.quoteRefNumber ?? app.quoteId}</span>
-            ) : (
-              <span className="text-sm text-[#A8A29E]">Not created yet</span>
-            )}
-          </div>
-          {app.quoteId && (
+    <DetailSection title="Linked Records">
+      <DetailRow label="Quote">
+        {app.quoteId ? (
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-foreground">{app.quoteRefNumber ?? app.quoteId}</span>
             <button
               onClick={() => navigate(`/admin/crm/quotes/${app.quoteId}`)}
-              style={{ color: "#F5821F", fontWeight: 500, fontSize: 14, background: "none", border: "none", cursor: "pointer" }}
+              className="text-sm font-medium text-[#F5821F] hover:text-[#d97706] transition-colors"
+              style={{ background: "none", border: "none", cursor: "pointer" }}
             >
               View →
             </button>
-          )}
-        </div>
-        <div className="h-px bg-[#F4F3F1]" />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-[#57534E] w-20">Contract</span>
-            {app.contractId ? (
-              <span className="text-sm font-medium text-[#1A1917]">{app.contractNumber ?? app.contractId}</span>
-            ) : (
-              <span className="text-sm text-[#A8A29E]">Not created yet</span>
-            )}
           </div>
-          {app.contractId && (
+        ) : (
+          <span className="text-muted-foreground/60">Not created yet</span>
+        )}
+      </DetailRow>
+      <DetailRow label="Contract">
+        {app.contractId ? (
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-foreground">{app.contractNumber ?? app.contractId}</span>
             <button
               onClick={() => navigate(`/admin/crm/contracts/${app.contractId}`)}
-              style={{ color: "#F5821F", fontWeight: 500, fontSize: 14, background: "none", border: "none", cursor: "pointer" }}
+              className="text-sm font-medium text-[#F5821F] hover:text-[#d97706] transition-colors"
+              style={{ background: "none", border: "none", cursor: "pointer" }}
             >
               View →
             </button>
-          )}
-        </div>
-      </div>
-    </div>
+          </div>
+        ) : (
+          <span className="text-muted-foreground/60">Not created yet</span>
+        )}
+      </DetailRow>
+    </DetailSection>
   );
 }
 
@@ -693,15 +680,15 @@ export default function CampApplicationDetail() {
               </DetailSection>
 
               <div className="lg:col-span-2">
+                <LinkedRecordsCard app={app} />
+              </div>
+
+              <div className="lg:col-span-2">
                 <SystemInfoSection
                   owner={app.assignedStaffId ?? null}
                   createdAt={app.createdAt}
                   updatedAt={app.updatedAt}
                 />
-              </div>
-
-              <div className="lg:col-span-2">
-                <LinkedRecordsCard app={app} />
               </div>
             </div>
           </div>
