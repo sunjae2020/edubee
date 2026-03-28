@@ -415,20 +415,29 @@ export default function CampApplicationDetail() {
   });
 
   // ── Package group / package helpers ───────────────────────────────────────
-  const currentPkgGroupId = (getValue("packageGroupId") as string) ?? app?.packageGroupId;
-  const currentPkgId      = (getValue("packageId")      as string) ?? app?.packageId;
+  const currentPkgGroupId = (getValue("packageGroupId") as string) ?? app?.packageGroupId ?? null;
+  const currentPkgId      = (getValue("packageId")      as string) ?? app?.packageId      ?? null;
+
+  // When packageGroupId is missing but packageId exists, derive group from package detail
+  const { data: pkgDetailForGroup } = useQuery({
+    queryKey: ["pkg-detail-for-group", currentPkgId],
+    queryFn:  () => axios.get(`${BASE}/api/packages/${currentPkgId}`).then(r => r.data),
+    enabled:  !!currentPkgId && !currentPkgGroupId,
+  });
+  const effectivePkgGroupId: string | null =
+    currentPkgGroupId || pkgDetailForGroup?.packageGroupId || null;
 
   const { data: pgResp } = useQuery({
     queryKey: ["package-groups-all-detail"],
     queryFn:  () => axios.get(`${BASE}/api/package-groups?limit=100&status=Active`).then(r => r.data),
   });
   const packageGroupOptions: Array<{ id: string; nameEn: string }> =
-    (pgResp?.data ?? []).map((p: any) => p.group ?? p).filter((p: any) => p?.id);
+    (pgResp?.data ?? []).filter((p: any) => p?.id);
 
   const { data: pkgResp } = useQuery({
-    queryKey: ["admin-packages-for-detail", currentPkgGroupId],
-    queryFn:  () => axios.get(`${BASE}/api/packages?limit=100&packageGroupId=${currentPkgGroupId}`).then(r => r.data),
-    enabled:  !!currentPkgGroupId,
+    queryKey: ["admin-packages-for-detail", effectivePkgGroupId],
+    queryFn:  () => axios.get(`${BASE}/api/packages?limit=100&packageGroupId=${effectivePkgGroupId}`).then(r => r.data),
+    enabled:  !!effectivePkgGroupId,
   });
   const packageOptions: Array<{ id: string; name: string }> = pkgResp?.data ?? [];
 
@@ -632,7 +641,7 @@ export default function CampApplicationDetail() {
                 <DetailRow label="Package Group">
                   {canEdit ? (
                     <Select
-                      value={currentPkgGroupId ?? ""}
+                      value={effectivePkgGroupId ?? ""}
                       onValueChange={v => {
                         setField("packageGroupId", v as any);
                         setField("packageId", null as any);
@@ -648,7 +657,7 @@ export default function CampApplicationDetail() {
                       </SelectContent>
                     </Select>
                   ) : (
-                    <span>{app.packageGroupName ?? "—"}</span>
+                    <span>{app.packageGroupName ?? pkgDetailForGroup?.groupNameEn ?? "—"}</span>
                   )}
                 </DetailRow>
                 <DetailRow label="Package">
@@ -656,10 +665,10 @@ export default function CampApplicationDetail() {
                     <Select
                       value={currentPkgId ?? ""}
                       onValueChange={v => setField("packageId", v as any)}
-                      disabled={!currentPkgGroupId}
+                      disabled={!effectivePkgGroupId}
                     >
                       <SelectTrigger className="h-8 text-sm border-[#F5821F]">
-                        <SelectValue placeholder={currentPkgGroupId ? "Select package..." : "Select group first"} />
+                        <SelectValue placeholder={effectivePkgGroupId ? "Select package..." : "Select group first"} />
                       </SelectTrigger>
                       <SelectContent>
                         {packageOptions.map(p => (
