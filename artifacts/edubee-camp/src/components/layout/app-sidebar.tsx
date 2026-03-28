@@ -58,7 +58,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
 
   if (isSAorAD || isCC || isEA) {
     const salesItems: NavItem[] = [
-      { icon: ClipboardList, label: "Applications", href: "/admin/applications" },
+      { icon: ClipboardList, label: "All Applications", href: "/admin/all-applications" },
     ];
     if (isSAorAD)
       salesItems.push({ icon: FolderOpen, label: "Documents", href: "/admin/documents" });
@@ -68,8 +68,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
   const campItems: NavItem[] = [];
   if (isSAorAD || isCC) {
     campItems.push(
-      { icon: ClipboardList, label: "Camp Application", href: "/admin/camp-applications" },
-      { icon: ListChecks,    label: "Enrollment Spots", href: "/admin/enrollment-spots"  },
+      { icon: ListChecks, label: "Enrollment Spots", href: "/admin/enrollment-spots" },
     );
   }
   if (campItems.length > 0)

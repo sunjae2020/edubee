@@ -13,6 +13,7 @@ import Dashboard from "@/pages/dashboard";
 import DashboardCrmPage from "@/pages/admin/DashboardCrmPage";
 import Users from "@/pages/users";
 import Applications from "@/pages/admin/applications";
+import AllApplications from "@/pages/admin/all-applications";
 import CampApplications from "@/pages/admin/camp-applications";
 import CampApplicationDetail from "@/pages/admin/camp-application-detail";
 import PackageGroups from "@/pages/admin/package-groups";
@@ -178,6 +179,9 @@ function Router() {
       </Route>
       <Route path="/admin/leads">
         <AdminRoute title="Leads"><Leads /></AdminRoute>
+      </Route>
+      <Route path="/admin/all-applications">
+        <AdminRoute title="All Applications"><AllApplications /></AdminRoute>
       </Route>
       <Route path="/admin/applications/new">
         <AdminRoute title="New Application"><ApplicationForm /></AdminRoute>

@@ -52,6 +52,7 @@ import statementsRouter from "./statements.js";
 import menuAllocationRouter from "./menu-allocation.js";
 import accountServiceProfilesRouter from "./account-service-profiles.js";
 import costLinesRouter from "./cost-lines.js";
+import allApplicationsRouter from "./all-applications.js";
 
 const router: IRouter = Router();
 
@@ -108,5 +109,6 @@ router.use(statementsRouter);
 router.use(menuAllocationRouter);
 router.use(accountServiceProfilesRouter);
 router.use(costLinesRouter);
+router.use(allApplicationsRouter);
 
 export default router;

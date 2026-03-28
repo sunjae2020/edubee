@@ -206,7 +206,10 @@ router.get("/public/packages", async (req, res) => {
 const participantSchema = z.object({
   participantType: z.enum(["primary_student", "child", "adult"]),
   fullName: z.string().min(1),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   fullNameNative: z.string().optional(),
+  englishName: z.string().optional(),
   dateOfBirth: z.string().optional(),
   gender: z.string().optional(),
   nationality: z.string().optional(),
@@ -281,6 +284,19 @@ router.post("/public/applications", async (req, res) => {
     const totalChildren = data.participants.filter((p) => p.participantType !== "adult").length;
     const totalAdults = data.participants.filter((p) => p.participantType === "adult").length;
 
+    // Extract primary applicant name fields from primary_student (or first adult)
+    const primaryP = data.participants.find(p => p.participantType === "primary_student")
+                  ?? data.participants.find(p => p.participantType === "adult")
+                  ?? data.participants[0];
+    const applicantFirstName = primaryP?.firstName ?? null;
+    const applicantLastName  = primaryP?.lastName  ?? null;
+    const applicantOriginalName = primaryP?.fullNameNative ?? null;
+    const applicantEnglishName  = primaryP?.englishName    ?? null;
+    const applicantFullName = primaryP?.fullName ?? null;
+    const applicantEmail = data.participants.find(p => p.email)?.email ?? null;
+    const applicantPhone = data.participants.find(p => p.phone)?.phone ?? null;
+    const applicantNationality = primaryP?.nationality ?? null;
+
     const [newApp] = await db
       .insert(applications)
       .values({
@@ -295,8 +311,18 @@ router.post("/public/applications", async (req, res) => {
         termsAccepted: true,
         termsAcceptedAt: new Date(),
         status: "pending",
+        applicationStatus: "submitted",
+        applicationType: "camp",
         totalChildren,
         totalAdults,
+        firstName:    applicantFirstName,
+        lastName:     applicantLastName,
+        originalName: applicantOriginalName,
+        englishName:  applicantEnglishName,
+        applicantName:        applicantFullName,
+        applicantEmail:       applicantEmail,
+        applicantPhone:       applicantPhone,
+        applicantNationality: applicantNationality,
       })
       .returning();
 
@@ -327,24 +353,21 @@ router.post("/public/applications", async (req, res) => {
     // Mirror into camp_applications so admin view can see landing-page submissions
     if (data.packageId) {
       try {
-        const emergencyContact = data.participants.find(p => p.isEmergencyContact && p.participantType === "adult");
-        const adult = emergencyContact ?? data.participants.find(p => p.participantType === "adult");
-        const primary = data.participants.find(p => p.participantType === "primary_student");
-        const applicantName = adult?.fullName ?? primary?.fullName ?? "Unknown";
-        const applicantEmail = adult?.email ?? primary?.email ?? "";
-        const applicantPhone = adult?.phone ?? primary?.phone ?? null;
-        const applicantNationality = adult?.nationality ?? primary?.nationality ?? null;
         const studentCount = data.participants.filter(p => p.participantType !== "adult").length;
-        const adultCount = data.participants.filter(p => p.participantType === "adult").length;
+        const adultCount   = data.participants.filter(p => p.participantType === "adult").length;
 
         await db.insert(campApplications).values({
           applicationRef: applicationNumber,
           packageGroupId: data.packageGroupId,
           packageId: data.packageId,
-          applicantName,
-          applicantEmail,
-          applicantPhone,
-          applicantNationality,
+          applicantName:         applicantFullName ?? "Unknown",
+          applicantEmail:        applicantEmail ?? "",
+          applicantPhone:        applicantPhone,
+          applicantNationality:  applicantNationality,
+          applicantFirstName:    applicantFirstName,
+          applicantLastName:     applicantLastName,
+          applicantOriginalName: applicantOriginalName,
+          applicantEnglishName:  applicantEnglishName,
           studentCount,
           adultCount,
           preferredStartDate: data.preferredStartDate ?? null,
