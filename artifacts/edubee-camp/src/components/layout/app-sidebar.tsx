@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs } from "@/hooks/use-view-as";
@@ -190,6 +190,98 @@ function saveCollapsed(keys: Set<string>) {
   } catch { /* ignore */ }
 }
 
+// ── CollapsedGroupFlyout ──────────────────────────────────────────────────
+
+function CollapsedGroupFlyout({
+  group, location, onNavClick,
+}: { group: NavGroup; location: string; onNavClick?: () => void }) {
+  const [open, setOpen] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasActive = group.items.some(
+    item => location === item.href || location.startsWith(item.href + "/")
+  );
+
+  const show = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setOpen(true);
+  };
+  const hide = () => {
+    timerRef.current = setTimeout(() => setOpen(false), 120);
+  };
+
+  return (
+    <div className="relative mb-0.5" onMouseEnter={show} onMouseLeave={hide}>
+      {/* Collapsed icon row — one icon per group */}
+      <div className="flex flex-col items-center gap-0.5 py-1">
+        {group.items.map(item => {
+          const isActive = location === item.href || location.startsWith(item.href + "/");
+          const Icon = item.icon;
+          return (
+            <Link key={item.href} href={item.href} onClick={onNavClick}>
+              <div
+                className={`w-10 h-9 flex items-center justify-center rounded-lg transition-colors cursor-pointer
+                  ${isActive ? "" : "hover:bg-[#F4F3F1] dark:hover:bg-[#242220]"}`}
+                style={{ background: isActive ? "var(--e-orange-lt)" : "transparent" }}
+                title={item.label}
+              >
+                <Icon
+                  size={16}
+                  strokeWidth={isActive ? 2.2 : 1.8}
+                  style={{ color: isActive ? "var(--e-orange)" : "var(--e-text-3)" }}
+                />
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Flyout panel */}
+      {open && (
+        <div
+          className="absolute left-[56px] top-0 z-50 min-w-[180px] rounded-xl shadow-xl border py-2"
+          style={{
+            background: "var(--e-bg-sidebar)",
+            borderColor: "var(--e-border)",
+          }}
+          onMouseEnter={show}
+          onMouseLeave={hide}
+        >
+          {/* Group label */}
+          <div
+            className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: hasActive ? "var(--e-orange)" : "var(--e-text-3)" }}
+          >
+            {group.label}
+          </div>
+          {group.items.map(item => {
+            const isActive = location === item.href || location.startsWith(item.href + "/");
+            const Icon = item.icon;
+            return (
+              <Link key={item.href} href={item.href} onClick={() => { setOpen(false); onNavClick?.(); }}>
+                <div
+                  className={`flex items-center gap-2.5 px-3 h-9 mx-1 rounded-lg text-[13px] cursor-pointer transition-colors select-none
+                    ${isActive ? "font-semibold" : "font-normal hover:bg-[#F4F3F1] dark:hover:bg-[#242220]"}`}
+                  style={{
+                    background: isActive ? "var(--e-orange-lt)" : "transparent",
+                    color: isActive ? "var(--e-orange)" : "var(--e-text-2)",
+                  }}
+                >
+                  <Icon
+                    size={14}
+                    strokeWidth={isActive ? 2.2 : 1.8}
+                    style={{ color: isActive ? "var(--e-orange)" : "var(--e-text-3)", flexShrink: 0 }}
+                  />
+                  <span className="truncate">{item.label}</span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── AppSidebar ────────────────────────────────────────────────────────────
 
 type Props = { collapsed: boolean; onToggle: () => void; onNavClick?: () => void };
@@ -230,6 +322,7 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
         width: collapsed ? 64 : 240,
         background: "var(--e-bg-sidebar)",
         borderRight: "1px solid var(--e-border)",
+        overflow: "visible",
       }}
     >
       {/* Logo header */}
@@ -258,19 +351,31 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {nav.map(group => {
-          const open        = isGroupOpen(group);
-          const CatIcon     = group.catIcon;
-          const hasActive   = group.items.some(
-            item => location === item.href || location.startsWith(item.href + "/")
-          );
+      <nav
+        className="flex-1 overflow-y-auto py-3 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        style={{ overflow: collapsed ? "visible" : undefined }}
+      >
+        {collapsed ? (
+          /* ── Collapsed: flyout per group ── */
+          nav.map(group => (
+            <CollapsedGroupFlyout
+              key={group.key}
+              group={group}
+              location={location}
+              onNavClick={onNavClick}
+            />
+          ))
+        ) : (
+          /* ── Expanded: normal accordion ── */
+          nav.map(group => {
+            const open      = isGroupOpen(group);
+            const CatIcon   = group.catIcon;
+            const hasActive = group.items.some(
+              item => location === item.href || location.startsWith(item.href + "/")
+            );
 
-          return (
-            <div key={group.key} className="mb-0.5">
-
-              {/* Category header — only in expanded mode */}
-              {!collapsed && (
+            return (
+              <div key={group.key} className="mb-0.5">
                 <button
                   onClick={() => toggleGroup(group.key)}
                   className="w-full flex items-center gap-1.5 px-2 pt-3 pb-1.5 rounded-md transition-colors
@@ -298,26 +403,25 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
                     }}
                   />
                 </button>
-              )}
 
-              {/* Items */}
-              {open && group.items.map(item => {
-                const isActive = location === item.href || location.startsWith(item.href + "/");
-                const Icon     = item.icon;
-                return (
-                  <Link key={item.href} href={item.href} onClick={onNavClick}>
-                    <SidebarNavItem
-                      icon={Icon}
-                      label={item.label}
-                      isActive={isActive}
-                      collapsed={collapsed}
-                    />
-                  </Link>
-                );
-              })}
-            </div>
-          );
-        })}
+                {open && group.items.map(item => {
+                  const isActive = location === item.href || location.startsWith(item.href + "/");
+                  const Icon     = item.icon;
+                  return (
+                    <Link key={item.href} href={item.href} onClick={onNavClick}>
+                      <SidebarNavItem
+                        icon={Icon}
+                        label={item.label}
+                        isActive={isActive}
+                        collapsed={false}
+                      />
+                    </Link>
+                  );
+                })}
+              </div>
+            );
+          })
+        )}
       </nav>
 
       {/* User footer */}
