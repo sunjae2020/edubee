@@ -349,20 +349,18 @@ export default function AllApplicationsPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Programme / Service</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Assigned Staff</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Quote</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Contract</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Date</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">Loading...</td>
+                <td colSpan={7} className="text-center py-12 text-muted-foreground text-sm">Loading...</td>
               </tr>
             )}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">No applications found</td>
+                <td colSpan={7} className="text-center py-12 text-muted-foreground text-sm">No applications found</td>
               </tr>
             )}
             {rows.map((row, i) => (
@@ -390,44 +388,6 @@ export default function AllApplicationsPage() {
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">
                   {row.assignedStaffName ?? "—"}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap" onClick={e => e.stopPropagation()}>
-                  {row.quoteId && row.quoteRef ? (
-                    <a
-                      href={`${BASE}/admin/crm/quotes/${row.quoteId}`}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
-                    >
-                      {row.quoteRef}
-                    </a>
-                  ) : row.quoteId ? (
-                    <a
-                      href={`${BASE}/admin/crm/quotes/${row.quoteId}`}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
-                    >
-                      View
-                    </a>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap" onClick={e => e.stopPropagation()}>
-                  {row.contractId && row.contractRef ? (
-                    <a
-                      href={`${BASE}/admin/contracts/${row.contractId}`}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
-                    >
-                      {row.contractRef}
-                    </a>
-                  ) : row.contractId ? (
-                    <a
-                      href={`${BASE}/admin/contracts/${row.contractId}`}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
-                    >
-                      View
-                    </a>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">—</span>
-                  )}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                   {row.createdAt ? new Date(row.createdAt).toLocaleDateString("en-AU") : "—"}
