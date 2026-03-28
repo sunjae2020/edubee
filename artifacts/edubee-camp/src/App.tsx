@@ -28,6 +28,7 @@ import PackageGroupDetail from "@/pages/admin/package-group-detail";
 import NewPackageGroup from "@/pages/admin/new-package-group";
 import ApplicationDetail from "@/pages/admin/application-detail";
 import ApplicationForm from "@/pages/admin/application-form";
+import AdminCampApplicationForm from "@/pages/admin/camp-application-form";
 import PickupMgtDetail from "@/pages/admin/services/pickup-detail";
 import TourMgtDetail from "@/pages/admin/services/tour-detail";
 import SettlementMgtDetail from "@/pages/admin/services/settlement-detail";
@@ -185,6 +186,9 @@ function Router() {
       </Route>
       <Route path="/admin/applications/new">
         <AdminRoute title="New Application"><ApplicationForm /></AdminRoute>
+      </Route>
+      <Route path="/admin/camp-applications/new">
+        <AdminRoute title="New Camp Application"><AdminCampApplicationForm /></AdminRoute>
       </Route>
       <Route path="/admin/applications/:id">
         <AdminRoute title="Application Detail"><ApplicationDetail /></AdminRoute>

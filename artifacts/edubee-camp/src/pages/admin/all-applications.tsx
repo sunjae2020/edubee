@@ -1,9 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import {
-  Search, Plus, Download,
+  Search, Plus, Download, ChevronDown,
   Tent, GraduationCap, Plane, Building2, Briefcase,
   Shield, Stamp, Car, Globe, Bus,
 } from "lucide-react";
@@ -167,6 +167,61 @@ const TABS = [
 
 const STATUSES = ["all", "submitted", "reviewing", "quoted", "confirmed", "converted", "cancelled"];
 
+// ── New Application Dropdown ────────────────────────────────────────────────
+
+function NewApplicationDropdown({ navigate }: { navigate: (path: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <Button
+        size="sm"
+        className="gap-1.5 bg-[var(--e-orange)] hover:bg-[var(--e-orange-dark)] text-white pr-2"
+        onClick={() => setOpen(o => !o)}
+      >
+        <Plus className="w-4 h-4" />
+        New Application
+        <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
+      </Button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-52 bg-card border border-border rounded-lg shadow-lg z-50 py-1 overflow-hidden">
+          <button
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-[#FFF0E0] hover:text-[#C2410C] transition-colors text-left"
+            onClick={() => { setOpen(false); navigate("/admin/camp-applications/new"); }}
+          >
+            <Tent className="w-4 h-4 shrink-0 text-[#F5821F]" />
+            <div>
+              <div className="font-medium">Camp Application</div>
+              <div className="text-xs text-muted-foreground">캠프 신청서 작성</div>
+            </div>
+          </button>
+          <div className="border-t border-border mx-2" />
+          <button
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-[#EDE9FE] hover:text-[#6D28D9] transition-colors text-left"
+            onClick={() => { setOpen(false); navigate("/admin/applications/new"); }}
+          >
+            <Globe className="w-4 h-4 shrink-0 text-[#7C3AED]" />
+            <div>
+              <div className="font-medium">Service Application</div>
+              <div className="text-xs text-muted-foreground">서비스 신청서 작성</div>
+            </div>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function AllApplicationsPage() {
@@ -226,13 +281,7 @@ export default function AllApplicationsPage() {
             <Button variant="outline" size="sm" className="gap-1.5">
               <Download className="w-4 h-4" /> Export
             </Button>
-            <Button
-              size="sm"
-              className="gap-1.5 bg-[var(--e-orange)] hover:bg-[var(--e-orange-dark)] text-white"
-              onClick={() => navigate("/admin/camp-applications")}
-            >
-              <Plus className="w-4 h-4" /> New Application
-            </Button>
+            <NewApplicationDropdown navigate={navigate} />
           </div>
         </div>
 

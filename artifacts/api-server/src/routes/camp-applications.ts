@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { campApplications, applicationParticipants } from "@workspace/db/schema";
+import { campApplications, applicationParticipants, applications } from "@workspace/db/schema";
 import { contacts, leads, contracts, quotes } from "@workspace/db/schema";
-import { eq, ilike, or, count, and, desc, SQL } from "drizzle-orm";
+import { eq, ilike, or, count, and, desc, SQL, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -61,6 +61,75 @@ router.get("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
     return res.json({ ...application, participants });
   } catch (err) {
     console.error("[GET /api/camp-applications/:id]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/camp-applications — create new camp application (admin)
+router.post("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const {
+      applicantFirstName, applicantLastName, applicantOriginalName, applicantEnglishName,
+      applicantEmail, applicantPhone, applicantNationality, applicantDob,
+      packageGroupId, packageId,
+      preferredStartDate, studentCount, adultCount,
+      specialRequirements, dietaryRequirements, medicalConditions,
+      emergencyContactName, emergencyContactPhone,
+      notes, assignedStaffId, agentAccountId,
+    } = req.body;
+
+    if (!applicantFirstName || !applicantLastName || !applicantEmail) {
+      return res.status(400).json({ error: "First name, last name, and email are required" });
+    }
+    if (!packageGroupId) {
+      return res.status(400).json({ error: "Package group is required" });
+    }
+    if (!packageId) {
+      return res.status(400).json({ error: "Package is required" });
+    }
+
+    // Generate applicationRef: APP-YYYY-XXXX
+    const year = new Date().getFullYear();
+    const prefix = `APP-${year}-`;
+    const [countResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(applications)
+      .where(sql`application_number LIKE ${prefix + "%"}`);
+    const seq = (Number(countResult?.count ?? 0) + 1).toString().padStart(4, "0");
+    const applicationRef = `${prefix}${seq}`;
+
+    const fullName = `${applicantFirstName} ${applicantLastName.toUpperCase()}`.trim();
+
+    const [newApp] = await db.insert(campApplications).values({
+      applicationRef,
+      packageGroupId,
+      packageId:             packageId || null,
+      applicantFirstName,
+      applicantLastName,
+      applicantOriginalName: applicantOriginalName || null,
+      applicantEnglishName:  applicantEnglishName  || null,
+      applicantName:         fullName,
+      applicantEmail,
+      applicantPhone:        applicantPhone        || null,
+      applicantNationality:  applicantNationality  || null,
+      applicantDob:          applicantDob          || null,
+      preferredStartDate:    preferredStartDate    || null,
+      studentCount:          Number(studentCount)  || 0,
+      adultCount:            Number(adultCount)    || 1,
+      specialRequirements:   specialRequirements   || null,
+      dietaryRequirements:   dietaryRequirements   || null,
+      medicalConditions:     medicalConditions     || null,
+      emergencyContactName:  emergencyContactName  || null,
+      emergencyContactPhone: emergencyContactPhone || null,
+      applicationStatus: "submitted",
+      status: "Active",
+      assignedStaffId: assignedStaffId || null,
+      agentAccountId:  agentAccountId  || null,
+    }).returning();
+
+    return res.status(201).json(newApp);
+  } catch (err) {
+    console.error("[POST /api/camp-applications]", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
