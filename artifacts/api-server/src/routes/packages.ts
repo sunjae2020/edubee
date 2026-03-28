@@ -17,7 +17,7 @@ router.get("/package-groups", authenticate, async (req, res) => {
     const offset = (pageNum - 1) * limitNum;
 
     const conditions: SQL[] = [];
-    if (status) conditions.push(eq(packageGroups.status, status));
+    if (status) conditions.push(ilike(packageGroups.status, status));
     if (countryCode) conditions.push(eq(packageGroups.countryCode, countryCode));
 
     // Camp coordinators see only their own

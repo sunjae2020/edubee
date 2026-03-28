@@ -429,7 +429,7 @@ export default function CampApplicationDetail() {
 
   const { data: pgResp } = useQuery({
     queryKey: ["package-groups-all-detail"],
-    queryFn:  () => axios.get(`${BASE}/api/package-groups?limit=100&status=Active`).then(r => r.data),
+    queryFn:  () => axios.get(`${BASE}/api/package-groups?limit=100&status=active`).then(r => r.data),
   });
   const packageGroupOptions: Array<{ id: string; nameEn: string }> =
     (pgResp?.data ?? []).filter((p: any) => p?.id);

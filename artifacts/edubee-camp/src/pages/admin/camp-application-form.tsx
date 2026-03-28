@@ -82,9 +82,9 @@ export default function AdminCampApplicationForm() {
   const { data: pgResp } = useQuery({
     queryKey: ["admin-package-groups"],
     queryFn: () =>
-      axios.get(`${BASE}/api/package-groups?limit=100&status=Active`).then(r => r.data),
+      axios.get(`${BASE}/api/package-groups?limit=100&status=active`).then(r => r.data),
   });
-  const packageGroups: Array<{ group: { id: string; nameEn: string; nameKo: string } }> =
+  const packageGroups: Array<{ id: string; nameEn: string; nameKo: string }> =
     pgResp?.data ?? [];
 
   // ── Packages (filtered by group)
@@ -278,8 +278,8 @@ export default function AdminCampApplicationForm() {
               >
                 <option value="">-- Select Group --</option>
                 {packageGroups.map(pg => (
-                  <option key={pg.group.id} value={pg.group.id}>
-                    {pg.group.nameEn || pg.group.nameKo}
+                  <option key={pg.id} value={pg.id}>
+                    {pg.nameEn || pg.nameKo}
                   </option>
                 ))}
               </select>
