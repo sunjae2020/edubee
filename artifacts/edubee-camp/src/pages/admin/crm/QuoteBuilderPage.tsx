@@ -532,7 +532,9 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
     )
   ).sort() as string[];
 
-  // Real-time search — re-fetches whenever any filter changes
+  // Only fetch when at least one meaningful filter is active (status alone is not enough)
+  const hasActiveFilter = !!(debouncedSearch || productGroup || productType || priority || grade || country || location);
+
   const { data: productData, isFetching } = useQuery<{ data: Product[]; total: number }>({
     queryKey: ["products-quote-search", { debouncedSearch, productGroup, productType, priority, grade, status, country, location }],
     queryFn: () => {
@@ -547,6 +549,7 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
       if (location)        params.set("location",        location);
       return axios.get(`${BASE}/api/products?${params}`).then((r) => r.data);
     },
+    enabled: hasActiveFilter,
     staleTime: 0,
   });
 
@@ -713,7 +716,9 @@ function ProductSearchPanel({ onAdd }: { onAdd: (p: Product) => void }) {
         </div>
 
         {/* Results */}
-        {isFetching ? (
+        {!hasActiveFilter ? (
+          <p className="text-sm text-gray-400 text-center py-6">Enter a search term or select a filter to find products.</p>
+        ) : isFetching ? (
           <div className="py-6 flex justify-center">
             <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-200" style={{ borderTopColor: PRIMARY }} />
           </div>
