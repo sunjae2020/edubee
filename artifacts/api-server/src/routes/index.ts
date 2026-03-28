@@ -51,6 +51,7 @@ import taxInvoicesRouter from "./tax-invoices.js";
 import statementsRouter from "./statements.js";
 import menuAllocationRouter from "./menu-allocation.js";
 import accountServiceProfilesRouter from "./account-service-profiles.js";
+import costLinesRouter from "./cost-lines.js";
 
 const router: IRouter = Router();
 
@@ -106,5 +107,6 @@ router.use(taxInvoicesRouter);
 router.use(statementsRouter);
 router.use(menuAllocationRouter);
 router.use(accountServiceProfilesRouter);
+router.use(costLinesRouter);
 
 export default router;

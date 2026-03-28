@@ -391,6 +391,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       creditAmount: parseFloat(t.credit_amount ?? "0"),
       debitAmount:  Math.max(0, parseFloat(t.amount ?? "0") - parseFloat(t.credit_amount ?? "0")),
       status: t.status, description: t.description, bankReference: t.bank_reference,
+      paymentInfoId: t.payment_info_id ?? null,
     }));
 
     const saArr = r(saRes); const sa = saArr[0] ?? null;

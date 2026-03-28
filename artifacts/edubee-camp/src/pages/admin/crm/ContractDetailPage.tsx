@@ -8,6 +8,7 @@ import {
   Car, Building2, Briefcase, Shield, CheckCircle2, Clock,
   AlertCircle, ChevronRight, Star, TrendingUp, TrendingDown,
   UploadCloud, MessageSquare, Send, Download, Pencil, Plus, X, Wrench, Map, Stamp, Trash2,
+  ChevronDown, ChevronUp, Search,
 } from "lucide-react";
 import { format } from "date-fns";
 import PaymentStatementModal from "../../../components/finance/PaymentStatementModal";
@@ -64,15 +65,12 @@ function InfoRow({ label, value }: { label: string; value?: string | null | Reac
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
 const TABS = [
-  { key: "overview",     label: "Overview"          },
-  { key: "services",     label: "Services"          },
-  { key: "schedule",     label: "Payment Schedule"  },
-  { key: "invoices",     label: "Invoices"          },
-  { key: "payments",     label: "Payments"          },
-  { key: "transactions", label: "Transactions"      },
-  { key: "commission",   label: "Commission / Cost" },
-  { key: "documents",    label: "Documents"         },
-  { key: "activity",     label: "Activity"          },
+  { key: "overview",     label: "Overview"         },
+  { key: "services",     label: "Services"         },
+  { key: "schedule",     label: "Payment Schedule" },
+  { key: "transactions", label: "Transactions"     },
+  { key: "documents",    label: "Documents"        },
+  { key: "activity",     label: "Activity"         },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
@@ -458,6 +456,290 @@ function ScheduleEditRow({
   );
 }
 
+// ── Cost type options ────────────────────────────────────────────────────────
+const COST_TYPES = [
+  { value: "sub_agent",   label: "Sub-Agent Commission"  },
+  { value: "super_agent", label: "Super-Agent Commission"},
+  { value: "referral",    label: "Referral Fee"          },
+  { value: "incentive",   label: "Staff Incentive"       },
+  { value: "school_fee",  label: "School Fee (AP)"       },
+  { value: "other",       label: "Other Cost"            },
+];
+const COST_BADGE: Record<string, string> = {
+  sub_agent:   "bg-[#FEF0E3] text-[#F5821F]",
+  super_agent: "bg-[#FEF0E3] text-[#F5821F]",
+  referral:    "bg-[#EFF6FF] text-[#1D4ED8]",
+  incentive:   "bg-[#F4F3F1] text-[#57534E]",
+  school_fee:  "bg-[#FEF9C3] text-[#CA8A04]",
+  other:       "bg-[#F4F3F1] text-[#57534E]",
+};
+
+interface ClForm {
+  costType: string; partnerId: string; partnerName: string;
+  calcType: "percentage" | "fixed";
+  rate: string; baseAmount: string; calculatedAmount: string;
+  description: string;
+}
+const EMPTY_CL_FORM: ClForm = {
+  costType: "sub_agent", partnerId: "", partnerName: "",
+  calcType: "percentage", rate: "", baseAmount: "", calculatedAmount: "",
+  description: "",
+};
+
+function CostLinePanel({ cp, contractId }: { cp: any; contractId: string }) {
+  const qc = useQueryClient();
+  const costLines: any[] = cp.costLines ?? [];
+  const [adding, setAdding] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm]     = useState<ClForm>(EMPTY_CL_FORM);
+  const [partnerQ, setPartnerQ] = useState("");
+  const [showPartnerDrop, setShowPartnerDrop] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [err, setErr] = useState("");
+
+  const { data: partners = [] } = useQuery<any[]>({
+    queryKey: ["cl-partners", partnerQ],
+    queryFn: () => axios.get(`${BASE}/api/cost-lines/lookup/partners?q=${encodeURIComponent(partnerQ)}`).then(r => r.data),
+    enabled: showPartnerDrop,
+  });
+
+  const setF = (k: keyof ClForm, v: string) =>
+    setForm(prev => {
+      const next = { ...prev, [k]: v };
+      if (k === "rate" || k === "baseAmount" || k === "calcType") {
+        const r = parseFloat(k === "rate" ? v : next.rate) || 0;
+        const b = parseFloat(k === "baseAmount" ? v : next.baseAmount) || 0;
+        const ct = k === "calcType" ? v : next.calcType;
+        if (ct === "percentage") next.calculatedAmount = b > 0 && r > 0 ? (b * r / 100).toFixed(2) : "";
+        else                     next.calculatedAmount = r > 0 ? r.toFixed(2) : "";
+      }
+      return next;
+    });
+
+  const openAdd = () => { setForm(EMPTY_CL_FORM); setPartnerQ(""); setErr(""); setAdding(true); setEditId(null); };
+  const openEdit = (cl: any) => {
+    setForm({
+      costType: cl.costType ?? "sub_agent",
+      partnerId: cl.partnerId ?? "", partnerName: cl.partnerName ?? "",
+      calcType: cl.calcType === "fixed" ? "fixed" : "percentage",
+      rate: cl.rate != null ? String(cl.calcType === "percentage" ? (cl.rate * 100).toFixed(4) : cl.rate) : "",
+      baseAmount: cl.baseAmount != null ? String(cl.baseAmount) : "",
+      calculatedAmount: cl.calculatedAmount != null ? String(cl.calculatedAmount) : "",
+      description: cl.description ?? "",
+    });
+    setPartnerQ(cl.partnerName ?? ""); setErr(""); setEditId(cl.id); setAdding(false);
+  };
+  const closeForm = () => { setAdding(false); setEditId(null); setErr(""); };
+
+  const handleSave = async () => {
+    setSaving(true); setErr("");
+    try {
+      const payload = {
+        contractProductId: cp.id,
+        costType: form.costType,
+        partnerId: form.partnerId || null,
+        calcType: form.calcType,
+        rate: form.rate !== "" ? (form.calcType === "percentage" ? parseFloat(form.rate) / 100 : parseFloat(form.rate)) : null,
+        baseAmount: form.baseAmount !== "" ? parseFloat(form.baseAmount) : null,
+        calculatedAmount: form.calculatedAmount !== "" ? parseFloat(form.calculatedAmount) : 0,
+        description: form.description || null,
+      };
+      if (editId) {
+        await axios.put(`${BASE}/api/cost-lines/${editId}`, payload);
+      } else {
+        await axios.post(`${BASE}/api/cost-lines`, payload);
+      }
+      qc.invalidateQueries({ queryKey: ["crm-contract", contractId] });
+      closeForm();
+    } catch (e: any) {
+      setErr(e?.response?.data?.error ?? "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (clId: string) => {
+    if (!window.confirm("이 Cost Line을 삭제하시겠습니까?")) return;
+    setDeleting(clId);
+    try {
+      await axios.delete(`${BASE}/api/cost-lines/${clId}`);
+      qc.invalidateQueries({ queryKey: ["crm-contract", contractId] });
+    } catch (e: any) {
+      alert(e?.response?.data?.error ?? "Delete failed");
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const inpCls = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[#F5821F] w-full bg-white";
+  const selCls = inpCls;
+
+  return (
+    <div className="mx-4 mb-3 mt-1 bg-[#FAFAF9] border border-[#E8E6E2] rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#E8E6E2] bg-white">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">
+          Cost Lines / Commission
+          {costLines.length > 0 && (
+            <span className="ml-2 text-[#57534E]">
+              AP Total: {fmtMoney(costLines.reduce((s: number, cl: any) => s + parseFloat(cl.calculatedAmount ?? "0"), 0))}
+            </span>
+          )}
+        </span>
+        {!adding && !editId && (
+          <button onClick={openAdd}
+            className="h-7 px-2.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium flex items-center gap-1 hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+            style={{ color: "#57534E" }}>
+            <Plus size={10} /> Add Cost Line
+          </button>
+        )}
+      </div>
+
+      {/* Existing lines */}
+      {costLines.length > 0 && (
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-[#E8E6E2]">
+              {["Type","Partner / Staff","Method","Rate","Base","Calculated","Status",""].map(h => (
+                <th key={h} className="text-left px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[#A8A29E]">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {costLines.map((cl: any) => (
+              <tr key={cl.id} className="border-b border-[#E8E6E2] hover:bg-white last:border-0">
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-medium ${COST_BADGE[cl.costType] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
+                    {COST_TYPES.find(t => t.value === cl.costType)?.label ?? cl.costType}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-[#1C1917] max-w-[120px] truncate">{cl.partnerName ?? "—"}</td>
+                <td className="px-3 py-2 text-[#57534E] capitalize">{cl.calcType}</td>
+                <td className="px-3 py-2 text-[#57534E]">
+                  {cl.calcType === "percentage"
+                    ? `${(parseFloat(cl.rate ?? "0") * 100).toFixed(1)}%`
+                    : fmtMoney(parseFloat(cl.rate ?? "0"))}
+                </td>
+                <td className="px-3 py-2 text-[#57534E]">{cl.baseAmount ? fmtMoney(parseFloat(cl.baseAmount)) : "—"}</td>
+                <td className="px-3 py-2 font-semibold" style={{ color: "#9A3412" }}>{fmtMoney(parseFloat(cl.calculatedAmount ?? "0"))}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-medium ${cl.status === "paid" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#F4F3F1] text-[#57534E]"}`}>
+                    {cl.status}
+                  </span>
+                </td>
+                <td className="px-3 py-2">
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => openEdit(cl)} disabled={cl.status === "paid"}
+                      className="p-1 rounded hover:bg-[#EFF6FF] hover:text-[#2563EB] text-[#57534E] disabled:opacity-30 transition-colors">
+                      <Pencil size={11} />
+                    </button>
+                    <button onClick={() => handleDelete(cl.id)} disabled={cl.status === "paid" || deleting === cl.id}
+                      className="p-1 rounded hover:bg-red-50 hover:text-red-500 text-[#57534E] disabled:opacity-30 transition-colors">
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {costLines.length === 0 && !adding && !editId && (
+        <div className="py-3 text-center text-[11px] text-[#A8A29E]">No cost lines yet</div>
+      )}
+
+      {/* Add / Edit form */}
+      {(adding || editId) && (
+        <div className="p-3 border-t border-[#E8E6E2] bg-white">
+          <p className="text-[11px] font-semibold text-[#57534E] mb-2">{editId ? "Edit Cost Line" : "New Cost Line"}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+            {/* Type */}
+            <div>
+              <label className="block text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Type</label>
+              <select className={selCls} value={form.costType} onChange={e => setF("costType", e.target.value)}>
+                {COST_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            {/* Partner */}
+            <div className="relative">
+              <label className="block text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Partner / Payee</label>
+              <div className="relative">
+                <input className={inpCls + " pr-6"} value={partnerQ}
+                  onChange={e => { setPartnerQ(e.target.value); setShowPartnerDrop(true); setF("partnerId", ""); setF("partnerName", ""); }}
+                  onFocus={() => setShowPartnerDrop(true)}
+                  placeholder="Search…" />
+                <Search size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
+              </div>
+              {showPartnerDrop && partners.length > 0 && (
+                <div className="absolute z-20 mt-1 w-full bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-36 overflow-y-auto">
+                  {partners.map((p: any) => (
+                    <button key={p.id} className="w-full text-left px-3 py-1.5 text-xs hover:bg-[#FEF0E3] hover:text-[#F5821F]"
+                      onMouseDown={() => { setF("partnerId", p.id); setF("partnerName", p.name); setPartnerQ(p.name); setShowPartnerDrop(false); }}>
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Calc type */}
+            <div>
+              <label className="block text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Method</label>
+              <select className={selCls} value={form.calcType} onChange={e => setF("calcType", e.target.value)}>
+                <option value="percentage">Percentage (%)</option>
+                <option value="fixed">Fixed Amount</option>
+              </select>
+            </div>
+            {/* Rate */}
+            <div>
+              <label className="block text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">
+                {form.calcType === "percentage" ? "Rate (%)" : "Fixed Amount"}
+              </label>
+              <input type="number" min="0" step="0.01" className={inpCls} value={form.rate}
+                onChange={e => setF("rate", e.target.value)}
+                placeholder={form.calcType === "percentage" ? "e.g. 10" : "e.g. 500"} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+            {/* Base amount — only relevant for percentage */}
+            {form.calcType === "percentage" && (
+              <div>
+                <label className="block text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Base Amount</label>
+                <input type="number" min="0" step="0.01" className={inpCls} value={form.baseAmount}
+                  onChange={e => setF("baseAmount", e.target.value)} placeholder="0.00" />
+              </div>
+            )}
+            {/* Calculated */}
+            <div>
+              <label className="block text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Calculated (AP)</label>
+              <input type="number" min="0" step="0.01" className={inpCls} value={form.calculatedAmount}
+                onChange={e => setF("calculatedAmount", e.target.value)} placeholder="0.00" />
+            </div>
+            {/* Description */}
+            <div className={form.calcType === "percentage" ? "col-span-2" : "col-span-3"}>
+              <label className="block text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Description</label>
+              <input type="text" className={inpCls} value={form.description}
+                onChange={e => setF("description", e.target.value)} placeholder="Optional note" />
+            </div>
+          </div>
+          {err && <p className="text-[11px] text-red-600 mb-2">{err}</p>}
+          <div className="flex items-center gap-2">
+            <button onClick={handleSave} disabled={saving || !form.calculatedAmount}
+              className="h-7 px-3 rounded-lg text-[11px] font-semibold text-white disabled:opacity-50"
+              style={{ background: "#F5821F" }}>
+              {saving ? "Saving…" : editId ? "Update" : "Add"}
+            </button>
+            <button onClick={closeForm} className="h-7 px-2.5 rounded-lg text-[11px] border border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1]">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PaymentScheduleTab({ contract }: { contract: any }) {
   const products: any[] = contract.contractProducts ?? [];
   const totalAr = products.reduce((s: number, p: any) => s + (p.arAmount ?? 0), 0);
@@ -569,6 +851,10 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
   const changeDraft = (k: keyof CpDraft, v: any) => setDraft(prev => prev ? { ...prev, [k]: v } : prev);
   const changeNew   = (k: keyof CpDraft, v: any) => setNewDraft(prev => prev ? { ...prev, [k]: v } : prev);
 
+  const [expandedCpIds, setExpandedCpIds] = useState<Set<string>>(new Set());
+  const toggleExpand = (id: string) =>
+    setExpandedCpIds(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+
   return (
     <div className="space-y-4">
       <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
@@ -609,47 +895,66 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                     errMsg={errMsg}
                   />
                 ) : (
-                  <tr key={cp.id}
-                    className="border-b border-[#E8E6E2] transition-colors group"
-                    style={cp.apStatus === "ready" ? { background:"#FFFCF9" } : {}}>
-                    <td className="px-4 py-3 text-xs text-[#A8A29E]">{i + 1}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        {cp.isInitialPayment && <span className="text-[#CA8A04] text-xs">★</span>}
-                        {cp.apStatus === "ready" && <AlertCircle size={12} style={{ color:"#F5821F" }} />}
-                        <span className="text-[13px] text-[#1C1917] font-medium">{cp.name ?? `Instalment ${i + 1}`}</span>
-                      </div>
-                      {cp.serviceModuleType && (
-                        <div className="text-[11px] text-[#A8A29E] mt-0.5">{cp.serviceModuleType}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.arDueDate)}</td>
-                    <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.arAmount)}</td>
-                    <td className="px-4 py-3"><Badge s={cp.arStatus} map={AR_BADGE} /></td>
-                    <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.apDueDate)}</td>
-                    <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.apAmount)}</td>
-                    <td className="px-4 py-3"><Badge s={cp.apStatus} map={AP_BADGE} /></td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => printInstalment(cp, contract, i)}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
-                          title="Invoice">
-                          <Download size={11} />
-                        </button>
-                        <button onClick={() => startEdit(cp)}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-[#EFF6FF] hover:border-[#3B82F6] hover:text-[#2563EB] transition-colors"
-                          title="Edit">
-                          <Pencil size={11} />
-                        </button>
-                        <button onClick={() => handleDelete(cp.id)} disabled={deleting === cp.id}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-red-50 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-40"
-                          title="Delete">
-                          <Trash2 size={11} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                  <>
+                    <tr key={cp.id}
+                      className={`transition-colors group ${expandedCpIds.has(cp.id) ? "bg-[#FFFCF9]" : "border-b border-[#E8E6E2]"}`}
+                      style={!expandedCpIds.has(cp.id) && cp.apStatus === "ready" ? { background:"#FFFCF9" } : {}}>
+                      <td className="px-4 py-3 text-xs text-[#A8A29E]">{i + 1}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          {cp.isInitialPayment && <span className="text-[#CA8A04] text-xs">★</span>}
+                          {cp.apStatus === "ready" && <AlertCircle size={12} style={{ color:"#F5821F" }} />}
+                          <span className="text-[13px] text-[#1C1917] font-medium">{cp.name ?? `Instalment ${i + 1}`}</span>
+                        </div>
+                        {cp.serviceModuleType && (
+                          <div className="text-[11px] text-[#A8A29E] mt-0.5">{cp.serviceModuleType}</div>
+                        )}
+                        {(cp.costLines ?? []).length > 0 && (
+                          <div className="text-[11px] mt-0.5" style={{ color:"#9A3412" }}>
+                            {(cp.costLines ?? []).length} cost line{(cp.costLines ?? []).length > 1 ? "s" : ""}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.arDueDate)}</td>
+                      <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.arAmount)}</td>
+                      <td className="px-4 py-3"><Badge s={cp.arStatus} map={AR_BADGE} /></td>
+                      <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(cp.apDueDate)}</td>
+                      <td className="px-4 py-3 text-right text-[13px] font-semibold text-[#1C1917]">{fmtMoney(cp.apAmount)}</td>
+                      <td className="px-4 py-3"><Badge s={cp.apStatus} map={AP_BADGE} /></td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => toggleExpand(cp.id)}
+                            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[11px] font-medium transition-colors ${expandedCpIds.has(cp.id) ? "bg-[#FEF0E3] border-[#F5821F] text-[#F5821F]" : "border-[#E8E6E2] text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
+                            title="Cost Lines">
+                            {expandedCpIds.has(cp.id) ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                          </button>
+                          <button
+                            onClick={() => printInstalment(cp, contract, i)}
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+                            title="Invoice">
+                            <Download size={11} />
+                          </button>
+                          <button onClick={() => startEdit(cp)}
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-[#EFF6FF] hover:border-[#3B82F6] hover:text-[#2563EB] transition-colors"
+                            title="Edit">
+                            <Pencil size={11} />
+                          </button>
+                          <button onClick={() => handleDelete(cp.id)} disabled={deleting === cp.id}
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-red-50 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-40"
+                            title="Delete">
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expandedCpIds.has(cp.id) && (
+                      <tr className="border-b border-[#E8E6E2]">
+                        <td colSpan={9} className="p-0">
+                          <CostLinePanel cp={cp} contractId={contract.id} />
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 )
               )}
               {addingNew && newDraft && (
@@ -1132,70 +1437,237 @@ function TransactionsTab({ contract, onRecordPayment }: { contract: any; onRecor
   );
 }
 
-// ── Commission Tab ──────────────────────────────────────────────────────────
-function CommissionTab({ contract }: { contract: any }) {
-  const cs = contract.commissionSummary ?? {};
-  const products: any[] = contract.contractProducts ?? [];
-  const allLines = products.flatMap((cp: any) =>
-    (cp.costLines ?? []).map((cl: any) => ({ ...cl, instalmentName: cp.name ?? "—" }))
-  );
-  const COST_BADGE: Record<string, string> = {
-    sub_agent:   "bg-[#FEF0E3] text-[#F5821F]",
-    super_agent: "bg-[#FEF0E3] text-[#F5821F]",
-    referral:    "bg-[#EFF6FF] text-[#1D4ED8]",
-    incentive:   "bg-[#F4F3F1] text-[#57534E]",
+// ── Unified Transactions Ledger Tab ──────────────────────────────────────────
+// Shows payment_headers as primary records + any manual transactions (paymentInfoId=null)
+// sorted by date, newest first.
+const PTYPE_BADGE_LED: Record<string, string> = {
+  trust_receipt:     "bg-[#DCFCE7] text-[#16A34A]",
+  trust_transfer:    "bg-[#FEF0E3] text-[#F5821F]",
+  commission:        "bg-[#EDE9FE] text-[#7C3AED]",
+  direct:            "bg-[#F0F9FF] text-[#0369A1]",
+  service_fee_camp:  "bg-[#DCFCE7] text-[#16A34A]",
+  camp_tour_ap:      "bg-[#FEF9C3] text-[#CA8A04]",
+  camp_institute_ap: "bg-[#FEF9C3] text-[#CA8A04]",
+};
+const AR_PTYPES = new Set(["trust_receipt", "service_fee_camp", "direct"]);
+
+function UnifiedTransactionsTab({ contract, onRecordPayment }: { contract: any; onRecordPayment: () => void }) {
+  const qc = useQueryClient();
+
+  // Fetch payment headers for this contract
+  const { data: payRows = [], isLoading: loadingPay } = useQuery<any[]>({
+    queryKey: ["contract-payments", contract.id],
+    queryFn: () => axios.get(`${BASE}/api/accounting/payments/by-contract/${contract.id}`).then(r => r.data),
+    enabled: !!contract.id,
+  });
+
+  // Deduplicate payment_headers (payRows has one row per payment_line)
+  const paymentsMap = new Map<string, any>();
+  for (const row of payRows) {
+    if (!paymentsMap.has(row.id)) paymentsMap.set(row.id, { ...row, products: [] });
+    if (row.product_name) paymentsMap.get(row.id)!.products.push(row.product_name);
+  }
+  const payments: any[] = Array.from(paymentsMap.values());
+
+  // Manual transactions: only those without a paymentInfoId (manually entered)
+  const manualTxns: any[] = (contract.transactions ?? []).filter((t: any) => !t.paymentInfoId);
+
+  // Merge and sort by date desc
+  type LedgerRow = { _type: "payment" | "txn"; _date: string; _data: any };
+  const ledger: LedgerRow[] = [
+    ...payments.map(p => ({ _type: "payment" as const, _date: p.payment_date ?? "", _data: p })),
+    ...manualTxns.map(t => ({ _type: "txn" as const, _date: t.transactionDate ?? "", _data: t })),
+  ].sort((a, b) => b._date.localeCompare(a._date));
+
+  // Summary
+  const totalIn  = payments.filter(p => AR_PTYPES.has(p.payment_type) && p.status !== "Void")
+                           .reduce((s, p) => s + Number(p.total_amount ?? 0), 0);
+  const totalOut = payments.filter(p => !AR_PTYPES.has(p.payment_type) && p.status !== "Void")
+                           .reduce((s, p) => s + Number(p.total_amount ?? 0), 0);
+  const net = totalIn - totalOut;
+
+  const [voidingId, setVoidingId] = useState<string | null>(null);
+  const [editingTxn, setEditingTxn] = useState<any | null>(null);
+  const [deletingTxnId, setDeletingTxnId] = useState<string | null>(null);
+
+  const handleVoidPayment = async (payId: string) => {
+    if (!window.confirm("이 Payment를 Void 처리하시겠습니까? 연결된 Transaction도 자동으로 Inactive 됩니다.")) return;
+    setVoidingId(payId);
+    try {
+      await axios.patch(`${BASE}/api/accounting/payments/${payId}/void`);
+      qc.invalidateQueries({ queryKey: ["contract-payments", contract.id] });
+      qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] });
+    } catch (e: any) {
+      alert(e?.response?.data?.error ?? "Void failed");
+    } finally {
+      setVoidingId(null);
+    }
   };
+
+  const handleVoidTxn = async (txnId: string) => {
+    if (!window.confirm("이 Transaction을 Void하시겠습니까?")) return;
+    setDeletingTxnId(txnId);
+    try {
+      await axios.delete(`${BASE}/api/transactions/${txnId}`);
+      qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] });
+    } catch (e: any) {
+      alert(e?.response?.data?.error ?? "Void failed");
+    } finally {
+      setDeletingTxnId(null);
+    }
+  };
+
+  if (loadingPay) {
+    return <div className="bg-white border border-[#E8E6E2] rounded-xl p-10 text-center text-[#A8A29E] text-sm">Loading…</div>;
+  }
+
   return (
     <div className="space-y-4">
+      {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: "Sub-Agent",      val: cs.subAgent      },
-          { label: "Super-Agent",    val: cs.superAgent     },
-          { label: "Referral",       val: cs.referral       },
-          { label: "Staff Incentive",val: cs.staffIncentive },
-        ].map(c => (
-          <div key={c.label} className="bg-white border border-[#E8E6E2] rounded-xl p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">{c.label}</p>
-            <p className="text-xl font-bold text-[#1C1917] mt-1">{fmtMoney(c.val)}</p>
-          </div>
-        ))}
-      </div>
-      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
-        <div className="px-5 py-3 border-b border-[#E8E6E2]">
-          <h3 className="text-sm font-semibold text-[#1C1917]">Cost Lines ({allLines.length})</h3>
+        <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
+          <p className="text-xs text-[#A8A29E] mb-1">Total Received (AR)</p>
+          <p className="text-xl font-bold text-[#16A34A]">{fmtMoney(totalIn)}</p>
         </div>
-        {allLines.length === 0 ? (
-          <div className="text-center py-8 text-[#A8A29E] text-sm">No cost lines recorded</div>
+        <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
+          <p className="text-xs text-[#A8A29E] mb-1">Total Paid Out (AP)</p>
+          <p className="text-xl font-bold text-[#DC2626]">{fmtMoney(totalOut)}</p>
+        </div>
+        <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
+          <p className="text-xs text-[#A8A29E] mb-1">Net</p>
+          <p className={`text-xl font-bold ${net >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"}`}>{fmtMoney(net)}</p>
+        </div>
+        <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
+          <p className="text-xs text-[#A8A29E] mb-1">Entries</p>
+          <p className="text-xl font-bold text-[#1C1917]">{ledger.length}</p>
+        </div>
+      </div>
+
+      {/* Ledger table */}
+      <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
+        <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[#1C1917]">Ledger ({ledger.length})</h3>
+          <button onClick={onRecordPayment}
+            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+            style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
+            <Plus size={12} /> Record Payment
+          </button>
+        </div>
+
+        {ledger.length === 0 ? (
+          <div className="text-center py-12 text-[#A8A29E]">
+            <CreditCard size={32} className="mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No financial entries yet</p>
+          </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
-                {["Instalment","Type","Partner / Staff","Method","Rate","Base","Calculated","Status"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {allLines.map((cl: any, i: number) => (
-                <tr key={i} className="border-b border-[#E8E6E2] hover:bg-[#FAFAF9]">
-                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{cl.instalmentName}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${COST_BADGE[cl.costType] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
-                      {(cl.costType ?? "").replace(/_/g," ")}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-[#1C1917]">{cl.partnerName ?? "—"}</td>
-                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{cl.calcType ?? "—"}</td>
-                  <td className="px-4 py-3 text-[12px] text-[#57534E]">{cl.calcType === "percentage" ? `${(cl.rate * 100).toFixed(1)}%` : fmtMoney(cl.rate)}</td>
-                  <td className="px-4 py-3 text-[13px]">{fmtMoney(cl.baseAmount)}</td>
-                  <td className="px-4 py-3 text-[13px] font-semibold" style={{ color:"#F5821F" }}>{fmtMoney(cl.calculatedAmount)}</td>
-                  <td className="px-4 py-3"><Badge s={cl.status} map={{ paid:"bg-[#DCFCE7] text-[#16A34A]", pending:"bg-[#F4F3F1] text-[#57534E]" }} /></td>
+          <>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#E8E6E2] bg-[#FAFAF9]">
+                  {["Date","Ref","Type","Counterparty","Products","Amount","Status","Actions"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {ledger.map((row, idx) => {
+                  if (row._type === "payment") {
+                    const p = row._data;
+                    const isVoid = p.status === "Void";
+                    const isIn = AR_PTYPES.has(p.payment_type);
+                    const productNames = [...new Set(p.products ?? [])].join(", ") || "—";
+                    const counterparty = p.received_from_name ?? p.paid_to_name ?? "—";
+                    return (
+                      <tr key={`p-${p.id}`}
+                        className={`border-b border-[#E8E6E2] transition-colors ${isVoid ? "opacity-40 bg-[#FAFAF9]" : "hover:bg-[#FAFAF9]"}`}>
+                        <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(p.payment_date)}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-[#57534E]">{p.payment_ref ?? "—"}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${PTYPE_BADGE_LED[p.payment_type] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
+                            {(p.payment_type ?? "").replace(/_/g," ").replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-[12px] font-medium text-[#1C1917] max-w-[110px] truncate">{counterparty}</td>
+                        <td className="px-4 py-3 text-[12px] text-[#57534E] max-w-[120px] truncate" title={productNames}>{productNames}</td>
+                        <td className="px-4 py-3 text-[13px] font-bold" style={{ color: isVoid ? "#A8A29E" : isIn ? "#16A34A" : "#DC2626" }}>
+                          {isIn ? "+" : "−"}{fmtMoney(Number(p.total_amount))}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                            isVoid ? "bg-[#F4F3F1] text-[#A8A29E]" :
+                            p.status === "Approved" ? "bg-[#DCFCE7] text-[#16A34A]" :
+                            "bg-[#FEF9C3] text-[#CA8A04]"}`}>
+                            {isVoid ? "Void" : (p.status ?? "Active")}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {!isVoid && (
+                            <button onClick={() => handleVoidPayment(p.id)} disabled={voidingId === p.id}
+                              className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-red-50 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-30"
+                              title="Void">
+                              <Trash2 size={11} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  } else {
+                    // Manual transaction
+                    const t = row._data;
+                    const isInactive = t.status === "Inactive";
+                    const isCredit = ["Credit","payment_received"].includes(t.transactionType);
+                    return (
+                      <tr key={`t-${t.id}`}
+                        className={`border-b border-[#E8E6E2] transition-colors ${isInactive ? "opacity-40 bg-[#FAFAF9]" : "hover:bg-[#FAFAF9]"}`}>
+                        <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(t.transactionDate)}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-[#57534E]">{t.bankReference ?? "—"}</td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#F4F3F1] text-[#57534E]">
+                            Manual / {t.transactionType === "payment_received" ? "In" : t.transactionType === "payment_sent" ? "Out" : t.transactionType}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-[12px] text-[#57534E]">—</td>
+                        <td className="px-4 py-3 text-[12px] text-[#A8A29E] max-w-[120px] truncate" title={t.description ?? ""}>{t.description ?? "—"}</td>
+                        <td className="px-4 py-3 text-[13px] font-bold" style={{ color: isInactive ? "#A8A29E" : isCredit ? "#16A34A" : "#DC2626" }}>
+                          {isCredit ? "+" : "−"}{fmtMoney(parseFloat(t.creditAmount ?? t.amount ?? "0"))}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${isInactive ? "bg-[#F4F3F1] text-[#A8A29E]" : "bg-[#DCFCE7] text-[#16A34A]"}`}>
+                            {t.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <button onClick={() => setEditingTxn(t)} disabled={isInactive}
+                              className="p-1.5 rounded-lg border border-[#E8E6E2] text-[#57534E] hover:bg-[#EFF6FF] hover:border-[#3B82F6] hover:text-[#2563EB] transition-colors disabled:opacity-30"
+                              title="Edit">
+                              <Pencil size={11} />
+                            </button>
+                            <button onClick={() => handleVoidTxn(t.id)} disabled={isInactive || deletingTxnId === t.id}
+                              className="p-1.5 rounded-lg border border-[#E8E6E2] text-[#57534E] hover:bg-red-50 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-30"
+                              title="Void">
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                })}
+              </tbody>
+            </table>
+            <div className="px-5 py-3 border-t border-[#E8E6E2] flex gap-6 bg-[#FAFAF9]">
+              <div><span className="text-xs text-[#A8A29E]">Total In </span><span className="text-sm font-bold text-[#16A34A]">{fmtMoney(totalIn)}</span></div>
+              <div><span className="text-xs text-[#A8A29E]">Total Out </span><span className="text-sm font-bold text-[#DC2626]">{fmtMoney(totalOut)}</span></div>
+              <div><span className="text-xs text-[#A8A29E]">Net </span><span className="text-sm font-bold" style={{ color:"#F5821F" }}>{fmtMoney(net)}</span></div>
+            </div>
+          </>
         )}
       </div>
+
+      {editingTxn && (
+        <TxnEditModal txn={editingTxn} contractId={contract.id} onClose={() => setEditingTxn(null)} />
+      )}
     </div>
   );
 }
@@ -2698,17 +3170,14 @@ export default function ContractDetailPage() {
     countOne(svcsForCount.settlement) +
     countOne(svcsForCount.visa);
 
-  const commissionCount = (contract.contractProducts ?? [])
+  const costLineCount = (contract.contractProducts ?? [])
     .flatMap((cp: any) => cp.costLines ?? []).length;
 
   const counts: Partial<Record<TabKey, number>> = {
     services:     servicesCount,
-    schedule:     contract.contractProducts?.length ?? 0,
-    invoices:     contract.invoices?.length          ?? 0,
-    payments:     contract.paymentsCount             ?? 0,
-    transactions: contract.transactions?.length      ?? 0,
-    commission:   commissionCount,
-    activity:     contract.activityCount             ?? 0,
+    schedule:     (contract.contractProducts?.length ?? 0) + (costLineCount > 0 ? costLineCount : 0),
+    transactions: contract.paymentsCount ?? 0,
+    activity:     contract.activityCount ?? 0,
     documents:    0,
   };
 
@@ -2948,11 +3417,8 @@ export default function ContractDetailPage() {
             onAddService={openAddService}
           />
         )}
-        {activeTab === "schedule"     && <PaymentScheduleTab contract={contract} />}
-        {activeTab === "invoices"     && <InvoicesTab        contract={contract} onGenerateInvoice={() => setGeneratingInvoice(true)} />}
-        {activeTab === "payments"     && <PaymentsTab        contractId={contract.id} />}
-        {activeTab === "transactions" && <TransactionsTab    contract={contract} onRecordPayment={() => setRecordingPayment(true)} />}
-        {activeTab === "commission"   && <CommissionTab      contract={contract} />}
+        {activeTab === "schedule"     && <PaymentScheduleTab     contract={contract} />}
+        {activeTab === "transactions" && <UnifiedTransactionsTab contract={contract} onRecordPayment={() => setRecordingPayment(true)} />}
         {activeTab === "documents"    && <DocumentsTab contractId={String(contract.id)} />}
         {activeTab === "activity"     && <ActivityTab contractId={id!} />}
 
