@@ -414,6 +414,33 @@ export default function CampApplicationDetail() {
     alwaysEdit: true,
   });
 
+  // ── Package group / package helpers ───────────────────────────────────────
+  const currentPkgGroupId = (getValue("packageGroupId") as string) ?? app?.packageGroupId;
+  const currentPkgId      = (getValue("packageId")      as string) ?? app?.packageId;
+
+  const { data: pgResp } = useQuery({
+    queryKey: ["package-groups-all-detail"],
+    queryFn:  () => axios.get(`${BASE}/api/package-groups?limit=100&status=Active`).then(r => r.data),
+  });
+  const packageGroupOptions: Array<{ id: string; nameEn: string }> =
+    (pgResp?.data ?? []).map((p: any) => p.group ?? p).filter((p: any) => p?.id);
+
+  const { data: pkgResp } = useQuery({
+    queryKey: ["admin-packages-for-detail", currentPkgGroupId],
+    queryFn:  () => axios.get(`${BASE}/api/packages?limit=100&packageGroupId=${currentPkgGroupId}`).then(r => r.data),
+    enabled:  !!currentPkgGroupId,
+  });
+  const packageOptions: Array<{ id: string; name: string }> = pkgResp?.data ?? [];
+
+  const { data: pkgProductsResp } = useQuery({
+    queryKey: ["pkg-products-detail", currentPkgId],
+    queryFn:  () => axios.get(`${BASE}/api/packages/${currentPkgId}/products`).then(r => r.data),
+    enabled:  !!currentPkgId,
+  });
+  const displayProducts: any[] = Array.isArray(pkgProductsResp)
+    ? pkgProductsResp
+    : (app?.packageProductDetails ?? []);
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-4">
@@ -602,8 +629,48 @@ export default function CampApplicationDetail() {
               </DetailSection>
 
               <DetailSection title="Package Info">
-                <DetailRow label="Package Group" value={app.packageGroupName ?? app.packageGroupId} />
-                <DetailRow label="Package"       value={app.packageName     ?? app.packageId} />
+                <DetailRow label="Package Group">
+                  {canEdit ? (
+                    <Select
+                      value={currentPkgGroupId ?? ""}
+                      onValueChange={v => {
+                        setField("packageGroupId", v as any);
+                        setField("packageId", null as any);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-sm border-[#F5821F]">
+                        <SelectValue placeholder="Select package group..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {packageGroupOptions.map(pg => (
+                          <SelectItem key={pg.id} value={pg.id}>{pg.nameEn}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span>{app.packageGroupName ?? "—"}</span>
+                  )}
+                </DetailRow>
+                <DetailRow label="Package">
+                  {canEdit ? (
+                    <Select
+                      value={currentPkgId ?? ""}
+                      onValueChange={v => setField("packageId", v as any)}
+                      disabled={!currentPkgGroupId}
+                    >
+                      <SelectTrigger className="h-8 text-sm border-[#F5821F]">
+                        <SelectValue placeholder={currentPkgGroupId ? "Select package..." : "Select group first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {packageOptions.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span>{app.packageName ?? "—"}</span>
+                  )}
+                </DetailRow>
                 <EditableField
                   label="Preferred Start"
                   isEditing={isEditing}
@@ -637,6 +704,55 @@ export default function CampApplicationDetail() {
                   multiline
                 />
               </DetailSection>
+
+              {/* ── Package Products ───────────────────────────────── */}
+              {displayProducts.length > 0 && (
+                <DetailSection title="Package Products">
+                  <div className="space-y-0">
+                    {displayProducts.map((prod: any, i: number) => {
+                      const unitPriceVal = Number(prod.unitPrice ?? prod.price ?? prod.cost ?? 0);
+                      const qty         = Number(prod.quantity ?? 1);
+                      const lineTotal   = unitPriceVal * qty;
+                      const currency    = prod.currency ?? "AUD";
+                      return (
+                        <div
+                          key={prod.linkId ?? prod.id ?? i}
+                          className="flex items-center justify-between py-2.5 border-b border-border/60 last:border-0 gap-3"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-foreground font-medium truncate">
+                              {prod.productName ?? "—"}
+                            </div>
+                            {prod.isOptional && (
+                              <span className="text-xs text-muted-foreground">(Optional)</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground whitespace-nowrap">
+                            {qty > 1 ? `${qty} ×` : ""} {currency} {unitPriceVal.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-sm font-semibold text-foreground whitespace-nowrap w-28 text-right">
+                            {currency} {lineTotal.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {/* Total */}
+                    <div className="flex items-center justify-between pt-3 mt-1">
+                      <span className="text-sm font-semibold text-foreground">Total</span>
+                      <span className="text-base font-bold text-[#F5821F]">
+                        {(displayProducts[0]?.currency ?? "AUD")}{" "}
+                        {displayProducts
+                          .reduce((sum: number, p: any) => {
+                            const u = Number(p.unitPrice ?? p.price ?? p.cost ?? 0);
+                            const q = Number(p.quantity ?? 1);
+                            return sum + u * q;
+                          }, 0)
+                          .toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                </DetailSection>
+              )}
 
               <DetailSection title="Emergency Contact">
                 <EditableField

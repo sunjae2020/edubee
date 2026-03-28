@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { campApplications, applicationParticipants, applications } from "@workspace/db/schema";
 import { contacts, leads, contracts, quotes, quote_products } from "@workspace/db/schema";
-import { packageProducts, products } from "@workspace/db/schema";
+import { packageProducts, products, packageGroups, packages as pkgsTable } from "@workspace/db/schema";
 import { eq, ilike, or, count, and, desc, SQL, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -56,10 +56,50 @@ router.get("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
       .where(eq(campApplications.id, req.params.id)).limit(1);
     if (!application) return res.status(404).json({ error: "Not found" });
 
+    // Fetch package group name
+    const [pgRow] = application.packageGroupId
+      ? await db.select({ nameEn: packageGroups.nameEn })
+          .from(packageGroups)
+          .where(eq(packageGroups.id, application.packageGroupId))
+          .limit(1)
+      : [null];
+
+    // Fetch package name
+    const [pkgRow] = application.packageId
+      ? await db.select({ name: pkgsTable.name })
+          .from(pkgsTable)
+          .where(eq(pkgsTable.id, application.packageId))
+          .limit(1)
+      : [null];
+
+    // Fetch package products with product details
+    const packageProductDetails = application.packageId
+      ? await db.select({
+          id:          packageProducts.id,
+          productId:   packageProducts.productId,
+          isOptional:  packageProducts.isOptional,
+          quantity:    packageProducts.quantity,
+          unitPrice:   packageProducts.unitPrice,
+          productName: products.productName,
+          price:       products.price,
+          currency:    products.currency,
+          description: products.description,
+        })
+        .from(packageProducts)
+        .leftJoin(products, eq(packageProducts.productId, products.id))
+        .where(eq(packageProducts.packageId, application.packageId))
+      : [];
+
     const participants = await db.select().from(applicationParticipants)
       .where(eq(applicationParticipants.campApplicationId, req.params.id));
 
-    return res.json({ ...application, participants });
+    return res.json({
+      ...application,
+      packageGroupName:    pgRow?.nameEn  ?? null,
+      packageName:         pkgRow?.name   ?? null,
+      packageProductDetails,
+      participants,
+    });
   } catch (err) {
     console.error("[GET /api/camp-applications/:id]", err);
     return res.status(500).json({ error: "Internal server error" });
