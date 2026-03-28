@@ -775,7 +775,7 @@ export default function CampApplicationDetail() {
                 <EditableField
                   label="Assigned Staff"
                   isEditing={isEditing}
-                  value={staffList.find(s => s.id === app.assignedStaffId)?.name ?? app.assignedStaffId ?? "—"}
+                  value={staffList.find(s => s.id === app.assignedStaffId)?.fullName ?? app.assignedStaffId ?? "—"}
                   editChildren={
                     <Select
                       value={getValue("assignedStaffId") ?? ""}
@@ -785,7 +785,7 @@ export default function CampApplicationDetail() {
                       <SelectContent>
                         <SelectItem value="__none__">— Unassigned —</SelectItem>
                         {staffList.map((s: any) => (
-                          <SelectItem key={s.id} value={s.id}>{s.name ?? s.email}</SelectItem>
+                          <SelectItem key={s.id} value={s.id}>{s.fullName ?? s.email}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
