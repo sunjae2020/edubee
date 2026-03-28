@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { applications, campApplications, packageGroups, packages } from "@workspace/db/schema";
 import { quotes }    from "@workspace/db/schema";
 import { contracts } from "@workspace/db/schema";
+import { users }     from "@workspace/db/schema";
 import { sql, ilike, eq, or, desc, and } from "drizzle-orm";
 
 const router = Router();
@@ -42,16 +43,18 @@ router.get("/admin/all-applications", async (req, res) => {
           contractStatus:   contracts.status,
           packageGroupId:   campApplications.packageGroupId,
           packageId:        campApplications.packageId,
-          packageGroupName: packageGroups.nameEn,
-          packageName:      packages.name,
-          serviceTypes:     sql<null>`NULL`,
-          createdAt:        campApplications.createdAt,
+          packageGroupName:  packageGroups.nameEn,
+          packageName:       packages.name,
+          serviceTypes:      sql<null>`NULL`,
+          createdAt:         campApplications.createdAt,
+          assignedStaffName: users.fullName,
         })
         .from(campApplications)
         .leftJoin(packageGroups, eq(campApplications.packageGroupId, packageGroups.id))
         .leftJoin(packages,      eq(campApplications.packageId,      packages.id))
         .leftJoin(quotes,        eq(campApplications.quoteId,        quotes.id))
         .leftJoin(contracts,     eq(campApplications.contractId,     contracts.id))
+        .leftJoin(users,         eq(campApplications.assignedStaffId, users.id))
         .orderBy(desc(campApplications.createdAt));
 
       const where: any[] = [];
@@ -96,14 +99,16 @@ router.get("/admin/all-applications", async (req, res) => {
           contractStatus:   contracts.status,
           packageGroupId:   applications.packageGroupId,
           packageId:        applications.packageId,
-          packageGroupName: sql<null>`NULL`,
-          packageName:      sql<null>`NULL`,
-          serviceTypes:     applications.serviceTypes,
-          createdAt:        applications.createdAt,
+          packageGroupName:  sql<null>`NULL`,
+          packageName:       sql<null>`NULL`,
+          serviceTypes:      applications.serviceTypes,
+          createdAt:         applications.createdAt,
+          assignedStaffName: users.fullName,
         })
         .from(applications)
         .leftJoin(quotes,    eq(applications.quoteId,    quotes.id))
         .leftJoin(contracts, eq(contracts.applicationId, applications.id))
+        .leftJoin(users,     eq(applications.assignedStaffId, users.id))
         .orderBy(desc(applications.createdAt));
 
       const where: any[] = [];

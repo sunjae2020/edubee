@@ -159,6 +159,7 @@ interface AppRow {
   packageName: string | null;
   serviceTypes: unknown;
   createdAt: string;
+  assignedStaffName: string | null;
 }
 
 // ── Tabs / statuses ────────────────────────────────────────────────────────
@@ -347,6 +348,7 @@ export default function AllApplicationsPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Applicant</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Programme / Service</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Assigned Staff</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Quote</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Contract</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Date</th>
@@ -355,12 +357,12 @@ export default function AllApplicationsPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">Loading...</td>
+                <td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">Loading...</td>
               </tr>
             )}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">No applications found</td>
+                <td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">No applications found</td>
               </tr>
             )}
             {rows.map((row, i) => (
@@ -385,6 +387,9 @@ export default function AllApplicationsPage() {
                 </td>
                 <td className="px-4 py-3">
                   <StatusBadge status={row.status} />
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">
+                  {row.assignedStaffName ?? "—"}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap" onClick={e => e.stopPropagation()}>
                   {row.quoteId && row.quoteRef ? (
