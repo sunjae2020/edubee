@@ -7,7 +7,7 @@ import {
   tourMgt, accounts, leads,
   visaServicesMgt, campTourMgt, otherServicesMgt,
 } from "@workspace/db/schema";
-import { eq, and, count, sql, SQL } from "drizzle-orm";
+import { eq, and, count, sql, SQL, or, ilike } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { sendMail } from "../mailer.js";
@@ -31,7 +31,7 @@ function genContractNumber(): string {
 // ─── GET /api/crm/quotes ────────────────────────────────────────────
 router.get("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { quoteStatus, isTemplate, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const { quoteStatus, isTemplate, search, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum  = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset   = (pageNum - 1) * limitNum;
@@ -40,6 +40,14 @@ router.get("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req,
     if (quoteStatus)               conditions.push(eq(quotes.quoteStatus, quoteStatus));
     if (isTemplate === "true")     conditions.push(eq(quotes.isTemplate, true));
     else if (isTemplate === "false") conditions.push(eq(quotes.isTemplate, false));
+    if (search?.trim()) {
+      const like = `%${search.trim()}%`;
+      conditions.push(or(
+        ilike(quotes.quoteRefNumber, like),
+        ilike(quotes.customerName,   like),
+        ilike(quotes.accountName,    like),
+      ) as SQL);
+    }
 
     const where = conditions.length ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(quotes).where(where);

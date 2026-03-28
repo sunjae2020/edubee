@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
-import { Plus, FileText } from "lucide-react";
+import { Plus, FileText, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { ClientNameCell } from "@/components/common/ClientNameCell";
@@ -55,6 +56,13 @@ export default function QuotesPage() {
   const [tab, setTab] = useState<"quotes" | "templates">("quotes");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -62,12 +70,15 @@ export default function QuotesPage() {
     onSuccess: (created) => navigate(`/admin/crm/quotes/${created.id}`),
   });
 
+  useEffect(() => { setPage(1); }, [debouncedSearch]);
+
   const { data: resp, isLoading } = useQuery({
-    queryKey: ["crm-quotes", tab, page, pageSize],
+    queryKey: ["crm-quotes", tab, page, pageSize, debouncedSearch],
     queryFn: () => {
       const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (tab === "templates") p.set("isTemplate", "true");
       else p.set("isTemplate", "false");
+      if (debouncedSearch.trim()) p.set("search", debouncedSearch.trim());
       return axios.get(`${BASE}/api/crm/quotes?${p}`).then(r => r.data);
     },
   });
@@ -106,6 +117,24 @@ export default function QuotesPage() {
             {label}
           </button>
         ))}
+      </div>
+
+      <div className="relative w-80">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+        <Input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search by ref, name…"
+          className="pl-8 pr-8 h-9 text-sm"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
 
       <div className="rounded-xl border border-stone-200 overflow-x-auto">
