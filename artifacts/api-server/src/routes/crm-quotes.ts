@@ -398,7 +398,7 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
       }
 
       // 2c. Recalculate contract financial totals from actual inserted contract_products
-      const [arApTotals] = await tx.execute(sql`
+      const arApResult = await tx.execute(sql`
         SELECT
           COALESCE(SUM(ar_amount), 0) AS total_ar,
           COALESCE(SUM(ap_amount), 0) AS total_ap,
@@ -406,6 +406,7 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
         FROM contract_products
         WHERE contract_id = ${contractId}::uuid
       `);
+      const arApTotals = ((arApResult as any).rows ?? (arApResult as any[]))[0] ?? {};
       const computedAr = parseFloat(String((arApTotals as any).total_ar ?? "0"));
       const computedAp = parseFloat(String((arApTotals as any).total_ap ?? "0"));
       const computedTotal = parseFloat(String((arApTotals as any).total_val ?? "0"));
