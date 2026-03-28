@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
@@ -7,8 +7,8 @@ import {
   ArrowLeft, ExternalLink, FileText, CreditCard, GraduationCap,
   Car, Building2, Briefcase, Shield, CheckCircle2, Clock,
   AlertCircle, ChevronRight, Star, TrendingUp, TrendingDown,
-  UploadCloud, MessageSquare, Send, Download, Pencil, Plus, X, Wrench, Map, Stamp, Trash2,
-  ChevronDown, ChevronUp, Search,
+  UploadCloud, MessageSquare, Send, Download, Pencil, Plus, X, Wrench, Stamp, Trash2,
+  ChevronDown, ChevronUp, Search, Map as MapIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import PaymentStatementModal from "../../../components/finance/PaymentStatementModal";
@@ -895,8 +895,8 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                     errMsg={errMsg}
                   />
                 ) : (
-                  <>
-                    <tr key={cp.id}
+                  <Fragment key={cp.id}>
+                    <tr
                       className={`transition-colors group ${expandedCpIds.has(cp.id) ? "bg-[#FFFCF9]" : "border-b border-[#E8E6E2]"}`}
                       style={!expandedCpIds.has(cp.id) && cp.apStatus === "ready" ? { background:"#FFFCF9" } : {}}>
                       <td className="px-4 py-3 text-xs text-[#A8A29E]">{i + 1}</td>
@@ -954,7 +954,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 )
               )}
               {addingNew && newDraft && (
@@ -1963,7 +1963,7 @@ const SVC_DETAIL_ROUTE: Record<string, string> = {
 const SVC_DEFS_MODAL = [
   { key: "studyAbroad",   label: "Study Abroad",   icon: GraduationCap, desc: "School application, visa & enrolment"  },
   { key: "pickup",        label: "Pickup",          icon: Car,           desc: "Airport or station transfer"            },
-  { key: "tour",          label: "Tour",            icon: Map,           desc: "Tour or excursion management"           },
+  { key: "tour",          label: "Tour",            icon: MapIcon,       desc: "Tour or excursion management"           },
   { key: "accommodation", label: "Accommodation",   icon: Building2,     desc: "Homestay, residence or rental"         },
   { key: "internship",    label: "Internship",      icon: Briefcase,     desc: "Work placement management"             },
   { key: "settlement",    label: "Settlement",      icon: CheckCircle2,  desc: "Arrival & settlement support"          },
@@ -2269,7 +2269,7 @@ const ALL_SVC_DEFS = [
   { key: "studyAbroad",   label: "Study Abroad",   icon: GraduationCap },
   { key: "pickup",        label: "Pickup",          icon: Car           },
   { key: "camp",          label: "Camp / Tour",     icon: GraduationCap },
-  { key: "tour",          label: "Tour",            icon: Map           },
+  { key: "tour",          label: "Tour",            icon: MapIcon       },
   { key: "accommodation", label: "Accommodation",   icon: Building2     },
   { key: "internship",    label: "Internship",      icon: Briefcase     },
   { key: "settlement",    label: "Settlement",      icon: CheckCircle2  },
