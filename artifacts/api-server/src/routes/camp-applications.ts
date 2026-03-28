@@ -369,6 +369,28 @@ router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole
               manualInput: false,
             }))
           );
+        } else {
+          // No package_products defined — add the package itself as a single line item
+          const [pkg] = await tx
+            .select({ id: pkgsTable.id, name: pkgsTable.name, priceAud: pkgsTable.priceAud })
+            .from(pkgsTable)
+            .where(eq(pkgsTable.id, application.packageId))
+            .limit(1);
+          if (pkg) {
+            const unitAmt = String(pkg.priceAud ?? "0");
+            await tx.insert(quote_products).values({
+              quoteId:     newQuote.id,
+              name:        pkg.name ?? "Package",
+              price:       unitAmt,
+              quantity:    1,
+              unitPrice:   unitAmt,
+              total:       unitAmt,
+              sortOrder:   0,
+              sortIndex:   0,
+              manualInput: false,
+              isInitialPayment: true,
+            });
+          }
         }
       }
 

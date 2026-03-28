@@ -519,7 +519,63 @@ router.post("/applications/:id/convert-to-quote", authenticate, requireRole("sup
               manualInput: false,
             }))
           );
+        } else {
+          // No package_products defined — fall back to the package itself as a single line item
+          const [pkg] = await tx
+            .select({ id: packages.id, name: packages.name, priceAud: packages.priceAud })
+            .from(packages)
+            .where(eq(packages.id, application.packageId!))
+            .limit(1);
+          if (pkg) {
+            const unitAmt = String(pkg.priceAud ?? "0");
+            await tx.insert(quote_products).values({
+              quoteId:          newQuote.id,
+              name:             pkg.name ?? "Package",
+              price:            unitAmt,
+              quantity:         1,
+              unitPrice:        unitAmt,
+              total:            unitAmt,
+              sortOrder:        0,
+              sortIndex:        0,
+              manualInput:      false,
+              isInitialPayment: true,
+            });
+          }
         }
+      }
+
+      // ── Add service type items to the quote ────────────────────────────
+      const SERVICE_LABELS: Record<string, string> = {
+        pickup:       "Airport Pickup & Drop",
+        accommodation: "Accommodation",
+        internship:   "Internship Program",
+        study_abroad: "Study Abroad Program",
+        settlement:   "Settlement Service",
+        tour:         "Tour Program",
+        visa:         "Visa Assistance",
+        insurance:    "Insurance",
+      };
+      const serviceTypes = Array.isArray(application.serviceTypes)
+        ? (application.serviceTypes as string[])
+        : [];
+      if (serviceTypes.length > 0) {
+        // Find offset after any existing items
+        const existingCount = application.packageId ? 1 : 0;
+        await tx.insert(quote_products).values(
+          serviceTypes.map((svc, i) => ({
+            quoteId:          newQuote.id,
+            name:             SERVICE_LABELS[svc] ?? svc.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+            price:            "0",
+            quantity:         1,
+            unitPrice:        "0",
+            total:            "0",
+            sortOrder:        existingCount + i,
+            sortIndex:        existingCount + i,
+            manualInput:      true,
+            isInitialPayment: false,
+            serviceModuleType: svc,
+          }))
+        );
       }
 
       return newQuote;
