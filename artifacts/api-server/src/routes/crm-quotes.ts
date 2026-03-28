@@ -200,7 +200,7 @@ router.put("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (
     if (!existing) return res.status(404).json({ error: "Quote not found" });
 
     const { leadId, contactId, accountName, customerName, originalName, studentAccountId,
-            quoteStatus, expiryDate, isTemplate, notes,
+            quoteStatus, expiryDate, isTemplate, notes, ownerId,
             products: lineItems } = req.body;
 
     const [updated] = await db.update(quotes)
@@ -208,6 +208,7 @@ router.put("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (
              customerName:     customerName ?? existing.customerName,
              originalName:     originalName !== undefined ? (originalName ?? null) : existing.originalName,
              studentAccountId: studentAccountId ?? existing.studentAccountId,
+             ownerId:          ownerId !== undefined ? (ownerId || null) : existing.ownerId,
              quoteStatus, expiryDate, isTemplate, notes,
              modifiedOn: new Date() })
       .where(eq(quotes.id, req.params.id))

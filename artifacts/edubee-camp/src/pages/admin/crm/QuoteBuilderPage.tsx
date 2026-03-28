@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { format } from "date-fns";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -47,6 +48,9 @@ interface Quote {
   customerName?: string;
   originalName?: string;
   studentAccountId?: string;
+  ownerId?: string | null;
+  createdOn?: string | null;
+  modifiedOn?: string | null;
   leadId?: string;
   campApplicationId?: string | null;
   contractId?: string | null;
@@ -1078,6 +1082,7 @@ export default function QuoteBuilderPage() {
   const [clientLastName,     setClientLastName]     = useState<string | null>(null);
   const [clientOriginalName, setClientOriginalName] = useState<string | null>(null);
   const [clientEnglishName,  setClientEnglishName]  = useState<string | null>(null);
+  const [ownerId,            setOwnerId]            = useState<string>("");
   const [linkedContractId, setLinkedContractId] = useState<string | null>(null);
   const [linkedContractNumber, setLinkedContractNumber] = useState<string | null>(null);
 
@@ -1104,6 +1109,7 @@ export default function QuoteBuilderPage() {
     setNotes(quote.notes ?? "");
     setCustomerName(quote.customerName ?? "");
     setOriginalName(quote.originalName ?? "");
+    setOwnerId(quote.ownerId ?? "");
     setStudentAccountId(quote.studentAccountId ?? null);
     setStudentAccountName(quote.accountName ?? null);
     setLinkedContractId(quote.contractId ?? null);
@@ -1128,6 +1134,13 @@ export default function QuoteBuilderPage() {
       axios.get(`${BASE}/api/quote-products?quoteId=${quoteId}`).then((r) => r.data),
     enabled: validId,
   });
+
+  const { data: usersData } = useQuery<{ id: string; fullName: string; email: string }[]>({
+    queryKey: ["users-list"],
+    queryFn: () => axios.get(`${BASE}/api/users?limit=100`).then(r => r.data?.data ?? []),
+    staleTime: 5 * 60 * 1000,
+  });
+  const usersList = usersData ?? [];
 
   useEffect(() => {
     setLines([...serverLines].sort((a, b) => a.sortIndex - b.sortIndex));
@@ -1370,6 +1383,7 @@ export default function QuoteBuilderPage() {
         notes,
         customerName,
         originalName: originalName || null,
+        ownerId: ownerId || null,
         studentAccountId,
         accountName: studentAccountName,
       });
@@ -1904,6 +1918,42 @@ export default function QuoteBuilderPage() {
               Unsaved changes — click Save Quote to apply.
             </p>
           )}
+        </div>
+
+        {/* 7. System */}
+        <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest border-b border-gray-100 pb-2">
+            System
+          </h2>
+          <div>
+            <Label className="text-xs text-gray-500">Owner <span className="text-red-500">*</span></Label>
+            <Select value={ownerId} onValueChange={setOwnerId}>
+              <SelectTrigger className="h-8 text-sm mt-1">
+                <SelectValue placeholder="— Select owner —" />
+              </SelectTrigger>
+              <SelectContent>
+                {usersList.map(u => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.fullName ?? u.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
+            <div>
+              <p className="mb-0.5">Created On</p>
+              <p className="text-gray-700 font-medium">
+                {quote?.createdOn ? format(new Date(quote.createdOn), "dd MMM yyyy, HH:mm") : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="mb-0.5">Modified On</p>
+              <p className="text-gray-700 font-medium">
+                {quote?.modifiedOn ? format(new Date(quote.modifiedOn), "dd MMM yyyy, HH:mm") : "—"}
+              </p>
+            </div>
+          </div>
         </div>
 
       </div>
