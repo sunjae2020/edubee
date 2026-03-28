@@ -162,7 +162,7 @@ export default function QuotesPage() {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               <SortableTh col="quoteRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Quote Ref</SortableTh>
-              <SortableTh col="customerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Customer</SortableTh>
+              <SortableTh col="customerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Items</th>
               <SortableTh col="totalAmount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Total (AUD)</SortableTh>
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>

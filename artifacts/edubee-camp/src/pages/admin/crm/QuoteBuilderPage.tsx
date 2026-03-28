@@ -1074,6 +1074,10 @@ export default function QuoteBuilderPage() {
   const [studentAccountId, setStudentAccountId] = useState<string | null>(null);
   const [studentAccountName, setStudentAccountName] = useState<string | null>(null);
   const [clientAccountEmail, setClientAccountEmail] = useState<string | null>(null);
+  const [clientFirstName,    setClientFirstName]    = useState<string | null>(null);
+  const [clientLastName,     setClientLastName]     = useState<string | null>(null);
+  const [clientOriginalName, setClientOriginalName] = useState<string | null>(null);
+  const [clientEnglishName,  setClientEnglishName]  = useState<string | null>(null);
   const [linkedContractId, setLinkedContractId] = useState<string | null>(null);
   const [linkedContractNumber, setLinkedContractNumber] = useState<string | null>(null);
 
@@ -1130,12 +1134,32 @@ export default function QuoteBuilderPage() {
     setDirtyLines(new Set());
   }, [serverLines]);
 
-  // ── Fetch client account email when account changes ──────────────────────────
+  // ── Fetch client account details when account changes ───────────────────────
   useEffect(() => {
-    if (!studentAccountId) { setClientAccountEmail(null); return; }
+    if (!studentAccountId) {
+      setClientAccountEmail(null);
+      setClientFirstName(null);
+      setClientLastName(null);
+      setClientOriginalName(null);
+      setClientEnglishName(null);
+      return;
+    }
     axios.get(`${BASE}/api/crm/accounts/${studentAccountId}`)
-      .then((r) => setClientAccountEmail(r.data?.email ?? null))
-      .catch(() => setClientAccountEmail(null));
+      .then((r) => {
+        const d = r.data ?? {};
+        setClientAccountEmail(d.email ?? null);
+        setClientFirstName(d.firstName ?? null);
+        setClientLastName(d.lastName ?? null);
+        setClientOriginalName(d.originalName ?? null);
+        setClientEnglishName(d.englishName ?? null);
+      })
+      .catch(() => {
+        setClientAccountEmail(null);
+        setClientFirstName(null);
+        setClientLastName(null);
+        setClientOriginalName(null);
+        setClientEnglishName(null);
+      });
   }, [studentAccountId]);
 
   // ── DnD ─────────────────────────────────────────────────────────────────────
@@ -1658,11 +1682,21 @@ export default function QuoteBuilderPage() {
                   }}
                 />
               </div>
-              {clientAccountEmail && (
-                <p className="mt-1 text-xs text-gray-400 flex items-center gap-1">
-                  <Mail className="w-3 h-3 shrink-0" />
-                  {clientAccountEmail}
-                </p>
+              {studentAccountId && (
+                <div className="mt-2 space-y-1 text-xs text-gray-500 border-t border-gray-100 pt-2">
+                  {[
+                    ["First Name",             clientFirstName],
+                    ["Last Name",              clientLastName],
+                    ["Original Name",          clientOriginalName],
+                    ["English Name (Nick Name)", clientEnglishName],
+                    ["Email",                  clientAccountEmail],
+                  ].map(([label, value]) => value ? (
+                    <div key={label as string} className="flex items-center gap-2">
+                      <span className="w-36 shrink-0 text-gray-400">{label}</span>
+                      <span className="text-gray-700 truncate">{value}</span>
+                    </div>
+                  ) : null)}
+                </div>
               )}
             </div>
             <div>
