@@ -127,12 +127,12 @@ export default function AdminCampApplicationForm() {
       }).then(r => r.data),
 
     onSuccess: (data) => {
-      toast({ title: "신청서 작성 완료", description: `${data.applicationRef} 가 생성되었습니다.` });
+      toast({ title: "Application Created", description: `${data.applicationRef} has been created.` });
       setLocation(`/admin/camp-applications/${data.id}`);
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.error ?? "저장에 실패했습니다.";
-      toast({ title: "오류", description: msg, variant: "destructive" });
+      const msg = err?.response?.data?.error ?? "Failed to save. Please try again.";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     },
   });
 
@@ -140,8 +140,8 @@ export default function AdminCampApplicationForm() {
     e.preventDefault();
     if (!firstName || !lastName || !email || !packageGroupId || !packageId) {
       toast({
-        title: "필수 항목 누락",
-        description: "성, 이름, 이메일, 프로그램 그룹, 프로그램을 입력해 주세요.",
+        title: "Required fields missing",
+        description: "Please fill in First Name, Last Name, Email, Package Group and Package.",
         variant: "destructive",
       });
       return;
@@ -172,7 +172,7 @@ export default function AdminCampApplicationForm() {
             size="sm"
             onClick={() => setLocation("/admin/all-applications")}
           >
-            취소
+            Cancel
           </Button>
           <Button
             type="submit"
@@ -182,7 +182,7 @@ export default function AdminCampApplicationForm() {
             disabled={submit.isPending}
           >
             {submit.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-            신청서 저장
+            Save Application
           </Button>
         </div>
       </div>
@@ -191,9 +191,9 @@ export default function AdminCampApplicationForm() {
       <form id="camp-app-form" onSubmit={onSubmit} className="max-w-3xl mx-auto px-6 py-8 space-y-6">
 
         {/* 신청인 정보 */}
-        <Section title="신청인 정보 (Applicant Information)">
+        <Section title="Applicant Information">
           <div className="grid grid-cols-2 gap-4">
-            <Field label="First Name (이름)" required>
+            <Field label="First Name" required>
               <Input
                 value={firstName}
                 onChange={e => setFirstName(e.target.value)}
@@ -201,7 +201,7 @@ export default function AdminCampApplicationForm() {
                 className={inputCls}
               />
             </Field>
-            <Field label="Last Name (성)" required>
+            <Field label="Last Name" required>
               <Input
                 value={lastName}
                 onChange={e => setLastName(e.target.value)}
@@ -211,15 +211,15 @@ export default function AdminCampApplicationForm() {
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="한국 이름 (Korean Name)">
+            <Field label="Korean Name">
               <Input
                 value={originalName}
                 onChange={e => setOriginalName(e.target.value)}
-                placeholder="e.g. 김지수"
+                placeholder="e.g. Kim Jisoo"
                 className={inputCls}
               />
             </Field>
-            <Field label="영어 이름 / 별명 (English Name / Nick)">
+            <Field label="English Name / Nick">
               <Input
                 value={englishName}
                 onChange={e => setEnglishName(e.target.value)}
@@ -268,7 +268,7 @@ export default function AdminCampApplicationForm() {
         </Section>
 
         {/* 프로그램 선택 */}
-        <Section title="프로그램 선택 (Programme)">
+        <Section title="Programme">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Package Group" required>
               <select
@@ -276,7 +276,7 @@ export default function AdminCampApplicationForm() {
                 onChange={e => onGroupChange(e.target.value)}
                 className={selectCls}
               >
-                <option value="">-- 그룹 선택 --</option>
+                <option value="">-- Select Group --</option>
                 {packageGroups.map(pg => (
                   <option key={pg.group.id} value={pg.group.id}>
                     {pg.group.nameEn || pg.group.nameKo}
@@ -291,7 +291,7 @@ export default function AdminCampApplicationForm() {
                 disabled={!packageGroupId}
                 className={selectCls}
               >
-                <option value="">-- 패키지 선택 --</option>
+                <option value="">-- Select Package --</option>
                 {packageOptions.map(pk => (
                   <option key={pk.id} value={pk.id}>{pk.name}</option>
                 ))}
@@ -329,12 +329,12 @@ export default function AdminCampApplicationForm() {
         </Section>
 
         {/* 추가 요구사항 */}
-        <Section title="추가 요구사항 (Special Requirements)">
+        <Section title="Special Requirements">
           <Field label="Special Requirements">
             <Textarea
               value={specialReqs}
               onChange={e => setSpecialReqs(e.target.value)}
-              placeholder="특별한 요구사항이 있으면 입력해 주세요."
+              placeholder="Enter any special requirements"
               rows={3}
               className="text-sm border-border focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F] resize-none"
             />
@@ -343,7 +343,7 @@ export default function AdminCampApplicationForm() {
             <Textarea
               value={dietaryReqs}
               onChange={e => setDietaryReqs(e.target.value)}
-              placeholder="식이 요건 (채식, 알레르기 등)"
+              placeholder="e.g. Vegetarian, Halal, nut allergy..."
               rows={3}
               className="text-sm border-border focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F] resize-none"
             />
@@ -352,7 +352,7 @@ export default function AdminCampApplicationForm() {
             <Textarea
               value={medicalCond}
               onChange={e => setMedicalCond(e.target.value)}
-              placeholder="건강 상태 또는 복용 중인 약"
+              placeholder="e.g. Asthma, diabetes, medication..."
               rows={3}
               className="text-sm border-border focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F] resize-none"
             />
@@ -360,13 +360,13 @@ export default function AdminCampApplicationForm() {
         </Section>
 
         {/* 비상 연락처 */}
-        <Section title="비상 연락처 (Emergency Contact)">
+        <Section title="Emergency Contact">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Contact Name">
               <Input
                 value={ecName}
                 onChange={e => setEcName(e.target.value)}
-                placeholder="이름"
+                placeholder="Full name"
                 className={inputCls}
               />
             </Field>
@@ -387,7 +387,7 @@ export default function AdminCampApplicationForm() {
             <Textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="내부 메모 (신청자에게 보이지 않음)"
+              placeholder="Internal notes (not visible to applicant)"
               rows={4}
               className="text-sm border-border focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F] resize-none"
             />
@@ -401,7 +401,7 @@ export default function AdminCampApplicationForm() {
             variant="outline"
             onClick={() => setLocation("/admin/all-applications")}
           >
-            취소
+            Cancel
           </Button>
           <Button
             type="submit"
@@ -409,7 +409,7 @@ export default function AdminCampApplicationForm() {
             disabled={submit.isPending}
           >
             {submit.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-            신청서 저장
+            Save Application
           </Button>
         </div>
       </form>

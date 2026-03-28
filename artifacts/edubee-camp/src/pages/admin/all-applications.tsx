@@ -160,9 +160,9 @@ interface AppRow {
 // ── Tabs / statuses ────────────────────────────────────────────────────────
 
 const TABS = [
-  { key: "all",     label: "전체" },
-  { key: "camp",    label: "캠프" },
-  { key: "service", label: "서비스" },
+  { key: "all",     label: "All" },
+  { key: "camp",    label: "Camp" },
+  { key: "service", label: "Service" },
 ];
 
 const STATUSES = ["all", "submitted", "reviewing", "quoted", "confirmed", "converted", "cancelled"];
@@ -186,7 +186,7 @@ function NewApplicationDropdown({ navigate }: { navigate: (path: string) => void
     <div ref={ref} className="relative">
       <Button
         size="sm"
-        className="gap-1.5 bg-[var(--e-orange)] hover:bg-[var(--e-orange-dark)] text-white pr-2"
+        className="gap-1.5 border border-[#F5821F] bg-[#F5821F] text-white hover:bg-white hover:text-[#F5821F] pr-2"
         onClick={() => setOpen(o => !o)}
       >
         <Plus className="w-4 h-4" />
@@ -202,7 +202,7 @@ function NewApplicationDropdown({ navigate }: { navigate: (path: string) => void
             <Tent className="w-4 h-4 shrink-0 text-[#F5821F]" />
             <div>
               <div className="font-medium">Camp Application</div>
-              <div className="text-xs text-muted-foreground">캠프 신청서 작성</div>
+              <div className="text-xs text-muted-foreground">For camp programs</div>
             </div>
           </button>
           <div className="border-t border-border mx-2" />
@@ -213,7 +213,7 @@ function NewApplicationDropdown({ navigate }: { navigate: (path: string) => void
             <Globe className="w-4 h-4 shrink-0 text-[#7C3AED]" />
             <div>
               <div className="font-medium">Service Application</div>
-              <div className="text-xs text-muted-foreground">서비스 신청서 작성</div>
+              <div className="text-xs text-muted-foreground">For non-camp services</div>
             </div>
           </button>
         </div>
@@ -275,7 +275,7 @@ export default function AllApplicationsPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl font-semibold text-foreground">All Applications</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">캠프 및 서비스 신청서 통합 관리</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Manage all camp and service applications</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5">
@@ -310,11 +310,11 @@ export default function AllApplicationsPage() {
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSearch()}
-              placeholder="이름·이메일·신청번호..."
+              placeholder="Name · Email · Ref No..."
               className="pl-9 h-9 text-sm"
             />
           </div>
-          <Button variant="outline" size="sm" onClick={handleSearch}>검색</Button>
+          <Button variant="outline" size="sm" onClick={handleSearch}>Search</Button>
           <div className="flex gap-1 flex-wrap">
             {STATUSES.map(s => (
               <button
@@ -326,7 +326,7 @@ export default function AllApplicationsPage() {
                     : "bg-[#F4F3F1] text-[#57534E] hover:bg-[#E8E6E1]"
                 }`}
               >
-                {s === "all" ? "전체" : s.charAt(0).toUpperCase() + s.slice(1)}
+                {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
               </button>
             ))}
           </div>
@@ -338,23 +338,23 @@ export default function AllApplicationsPage() {
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-[var(--e-bg-sidebar)] z-10">
             <tr className="border-b border-[var(--e-border)]">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">신청번호</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">유형</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">신청인</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">프로그램 / 서비스</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">상태</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">신청일</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Ref No.</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Applicant</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Programme / Service</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Date</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={6} className="text-center py-12 text-muted-foreground text-sm">불러오는 중...</td>
+                <td colSpan={6} className="text-center py-12 text-muted-foreground text-sm">Loading...</td>
               </tr>
             )}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center py-12 text-muted-foreground text-sm">신청서가 없습니다</td>
+                <td colSpan={6} className="text-center py-12 text-muted-foreground text-sm">No applications found</td>
               </tr>
             )}
             {rows.map((row, i) => (
@@ -381,7 +381,7 @@ export default function AllApplicationsPage() {
                   <StatusBadge status={row.status} />
                 </td>
                 <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
-                  {row.createdAt ? new Date(row.createdAt).toLocaleDateString("ko-KR") : "—"}
+                  {row.createdAt ? new Date(row.createdAt).toLocaleDateString("en-AU") : "—"}
                 </td>
               </tr>
             ))}
@@ -391,11 +391,11 @@ export default function AllApplicationsPage() {
 
       {/* ── Pagination ─────────────────────────────────────────────────── */}
       <div className="px-6 py-3 border-t border-[var(--e-border)] flex items-center justify-between text-sm text-muted-foreground bg-[var(--e-bg-page)]">
-        <span>총 {total.toLocaleString()}건</span>
+        <span>{total.toLocaleString()} total</span>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>이전</Button>
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
           <span className="px-2">{page} / {totalPages}</span>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>다음</Button>
+          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
         </div>
       </div>
     </div>
