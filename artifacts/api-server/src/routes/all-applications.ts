@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { applications, campApplications, campPackageGroups, campPackages } from "@workspace/db/schema";
+import { applications, campApplications, packageGroups, packages } from "@workspace/db/schema";
 import { sql, ilike, eq, or, desc, and } from "drizzle-orm";
 
 const router = Router();
@@ -36,14 +36,14 @@ router.get("/admin/all-applications", async (req, res) => {
           contractId:       campApplications.contractId,
           packageGroupId:   campApplications.packageGroupId,
           packageId:        campApplications.packageId,
-          packageGroupName: campPackageGroups.name,
-          packageName:      campPackages.name,
+          packageGroupName: packageGroups.nameEn,
+          packageName:      packages.name,
           serviceTypes:     sql<null>`NULL`,
           createdAt:        campApplications.createdAt,
         })
         .from(campApplications)
-        .leftJoin(campPackageGroups, eq(campApplications.packageGroupId, campPackageGroups.id))
-        .leftJoin(campPackages,      eq(campApplications.packageId,      campPackages.id))
+        .leftJoin(packageGroups, eq(campApplications.packageGroupId, packageGroups.id))
+        .leftJoin(packages,      eq(campApplications.packageId,      packages.id))
         .orderBy(desc(campApplications.createdAt));
 
       const where: any[] = [];

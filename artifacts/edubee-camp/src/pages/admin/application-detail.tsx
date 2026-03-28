@@ -308,8 +308,8 @@ export default function ApplicationDetail() {
         title={app.applicationNumber ?? "Application"}
         subtitle={app.applicantName ?? app.studentName ?? ""}
         badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>{(app.applicationStatus ?? app.status ?? "pending").replace(/_/g, " ")}</span>}
-        backPath="/admin/applications"
-        backLabel="Applications"
+        backPath="/admin/all-applications"
+        backLabel="All Applications"
         tabs={TABS}
         activeTab={activeTab}
         onTabChange={setActiveTab}

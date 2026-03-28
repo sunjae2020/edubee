@@ -444,10 +444,10 @@ export default function CampApplicationDetail() {
           <p className="text-sm font-medium text-[#1C1917]">Camp Application not found.</p>
           <p className="text-xs text-[#78716C]">This record may have been deleted or the link is incorrect.</p>
           <button
-            onClick={() => navigate("/admin/camp-applications")}
+            onClick={() => navigate("/admin/all-applications")}
             className="inline-flex items-center gap-1.5 rounded-md bg-[#F5821F] px-4 py-2 text-xs font-semibold text-white hover:opacity-90"
           >
-            ← Back to Camp Applications
+            ← Back to All Applications
           </button>
         </div>
       );
@@ -504,8 +504,8 @@ export default function CampApplicationDetail() {
             : (app.applicantName ?? app.studentName ?? "")
         }
         badge={badge}
-        backPath="/admin/camp-applications"
-        backLabel="Camp Applications"
+        backPath="/admin/all-applications"
+        backLabel="All Applications"
         tabs={TABS}
         activeTab={activeTab}
         onTabChange={setActiveTab}
