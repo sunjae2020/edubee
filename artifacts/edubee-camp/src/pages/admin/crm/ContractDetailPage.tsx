@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, Fragment } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
+import { DetailSection, DetailRow } from "@/components/shared/DetailPageLayout";
 import axios from "axios";
 import {
   ArrowLeft, ExternalLink, FileText, CreditCard, GraduationCap,
@@ -3406,6 +3407,47 @@ export default function ContractDetailPage() {
               setPrimaryServiceType={handleSetPrimary}
               onAddService={openAddService}
             />
+            {(contract.campApplication || contract.quote) && (
+              <DetailSection title="Linked Records">
+                {contract.campApplication && (
+                  <DetailRow label="Camp Application">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">
+                        {contract.campApplication.applicationRef ?? contract.campApplication.id}
+                        {contract.campApplication.applicantName && (
+                          <span className="ml-2 text-muted-foreground font-normal">
+                            — {contract.campApplication.applicantName}
+                          </span>
+                        )}
+                      </span>
+                      <button
+                        onClick={() => navigate(`/admin/camp-applications/${contract.campApplication.id}`)}
+                        className="text-sm font-medium text-[#F5821F] hover:text-[#d97706] transition-colors ml-4"
+                        style={{ background: "none", border: "none", cursor: "pointer" }}
+                      >
+                        View →
+                      </button>
+                    </div>
+                  </DetailRow>
+                )}
+                {contract.quote && (
+                  <DetailRow label="Quote">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">
+                        {contract.quote.quoteRefNumber ?? contract.quote.id}
+                      </span>
+                      <button
+                        onClick={() => navigate(`/admin/crm/quotes/${contract.quote.id}`)}
+                        className="text-sm font-medium text-[#F5821F] hover:text-[#d97706] transition-colors ml-4"
+                        style={{ background: "none", border: "none", cursor: "pointer" }}
+                      >
+                        View →
+                      </button>
+                    </div>
+                  </DetailRow>
+                )}
+              </DetailSection>
+            )}
             <SystemInfoSection owner={contract.ownerId ?? null} createdAt={contract.createdAt} updatedAt={contract.updatedAt} />
           </>
         )}

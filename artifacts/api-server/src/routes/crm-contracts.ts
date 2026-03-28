@@ -275,16 +275,20 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
                u.id           AS owner_user_id,
                u.full_name    AS owner_name,
                q.quote_ref_number,
+               q.camp_application_id,
+               ca.application_ref  AS camp_app_ref,
+               ca.applicant_name   AS camp_app_name,
                COALESCE(ct1.id,          ct2.id)                       AS contact_id,
                COALESCE(ct1.nationality, ct2.nationality)               AS contact_nationality,
                COALESCE(ct1.email,       ct2.email, c.client_email)     AS contact_email,
                COALESCE(ct1.mobile,      ct2.mobile)                    AS contact_phone
         FROM contracts c
-        LEFT JOIN accounts  a   ON a.id   = c.account_id
-        LEFT JOIN contacts  ct1 ON ct1.id = a.primary_contact_id
-        LEFT JOIN contacts  ct2 ON ct2.id = c.customer_contact_id
-        LEFT JOIN users     u   ON u.id   = a.owner_id
-        LEFT JOIN quotes    q   ON q.id   = c.quote_id
+        LEFT JOIN accounts       a   ON a.id   = c.account_id
+        LEFT JOIN contacts       ct1 ON ct1.id = a.primary_contact_id
+        LEFT JOIN contacts       ct2 ON ct2.id = c.customer_contact_id
+        LEFT JOIN users          u   ON u.id   = a.owner_id
+        LEFT JOIN quotes         q   ON q.id   = c.quote_id
+        LEFT JOIN camp_applications ca ON ca.id = q.camp_application_id
         WHERE c.id = ${id}::uuid
       `),
       db.execute(sql`
@@ -450,7 +454,12 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       } : null,
       studentName: c.student_name,
       clientEmail: c.contact_email ?? c.client_email ?? null,
-      quote:   c.quote_id  ? { id: c.quote_id,  quoteRefNumber: c.quote_ref_number } : null,
+      quote:           c.quote_id  ? { id: c.quote_id,  quoteRefNumber: c.quote_ref_number } : null,
+      campApplication: c.camp_application_id ? {
+        id:             c.camp_application_id,
+        applicationRef: c.camp_app_ref  ?? null,
+        applicantName:  c.camp_app_name ?? null,
+      } : null,
       owner:   c.owner_id  ? { id: c.owner_id,  name: c.owner_name }               : null,
       contractProducts,
       invoices,
