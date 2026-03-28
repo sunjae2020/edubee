@@ -32,6 +32,7 @@ interface ContractRow {
   arSummary?: { totalAr: number; collectedAr: number; statusList: string[] };
   apSummary?: { totalAp: number; remittedAp: number; statusList: string[] };
   collectionRate: number;
+  clientEmail?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }
@@ -463,7 +464,7 @@ export default function ContractListPage() {
                         name:         row.account?.name,
                       })}
                       accountId={row.account?.id}
-                      subLabel={row.quote?.quoteRefNumber}
+                      subLabel={row.clientEmail ?? undefined}
                     />
                   </td>
                   <td className="px-4 py-3">

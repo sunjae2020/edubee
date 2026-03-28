@@ -53,18 +53,21 @@ router.get("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req,
       let accountFirstName: string | null = null;
       let accountLastName: string | null = null;
       let accountOriginalName: string | null = null;
+      let accountEmail: string | null = null;
       if (q.studentAccountId) {
         const [acc] = await db.select({
           firstName: accounts.firstName, lastName: accounts.lastName,
           originalName: accounts.originalName, name: accounts.name,
+          email: accounts.email,
         }).from(accounts).where(eq(accounts.id, q.studentAccountId));
         if (acc) {
           accountFirstName   = acc.firstName ?? null;
           accountLastName    = acc.lastName  ?? null;
           accountOriginalName = acc.originalName ?? null;
+          accountEmail       = acc.email ?? null;
         }
       }
-      return { ...q, products, total, accountFirstName, accountLastName, accountOriginalName };
+      return { ...q, products, total, accountFirstName, accountLastName, accountOriginalName, accountEmail };
     }));
 
     return res.json({

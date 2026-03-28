@@ -27,6 +27,7 @@ interface QuoteRow {
   accountFirstName?: string | null;
   accountLastName?: string | null;
   accountOriginalName?: string | null;
+  accountEmail?: string | null;
   studentAccountId?: string | null;
   contactId?: string | null;
   quoteStatus: string;
@@ -141,7 +142,7 @@ export default function QuotesPage() {
                         name: q.accountName,
                       })}
                       accountId={q.studentAccountId}
-                      subLabel={q.quoteRefNumber ?? undefined}
+                      subLabel={q.accountEmail ?? undefined}
                     />
                   </button>
                 </td>
