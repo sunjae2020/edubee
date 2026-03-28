@@ -78,7 +78,7 @@ function TypeBadge({ type }: { type: string }) {
 export default function TasksPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
-  const { sortBy, sortDir, onSort } = useSortState();
+  const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const qc = useQueryClient();
   const role = user?.role ?? "";
   const isParent = role === "parent_client";

@@ -138,7 +138,7 @@ function SourceTabs({ active, onChange }: { active: Source; onChange: (s: Source
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PickupManagement() {
   const [, navigate] = useLocation();
-  const { sortBy, sortDir, onSort } = useSortState();
+  const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const [search, setSearch]         = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
   const [source, setSource]         = useState<Source>("all");

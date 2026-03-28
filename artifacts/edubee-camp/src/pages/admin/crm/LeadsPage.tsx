@@ -147,7 +147,7 @@ export default function CrmLeadsPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  const { sortBy, sortDir, onSort } = useSortState();
+  const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
 
   const [view, setView]           = useState<"table" | "kanban">("table");
   const [search, setSearch]       = useState("");

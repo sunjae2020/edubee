@@ -65,7 +65,7 @@ export default function DocumentsPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [, navigate] = useLocation();
-  const { sortBy, sortDir, onSort } = useSortState();
+  const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const { user } = useAuth();
 
   const [entityType, setEntityType] = useState("");

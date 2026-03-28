@@ -48,7 +48,7 @@ function fmtDate(d: string | null | undefined): string {
 export default function OtherServicePage() {
   const qc               = useQueryClient();
   const [, navigate]     = useLocation();
-  const { sortBy, sortDir, onSort } = useSortState();
+  const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const [search, setSearch]   = useState("");
   const [status, setStatus]   = useState("");
   const [page, setPage]       = useState(1);

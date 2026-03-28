@@ -71,7 +71,7 @@ export default function Applications() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const { sortBy, sortDir, onSort } = useSortState();
+  const { sortBy, sortDir, onSort } = useSortState("createdAt", "desc");
   const [search, setSearch] = useState("");
   const [serviceType, setServiceType] = useState("all");
   const [appStatus, setAppStatus] = useState("all");

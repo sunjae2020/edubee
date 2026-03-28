@@ -97,7 +97,7 @@ function PipelineStepper({
 export default function InternshipPage() {
   const qc                            = useQueryClient();
   const [, navigate]                  = useLocation();
-  const { sortBy, sortDir, onSort } = useSortState();
+  const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const [activeStage, setActiveStage] = useState("");
   const [search, setSearch]           = useState("");
   const [page, setPage]               = useState(1);

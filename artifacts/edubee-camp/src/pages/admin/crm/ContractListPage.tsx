@@ -123,7 +123,7 @@ function ActiveTag({ label, onRemove }: { label: string; onRemove: () => void })
 // ── Main Component ─────────────────────────────────────────────────────────
 export default function ContractListPage() {
   const [, navigate] = useLocation();
-  const { sortBy, sortDir, onSort } = useSortState();
+  const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
 
   // Filter state
   const [search,    setSearch]    = useState("");

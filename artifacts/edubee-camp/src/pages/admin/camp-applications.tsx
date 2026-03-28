@@ -104,7 +104,7 @@ export default function CampApplications() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const { sortBy, sortDir, onSort } = useSortState();
+  const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const [search, setSearch] = useState("");
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
