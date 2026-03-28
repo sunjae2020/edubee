@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { ClientNameCell } from "@/components/common/ClientNameCell";
 import { nameFromAccount } from "@/lib/nameUtils";
+import { TableFooter } from "@/components/ui/table-footer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -52,6 +53,7 @@ export default function QuotesPage() {
   const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const [tab, setTab] = useState<"quotes" | "templates">("quotes");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -60,9 +62,9 @@ export default function QuotesPage() {
   });
 
   const { data: resp, isLoading } = useQuery({
-    queryKey: ["crm-quotes", tab, page],
+    queryKey: ["crm-quotes", tab, page, pageSize],
     queryFn: () => {
-      const p = new URLSearchParams({ page: String(page), limit: "20" });
+      const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (tab === "templates") p.set("isTemplate", "true");
       else p.set("isTemplate", "false");
       return axios.get(`${BASE}/api/crm/quotes?${p}`).then(r => r.data);
@@ -71,7 +73,7 @@ export default function QuotesPage() {
 
   const rows: QuoteRow[] = resp?.data ?? [];
   const sorted = useSorted(rows, sortBy, sortDir);
-  const totalPages = resp?.meta?.totalPages ?? 1;
+  const total = resp?.meta?.total ?? 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -159,12 +161,14 @@ export default function QuotesPage() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-end gap-2">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
-        </div>
-      )}
+      <TableFooter
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        label="quotes"
+        onPageChange={setPage}
+        onPageSizeChange={v => { setPageSize(v); setPage(1); }}
+      />
     </div>
   );
 }
