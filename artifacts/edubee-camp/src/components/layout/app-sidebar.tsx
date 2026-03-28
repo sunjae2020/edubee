@@ -190,6 +190,103 @@ function saveCollapsed(keys: Set<string>) {
   } catch { /* ignore */ }
 }
 
+// ── CategoryHeader ────────────────────────────────────────────────────────
+
+function CategoryHeader({ group, hasActive, open, onToggle }: {
+  group: NavGroup; hasActive: boolean; open: boolean; onToggle: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const CatIcon = group.catIcon;
+  return (
+    <button
+      onClick={onToggle}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="w-full flex items-center gap-1.5 px-2 pt-3 pb-1.5 rounded-md transition-all duration-150"
+      style={{ background: hovered && !hasActive ? "#FFF0E0" : "transparent" }}
+    >
+      <CatIcon
+        size={13}
+        strokeWidth={hasActive || hovered ? 2.2 : 1.8}
+        style={{
+          color: hasActive ? "var(--e-orange)" : hovered ? "#EA580C" : "var(--e-text-3)",
+          flexShrink: 0,
+        }}
+      />
+      <span
+        className="flex-1 text-left text-[11px] font-semibold uppercase tracking-[0.08em] truncate"
+        style={{ color: hasActive ? "var(--e-orange)" : hovered ? "#C2410C" : "var(--e-text-3)" }}
+      >
+        {group.label}
+      </span>
+      <ChevronDown
+        size={11}
+        strokeWidth={1.8}
+        style={{
+          color: hovered ? "#EA580C" : "var(--e-text-3)",
+          flexShrink: 0,
+          transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+          transition: "transform 150ms ease",
+        }}
+      />
+    </button>
+  );
+}
+
+// ── CollapsedIconItem & FlyoutItem ───────────────────────────────────────
+
+function CollapsedIconItem({ item, Icon, isActive, onNavClick }: {
+  item: NavItem; Icon: LucideIcon; isActive: boolean; onNavClick?: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Link href={item.href} onClick={onNavClick}>
+      <div
+        className="w-10 h-9 flex items-center justify-center rounded-lg transition-all duration-150 cursor-pointer"
+        style={{
+          background: isActive ? "var(--e-orange-lt)" : hovered ? "#FFF0E0" : "transparent",
+        }}
+        title={item.label}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <Icon
+          size={16}
+          strokeWidth={isActive || hovered ? 2.2 : 1.8}
+          style={{ color: isActive ? "var(--e-orange)" : hovered ? "#EA580C" : "var(--e-text-3)" }}
+        />
+      </div>
+    </Link>
+  );
+}
+
+function FlyoutItem({ item, Icon, isActive, onClose }: {
+  item: NavItem; Icon: LucideIcon; isActive: boolean; onClose: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Link href={item.href} onClick={onClose}>
+      <div
+        className="flex items-center gap-2.5 px-3 h-9 mx-1 rounded-lg text-[13px] cursor-pointer transition-all duration-150 select-none font-medium"
+        style={{
+          background: isActive ? "var(--e-orange-lt)" : hovered ? "#FFF0E0" : "transparent",
+          color: isActive ? "var(--e-orange)" : hovered ? "#C2410C" : "var(--e-text-2)",
+          fontWeight: isActive ? 600 : undefined,
+        }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <Icon
+          size={14}
+          strokeWidth={isActive || hovered ? 2.2 : 1.8}
+          style={{ color: isActive ? "var(--e-orange)" : hovered ? "#EA580C" : "var(--e-text-3)", flexShrink: 0 }}
+        />
+        <span className="truncate">{item.label}</span>
+      </div>
+    </Link>
+  );
+}
+
 // ── CollapsedGroupFlyout ──────────────────────────────────────────────────
 
 function CollapsedGroupFlyout({
@@ -217,20 +314,13 @@ function CollapsedGroupFlyout({
           const isActive = location === item.href || location.startsWith(item.href + "/");
           const Icon = item.icon;
           return (
-            <Link key={item.href} href={item.href} onClick={onNavClick}>
-              <div
-                className={`w-10 h-9 flex items-center justify-center rounded-lg transition-colors cursor-pointer
-                  ${isActive ? "" : "hover:bg-[#F4F3F1] dark:hover:bg-[#242220]"}`}
-                style={{ background: isActive ? "var(--e-orange-lt)" : "transparent" }}
-                title={item.label}
-              >
-                <Icon
-                  size={16}
-                  strokeWidth={isActive ? 2.2 : 1.8}
-                  style={{ color: isActive ? "var(--e-orange)" : "var(--e-text-3)" }}
-                />
-              </div>
-            </Link>
+            <CollapsedIconItem
+              key={item.href}
+              item={item}
+              Icon={Icon}
+              isActive={isActive}
+              onNavClick={onNavClick}
+            />
           );
         })}
       </div>
@@ -238,17 +328,18 @@ function CollapsedGroupFlyout({
       {/* Flyout panel */}
       {open && (
         <div
-          className="absolute left-[56px] top-0 z-50 min-w-[180px] rounded-xl shadow-xl border py-2"
+          className="absolute left-[56px] top-0 z-50 min-w-[190px] rounded-xl py-2"
           style={{
             background: "var(--e-bg-sidebar)",
-            borderColor: "var(--e-border)",
+            border: "1px solid var(--e-border)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
           }}
           onMouseEnter={show}
           onMouseLeave={hide}
         >
           {/* Group label */}
           <div
-            className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
+            className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.08em]"
             style={{ color: hasActive ? "var(--e-orange)" : "var(--e-text-3)" }}
           >
             {group.label}
@@ -257,23 +348,13 @@ function CollapsedGroupFlyout({
             const isActive = location === item.href || location.startsWith(item.href + "/");
             const Icon = item.icon;
             return (
-              <Link key={item.href} href={item.href} onClick={() => { setOpen(false); onNavClick?.(); }}>
-                <div
-                  className={`flex items-center gap-2.5 px-3 h-9 mx-1 rounded-lg text-[13px] cursor-pointer transition-colors select-none
-                    ${isActive ? "font-semibold" : "font-normal hover:bg-[#F4F3F1] dark:hover:bg-[#242220]"}`}
-                  style={{
-                    background: isActive ? "var(--e-orange-lt)" : "transparent",
-                    color: isActive ? "var(--e-orange)" : "var(--e-text-2)",
-                  }}
-                >
-                  <Icon
-                    size={14}
-                    strokeWidth={isActive ? 2.2 : 1.8}
-                    style={{ color: isActive ? "var(--e-orange)" : "var(--e-text-3)", flexShrink: 0 }}
-                  />
-                  <span className="truncate">{item.label}</span>
-                </div>
-              </Link>
+              <FlyoutItem
+                key={item.href}
+                item={item}
+                Icon={Icon}
+                isActive={isActive}
+                onClose={() => { setOpen(false); onNavClick?.(); }}
+              />
             );
           })}
         </div>
@@ -376,33 +457,12 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
 
             return (
               <div key={group.key} className="mb-0.5">
-                <button
-                  onClick={() => toggleGroup(group.key)}
-                  className="w-full flex items-center gap-1.5 px-2 pt-3 pb-1.5 rounded-md transition-colors
-                    hover:bg-[#F4F3F1] dark:hover:bg-[#242220] group/cat"
-                >
-                  <CatIcon
-                    size={13}
-                    strokeWidth={hasActive ? 2.2 : 1.8}
-                    style={{ color: hasActive ? "var(--e-orange)" : "var(--e-text-3)", flexShrink: 0 }}
-                  />
-                  <span
-                    className="flex-1 text-left text-[11px] font-semibold uppercase tracking-[0.08em] truncate"
-                    style={{ color: hasActive ? "var(--e-orange)" : "var(--e-text-3)" }}
-                  >
-                    {group.label}
-                  </span>
-                  <ChevronDown
-                    size={11}
-                    strokeWidth={1.8}
-                    style={{
-                      color: "var(--e-text-3)",
-                      flexShrink: 0,
-                      transform: open ? "rotate(0deg)" : "rotate(-90deg)",
-                      transition: "transform 150ms ease",
-                    }}
-                  />
-                </button>
+                <CategoryHeader
+                  group={group}
+                  hasActive={hasActive}
+                  open={open}
+                  onToggle={() => toggleGroup(group.key)}
+                />
 
                 {open && group.items.map(item => {
                   const isActive = location === item.href || location.startsWith(item.href + "/");
@@ -460,28 +520,36 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
 function SidebarNavItem({
   icon: Icon, label, isActive, collapsed,
 }: { icon: LucideIcon; label: string; isActive: boolean; collapsed: boolean }) {
+  const [hovered, setHovered] = useState(false);
   return (
     <div
       title={collapsed ? label : undefined}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={`
         flex items-center gap-2.5 px-2 h-9 rounded-lg text-[13px] cursor-pointer
         transition-all duration-150 select-none
         ${collapsed ? "justify-center" : "ml-1"}
-        ${isActive
-          ? "font-semibold"
-          : "font-normal hover:bg-[#F4F3F1] dark:hover:bg-[#242220]"
-        }
+        ${isActive ? "font-semibold" : "font-medium"}
       `}
       style={{
-        background: isActive ? "var(--e-orange-lt)" : "transparent",
-        color:      isActive ? "var(--e-orange)"    : "var(--e-text-2)",
+        background: isActive
+          ? "var(--e-orange-lt)"
+          : hovered ? "#FFF0E0" : "transparent",
+        color: isActive
+          ? "var(--e-orange)"
+          : hovered ? "#C2410C" : "var(--e-text-2)",
       }}
     >
       <Icon
         className="shrink-0"
         size={15}
-        strokeWidth={isActive ? 2.2 : 1.8}
-        style={{ color: isActive ? "var(--e-orange)" : "var(--e-text-3)" }}
+        strokeWidth={isActive || hovered ? 2.2 : 1.8}
+        style={{
+          color: isActive
+            ? "var(--e-orange)"
+            : hovered ? "#EA580C" : "var(--e-text-3)",
+        }}
       />
       {!collapsed && <span className="truncate">{label}</span>}
     </div>
