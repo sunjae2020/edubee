@@ -2,33 +2,37 @@ import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
-import { Search, Plus, Download, Tent, GraduationCap, Plane, Building2, Briefcase, Shield, Stamp, Car, Globe } from "lucide-react";
+import {
+  Search, Plus, Download,
+  Tent, GraduationCap, Plane, Building2, Briefcase,
+  Shield, Stamp, Car, Globe, Bus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-// ── Source type config ─────────────────────────────────────────────────────
+// ── Source / service type config ───────────────────────────────────────────
 
 const SOURCE_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  camp:            { label: "Camp",          icon: Tent,         color: "bg-[#FFF0E0] text-[#C2410C]"   },
-  study_abroad:    { label: "Study Abroad",  icon: GraduationCap,color: "bg-[#EDE9FE] text-[#6D28D9]"   },
-  pickup:          { label: "Pickup",        icon: Plane,        color: "bg-[#DBEAFE] text-[#1D4ED8]"   },
-  accommodation:   { label: "Accommodation", icon: Building2,    color: "bg-[#F0FDF4] text-[#15803D]"   },
-  internship:      { label: "Internship",    icon: Briefcase,    color: "bg-[#FEF9C3] text-[#A16207]"   },
-  guardian:        { label: "Guardian",      icon: Shield,       color: "bg-[#FCE7F3] text-[#BE185D]"   },
-  visa:            { label: "Visa",          icon: Stamp,        color: "bg-[#F1F5F9] text-[#475569]"   },
-  tour:            { label: "Tour",          icon: Car,          color: "bg-[#ECFDF5] text-[#065F46]"   },
-  service:         { label: "Service",       icon: Globe,        color: "bg-[#F8FAFC] text-[#64748B]"   },
+  camp:          { label: "Camp",          icon: Tent,          color: "bg-[#FFF0E0] text-[#C2410C]" },
+  study_abroad:  { label: "Study Abroad",  icon: GraduationCap, color: "bg-[#EDE9FE] text-[#6D28D9]" },
+  pickup:        { label: "Pickup",        icon: Plane,         color: "bg-[#DBEAFE] text-[#1D4ED8]" },
+  accommodation: { label: "Accomm.",       icon: Building2,     color: "bg-[#F0FDF4] text-[#15803D]" },
+  internship:    { label: "Internship",    icon: Briefcase,     color: "bg-[#FEF9C3] text-[#A16207]" },
+  guardian:      { label: "Guardian",      icon: Shield,        color: "bg-[#FCE7F3] text-[#BE185D]" },
+  visa:          { label: "Visa",          icon: Stamp,         color: "bg-[#F1F5F9] text-[#475569]" },
+  tour:          { label: "Tour",          icon: Car,           color: "bg-[#ECFDF5] text-[#065F46]" },
+  transfer:      { label: "Transfer",      icon: Bus,           color: "bg-[#DBEAFE] text-[#1D4ED8]" },
+  service:       { label: "Service",       icon: Globe,         color: "bg-[#F8FAFC] text-[#64748B]" },
 };
 
-function SourceBadge({ sourceType }: { sourceType: string | null }) {
+function SourceBadge({ sourceType }: { sourceType?: string | null }) {
   const cfg = SOURCE_CONFIG[sourceType ?? ""] ?? SOURCE_CONFIG.service;
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
-      <Icon className="w-3 h-3" />
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${cfg.color}`}>
+      <Icon className="w-3 h-3 shrink-0" />
       {cfg.label}
     </span>
   );
@@ -53,13 +57,84 @@ function StatusBadge({ status }: { status?: string | null }) {
   );
 }
 
-const TABS = [
-  { key: "all",     label: "전체" },
-  { key: "camp",    label: "캠프" },
-  { key: "service", label: "서비스" },
-];
+// Compact applicant cell — mirrors Lead list "Client" style
+function ApplicantCell({ row }: { row: AppRow }) {
+  const firstName = row.firstName?.trim() ?? "";
+  const lastName  = (row.lastName?.trim() ?? "").toUpperCase();
+  const displayName = (firstName || lastName)
+    ? [firstName, lastName].filter(Boolean).join(" ")
+    : (row.fullName ?? "—");
 
-const STATUSES = ["all", "submitted", "reviewing", "quoted", "confirmed", "converted", "cancelled"];
+  const sub1 = row.originalName?.trim() || row.englishName?.trim() || null;
+  const sub2 = row.email?.trim() || null;
+
+  return (
+    <div className="min-w-0">
+      <div className="font-semibold text-foreground text-sm leading-tight truncate">
+        {displayName}
+        {row.englishName && row.originalName && (
+          <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+            {row.englishName}
+          </span>
+        )}
+      </div>
+      {sub1 && (
+        <div className="text-xs text-muted-foreground leading-tight mt-0.5 truncate">{sub1}</div>
+      )}
+      {sub2 && (
+        <div className="text-xs text-muted-foreground leading-tight truncate">{sub2}</div>
+      )}
+    </div>
+  );
+}
+
+// Programme cell (camp) or Service cell (service)
+function ProgrammeCell({ row }: { row: AppRow }) {
+  const src = row.sourceType ?? "";
+
+  if (src === "camp") {
+    return (
+      <div className="min-w-0">
+        {row.packageGroupName ? (
+          <>
+            <div className="text-sm font-medium text-foreground truncate">{row.packageGroupName}</div>
+            {row.packageName && (
+              <div className="text-xs text-muted-foreground truncate mt-0.5">{row.packageName}</div>
+            )}
+          </>
+        ) : (
+          <span className="text-muted-foreground text-xs">—</span>
+        )}
+      </div>
+    );
+  }
+
+  // Service: parse serviceTypes (jsonb array or string)
+  let types: string[] = [];
+  if (row.serviceTypes) {
+    try {
+      const parsed = typeof row.serviceTypes === "string"
+        ? JSON.parse(row.serviceTypes)
+        : row.serviceTypes;
+      types = Array.isArray(parsed) ? parsed : [String(parsed)];
+    } catch {
+      types = [String(row.serviceTypes)];
+    }
+  }
+  if (types.length === 0 && src && src !== "camp" && src !== "service") {
+    types = [src];
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {types.length > 0
+        ? types.map(t => <SourceBadge key={t} sourceType={t} />)
+        : <span className="text-muted-foreground text-xs">—</span>}
+    </div>
+  );
+}
+
+// ── Types ──────────────────────────────────────────────────────────────────
 
 interface AppRow {
   id: string;
@@ -76,16 +151,31 @@ interface AppRow {
   status: string | null;
   quoteId: string | null;
   contractId: string | null;
+  packageGroupName: string | null;
+  packageName: string | null;
+  serviceTypes: unknown;
   createdAt: string;
 }
 
+// ── Tabs / statuses ────────────────────────────────────────────────────────
+
+const TABS = [
+  { key: "all",     label: "전체" },
+  { key: "camp",    label: "캠프" },
+  { key: "service", label: "서비스" },
+];
+
+const STATUSES = ["all", "submitted", "reviewing", "quoted", "confirmed", "converted", "cancelled"];
+
+// ── Page ───────────────────────────────────────────────────────────────────
+
 export default function AllApplicationsPage() {
   const [, navigate] = useLocation();
-  const [tab,    setTab]    = useState("all");
-  const [status, setStatus] = useState("all");
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [page,   setPage]   = useState(1);
+  const [tab,        setTab]        = useState("all");
+  const [status,     setStatus]     = useState("all");
+  const [search,     setSearch]     = useState("");
+  const [searchInput,setSearchInput]= useState("");
+  const [page,       setPage]       = useState(1);
   const pageSize = 20;
 
   const queryKey = ["all-applications", { tab, status, search, page, pageSize }];
@@ -93,47 +183,39 @@ export default function AllApplicationsPage() {
     queryKey,
     queryFn: () => {
       const params = new URLSearchParams();
-      params.set("page", String(page));
+      params.set("page",     String(page));
       params.set("pageSize", String(pageSize));
       if (tab    !== "all") params.set("type",   tab);
       if (status !== "all") params.set("status", status);
       if (search) params.set("search", search);
-      return axios.get(`${BASE}/api/admin/all-applications?${params}`).then(r => r.data as { data: AppRow[]; total: number; page: number; pageSize: number });
+      return axios
+        .get(`${BASE}/api/admin/all-applications?${params}`)
+        .then(r => r.data as { data: AppRow[]; total: number; page: number; pageSize: number });
     },
-    placeholderData: (prev) => prev,
+    placeholderData: prev => prev,
   });
 
-  const rows  = data?.data  ?? [];
-  const total = data?.total ?? 0;
+  const rows       = data?.data  ?? [];
+  const total      = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  const handleSearch = useCallback(() => {
-    setSearch(searchInput);
-    setPage(1);
-  }, [searchInput]);
+  const handleSearch = useCallback(() => { setSearch(searchInput); setPage(1); }, [searchInput]);
 
   function handleRowClick(row: AppRow) {
-    const src = row.sourceType ?? "";
-    if (src === "camp") {
+    if ((row.sourceType ?? "") === "camp") {
       navigate(`/admin/camp-applications/${row.id}`);
     } else {
       navigate(`/admin/applications/${row.id}`);
     }
   }
 
-  function handleTabChange(key: string) {
-    setTab(key);
-    setPage(1);
-  }
-
-  function handleStatusChange(s: string) {
-    setStatus(s);
-    setPage(1);
-  }
+  function handleTabChange(k: string) { setTab(k); setPage(1); }
+  function handleStatusChange(s: string) { setStatus(s); setPage(1); }
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="px-6 pt-6 pb-4 border-b border-[var(--e-border)] bg-[var(--e-bg-page)]">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -171,15 +253,15 @@ export default function AllApplicationsPage() {
           ))}
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-xs">
+        {/* Search + status filters */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSearch()}
-              placeholder="이름, 이메일, 신청번호 검색..."
+              placeholder="이름·이메일·신청번호..."
               className="pl-9 h-9 text-sm"
             />
           </div>
@@ -202,18 +284,15 @@ export default function AllApplicationsPage() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* ── Table ──────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-auto">
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-[var(--e-bg-sidebar)] z-10">
             <tr className="border-b border-[var(--e-border)]">
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">신청번호</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">유형</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">First Name</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Last Name</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Original Name</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">English Name</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">이메일</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">신청인</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">프로그램 / 서비스</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">상태</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">신청일</th>
             </tr>
@@ -221,19 +300,21 @@ export default function AllApplicationsPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">불러오는 중...</td>
+                <td colSpan={6} className="text-center py-12 text-muted-foreground text-sm">불러오는 중...</td>
               </tr>
             )}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">신청서가 없습니다</td>
+                <td colSpan={6} className="text-center py-12 text-muted-foreground text-sm">신청서가 없습니다</td>
               </tr>
             )}
             {rows.map((row, i) => (
               <tr
                 key={row.id}
                 onClick={() => handleRowClick(row)}
-                className={`border-b border-[var(--e-border)] cursor-pointer transition-colors hover:bg-[#FFF8F5] ${i % 2 === 0 ? "bg-white" : "bg-[#FAFAF9]"}`}
+                className={`border-b border-[var(--e-border)] cursor-pointer transition-colors hover:bg-[#FFF8F5] ${
+                  i % 2 === 0 ? "bg-white" : "bg-[#FAFAF9]"
+                }`}
               >
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
                   {row.ref ?? "—"}
@@ -241,12 +322,15 @@ export default function AllApplicationsPage() {
                 <td className="px-4 py-3">
                   <SourceBadge sourceType={row.sourceType} />
                 </td>
-                <td className="px-4 py-3 font-medium">{row.firstName ?? <span className="text-muted-foreground">—</span>}</td>
-                <td className="px-4 py-3 font-medium uppercase">{row.lastName ?? <span className="text-muted-foreground">—</span>}</td>
-                <td className="px-4 py-3 text-muted-foreground">{row.originalName ?? "—"}</td>
-                <td className="px-4 py-3 text-muted-foreground">{row.englishName ?? "—"}</td>
-                <td className="px-4 py-3 text-muted-foreground text-xs">{row.email ?? "—"}</td>
-                <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
+                <td className="px-4 py-3 max-w-[220px]">
+                  <ApplicantCell row={row} />
+                </td>
+                <td className="px-4 py-3 max-w-[240px]">
+                  <ProgrammeCell row={row} />
+                </td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={row.status} />
+                </td>
                 <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                   {row.createdAt ? new Date(row.createdAt).toLocaleDateString("ko-KR") : "—"}
                 </td>
@@ -256,7 +340,7 @@ export default function AllApplicationsPage() {
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* ── Pagination ─────────────────────────────────────────────────── */}
       <div className="px-6 py-3 border-t border-[var(--e-border)] flex items-center justify-between text-sm text-muted-foreground bg-[var(--e-bg-page)]">
         <span>총 {total.toLocaleString()}건</span>
         <div className="flex items-center gap-2">
