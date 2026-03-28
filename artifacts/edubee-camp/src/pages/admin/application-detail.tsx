@@ -255,6 +255,14 @@ export default function ApplicationDetail() {
     alwaysEdit: true,
   });
 
+  // ── Staff list for Assignment section ────────────────────────────────────
+  const { data: staffData } = useQuery({
+    queryKey: ["staff-list-app-detail"],
+    queryFn:  () => axios.get(`${BASE}/api/users?limit=100`).then(r => r.data?.data ?? []),
+  });
+  const staffList: any[] = staffData ?? [];
+  const currentAssignedStaffId = (getValue("assignedStaffId") as string) ?? app?.assignedStaffId;
+
   // ── Open service edit dialog ───────────────────────────────────────────────
   function openEditSvc(type: string) {
     const meta = SERVICE_META[type];
@@ -431,7 +439,31 @@ export default function ApplicationDetail() {
               />
             </DetailSection>
 
-            {/* ⑤ Linked Records */}
+            {/* ⑤ Assignment */}
+            <DetailSection title="Assignment">
+              <DetailRow label="Assigned Staff">
+                {canEdit ? (
+                  <Select
+                    value={currentAssignedStaffId ?? ""}
+                    onValueChange={v => setField("assignedStaffId", v === "__none__" ? null : v as any)}
+                  >
+                    <SelectTrigger className="h-8 text-sm border-[#F5821F]">
+                      <SelectValue placeholder="Select staff..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Unassigned —</SelectItem>
+                      {staffList.map((s: any) => (
+                        <SelectItem key={s.id} value={s.id}>{s.fullName ?? s.email}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span>{staffList.find((s: any) => s.id === app.assignedStaffId)?.fullName ?? "—"}</span>
+                )}
+              </DetailRow>
+            </DetailSection>
+
+            {/* ⑥ Linked Records */}
             {app.quoteId && (
               <DetailSection title="Linked Records">
                 <div className="flex items-center justify-between">
@@ -445,7 +477,7 @@ export default function ApplicationDetail() {
             )}
 
             <div className="lg:col-span-2">
-              <SystemInfoSection owner={app.agentId ?? null} createdAt={app.createdAt} updatedAt={app.updatedAt} />
+              <SystemInfoSection owner={app.assignedStaffId ?? null} createdAt={app.createdAt} updatedAt={app.updatedAt} />
             </div>
           </div>
         )}
