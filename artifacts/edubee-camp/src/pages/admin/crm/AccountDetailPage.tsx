@@ -5,11 +5,10 @@ import axios from "axios";
 import {
   ArrowLeft, Save, Building2, Users, FileText, Briefcase,
   Plus, Loader2, ChevronRight, ExternalLink, Package, DollarSign, Shield,
-  UserPlus, X, Layers,
+  UserPlus, X, Layers, Copy, Check,
 } from "lucide-react";
 import { AccountServiceProfilesTab } from "./AccountServiceProfilesTab";
 import { PortalAccessPanel } from "@/components/crm/PortalAccessPanel";
-import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -663,6 +662,7 @@ export default function AccountDetailPage() {
   const id    = matchId ? (params?.id ?? "") : "";
 
   const [tab, setTab] = useState("overview");
+  const [copiedId, setCopiedId] = useState(false);
 
   const { data: account, isLoading } = useQuery({
     queryKey: ["crm-account", id],
@@ -1171,9 +1171,9 @@ export default function AccountDetailPage() {
                 </div>
               )}
 
-              {/* System */}
+              {/* Admin Info */}
               <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
-                <Section title="System">
+                <Section title="Admin Info">
                   <Field label="Owner" span={2} required>
                     <Select value={form.ownerId || "none"} onValueChange={v => set("ownerId", v === "none" ? "" : v)}>
                       <SelectTrigger className={INPUT_CLS}>
@@ -1197,16 +1197,29 @@ export default function AccountDetailPage() {
                         <p className="text-xs text-stone-400 mb-0.5">Modified On</p>
                         <p className="text-sm text-stone-700">{account?.modifiedOn ? new Date(account.modifiedOn).toLocaleString() : "—"}</p>
                       </div>
+                      <div className="col-span-2">
+                        <p className="text-xs text-stone-400 mb-0.5">Account ID</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-mono truncate text-stone-500">{account.id}</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(account.id).then(() => {
+                                setCopiedId(true);
+                                setTimeout(() => setCopiedId(false), 2000);
+                              });
+                            }}
+                            className="shrink-0 text-stone-400 hover:text-[#F5821F] transition-colors"
+                            title="Copy ID"
+                          >
+                            {copiedId ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
                     </>
                   )}
                 </Section>
               </div>
-            <SystemInfoSection
-              id={account?.id}
-              recordIdLabel="Account ID"
-              createdAt={account?.createdAt ?? account?.created_at ?? null}
-              updatedAt={account?.updatedAt ?? account?.updated_at ?? null}
-            />
             </>
           )}
 
