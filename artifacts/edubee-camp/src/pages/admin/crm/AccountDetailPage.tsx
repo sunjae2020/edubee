@@ -121,18 +121,34 @@ function getTabs(accountType?: string | null) {
   switch (accountType) {
     case "Student":
     case "Client":
+    case "Private":
       return [...base, leads, contracts, ledger];
+
     case "Company":
+    case "Branch":
+    case "Organisation":
       return [...base, leads, contracts, serviceProfiles, ledger];
+
     case "Supplier":
       return [...base, serviceProfiles, products, ledger, portal];
+
     case "School":
+    case "Institute":
       return [...base, leads, contracts, serviceProfiles, products, ledger, portal];
+
     case "Sub_Agency":
     case "Super_Agency":
+    case "Agency":
+    case "Agent":
       return [...base, leads, contracts, commission, ledger, portal];
+
     case "Provider":
+    case "Accommodation":
       return [...base, serviceProfiles, leads, contracts, ledger, portal];
+
+    case "Staff":
+      return [...base, leads, contracts, ledger];
+
     default:
       return [...base, leads, contracts, ledger, portal];
   }
