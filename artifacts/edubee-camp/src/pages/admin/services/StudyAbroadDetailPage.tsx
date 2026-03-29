@@ -792,6 +792,17 @@ export default function StudyAbroadDetailPage() {
     onError: () => toast({ title: "Save failed", variant: "destructive" }),
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: () =>
+      axios.patch(`${BASE}/api/services/study-abroad/${id}/toggle-active`).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["study-abroad-detail", id] });
+      qc.invalidateQueries({ queryKey: ["study-abroad"] });
+      toast({ title: data.isActive ? "Record activated" : "Record deactivated" });
+    },
+    onError: () => toast({ title: "Failed to toggle status", variant: "destructive" }),
+  });
+
   const { data: interviewData, isLoading: interviewLoading } = useQuery({
     queryKey: ["sa-interviews", id],
     queryFn: () => axios.get(`${BASE}/api/interview-schedules?studyAbroadId=${id}`).then(r => r.data),
@@ -960,7 +971,17 @@ export default function StudyAbroadDetailPage() {
               onStageChange={stage => patchMutation.mutate({ applicationStage: stage })}
               onSave={patch => patchMutation.mutate(patch)}
             />
-            <SystemInfoSection owner={record.clientId ?? null} createdAt={record.createdAt} updatedAt={record.updatedAt} />
+            <SystemInfoSection
+              id={record.id}
+              recordIdLabel="Study Abroad ID"
+              createdAt={record.createdAt}
+              updatedAt={record.updatedAt}
+              isActive={record.isActive ?? true}
+              onToggleActive={() => toggleActiveMutation.mutate()}
+              isToggling={toggleActiveMutation.isPending}
+              ownerName={record.staffFirstName ?? null}
+              ownerLabel="Assigned Staff"
+            />
           </>
         )}
         {tab === "schools" && (

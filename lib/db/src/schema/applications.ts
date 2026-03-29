@@ -40,6 +40,7 @@ export const leads = pgTable("leads", {
   accountId:         uuid("account_id"),
   createdAt:         timestamp("created_at").defaultNow(),
   updatedAt:         timestamp("updated_at").defaultNow(),
+  isActive:          boolean("is_active").notNull().default(true),
 });
 
 export const applications = pgTable("applications", {
@@ -113,6 +114,7 @@ export const applications = pgTable("applications", {
   lastName:           varchar("last_name",     { length: 100 }),
   englishName:        varchar("english_name",  { length: 100 }),
   originalName:       varchar("original_name", { length: 200 }),
+  isActive:           boolean("is_active").notNull().default(true),
 });
 
 export const applicationParticipants = pgTable("application_participants", {

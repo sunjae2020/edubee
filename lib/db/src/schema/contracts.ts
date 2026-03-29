@@ -50,6 +50,7 @@ export const contracts = pgTable("contracts", {
   accountId: uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  isActive:  boolean("is_active").notNull().default(true),
 });
 
 export const contractProducts = pgTable("contract_products", {

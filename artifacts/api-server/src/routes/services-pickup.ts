@@ -28,6 +28,7 @@ const SELECT_COLS = {
   apCost:         pickupMgt.apCost,
   flightNo:       pickupMgt.flightNo,
   timezone:       pickupMgt.timezone,
+  isActive:       pickupMgt.isActive,
   createdAt:      pickupMgt.createdAt,
   updatedAt:      pickupMgt.updatedAt,
   // joined
@@ -272,6 +273,29 @@ router.patch(
       return res.json(updated.rows?.[0] ?? updated);
     } catch (err) {
       console.error("[PATCH /api/services/pickup/:id/assign]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+router.patch(
+  "/services/pickup/:id/toggle-active",
+  authenticate,
+  async (req, res) => {
+    try {
+      const [existing] = await db
+        .select({ id: pickupMgt.id, isActive: pickupMgt.isActive })
+        .from(pickupMgt)
+        .where(eq(pickupMgt.id, req.params.id));
+      if (!existing) return res.status(404).json({ error: "Not found" });
+      const [updated] = await db
+        .update(pickupMgt)
+        .set({ isActive: !existing.isActive, updatedAt: new Date() })
+        .where(eq(pickupMgt.id, req.params.id))
+        .returning();
+      return res.json(updated);
+    } catch (err) {
+      console.error("[PATCH /api/services/pickup/:id/toggle-active]", err);
       return res.status(500).json({ error: "Internal server error" });
     }
   }

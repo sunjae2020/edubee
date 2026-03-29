@@ -31,6 +31,7 @@ const SELECT_COLS = {
   welfareInterventions:           guardianMgt.welfareInterventions,
   status:                         guardianMgt.status,
   notes:                          guardianMgt.notes,
+  isActive:                       guardianMgt.isActive,
   createdAt:                      guardianMgt.createdAt,
   updatedAt:                      guardianMgt.updatedAt,
   serviceFee:                     guardianMgt.serviceFee,
@@ -375,6 +376,30 @@ router.post(
       return res.status(201).json(record);
     } catch (err) {
       console.error("[POST /api/services/guardian]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+router.patch(
+  "/services/guardian/:id/toggle-active",
+  authenticate,
+  requireRole(...STAFF_ROLES),
+  async (req, res) => {
+    try {
+      const [existing] = await db
+        .select({ id: guardianMgt.id, isActive: guardianMgt.isActive })
+        .from(guardianMgt)
+        .where(eq(guardianMgt.id, req.params.id));
+      if (!existing) return res.status(404).json({ error: "Not found" });
+      const [updated] = await db
+        .update(guardianMgt)
+        .set({ isActive: !existing.isActive, updatedAt: new Date() })
+        .where(eq(guardianMgt.id, req.params.id))
+        .returning();
+      return res.json(updated);
+    } catch (err) {
+      console.error("[PATCH /api/services/guardian/:id/toggle-active]", err);
       return res.status(500).json({ error: "Internal server error" });
     }
   }

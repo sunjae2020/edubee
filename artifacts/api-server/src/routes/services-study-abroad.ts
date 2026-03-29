@@ -28,6 +28,7 @@ const SELECT_COLS = {
   status:              studyAbroadMgt.status,
   notes:               studyAbroadMgt.notes,
   programContext:      studyAbroadMgt.programContext,
+  isActive:            studyAbroadMgt.isActive,
   createdAt:           studyAbroadMgt.createdAt,
   updatedAt:           studyAbroadMgt.updatedAt,
   contractNumber:      contracts.contractNumber,
@@ -261,6 +262,30 @@ router.post(
       return res.status(201).json(record);
     } catch (err) {
       console.error("[POST /api/services/study-abroad]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+router.patch(
+  "/services/study-abroad/:id/toggle-active",
+  authenticate,
+  requireRole(...STAFF_ROLES),
+  async (req, res) => {
+    try {
+      const [existing] = await db
+        .select({ id: studyAbroadMgt.id, isActive: studyAbroadMgt.isActive })
+        .from(studyAbroadMgt)
+        .where(eq(studyAbroadMgt.id, req.params.id));
+      if (!existing) return res.status(404).json({ error: "Not found" });
+      const [updated] = await db
+        .update(studyAbroadMgt)
+        .set({ isActive: !existing.isActive, updatedAt: new Date() })
+        .where(eq(studyAbroadMgt.id, req.params.id))
+        .returning();
+      return res.json(updated);
+    } catch (err) {
+      console.error("[PATCH /api/services/study-abroad/:id/toggle-active]", err);
       return res.status(500).json({ error: "Internal server error" });
     }
   }

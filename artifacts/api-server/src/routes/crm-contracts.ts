@@ -412,6 +412,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     return res.json({
       id: c.id,
       contractRefDisplay:      c.contract_number,
+      contractNumber:          c.contract_number,
       contractStatus:          c.status,
       fromDate:                c.start_date,
       toDate:                  c.end_date,
@@ -422,6 +423,11 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       serviceModulesActivated: c.service_modules_activated ?? [],
       primaryServiceModule:    c.primary_service_module ?? null,
       notes:                   c.notes,
+      isActive:                c.is_active ?? true,
+      createdAt:               c.created_at ?? null,
+      updatedAt:               c.updated_at ?? null,
+      ownerId:                 c.owner_id ?? null,
+      ownerName:               c.owner_name ?? null,
       account: {
         id:           c.account_id_val ?? c.account_id,
         name:         c.account_name ?? c.student_name,

@@ -186,6 +186,17 @@ export default function PickupMgtDetail() {
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: () =>
+      axios.patch(`${BASE}/api/services/pickup/${id}/toggle-active`).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["pickup-detail", id] });
+      qc.invalidateQueries({ queryKey: ["pickup"] });
+      toast({ title: data.isActive ? "Record activated" : "Record deactivated" });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to toggle status" }),
+  });
+
   const { isEditing, isDirty, isSaving, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
     initialData: rec ?? {},
     onSave: async (d) => { await updateRec.mutateAsync(d); },
@@ -392,7 +403,15 @@ export default function PickupMgtDetail() {
             )}
           </DetailSection>
           <div className="lg:col-span-2">
-            <SystemInfoSection owner={rec.clientId ?? null} createdAt={rec.createdAt} updatedAt={rec.updatedAt} />
+            <SystemInfoSection
+              id={rec.id}
+              recordIdLabel="Pickup ID"
+              createdAt={rec.createdAt}
+              updatedAt={rec.updatedAt}
+              isActive={rec.isActive ?? true}
+              onToggleActive={() => toggleActiveMutation.mutate()}
+              isToggling={toggleActiveMutation.isPending}
+            />
           </div>
         </div>
       )}

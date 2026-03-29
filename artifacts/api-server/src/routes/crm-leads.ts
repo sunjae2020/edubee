@@ -353,4 +353,23 @@ router.post("/crm/leads/:id/convert-to-quote", authenticate, requireRole(...ADMI
   }
 });
 
+router.patch("/crm/leads/:id/toggle-active", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const [existing] = await db
+      .select({ id: leads.id, isActive: leads.isActive })
+      .from(leads)
+      .where(eq(leads.id, req.params.id));
+    if (!existing) return res.status(404).json({ error: "Lead not found" });
+    const [updated] = await db
+      .update(leads)
+      .set({ isActive: !existing.isActive, updatedAt: new Date() })
+      .where(eq(leads.id, req.params.id))
+      .returning();
+    return res.json(updated);
+  } catch (err) {
+    console.error("[PATCH /api/crm/leads/:id/toggle-active]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

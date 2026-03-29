@@ -102,6 +102,9 @@ interface Lead {
   assignedStaffName?: string | null;
   activities?: ActivityRecord[];
   campApplication?: CampApplicationSnippet | null;
+  isActive?: boolean | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 interface StaffOption { id: string; name: string; }
@@ -464,6 +467,17 @@ export default function LeadDetailPage() {
     });
     setIsDirty(false);
   };
+
+  // ── toggle active mutation ─────────────────────────────────────────────────
+  const toggleActiveMutation = useMutation({
+    mutationFn: () =>
+      axios.patch(`${BASE}/api/crm/leads/${id}/toggle-active`).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["crm-lead", id] });
+      toast({ title: data.isActive ? "Lead activated" : "Lead deactivated" });
+    },
+    onError: () => toast({ title: "Failed to toggle status", variant: "destructive" }),
+  });
 
   // ── save mutation ─────────────────────────────────────────────────────────
   const saveMutation = useMutation({
@@ -868,7 +882,17 @@ export default function LeadDetailPage() {
           )}
 
           {/* System Info */}
-          <SystemInfoSection id={lead.id} />
+          <SystemInfoSection
+            id={lead.id}
+            recordIdLabel="Lead ID"
+            createdAt={lead.createdAt ?? null}
+            updatedAt={lead.updatedAt ?? null}
+            isActive={lead.isActive ?? true}
+            onToggleActive={() => toggleActiveMutation.mutate()}
+            isToggling={toggleActiveMutation.isPending}
+            ownerName={lead.assignedStaffName ?? null}
+            ownerLabel="Assigned Staff"
+          />
         </div>
       )}
 

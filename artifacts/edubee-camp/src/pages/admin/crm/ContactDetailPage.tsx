@@ -733,7 +733,12 @@ export default function ContactDetailPage() {
         onRefresh={() => refetch()}
       />
 
-      <SystemInfoSection owner={contact.createdBy ?? null} createdAt={contact.createdAt} updatedAt={contact.updatedAt} />
+      <SystemInfoSection
+        id={contact.id}
+        recordIdLabel="Contact ID"
+        createdAt={contact.createdAt}
+        updatedAt={contact.updatedAt}
+      />
     </div>
   );
 }

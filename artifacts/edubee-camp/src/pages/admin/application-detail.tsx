@@ -174,6 +174,16 @@ export default function ApplicationDetail() {
   const canEdit = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "") && !isContracted;
 
   // ── Mutations ──────────────────────────────────────────────────────────────
+  const toggleActiveMutation = useMutation({
+    mutationFn: () =>
+      axios.patch(`${BASE}/api/applications/${id}/toggle-active`).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["application-detail-page", id] });
+      toast({ title: data.isActive ? "Application activated" : "Application deactivated" });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to toggle status" }),
+  });
+
   const updateApp = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
       axios.patch(`${BASE}/api/applications/${id}`, payload).then(r => r.data),
@@ -477,7 +487,15 @@ export default function ApplicationDetail() {
             )}
 
             <div className="lg:col-span-2">
-              <SystemInfoSection owner={app.assignedStaffId ?? null} createdAt={app.createdAt} updatedAt={app.updatedAt} />
+              <SystemInfoSection
+                id={app.id}
+                recordIdLabel="Application ID"
+                createdAt={app.createdAt}
+                updatedAt={app.updatedAt}
+                isActive={app.isActive ?? true}
+                onToggleActive={() => toggleActiveMutation.mutate()}
+                isToggling={toggleActiveMutation.isPending}
+              />
             </div>
           </div>
         )}

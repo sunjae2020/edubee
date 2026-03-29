@@ -45,6 +45,11 @@ interface AccomDetail {
   relocationReason?: string | null;
   status?: string | null;
   notes?: string | null;
+  isActive?: boolean | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  clientId?: string | null;
+  assignedStaffId?: string | null;
   staffFirstName?: string | null;
   staffLastName?: string | null;
   contractStatus?: string | null;
@@ -556,6 +561,17 @@ export default function AccommodationDetailPage() {
     onError: () => toast({ title: "Save failed", variant: "destructive" }),
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: () =>
+      axios.patch(`${BASE}/api/services/accommodation/${id}/toggle-active`).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["accommodation-detail", id] });
+      qc.invalidateQueries({ queryKey: ["accommodation"] });
+      toast({ title: data.isActive ? "Record activated" : "Record deactivated" });
+    },
+    onError: () => toast({ title: "Failed to toggle status", variant: "destructive" }),
+  });
+
   if (isLoading) return <div className="flex items-center justify-center h-64 text-stone-400 text-sm">Loading…</div>;
   if (!record)  return <div className="p-6 text-stone-500">Record not found.</div>;
 
@@ -693,7 +709,17 @@ export default function AccommodationDetailPage() {
           />
         </div>
       )}
-      <SystemInfoSection owner={record.clientId ?? null} createdAt={record.createdAt} updatedAt={record.updatedAt} />
+      <SystemInfoSection
+        id={record.id}
+        recordIdLabel="Accommodation ID"
+        createdAt={record.createdAt}
+        updatedAt={record.updatedAt}
+        isActive={record.isActive ?? true}
+        onToggleActive={() => toggleActiveMutation.mutate()}
+        isToggling={toggleActiveMutation.isPending}
+        ownerName={record.staffFirstName ?? null}
+        ownerLabel="Assigned Staff"
+      />
     </div>
   );
 }

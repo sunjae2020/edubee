@@ -494,6 +494,17 @@ export default function VisaServiceDetailPage() {
     onError: () => toast({ title: "Save failed", variant: "destructive" }),
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: () =>
+      axios.patch(`${BASE}/api/services/visa/${id}/toggle-active`).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["visa-service-detail", id] });
+      qc.invalidateQueries({ queryKey: ["visa-services"] });
+      toast({ title: data.isActive ? "Record activated" : "Record deactivated" });
+    },
+    onError: () => toast({ title: "Failed to toggle status", variant: "destructive" }),
+  });
+
   if (isLoading) return <div className="flex items-center justify-center h-64 text-stone-400 text-sm">Loading…</div>;
   if (!record)   return <div className="p-6 text-stone-500">Record not found.</div>;
 
@@ -560,7 +571,17 @@ export default function VisaServiceDetailPage() {
       {tab === "overview"  && (
         <>
           <OverviewTab record={record} onSave={p => patchMutation.mutate(p)} />
-          <SystemInfoSection owner={record.clientId ?? null} createdAt={record.createdAt} updatedAt={record.updatedAt} />
+          <SystemInfoSection
+            id={record.id}
+            recordIdLabel="Visa Service ID"
+            createdAt={record.createdAt}
+            updatedAt={record.updatedAt}
+            isActive={record.isActive ?? true}
+            onToggleActive={() => toggleActiveMutation.mutate()}
+            isToggling={toggleActiveMutation.isPending}
+            ownerName={record.staffFullName ?? null}
+            ownerLabel="Assigned Staff"
+          />
         </>
       )}
       {tab === "timeline"  && <TimelineTab record={record} onEdit={() => setTab("overview")} />}

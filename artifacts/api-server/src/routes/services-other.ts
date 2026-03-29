@@ -21,6 +21,7 @@ const SELECT_COLS = {
   serviceFee:      otherServicesMgt.serviceFee,
   apCost:          otherServicesMgt.apCost,
   notes:           otherServicesMgt.notes,
+  isActive:        otherServicesMgt.isActive,
   createdAt:       otherServicesMgt.createdAt,
   updatedAt:       otherServicesMgt.updatedAt,
   contractNumber:  contracts.contractNumber,
@@ -208,6 +209,30 @@ router.patch(
       return res.json(updated);
     } catch (err) {
       console.error("[PATCH /api/services/other/:id]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+router.patch(
+  "/services/other/:id/toggle-active",
+  authenticate,
+  requireRole(...STAFF_ROLES),
+  async (req, res) => {
+    try {
+      const [existing] = await db
+        .select({ id: otherServicesMgt.id, isActive: otherServicesMgt.isActive })
+        .from(otherServicesMgt)
+        .where(eq(otherServicesMgt.id, req.params.id));
+      if (!existing) return res.status(404).json({ error: "Not found" });
+      const [updated] = await db
+        .update(otherServicesMgt)
+        .set({ isActive: !existing.isActive, updatedAt: new Date() })
+        .where(eq(otherServicesMgt.id, req.params.id))
+        .returning();
+      return res.json(updated);
+    } catch (err) {
+      console.error("[PATCH /api/services/other/:id/toggle-active]", err);
       return res.status(500).json({ error: "Internal server error" });
     }
   }

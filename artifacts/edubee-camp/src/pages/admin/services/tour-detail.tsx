@@ -164,6 +164,16 @@ export default function TourMgtDetail() {
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: () =>
+      axios.patch(`${BASE}/api/services/tour/${id}/toggle-active`).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["tour-detail", id] });
+      toast({ title: data.isActive ? "Record activated" : "Record deactivated" });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to toggle status" }),
+  });
+
   const { isEditing, isDirty, isSaving, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
     initialData: rec ?? {},
     onSave: async (data) => { await updateRec.mutateAsync(data); },
@@ -271,7 +281,15 @@ export default function TourMgtDetail() {
               )}
             </DetailSection>
             <div className="lg:col-span-2">
-              <SystemInfoSection owner={rec.clientId ?? null} createdAt={rec.createdAt} updatedAt={rec.updatedAt} />
+              <SystemInfoSection
+                id={rec.id}
+                recordIdLabel="Tour ID"
+                createdAt={rec.createdAt}
+                updatedAt={rec.updatedAt}
+                isActive={rec.isActive ?? true}
+                onToggleActive={() => toggleActiveMutation.mutate()}
+                isToggling={toggleActiveMutation.isPending}
+              />
             </div>
           </div>
         </TabsContent>

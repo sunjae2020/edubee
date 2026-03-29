@@ -144,4 +144,5 @@ export const campTourMgt = pgTable("camp_tour_mgt", {
   coaApCode:             varchar("coa_ap_code", { length: 10 }),
   createdAt:             timestamp("created_at").notNull().defaultNow(),
   updatedAt:             timestamp("updated_at").notNull().defaultNow(),
+  isActive:              boolean("is_active").notNull().default(true),
 });

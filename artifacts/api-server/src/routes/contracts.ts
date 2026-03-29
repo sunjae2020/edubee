@@ -229,4 +229,23 @@ router.get("/contracts/:id/accounting", authenticate, async (req, res) => {
   }
 });
 
+router.patch("/contracts/:id/toggle-active", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const [existing] = await db
+      .select({ id: contracts.id, isActive: contracts.isActive })
+      .from(contracts)
+      .where(eq(contracts.id, req.params.id));
+    if (!existing) return res.status(404).json({ error: "Contract not found" });
+    const [updated] = await db
+      .update(contracts)
+      .set({ isActive: !existing.isActive, updatedAt: new Date() })
+      .where(eq(contracts.id, req.params.id))
+      .returning();
+    return res.json(updated);
+  } catch (err) {
+    console.error("[PATCH /api/contracts/:id/toggle-active]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 export default router;

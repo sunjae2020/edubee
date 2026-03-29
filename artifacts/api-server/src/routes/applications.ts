@@ -444,6 +444,21 @@ router.patch("/applications/:id", authenticate, async (req, res) => {
   }
 });
 
+router.patch("/applications/:id/toggle-active", authenticate, requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
+  try {
+    const [existing] = await db.select({ id: applications.id, isActive: applications.isActive })
+      .from(applications).where(eq(applications.id, req.params.id)).limit(1);
+    if (!existing) return res.status(404).json({ error: "Not Found" });
+    const [updated] = await db.update(applications)
+      .set({ isActive: !existing.isActive, updatedAt: new Date() })
+      .where(eq(applications.id, req.params.id)).returning({ id: applications.id, isActive: applications.isActive });
+    return res.json(updated);
+  } catch (err) {
+    console.error("[PATCH /api/applications/:id/toggle-active]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.delete("/applications/:id", authenticate, requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
   try {
     const [application] = await db.update(applications)

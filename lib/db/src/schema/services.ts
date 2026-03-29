@@ -43,6 +43,7 @@ export const accommodationMgt = pgTable("accommodation_mgt", {
   notes:             text("notes"),
   createdAt:         timestamp("created_at").notNull().defaultNow(),
   updatedAt:         timestamp("updated_at").notNull().defaultNow(),
+  isActive:          boolean("is_active").notNull().default(true),
 });
 
 // ── Internship Management ──────────────────────────────────────────────────
@@ -72,6 +73,7 @@ export const internshipMgt = pgTable("internship_mgt", {
   notes:                 text("notes"),
   createdAt:             timestamp("created_at").notNull().defaultNow(),
   updatedAt:             timestamp("updated_at").notNull().defaultNow(),
+  isActive:              boolean("is_active").notNull().default(true),
 });
 
 // ── Guardian Management ────────────────────────────────────────────────────
@@ -99,6 +101,7 @@ export const guardianMgt = pgTable("guardian_mgt", {
   notes:                          text("notes"),
   createdAt:                      timestamp("created_at").notNull().defaultNow(),
   updatedAt:                      timestamp("updated_at").notNull().defaultNow(),
+  isActive:                       boolean("is_active").notNull().default(true),
 });
 
 // ── Study Abroad Management ────────────────────────────────────────────────
@@ -152,6 +155,7 @@ export const studyAbroadMgt = pgTable("study_abroad_mgt", {
   studentPassportExpiry:   date("student_passport_expiry"),
   studentGrade:            varchar("student_grade", { length: 100 }),
   studentSchoolName:       varchar("student_school_name", { length: 255 }),
+  isActive:                boolean("is_active").notNull().default(true),
 });
 
 // ── Phase 1 Type Definitions ──────────────────────────────────────────────
@@ -180,6 +184,7 @@ export const visaServicesMgt = pgTable("visa_services_mgt", {
   notes:           text("notes"),
   createdAt:       timestamp("created_at").notNull().defaultNow(),
   updatedAt:       timestamp("updated_at").notNull().defaultNow(),
+  isActive:        boolean("is_active").notNull().default(true),
 });
 
 // ── Other Service Management ────────────────────────────────────────────────
@@ -198,6 +203,7 @@ export const otherServicesMgt = pgTable("other_services_mgt", {
   notes:           text("notes"),
   createdAt:       timestamp("created_at").notNull().defaultNow(),
   updatedAt:       timestamp("updated_at").notNull().defaultNow(),
+  isActive:        boolean("is_active").notNull().default(true),
 });
 
 // ── Pickup Management ──────────────────────────────────────────────────────
@@ -223,6 +229,7 @@ export const pickupMgt = pgTable("pickup_mgt", {
   apCost:        decimal("ap_cost",     { precision: 12, scale: 2 }),
   flightNo:      varchar("flight_no",   { length: 50 }),
   timezone:      varchar("timezone",    { length: 100 }),
+  isActive:      boolean("is_active").notNull().default(true),
 });
 
 // ── Tour Management ────────────────────────────────────────────────────────
@@ -246,6 +253,7 @@ export const tourMgt = pgTable("tour_mgt", {
   productId:     uuid("product_id").references(() => products.id),
   serviceFee:    decimal("service_fee", { precision: 12, scale: 2 }),
   apCost:        decimal("ap_cost",     { precision: 12, scale: 2 }),
+  isActive:      boolean("is_active").notNull().default(true),
 });
 
 // ── Settlement Management ──────────────────────────────────────────────────
@@ -280,6 +288,7 @@ export const settlementMgt = pgTable("settlement_mgt", {
   overallStatus:         varchar("overall_status", { length: 50 }).default("pending"),
   checklist:             jsonb("checklist"),
   checklistTemplateId:   uuid("checklist_template_id").references(() => settlementChecklistTemplates.id, { onDelete: "set null" }),
+  isActive:              boolean("is_active").notNull().default(true),
 });
 
 // ── Settlement Checklist Templates ─────────────────────────────────────────

@@ -30,6 +30,7 @@ const SELECT_COLS = {
   settlementId:      accommodationMgt.settlementId,
   status:            accommodationMgt.status,
   notes:             accommodationMgt.notes,
+  isActive:          accommodationMgt.isActive,
   createdAt:         accommodationMgt.createdAt,
   updatedAt:         accommodationMgt.updatedAt,
   contractNumber:       contracts.contractNumber,
@@ -253,6 +254,30 @@ router.post(
       return res.json(updated);
     } catch (err) {
       console.error("[POST /api/services/accommodation/:id/welfare-check]", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+router.patch(
+  "/services/accommodation/:id/toggle-active",
+  authenticate,
+  requireRole(...STAFF_ROLES),
+  async (req, res) => {
+    try {
+      const [existing] = await db
+        .select({ id: accommodationMgt.id, isActive: accommodationMgt.isActive })
+        .from(accommodationMgt)
+        .where(eq(accommodationMgt.id, req.params.id));
+      if (!existing) return res.status(404).json({ error: "Not found" });
+      const [updated] = await db
+        .update(accommodationMgt)
+        .set({ isActive: !existing.isActive, updatedAt: new Date() })
+        .where(eq(accommodationMgt.id, req.params.id))
+        .returning();
+      return res.json(updated);
+    } catch (err) {
+      console.error("[PATCH /api/services/accommodation/:id/toggle-active]", err);
       return res.status(500).json({ error: "Internal server error" });
     }
   }

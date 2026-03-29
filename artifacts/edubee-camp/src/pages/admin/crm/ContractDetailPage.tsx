@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import PaymentStatementModal from "../../../components/finance/PaymentStatementModal";
 import { ClientNameDisplay } from "@/components/common/ClientNameDisplay";
 import { nameFromAccount } from "@/lib/nameUtils";
+import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -3061,6 +3062,8 @@ export default function ContractDetailPage() {
   const openAddService = (defaultType?: string) =>
     setAddingService(defaultType ?? "");
 
+  const { toast } = useToast();
+
   const { data: contract, isLoading } = useQuery({
     queryKey: ["crm-contract", id],
     queryFn: () => axios.get(`${BASE}/api/crm/contracts/${id}`).then(r => r.data),
@@ -3090,6 +3093,16 @@ export default function ContractDetailPage() {
     mutationFn: (module: string) =>
       axios.patch(`${BASE}/api/crm/contracts/${id}`, { primaryServiceModule: module }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["crm-contract", id] }),
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: () =>
+      axios.patch(`${BASE}/api/contracts/${id}/toggle-active`).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["crm-contract", id] });
+      toast({ title: data.isActive ? "Contract activated" : "Contract deactivated" });
+    },
+    onError: () => toast({ title: "Failed to toggle status", variant: "destructive" }),
   });
 
   const handleSetPrimary = (module: string) => {
@@ -3448,7 +3461,17 @@ export default function ContractDetailPage() {
                 )}
               </DetailSection>
             )}
-            <SystemInfoSection owner={contract.ownerId ?? null} createdAt={contract.createdAt} updatedAt={contract.updatedAt} />
+            <SystemInfoSection
+              id={contract.id}
+              recordIdLabel="Contract ID"
+              createdAt={contract.createdAt ?? null}
+              updatedAt={contract.updatedAt ?? null}
+              isActive={contract.isActive ?? true}
+              onToggleActive={() => toggleActiveMutation.mutate()}
+              isToggling={toggleActiveMutation.isPending}
+              ownerName={contract.ownerName ?? null}
+              ownerLabel="Account Owner"
+            />
           </>
         )}
         {activeTab === "services"     && (

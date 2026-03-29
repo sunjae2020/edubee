@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { AccountServiceProfilesTab } from "./AccountServiceProfilesTab";
 import { PortalAccessPanel } from "@/components/crm/PortalAccessPanel";
+import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1188,6 +1189,12 @@ export default function AccountDetailPage() {
                   )}
                 </Section>
               </div>
+            <SystemInfoSection
+              id={account?.id}
+              recordIdLabel="Account ID"
+              createdAt={account?.createdAt ?? account?.created_at ?? null}
+              updatedAt={account?.updatedAt ?? account?.updated_at ?? null}
+            />
             </>
           )}
 
