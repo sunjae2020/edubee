@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { fetchLogoSrc, logoImgHtml } from "@/lib/branding";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -249,7 +250,9 @@ function EmailDialog({ invoice, open, onClose, onSuccess }: {
 }
 
 /* ── Print helper ───────────────────────────────────────── */
-function printInvoice(inv: Invoice) {
+async function printInvoice(inv: Invoice) {
+  const logoSrc = await fetchLogoSrc();
+  const brandHtml = logoSrc ? logoImgHtml(logoSrc) : `<div class="brand">Edubee Camp</div>`;
   const sym = CURRENCY_SYMBOLS[inv.originalCurrency ?? inv.currency ?? "AUD"] ?? (inv.originalCurrency ?? inv.currency ?? "AUD");
   const amount = inv.originalAmount ?? inv.totalAmount;
   const amountStr = amount ? `${sym}${Number(amount).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—";
@@ -257,7 +260,7 @@ function printInvoice(inv: Invoice) {
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Invoice ${inv.invoiceNumber ?? ""}</title>
 <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#fff;color:#1a1917;padding:48px;font-size:14px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px}.brand{font-size:28px;font-weight:700;color:#F5821F}.brand-sub{font-size:13px;color:#64748b;margin-top:2px}.inv-title{text-align:right}.inv-title h2{font-size:22px;font-weight:700}.inv-title p{color:#64748b;font-size:13px;margin-top:4px}.badge{display:inline-block;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:600;background:#FEF0E3;color:#F5821F;text-transform:capitalize;margin-top:8px}.divider{border:none;border-top:1px solid #e2e8f0;margin:24px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0}.section h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:8px}.section p{font-size:14px;color:#1a1917;margin-bottom:4px}.section .label{color:#64748b;font-size:12px}table{width:100%;border-collapse:collapse;margin-top:24px}thead tr{background:#f8fafc}thead th{padding:10px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#64748b;border-bottom:1px solid #e2e8f0}tbody td{padding:12px;border-bottom:1px solid #f1f5f9}.total-row td{font-weight:700;font-size:16px;color:#F5821F;border-top:2px solid #e2e8f0;padding-top:16px}.notes{margin-top:32px;padding:16px;background:#f8fafc;border-radius:8px}.notes h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:6px}.footer{margin-top:48px;text-align:center;font-size:12px;color:#94a3b8}@media print{body{padding:24px}}</style></head>
 <body>
-<div class="header"><div><div class="brand">Edubee Camp</div><div class="brand-sub">Educational Services</div></div>
+<div class="header"><div>${brandHtml}<div class="brand-sub">Educational Services</div></div>
 <div class="inv-title"><h2>INVOICE</h2><p>${inv.invoiceNumber ?? "—"}</p><span class="badge">${(inv.status ?? "draft").replace(/_/g, " ")}</span></div></div>
 <hr class="divider"/>
 <div class="grid"><div class="section"><h3>Bill To</h3><p>${inv.studentName ?? "—"}</p>${inv.studentEmail ? `<p class="label">${inv.studentEmail}</p>` : ""}</div>

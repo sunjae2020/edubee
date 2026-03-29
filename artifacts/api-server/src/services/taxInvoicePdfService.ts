@@ -1,5 +1,6 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, renderToBuffer, Image } from "@react-pdf/renderer";
+import { getLogoDataUri } from "./brandingService.js";
 
 // ── Styles ────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
@@ -78,7 +79,7 @@ function el(type: any, props: any, ...children: any[]) {
   return React.createElement(type, props, ...children);
 }
 
-function TaxInvoiceDocument({ d }: { d: TaxInvoicePdfData }) {
+function TaxInvoiceDocument({ d, logoDataUri }: { d: TaxInvoicePdfData; logoDataUri?: string }) {
   const isNet   = d.invoiceType === "net";
   const hasGst  = !d.isGstFree && parseFloat(d.gstAmount) > 0;
   const dueDate = d.dueDate
@@ -91,7 +92,9 @@ function TaxInvoiceDocument({ d }: { d: TaxInvoicePdfData }) {
       // ── Header ──────────────────────────────────────────────────────────
       el(View, { style: S.headerRow },
         el(View, { style: S.logoBox },
-          el(Text, { style: S.logoText }, d.agencyName),
+          logoDataUri
+            ? el(Image, { src: logoDataUri, style: { height: 40, maxWidth: 160 } } as any)
+            : el(Text, { style: S.logoText }, d.agencyName),
           el(Text, { style: S.logoSub  }, "Educational Camp Marketplace"),
         ),
         el(View, null,
@@ -211,7 +214,8 @@ function TaxInvoiceDocument({ d }: { d: TaxInvoicePdfData }) {
 }
 
 export async function renderTaxInvoicePdf(data: TaxInvoicePdfData): Promise<Buffer> {
-  const element = React.createElement(TaxInvoiceDocument, { d: data });
+  const logoDataUri = await getLogoDataUri();
+  const element = React.createElement(TaxInvoiceDocument, { d: data, logoDataUri });
   const buffer  = await renderToBuffer(element as any);
   return Buffer.from(buffer);
 }

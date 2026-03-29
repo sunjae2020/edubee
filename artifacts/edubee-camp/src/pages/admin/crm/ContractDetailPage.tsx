@@ -16,6 +16,7 @@ import PaymentStatementModal from "../../../components/finance/PaymentStatementM
 import { ClientNameDisplay } from "@/components/common/ClientNameDisplay";
 import { nameFromAccount } from "@/lib/nameUtils";
 import { useToast } from "@/hooks/use-toast";
+import { fetchLogoSrc, logoImgHtml } from "@/lib/branding";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -265,7 +266,9 @@ function StatementHistorySection({ contractId, onGenerate }: { contractId: strin
 }
 
 // ── Per-row invoice printer ────────────────────────────────────────────────
-function printInstalment(cp: any, contract: any, idx: number) {
+async function printInstalment(cp: any, contract: any, idx: number) {
+  const logoSrc = await fetchLogoSrc();
+  const brandHtml = logoSrc ? logoImgHtml(logoSrc) : `<div class="brand">Edubee Camp</div>`;
   const clientName = contract.account?.name ?? contract.studentName ?? "Client";
   const clientEmail = contract.clientEmail ?? contract.account?.email ?? "";
   const refNum = contract.contractRefDisplay ?? "";
@@ -305,7 +308,7 @@ function printInstalment(cp: any, contract: any, idx: number) {
   </head><body>
     <div class="header">
       <div>
-        <div class="brand">Edubee Camp</div>
+        ${brandHtml}
         <div class="brand-sub">Payment Invoice</div>
       </div>
       <div>

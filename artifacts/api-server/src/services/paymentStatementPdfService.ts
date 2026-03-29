@@ -1,5 +1,6 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, renderToBuffer, Image } from "@react-pdf/renderer";
+import { getLogoDataUri } from "./brandingService.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function el(type: any, props: any, ...children: any[]) {
@@ -133,7 +134,7 @@ export interface StatementPdfData {
 }
 
 // ── PDF document ──────────────────────────────────────────────────────────
-function StatementDocument({ d }: { d: StatementPdfData }) {
+function StatementDocument({ d, logoDataUri }: { d: StatementPdfData; logoDataUri?: string }) {
   const hasContract = d.statementScope === "contract" && d.contractNumber;
 
   return el(Document, { title: `Payment Statement ${d.statementRef}` },
@@ -142,7 +143,9 @@ function StatementDocument({ d }: { d: StatementPdfData }) {
       // ── Header ─────────────────────────────────────────────────────────
       el(View, { style: S.headerRow },
         el(View, null,
-          el(Text, { style: S.logoText }, "Edubee Camp"),
+          logoDataUri
+            ? el(Image, { src: logoDataUri, style: { height: 38, maxWidth: 160 } } as any)
+            : el(Text, { style: S.logoText }, "Edubee Camp"),
           el(Text, { style: S.logoSub  }, "Educational Camp Marketplace"),
         ),
         el(View, null,
@@ -335,7 +338,8 @@ function StatementDocument({ d }: { d: StatementPdfData }) {
 
 // ── Export render function ────────────────────────────────────────────────
 export async function renderStatementPdf(data: StatementPdfData): Promise<Buffer> {
-  const element = React.createElement(StatementDocument, { d: data });
+  const logoDataUri = await getLogoDataUri();
+  const element = React.createElement(StatementDocument, { d: data, logoDataUri });
   const buffer  = await renderToBuffer(element as any);
   return Buffer.from(buffer);
 }

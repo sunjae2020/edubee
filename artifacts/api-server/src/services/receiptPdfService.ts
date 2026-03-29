@@ -1,22 +1,10 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, renderToBuffer, Image } from "@react-pdf/renderer";
 import { db } from "@workspace/db";
 import { receipts, invoices, contracts, users } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { sendMail } from "../mailer.js";
-import fs from "fs";
-import path from "path";
-
-// ── Resolve logo path ─────────────────────────────────────────────────────
-// Use process.cwd() so this works in both ESM dev (tsx) and CJS prod (esbuild)
-let LOGO_DATA_URI = "";
-try {
-  const logoPath = path.join(process.cwd(), "attached_assets/edubee_logo_800x310b_1773796715563.png");
-  if (fs.existsSync(logoPath)) {
-    const logoBuffer = fs.readFileSync(logoPath);
-    LOGO_DATA_URI = `data:image/png;base64,${logoBuffer.toString("base64")}`;
-  }
-} catch { /* logo not found — PDF will use text fallback */ }
+import { getLogoDataUri } from "./brandingService.js";
 
 // ── Styles ────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
@@ -78,7 +66,7 @@ function fmtDate(val: string | Date | null | undefined) {
 }
 
 // ── React PDF Document ─────────────────────────────────────────────────────
-function ReceiptDocument({ data }: { data: ReceiptData }) {
+function ReceiptDocument({ data, logoDataUri }: { data: ReceiptData; logoDataUri?: string }) {
   return React.createElement(
     Document,
     { title: `Receipt ${data.receiptNumber}` },
@@ -89,7 +77,9 @@ function ReceiptDocument({ data }: { data: ReceiptData }) {
       // Header
       React.createElement(View, { style: styles.headerRow },
         React.createElement(View, { style: styles.logoBox },
-          React.createElement(Text, { style: styles.logoText }, "Edubee Camp"),
+          logoDataUri
+            ? React.createElement(Image, { src: logoDataUri, style: { height: 40, maxWidth: 160 } } as any)
+            : React.createElement(Text, { style: styles.logoText }, "Edubee Camp"),
           React.createElement(Text, { style: styles.logoSub }, "Educational Camp Marketplace"),
         ),
         React.createElement(View, null,
@@ -253,8 +243,11 @@ export async function buildReceiptData(receiptId: string): Promise<ReceiptData> 
 
 // ── Generate PDF buffer ────────────────────────────────────────────────────
 export async function generateReceiptPdf(receiptId: string): Promise<Buffer> {
-  const data = await buildReceiptData(receiptId);
-  const element = React.createElement(ReceiptDocument, { data });
+  const [data, logoDataUri] = await Promise.all([
+    buildReceiptData(receiptId),
+    getLogoDataUri(),
+  ]);
+  const element = React.createElement(ReceiptDocument, { data, logoDataUri });
   const buffer = await renderToBuffer(element as any);
   return Buffer.from(buffer);
 }

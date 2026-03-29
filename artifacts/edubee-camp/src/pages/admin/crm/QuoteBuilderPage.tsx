@@ -26,6 +26,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { fetchLogoSrc, logoImgHtml } from "@/lib/branding";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PRIMARY = "#F5821F";
@@ -1309,8 +1310,10 @@ export default function QuoteBuilderPage() {
   });
 
   // ── Print / PDF ──────────────────────────────────────────────────────────────
-  const printQuote = () => {
+  const printQuote = async () => {
     if (!quote) return;
+    const logoSrc = await fetchLogoSrc();
+    const brandHtml = logoSrc ? logoImgHtml(logoSrc) : `<div class="brand">Edubee Camp</div>`;
     const total = activeLines.reduce((s, l) => s + Number(l.price ?? 0) * (l.quantity ?? 1), 0);
     const rows = activeLines.map((l) => `
       <tr>
@@ -1342,7 +1345,7 @@ export default function QuoteBuilderPage() {
       </style>
     </head><body>
       <div class="header">
-        <div><div class="brand">Edubee Camp</div><div class="ref">Quote ${quote.quoteRefNumber ?? ""}</div></div>
+        <div>${brandHtml}<div class="ref">Quote ${quote.quoteRefNumber ?? ""}</div></div>
         <div style="text-align:right;font-size:12px;color:#888">
           ${quote.expiryDate ? `<div>Expiry: ${quote.expiryDate}</div>` : ""}
           <div style="margin-top:4px;font-size:11px;background:#${quoteStatus === "Accepted" ? "d1fae5;color:#065f46" : quoteStatus === "Sent" ? "dbeafe;color:#1e40af" : "fef3c7;color:#92400e"};padding:2px 8px;border-radius:999px;display:inline-block">${quoteStatus}</div>
