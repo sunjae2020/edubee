@@ -665,7 +665,6 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PaymentsPage() {
   const [, navigate]          = useLocation();
-  const [tab, setTab]         = useState<"payments" | "journal">("payments");
   const { sortBy, sortDir, onSort } = useSortState();
   const [showCreate, setShowCreate] = useState(false);
   const [typeFilter, setTypeFilter] = useState("");
@@ -684,19 +683,10 @@ export default function PaymentsPage() {
       if (dateTo)     p.set("date_to", dateTo);
       return axios.get(`${BASE}/api/accounting/payments?${p}`).then(r => r.data);
     },
-    enabled: tab === "payments",
-  });
-
-  const { data: jeData, isLoading: jeLoading } = useQuery({
-    queryKey: ["journal-entries"],
-    queryFn: () => axios.get(`${BASE}/api/accounting/journal-entries`).then(r => r.data),
-    enabled: tab === "journal",
   });
 
   const payments: PaymentHeader[] = paymentsData?.data ?? [];
   const sortedPayments = useSorted(payments, sortBy, sortDir);
-  const jes: JournalEntry[]       = jeData?.data       ?? [];
-  const sortedJes = useSorted(jes, sortBy, sortDir);
 
   return (
     <div className="p-6 space-y-6">
@@ -715,26 +705,7 @@ export default function PaymentsPage() {
         </Button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-stone-200 overflow-x-auto">
-        {([["payments", "Payments"], ["journal", "Journal Entries"]] as const).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === key ? "border-[#F5821F] text-[#F5821F]" : "border-transparent text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            {key === "journal" && <BookOpen size={13} />}
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Payments Tab */}
-      {tab === "payments" && (
-        <>
-          {/* Filter bar */}
+      {/* Filter bar */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex gap-1.5">
               {PAYMENT_TYPES.map(t => (
@@ -834,68 +805,6 @@ export default function PaymentsPage() {
               </tbody>
             </table>
           </div>
-        </>
-      )}
-
-      {/* Journal Entries Tab */}
-      {tab === "journal" && (
-        <div className="rounded-xl border border-stone-200 overflow-x-auto">
-          <div className="bg-stone-50 border-b border-stone-200 px-4 py-3 flex items-center gap-2">
-            <BookOpen size={14} className="text-stone-400" />
-            <span className="text-xs font-semibold text-stone-600 uppercase tracking-wide">Journal Entries — Read Only</span>
-          </div>
-          <table className="w-full min-w-[800px] text-sm">
-            <thead className="bg-stone-50 border-b border-stone-100">
-              <tr>
-                <SortableTh col="entryDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Date</SortableTh>
-                  <SortableTh col="debitAccountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">DR Account</SortableTh>
-                  <SortableTh col="creditAccountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">CR Account</SortableTh>
-                  <SortableTh col="amount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Amount</SortableTh>
-                  <SortableTh col="entryType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Type</SortableTh>
-                  <SortableTh col="paymentRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Payment Ref</SortableTh>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Auto</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {jeLoading && (
-                <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
-              )}
-              {!jeLoading && jes.length === 0 && (
-                <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No journal entries yet</td></tr>
-              )}
-              {sortedJes.map(je => (
-                <tr key={je.id} className={`hover:bg-[#FEF0E3] cursor-pointer transition-colors ${je.paymentStatus === "Void" ? "opacity-50" : ""}`} onClick={() => navigate(`/admin/accounting/journal/${je.id}`)}>
-                  <td className="px-4 py-3 text-stone-700">{fmtDate(je.entryDate)}</td>
-                  <td className="px-4 py-3">
-                    <span className="font-mono text-xs text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded mr-1">{je.debitCoa}</span>
-                    <span className="text-stone-600 text-xs">{je.debitCoaName}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="font-mono text-xs text-[#DC2626] bg-[#FEF2F2] px-2 py-0.5 rounded mr-1">{je.creditCoa}</span>
-                    <span className="text-stone-600 text-xs">{je.creditCoaName}</span>
-                  </td>
-                  <td className="px-4 py-3 font-medium text-stone-800">{fmtAmt(je.amount)}</td>
-                  <td className="px-4 py-3 text-xs text-stone-500 capitalize">{(je.entryType ?? "").replace(/_/g, " ")}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-stone-400">{je.paymentRef ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    {je.autoGenerated ? (
-                      <span className="flex items-center gap-1 text-xs text-[#16A34A]">
-                        <CheckCircle2 size={11} /> Auto
-                      </span>
-                    ) : (
-                      <span className="text-xs text-stone-400">Manual</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <JeVoidAction je={je} isSuperAdmin={isSuperAdmin} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
 
       {showCreate && <CreateSheet onClose={() => setShowCreate(false)} />}
     </div>
