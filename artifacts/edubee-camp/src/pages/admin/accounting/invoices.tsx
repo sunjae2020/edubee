@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -649,11 +648,11 @@ const CLIENT_STATUSES = ["draft", "sent", "partially_paid", "awaiting_receipt", 
 function ClientTab() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Invoice | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Invoice | null>(null);
   const [emailTarget, setEmailTarget] = useState<Invoice | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
@@ -676,7 +675,7 @@ function ClientTab() {
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<Invoice> }) =>
       axios.put(`${BASE}/api/invoices/${id}`, payload).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices-client"] }); toast({ title: "Invoice updated" }); setSelected(null); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices-client"] }); toast({ title: "Invoice updated" }); },
     onError: () => toast({ title: "Update failed", variant: "destructive" }),
   });
 
@@ -710,7 +709,7 @@ function ClientTab() {
                   <Receipt className="w-8 h-8 mx-auto mb-3 opacity-30" />No client invoices found
                 </td></tr>
               ) : sorted.map(r => (
-                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
+                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{r.studentName ?? "—"}</div>
@@ -732,7 +731,7 @@ function ClientTab() {
                           <CreditCard className="w-2.5 h-2.5" /> Pay
                         </Button>
                       )}
-                      {["paid", "refunded", "cancelled"].includes(r.status ?? "") && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </div>
                   </td>
                 </tr>
@@ -745,16 +744,6 @@ function ClientTab() {
       <NewInvoiceModal open={showNewModal} onClose={() => setShowNewModal(false)} defaultType="client" onSuccess={invalidate} />
       <RecordPaymentModal invoice={paymentTarget} open={!!paymentTarget} onClose={() => setPaymentTarget(null)} onSuccess={invalidate} />
       <EmailInvoiceModal invoice={emailTarget} open={!!emailTarget} onClose={() => setEmailTarget(null)} onSuccess={invalidate} />
-
-      <InvoiceDetailSheet
-        invoice={selected}
-        open={!!selected}
-        onClose={() => setSelected(null)}
-        onPayment={inv => setPaymentTarget(inv)}
-        onUpdate={(id, payload) => updateMutation.mutate({ id, payload })}
-        onEmail={inv => { setSelected(null); setEmailTarget(inv); }}
-        label="Client Invoice"
-      />
     </div>
   );
 }
@@ -765,11 +754,11 @@ const AGENT_STATUSES = ["draft", "sent", "paid", "overdue", "cancelled"];
 function AgentTab() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Invoice | null>(null);
   const [emailTarget, setEmailTarget] = useState<Invoice | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
 
@@ -791,7 +780,7 @@ function AgentTab() {
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<Invoice> }) =>
       axios.put(`${BASE}/api/invoices/${id}`, payload).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices-agent"] }); toast({ title: "Invoice updated" }); setSelected(null); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices-agent"] }); toast({ title: "Invoice updated" }); },
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["invoices-agent"] });
@@ -823,7 +812,7 @@ function AgentTab() {
                   <FileText className="w-8 h-8 mx-auto mb-3 opacity-30" />No agent invoices found
                 </td></tr>
               ) : sorted.map(r => (
-                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
+                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{r.studentName ?? "—"}</div>
@@ -834,9 +823,12 @@ function AgentTab() {
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.dueDate ?? "—"}</td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                   <td className="px-4 py-3">
-                    {r.status === "sent"
-                      ? <Button size="sm" className="h-6 text-[10px] px-2 bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "paid", paidAt: new Date().toISOString() } }); }}>Mark Paid</Button>
-                      : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                    <div className="flex items-center gap-1">
+                      {r.status === "sent" && (
+                        <Button size="sm" className="h-6 text-[10px] px-2 bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "paid", paidAt: new Date().toISOString() } }); }}>Mark Paid</Button>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -847,16 +839,6 @@ function AgentTab() {
 
       <NewInvoiceModal open={showNewModal} onClose={() => setShowNewModal(false)} defaultType="agent" onSuccess={invalidate} />
       <EmailInvoiceModal invoice={emailTarget} open={!!emailTarget} onClose={() => setEmailTarget(null)} onSuccess={invalidate} />
-
-      <InvoiceDetailSheet
-        invoice={selected}
-        open={!!selected}
-        onClose={() => setSelected(null)}
-        onPayment={() => {}}
-        onUpdate={(id, payload) => updateMutation.mutate({ id, payload })}
-        onEmail={inv => { setSelected(null); setEmailTarget(inv); }}
-        label="Agent Invoice"
-      />
     </div>
   );
 }
@@ -867,11 +849,11 @@ const PARTNER_STATUSES = ["draft", "sent", "paid", "overdue", "cancelled"];
 function PartnerTab() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Invoice | null>(null);
   const [emailTarget, setEmailTarget] = useState<Invoice | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
 
@@ -893,7 +875,7 @@ function PartnerTab() {
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<Invoice> }) =>
       axios.put(`${BASE}/api/invoices/${id}`, payload).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices-partner"] }); toast({ title: "Invoice updated" }); setSelected(null); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices-partner"] }); toast({ title: "Invoice updated" }); },
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["invoices-partner"] });
@@ -925,7 +907,7 @@ function PartnerTab() {
                   <Handshake className="w-8 h-8 mx-auto mb-3 opacity-30" />No partner invoices found
                 </td></tr>
               ) : sorted.map(r => (
-                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
+                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{r.studentName ?? "—"}</div>
@@ -938,9 +920,12 @@ function PartnerTab() {
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.dueDate ?? "—"}</td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                   <td className="px-4 py-3">
-                    {r.status === "sent"
-                      ? <Button size="sm" className="h-6 text-[10px] px-2 bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "paid", paidAt: new Date().toISOString() } }); }}>Mark Paid</Button>
-                      : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                    <div className="flex items-center gap-1">
+                      {r.status === "sent" && (
+                        <Button size="sm" className="h-6 text-[10px] px-2 bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: r.id, payload: { status: "paid", paidAt: new Date().toISOString() } }); }}>Mark Paid</Button>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -951,16 +936,6 @@ function PartnerTab() {
 
       <NewInvoiceModal open={showNewModal} onClose={() => setShowNewModal(false)} defaultType="partner" onSuccess={invalidate} />
       <EmailInvoiceModal invoice={emailTarget} open={!!emailTarget} onClose={() => setEmailTarget(null)} onSuccess={invalidate} />
-
-      <InvoiceDetailSheet
-        invoice={selected}
-        open={!!selected}
-        onClose={() => setSelected(null)}
-        onPayment={() => {}}
-        onUpdate={(id, payload) => updateMutation.mutate({ id, payload })}
-        onEmail={inv => { setSelected(null); setEmailTarget(inv); }}
-        label="Partner Invoice"
-      />
     </div>
   );
 }

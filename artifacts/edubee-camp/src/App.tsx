@@ -101,6 +101,7 @@ import JournalEntriesPage from "@/pages/admin/accounting/JournalEntriesPage";
 import JournalEntryDetailPage from "@/pages/admin/accounting/JournalEntryDetailPage";
 import TaxInvoiceListPage from "@/pages/admin/accounting/TaxInvoiceListPage";
 import TaxInvoiceDetailPage from "@/pages/admin/accounting/TaxInvoiceDetailPage";
+import InvoiceDetailPage from "@/pages/admin/accounting/InvoiceDetailPage";
 
 // Services (new)
 import StudyAbroadPage from "@/pages/admin/services/StudyAbroadPage";
@@ -325,6 +326,9 @@ function Router() {
       </Route>
 
       {/* Accounting Pages */}
+      <Route path="/admin/accounting/invoices/:id">
+        <AdminRoute title="Invoice Detail"><InvoiceDetailPage /></AdminRoute>
+      </Route>
       <Route path="/admin/accounting/invoices">
         <AdminRoute title="Invoices"><Invoices /></AdminRoute>
       </Route>
