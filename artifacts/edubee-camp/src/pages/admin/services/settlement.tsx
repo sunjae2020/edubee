@@ -21,6 +21,8 @@ interface Rec {
   overallStatus?: string | null;
   assignedConsultantId?: string | null;
   consultantName?: string | null;
+  providerAccountId?: string | null;
+  providerAccountName?: string | null;
   grossAmount?: string | null;
   notes?: string | null;
   createdAt?: string;

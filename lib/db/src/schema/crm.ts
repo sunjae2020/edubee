@@ -109,6 +109,7 @@ export const quotes = pgTable("quotes", {
   contactId:           uuid("contact_id").references(() => contacts.id, { onDelete: "set null" }),
   customerContactId:   uuid("customer_contact_id").references(() => contacts.id, { onDelete: "set null" }),
   studentAccountId:    uuid("student_account_id").references(() => accounts.id, { onDelete: "set null" }),
+  agentAccountId:      uuid("agent_account_id").references(() => accounts.id, { onDelete: "set null" }),
   accountName:         varchar("account_name",        { length: 255 }),
   customerName:        varchar("customer_name",       { length: 255 }),
   originalName:        varchar("original_name",       { length: 255 }),

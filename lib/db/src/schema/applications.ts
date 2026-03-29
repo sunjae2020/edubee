@@ -14,6 +14,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { users } from "./users";
 import { packageGroups, packages, enrollmentSpots } from "./packages";
+import { accounts } from "./crm";
 
 export const leads = pgTable("leads", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -45,6 +46,7 @@ export const applications = pgTable("applications", {
   id: uuid("id").primaryKey().defaultRandom(),
   applicationNumber: varchar("application_number", { length: 50 }).unique(),
   agentId: uuid("agent_id").references(() => users.id),
+  agentAccountId: uuid("agent_account_id").references(() => accounts.id),
   clientId: uuid("client_id").references(() => users.id),
   packageGroupId: uuid("package_group_id").references(() => packageGroups.id),
   packageId: uuid("package_id").references(() => packages.id),

@@ -255,6 +255,7 @@ export const settlementMgt = pgTable("settlement_mgt", {
   contractId:            uuid("contract_id").references(() => contracts.id),
   productId:             uuid("product_id").references(() => products.id),
   providerUserId:        uuid("provider_user_id").references(() => users.id),
+  providerAccountId:     uuid("provider_account_id").references(() => accounts.id, { onDelete: "set null" }),
   providerRole:          varchar("provider_role", { length: 50 }),
   serviceDescription:    text("service_description"),
   grossAmount:           decimal("gross_amount",        { precision: 12, scale: 2 }),
