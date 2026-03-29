@@ -159,4 +159,40 @@ router.put("/general", authenticate, requireRole(...SUPER_ADMIN), async (req, re
   }
 });
 
+// ─── GET /settings/branding ──────────────────────────────────────────────────
+router.get("/branding", authenticate, requireRole(...SUPER_ADMIN), async (req, res) => {
+  try {
+    const keys = ["branding.logoPath", "branding.faviconPath"];
+    const rows = await db.select().from(platformSettings).where(inArray(platformSettings.key, keys));
+    const cfg: Record<string, string> = {};
+    for (const row of rows) cfg[row.key] = row.value ?? "";
+    return res.json({
+      logoPath: cfg["branding.logoPath"] ?? "",
+      faviconPath: cfg["branding.faviconPath"] ?? "",
+    });
+  } catch (err) {
+    console.error("GET /settings/branding error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ─── PUT /settings/branding ──────────────────────────────────────────────────
+router.put("/branding", authenticate, requireRole(...SUPER_ADMIN), async (req, res) => {
+  try {
+    const { logoPath, faviconPath } = req.body;
+    const now = new Date();
+    const upserts: { key: string; value: string; updatedAt: Date }[] = [];
+    if (logoPath !== undefined) upserts.push({ key: "branding.logoPath", value: String(logoPath), updatedAt: now });
+    if (faviconPath !== undefined) upserts.push({ key: "branding.faviconPath", value: String(faviconPath), updatedAt: now });
+    for (const row of upserts) {
+      await db.insert(platformSettings).values(row)
+        .onConflictDoUpdate({ target: platformSettings.key, set: { value: row.value, updatedAt: row.updatedAt } });
+    }
+    return res.json({ success: true, updated: upserts.map(u => u.key) });
+  } catch (err) {
+    console.error("PUT /settings/branding error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 export default router;

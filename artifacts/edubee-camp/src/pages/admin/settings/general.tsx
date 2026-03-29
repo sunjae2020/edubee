@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import {
   Settings, Mail, Globe, Phone, Send, Loader2, CheckCircle2,
-  Eye, EyeOff, ExternalLink, Key, Palette, Copy, Check,
+  Eye, EyeOff, ExternalLink, Key, Palette, Copy, Check, Upload, ImageIcon, Trash2,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -73,9 +73,179 @@ function RuleRow({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
+type AssetType = "logo" | "favicon";
+
+function AssetUploader({
+  label,
+  hint,
+  accept,
+  currentSrc,
+  defaultSrc,
+  previewClass,
+  onSave,
+  onReset,
+  saving,
+}: {
+  label: string;
+  hint: string;
+  accept: string;
+  currentSrc: string;
+  defaultSrc: string;
+  previewClass: string;
+  onSave: (file: File) => void;
+  onReset: () => void;
+  saving: boolean;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string>("");
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    setPreview(url);
+  }
+
+  const activeSrc = preview || currentSrc || defaultSrc;
+  const hasCustom = !!currentSrc;
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-5 items-start">
+      {/* Preview box */}
+      <div className={`shrink-0 flex items-center justify-center rounded-xl border-2 border-dashed border-[#E8E6E2] bg-stone-50 ${previewClass}`}>
+        {activeSrc
+          ? <img src={activeSrc} alt={label} className="max-w-full max-h-full object-contain p-2" />
+          : <ImageIcon className="w-8 h-8 text-stone-300" />}
+      </div>
+
+      {/* Controls */}
+      <div className="flex-1 space-y-3">
+        <div>
+          <p className="text-sm font-medium text-stone-700">{label}</p>
+          <p className="text-xs text-stone-400 mt-0.5">{hint}</p>
+        </div>
+        <input ref={fileRef} type="file" accept={accept} className="hidden" onChange={handleFile} />
+        <div className="flex flex-wrap gap-2 items-center">
+          <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => fileRef.current?.click()}>
+            <Upload className="w-3.5 h-3.5" /> 파일 선택
+          </Button>
+          {preview && (
+            <Button
+              size="sm"
+              className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5 h-8 text-xs"
+              onClick={() => {
+                const f = fileRef.current?.files?.[0];
+                if (f) { onSave(f); setPreview(""); if (fileRef.current) fileRef.current.value = ""; }
+              }}
+              disabled={saving}
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+              저장
+            </Button>
+          )}
+          {hasCustom && !preview && (
+            <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs text-stone-500 hover:text-red-600 hover:border-red-300" onClick={onReset}>
+              <Trash2 className="w-3.5 h-3.5" /> 기본값으로 초기화
+            </Button>
+          )}
+        </div>
+        {hasCustom && <p className="text-xs text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> 커스텀 에셋이 저장되어 있습니다.</p>}
+      </div>
+    </div>
+  );
+}
+
+function BrandingSection() {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [savingLogo, setSavingLogo] = useState(false);
+  const [savingFavicon, setSavingFavicon] = useState(false);
+
+  const { data: branding } = useQuery({
+    queryKey: ["settings-branding"],
+    queryFn: () => axios.get(`${BASE}/api/settings/branding`).then(r => r.data),
+  });
+
+  async function uploadAsset(file: File, type: AssetType) {
+    const setter = type === "logo" ? setSavingLogo : setSavingFavicon;
+    setter(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const { data } = await axios.post(`${BASE}/api/storage/uploads/direct`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const objectPath: string = data.objectPath;
+      const bodyKey = type === "logo" ? { logoPath: objectPath } : { faviconPath: objectPath };
+      await axios.put(`${BASE}/api/settings/branding`, bodyKey);
+      await qc.invalidateQueries({ queryKey: ["settings-branding"] });
+      toast({ title: `${type === "logo" ? "로고" : "파비콘"} 저장 완료` });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "업로드 실패", description: err?.response?.data?.error ?? err.message });
+    } finally {
+      setter(false);
+    }
+  }
+
+  async function resetAsset(type: AssetType) {
+    try {
+      const bodyKey = type === "logo" ? { logoPath: "" } : { faviconPath: "" };
+      await axios.put(`${BASE}/api/settings/branding`, bodyKey);
+      await qc.invalidateQueries({ queryKey: ["settings-branding"] });
+      toast({ title: `${type === "logo" ? "로고" : "파비콘"}가 기본값으로 초기화되었습니다.` });
+    } catch {
+      toast({ variant: "destructive", title: "초기화 실패" });
+    }
+  }
+
+  const logoSrc = branding?.logoPath ? `${BASE}/api/storage${branding.logoPath}` : "";
+  const faviconSrc = branding?.faviconPath ? `${BASE}/api/storage${branding.faviconPath}` : "";
+
+  return (
+    <RuleCard title="Logo & Favicon">
+      <div className="space-y-6">
+        <AssetUploader
+          label="로고 (Logo)"
+          hint="PNG · SVG · WebP 권장 / 최대 12 MB / 배경 투명 PNG 추천"
+          accept="image/png,image/svg+xml,image/webp,image/jpeg"
+          currentSrc={logoSrc}
+          defaultSrc={`${BASE}/edubee-logo.png`}
+          previewClass="w-48 h-24"
+          onSave={(f) => uploadAsset(f, "logo")}
+          onReset={() => resetAsset("logo")}
+          saving={savingLogo}
+        />
+        <div className="border-t border-[#E8E6E2]" />
+        <AssetUploader
+          label="파비콘 (Favicon)"
+          hint="SVG · ICO · PNG 32×32 권장 / 최대 12 MB"
+          accept="image/svg+xml,image/x-icon,image/png"
+          currentSrc={faviconSrc}
+          defaultSrc={`${BASE}/favicon.svg`}
+          previewClass="w-16 h-16"
+          onSave={(f) => uploadAsset(f, "favicon")}
+          onReset={() => resetAsset("favicon")}
+          saving={savingFavicon}
+        />
+        <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700 space-y-1">
+          <p className="font-medium">적용 안내</p>
+          <ul className="list-disc list-inside space-y-0.5 text-amber-600">
+            <li>저장된 로고는 인보이스·견적서·계약서 PDF에 자동 반영됩니다.</li>
+            <li>파비콘은 저장 후 브라우저 탭을 새로고침해야 적용됩니다.</li>
+            <li>기본 에셋은 <code className="bg-amber-100 px-1 rounded">public/edubee-logo.png</code> · <code className="bg-amber-100 px-1 rounded">public/favicon.svg</code>입니다.</li>
+          </ul>
+        </div>
+      </div>
+    </RuleCard>
+  );
+}
+
 function DesignSystemTab() {
   return (
     <div className="space-y-6 max-w-3xl">
+
+      {/* Logo & Favicon */}
+      <BrandingSection />
 
       {/* Colors */}
       <RuleCard title="Brand Colors">
