@@ -380,6 +380,38 @@ router.get("/receipts", authenticate, async (req, res) => {
   }
 });
 
+// Get single receipt
+router.get("/receipts/:id", authenticate, async (req, res) => {
+  try {
+    const [rcp] = await db.select().from(receipts).where(eq(receipts.id, req.params.id)).limit(1);
+    if (!rcp) return res.status(404).json({ error: "Receipt not found" });
+    const inv = rcp.invoiceId
+      ? (await db.select({ id: invoices.id, contractId: invoices.contractId, invoiceNumber: invoices.invoiceNumber }).from(invoices).where(eq(invoices.id, rcp.invoiceId)).limit(1))[0]
+      : null;
+    const withInvoice = { ...rcp, contractId: inv?.contractId ?? null, invoiceNumber: inv?.invoiceNumber ?? null };
+    const [enriched] = await enrichWithStudentName([withInvoice]);
+    return res.json({ data: enriched });
+  } catch {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update receipt status
+router.patch("/receipts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const [existing] = await db.select().from(receipts).where(eq(receipts.id, req.params.id)).limit(1);
+    if (!existing) return res.status(404).json({ error: "Receipt not found" });
+    const { status, confirmedAt } = req.body;
+    const updates: Record<string, any> = {};
+    if (status !== undefined) updates.status = status;
+    if (confirmedAt !== undefined) updates.confirmedAt = confirmedAt;
+    const [updated] = await db.update(receipts).set(updates).where(eq(receipts.id, req.params.id)).returning();
+    return res.json({ data: updated });
+  } catch {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Send Receipt by Email
 router.post("/receipts/:id/send-email", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {

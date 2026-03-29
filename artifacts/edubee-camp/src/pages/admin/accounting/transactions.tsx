@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { TableFooter } from "@/components/ui/table-footer";
@@ -107,6 +107,7 @@ function SearchSelect({
 }
 
 export default function Transactions() {
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -115,7 +116,6 @@ export default function Transactions() {
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage]           = useState(1);
   const [pageSize, setPageSize]   = useState(PAGE_SIZE);
-  const [selected, setSelected]   = useState<Transaction | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm]           = useState<FormState>(EMPTY);
 
@@ -213,7 +213,7 @@ export default function Transactions() {
                 </td>
               </tr>
             ) : sorted.map(r => (
-              <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
+              <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/transactions/${r.id}`)}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">
                     {r.transactionType === "credit"
@@ -311,36 +311,6 @@ export default function Transactions() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Detail Sheet ─────────────────────────────────────────────────────── */}
-      <Sheet open={!!selected} onOpenChange={o => { if (!o) setSelected(null); }}>
-        <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto bg-background">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              {selected?.transactionType === "credit"
-                ? <ArrowDownLeft className="w-4 h-4 text-[#22C55E]" />
-                : <ArrowUpRight className="w-4 h-4 text-[#DC2626]" />}
-              Transaction Detail
-            </SheetTitle>
-          </SheetHeader>
-          {selected && (
-            <div className="mt-4 space-y-4">
-              <div className={`text-2xl font-bold ${selected.transactionType === "credit" ? "text-[#16A34A]" : "text-[#DC2626]"}`}>
-                {selected.transactionType === "credit" ? "+" : "−"}{fmtAmount(selected.creditAmount ?? selected.amount, selected.currency)}
-              </div>
-              <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Type</span><span className="capitalize font-medium">{selected.transactionType ?? "—"}</span></div>
-                {selected.description && <div className="flex justify-between"><span className="text-muted-foreground">Description</span><span>{selected.description}</span></div>}
-                {selected.costCenterCode && <div className="flex justify-between"><span className="text-muted-foreground">Cost Center</span><span className="font-mono text-xs">{selected.costCenterCode}</span></div>}
-                <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span>{selected.transactionDate ? format(new Date(selected.transactionDate), "MMM d, yyyy") : selected.createdAt ? format(new Date(selected.createdAt), "MMM d, yyyy") : "—"}</span></div>
-                {selected.bankReference && <div className="flex justify-between"><span className="text-muted-foreground">Reference</span><span className="font-mono text-xs">{selected.bankReference}</span></div>}
-                <div className="flex justify-between"><span className="text-muted-foreground">Status</span>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${selected.status === "Active" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#F4F3F1] text-[#57534E]"}`}>{selected.status ?? "Active"}</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

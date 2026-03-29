@@ -44,7 +44,9 @@ import TasksCS from "@/pages/admin/services/tasks";
 import ExchangeRates from "@/pages/admin/accounting/exchange-rates";
 import Invoices from "@/pages/admin/accounting/invoices";
 import Receipts from "@/pages/admin/accounting/receipts";
+import ReceiptDetailPage from "@/pages/admin/accounting/ReceiptDetailPage";
 import Transactions from "@/pages/admin/accounting/transactions";
+import TransactionDetailPage from "@/pages/admin/accounting/TransactionDetailPage";
 
 // My Accounting
 import MySettlements from "@/pages/admin/my-accounting/settlements";
@@ -341,8 +343,14 @@ function Router() {
       <Route path="/admin/accounting/partner-invoices">
         <AdminRoute title="Invoices"><Invoices /></AdminRoute>
       </Route>
+      <Route path="/admin/accounting/receipts/:id">
+        <AdminRoute title="Receipt Detail"><ReceiptDetailPage /></AdminRoute>
+      </Route>
       <Route path="/admin/accounting/receipts">
         <AdminRoute title="Receipts"><Receipts /></AdminRoute>
+      </Route>
+      <Route path="/admin/accounting/transactions/:id">
+        <AdminRoute title="Transaction Detail"><TransactionDetailPage /></AdminRoute>
       </Route>
       <Route path="/admin/accounting/transactions">
         <AdminRoute title="Transactions"><Transactions /></AdminRoute>

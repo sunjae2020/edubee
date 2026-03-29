@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -463,125 +462,15 @@ function EmailReceiptModal({
   );
 }
 
-/* ── Detail Sheet ─────────────────────────────────────────── */
-function ReceiptDetailSheet({
-  receipt, open, onClose, onEmail,
-}: {
-  receipt: Receipt | null; open: boolean; onClose: () => void; onEmail: (r: Receipt) => void;
-}) {
-  const [, navigate] = useLocation();
-  if (!receipt) return null;
-  const methodLabel = PAYMENT_METHODS.find(m => m.value === receipt.paymentMethod)?.label ?? receipt.paymentMethod ?? "—";
-
-  return (
-    <Sheet open={open} onOpenChange={o => { if (!o) onClose(); }}>
-      <SheetContent className="w-[520px] sm:max-w-[520px] overflow-y-auto bg-background">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            Receipt <span className="font-mono text-sm text-muted-foreground">{receipt.receiptNumber}</span>
-          </SheetTitle>
-        </SheetHeader>
-
-        <div className="mt-4 space-y-4">
-          <StatusBadge status={receipt.status} />
-
-          {/* Amount highlight */}
-          <div className="bg-[#F0FDF4] border border-[#86EFAC] rounded-xl p-4 text-center">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Amount Received</p>
-            <p className="text-2xl font-bold text-[#16A34A]">
-              {fmtAmount(receipt.originalAmount ?? receipt.amount, receipt.originalCurrency ?? receipt.currency)}
-            </p>
-          </div>
-
-          {/* Info block */}
-          <div className="bg-muted/30 rounded-lg p-4 space-y-2.5 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Student</span>
-              <span className="font-medium">{receipt.studentName ?? receipt.payerName ?? "—"}</span>
-            </div>
-            {receipt.studentEmail && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Student Email</span>
-                <span className="text-xs">{receipt.studentEmail}</span>
-              </div>
-            )}
-            {receipt.agentName && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Agent</span>
-                <span>{receipt.agentName}</span>
-              </div>
-            )}
-            {/* Invoice link */}
-            {receipt.invoiceId && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Invoice</span>
-                <span className="font-mono text-xs text-muted-foreground">{receipt.invoiceNumber ?? receipt.invoiceId.slice(0, 8)}</span>
-              </div>
-            )}
-            {/* Contract link */}
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Contract</span>
-              {receipt.contractId ? (
-                <button
-                  className="flex items-center gap-1 text-[#F5821F] hover:underline font-mono text-xs font-medium"
-                  onClick={() => { onClose(); navigate(`/admin/crm/contracts/${receipt.contractId}`); }}
-                >
-                  {receipt.contractNumber ?? receipt.contractId.slice(0, 8)}
-                  <ExternalLink className="w-3 h-3" />
-                </button>
-              ) : <span className="text-muted-foreground text-xs">—</span>}
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Method</span>
-              <span className="capitalize">{methodLabel}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Receipt Date</span>
-              <span>{receipt.receiptDate ? format(new Date(receipt.receiptDate), "MMM d, yyyy") : "—"}</span>
-            </div>
-            {receipt.confirmedAt && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Confirmed At</span>
-                <span className="text-xs">{format(new Date(receipt.confirmedAt), "MMM d, yyyy HH:mm")}</span>
-              </div>
-            )}
-          </div>
-
-          {receipt.notes && (
-            <div>
-              <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notes</div>
-              <p className="text-sm">{receipt.notes}</p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onEmail(receipt)}>
-              <Mail className="w-3.5 h-3.5" /> Email Receipt
-            </Button>
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => printReceipt(receipt)}>
-              <Printer className="w-3.5 h-3.5" /> Print / PDF
-            </Button>
-            <Button size="sm" variant="ghost" onClick={onClose} className="col-span-2 text-muted-foreground">
-              Close
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
 /* ── Main Page ────────────────────────────────────────────── */
 export default function Receipts() {
+  const [, navigate] = useLocation();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
-  const [selected, setSelected] = useState<Receipt | null>(null);
-  const [emailTarget, setEmailTarget] = useState<Receipt | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
 
   const queryKey = ["receipts", { search, status: activeStatus, page, pageSize }];
@@ -631,7 +520,7 @@ export default function Receipts() {
                   <ClipboardList className="w-8 h-8 mx-auto mb-3 opacity-30" />No receipts found
                 </td></tr>
               ) : sorted.map(r => (
-                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
+                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/receipts/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.receiptNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{r.studentName ?? r.payerName ?? "—"}</div>
@@ -657,13 +546,6 @@ export default function Receipts() {
       <TableFooter page={page} pageSize={pageSize} total={total} label="receipts" onPageChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} />
 
       <NewReceiptModal open={showNewModal} onClose={() => setShowNewModal(false)} onSuccess={invalidate} />
-      <EmailReceiptModal receipt={emailTarget} open={!!emailTarget} onClose={() => setEmailTarget(null)} onSuccess={invalidate} />
-      <ReceiptDetailSheet
-        receipt={selected}
-        open={!!selected}
-        onClose={() => setSelected(null)}
-        onEmail={r => { setSelected(null); setEmailTarget(r); }}
-      />
     </div>
   );
 }
