@@ -153,6 +153,9 @@ export const staffKpiPeriods = pgTable("staff_kpi_periods", {
 // ── Tax Invoices ───────────────────────────────────────────────────────────
 export const taxInvoices = pgTable("tax_invoices", {
   id:                uuid("id").primaryKey().defaultRandom(),
+  // Foreign key to unified invoices table
+  invoiceId:         uuid("invoice_id").references(() => invoices.id),
+  // Core tax invoice fields
   invoiceRef:        varchar("invoice_ref",        { length: 50  }).unique().notNull(),
   invoiceDate:       date("invoice_date").notNull(),
   invoiceType:       varchar("invoice_type",        { length: 20  }).notNull(),

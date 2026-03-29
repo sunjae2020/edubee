@@ -128,6 +128,7 @@ export const invoices = pgTable("invoices", {
   lineItems: jsonb("line_items"),
   subtotal: decimal("subtotal", { precision: 12, scale: 2 }),
   taxAmount: decimal("tax_amount", { precision: 12, scale: 2 }),
+  gstAmount: decimal("gst_amount", { precision: 12, scale: 2 }), // Tax invoice field
   totalAmount: decimal("total_amount", { precision: 12, scale: 2 }),
   originalCurrency: varchar("original_currency", { length: 10 }),
   originalAmount: decimal("original_amount", { precision: 12, scale: 2 }),
@@ -154,6 +155,18 @@ export const invoices = pgTable("invoices", {
   contractProductId: uuid("contract_product_id"),
   balanceDue: decimal("balance_due", { precision: 12, scale: 2 }),
   arStatus: varchar("ar_status", { length: 20 }).default("invoiced"),
+  // Tax Invoice fields (optional - nullable for non-tax invoices)
+  invoiceRef: varchar("invoice_ref", { length: 50 }),
+  schoolAccountId: uuid("school_account_id"),
+  studentAccountId: uuid("student_account_id"),
+  programName: varchar("program_name", { length: 255 }),
+  studentName: varchar("student_name", { length: 255 }),
+  courseStartDate: date("course_start_date"),
+  courseEndDate: date("course_end_date"),
+  isGstFree: boolean("is_gst_free").default(false),
+  pdfUrl: varchar("pdf_url", { length: 500 }),
+  sentToEmail: varchar("sent_to_email", { length: 255 }),
+  sentAt: timestamp("sent_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
