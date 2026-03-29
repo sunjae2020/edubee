@@ -80,7 +80,7 @@ interface CompanyProfile {
 
 interface SchoolProfile {
   id: string; accountId: string; cricosCode?: string; rtoCode?: string;
-  institutionType?: string; enrolmentOfficer?: string;
+  institutionType?: string[]; enrolmentOfficer?: string;
   enrolmentEmail?: string; enrolmentPhone?: string;
   intakeMonths?: number[]; academicCalendar?: string;
   defaultCommissionRate?: string; commissionBasis?: string;
@@ -111,6 +111,16 @@ const SERVICE_TYPE_CONFIG: Record<ServiceType, {
   translation:     { label: "Translation",      icon: <Globe size={14} />,         color: "#57534E", bg: "#F4F3F1" },
   other:           { label: "Other",            icon: <AlertCircle size={14} />,   color: "#57534E", bg: "#F4F3F1" },
 };
+
+const INSTITUTION_TYPES = [
+  "English Language School",
+  "University",
+  "TAFE",
+  "Private College",
+  "High School",
+  "Primary School",
+  "Other",
+];
 
 const MEAL_OPTIONS = ["no", "breakfast", "half_board", "full_board"];
 const MEAL_LABELS: Record<string, string> = {
@@ -922,21 +932,44 @@ const CompanyProfileSection = ({ accountId, readOnly }: { accountId: string; rea
 const SchoolProfileSection = ({ accountId, readOnly }: { accountId: string; readOnly?: boolean }) => {
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<Partial<SchoolProfile>>({ canSponsorStudentVisa: true, oshcRequired: true, intakeMonths: [] });
+  const [form, setForm] = useState<Partial<SchoolProfile>>({ canSponsorStudentVisa: true, oshcRequired: true, intakeMonths: [], institutionType: [] });
 
   useEffect(() => {
     apiFetch(`/api/accounts/${accountId}/profiles/school`)
-      .then(r => r.json()).then(d => { setProfile(d.data); if (d.data) setForm(d.data); });
+      .then(r => r.json()).then(d => {
+        setProfile(d.data);
+        if (d.data) {
+          const normalized = {
+            ...d.data,
+            institutionType: Array.isArray(d.data.institutionType)
+              ? d.data.institutionType
+              : d.data.institutionType
+                ? [d.data.institutionType]
+                : [],
+          };
+          setForm(normalized);
+        }
+      });
   }, [accountId]);
 
   const toggleMonth = (m: number) =>
     setForm(p => ({ ...p, intakeMonths: (p.intakeMonths ?? []).includes(m) ? (p.intakeMonths ?? []).filter(x => x !== m) : [...(p.intakeMonths ?? []), m].sort((a, b) => a - b) }));
 
+  const toggleInstitutionType = (t: string) =>
+    setForm(p => ({ ...p, institutionType: (p.institutionType ?? []).includes(t) ? (p.institutionType ?? []).filter(x => x !== t) : [...(p.institutionType ?? []), t] }));
+
   const save = async () => {
     const url = profile ? `/api/accounts/${accountId}/profiles/school/${profile.id}` : `/api/accounts/${accountId}/profiles/school`;
     const r = await apiFetch(url, { method: profile ? "PUT" : "POST", body: JSON.stringify(form) });
     const d = await r.json();
-    setProfile(d.data); setEditing(false);
+    if (d.data) {
+      const normalized = {
+        ...d.data,
+        institutionType: Array.isArray(d.data.institutionType) ? d.data.institutionType : d.data.institutionType ? [d.data.institutionType] : [],
+      };
+      setProfile(normalized);
+    }
+    setEditing(false);
   };
 
   const F = (key: keyof SchoolProfile) => (v: string | boolean) => setForm(prev => ({ ...prev, [key]: v }));
@@ -957,9 +990,29 @@ const SchoolProfileSection = ({ accountId, readOnly }: { accountId: string; read
             <FieldLabel label="CRICOS Code"><TextInput value={form.cricosCode} onChange={F("cricosCode")} placeholder="00000A" /></FieldLabel>
             <FieldLabel label="RTO Code"><TextInput value={form.rtoCode} onChange={F("rtoCode")} placeholder="12345" /></FieldLabel>
             <FieldLabel label="Institution Type">
-              <SelectInput value={form.institutionType} onChange={F("institutionType")}
-                options={["University","TAFE","English Language School","High School","Primary School","Other"].map(t => ({ value: t, label: t }))}
-                placeholder="Select type" />
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 2 }}>
+                {INSTITUTION_TYPES.map(t => {
+                  const isOn = (form.institutionType ?? []).includes(t);
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => toggleInstitutionType(t)}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 5,
+                        padding: "5px 11px", borderRadius: 999, fontSize: 12, fontWeight: 500,
+                        border: `1.5px solid ${isOn ? "#CA8A04" : "#E8E6E2"}`,
+                        background: isOn ? "#FEF9C3" : "#FFFFFF",
+                        color: isOn ? "#CA8A04" : "#57534E",
+                        cursor: "pointer", transition: "all 150ms",
+                      }}
+                    >
+                      {isOn ? <CheckSquare size={12} /> : <Square size={12} />}
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
             </FieldLabel>
             <FieldLabel label="Academic Calendar">
               <SelectInput value={form.academicCalendar} onChange={F("academicCalendar")}
@@ -1010,7 +1063,6 @@ const SchoolProfileSection = ({ accountId, readOnly }: { accountId: string; read
           {[
             { label: "CRICOS CODE", val: profile.cricosCode },
             { label: "RTO CODE", val: profile.rtoCode },
-            { label: "INSTITUTION TYPE", val: profile.institutionType },
             { label: "ACADEMIC CALENDAR", val: profile.academicCalendar },
             { label: "ENROLMENT OFFICER", val: profile.enrolmentOfficer },
             { label: "ENROLMENT EMAIL", val: profile.enrolmentEmail },
@@ -1023,6 +1075,16 @@ const SchoolProfileSection = ({ accountId, readOnly }: { accountId: string; read
               <div style={{ fontSize: 14, color: "#1C1917" }}>{f.val}</div>
             </div>
           ))}
+          {(Array.isArray(profile.institutionType) ? profile.institutionType : []).length > 0 && (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <div style={{ fontSize: 11, fontWeight: 500, color: "#A8A29E", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>INSTITUTION TYPE</div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {(Array.isArray(profile.institutionType) ? profile.institutionType : []).map(t => (
+                  <TagChip key={t} label={t} color="#CA8A04" bg="#FEF9C3" />
+                ))}
+              </div>
+            </div>
+          )}
           {(profile.intakeMonths ?? []).length > 0 && (
             <div style={{ gridColumn: "1 / -1" }}>
               <div style={{ fontSize: 11, fontWeight: 500, color: "#A8A29E", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>INTAKE MONTHS</div>

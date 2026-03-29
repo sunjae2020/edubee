@@ -103,7 +103,7 @@ export const accountSchoolProfiles = pgTable("account_school_profiles", {
   accountId:             uuid("account_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
   cricosCode:            varchar("cricos_code",          { length: 50 }),
   rtoCode:               varchar("rto_code",             { length: 50 }),
-  institutionType:       varchar("institution_type",     { length: 50 }),
+  institutionType:       jsonb("institution_type"),
   enrolmentOfficer:      varchar("enrolment_officer",    { length: 255 }),
   enrolmentEmail:        varchar("enrolment_email",      { length: 255 }),
   enrolmentPhone:        varchar("enrolment_phone",      { length: 100 }),
