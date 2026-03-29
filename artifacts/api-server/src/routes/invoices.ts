@@ -147,7 +147,7 @@ router.get(
 
 // ─── POST /api/invoices (Create) ─────────────────────────────────────────
 router.post(
-  "/invoices",
+  "/",
   authenticate,
   requireRole(...ADMIN),
   async (req, res) => {
@@ -186,57 +186,15 @@ router.post(
         contractId,
         recipientId,
         totalAmount,
-        gstAmount,
+        taxAmount: gstAmount || taxAmount,
         status: status || "draft",
         issuedAt,
         dueDate,
         notes,
-        schoolAccountId,
-        studentAccountId,
-        programName,
-        studentName,
-        courseStartDate,
-        courseEndDate,
-        isGstFree,
-        pdfUrl,
-        sentToEmail,
         createdBy: createdBy || req.user?.id,
         createdAt: new Date(),
         updatedAt: new Date(),
       }).returning();
-
-      // If it's a tax invoice, also create a tax invoice record
-      if (invoiceType === "tax_invoice" && contractProductId) {
-        const [taxInv] = await db.insert(taxInvoices).values({
-          invoiceId: newInvoice.id,
-          invoiceRef: invoiceRef || `TAX-${Date.now()}`,
-          invoiceDate: new Date(),
-          invoiceType,
-          contractProductId,
-          contractId,
-          schoolAccountId,
-          studentAccountId,
-          programName,
-          studentName,
-          courseStartDate,
-          courseEndDate,
-          gstAmount,
-          totalAmount,
-          isGstFree,
-          status: status || "draft",
-          dueDate,
-          pdfUrl,
-          sentToEmail,
-          createdBy: createdBy || req.user?.id,
-          createdOn: new Date(),
-          modifiedOn: new Date(),
-        }).returning();
-
-        return res.status(201).json({
-          invoice: newInvoice,
-          taxInvoice: taxInv,
-        });
-      }
 
       return res.status(201).json(newInvoice);
     } catch (err) {
