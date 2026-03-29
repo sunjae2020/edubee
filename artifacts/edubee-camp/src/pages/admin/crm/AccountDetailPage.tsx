@@ -104,6 +104,8 @@ interface Account {
   parentAccount?: { id: string; name: string } | null;
 }
 
+interface StaffOption { id: string; name: string; }
+
 type FormData = Omit<Account, "id" | "createdOn" | "modifiedOn" | "primaryContact" | "secondaryContact" | "parentAccount">;
 
 function getTabs(accountType?: string | null) {
@@ -685,6 +687,11 @@ export default function AccountDetailPage() {
     queryFn: () => axios.get(`${BASE}/api/auth/me`).then(r => r.data),
   });
 
+  const { data: staffList = [] } = useQuery<StaffOption[]>({
+    queryKey: ["crm-staff"],
+    queryFn: () => axios.get(`${BASE}/api/crm/staff`).then(r => r.data),
+  });
+
   // ── Additional Contacts ───────────────────────────────────────────────────
   const [showAddContact, setShowAddContact]   = useState(false);
   const [contactSearch, setContactSearch]     = useState("");
@@ -1168,12 +1175,17 @@ export default function AccountDetailPage() {
               <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
                 <Section title="System">
                   <Field label="Owner" span={2} required>
-                    <Input
-                      value={form.ownerId}
-                      onChange={e => set("ownerId", e.target.value)}
-                      placeholder="Owner user ID"
-                      className={INPUT_CLS}
-                    />
+                    <Select value={form.ownerId || "none"} onValueChange={v => set("ownerId", v === "none" ? "" : v)}>
+                      <SelectTrigger className={INPUT_CLS}>
+                        <SelectValue placeholder="— select staff —" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— unassigned —</SelectItem>
+                        {staffList.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </Field>
                   {!isNew && (
                     <>
