@@ -71,8 +71,8 @@ class PaymentLedgerValidator {
     console.log("═══════════════════════════════════════════");
 
     try {
-      // Get contracts
-      const { status: ctStatus, data: ctData } = await this.fetch("/contracts");
+      // Get contracts (use /crm/contracts which is more stable)
+      const { status: ctStatus, data: ctData } = await this.fetch("/crm/contracts");
       if (ctStatus !== 200) {
         this.logResult(
           "Contract-Payment",
@@ -232,9 +232,9 @@ class PaymentLedgerValidator {
     console.log("═══════════════════════════════════════════");
 
     try {
-      // Get transactions
+      // Get transactions (use /transactions which is working)
       const { status: txStatus, data: txData } = await this.fetch(
-        "/accounting/transactions"
+        "/transactions"
       );
       if (txStatus !== 200) {
         this.logResult(

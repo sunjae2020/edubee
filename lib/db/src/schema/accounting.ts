@@ -54,6 +54,7 @@ export const productCostLines = pgTable("product_cost_lines", {
 export const paymentHeaders = pgTable("payment_headers", {
   id:            uuid("id").primaryKey().defaultRandom(),
   paymentRef:    varchar("payment_ref", { length: 50 }).unique(),
+  contractId:    uuid("contract_id").references(() => contracts.id, { onDelete: "set null" }),
   paymentDate:   date("payment_date").notNull(),
   totalAmount:   decimal("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
   currency:      varchar("currency", { length: 10 }).notNull().default("AUD"),

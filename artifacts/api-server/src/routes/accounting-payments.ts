@@ -152,6 +152,7 @@ router.post(
   async (req, res) => {
     try {
       const {
+        contractId,
         paymentDate, paymentMethod, paymentType,
         bankReference, notes,
         receivedFromName, paidToName,
@@ -184,6 +185,7 @@ router.post(
         // 1. Create payment header
         const [header] = await tx.insert(paymentHeaders).values({
           paymentRef:    genPayRef(),
+          contractId:    contractId ?? null,
           paymentDate,
           totalAmount:   String(totalAmount.toFixed(2)),
           currency:      "AUD",
