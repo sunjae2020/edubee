@@ -73,16 +73,20 @@ export default function QuotesPage() {
     onSuccess: (created) => navigate(`/admin/crm/quotes/${created.id}`),
   });
 
-  useEffect(() => { setPage(1); }, [debouncedSearch, statusFilter]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, statusFilter, sortBy, sortDir]);
 
   const { data: resp, isLoading } = useQuery({
-    queryKey: ["crm-quotes", tab, page, pageSize, debouncedSearch, statusFilter],
+    queryKey: ["crm-quotes", tab, page, pageSize, debouncedSearch, statusFilter, sortBy, sortDir],
     queryFn: () => {
       const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (tab === "templates") p.set("isTemplate", "true");
       else p.set("isTemplate", "false");
       if (debouncedSearch.trim()) p.set("search", debouncedSearch.trim());
       if (statusFilter !== "all") p.set("quoteStatus", statusFilter);
+      // Pass sort to server — server supports createdOn / modifiedOn
+      const serverSortCol = sortBy === "modifiedOn" ? "modifiedOn" : "createdOn";
+      p.set("sortBy", serverSortCol);
+      p.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/crm/quotes?${p}`).then(r => r.data);
     },
   });

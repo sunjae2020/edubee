@@ -7,7 +7,7 @@ import {
   tourMgt, accounts, leads,
   visaServicesMgt, campTourMgt, otherServicesMgt,
 } from "@workspace/db/schema";
-import { eq, and, count, sql, SQL, or, ilike } from "drizzle-orm";
+import { eq, and, count, sql, SQL, or, ilike, asc, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { sendMail } from "../mailer.js";
@@ -31,7 +31,8 @@ function genContractNumber(): string {
 // ─── GET /api/crm/quotes ────────────────────────────────────────────
 router.get("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { quoteStatus, isTemplate, search, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const { quoteStatus, isTemplate, search, page = "1", limit = "20",
+            sortBy = "createdOn", sortDir = "desc" } = req.query as Record<string, string>;
     const pageNum  = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset   = (pageNum - 1) * limitNum;
@@ -51,10 +52,15 @@ router.get("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req,
     }
 
     const where = conditions.length ? and(...conditions) : undefined;
+
+    // Build server-side sort column
+    const sortCol = sortBy === "modifiedOn" ? quotes.modifiedOn : quotes.createdOn;
+    const orderExpr = sortDir === "asc" ? asc(sortCol) : desc(sortCol);
+
     const [totalResult] = await db.select({ count: count() }).from(quotes).where(where);
     const data = await db.select().from(quotes).where(where)
       .limit(limitNum).offset(offset)
-      .orderBy(quotes.createdOn);
+      .orderBy(orderExpr);
 
     const enriched = await Promise.all(data.map(async q => {
       const products = await db.select().from(quote_products).where(eq(quote_products.quoteId, q.id));
