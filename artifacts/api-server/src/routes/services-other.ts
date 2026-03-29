@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { otherServicesMgt, contracts, users, accounts } from "@workspace/db/schema";
-import { eq, and, ilike, or, count, SQL } from "drizzle-orm";
+import { eq, and, ilike, or, count, asc, desc, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -47,6 +47,7 @@ router.get(
       const {
         status, search,
         page = "1", limit = "20",
+        sortBy = "createdOn", sortDir = "desc",
       } = req.query as Record<string, string>;
 
       const pageNum  = Math.max(1, parseInt(page));
@@ -71,6 +72,7 @@ router.get(
         .leftJoin(contracts, eq(otherServicesMgt.contractId, contracts.id))
         .where(where);
 
+      const orderExpr = sortDir === "asc" ? asc(otherServicesMgt.createdAt) : desc(otherServicesMgt.createdAt);
       const rows = await db
         .select(SELECT_COLS)
         .from(otherServicesMgt)
@@ -78,7 +80,7 @@ router.get(
         .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(otherServicesMgt.assignedStaffId, users.id))
         .where(where)
-        .orderBy(otherServicesMgt.createdAt)
+        .orderBy(orderExpr)
         .limit(limitNum)
         .offset(offset);
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -56,12 +56,16 @@ export default function OtherServicePage() {
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({ contractId: "", serviceType: "", title: "" });
 
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["other-services", search, status, page, pageSize],
+    queryKey: ["other-services", search, status, page, pageSize, sortBy, sortDir],
     queryFn: () => {
       const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) p.set("search", search);
       if (status) p.set("status", status);
+      p.set("sortBy",  sortBy);
+      p.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/services/other?${p}`).then(r => r.data);
     },
   });

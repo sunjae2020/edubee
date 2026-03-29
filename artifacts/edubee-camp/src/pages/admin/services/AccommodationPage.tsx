@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -69,12 +69,16 @@ export default function AccommodationPage() {
     queryFn: () => axios.get(`${BASE}/api/services/accommodation?limit=100`).then(r => r.data),
   });
 
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["accommodation", search, status, page, pageSize],
+    queryKey: ["accommodation", search, status, page, pageSize, sortBy, sortDir],
     queryFn: () => {
       const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) p.set("search", search);
       if (status) p.set("status", status);
+      p.set("sortBy",  sortBy);
+      p.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/services/accommodation?${p}`).then(r => r.data);
     },
   });

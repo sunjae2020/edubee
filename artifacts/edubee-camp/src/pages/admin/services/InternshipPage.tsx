@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -110,12 +110,16 @@ export default function InternshipPage() {
     queryFn: () => axios.get(`${BASE}/api/services/internship?limit=100`).then(r => r.data),
   });
 
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["internship", activeStage, search, page, pageSize],
+    queryKey: ["internship", activeStage, search, page, pageSize, sortBy, sortDir],
     queryFn: () => {
       const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (activeStage) p.set("status", activeStage);
       if (search)      p.set("search", search);
+      p.set("sortBy",  sortBy);
+      p.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/services/internship?${p}`).then(r => r.data);
     },
   });

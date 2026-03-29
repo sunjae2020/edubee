@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { tourMgt, contracts, users, products } from "@workspace/db/schema";
-import { eq, and, ilike, or, count, SQL } from "drizzle-orm";
+import { eq, and, ilike, or, count, asc, desc, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -52,6 +52,7 @@ router.get(
       const {
         status, search,
         page = "1", limit = "20",
+        sortBy = "createdOn", sortDir = "desc",
       } = req.query as Record<string, string>;
 
       const role = (req.user as any)?.role;
@@ -84,13 +85,16 @@ router.get(
         .leftJoin(contracts, eq(tourMgt.contractId, contracts.id))
         .where(where);
 
+      const sortColMap: Record<string, any> = { tourDate: tourMgt.tourDate, createdOn: tourMgt.createdAt };
+      const sortCol = sortColMap[sortBy] ?? tourMgt.createdAt;
+      const orderExpr = sortDir === "asc" ? asc(sortCol) : desc(sortCol);
       const rows = await db
         .select(SELECT_COLS)
         .from(tourMgt)
         .leftJoin(contracts, eq(tourMgt.contractId, contracts.id))
         .leftJoin(products, eq(tourMgt.productId, products.id))
         .where(where)
-        .orderBy(tourMgt.tourDate)
+        .orderBy(orderExpr)
         .limit(limitNum)
         .offset(offset);
 

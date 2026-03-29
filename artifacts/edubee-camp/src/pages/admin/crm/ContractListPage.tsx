@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -179,6 +179,8 @@ export default function ContractListPage() {
     setDateFrom(f); setDateTo(t); setPage(1);
   }
 
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (search)   params.set("search", search);
   if (status)   params.set("status", status);
@@ -188,6 +190,8 @@ export default function ContractListPage() {
   if (payFreq)  params.set("paymentFrequency", payFreq);
   if (arStatus) params.set("arStatus", arStatus);
   if (apStatus) params.set("apStatus", apStatus);
+  params.set("sortBy",  sortBy);
+  params.set("sortDir", sortDir);
 
   const { data: resp, isLoading } = useQuery({
     queryKey: ["crm-contracts", params.toString()],

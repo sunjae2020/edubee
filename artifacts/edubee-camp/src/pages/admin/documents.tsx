@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -75,8 +75,10 @@ export default function DocumentsPage() {
   const [page, setPage] = useState(1);
   const [logDoc, setLogDoc] = useState<any>(null);
 
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["all-documents", entityType, categoryGroup, status, search, page],
+    queryKey: ["all-documents", entityType, categoryGroup, status, search, page, sortBy, sortDir],
     queryFn: () =>
       axios.get(`${BASE}/api/documents/all`, {
         params: {
@@ -86,6 +88,8 @@ export default function DocumentsPage() {
           search: search || undefined,
           page,
           limit: 50,
+          sortBy,
+          sortDir,
         },
       }).then(r => r.data),
   });

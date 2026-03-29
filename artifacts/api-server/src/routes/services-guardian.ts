@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { guardianMgt, contracts, users, invoices, accounts } from "@workspace/db/schema";
-import { eq, and, ilike, or, count, isNotNull, lte, gte, isNull, sql, SQL, max } from "drizzle-orm";
+import { eq, and, ilike, or, count, isNotNull, lte, gte, isNull, sql, asc, desc, SQL, max } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -97,6 +97,7 @@ router.get(
       const {
         status, search,
         page = "1", limit = "20",
+        sortBy = "createdOn", sortDir = "desc",
       } = req.query as Record<string, string>;
 
       const pageNum  = Math.max(1, parseInt(page));
@@ -120,6 +121,7 @@ router.get(
         .leftJoin(contracts, eq(guardianMgt.contractId, contracts.id))
         .where(where);
 
+      const orderExpr = sortDir === "asc" ? asc(guardianMgt.createdAt) : desc(guardianMgt.createdAt);
       const rows = await db
         .select(SELECT_COLS)
         .from(guardianMgt)
@@ -127,7 +129,7 @@ router.get(
         .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(guardianMgt.assignedStaffId, users.id))
         .where(where)
-        .orderBy(guardianMgt.createdAt)
+        .orderBy(orderExpr)
         .limit(limitNum)
         .offset(offset);
 

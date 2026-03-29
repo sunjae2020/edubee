@@ -4,7 +4,7 @@ import {
   pickupMgt, tourMgt, settlementMgt,
   settlementChecklistTemplates, contracts, applications, users, accounts
 } from "@workspace/db/schema";
-import { eq, and, inArray, sql, SQL, desc } from "drizzle-orm";
+import { eq, and, inArray, sql, SQL, asc, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 
 const router = Router();
@@ -182,7 +182,11 @@ router.get("/services/settlement", authenticate, async (req, res) => {
 
     if (role === "parent_client") return res.status(403).json({ error: "Forbidden" });
 
-    const { contractId, providerId, status, overallStatus } = req.query as Record<string, string>;
+    const { contractId, providerId, status, overallStatus, sortBy = "createdAt", sortDir = "desc" } = req.query as Record<string, string>;
+    const colMap: Record<string, unknown> = { createdAt: settlementMgt.createdAt, arrivalDate: settlementMgt.arrivalDate, settlementDate: settlementMgt.settlementDate };
+    const col = (colMap[sortBy] ?? settlementMgt.createdAt) as Parameters<typeof desc>[0];
+    const orderExpr = sortDir === "asc" ? asc(col) : desc(col);
+
     const conditions: SQL[] = [];
     if (contractId)   conditions.push(eq(settlementMgt.contractId, contractId));
     if (providerId)   conditions.push(eq(settlementMgt.providerUserId, providerId));
@@ -195,7 +199,7 @@ router.get("/services/settlement", authenticate, async (req, res) => {
       const ownContracts = await db.select({ id: contracts.id }).from(contracts).where(eq(contracts.campProviderId, uid));
       const contractIds = ownContracts.map(c => c.id);
       if (contractIds.length === 0) return res.json({ data: [] });
-      const rawData = await db.select().from(settlementMgt);
+      const rawData = await db.select().from(settlementMgt).orderBy(orderExpr);
       const data = rawData.filter(s => s.contractId && contractIds.includes(s.contractId));
       const enriched = await enrichWithContractInfo(data);
       return res.json({ data: await enrichSettlementConsultants(enriched) });
@@ -204,8 +208,8 @@ router.get("/services/settlement", authenticate, async (req, res) => {
     }
 
     const data = conditions.length > 0
-      ? await db.select().from(settlementMgt).where(conditions.length === 1 ? conditions[0] : and(...conditions))
-      : await db.select().from(settlementMgt);
+      ? await db.select().from(settlementMgt).where(conditions.length === 1 ? conditions[0] : and(...conditions)).orderBy(orderExpr)
+      : await db.select().from(settlementMgt).orderBy(orderExpr);
 
     const enriched = await enrichWithContractInfo(data);
     return res.json({ data: await enrichSettlementConsultants(enriched) });

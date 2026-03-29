@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { studyAbroadMgt, contracts, users, accounts } from "@workspace/db/schema";
-import { eq, and, ilike, or, lte, isNotNull, sql, count, SQL } from "drizzle-orm";
+import { eq, and, ilike, or, lte, isNotNull, sql, count, asc, desc, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -82,7 +82,8 @@ router.get(
   requireRole(...STAFF_ROLES),
   async (req, res) => {
     try {
-      const { applicationStage, status, search, page = "1", limit = "20" } = req.query as Record<string, string>;
+      const { applicationStage, status, search, page = "1", limit = "20",
+        sortBy = "createdOn", sortDir = "desc" } = req.query as Record<string, string>;
       const pageNum  = Math.max(1, parseInt(page));
       const limitNum = Math.min(100, parseInt(limit));
       const offset   = (pageNum - 1) * limitNum;
@@ -108,6 +109,7 @@ router.get(
         .leftJoin(contracts, eq(studyAbroadMgt.contractId, contracts.id))
         .where(where);
 
+      const orderExpr = sortDir === "asc" ? asc(studyAbroadMgt.createdAt) : desc(studyAbroadMgt.createdAt);
       const rows = await db
         .select(SELECT_COLS)
         .from(studyAbroadMgt)
@@ -115,7 +117,7 @@ router.get(
         .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(studyAbroadMgt.assignedStaffId, users.id))
         .where(where)
-        .orderBy(studyAbroadMgt.createdAt)
+        .orderBy(orderExpr)
         .limit(limitNum)
         .offset(offset);
 

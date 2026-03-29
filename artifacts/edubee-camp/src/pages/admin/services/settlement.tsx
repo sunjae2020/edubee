@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -73,10 +73,14 @@ export default function Settlement() {
   const canCreate = ["super_admin", "admin", "camp_coordinator"].includes(role);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["services-settlement", statusFilter],
+    queryKey: ["services-settlement", statusFilter, sortBy, sortDir],
     queryFn: () =>
       axios.get(`${BASE}/api/services/settlement`, {
-        params: statusFilter !== "all" ? { overallStatus: statusFilter } : {},
+        params: {
+          ...(statusFilter !== "all" ? { overallStatus: statusFilter } : {}),
+          sortBy,
+          sortDir,
+        },
       }).then(r => r.data.data ?? []),
   });
   const rows: Rec[] = (data ?? []).filter((r: Rec) => {

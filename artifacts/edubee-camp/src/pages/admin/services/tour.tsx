@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -112,13 +112,17 @@ export default function TourManagement() {
   const [form, setForm] = useState<Partial<Rec>>({});
   const isAdmin = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
 
-  const queryKey = ["services-tour", { search, status: activeStatus, page, pageSize }];
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
+  const queryKey = ["services-tour", { search, status: activeStatus, page, pageSize, sortBy, sortDir }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
       const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) params.set("search", search);
       if (activeStatus !== "all") params.set("status", activeStatus);
+      params.set("sortBy",  sortBy);
+      params.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/services/tour?${params}`).then(r => r.data);
     },
   });

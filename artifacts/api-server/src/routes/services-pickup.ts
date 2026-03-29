@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { pickupMgt, contracts, users, products } from "@workspace/db/schema";
-import { eq, and, sql, count, SQL, gte, lt, lte, isNull, isNotNull } from "drizzle-orm";
+import { eq, and, sql, count, asc, desc, SQL, gte, lt, lte, isNull, isNotNull } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -52,6 +52,7 @@ router.get(
       const {
         today, this_week, status, source, search,
         page = "1", limit = "20",
+        sortBy = "createdOn", sortDir = "desc",
       } = req.query as Record<string, string>;
 
       const pageNum  = Math.max(1, parseInt(page));
@@ -99,6 +100,9 @@ router.get(
         .leftJoin(contracts, eq(pickupMgt.contractId, contracts.id))
         .where(where);
 
+      const sortColMap: Record<string, any> = { pickupDatetime: pickupMgt.pickupDatetime, createdOn: pickupMgt.createdAt };
+      const sortCol = sortColMap[sortBy] ?? pickupMgt.createdAt;
+      const orderExpr = sortDir === "asc" ? asc(sortCol) : desc(sortCol);
       const rows = await db
         .select({
           ...SELECT_COLS,
@@ -108,7 +112,7 @@ router.get(
         .from(pickupMgt)
         .leftJoin(contracts, eq(pickupMgt.contractId, contracts.id))
         .where(where)
-        .orderBy(pickupMgt.pickupDatetime)
+        .orderBy(orderExpr)
         .limit(limitNum)
         .offset(offset);
 

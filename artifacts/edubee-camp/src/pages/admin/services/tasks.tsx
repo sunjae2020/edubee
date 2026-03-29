@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import axios from "axios";
@@ -98,7 +98,7 @@ export default function TasksPage() {
   const [editingAssignee, setEditingAssignee] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["tasks", taskTypeTab, statusFilter, priorityFilter, search],
+    queryKey: ["tasks", taskTypeTab, statusFilter, priorityFilter, search, sortBy, sortDir],
     queryFn: () => {
       const params = new URLSearchParams();
       params.set("taskType", taskTypeTab);
@@ -106,6 +106,8 @@ export default function TasksPage() {
       if (priorityFilter !== "all") params.set("priority", priorityFilter);
       if (search) params.set("search", search);
       params.set("limit", "100");
+      params.set("sortBy",  sortBy);
+      params.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/tasks?${params}`).then(r => r.data);
     },
   });

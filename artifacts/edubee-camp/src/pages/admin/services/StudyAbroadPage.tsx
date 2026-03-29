@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -118,12 +118,16 @@ export default function StudyAbroadPage() {
     queryFn: () => axios.get(`${BASE}/api/services/study-abroad/visa-alerts`).then(r => r.data),
   });
 
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["study-abroad", activeStage, search, page, pageSize],
+    queryKey: ["study-abroad", activeStage, search, page, pageSize, sortBy, sortDir],
     queryFn: () => {
       const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (activeStage) p.set("applicationStage", activeStage);
       if (search)      p.set("search", search);
+      p.set("sortBy",  sortBy);
+      p.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/services/study-abroad?${p}`).then(r => r.data);
     },
   });

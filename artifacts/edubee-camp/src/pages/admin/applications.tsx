@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -83,7 +83,9 @@ export default function Applications() {
     staleTime: 30_000,
   });
 
-  const queryKey = ["applications", { search, serviceType, appStatus, page }];
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
+  const queryKey = ["applications", { search, serviceType, appStatus, page, sortBy, sortDir }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
@@ -91,6 +93,8 @@ export default function Applications() {
       if (search) params.set("search", search);
       if (serviceType !== "all") params.set("applicationType", serviceType);
       if (appStatus !== "all") params.set("appStatus", appStatus);
+      params.set("sortBy",  sortBy);
+      params.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/applications?${params}`).then(r => r.data);
     },
   });

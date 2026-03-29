@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -94,13 +94,17 @@ export default function AccountsPage() {
   const [page, setPage]                 = useState(1);
   const [pageSize, setPageSize]         = useState(PAGE_SIZE);
 
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
   const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
   if (search)                 params.set("search",       search);
   if (filterType !== "all")   params.set("account_type", filterType);
   if (filterStatus !== "all") params.set("status",       filterStatus);
+  params.set("sortBy",  sortBy);
+  params.set("sortDir", sortDir);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["crm-accounts", search, filterType, filterStatus, page, pageSize],
+    queryKey: ["crm-accounts", search, filterType, filterStatus, page, pageSize, sortBy, sortDir],
     queryFn:  () => axios.get(`${BASE}/api/crm/accounts?${params}`).then(r => r.data),
   });
 

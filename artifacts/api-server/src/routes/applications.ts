@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { leads, applications, applicationParticipants, contracts, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages, quote_products } from "@workspace/db/schema";
 import { packageProducts, products } from "@workspace/db/schema";
-import { eq, and, ilike, or, count, inArray, sql, SQL } from "drizzle-orm";
+import { eq, and, ilike, or, count, inArray, sql, asc, desc, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { financeAutoGenerate } from "../services/contractFinanceService.js";
@@ -21,7 +21,7 @@ function generateApplicationNumber() {
 // Leads
 router.get("/leads", authenticate, async (req, res) => {
   try {
-    const { agentId, status, search, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const { agentId, status, search, page = "1", limit = "20", sortBy = "createdAt", sortDir = "desc" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
@@ -34,7 +34,7 @@ router.get("/leads", authenticate, async (req, res) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(leads).where(whereClause);
-    const rawData = await db.select().from(leads).where(whereClause).limit(limitNum).offset(offset).orderBy(leads.createdAt);
+    const rawData = await db.select().from(leads).where(whereClause).limit(limitNum).offset(offset).orderBy(sortDir === "asc" ? asc(leads.createdAt) : desc(leads.createdAt));
     const data = rawData.map(l => ({ ...l, studentName: l.fullName }));
 
     const total = Number(totalResult.count);
@@ -154,7 +154,7 @@ router.get("/applications/stats", authenticate, async (req, res) => {
 // Applications
 router.get("/applications", authenticate, async (req, res) => {
   try {
-    const { agentId, status, appStatus, applicationType, packageGroupId, search, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const { agentId, status, appStatus, applicationType, packageGroupId, search, page = "1", limit = "20", sortBy = "createdAt", sortDir = "desc" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
@@ -182,7 +182,7 @@ router.get("/applications", authenticate, async (req, res) => {
       .where(whereClause)
       .limit(limitNum)
       .offset(offset)
-      .orderBy(applications.createdAt);
+      .orderBy(sortDir === "asc" ? asc(applications.createdAt) : desc(applications.createdAt));
 
     // Enrich with student name (client user's fullName)
     const clientIds = [...new Set(rawData.map(r => r.app.clientId).filter(Boolean))] as string[];

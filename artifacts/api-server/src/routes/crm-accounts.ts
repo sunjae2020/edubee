@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { accounts, contacts, authLogs, account_contacts } from "@workspace/db/schema";
-import { eq, ilike, and, or, count, ne, SQL, sql } from "drizzle-orm";
+import { eq, ilike, and, or, count, ne, asc, desc, SQL, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -72,7 +72,8 @@ const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
 // GET /crm/accounts
 router.get("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { account_type, status, search, page = "1", limit = "20" } =
+    const { account_type, status, search, page = "1", limit = "20",
+      sortBy = "createdOn", sortDir = "desc" } =
       req.query as Record<string, string>;
     const pageNum  = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
@@ -115,7 +116,7 @@ router.get("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (re
       .where(whereClause)
       .limit(limitNum)
       .offset(offset)
-      .orderBy(accounts.accountType, accounts.name);
+      .orderBy(sortDir === "asc" ? asc(accounts.createdOn) : desc(accounts.createdOn));
 
     return res.json({
       data:  rows,

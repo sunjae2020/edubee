@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -167,13 +167,17 @@ export default function CrmLeadsPage() {
     queryFn: () => axios.get(`${BASE}/api/crm/staff`).then(r => r.data),
   });
 
-  const tableKey = ["crm-leads-table", { search, status: statusFilter, page, pageSize }];
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
+  const tableKey = ["crm-leads-table", { search, status: statusFilter, page, pageSize, sortBy, sortDir }];
   const { data: tableResp, isLoading: tableLoading } = useQuery({
     queryKey: tableKey,
     queryFn: () => {
       const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search)                  p.set("search", search);
       if (statusFilter !== "all") p.set("leadStatus", statusFilter);
+      p.set("sortBy", sortBy);
+      p.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/crm/leads?${p}`).then(r => r.data);
     },
     enabled: view === "table",

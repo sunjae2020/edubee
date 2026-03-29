@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -154,13 +154,17 @@ export default function PickupManagement() {
     },
   });
 
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
   const { data: resp, isLoading } = useQuery({
-    queryKey: ["pickup", { search, status: activeStatus, source, page, pageSize }],
+    queryKey: ["pickup", { search, status: activeStatus, source, page, pageSize, sortBy, sortDir }],
     queryFn: () => {
       const p = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) p.set("search", search);
       if (activeStatus !== "all") p.set("status", activeStatus);
       if (source !== "all") p.set("source", source);
+      p.set("sortBy",  sortBy);
+      p.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/services/pickup?${p}`).then(r => r.data);
     },
   });

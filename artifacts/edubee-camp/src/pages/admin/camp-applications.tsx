@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -147,13 +147,17 @@ export default function CampApplications() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Application>>({});
 
-  const queryKey = ["camp-applications", { search, status: activeStatus, page, pageSize }];
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
+  const queryKey = ["camp-applications", { search, status: activeStatus, page, pageSize, sortBy, sortDir }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
       const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) params.set("search", search);
       if (activeStatus !== "all") params.set("applicationStatus", activeStatus);
+      params.set("sortBy",  sortBy);
+      params.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/camp-applications?${params}`).then(r => ({
         ...r.data,
         data: (r.data.data ?? []).map((a: any) => ({

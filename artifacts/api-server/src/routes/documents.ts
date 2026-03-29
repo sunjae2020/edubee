@@ -20,7 +20,7 @@ import {
 } from "@workspace/db/schema";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
-import { eq, and, or, isNull, isNotNull, inArray, SQL, lte } from "drizzle-orm";
+import { eq, and, or, isNull, isNotNull, inArray, asc, desc, SQL, lte } from "drizzle-orm";
 
 const router = Router();
 
@@ -593,7 +593,7 @@ router.delete("/documents/:id", requireRole("super_admin", "admin"), async (req,
 // GET /api/documents/all — central management (SA/AD only)
 router.get("/documents/all", requireRole("super_admin", "admin"), async (req, res) => {
   try {
-    const { entityType, categoryGroup, status: statusFilter, search, page = "1", limit = "50" } = req.query as Record<string, string>;
+    const { entityType, categoryGroup, status: statusFilter, search, page = "1", limit = "50", sortBy = "createdAt", sortDir = "desc" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(200, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
@@ -606,7 +606,7 @@ router.get("/documents/all", requireRole("super_admin", "admin"), async (req, re
       .select()
       .from(documents)
       .where(and(...conds))
-      .orderBy(documents.createdAt)
+      .orderBy(sortDir === "asc" ? asc(documents.createdAt) : desc(documents.createdAt))
       .limit(limitNum)
       .offset(offset);
 

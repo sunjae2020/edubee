@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -127,7 +127,9 @@ export default function ContactsPage() {
   const [editContact, setEditContact] = useState<Contact | null>(null);
   const [form, setForm]               = useState<FormData>({});
 
-  const queryKey = ["crm-contacts", { search, status: statusFilter, accountType: typeFilter, page, pageSize }];
+  useEffect(() => { setPage(1); }, [sortBy, sortDir]);
+
+  const queryKey = ["crm-contacts", { search, status: statusFilter, accountType: typeFilter, page, pageSize, sortBy, sortDir }];
 
   const { data: resp, isLoading } = useQuery({
     queryKey,
@@ -136,6 +138,8 @@ export default function ContactsPage() {
       if (search)                      p.set("search", search);
       if (statusFilter !== "all")      p.set("status", statusFilter);
       if (typeFilter !== "all")        p.set("accountType", typeFilter);
+      p.set("sortBy", sortBy);
+      p.set("sortDir", sortDir);
       return axios.get(`${BASE}/api/crm/contacts?${p}`).then(r => r.data);
     },
   });

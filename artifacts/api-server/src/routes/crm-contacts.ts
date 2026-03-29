@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { contacts, accounts } from "@workspace/db/schema";
-import { eq, ilike, and, or, count, SQL } from "drizzle-orm";
+import { eq, ilike, and, or, count, asc, desc, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -10,7 +10,8 @@ const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
 
 router.get("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { status, accountType, nationality, search, page = "1", limit = "20" } =
+    const { status, accountType, nationality, search, page = "1", limit = "20",
+      sortBy = "createdOn", sortDir = "desc" } =
       req.query as Record<string, string>;
     const pageNum  = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
@@ -34,8 +35,9 @@ router.get("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (re
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     const [totalResult] = await db.select({ count: count() }).from(contacts).where(whereClause);
+    const orderExpr = sortDir === "asc" ? asc(contacts.createdOn) : desc(contacts.createdOn);
     const data = await db.select().from(contacts).where(whereClause).limit(limitNum).offset(offset)
-      .orderBy(contacts.createdOn);
+      .orderBy(orderExpr);
 
     return res.json({
       data,
