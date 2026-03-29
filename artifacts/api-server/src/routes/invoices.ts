@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import {
   invoices, taxInvoices, contracts, users, contractProducts, accounts,
 } from "@workspace/db/schema";
-import { eq, desc, and, or, ilike, SQL, inArray } from "drizzle-orm";
+import { eq, desc, and, or, ilike, SQL, inArray, count } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -23,70 +23,18 @@ router.get(
   requireRole(...STAFF),
   async (req, res) => {
     try {
-      const { type, status, contractId, invoiceType } = req.query as Record<string, string>;
-      const conds: SQL[] = [];
-
-      if (type) conds.push(eq(invoices.invoiceType, type));
-      if (status) conds.push(eq(invoices.status, status));
-      if (contractId) conds.push(eq(invoices.contractId, contractId));
-      if (invoiceType) conds.push(eq(invoices.invoiceType, invoiceType));
-
-      const whereClause = conds.length > 0 
-        ? conds.length === 1 
-          ? conds[0] 
-          : and(...conds)
-        : undefined;
-
-      // Get invoices from main invoices table
-      let rows = await db.select().from(invoices)
-        .where(whereClause)
-        .orderBy(desc(invoices.createdAt));
-
-      // Fallback: If invoices table is empty, read from tax_invoices for backward compatibility
-      if (rows.length === 0) {
-        const taxConds: SQL[] = [];
-        if (type || invoiceType) taxConds.push(eq(taxInvoices.invoiceType, type || invoiceType));
-        if (status) taxConds.push(eq(taxInvoices.status, status));
-        if (contractId) taxConds.push(eq(taxInvoices.contractId, contractId));
-
-        const taxWhere = taxConds.length > 0
-          ? taxConds.length === 1
-            ? taxConds[0]
-            : and(...taxConds)
-          : undefined;
-
-        const taxRows = await db.select({
-          id: taxInvoices.id,
-          invoiceNumber: taxInvoices.invoiceRef,
-          invoiceRef: taxInvoices.invoiceRef,
-          invoiceType: taxInvoices.invoiceType,
-          contractId: taxInvoices.contractId,
-          recipientId: null,
-          totalAmount: taxInvoices.totalAmount,
-          gstAmount: taxInvoices.gstAmount,
-          status: taxInvoices.status,
-          issuedAt: taxInvoices.invoiceDate,
-          dueDate: taxInvoices.dueDate,
-          paidAt: taxInvoices.paidAt,
-          programName: taxInvoices.programName,
-          studentName: taxInvoices.studentName,
-          createdAt: taxInvoices.createdOn,
-          updatedAt: taxInvoices.modifiedOn,
-        })
-          .from(taxInvoices)
-          .where(taxWhere)
-          .orderBy(desc(taxInvoices.createdOn));
-
-        rows = taxRows as any;
-      }
-
+      console.log("[GET /invoices] Request received");
+      
+      const rows = await db.select().from(invoices);
+      console.log("[GET /invoices] Fetched rows:", rows.length);
+      
       return res.json({
         data: rows,
         total: rows.length,
       });
     } catch (err) {
-      console.error("GET /invoices error:", err);
-      return res.status(500).json({ error: "Internal Server Error" });
+      console.error("[GET /invoices] Caught error:", err instanceof Error ? err.message : String(err));
+      return res.status(500).json({ error: "Internal Server Error", details: String(err) });
     }
   }
 );
