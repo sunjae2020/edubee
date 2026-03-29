@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { campApplications, applicationParticipants, applications } from "@workspace/db/schema";
-import { contacts, leads, contracts, quotes, quote_products } from "@workspace/db/schema";
+import { contacts, leads, contracts, quotes, quote_products, accounts, account_contacts } from "@workspace/db/schema";
 import { packageProducts, products, packageGroups, packages as pkgsTable } from "@workspace/db/schema";
 import { eq, ilike, or, count, and, desc, SQL, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
@@ -315,18 +315,86 @@ router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole
 
     const quoteRefNumber = "QTE-" + Date.now().toString().slice(-8);
 
+    // ── Pre-check: find existing client Account by email ─────────────────
+    let existingClientAccountId: string | null = null;
+    const applicantEmail = application.applicantEmail ?? null;
+    if (applicantEmail) {
+      const emailCheck = await db.execute(sql`
+        SELECT id FROM accounts WHERE email = ${applicantEmail} LIMIT 1
+      `);
+      const emailRow = ((emailCheck as any).rows ?? (emailCheck as any[]))[0];
+      if (emailRow?.id) existingClientAccountId = emailRow.id;
+    }
+
     const result = await db.transaction(async (tx) => {
+      // ── Auto-create Account + Contact from applicant data ─────────────
+      let clientAccountId: string | null = existingClientAccountId;
+
+      const hasApplicantName = !!(
+        application.applicantFirstName ||
+        application.applicantLastName  ||
+        application.applicantName
+      );
+
+      if (!clientAccountId && req.user?.id && hasApplicantName) {
+        const firstName = application.applicantFirstName
+          ?? application.applicantName?.split(" ")[0]
+          ?? "Unknown";
+        const lastName  = application.applicantLastName
+          ?? application.applicantName?.split(" ").slice(1).join(" ")
+          ?? "";
+
+        const [newContact] = await tx.insert(contacts).values({
+          firstName,
+          lastName,
+          originalName: application.applicantOriginalName ?? null,
+          englishName:  application.applicantEnglishName  ?? null,
+          email:        applicantEmail,
+          mobile:       application.applicantPhone        ?? null,
+          nationality:  application.applicantNationality  ?? null,
+          dob:          application.applicantDob          ?? null,
+          accountType:  "Student",
+          status:       "Active",
+        }).returning({ id: contacts.id });
+
+        const accountName =
+          [application.applicantFirstName, application.applicantLastName]
+            .filter(Boolean).join(" ")
+          || application.applicantName
+          || "Client";
+
+        const [newAccount] = await tx.insert(accounts).values({
+          name:             accountName,
+          email:            applicantEmail,
+          phoneNumber:      application.applicantPhone       ?? null,
+          country:          application.applicantNationality ?? null,
+          accountType:      "Student",
+          ownerId:          req.user!.id,
+          status:           "Active",
+          primaryContactId: newContact.id,
+        }).returning({ id: accounts.id });
+
+        await tx.insert(account_contacts).values({
+          accountId: newAccount.id,
+          contactId: newContact.id,
+          role:      "Primary",
+        });
+
+        clientAccountId = newAccount.id;
+      }
+
       const [newQuote] = await tx.insert(quotes).values({
         quoteRefNumber,
         campApplicationId: application.id,
-        leadId:            application.leadId           ?? null,
-        studentAccountId:  application.agentAccountId   ?? null,
+        leadId:            application.leadId          ?? null,
+        studentAccountId:  clientAccountId,
         customerName:      application.applicantName,
+        originalName:      application.applicantOriginalName ?? null,
         customerContactId: null,
         quoteStatus:       "Draft",
         isTemplate:        false,
-        createdBy:         req.user?.id                 ?? null,
-        ownerId:           application.assignedStaffId  ?? null,
+        createdBy:         req.user?.id                ?? null,
+        ownerId:           application.assignedStaffId ?? null,
         notes:             `Created from Camp Application: ${application.applicationRef ?? ""}`,
       }).returning();
 
@@ -394,15 +462,16 @@ router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole
         }
       }
 
-      return newQuote;
+      return { newQuote, clientAccountId };
     });
 
     return res.json({
-      success:          true,
-      quoteId:          result.id,
-      quoteRefNumber:   result.quoteRefNumber,
+      success:           true,
+      quoteId:           result.newQuote.id,
+      quoteRefNumber:    result.newQuote.quoteRefNumber,
       campApplicationId: application.id,
-      message:          "Quote created successfully",
+      clientAccountId:   result.clientAccountId,
+      message:           "Quote created successfully",
     });
   } catch (err: any) {
     console.error("[POST /api/camp-applications/:id/convert-to-quote]", err);

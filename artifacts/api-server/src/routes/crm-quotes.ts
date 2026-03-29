@@ -438,10 +438,20 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
       ] as string[];
       const activatedModules: string[] = [];
 
+      // studentAccountId from the quote → propagate to all service modules that support it
+      const clientAccountId = quote.studentAccountId ?? null;
+
       for (const mod of moduleTypes) {
         switch (mod) {
           case "study_abroad":
-            await tx.insert(studyAbroadMgt).values({ contractId, visaGranted: false, orientationCompleted: false, status: "pending" });
+            await tx.insert(studyAbroadMgt).values({
+              contractId,
+              studentAccountId:    clientAccountId,
+              leadId:              quote.leadId ?? null,
+              visaGranted:         false,
+              orientationCompleted: false,
+              status:              "pending",
+            });
             activatedModules.push("study_abroad");
             break;
           case "pickup":
@@ -450,19 +460,38 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
             break;
           case "hotel":
           case "accommodation":
-            await tx.insert(accommodationMgt).values({ contractId });
+            await tx.insert(accommodationMgt).values({
+              contractId,
+              studentAccountId: clientAccountId,
+              leadId:           quote.leadId ?? null,
+            });
             activatedModules.push("accommodation");
             break;
           case "internship":
-            await tx.insert(internshipMgt).values({ contractId, resumePrepared: false, coverLetterPrepared: false });
+            await tx.insert(internshipMgt).values({
+              contractId,
+              studentAccountId:    clientAccountId,
+              leadId:              quote.leadId ?? null,
+              resumePrepared:      false,
+              coverLetterPrepared: false,
+            });
             activatedModules.push("internship");
             break;
           case "settlement":
-            await tx.insert(settlementMgt).values({ contractId });
+            await tx.insert(settlementMgt).values({
+              contractId,
+              studentAccountId: clientAccountId,
+            });
             activatedModules.push("settlement");
             break;
           case "guardian":
-            await tx.insert(guardianMgt).values({ contractId, officialGuardianRegistered: false, status: "pending" });
+            await tx.insert(guardianMgt).values({
+              contractId,
+              studentAccountId:         clientAccountId,
+              leadId:                   quote.leadId ?? null,
+              officialGuardianRegistered: false,
+              status:                   "pending",
+            });
             activatedModules.push("guardian");
             break;
           case "tour":
