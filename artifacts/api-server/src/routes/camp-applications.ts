@@ -423,17 +423,18 @@ router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole
         if (pkgProds.length > 0) {
           await tx.insert(quote_products).values(
             pkgProds.map((pp, i) => ({
-              quoteId:    newQuote.id,
-              productId:  pp.productId ?? undefined,
-              name:       pp.productName ?? "Product",
-              price:      pp.price ?? pp.unitPrice ?? "0",
-              quantity:   pp.quantity ?? 1,
-              unitPrice:  pp.unitPrice ?? pp.price ?? "0",
-              total:      String(
+              quoteId:     newQuote.id,
+              productId:   pp.productId ?? undefined,
+              name:        pp.productName ?? "Product",
+              productName: pp.productName ?? "Product",
+              price:       pp.price ?? pp.unitPrice ?? "0",
+              quantity:    pp.quantity ?? 1,
+              unitPrice:   pp.unitPrice ?? pp.price ?? "0",
+              total:       String(
                 (Number(pp.unitPrice ?? pp.price ?? 0)) * (pp.quantity ?? 1)
               ),
-              sortOrder:  i,
-              sortIndex:  i,
+              sortOrder:   i,
+              sortIndex:   i,
               manualInput: false,
             }))
           );
@@ -449,6 +450,7 @@ router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole
             await tx.insert(quote_products).values({
               quoteId:     newQuote.id,
               name:        pkg.name ?? "Package",
+              productName: pkg.name ?? "Package",
               price:       unitAmt,
               quantity:    1,
               unitPrice:   unitAmt,
