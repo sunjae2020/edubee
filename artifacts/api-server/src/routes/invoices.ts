@@ -38,31 +38,9 @@ router.get(
         : undefined;
 
       // Get invoices from main invoices table
-      let query = db.select({
-        id: invoices.id,
-        invoiceNumber: invoices.invoiceNumber,
-        invoiceRef: invoices.invoiceRef,
-        invoiceType: invoices.invoiceType,
-        contractId: invoices.contractId,
-        recipientId: invoices.recipientId,
-        totalAmount: invoices.totalAmount,
-        gstAmount: invoices.gstAmount,
-        status: invoices.status,
-        issuedAt: invoices.issuedAt,
-        dueDate: invoices.dueDate,
-        paidAt: invoices.paidAt,
-        programName: invoices.programName,
-        studentName: invoices.studentName,
-        createdAt: invoices.createdAt,
-        updatedAt: invoices.updatedAt,
-      })
-        .from(invoices);
-
-      if (whereClause) {
-        query = query.where(whereClause);
-      }
-
-      let rows = await query.orderBy(desc(invoices.createdAt));
+      let rows = await db.select().from(invoices)
+        .where(whereClause)
+        .orderBy(desc(invoices.createdAt));
 
       // Fallback: If invoices table is empty, read from tax_invoices for backward compatibility
       if (rows.length === 0) {
