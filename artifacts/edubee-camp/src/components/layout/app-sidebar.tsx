@@ -118,7 +118,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
       { icon: ArrowLeftRight,label: "Transactions",      href: "/admin/accounting/transactions"   },
       { icon: ArrowLeftRight,label: "AR / AP Tracker",   href: "/admin/accounting/ar-ap"         },
       { icon: BookMarked,    label: "Journal Entries",   href: "/admin/accounting/journal"        },
-      { icon: FileText,      label: "Tax Invoices",      href: "/admin/accounting/tax-invoices"   },
       { icon: BookOpen,      label: "Chart of Accounts", href: "/admin/accounting/coa"            },
       { icon: RefreshCw,     label: "Exchange Rates",    href: "/admin/accounting/exchange-rates" },
     );
