@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import {
   invoices, taxInvoices, contracts, users, contractProducts, accounts,
 } from "@workspace/db/schema";
-import { eq, desc, and, or, ilike, SQL, inArray, count } from "drizzle-orm";
+import { eq, desc, and, ilike, count } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -16,33 +16,65 @@ router.get("/health", (req, res) => {
   res.json({ status: "invoices router loaded", timestamp: new Date().toISOString() });
 });
 
-// ─── GET / (Unified List) ────────────────────────────────────
+// ─── GET / (Unified List with filtering + pagination) ────────────────────────────────────
 router.get(
   "/",
   authenticate,
   requireRole(...STAFF),
   async (req, res) => {
     try {
-      console.log("[GET /invoices] Request received");
-      
-      const rows = await db.select().from(invoices);
-      console.log("[GET /invoices] Fetched rows:", rows.length);
-      
+      const { invoiceType, status, search } = req.query as Record<string, string>;
+      const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const offset = (page - 1) * limit;
+
+      // Build where conditions
+      const conditions: any[] = [];
+      if (invoiceType) {
+        conditions.push(eq(invoices.invoiceType, invoiceType));
+      }
+      if (status) {
+        conditions.push(eq(invoices.status, status));
+      }
+      if (search) {
+        conditions.push(ilike(invoices.invoiceNumber, `%${search}%`));
+      }
+
+      const baseQuery = conditions.length > 0 ? and(...conditions) : undefined;
+
+      // Run queries
+      const [rows, [countResult]] = await Promise.all([
+        baseQuery
+          ? db.select().from(invoices).where(baseQuery).orderBy(desc(invoices.createdAt)).limit(limit).offset(offset)
+          : db.select().from(invoices).orderBy(desc(invoices.createdAt)).limit(limit).offset(offset),
+        baseQuery
+          ? db.select({ count: count() }).from(invoices).where(baseQuery)
+          : db.select({ count: count() }).from(invoices),
+      ]);
+
+      const total = Number(countResult.count);
+
       return res.json({
         data: rows,
-        total: rows.length,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
       });
     } catch (err) {
-      console.error("[GET /invoices] Caught error:", err instanceof Error ? err.message : String(err));
+      console.error("[GET /invoices] error:", err instanceof Error ? err.message : String(err));
       return res.status(500).json({ error: "Internal Server Error", details: String(err) });
     }
   }
 );
 
-// ─── GET /api/invoices/:id (Detail) ──────────────────────────────────────
+// ─── GET /:id (Detail) ──────────────────────────────────────
 router.get(
-  "/invoices/:id",
+  "/:id",
   authenticate,
+  requireRole(...STAFF),
   async (req, res) => {
     try {
       const [invoice] = await db.select().from(invoices)
@@ -52,18 +84,7 @@ router.get(
         return res.status(404).json({ error: "Invoice not found" });
       }
 
-      // If it's a tax invoice, join with tax_invoices table
-      let enriched = invoice;
-      if (invoice.invoiceType === "tax_invoice" && invoice.invoiceRef) {
-        const [taxInv] = await db.select().from(taxInvoices)
-          .where(eq(taxInvoices.invoiceRef, invoice.invoiceRef)).limit(1);
-        
-        if (taxInv) {
-          enriched = { ...invoice, ...taxInv };
-        }
-      }
-
-      return res.json(enriched);
+      return res.json(invoice);
     } catch (err) {
       console.error("GET /invoices/:id error:", err);
       return res.status(500).json({ error: "Internal Server Error" });
@@ -71,7 +92,7 @@ router.get(
   }
 );
 
-// ─── POST /api/invoices (Create) ─────────────────────────────────────────
+// ─── POST / (Create) ─────────────────────────────────────────
 router.post(
   "/",
   authenticate,
@@ -85,7 +106,8 @@ router.post(
         contractId,
         recipientId,
         totalAmount,
-        gstAmount,
+        taxAmount,
+        subtotal,
         status,
         issuedAt,
         dueDate,
@@ -102,9 +124,10 @@ router.post(
         sentToEmail,
         contractProductId,
         createdBy,
+        lineItems,
+        currency,
       } = req.body;
 
-      // Create invoice record in invoices table
       const [newInvoice] = await db.insert(invoices).values({
         invoiceNumber: invoiceNumber || `INV-${Date.now()}`,
         invoiceRef,
@@ -112,27 +135,40 @@ router.post(
         contractId,
         recipientId,
         totalAmount,
-        taxAmount: gstAmount || taxAmount,
+        taxAmount,
+        subtotal,
         status: status || "draft",
-        issuedAt,
+        issuedAt: issuedAt ? new Date(issuedAt) : undefined,
         dueDate,
         notes,
+        schoolAccountId,
+        studentAccountId,
+        programName,
+        studentName,
+        courseStartDate,
+        courseEndDate,
+        isGstFree: isGstFree ?? false,
+        pdfUrl,
+        sentToEmail,
+        contractProductId,
         createdBy: createdBy || req.user?.id,
+        lineItems,
+        currency: currency || "AUD",
         createdAt: new Date(),
         updatedAt: new Date(),
       }).returning();
 
       return res.status(201).json(newInvoice);
     } catch (err) {
-      console.error("POST /invoices error:", err);
-      return res.status(500).json({ error: "Internal Server Error" });
+      console.error("POST /invoices error:", err instanceof Error ? err.message : String(err));
+      return res.status(500).json({ error: "Internal Server Error", details: String(err) });
     }
   }
 );
 
-// ─── PUT /api/invoices/:id (Update) ──────────────────────────────────────
+// ─── PUT /:id (Update) ──────────────────────────────────────
 router.put(
-  "/invoices/:id",
+  "/:id",
   authenticate,
   requireRole(...ADMIN),
   async (req, res) => {
@@ -144,32 +180,11 @@ router.put(
         return res.status(404).json({ error: "Invoice not found" });
       }
 
-      const updates = req.body;
+      const updates = { ...req.body, updatedAt: new Date() };
       const [updated] = await db.update(invoices)
-        .set({
-          ...updates,
-          updatedAt: new Date(),
-        })
+        .set(updates)
         .where(eq(invoices.id, req.params.id))
         .returning();
-
-      // If it's a tax invoice and we're updating tax-specific fields, also update tax_invoices
-      if (existing.invoiceType === "tax_invoice" && existing.invoiceRef) {
-        const taxUpdates: any = {};
-        if (updates.gstAmount !== undefined) taxUpdates.gstAmount = updates.gstAmount;
-        if (updates.totalAmount !== undefined) taxUpdates.totalAmount = updates.totalAmount;
-        if (updates.status !== undefined) taxUpdates.status = updates.status;
-        if (updates.pdfUrl !== undefined) taxUpdates.pdfUrl = updates.pdfUrl;
-        if (updates.sentToEmail !== undefined) taxUpdates.sentToEmail = updates.sentToEmail;
-        if (updates.sentAt !== undefined) taxUpdates.sentAt = updates.sentAt;
-
-        if (Object.keys(taxUpdates).length > 0) {
-          taxUpdates.modifiedOn = new Date();
-          await db.update(taxInvoices)
-            .set(taxUpdates)
-            .where(eq(taxInvoices.invoiceRef, existing.invoiceRef));
-        }
-      }
 
       return res.json(updated);
     } catch (err) {
@@ -179,9 +194,9 @@ router.put(
   }
 );
 
-// ─── DELETE /api/invoices/:id ────────────────────────────────────────────
+// ─── DELETE /:id ────────────────────────────────────────────
 router.delete(
-  "/invoices/:id",
+  "/:id",
   authenticate,
   requireRole(...ADMIN),
   async (req, res) => {
@@ -191,12 +206,6 @@ router.delete(
 
       if (!existing) {
         return res.status(404).json({ error: "Invoice not found" });
-      }
-
-      // If it's a tax invoice, delete the tax invoice record too
-      if (existing.invoiceType === "tax_invoice" && existing.invoiceRef) {
-        await db.delete(taxInvoices)
-          .where(eq(taxInvoices.invoiceRef, existing.invoiceRef));
       }
 
       await db.delete(invoices)

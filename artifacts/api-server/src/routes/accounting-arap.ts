@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { contractProducts, contracts, contacts, accounts } from "@workspace/db/schema";
+import { contractProducts, contracts, accounts } from "@workspace/db/schema";
 import { eq, and, or, ilike, gte, lte, inArray, sql, count, sum, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -265,7 +265,7 @@ router.get(
           id:                contractProducts.id,
           contractId:        contractProducts.contractId,
           contractNumber:    contracts.contractNumber,
-          studentName:       contacts.name,
+          studentName:       contracts.studentName,
           accountName:       accounts.name,
           name:              contractProducts.name,
           sortIndex:         contractProducts.sortIndex,
@@ -282,7 +282,6 @@ router.get(
         })
         .from(contractProducts)
         .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
-        .leftJoin(contacts,  eq(contracts.customerContactId, contacts.id))
         .leftJoin(accounts,  eq(contracts.accountId,         accounts.id))
         .where(where)
         .orderBy(contractProducts.arDueDate);

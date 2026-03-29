@@ -198,3 +198,36 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 
 ### i18n
 - All 4 locales (en/ko/ja/th): `nativeName` value → "Original Name" / locale equivalent; added `englishName` key
+
+## Phase N+1: Finance Pipeline DB & Schema Fixes (March 2026)
+
+### Root Cause Fixed
+- Drizzle ORM schema defined columns that did NOT exist in the actual DB, causing all ORM queries on those tables to fail with 500 errors.
+- Pattern: schema had `gstAmount: decimal("gst_amount", ...)` but DB only had `tax_amount`.
+
+### DB Column Additions (via direct ALTER TABLE)
+- `invoices`: Added `invoice_ref`, `school_account_id`, `student_account_id`, `program_name`, `student_name`, `course_start_date`, `course_end_date`, `is_gst_free`, `pdf_url`, `sent_to_email`, `sent_at`
+- `applications`: Added `agent_account_id uuid REFERENCES accounts(id) ON DELETE SET NULL`
+
+### Schema Fixes
+- `lib/db/src/schema/finance.ts`: Removed `gstAmount: decimal("gst_amount", ...)` (column doesn't exist in DB; `taxAmount` → `tax_amount` already covers it)
+
+### Route Architecture Fixes
+- `artifacts/api-server/src/routes/invoices.ts`: Rewritten with full CRUD (GET list with filters/pagination, GET/:id, POST, PUT/:id, DELETE/:id)
+- `artifacts/api-server/src/routes/index.ts`: Changed `router.use(invoicesRouter)` → `router.use("/invoices", invoicesRouter)` to prevent `GET /:id` wildcard from catching other routes
+- `artifacts/api-server/src/routes/accounting-arap.ts`: Fixed payment-schedule query — removed `contacts` JOIN (uses `contracts.studentName` directly instead of non-existent `contracts.customerContactId`)
+
+### Sample Data
+- 20 invoices: 10 client, 5 agent, 5 partner (all with `student_name`, `program_name` populated)
+- All 50 payments linked to contractId
+
+### All 24 Key API Endpoints Verified at 200
+- `/api/invoices` (+ `?invoiceType=agent/partner/client`)
+- `/api/accounting/payments`, `/api/accounting/journal-entries`
+- `/api/accounting/ar`, `/api/accounting/ap`, `/api/accounting/ar/summary`
+- `/api/accounting/coa`, `/api/accounting/payment-schedule`
+- `/api/crm/accounts`, `/api/crm/contacts`, `/api/crm/contracts`
+- `/api/contracts`, `/api/transactions`, `/api/receipts`, `/api/exchange-rates`
+- `/api/ledger/balance/:userId`, `/api/commissions`
+- `/api/applications`, `/api/packages`
+- `/api/dashboard/stats`, `/api/dashboard/crm/kpi`

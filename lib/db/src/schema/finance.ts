@@ -128,7 +128,6 @@ export const invoices = pgTable("invoices", {
   lineItems: jsonb("line_items"),
   subtotal: decimal("subtotal", { precision: 12, scale: 2 }),
   taxAmount: decimal("tax_amount", { precision: 12, scale: 2 }),
-  gstAmount: decimal("gst_amount", { precision: 12, scale: 2 }), // Tax invoice field
   totalAmount: decimal("total_amount", { precision: 12, scale: 2 }),
   originalCurrency: varchar("original_currency", { length: 10 }),
   originalAmount: decimal("original_amount", { precision: 12, scale: 2 }),

@@ -105,7 +105,7 @@ router.use(crmContractsRouter);
 router.use(paymentHeadersRouter);
 router.use(paymentLinesRouter);
 router.use(journalEntriesRouter);
-router.use(invoicesRouter);
+router.use("/invoices", invoicesRouter);
 router.use(taxInvoicesRouter);
 router.use(statementsRouter);
 router.use(menuAllocationRouter);
