@@ -254,36 +254,44 @@ function ImportTab() {
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const loadPreview = useCallback((f: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const lines = text.split(/\r?\n/).filter(Boolean);
-      const nonExample = lines.filter(l => !l.startsWith("#EXAMPLE"));
-      if (nonExample.length === 0) return;
-      const headers = nonExample[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
-      const dataLines = nonExample.slice(1).filter(l => !l.startsWith("#"));
-      setRowCount(dataLines.length);
-      const rows = dataLines.slice(0, 5).map(l =>
-        l.split(",").map(v => v.trim().replace(/^"|"$/g, ""))
-      );
-      setPreview({ headers, rows });
-    };
-    reader.readAsText(f);
+  const loadPreview = useCallback((f: File, text: string) => {
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    const nonExample = lines.filter(l => !l.startsWith("#EXAMPLE"));
+    if (nonExample.length === 0) return;
+    const headers = nonExample[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+    const dataLines = nonExample.slice(1).filter(l => !l.startsWith("#"));
+    setRowCount(dataLines.length);
+    const rows = dataLines.slice(0, 5).map(l =>
+      l.split(",").map(v => v.trim().replace(/^"|"$/g, ""))
+    );
+    setPreview({ headers, rows });
   }, []);
 
   const handleFile = (f: File) => {
-    if (!f.name.endsWith(".csv")) {
-      toast({ title: "Only CSV files allowed", variant: "destructive" });
+    if (f.name.endsWith(".xlsx") || f.name.endsWith(".xls")) {
+      toast({ title: "Excel files will be uploaded directly", description: "Backend will convert XLSX to CSV" });
+    } else if (!f.name.endsWith(".csv")) {
+      toast({ title: "CSV or Excel files allowed only", variant: "destructive" });
       return;
     }
-    if (f.size > 5 * 1024 * 1024) {
-      toast({ title: "File too large (max 5MB)", variant: "destructive" });
+    if (f.size > 10 * 1024 * 1024) {
+      toast({ title: "File too large (max 10MB)", variant: "destructive" });
       return;
     }
     setFile(f);
     setResult(null);
-    loadPreview(f);
+    
+    if (f.name.endsWith(".csv")) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        loadPreview(f, text);
+      };
+      reader.readAsText(f);
+    } else {
+      setRowCount(0);
+      setPreview(null);
+    }
   };
 
   const onDrop = (e: React.DragEvent) => {
@@ -331,26 +339,51 @@ function ImportTab() {
 
   const clearFile = () => { setFile(null); setPreview(null); setResult(null); setRowCount(0); };
 
+  const allTablesList = EXPORT_GROUPS.flatMap(g => g.tables.map(t => ({ ...t, groupIcon: g.icon })));
+  const getCurrentTableLabel = () => {
+    for (const group of EXPORT_GROUPS) {
+      const tbl = group.tables.find(t => t.key === selectedTable);
+      if (tbl) return tbl.label;
+    }
+    return "Table";
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-      <div className="lg:col-span-2 space-y-2">
+      <div className="lg:col-span-2 space-y-4">
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
           Select Table to Import
         </h3>
-        {IMPORT_TABLES.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => { setSelectedTable(t.key); clearFile(); }}
-            className={cn(
-              "w-full text-left px-4 py-3 rounded-lg border text-sm font-medium transition-colors",
-              selectedTable === t.key
-                ? "border-[#F5821F] bg-orange-50 text-[#F5821F]"
-                : "border-border hover:bg-muted"
-            )}
-          >
-            {t.icon} {t.label}
-          </button>
-        ))}
+        <div className="space-y-3 max-h-[600px] overflow-y-auto">
+          {EXPORT_GROUPS.map((group) => {
+            const Icon = group.icon;
+            const hasSelected = group.tables.some(t => t.key === selectedTable);
+            return (
+              <div key={group.label}>
+                <div className="flex items-center gap-2 mb-2 px-2">
+                  <Icon className={cn("h-3.5 w-3.5", group.color)} />
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase">{group.label}</h4>
+                </div>
+                <div className="space-y-1">
+                  {group.tables.map((t) => (
+                    <button
+                      key={t.key}
+                      onClick={() => { setSelectedTable(t.key); clearFile(); }}
+                      className={cn(
+                        "w-full text-left px-3 py-2 rounded-lg border text-sm font-medium transition-colors text-xs",
+                        selectedTable === t.key
+                          ? "border-[#F5821F] bg-orange-50 text-[#F5821F]"
+                          : "border-border hover:bg-muted"
+                      )}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="lg:col-span-3 space-y-4">
@@ -366,7 +399,7 @@ function ImportTab() {
               onClick={doDownloadTemplate}
             >
               <Download className="h-4 w-4 mr-2" />
-              Download Template for {IMPORT_TABLES.find(t => t.key === selectedTable)?.label}
+              Download Template for {getCurrentTableLabel()}
             </Button>
 
             {!file ? (
@@ -381,9 +414,9 @@ function ImportTab() {
                 )}
               >
                 <Upload className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-                <p className="font-medium text-sm">Drag CSV file here or click to browse</p>
-                <p className="text-xs text-muted-foreground mt-1">CSV only · max 5MB</p>
-                <input ref={inputRef} type="file" accept=".csv" className="hidden"
+                <p className="font-medium text-sm">Drag CSV or Excel file here or click to browse</p>
+                <p className="text-xs text-muted-foreground mt-1">CSV, XLSX, XLS · max 10MB</p>
+                <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
               </div>
             ) : (
