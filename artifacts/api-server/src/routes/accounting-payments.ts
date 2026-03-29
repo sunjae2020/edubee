@@ -153,6 +153,7 @@ router.post(
     try {
       const {
         contractId,
+        invoiceId,
         paymentDate, paymentMethod, paymentType,
         bankReference, notes,
         receivedFromName, paidToName,
@@ -186,6 +187,7 @@ router.post(
         const [header] = await tx.insert(paymentHeaders).values({
           paymentRef:    genPayRef(),
           contractId:    contractId ?? null,
+          invoiceId:     invoiceId && invoiceId.trim() ? invoiceId : null,
           paymentDate,
           totalAmount:   String(totalAmount.toFixed(2)),
           currency:      "AUD",

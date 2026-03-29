@@ -23,55 +23,41 @@ function generateContractNumber() {
 
 router.get("/contracts", authenticate, async (req, res) => {
   try {
-    const { status, campProviderId, packageId, search, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const { status, search, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
 
     const conditions: SQL[] = [];
     if (status) conditions.push(eq(contracts.status, status));
-    if (campProviderId) conditions.push(eq(contracts.campProviderId, campProviderId));
     if (search) conditions.push(ilike(contracts.contractNumber, `%${search}%`));
-    if (req.user!.role === "camp_coordinator") conditions.push(eq(contracts.campProviderId, req.user!.id));
-
-    // Filter by packageId via applications join
-    if (packageId) {
-      conditions.push(
-        exists(
-          db.select({ one: applications.id })
-            .from(applications)
-            .where(and(eq(applications.id, contracts.applicationId!), eq(applications.packageId, packageId)))
-        )
-      );
-    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(contracts).where(whereClause);
-    const rawData = await db.select().from(contracts).where(whereClause).limit(limitNum).offset(offset).orderBy(contracts.createdAt);
-
-    // Enrich with student name via application → client user
-    const appIds = [...new Set(rawData.map(c => c.applicationId).filter(Boolean))] as string[];
-    const appRows = appIds.length > 0
-      ? await db.select({ id: applications.id, clientId: applications.clientId, applicationNumber: applications.applicationNumber })
-          .from(applications).where(inArray(applications.id, appIds))
-      : [];
-    const clientIds = [...new Set(appRows.map(a => a.clientId).filter(Boolean))] as string[];
-    const userRows = clientIds.length > 0
-      ? await db.select({ id: users.id, fullName: users.fullName }).from(users).where(inArray(users.id, clientIds))
-      : [];
-    const userMap = new Map(userRows.map(u => [u.id, u.fullName]));
-    const appMap = new Map(appRows.map(a => [a.id, { clientId: a.clientId, applicationNumber: a.applicationNumber }]));
-
-    const data = rawData.map(c => {
-      const app = c.applicationId ? appMap.get(c.applicationId) : null;
-      const studentName = app?.clientId ? (userMap.get(app.clientId) ?? null) : null;
-      return { ...c, studentName, application: app ? { studentName, applicationNumber: app.applicationNumber } : null };
-    });
+    
+    const rows = await db
+      .select({
+        id: contracts.id,
+        contractNumber: contracts.contractNumber,
+        applicationId: contracts.applicationId,
+        totalAmount: contracts.totalAmount,
+        currency: contracts.currency,
+        status: contracts.status,
+        studentName: contracts.studentName,
+        clientEmail: contracts.clientEmail,
+        createdAt: contracts.createdAt,
+        updatedAt: contracts.updatedAt,
+      })
+      .from(contracts)
+      .where(whereClause)
+      .limit(limitNum)
+      .offset(offset)
+      .orderBy(contracts.createdAt);
 
     const total = Number(totalResult.count);
-    return res.json({ data, meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) } });
+    return res.json({ data: rows, meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) } });
   } catch (err) {
-    console.error(err);
+    console.error("[GET /contracts]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
