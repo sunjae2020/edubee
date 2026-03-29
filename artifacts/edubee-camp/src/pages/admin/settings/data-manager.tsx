@@ -349,31 +349,27 @@ function ImportTab() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-      <div className="lg:col-span-2 space-y-4">
-        <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
-          Select Table to Import
-        </h3>
-        <div className="space-y-3 max-h-[600px] overflow-y-auto">
+    <div className="space-y-4">
+      {!selectedTable && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {EXPORT_GROUPS.map((group) => {
             const Icon = group.icon;
-            const hasSelected = group.tables.some(t => t.key === selectedTable);
             return (
               <div key={group.label}>
-                <div className="flex items-center gap-2 mb-2 px-2">
-                  <Icon className={cn("h-3.5 w-3.5", group.color)} />
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase">{group.label}</h4>
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon className={cn("h-4 w-4", group.color)} />
+                  <h3 className="font-semibold text-xs text-muted-foreground uppercase tracking-wide">
+                    {group.label}
+                  </h3>
                 </div>
-                <div className="space-y-1">
+                <div className="grid grid-cols-1 gap-2">
                   {group.tables.map((t) => (
                     <button
                       key={t.key}
                       onClick={() => { setSelectedTable(t.key); clearFile(); }}
                       className={cn(
-                        "w-full text-left px-3 py-2 rounded-lg border text-sm font-medium transition-colors text-xs",
-                        selectedTable === t.key
-                          ? "border-[#F5821F] bg-orange-50 text-[#F5821F]"
-                          : "border-border hover:bg-muted"
+                        "w-full text-left px-3 py-2 rounded-lg border text-xs font-medium transition-colors hover:bg-muted",
+                        "border-border"
                       )}
                     >
                       {t.label}
@@ -384,107 +380,108 @@ function ImportTab() {
             );
           })}
         </div>
-      </div>
+      )}
 
-      <div className="lg:col-span-3 space-y-4">
-        {!selectedTable ? (
-          <div className="flex items-center justify-center h-40 text-muted-foreground text-sm border rounded-lg">
-            Select a table on the left to begin
+      {selectedTable && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <button onClick={() => { setSelectedTable(null); clearFile(); }} className="text-[#F5821F] hover:text-[#d97706] font-medium text-sm">
+              ← Back to Tables
+            </button>
+            <h3 className="font-semibold text-sm">{getCurrentTableLabel()}</h3>
           </div>
-        ) : (
-          <>
-            <Button
-              variant="outline"
-              className="border-[#F5821F] text-[#F5821F] hover:bg-orange-50 w-full"
-              onClick={doDownloadTemplate}
+
+          <Button
+            variant="outline"
+            className="border-[#F5821F] text-[#F5821F] hover:bg-orange-50 w-full"
+            onClick={doDownloadTemplate}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download Template for {getCurrentTableLabel()}
+          </Button>
+
+          {!file ? (
+            <div
+              onDrop={onDrop}
+              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onClick={() => inputRef.current?.click()}
+              className={cn(
+                "border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors",
+                dragging ? "border-[#F5821F] bg-orange-50" : "border-border hover:border-[#F5821F] hover:bg-muted/40"
+              )}
             >
-              <Download className="h-4 w-4 mr-2" />
-              Download Template for {getCurrentTableLabel()}
-            </Button>
-
-            {!file ? (
-              <div
-                onDrop={onDrop}
-                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-                onDragLeave={() => setDragging(false)}
-                onClick={() => inputRef.current?.click()}
-                className={cn(
-                  "border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors",
-                  dragging ? "border-[#F5821F] bg-orange-50" : "border-border hover:border-[#F5821F] hover:bg-muted/40"
-                )}
-              >
-                <Upload className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-                <p className="font-medium text-sm">Drag CSV or Excel file here or click to browse</p>
-                <p className="text-xs text-muted-foreground mt-1">CSV, XLSX, XLS · max 10MB</p>
-                <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium truncate">{file.name}</span>
-                    <Badge variant="secondary">{rowCount} rows</Badge>
-                  </div>
-                  <Button size="icon" variant="ghost" onClick={clearFile}>
-                    <X className="h-4 w-4" />
-                  </Button>
+              <Upload className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
+              <p className="font-medium text-sm">Drag CSV or Excel file here or click to browse</p>
+              <p className="text-xs text-muted-foreground mt-1">CSV, XLSX, XLS · max 10MB</p>
+              <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium truncate">{file.name}</span>
+                  <Badge variant="secondary">{rowCount} rows</Badge>
                 </div>
-
-                {preview && (
-                  <div className="overflow-auto rounded-lg border max-h-52">
-                    <table className="text-xs w-full">
-                      <thead>
-                        <tr className="bg-muted">
-                          {preview.headers.map((h, i) => (
-                            <th key={i} className="px-2 py-1.5 text-left font-semibold border-r last:border-0 whitespace-nowrap">
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {preview.rows.map((row, ri) => (
-                          <tr key={ri} className="border-t">
-                            {row.map((cell, ci) => (
-                              <td key={ci} className="px-2 py-1.5 border-r last:border-0 whitespace-nowrap max-w-[160px] truncate">
-                                {cell}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                <Button
-                  className="w-full bg-[#F5821F] hover:bg-[#d97706] text-white"
-                  disabled={importing}
-                  onClick={doImport}
-                >
-                  {importing ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Importing…
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Import {rowCount} rows
-                    </>
-                  )}
+                <Button size="icon" variant="ghost" onClick={clearFile}>
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
-            )}
 
-            {result && (
-              <ImportResult result={result} onDownloadError={downloadErrorCsv} />
-            )}
-          </>
+              {preview && (
+                <div className="overflow-auto rounded-lg border max-h-52">
+                  <table className="text-xs w-full">
+                    <thead>
+                      <tr className="bg-muted">
+                        {preview.headers.map((h, i) => (
+                          <th key={i} className="px-2 py-1.5 text-left font-semibold border-r last:border-0 whitespace-nowrap">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preview.rows.map((row, ri) => (
+                        <tr key={ri} className="border-t">
+                          {row.map((cell, ci) => (
+                            <td key={ci} className="px-2 py-1.5 border-r last:border-0 whitespace-nowrap max-w-[160px] truncate">
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <Button
+                className="w-full bg-[#F5821F] hover:bg-[#d97706] text-white"
+                disabled={importing}
+                onClick={doImport}
+              >
+                {importing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Importing…
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import {rowCount} rows
+                  </>
+                )}
+              </Button>
+            </div>
         )}
-      </div>
+
+          {result && (
+            <ImportResult result={result} onDownloadError={downloadErrorCsv} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
