@@ -63,6 +63,7 @@ router.get(
         })
         .from(guardianMgt)
         .leftJoin(contracts, eq(guardianMgt.contractId, contracts.id))
+        .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(guardianMgt.assignedStaffId, users.id))
         .where(
           and(
