@@ -146,8 +146,9 @@ export const quote_products = pgTable("quote_products", {
   unitPrice:         decimal("unit_price",  { precision: 12, scale: 2 }).notNull().default("0"),
   gstRate:           decimal("gst_rate",    { precision: 5,  scale: 2 }).notNull().default("0"),
   total:             decimal("total",       { precision: 12, scale: 2 }).notNull().default("0"),
-  serviceModuleType: varchar("service_module_type", { length: 50 }),
-  sortOrder:         integer("sort_order").notNull().default(0),
+  serviceModuleType:   varchar("service_module_type",   { length: 50 }),
+  providerAccountId:   uuid("provider_account_id").references(() => accounts.id, { onDelete: "set null" }),
+  sortOrder:           integer("sort_order").notNull().default(0),
 });
 
 export const account_contacts = pgTable("account_contacts", {

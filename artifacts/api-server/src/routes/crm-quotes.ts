@@ -259,7 +259,8 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
           'other'
         ) AS resolved_smt,
         p.product_context,
-        p.camp_package_id
+        p.camp_package_id,
+        COALESCE(qp.provider_account_id, p.provider_account_id) AS resolved_provider_account_id
       FROM quote_products qp
       LEFT JOIN products     p  ON p.id  = qp.product_id
       LEFT JOIN product_types pt ON pt.id = p.product_type_id
@@ -326,16 +327,17 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
             const realProductId = isManual ? null : (p.product_id ?? p.productId ?? null);
             return {
               contractId,
-              productId:         realProductId,
-              name:              p.name ?? p.product_name ?? null,
-              quantity:          qty,
-              unitPrice:         String(unitAmt),
-              totalPrice:        String(arAmt),
-              arAmount:          arAmt > 0 ? String(arAmt) : null,
-              arDueDate:         dueDateStr,
-              isInitialPayment:  p.is_initial_payment ?? p.isInitialPayment ?? false,
-              serviceModuleType: p.resolved_smt ?? null,
-              sortIndex:         p.sort_index ?? p.sort_order ?? i,
+              productId:          realProductId,
+              name:               p.name ?? p.product_name ?? null,
+              quantity:           qty,
+              unitPrice:          String(unitAmt),
+              totalPrice:         String(arAmt),
+              arAmount:           arAmt > 0 ? String(arAmt) : null,
+              arDueDate:          dueDateStr,
+              isInitialPayment:   p.is_initial_payment ?? p.isInitialPayment ?? false,
+              serviceModuleType:  p.resolved_smt ?? null,
+              providerAccountId:  p.resolved_provider_account_id ?? null,
+              sortIndex:          p.sort_index ?? p.sort_order ?? i,
             };
           })
         );
@@ -441,6 +443,15 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
       // studentAccountId from the quote → propagate to all service modules that support it
       const clientAccountId = quote.studentAccountId ?? null;
 
+      // Build provider map: serviceModuleType → first resolved providerAccountId for that SMT
+      const providerBySmт: Record<string, string | null> = {};
+      for (const p of products) {
+        const smt = p.resolved_smt;
+        if (smt && !providerBySmт[smt]) {
+          providerBySmт[smt] = p.resolved_provider_account_id ?? null;
+        }
+      }
+
       for (const mod of moduleTypes) {
         switch (mod) {
           case "study_abroad":
@@ -451,6 +462,7 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
               visaGranted:         false,
               orientationCompleted: false,
               status:              "pending",
+              instituteAccountId:  providerBySmт["study_abroad"] ?? null,
             });
             activatedModules.push("study_abroad");
             break;
@@ -459,14 +471,17 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
             activatedModules.push("pickup");
             break;
           case "hotel":
-          case "accommodation":
+          case "accommodation": {
+            const accSmt = mod === "hotel" ? "hotel" : "accommodation";
             await tx.insert(accommodationMgt).values({
               contractId,
-              studentAccountId: clientAccountId,
-              leadId:           quote.leadId ?? null,
+              studentAccountId:  clientAccountId,
+              leadId:            quote.leadId ?? null,
+              providerAccountId: providerBySmт[accSmt] ?? null,
             });
             activatedModules.push("accommodation");
             break;
+          }
           case "internship":
             await tx.insert(internshipMgt).values({
               contractId,
@@ -474,6 +489,7 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
               leadId:              quote.leadId ?? null,
               resumePrepared:      false,
               coverLetterPrepared: false,
+              hostCompanyId:       providerBySmт["internship"] ?? null,
             });
             activatedModules.push("internship");
             break;
@@ -487,15 +503,19 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
           case "guardian":
             await tx.insert(guardianMgt).values({
               contractId,
-              studentAccountId:         clientAccountId,
-              leadId:                   quote.leadId ?? null,
+              studentAccountId:           clientAccountId,
+              leadId:                     quote.leadId ?? null,
               officialGuardianRegistered: false,
-              status:                   "pending",
+              status:                     "pending",
+              schoolId:                   providerBySmт["guardian"] ?? null,
             });
             activatedModules.push("guardian");
             break;
           case "tour":
-            await tx.insert(tourMgt).values({ contractId });
+            await tx.insert(tourMgt).values({
+              contractId,
+              tourCompanyId: providerBySmт["tour"] ?? null,
+            });
             activatedModules.push("tour");
             break;
           case "camp":

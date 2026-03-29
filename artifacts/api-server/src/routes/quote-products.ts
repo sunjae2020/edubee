@@ -140,8 +140,16 @@ router.patch("/quote-products/:id", authenticate, requireRole(...ADMIN_ROLES), a
 // ─── POST /api/quote-products ───────────────────────────────────────────────
 router.post("/quote-products", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { quote_id, name, item_description, price, quantity, is_initial_payment, sort_index, manual_input, product_id, service_module_type } = req.body;
+    const { quote_id, name, item_description, price, quantity, is_initial_payment, sort_index, manual_input, product_id, service_module_type, provider_account_id } = req.body;
     if (!quote_id) return res.status(400).json({ error: "quote_id is required" });
+
+    // Auto-resolve providerAccountId: body override → product catalog lookup
+    let resolvedProviderAccountId: string | null = provider_account_id ?? null;
+    if (!resolvedProviderAccountId && product_id && !manual_input) {
+      const [prod] = await db.select({ providerAccountId: products.providerAccountId })
+        .from(products).where(eq(products.id, product_id));
+      resolvedProviderAccountId = prod?.providerAccountId ?? null;
+    }
 
     const maxIdx = sort_index !== undefined ? sort_index : (await getMaxSortIndex(quote_id)) + 1;
 
@@ -158,6 +166,7 @@ router.post("/quote-products", authenticate, requireRole(...ADMIN_ROLES), async 
       sortIndex:         maxIdx,
       status:            "Active",
       serviceModuleType: service_module_type ?? null,
+      providerAccountId: resolvedProviderAccountId,
     }).returning();
 
     return res.status(201).json(created);

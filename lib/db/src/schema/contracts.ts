@@ -79,6 +79,7 @@ export const contractProducts = pgTable("contract_products", {
   commissionArStatus: varchar("commission_ar_status",  { length: 20 }),
   gstAmount:          decimal("gst_amount",            { precision: 12, scale: 2 }),
   isGstFree:          boolean("is_gst_free").default(false),
+  providerAccountId:  uuid("provider_account_id").references(() => accounts.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
