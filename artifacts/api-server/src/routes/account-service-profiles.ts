@@ -7,6 +7,7 @@ import {
   accountCompanyProfiles,
   accountSchoolProfiles,
   accountTourProfiles,
+  accountHotelProfiles,
 } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
@@ -478,6 +479,108 @@ router.delete(
 // ■ SERVICE PROFILE SUMMARY — Pre-fill 통합 소스
 // ============================================================
 
+// ============================================================
+// ■ HOTEL PROFILES
+// ============================================================
+
+router.get(
+  "/accounts/:id/profiles/hotel",
+  authenticate,
+  requireRole(...ADMIN_ROLES),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const rows = await db
+        .select()
+        .from(accountHotelProfiles)
+        .where(eq(accountHotelProfiles.accountId, id));
+      res.json({ success: true, data: rows });
+    } catch (err) {
+      console.error("[GET /api/accounts/:id/profiles/hotel]", err);
+      res.status(500).json({ success: false, message: "Failed to fetch hotel profiles" });
+    }
+  }
+);
+
+router.post(
+  "/accounts/:id/profiles/hotel",
+  authenticate,
+  requireRole(...ADMIN_ROLES),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { amenities, ...rest } = req.body;
+      const [created] = await db
+        .insert(accountHotelProfiles)
+        .values({
+          accountId: id,
+          ...rest,
+          ...(amenities !== undefined ? { amenities } : {}),
+        })
+        .returning();
+      res.status(201).json({ success: true, data: created });
+    } catch (err) {
+      console.error("[POST /api/accounts/:id/profiles/hotel]", err);
+      res.status(500).json({ success: false, message: "Failed to create hotel profile" });
+    }
+  }
+);
+
+router.put(
+  "/accounts/:id/profiles/hotel/:profileId",
+  authenticate,
+  requireRole(...ADMIN_ROLES),
+  async (req, res) => {
+    try {
+      const { id, profileId } = req.params;
+      const { amenities, ...rest } = req.body;
+      const [updated] = await db
+        .update(accountHotelProfiles)
+        .set({
+          ...rest,
+          ...(amenities !== undefined ? { amenities } : {}),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(accountHotelProfiles.id, profileId),
+            eq(accountHotelProfiles.accountId, id)
+          )
+        )
+        .returning();
+      if (!updated) return res.status(404).json({ success: false, message: "Profile not found" });
+      res.json({ success: true, data: updated });
+    } catch (err) {
+      console.error("[PUT /api/accounts/:id/profiles/hotel/:profileId]", err);
+      res.status(500).json({ success: false, message: "Failed to update hotel profile" });
+    }
+  }
+);
+
+router.delete(
+  "/accounts/:id/profiles/hotel/:profileId",
+  authenticate,
+  requireRole(...ADMIN_ROLES),
+  async (req, res) => {
+    try {
+      const { id, profileId } = req.params;
+      await db
+        .update(accountHotelProfiles)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(
+          and(
+            eq(accountHotelProfiles.id, profileId),
+            eq(accountHotelProfiles.accountId, id)
+          )
+        );
+      res.json({ success: true });
+    } catch (err) {
+      console.error("[DELETE /api/accounts/:id/profiles/hotel/:profileId]", err);
+      res.status(500).json({ success: false, message: "Failed to deactivate hotel profile" });
+    }
+  }
+);
+
 router.get(
   "/accounts/:id/service-profile-summary",
   authenticate,
@@ -493,6 +596,7 @@ router.get(
         companyProfileRows,
         schoolProfileRows,
         tourProfiles,
+        hotelProfiles,
       ] = await Promise.all([
         db.select().from(accountServiceCategories)
           .where(eq(accountServiceCategories.accountId, id)),
@@ -526,6 +630,14 @@ router.get(
               eq(accountTourProfiles.isActive, true)
             )
           ),
+
+        db.select().from(accountHotelProfiles)
+          .where(
+            and(
+              eq(accountHotelProfiles.accountId, id),
+              eq(accountHotelProfiles.isActive, true)
+            )
+          ),
       ]);
 
       res.json({
@@ -537,6 +649,7 @@ router.get(
           companyProfile: companyProfileRows[0] ?? null,
           schoolProfile: schoolProfileRows[0] ?? null,
           tourProfiles,
+          hotelProfiles,
         },
       });
     } catch (err) {

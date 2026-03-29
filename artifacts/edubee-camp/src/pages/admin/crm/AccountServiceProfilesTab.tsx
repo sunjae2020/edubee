@@ -4,7 +4,7 @@ import {
   Plus, Pencil, Trash2,
   Phone, Clock, Users, DollarSign, Star,
   CheckSquare, Square, Save, X, Globe, AlertCircle,
-  Utensils, Bed, Plane, Bus, Map, Layers,
+  Utensils, Bed, Plane, Bus, Map, Layers, ConciergeBell,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -22,7 +22,7 @@ function apiFetch(path: string, options?: RequestInit): Promise<Response> {
 }
 
 type ServiceType =
-  | "homestay" | "dormitory" | "pickup" | "tour_provider"
+  | "homestay" | "dormitory" | "hotel" | "pickup" | "tour_provider"
   | "internship_host" | "school" | "camp_institute"
   | "guardian" | "translation" | "other";
 
@@ -93,6 +93,20 @@ interface SchoolProfile {
   isActive: boolean; notes?: string;
 }
 
+interface HotelProfile {
+  id: string; accountId: string;
+  roomTypeName?: string; starRating?: number;
+  mealIncluded?: string;
+  retailPricePerNight?: string; partnerCostPerNight?: string;
+  totalRooms?: number;
+  checkInTime?: string; checkOutTime?: string;
+  propertyAddress?: string;
+  distanceToSchool?: string; distanceToCbd?: string;
+  amenities?: Record<string, boolean>;
+  bookingContact?: string; cancellationPolicy?: string;
+  isActive: boolean; notes?: string;
+}
+
 interface AccountServiceProfilesTabProps {
   accountId: string; accountName?: string; readOnly?: boolean;
 }
@@ -102,6 +116,7 @@ const SERVICE_TYPE_CONFIG: Record<ServiceType, {
 }> = {
   homestay:        { label: "Homestay",        icon: <Home size={14} />,          color: "#F5821F", bg: "#FEF0E3" },
   dormitory:       { label: "Dormitory",        icon: <Bed size={14} />,           color: "#F5821F", bg: "#FEF0E3" },
+  hotel:           { label: "Hotel",            icon: <ConciergeBell size={14} />, color: "#0369A1", bg: "#E0F2FE" },
   pickup:          { label: "Airport Pickup",   icon: <Car size={14} />,           color: "#16A34A", bg: "#DCFCE7" },
   tour_provider:   { label: "Tour Provider",    icon: <Map size={14} />,           color: "#0891B2", bg: "#E0F2FE" },
   internship_host: { label: "Internship Host",  icon: <Building2 size={14} />,     color: "#7C3AED", bg: "#EDE9FE" },
@@ -1101,6 +1116,258 @@ const SchoolProfileSection = ({ accountId, readOnly }: { accountId: string; read
   );
 };
 
+const HOTEL_AMENITIES = [
+  { key: "wifi",       label: "WiFi" },
+  { key: "pool",       label: "Pool" },
+  { key: "gym",        label: "Gym" },
+  { key: "parking",    label: "Parking" },
+  { key: "aircon",     label: "Air Con" },
+  { key: "laundry",    label: "Laundry" },
+  { key: "restaurant", label: "Restaurant" },
+  { key: "bar",        label: "Bar" },
+  { key: "spa",        label: "Spa" },
+  { key: "breakfast",  label: "Breakfast" },
+];
+
+const HotelProfileSection = ({ accountId, readOnly }: { accountId: string; readOnly?: boolean }) => {
+  const [profiles, setProfiles] = useState<HotelProfile[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState<Partial<HotelProfile>>({ mealIncluded: "no", amenities: {} });
+
+  const loadProfiles = useCallback(() => {
+    apiFetch(`/api/accounts/${accountId}/profiles/hotel`)
+      .then(r => r.json()).then(d => setProfiles((d.data ?? []).filter((p: HotelProfile) => p.isActive)));
+  }, [accountId]);
+
+  useEffect(() => { loadProfiles(); }, [loadProfiles]);
+
+  const save = async () => {
+    const url = editId
+      ? `/api/accounts/${accountId}/profiles/hotel/${editId}`
+      : `/api/accounts/${accountId}/profiles/hotel`;
+    await apiFetch(url, { method: editId ? "PUT" : "POST", body: JSON.stringify(form) });
+    setShowForm(false); setEditId(null);
+    setForm({ mealIncluded: "no", amenities: {} });
+    loadProfiles();
+  };
+
+  const deactivate = async (id: string) => {
+    await apiFetch(`/api/accounts/${accountId}/profiles/hotel/${id}`, { method: "DELETE" });
+    loadProfiles();
+  };
+
+  const startEdit = (p: HotelProfile) => { setForm(p); setEditId(p.id); setShowForm(true); };
+
+  const F = (key: keyof HotelProfile) => (v: string | boolean | number) =>
+    setForm(prev => ({ ...prev, [key]: v }));
+
+  const toggleAmenity = (key: string) =>
+    setForm(p => ({ ...p, amenities: { ...(p.amenities ?? {}), [key]: !(p.amenities ?? {})[key] } }));
+
+  return (
+    <SectionCard
+      title="Hotel Room Types"
+      icon={<ConciergeBell size={16} />}
+      action={!readOnly && (
+        <Btn onClick={() => { setShowForm(true); setEditId(null); setForm({ mealIncluded: "no", amenities: {} }); }} size="sm">
+          <Plus size={13} /> Add Room Type
+        </Btn>
+      )}
+    >
+      {showForm && (
+        <div style={{ background: "#FAFAF9", border: "1px solid #E8E6E2", borderRadius: 10, padding: 20, marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#1C1917" }}>{editId ? "Edit Room Type" : "New Room Type"}</span>
+            <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#57534E" }}><X size={18} /></button>
+          </div>
+
+          <Grid2>
+            <FieldLabel label="Room Type Name">
+              <TextInput value={form.roomTypeName} onChange={F("roomTypeName")} placeholder="e.g. Standard King, Deluxe Twin" />
+            </FieldLabel>
+            <FieldLabel label="Star Rating">
+              <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setForm(p => ({ ...p, starRating: n }))}
+                    style={{
+                      background: "none", border: "none", cursor: "pointer", padding: 2,
+                      color: (form.starRating ?? 0) >= n ? "#F59E0B" : "#D6D3D1",
+                    }}
+                  >
+                    <Star size={22} fill={(form.starRating ?? 0) >= n ? "#F59E0B" : "none"} />
+                  </button>
+                ))}
+                {form.starRating && (
+                  <span style={{ fontSize: 12, color: "#57534E", marginLeft: 4 }}>{form.starRating} star{form.starRating > 1 ? "s" : ""}</span>
+                )}
+              </div>
+            </FieldLabel>
+          </Grid2>
+
+          <div style={{ marginTop: 12 }}>
+            <FieldLabel label="Property Address">
+              <TextInput value={form.propertyAddress} onChange={F("propertyAddress")} placeholder="123 Main Street, Sydney NSW 2000" />
+            </FieldLabel>
+          </div>
+
+          <Divider />
+
+          <Grid2>
+            <FieldLabel label="Meal Included">
+              <SelectInput value={form.mealIncluded} onChange={F("mealIncluded")}
+                options={MEAL_OPTIONS.map(m => ({ value: m, label: MEAL_LABELS[m] }))} />
+            </FieldLabel>
+            <FieldLabel label="Total Rooms Available">
+              <TextInput value={form.totalRooms} onChange={v => setForm(p => ({ ...p, totalRooms: parseInt(v) || undefined }))} type="number" placeholder="e.g. 10" />
+            </FieldLabel>
+            <FieldLabel label="Retail Price / Night (A$)">
+              <TextInput value={form.retailPricePerNight} onChange={F("retailPricePerNight")} type="number" placeholder="150.00" />
+            </FieldLabel>
+            <FieldLabel label="Partner Cost / Night (A$)">
+              <TextInput value={form.partnerCostPerNight} onChange={F("partnerCostPerNight")} type="number" placeholder="120.00" />
+            </FieldLabel>
+            <FieldLabel label="Check-In Time">
+              <TextInput value={form.checkInTime} onChange={F("checkInTime")} placeholder="e.g. 14:00" />
+            </FieldLabel>
+            <FieldLabel label="Check-Out Time">
+              <TextInput value={form.checkOutTime} onChange={F("checkOutTime")} placeholder="e.g. 11:00" />
+            </FieldLabel>
+            <FieldLabel label="Distance to School">
+              <TextInput value={form.distanceToSchool} onChange={F("distanceToSchool")} placeholder="e.g. 10 min walk" />
+            </FieldLabel>
+            <FieldLabel label="Distance to CBD">
+              <TextInput value={form.distanceToCbd} onChange={F("distanceToCbd")} placeholder="e.g. 5 min by train" />
+            </FieldLabel>
+            <FieldLabel label="Booking Contact">
+              <TextInput value={form.bookingContact} onChange={F("bookingContact")} placeholder="reservations@hotel.com" />
+            </FieldLabel>
+          </Grid2>
+
+          <Divider />
+
+          <FieldLabel label="Amenities">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+              {HOTEL_AMENITIES.map(({ key, label }) => {
+                const isOn = !!(form.amenities ?? {})[key];
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => toggleAmenity(key)}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 5,
+                      padding: "5px 11px", borderRadius: 999, fontSize: 12, fontWeight: 500,
+                      border: `1.5px solid ${isOn ? "#0369A1" : "#E8E6E2"}`,
+                      background: isOn ? "#E0F2FE" : "#FFFFFF",
+                      color: isOn ? "#0369A1" : "#57534E",
+                      cursor: "pointer", transition: "all 150ms",
+                    }}
+                  >
+                    {isOn ? <CheckSquare size={12} /> : <Square size={12} />}
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </FieldLabel>
+
+          <div style={{ marginTop: 12 }}>
+            <FieldLabel label="Cancellation Policy">
+              <TextareaInput value={form.cancellationPolicy} onChange={F("cancellationPolicy")} placeholder="Free cancellation up to 24 hours before check-in..." />
+            </FieldLabel>
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <FieldLabel label="Notes">
+              <TextareaInput value={form.notes} onChange={F("notes")} placeholder="Additional notes..." />
+            </FieldLabel>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
+            <Btn variant="secondary" size="sm" onClick={() => setShowForm(false)}>Cancel</Btn>
+            <Btn size="sm" onClick={save}><Save size={13} /> Save Room Type</Btn>
+          </div>
+        </div>
+      )}
+
+      {profiles.length === 0 && !showForm ? (
+        <div style={{ textAlign: "center", padding: "32px 0", color: "#A8A29E" }}>
+          <ConciergeBell size={32} style={{ margin: "0 auto 8px", display: "block", opacity: 0.4 }} />
+          <p style={{ fontSize: 14 }}>No hotel room types yet. Click "Add Room Type" to get started.</p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {profiles.map(p => (
+            <div key={p.id} style={{ border: "1px solid #E8E6E2", borderRadius: 10, padding: "16px 20px", background: "#FFFFFF" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: "#1C1917" }}>{p.roomTypeName ?? "Unnamed Room"}</span>
+                    {p.starRating && (
+                      <span style={{ display: "flex", gap: 2 }}>
+                        {Array.from({ length: p.starRating }).map((_, i) => (
+                          <Star key={i} size={13} fill="#F59E0B" color="#F59E0B" />
+                        ))}
+                      </span>
+                    )}
+                  </div>
+                  {p.propertyAddress && (
+                    <div style={{ fontSize: 12, color: "#78716C", display: "flex", alignItems: "center", gap: 4 }}>
+                      <MapPin size={11} /> {p.propertyAddress}
+                    </div>
+                  )}
+                </div>
+                {!readOnly && (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <Btn variant="secondary" size="sm" onClick={() => startEdit(p)}><Pencil size={12} /></Btn>
+                    <Btn variant="secondary" size="sm" onClick={() => deactivate(p.id)}><Trash2 size={12} /></Btn>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px 16px", marginTop: 12 }}>
+                {[
+                  { label: "MEAL", val: p.mealIncluded ? MEAL_LABELS[p.mealIncluded] ?? p.mealIncluded : undefined },
+                  { label: "RETAIL / NIGHT", val: p.retailPricePerNight ? `A$${p.retailPricePerNight}` : undefined },
+                  { label: "PARTNER COST", val: p.partnerCostPerNight ? `A$${p.partnerCostPerNight}` : undefined },
+                  { label: "ROOMS", val: p.totalRooms ? String(p.totalRooms) : undefined },
+                  { label: "CHECK-IN", val: p.checkInTime },
+                  { label: "CHECK-OUT", val: p.checkOutTime },
+                  { label: "TO SCHOOL", val: p.distanceToSchool },
+                  { label: "TO CBD", val: p.distanceToCbd },
+                  { label: "BOOKING", val: p.bookingContact },
+                ].map(f => f.val && (
+                  <div key={f.label}>
+                    <div style={{ fontSize: 10, fontWeight: 500, color: "#A8A29E", textTransform: "uppercase", letterSpacing: "0.05em" }}>{f.label}</div>
+                    <div style={{ fontSize: 13, color: "#1C1917" }}>{f.val}</div>
+                  </div>
+                ))}
+              </div>
+
+              {p.amenities && Object.values(p.amenities).some(Boolean) && (
+                <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {HOTEL_AMENITIES.filter(a => (p.amenities ?? {})[a.key]).map(a => (
+                    <TagChip key={a.key} label={a.label} color="#0369A1" bg="#E0F2FE" />
+                  ))}
+                </div>
+              )}
+
+              {p.cancellationPolicy && (
+                <div style={{ marginTop: 8, fontSize: 12, color: "#57534E", borderTop: "1px solid #F4F3F1", paddingTop: 8 }}>
+                  <span style={{ fontWeight: 500 }}>Cancellation: </span>{p.cancellationPolicy}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </SectionCard>
+  );
+};
+
 export const AccountServiceProfilesTab = ({
   accountId, accountName, readOnly = false,
 }: AccountServiceProfilesTabProps) => {
@@ -1132,6 +1399,7 @@ export const AccountServiceProfilesTab = ({
         </div>
       )}
       {(has("homestay") || has("dormitory")) && <HomestayProfileSection accountId={accountId} readOnly={readOnly} />}
+      {has("hotel") && <HotelProfileSection accountId={accountId} readOnly={readOnly} />}
       {has("pickup") && <PickupProfileSection accountId={accountId} readOnly={readOnly} />}
       {has("tour_provider") && <TourProfileSection accountId={accountId} readOnly={readOnly} />}
       {has("internship_host") && <CompanyProfileSection accountId={accountId} readOnly={readOnly} />}

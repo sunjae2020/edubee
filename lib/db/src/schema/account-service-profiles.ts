@@ -123,6 +123,29 @@ export const accountSchoolProfiles = pgTable("account_school_profiles", {
   unique().on(t.accountId),
 ]);
 
+export const accountHotelProfiles = pgTable("account_hotel_profiles", {
+  id:                   uuid("id").primaryKey().defaultRandom(),
+  accountId:            uuid("account_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
+  roomTypeName:         varchar("room_type_name",       { length: 255 }),
+  starRating:           integer("star_rating"),
+  mealIncluded:         varchar("meal_included",        { length: 50 }),
+  retailPricePerNight:  decimal("retail_price_per_night", { precision: 10, scale: 2 }),
+  partnerCostPerNight:  decimal("partner_cost_per_night", { precision: 10, scale: 2 }),
+  totalRooms:           integer("total_rooms"),
+  checkInTime:          varchar("check_in_time",        { length: 20 }),
+  checkOutTime:         varchar("check_out_time",       { length: 20 }),
+  propertyAddress:      text("property_address"),
+  distanceToSchool:     varchar("distance_to_school",   { length: 200 }),
+  distanceToCbd:        varchar("distance_to_cbd",      { length: 200 }),
+  amenities:            jsonb("amenities"),
+  bookingContact:       varchar("booking_contact",      { length: 255 }),
+  cancellationPolicy:   text("cancellation_policy"),
+  isActive:             boolean("is_active").notNull().default(true),
+  notes:                text("notes"),
+  createdAt:            timestamp("created_at").notNull().defaultNow(),
+  updatedAt:            timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const accountTourProfiles = pgTable("account_tour_profiles", {
   id:                    uuid("id").primaryKey().defaultRandom(),
   accountId:             uuid("account_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
