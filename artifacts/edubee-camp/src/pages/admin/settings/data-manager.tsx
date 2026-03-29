@@ -31,6 +31,8 @@ const EXPORT_GROUPS = [
     color: "text-blue-500",
     tables: [
       { key: "users", label: "Users" },
+      { key: "accounts", label: "Accounts" },
+      { key: "contacts", label: "Contacts" },
     ],
   },
   {
@@ -41,6 +43,8 @@ const EXPORT_GROUPS = [
       { key: "leads", label: "Leads" },
       { key: "applications", label: "Applications" },
       { key: "application_participants", label: "Participants" },
+      { key: "camp_applications", label: "Camp Applications" },
+      { key: "quotes", label: "Quotes" },
     ],
   },
   {
@@ -50,6 +54,7 @@ const EXPORT_GROUPS = [
     tables: [
       { key: "contracts", label: "Contracts" },
       { key: "contract_products", label: "Contract Products" },
+      { key: "contract_finance_items", label: "Contract Finance Items" },
     ],
   },
   {
@@ -58,10 +63,15 @@ const EXPORT_GROUPS = [
     color: "text-teal-500",
     tables: [
       { key: "institute_mgt", label: "Institute" },
-      { key: "hotel_mgt", label: "Hotel" },
+      { key: "accommodation_mgt", label: "Accommodation" },
       { key: "pickup_mgt", label: "Pickup" },
       { key: "tour_mgt", label: "Tour" },
+      { key: "camp_tour_mgt", label: "Camp Tour" },
       { key: "settlement_mgt", label: "Settlement" },
+      { key: "study_abroad_mgt", label: "Study Abroad" },
+      { key: "internship_mgt", label: "Internship" },
+      { key: "guardian_mgt", label: "Guardian" },
+      { key: "visa_services_mgt", label: "Visa Services" },
     ],
   },
   {
@@ -70,8 +80,14 @@ const EXPORT_GROUPS = [
     color: "text-green-500",
     tables: [
       { key: "invoices", label: "Invoices" },
+      { key: "journal_entries", label: "Journal Entries" },
       { key: "transactions", label: "Transactions" },
       { key: "receipts", label: "Receipts" },
+      { key: "payment_headers", label: "Payment Headers" },
+      { key: "payment_lines", label: "Payment Lines" },
+      { key: "payment_statements", label: "Payment Statements" },
+      { key: "account_ledger_entries", label: "Account Ledger" },
+      { key: "user_ledger", label: "User Ledger" },
       { key: "exchange_rates", label: "Exchange Rates" },
     ],
   },
@@ -83,16 +99,37 @@ const EXPORT_GROUPS = [
       { key: "package_groups", label: "Package Groups" },
       { key: "packages", label: "Packages" },
       { key: "products", label: "Products" },
+      { key: "product_cost_lines", label: "Product Cost Lines" },
+    ],
+  },
+  {
+    label: "CRM",
+    icon: Target,
+    color: "text-pink-500",
+    tables: [
+      { key: "crm_leads", label: "CRM Leads" },
+      { key: "crm_contacts", label: "CRM Contacts" },
+      { key: "crm_contracts", label: "CRM Contracts" },
     ],
   },
 ];
 
 const IMPORT_TABLES = [
   { key: "users", label: "Users", icon: "👤" },
+  { key: "accounts", label: "Accounts", icon: "🏢" },
+  { key: "contacts", label: "Contacts", icon: "📇" },
   { key: "exchange_rates", label: "Exchange Rates", icon: "💱" },
   { key: "products", label: "Products", icon: "📦" },
+  { key: "package_groups", label: "Package Groups", icon: "🎁" },
+  { key: "packages", label: "Packages", icon: "📚" },
   { key: "enrollment_spots", label: "Enrollment Spots", icon: "🎓" },
+  { key: "leads", label: "Leads", icon: "🎯" },
+  { key: "applications", label: "Applications", icon: "📋" },
+  { key: "camp_applications", label: "Camp Applications", icon: "🏕️" },
+  { key: "contracts", label: "Contracts", icon: "📄" },
   { key: "transactions", label: "Transactions", icon: "💳" },
+  { key: "invoices", label: "Invoices", icon: "🧾" },
+  { key: "receipts", label: "Receipts", icon: "✅" },
 ];
 
 export default function DataManagerPage() {
