@@ -127,7 +127,7 @@ function AssetUploader({
         <input ref={fileRef} type="file" accept={accept} className="hidden" onChange={handleFile} />
         <div className="flex flex-wrap gap-2 items-center">
           <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => fileRef.current?.click()}>
-            <Upload className="w-3.5 h-3.5" /> 파일 선택
+            <Upload className="w-3.5 h-3.5" /> Select File
           </Button>
           {preview && (
             <Button
@@ -140,16 +140,16 @@ function AssetUploader({
               disabled={saving}
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-              저장
+              Save
             </Button>
           )}
           {hasCustom && !preview && (
             <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs text-stone-500 hover:text-red-600 hover:border-red-300" onClick={onReset}>
-              <Trash2 className="w-3.5 h-3.5" /> 기본값으로 초기화
+              <Trash2 className="w-3.5 h-3.5" /> Reset to Default
             </Button>
           )}
         </div>
-        {hasCustom && <p className="text-xs text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> 커스텀 에셋이 저장되어 있습니다.</p>}
+        {hasCustom && <p className="text-xs text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Custom asset saved.</p>}
       </div>
     </div>
   );
@@ -170,18 +170,18 @@ function BrandingSection() {
     const setter = type === "logo" ? setSavingLogo : setSavingFavicon;
     setter(true);
     try {
-      const form = new FormData();
-      form.append("file", file);
-      const { data } = await axios.post(`${BASE}/api/storage/uploads/direct`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
-      const objectPath: string = data.objectPath;
-      const bodyKey = type === "logo" ? { logoPath: objectPath } : { faviconPath: objectPath };
+      const bodyKey = type === "logo" ? { logoPath: dataUrl } : { faviconPath: dataUrl };
       await axios.put(`${BASE}/api/settings/branding`, bodyKey);
       await qc.invalidateQueries({ queryKey: ["settings-branding"] });
-      toast({ title: `${type === "logo" ? "로고" : "파비콘"} 저장 완료` });
+      toast({ title: `${type === "logo" ? "Logo" : "Favicon"} saved successfully` });
     } catch (err: any) {
-      toast({ variant: "destructive", title: "업로드 실패", description: err?.response?.data?.error ?? err.message });
+      toast({ variant: "destructive", title: "Upload failed", description: err?.response?.data?.error ?? err.message });
     } finally {
       setter(false);
     }
@@ -192,21 +192,27 @@ function BrandingSection() {
       const bodyKey = type === "logo" ? { logoPath: "" } : { faviconPath: "" };
       await axios.put(`${BASE}/api/settings/branding`, bodyKey);
       await qc.invalidateQueries({ queryKey: ["settings-branding"] });
-      toast({ title: `${type === "logo" ? "로고" : "파비콘"}가 기본값으로 초기화되었습니다.` });
+      toast({ title: `${type === "logo" ? "Logo" : "Favicon"} reset to default` });
     } catch {
-      toast({ variant: "destructive", title: "초기화 실패" });
+      toast({ variant: "destructive", title: "Reset failed" });
     }
   }
 
-  const logoSrc = branding?.logoPath ? `${BASE}/api/storage${branding.logoPath}` : "";
-  const faviconSrc = branding?.faviconPath ? `${BASE}/api/storage${branding.faviconPath}` : "";
+  function resolveSrc(path: string | undefined): string {
+    if (!path) return "";
+    if (path.startsWith("data:")) return path;
+    return `${BASE}/api/storage${path}`;
+  }
+
+  const logoSrc = resolveSrc(branding?.logoPath);
+  const faviconSrc = resolveSrc(branding?.faviconPath);
 
   return (
     <RuleCard title="Logo & Favicon">
       <div className="space-y-6">
         <AssetUploader
-          label="로고 (Logo)"
-          hint="PNG · SVG · WebP 권장 / 최대 12 MB / 배경 투명 PNG 추천"
+          label="Logo"
+          hint="PNG · SVG · WebP recommended / Max 2 MB / Transparent PNG preferred"
           accept="image/png,image/svg+xml,image/webp,image/jpeg"
           currentSrc={logoSrc}
           defaultSrc={`${BASE}/edubee-logo.png`}
@@ -217,8 +223,8 @@ function BrandingSection() {
         />
         <div className="border-t border-[#E8E6E2]" />
         <AssetUploader
-          label="파비콘 (Favicon)"
-          hint="SVG · ICO · PNG 32×32 권장 / 최대 12 MB"
+          label="Favicon"
+          hint="PNG · SVG · ICO recommended / 32×32 px / Max 512 KB"
           accept="image/svg+xml,image/x-icon,image/png"
           currentSrc={faviconSrc}
           defaultSrc={`${BASE}/favicon.svg`}
@@ -228,11 +234,11 @@ function BrandingSection() {
           saving={savingFavicon}
         />
         <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-700 space-y-1">
-          <p className="font-medium">적용 안내</p>
+          <p className="font-medium">How It Works</p>
           <ul className="list-disc list-inside space-y-0.5 text-amber-600">
-            <li>저장된 로고는 인보이스·견적서·계약서 PDF에 자동 반영됩니다.</li>
-            <li>파비콘은 저장 후 브라우저 탭을 새로고침해야 적용됩니다.</li>
-            <li>기본 에셋은 <code className="bg-amber-100 px-1 rounded">public/edubee-logo.png</code> · <code className="bg-amber-100 px-1 rounded">public/favicon.svg</code>입니다.</li>
+            <li>The saved logo is automatically applied to invoice, quote, and contract PDFs.</li>
+            <li>After saving the favicon, refresh the browser tab for it to take effect.</li>
+            <li>Default assets are <code className="bg-amber-100 px-1 rounded">public/edubee-logo.png</code> and <code className="bg-amber-100 px-1 rounded">public/favicon.svg</code>.</li>
           </ul>
         </div>
       </div>
