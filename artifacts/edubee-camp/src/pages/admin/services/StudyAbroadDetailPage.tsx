@@ -451,13 +451,13 @@ function OverviewTab({ record, onStageChange, onSave }: {
       )}
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 overflow-x-auto">
-        <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-4">Application Progress</h3>
+        <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide mb-4">Application Progress</h3>
         <StageStepper current={record.applicationStage ?? "counseling"} onSelect={onStageChange} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Client</h3>
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Client</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
@@ -504,7 +504,7 @@ function OverviewTab({ record, onStageChange, onSave }: {
         </div>
 
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Contract & COE</h3>
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Contract & COE</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between items-center"><span className="text-stone-400">Contract #</span>
               {record.contractId ? (
@@ -529,7 +529,7 @@ function OverviewTab({ record, onStageChange, onSave }: {
       </div>
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Student Participant</h3>
+        <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Student Participant</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-500">First Name</Label>
@@ -697,7 +697,7 @@ function VisaTab({ record, onSave }: { record: SARecord; onSave: (patch: Partial
     <div className="space-y-6">
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">Visa Information</h3>
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Visa Information</h3>
           <div className="flex items-center gap-2">
             {visaExpiryDate && <VisaExpiryBadge expiryDate={visaExpiryDate} />}
             {isDirty && (

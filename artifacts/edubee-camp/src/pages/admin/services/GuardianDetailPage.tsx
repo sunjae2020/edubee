@@ -206,7 +206,7 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</h3>
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Client</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
@@ -225,7 +225,7 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
         </div>
 
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">School Registration</h3>
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">School Registration</h3>
           <div
             className="flex items-center gap-2 p-2.5 rounded-lg border border-stone-200 cursor-pointer"
             onClick={() => { setRegistered(!registered); mark(); }}
@@ -247,7 +247,7 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Service Details</h3>
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Service Details</h3>
           {isDirty && (
             <div className="flex items-center gap-2">
               <button onClick={discard}
@@ -378,7 +378,7 @@ function SchoolEventsTab({ record }: { record: GuardianDetail }) {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               {["Date", "Event", "Notes"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#F5821F] uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
@@ -416,7 +416,7 @@ function MedicalTab({ record }: { record: GuardianDetail }) {
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
                 {["Date", "Description", "Action Taken"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#F5821F] uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -441,7 +441,7 @@ function MedicalTab({ record }: { record: GuardianDetail }) {
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
                 {["Date", "Description", "Outcome"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#F5821F] uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -509,7 +509,7 @@ function BillingTab({ record, id }: { record: GuardianDetail; id: string }) {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               {["Invoice #", "Seq #", "Amount", "Status", "Created"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#F5821F] uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
@@ -620,7 +620,7 @@ export default function GuardianDetailPage() {
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <FileText size={14} style={{ color: "#F5821F" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Related Contract</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Related Contract</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -648,7 +648,7 @@ export default function GuardianDetailPage() {
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <DollarSign size={14} style={{ color: "#F5821F" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Financial Summary</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Financial Summary</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">

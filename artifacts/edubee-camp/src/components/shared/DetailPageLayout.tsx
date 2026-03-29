@@ -185,7 +185,7 @@ export function DetailSection({
 }) {
   return (
     <div className={cn("bg-card rounded-xl border border-border p-5", className)}>
-      {title && <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">{title}</div>}
+      {title && <div className="text-xs font-semibold text-[#F5821F] uppercase tracking-widest mb-4 pb-2 border-b border-[#F5821F]/20">{title}</div>}
       {children}
     </div>
   );

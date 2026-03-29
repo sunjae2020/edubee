@@ -191,7 +191,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide flex items-center gap-1.5">
+            <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide flex items-center gap-1.5">
               <User size={13} /> Client Info
             </h3>
             {isDirty && (
@@ -246,7 +246,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
         </div>
 
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Preferred Industry</h3>
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Preferred Industry</h3>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Industries (comma-separated)</Label>
             <Input value={preferredIndustryStr} onChange={e => { setPreferredIndustryStr(e.target.value); mark(); }} className="h-9 text-sm" placeholder="e.g. IT, Finance, Marketing" />
@@ -257,7 +257,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
       {/* Work Experience */}
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide flex items-center gap-1.5">
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide flex items-center gap-1.5">
             <Briefcase size={13} /> Work Experience
           </h3>
           <button
@@ -341,7 +341,7 @@ function CompanyMatchTab({ record, onSave }: { record: InternshipDetail; onSave:
   return (
     <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Company & Placement Details</h3>
+        <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Company & Placement Details</h3>
         {isDirty && (
           <div className="flex items-center gap-2">
             <button onClick={discard}
@@ -427,7 +427,7 @@ function ProgressTab({ record, onSave }: { record: InternshipDetail; onSave: (p:
   return (
     <div className="space-y-5">
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-        <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Document Readiness</h3>
+        <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Document Readiness</h3>
         <div className="space-y-2">
           <ToggleRow label="Resume Prepared"        checked={resumePrepared}        onChange={v => { setResumePrepared(v); mark(); }} />
           <ToggleRow label="Cover Letter Prepared"  checked={coverLetterPrepared}   onChange={v => { setCoverLetterPrepared(v); mark(); }} />
@@ -437,7 +437,7 @@ function ProgressTab({ record, onSave }: { record: InternshipDetail; onSave: (p:
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Interview</h3>
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Interview</h3>
           {isDirty && (
             <div className="flex items-center gap-2">
               <button onClick={discard}

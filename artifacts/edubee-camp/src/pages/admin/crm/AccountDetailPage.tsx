@@ -168,7 +168,7 @@ function QI({ label, children }: { label: string; children: React.ReactNode }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-stone-400 border-b border-[#E8E6E2] pb-1.5">
+      <h3 className="text-xs font-semibold uppercase tracking-widest text-[#F5821F] border-b border-[#F5821F]/20 pb-1.5">
         {title}
       </h3>
       <div className="grid grid-cols-2 gap-x-4 gap-y-3">{children}</div>

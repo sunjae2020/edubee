@@ -168,7 +168,7 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {/* Client & Contract */}
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</h3>
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Client</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
@@ -186,7 +186,7 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
 
         {/* Host */}
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Host / Provider</h3>
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Host / Provider</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.hostName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Contact</span><span className="text-stone-600">{record.hostContact ?? "—"}</span></div>
@@ -199,7 +199,7 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
       {/* Editable fields */}
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Booking Details</h3>
+          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Booking Details</h3>
           {isDirty && (
             <div className="flex items-center gap-2">
               <button onClick={discard}
@@ -490,7 +490,7 @@ function BillingTab({ record, onEditRates }: { record: AccomDetail; onEditRates:
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               {["Item", "Rate", "Qty", "Amount"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#F5821F] uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
@@ -620,7 +620,7 @@ export default function AccommodationDetailPage() {
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <FileText size={14} style={{ color: "#F5821F" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Related Contract</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Related Contract</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -648,7 +648,7 @@ export default function AccommodationDetailPage() {
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <DollarSign size={14} style={{ color: "#F5821F" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Financial Summary</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Financial Summary</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">

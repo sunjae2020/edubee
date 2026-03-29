@@ -140,7 +140,7 @@ function OverviewTab({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText size={14} style={{ color: "#F5821F" }} />
-            <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Service Details</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Service Details</h3>
           </div>
           {isDirty && (
             <div className="flex items-center gap-2">
@@ -225,7 +225,7 @@ function OverviewTab({
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <FileText size={14} style={{ color: "#F5821F" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Related Contract</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Related Contract</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -256,7 +256,7 @@ function OverviewTab({
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <DollarSign size={14} style={{ color: "#F5821F" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Contract Financial</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Contract Financial</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -290,7 +290,7 @@ function BillTab({ record }: { record: OtherServiceRecord }) {
       <div className="bg-white border border-stone-200 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-stone-100 flex items-center gap-2">
           <DollarSign size={14} style={{ color: "#F5821F" }} />
-          <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Billing Summary</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Billing Summary</h3>
         </div>
         <div className="divide-y divide-stone-100">
           <div className="px-5 py-3.5 flex items-center justify-between text-sm">
@@ -315,7 +315,7 @@ function BillTab({ record }: { record: OtherServiceRecord }) {
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <User size={14} style={{ color: "#F5821F" }} />
-          <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Service Info</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Service Info</h3>
         </div>
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
           <div className="flex items-center justify-between">

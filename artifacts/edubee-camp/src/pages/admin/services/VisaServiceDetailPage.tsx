@@ -167,7 +167,7 @@ function OverviewTab({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Stamp size={14} style={{ color: "#F5821F" }} />
-            <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Visa Details</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Visa Details</h3>
           </div>
           {isDirty && (
             <div className="flex items-center gap-2">
@@ -272,7 +272,7 @@ function OverviewTab({
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <FileText size={14} style={{ color: "#F5821F" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Related Contract</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Related Contract</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -303,7 +303,7 @@ function OverviewTab({
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <DollarSign size={14} style={{ color: "#F5821F" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Contract Financial</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Contract Financial</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -348,7 +348,7 @@ function TimelineTab({ record, onEdit }: { record: VisaServiceRecord; onEdit: ()
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <Stamp size={14} style={{ color: "#F5821F" }} />
-            <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Application Timeline</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Application Timeline</h3>
           </div>
           <button
             onClick={onEdit}
@@ -410,7 +410,7 @@ function BillTab({ record, onEdit }: { record: VisaServiceRecord; onEdit: () => 
         <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <DollarSign size={14} style={{ color: "#F5821F" }} />
-            <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Billing Summary</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Billing Summary</h3>
           </div>
           <button
             onClick={onEdit}
@@ -442,7 +442,7 @@ function BillTab({ record, onEdit }: { record: VisaServiceRecord; onEdit: () => 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <Stamp size={14} style={{ color: "#F5821F" }} />
-          <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Visa Info</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Visa Info</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
           <div className="flex items-center justify-between">

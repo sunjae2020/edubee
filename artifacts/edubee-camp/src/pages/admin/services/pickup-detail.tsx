@@ -79,7 +79,7 @@ function BillTab({ record }: { record: any }) {
         <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <DollarSign size={14} style={{ color: "#F5821F" }} />
-            <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Billing Summary</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Billing Summary</h3>
           </div>
           {!editing ? (
             <button onClick={() => { setFee(record.serviceFee ?? ""); setCost(record.apCost ?? ""); setEditing(true); }}
@@ -123,7 +123,7 @@ function BillTab({ record }: { record: any }) {
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <Car size={14} style={{ color: "#F5821F" }} />
-          <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Transfer Info</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Transfer Info</h3>
         </div>
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
           <div className="flex items-center justify-between">
