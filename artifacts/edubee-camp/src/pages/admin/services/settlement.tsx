@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { format, parseISO } from "date-fns";
@@ -61,6 +62,7 @@ function Initials({ name }: { name?: string | null }) {
 
 export default function Settlement() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const qc = useQueryClient();
   const [, navigate] = useLocation();
   const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
@@ -104,8 +106,13 @@ export default function Settlement() {
       qc.invalidateQueries({ queryKey: ["services-settlement"] });
       setShowCreate(false);
       setForm({});
-      navigate(`${BASE}/admin/services/settlement/${created.id}`);
+      if (created?.id) {
+        navigate(`${BASE}/admin/services/settlement/${created.id}`);
+      } else {
+        toast({ title: "Settlement created", description: "But could not open the detail page." });
+      }
     },
+    onError: () => toast({ title: "Failed to create settlement", variant: "destructive" }),
   });
 
   return (

@@ -9,6 +9,8 @@ import { authenticate } from "../middleware/authenticate.js";
 
 const router = Router();
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 type UserRole = string;
 
 function isAdminOrCC(role: UserRole) {
@@ -73,6 +75,7 @@ router.get("/services/pickup/:id", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
     const uid = req.user!.id;
+    if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "Not Found" });
     const [rec] = await db.select().from(pickupMgt).where(eq(pickupMgt.id, req.params.id)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
     if (role === "partner_pickup" && rec.driverId !== uid) return res.status(403).json({ error: "Forbidden" });
@@ -132,6 +135,7 @@ router.get("/services/tour/:id", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
     const uid = req.user!.id;
+    if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "Not Found" });
     const [rec] = await db.select().from(tourMgt).where(eq(tourMgt.id, req.params.id)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
     if (role === "partner_tour" && rec.tourCompanyId !== uid) return res.status(403).json({ error: "Forbidden" });
@@ -269,6 +273,8 @@ router.get("/services/settlement/:id", authenticate, async (req, res) => {
     const role = req.user!.role;
     const uid  = req.user!.id;
     if (role === "parent_client") return res.status(403).json({ error: "Forbidden" });
+
+    if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "Not Found" });
 
     const [rec] = await db.select().from(settlementMgt)
       .where(eq(settlementMgt.id, req.params.id)).limit(1);

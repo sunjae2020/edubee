@@ -394,10 +394,11 @@ export default function SettlementMgtDetail() {
 
   const isAdmin = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
 
-  const { data: rec, isLoading } = useQuery<SettlementRec>({
+  const { data: rec, isLoading, isError, error, refetch } = useQuery<SettlementRec>({
     queryKey: ["settlement-detail", id],
     queryFn: () => axios.get(`${BASE}/api/services/settlement/${id}`).then(r => r.data),
     enabled: !!id,
+    retry: 1,
   });
 
   const updateMutation = useMutation({
@@ -423,13 +424,27 @@ export default function SettlementMgtDetail() {
       </div>
     );
   }
-  if (!rec) {
+  if (isError || !rec) {
+    const status = (error as any)?.response?.status;
+    const isForbidden = status === 403;
+    const isNotFound  = status === 404 || !id;
+    const msg = isForbidden
+      ? "You don't have permission to view this settlement."
+      : isNotFound
+        ? "Settlement record not found."
+        : "Failed to load settlement. Please try again.";
     return (
       <div className="p-6 flex flex-col items-center justify-center h-64 gap-3">
         <AlertCircle size={32} className="text-[#E8E6E2]" />
-        <p className="text-[#57534E]">Settlement record not found.</p>
-        <button onClick={() => navigate("/admin/services/settlement")}
-          className="text-sm underline" style={{ color:"#F5821F" }}>Back to Settlement</button>
+        <p className="text-[#57534E]">{msg}</p>
+        <div className="flex items-center gap-3">
+          {!isForbidden && !isNotFound && (
+            <button onClick={() => refetch()}
+              className="text-sm underline" style={{ color:"#F5821F" }}>Try Again</button>
+          )}
+          <button onClick={() => navigate("/admin/services/settlement")}
+            className="text-sm underline" style={{ color:"#F5821F" }}>Back to Settlement</button>
+        </div>
       </div>
     );
   }
