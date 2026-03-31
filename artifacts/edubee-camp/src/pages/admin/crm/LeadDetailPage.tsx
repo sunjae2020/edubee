@@ -54,7 +54,7 @@ const TABS = [
 
 const INPUT_CLS = "h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 focus-visible:ring-offset-0";
 
-const ACCOUNT_CREATE_TYPES = ["Client", "Agent", "Institute", "Hotel", "Tour Operator", "Pickup", "Other"];
+const ACCOUNT_CREATE_TYPES = ["Student", "Provider", "Client", "Institute", "Agent", "Company", "Accommodation", "Agency", "School", "Private"];
 
 interface ActivityRecord {
   id: string;
