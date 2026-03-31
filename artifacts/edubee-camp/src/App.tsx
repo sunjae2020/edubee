@@ -78,6 +78,7 @@ import FieldPermissions from "@/pages/admin/settings/field-permissions";
 import DocPermissions from "@/pages/admin/settings/doc-permissions";
 import ImpersonationLogs from "@/pages/admin/settings/impersonation-logs";
 import DataManager from "@/pages/admin/settings/data-manager";
+import LookupValues from "@/pages/admin/settings/lookup-values";
 import Products from "@/pages/admin/products";
 import ProductDetail from "@/pages/admin/product-detail";
 import ProductGroups from "@/pages/admin/product-groups";
@@ -474,6 +475,9 @@ function Router() {
       </Route>
       <Route path="/admin/settings/data-manager">
         <AdminRoute title="Data Manager"><DataManager /></AdminRoute>
+      </Route>
+      <Route path="/admin/settings/lookup-values">
+        <AdminRoute title="Lookup Values"><LookupValues /></AdminRoute>
       </Route>
 
       {/* My Programs */}

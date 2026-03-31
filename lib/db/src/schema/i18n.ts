@@ -37,6 +37,7 @@ export const systemSettings = pgTable("system_settings", {
   value:      text("value"),
   groupName:  varchar("group_name", { length: 100 }),
   status:     varchar("status", { length: 20 }).notNull().default("Active"),
+  sortOrder:  integer("sort_order").notNull().default(0),
   createdOn:  timestamp("created_on").notNull().defaultNow(),
   modifiedOn: timestamp("modified_on").notNull().defaultNow(),
 });

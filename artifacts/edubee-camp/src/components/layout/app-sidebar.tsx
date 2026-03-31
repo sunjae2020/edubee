@@ -12,7 +12,7 @@ import {
   Receipt, FileCheck, ArrowLeftRight, RefreshCw,
   Wallet, BarChart2,
   Users, Users2, Settings, Lock, Grid2x2, FileSearch, UserSearch,
-  Ticket, FolderOpen, Bot,
+  Ticket, FolderOpen, Bot, Tags,
   BookOpen, CreditCard, BookMarked, Briefcase, Shield, Wrench, Stamp,
   Tag, Percent, BadgeDollarSign,
   LucideIcon,
@@ -166,6 +166,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
         { icon: FileSearch,  label: "Doc Permissions",    href: "/admin/settings/doc-permissions"    },
         { icon: UserSearch,  label: "Impersonation Logs", href: "/admin/settings/impersonation-logs" },
         { icon: FolderOpen,  label: "Data Manager",       href: "/admin/settings/data-manager"       },
+        { icon: Tags,        label: "Lookup Values",      href: "/admin/settings/lookup-values"       },
       ],
     });
   }
