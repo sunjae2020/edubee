@@ -27,6 +27,8 @@ export interface ViewAsUser {
   fullName: string;
   role: string;
   avatarUrl?: string | null;
+  _sourceType?: "user" | "account";
+  _accountType?: string | null;
 }
 
 interface ViewAsContextType {
@@ -52,7 +54,6 @@ export function ViewAsProvider({ children }: { children: React.ReactNode }) {
     try {
       const stored = sessionStorage.getItem(SESSION_KEY);
       const user = stored ? JSON.parse(stored) : null;
-      // Apply theme immediately during initialization (synchronous, no flash)
       applyTheme(!!user);
       return user;
     } catch {

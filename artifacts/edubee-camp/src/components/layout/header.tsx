@@ -5,7 +5,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Clock, ClipboardList, RefreshCw, CalendarCheck, FileText, AlertTriangle, BarChart3, Receipt, LucideIcon, Layers, Sun, Moon, Search, X } from "lucide-react";
+import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Clock, ClipboardList, RefreshCw, CalendarCheck, FileText, AlertTriangle, BarChart3, Receipt, LucideIcon, Layers, Sun, Moon, Search, X, Building2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import axios from "axios";
@@ -15,6 +15,18 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 interface SwitchableUser {
   id: string; email: string; fullName: string;
   role: string; avatarUrl?: string | null;
+}
+
+interface SwitchableAccount {
+  id: string;
+  name: string;
+  accountType: string | null;
+  portalAccess: boolean;
+  portalRole: string | null;
+  portalEmail: string | null;
+  primaryContactFirstName: string | null;
+  primaryContactLastName: string | null;
+  primaryContactOriginalName: string | null;
 }
 
 interface Notification {
@@ -71,6 +83,19 @@ const NOTIF_ICONS: Record<string, LucideIcon> = {
   default: Bell,
 };
 
+const ACCOUNT_TYPE_COLORS: Record<string, { bg: string; text: string }> = {
+  Student:      { bg: "#FEF0E3", text: "#F5821F" },
+  Agent:        { bg: "#F4F3F1", text: "#57534E" },
+  School:       { bg: "#DCFCE7", text: "#15803D" },
+  Company:      { bg: "#E0F2FE", text: "#0369A1" },
+  Parent:       { bg: "#FCE7F3", text: "#BE185D" },
+};
+
+function getAccountTypeColor(type: string | null) {
+  return ACCOUNT_TYPE_COLORS[type ?? ""] ?? { bg: "#F4F3F1", text: "#57534E" };
+}
+
+type ViewTab = "users" | "accounts";
 type Props = { collapsed: boolean; onToggle: () => void; title?: string };
 
 export function Header({ collapsed, onToggle, title }: Props) {
@@ -80,6 +105,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
   const [location, navigate] = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
   const [viewAsOpen, setViewAsOpen] = useState(false);
+  const [viewTab, setViewTab] = useState<ViewTab>("users");
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -92,6 +118,12 @@ export function Header({ collapsed, onToggle, title }: Props) {
   const { data: switchableUsers = [] } = useQuery<SwitchableUser[]>({
     queryKey: ["switchable-users"],
     queryFn: () => axios.get(`${BASE}/api/users/switchable`).then(r => r.data),
+    enabled: canSwitch,
+  });
+
+  const { data: switchableAccounts = [] } = useQuery<SwitchableAccount[]>({
+    queryKey: ["switchable-accounts"],
+    queryFn: () => axios.get(`${BASE}/api/users/switchable-accounts`).then(r => r.data),
     enabled: canSwitch,
   });
 
@@ -119,13 +151,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
 
   const pageTitle = title ?? PAGE_TITLES[location] ?? "Edubee Camp Admin";
 
-  const grouped = switchableUsers.reduce<Record<string, SwitchableUser[]>>((acc, u) => {
-    if (!acc[u.role]) acc[u.role] = [];
-    acc[u.role].push(u);
-    return acc;
-  }, {});
-
-  const availableRoles = Object.keys(grouped).sort(
+  const availableRoles = Array.from(new Set(switchableUsers.map(u => u.role))).sort(
     (a, b) => (ROLE_HIERARCHY[b] ?? 0) - (ROLE_HIERARCHY[a] ?? 0)
   );
 
@@ -136,7 +162,42 @@ export function Header({ collapsed, onToggle, title }: Props) {
     return roleMatch && nameMatch;
   });
 
+  const filteredAccounts = switchableAccounts.filter(a => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (a.name ?? "").toLowerCase().includes(q) ||
+      (a.portalEmail ?? "").toLowerCase().includes(q) ||
+      (a.accountType ?? "").toLowerCase().includes(q)
+    );
+  });
+
+  function handleClose() {
+    setViewAsOpen(false);
+    setSelectedRole(null);
+    setSearchQuery("");
+  }
+
+  function switchToAccount(acct: SwitchableAccount) {
+    const contactName = [acct.primaryContactFirstName, acct.primaryContactLastName].filter(Boolean).join(" ") || acct.name;
+    setViewAs({
+      id: acct.id,
+      email: acct.portalEmail ?? "",
+      fullName: acct.name,
+      role: acct.portalRole ?? "parent_client",
+      _sourceType: "account",
+      _accountType: acct.accountType,
+    });
+    handleClose();
+  }
+
   if (!user) return null;
+
+  const viewingAsLabel = isImpersonating
+    ? viewAsUser?._sourceType === "account"
+      ? `Account: ${viewAsUser.fullName.split(" ")[0]}`
+      : `User: ${viewAsUser?.fullName?.split(" ")[0]}`
+    : ROLE_LABELS[myRole];
 
   return (
     <div>
@@ -157,7 +218,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Role view switcher */}
+          {/* View as switcher */}
           {canSwitch && (
             <DropdownMenu open={viewAsOpen} onOpenChange={(o) => {
               setViewAsOpen(o);
@@ -170,19 +231,20 @@ export function Header({ collapsed, onToggle, title }: Props) {
                   className={`h-8 px-3 text-xs gap-1.5 font-medium ${isImpersonating ? "bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#92400E] border-[#F59E0B]" : ""}`}
                 >
                   {isImpersonating ? (
-                    <><Eye className="w-3.5 h-3.5" /> Viewing as: {viewAsUser?.fullName?.split(" ")[0]}</>
+                    <><Eye className="w-3.5 h-3.5" /> Viewing as: {viewingAsLabel}</>
                   ) : (
                     <><Eye className="w-3.5 h-3.5 opacity-60" /> View as: {ROLE_LABELS[myRole]}</>
                   )}
                   <ChevronDown className="w-3 h-3 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
+
               <DropdownMenuContent align="end" className="w-72 p-0" onCloseAutoFocus={e => e.preventDefault()}>
                 {/* My View */}
                 <div className="px-2 pt-2 pb-1">
                   <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide px-1 mb-1">My View</p>
                   <button
-                    onClick={() => { clearViewAs(); setViewAsOpen(false); }}
+                    onClick={() => { clearViewAs(); handleClose(); }}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors ${!isImpersonating ? "bg-[#FEF0E3]" : "hover:bg-[#F4F3F1]"}`}
                   >
                     <div className="w-6 h-6 rounded-full bg-[#FEF0E3] flex items-center justify-center text-[10px] font-bold text-[#F5821F] shrink-0">
@@ -198,84 +260,144 @@ export function Header({ collapsed, onToggle, title }: Props) {
                   </button>
                 </div>
 
-                {switchableUsers.length > 0 && (
-                  <>
-                    <div className="border-t border-[#E8E6E2] mx-2" />
-                    <div className="px-2 pt-2">
-                      <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide px-1 mb-2">View as another user</p>
+                {/* Tabs */}
+                <div className="border-t border-[#E8E6E2] mx-2" />
+                <div className="px-2 pt-2">
+                  <div className="flex gap-1 mb-2">
+                    <button
+                      onClick={() => { setViewTab("users"); setSelectedRole(null); setSearchQuery(""); }}
+                      className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-medium transition-colors border ${viewTab === "users" ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
+                    >
+                      <UserIcon className="w-3 h-3" /> Users
+                      {switchableUsers.length > 0 && (
+                        <span className={`ml-0.5 px-1 py-0 rounded-full text-[9px] font-bold ${viewTab === "users" ? "bg-white/30 text-white" : "bg-[#F4F3F1] text-[#78716C]"}`}>
+                          {switchableUsers.length}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => { setViewTab("accounts"); setSelectedRole(null); setSearchQuery(""); }}
+                      className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-medium transition-colors border ${viewTab === "accounts" ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
+                    >
+                      <Building2 className="w-3 h-3" /> Accounts
+                      {switchableAccounts.length > 0 && (
+                        <span className={`ml-0.5 px-1 py-0 rounded-full text-[9px] font-bold ${viewTab === "accounts" ? "bg-white/30 text-white" : "bg-[#F4F3F1] text-[#78716C]"}`}>
+                          {switchableAccounts.length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
 
-                      {/* Role filter pills */}
-                      <div className="flex flex-wrap gap-1 mb-2">
+                  {/* Role filter pills — only on Users tab */}
+                  {viewTab === "users" && availableRoles.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      <button
+                        onClick={() => { setSelectedRole(null); setSearchQuery(""); setTimeout(() => searchRef.current?.focus(), 50); }}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${!selectedRole ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
+                      >
+                        All
+                      </button>
+                      {availableRoles.map(role => (
                         <button
-                          onClick={() => { setSelectedRole(null); setSearchQuery(""); setTimeout(() => searchRef.current?.focus(), 50); }}
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${!selectedRole ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
+                          key={role}
+                          onClick={() => { setSelectedRole(role); setSearchQuery(""); setTimeout(() => searchRef.current?.focus(), 50); }}
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${selectedRole === role ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
                         >
-                          All
+                          {ROLE_EMOJIS[role]} {ROLE_LABELS[role]}
                         </button>
-                        {availableRoles.map(role => (
-                          <button
-                            key={role}
-                            onClick={() => { setSelectedRole(role); setSearchQuery(""); setTimeout(() => searchRef.current?.focus(), 50); }}
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${selectedRole === role ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
-                          >
-                            {ROLE_EMOJIS[role]} {ROLE_LABELS[role]}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Search input */}
-                      <div className="relative mb-2">
-                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#A8A29E]" />
-                        <input
-                          ref={searchRef}
-                          type="text"
-                          value={searchQuery}
-                          onChange={e => setSearchQuery(e.target.value)}
-                          onKeyDown={e => e.stopPropagation()}
-                          onClick={e => e.stopPropagation()}
-                          placeholder={selectedRole ? `Search ${ROLE_LABELS[selectedRole]}…` : "Search by name or email…"}
-                          className="w-full pl-7 pr-7 py-1.5 text-xs border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] focus:outline-none focus:ring-1 focus:ring-[#F5821F] focus:border-[#F5821F]"
-                        />
-                        {searchQuery && (
-                          <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-[#78716C]">
-                            <X className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
+                      ))}
                     </div>
+                  )}
 
-                    {/* User list */}
-                    <div className="max-h-52 overflow-y-auto px-2 pb-2">
-                      {filteredUsers.length === 0 ? (
-                        <div className="text-center py-4 text-[11px] text-[#A8A29E]">No users found</div>
-                      ) : (
-                        filteredUsers.map(u => (
+                  {/* Search input */}
+                  <div className="relative mb-2">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#A8A29E]" />
+                    <input
+                      ref={searchRef}
+                      type="text"
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      onKeyDown={e => e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
+                      placeholder={
+                        viewTab === "users"
+                          ? (selectedRole ? `Search ${ROLE_LABELS[selectedRole]}…` : "Search by name or email…")
+                          : "Search account name or email…"
+                      }
+                      className="w-full pl-7 pr-7 py-1.5 text-xs border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] focus:outline-none focus:ring-1 focus:ring-[#F5821F] focus:border-[#F5821F]"
+                    />
+                    {searchQuery && (
+                      <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-[#78716C]">
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* List */}
+                <div className="max-h-52 overflow-y-auto px-2 pb-2">
+                  {viewTab === "users" ? (
+                    filteredUsers.length === 0 ? (
+                      <div className="text-center py-4 text-[11px] text-[#A8A29E]">No users found</div>
+                    ) : (
+                      filteredUsers.map(u => (
+                        <button
+                          key={u.id}
+                          onClick={() => { setViewAs({ ...u, _sourceType: "user" }); handleClose(); }}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors mb-0.5 ${viewAsUser?.id === u.id && viewAsUser?._sourceType === "user" ? "bg-[#FEF0E3]" : "hover:bg-[#F4F3F1]"}`}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-[#F4F3F1] flex items-center justify-center text-[10px] font-bold shrink-0">
+                            {u.fullName.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium truncate">{u.fullName}</div>
+                            <div className="text-[10px] text-[#A8A29E] truncate flex items-center gap-1">
+                              <span>{ROLE_EMOJIS[u.role]}</span>
+                              <span>{ROLE_LABELS[u.role]}</span>
+                            </div>
+                          </div>
+                          {viewAsUser?.id === u.id && viewAsUser?._sourceType === "user" && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#F5821F] shrink-0" />
+                          )}
+                        </button>
+                      ))
+                    )
+                  ) : (
+                    filteredAccounts.length === 0 ? (
+                      <div className="text-center py-4 text-[11px] text-[#A8A29E]">
+                        {switchableAccounts.length === 0 ? "No accounts with portal access" : "No accounts found"}
+                      </div>
+                    ) : (
+                      filteredAccounts.map(a => {
+                        const { bg, text } = getAccountTypeColor(a.accountType);
+                        const isActive = viewAsUser?.id === a.id && viewAsUser?._sourceType === "account";
+                        return (
                           <button
-                            key={u.id}
-                            onClick={() => { setViewAs(u); setViewAsOpen(false); setSelectedRole(null); setSearchQuery(""); }}
-                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors mb-0.5 ${viewAsUser?.id === u.id ? "bg-[#FEF0E3]" : "hover:bg-[#F4F3F1]"}`}
+                            key={a.id}
+                            onClick={() => switchToAccount(a)}
+                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors mb-0.5 ${isActive ? "bg-[#FEF0E3]" : "hover:bg-[#F4F3F1]"}`}
                           >
-                            <div className="w-6 h-6 rounded-full bg-[#F4F3F1] flex items-center justify-center text-[10px] font-bold shrink-0">
-                              {u.fullName.substring(0, 2).toUpperCase()}
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: bg }}>
+                              <Building2 className="w-3.5 h-3.5" style={{ color: text }} />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="text-xs font-medium truncate">{u.fullName}</div>
+                              <div className="text-xs font-medium truncate">{a.name}</div>
                               <div className="text-[10px] text-[#A8A29E] truncate flex items-center gap-1">
-                                <span>{ROLE_EMOJIS[u.role]}</span>
-                                <span>{ROLE_LABELS[u.role]}</span>
+                                {a.accountType && (
+                                  <span className="px-1 py-0 rounded text-[9px] font-medium" style={{ background: bg, color: text }}>
+                                    {a.accountType}
+                                  </span>
+                                )}
+                                {a.portalEmail && <span className="truncate">{a.portalEmail}</span>}
                               </div>
                             </div>
-                            {viewAsUser?.id === u.id && <div className="w-1.5 h-1.5 rounded-full bg-[#F5821F] shrink-0" />}
+                            {isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#F5821F] shrink-0" />}
                           </button>
-                        ))
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {switchableUsers.length === 0 && (
-                  <div className="px-2 pb-3 text-center text-[11px] text-[#A8A29E]">No other users to switch to</div>
-                )}
+                        );
+                      })
+                    )
+                  )}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -403,7 +525,11 @@ export function Header({ collapsed, onToggle, title }: Props) {
           style={{ background: "#FEF3C7", borderBottom: "1px solid #F59E0B", color: "#92400E" }}
         >
           <span>
-            👁 Viewing as: {ROLE_EMOJIS[viewAsUser.role]} {ROLE_LABELS[viewAsUser.role]} — {viewAsUser.fullName} ({viewAsUser.email}) · Preview mode
+            {viewAsUser._sourceType === "account" ? (
+              <>🏢 Viewing as Account: {viewAsUser.fullName} ({viewAsUser.email || "No portal email"}) · Portal Preview</>
+            ) : (
+              <>👁 Viewing as: {ROLE_EMOJIS[viewAsUser.role]} {ROLE_LABELS[viewAsUser.role]} — {viewAsUser.fullName} ({viewAsUser.email}) · Preview mode</>
+            )}
           </span>
           <button
             onClick={clearViewAs}

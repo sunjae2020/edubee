@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { users, products, packageGroupProducts, packageGroups } from "@workspace/db/schema";
+import { users, products, packageGroupProducts, packageGroups, accounts, contacts } from "@workspace/db/schema";
 import { eq, ilike, and, or, count, SQL, asc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { authenticate } from "../middleware/authenticate.js";
@@ -105,6 +105,31 @@ router.get("/switchable", authenticate, async (req, res) => {
     }).from(users).where(eq(users.status, "active"));
     const switchable = allUsers.filter(u => (ROLE_HIERARCHY[u.role] || 0) < myLevel && u.id !== req.user!.id);
     return res.json(switchable);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/switchable-accounts", authenticate, async (req, res) => {
+  try {
+    const myLevel = ROLE_HIERARCHY[req.user!.role] || 0;
+    if (myLevel < 60) return res.json([]);
+    const rows = await db
+      .select({
+        id:           accounts.id,
+        name:         accounts.name,
+        accountType:  accounts.accountType,
+        portalAccess: accounts.portalAccess,
+        portalRole:   accounts.portalRole,
+        portalEmail:  accounts.portalEmail,
+        primaryContactFirstName:  contacts.firstName,
+        primaryContactLastName:   contacts.lastName,
+        primaryContactOriginalName: contacts.originalName,
+      })
+      .from(accounts)
+      .leftJoin(contacts, eq(accounts.primaryContactId, contacts.id))
+      .where(eq(accounts.portalAccess, true));
+    return res.json(rows);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
