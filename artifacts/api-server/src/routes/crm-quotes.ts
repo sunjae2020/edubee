@@ -298,11 +298,12 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
 
       const contractId = newContract.id;
 
-      // 1b. Set quote_id and account_id (not in Drizzle schema → raw SQL)
+      // 1b. Set quote_id, account_id, and owner_id (not in Drizzle schema → raw SQL)
       await tx.execute(sql`
         UPDATE contracts
         SET quote_id   = ${req.params.id}::uuid,
-            account_id = ${quote.studentAccountId ?? null}
+            account_id = ${quote.studentAccountId ?? null},
+            owner_id   = ${quote.ownerId ?? null}
         WHERE id = ${contractId}::uuid
       `);
 
