@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
@@ -6,9 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Plus, Pencil, Trash2, GripVertical, Check, X, ToggleLeft, ToggleRight,
-  Tags, ChevronRight, ArrowLeft,
+  Plus, Pencil, Trash2, GripVertical, Check, X,
+  ToggleLeft, ToggleRight, Tags, ChevronRight, ArrowLeft,
 } from "lucide-react";
+import {
+  DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter,
+} from "@dnd-kit/core";
+import {
+  SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const api = (path: string) => `${BASE}${path}`;
@@ -47,6 +54,97 @@ function InlineEdit({ value, onSave, onCancel }: { value: string; onSave: (v: st
   );
 }
 
+// ── Sortable row ──────────────────────────────────────────────────────────────
+function SortableItem({
+  item, editingId, onEdit, onCancelEdit, onSaveEdit, onToggleStatus, onDelete,
+}: {
+  item: LookupItem;
+  editingId: string | null;
+  onEdit: (id: string) => void;
+  onCancelEdit: () => void;
+  onSaveEdit: (id: string, label: string) => void;
+  onToggleStatus: (item: LookupItem) => void;
+  onDelete: (item: LookupItem) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  const isEditing = editingId === item.id;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors group ${
+        isDragging
+          ? "bg-[#FEF0E3] border-[#F5821F]/40 shadow-md"
+          : item.status === "Inactive"
+          ? "bg-[#FAFAF9] border-[#E8E6E2] opacity-60"
+          : "bg-white border-[#E8E6E2] hover:border-[#F5821F]/30"
+      }`}
+    >
+      {/* Drag handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="text-[#D6D3D1] hover:text-[#A8A29E] cursor-grab active:cursor-grabbing shrink-0 touch-none"
+        tabIndex={-1}
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+      </button>
+
+      {isEditing ? (
+        <InlineEdit
+          value={item.label}
+          onSave={label => onSaveEdit(item.id, label)}
+          onCancel={onCancelEdit}
+        />
+      ) : (
+        <>
+          <span className="flex-1 text-sm font-medium text-[#1C1917] select-none">{item.label}</span>
+          {item.status === "Inactive" && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-[#A8A29E] border-[#E8E6E2] shrink-0">
+              Inactive
+            </Badge>
+          )}
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onEdit(item.id)}
+              className="p-1 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#78716C]"
+              title="Rename"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => onToggleStatus(item)}
+              className="p-1 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#78716C]"
+              title={item.status === "Active" ? "Deactivate" : "Activate"}
+            >
+              {item.status === "Active"
+                ? <ToggleRight className="w-3.5 h-3.5" />
+                : <ToggleLeft className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              onClick={() => onDelete(item)}
+              className="p-1 rounded hover:bg-red-50 text-[#A8A29E] hover:text-red-500"
+              title="Delete"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Lookup Items panel ────────────────────────────────────────────────────────
 function LookupItemsPanel({ group, groupLabel, onBack }: { group: string; groupLabel: string; onBack: () => void }) {
   const qc = useQueryClient();
@@ -55,13 +153,33 @@ function LookupItemsPanel({ group, groupLabel, onBack }: { group: string; groupL
   const [newLabel, setNewLabel] = useState("");
   const [addingNew, setAddingNew] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+  const [localItems, setLocalItems] = useState<LookupItem[] | null>(null);
 
-  const { data: items = [], isLoading } = useQuery<LookupItem[]>({
-    queryKey: ["lookups", group, showInactive],
-    queryFn: () => axios.get(api(`/api/settings/lookups?group=${group}${showInactive ? "&all=1" : ""}`)).then(r => r.data),
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  const { data: fetchedItems = [], isLoading } = useQuery<LookupItem[]>({
+    queryKey: ["lookups", group, "all"],
+    queryFn: () => axios.get(api(`/api/settings/lookups?group=${group}&all=1`)).then(r => r.data),
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["lookups", group] });
+  useEffect(() => {
+    if (fetchedItems.length > 0) setLocalItems(fetchedItems);
+  }, [fetchedItems]);
+
+  const items: LookupItem[] = localItems ?? fetchedItems;
+  const invalidate = useCallback(() => {
+    qc.invalidateQueries({ queryKey: ["lookups", group] });
+    setLocalItems(null);
+  }, [qc, group]);
+
+  const displayed = showInactive
+    ? items.filter(i => i.status !== "Deleted")
+    : items.filter(i => i.status === "Active");
+
+  const active   = items.filter(i => i.status === "Active");
+  const inactive = items.filter(i => i.status === "Inactive");
 
   const createMutation = useMutation({
     mutationFn: (label: string) => axios.post(api("/api/settings/lookups"), { group, label }),
@@ -82,9 +200,31 @@ function LookupItemsPanel({ group, groupLabel, onBack }: { group: string; groupL
     onError: () => toast({ title: "Error", variant: "destructive" }),
   });
 
-  const active   = items.filter(i => i.status === "Active");
-  const inactive = items.filter(i => i.status === "Inactive");
-  const displayed = showInactive ? items.filter(i => i.status !== "Deleted") : active;
+  const reorderMutation = useMutation({
+    mutationFn: (reordered: { id: string; sortOrder: number }[]) =>
+      axios.post(api("/api/settings/lookups/reorder"), { items: reordered }),
+    onError: () => { toast({ title: "Reorder failed", variant: "destructive" }); invalidate(); },
+  });
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const allItems = localItems ?? fetchedItems;
+    const activeIds = displayed.map(i => i.id);
+    const oldIdx = activeIds.indexOf(String(active.id));
+    const newIdx = activeIds.indexOf(String(over.id));
+    if (oldIdx === -1 || newIdx === -1) return;
+
+    const reordered = arrayMove(displayed, oldIdx, newIdx);
+
+    // Merge back with non-displayed (inactive) items
+    const nonDisplayed = allItems.filter(i => !displayed.find(d => d.id === i.id));
+    const merged = [...reordered, ...nonDisplayed].map((item, idx) => ({ ...item, sortOrder: idx }));
+    setLocalItems(merged);
+
+    reorderMutation.mutate(merged.map(i => ({ id: i.id, sortOrder: i.sortOrder })));
+  }
 
   return (
     <div>
@@ -121,7 +261,10 @@ function LookupItemsPanel({ group, groupLabel, onBack }: { group: string; groupL
             autoFocus
             value={newLabel}
             onChange={e => setNewLabel(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && newLabel.trim()) createMutation.mutate(newLabel.trim()); if (e.key === "Escape") { setAddingNew(false); setNewLabel(""); }}}
+            onKeyDown={e => {
+              if (e.key === "Enter" && newLabel.trim()) createMutation.mutate(newLabel.trim());
+              if (e.key === "Escape") { setAddingNew(false); setNewLabel(""); }
+            }}
             placeholder="Enter value name…"
             className="flex-1 px-2 py-1 text-sm border border-[#E8E6E2] rounded focus:outline-none focus:ring-1 focus:ring-[#F5821F]"
           />
@@ -136,6 +279,13 @@ function LookupItemsPanel({ group, groupLabel, onBack }: { group: string; groupL
         </div>
       )}
 
+      {/* Drag hint */}
+      {displayed.length > 1 && !isLoading && (
+        <p className="text-[11px] text-[#A8A29E] mb-2 flex items-center gap-1">
+          <GripVertical className="w-3 h-3" /> 왼쪽 핸들을 드래그해 순서를 변경하세요
+        </p>
+      )}
+
       {/* Items list */}
       {isLoading ? (
         <div className="text-center py-8 text-sm text-[#A8A29E]">Loading…</div>
@@ -145,56 +295,24 @@ function LookupItemsPanel({ group, groupLabel, onBack }: { group: string; groupL
           No values yet — click "Add Value" to get started.
         </div>
       ) : (
-        <div className="space-y-1">
-          {displayed.map(item => (
-            <div
-              key={item.id}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors group ${
-                item.status === "Inactive" ? "bg-[#FAFAF9] border-[#E8E6E2] opacity-60" : "bg-white border-[#E8E6E2] hover:border-[#F5821F]/30"
-              }`}
-            >
-              <GripVertical className="w-3.5 h-3.5 text-[#D6D3D1] cursor-grab shrink-0" />
-
-              {editingId === item.id ? (
-                <InlineEdit
-                  value={item.label}
-                  onSave={label => updateMutation.mutate({ id: item.id, label })}
-                  onCancel={() => setEditingId(null)}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={displayed.map(i => i.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-1">
+              {displayed.map(item => (
+                <SortableItem
+                  key={item.id}
+                  item={item}
+                  editingId={editingId}
+                  onEdit={id => setEditingId(id)}
+                  onCancelEdit={() => setEditingId(null)}
+                  onSaveEdit={(id, label) => updateMutation.mutate({ id, label })}
+                  onToggleStatus={item => updateMutation.mutate({ id: item.id, status: item.status === "Active" ? "Inactive" : "Active" })}
+                  onDelete={item => { if (confirm(`Delete "${item.label}"?`)) deleteMutation.mutate(item.id); }}
                 />
-              ) : (
-                <>
-                  <span className="flex-1 text-sm font-medium text-[#1C1917]">{item.label}</span>
-                  {item.status === "Inactive" && (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-[#A8A29E] border-[#E8E6E2]">Inactive</Badge>
-                  )}
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => setEditingId(item.id)}
-                      className="p-1 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#78716C]"
-                      title="Rename"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => updateMutation.mutate({ id: item.id, status: item.status === "Active" ? "Inactive" : "Active" })}
-                      className="p-1 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#78716C]"
-                      title={item.status === "Active" ? "Deactivate" : "Activate"}
-                    >
-                      {item.status === "Active" ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
-                    </button>
-                    <button
-                      onClick={() => { if (confirm(`Delete "${item.label}"?`)) deleteMutation.mutate(item.id); }}
-                      className="p-1 rounded hover:bg-red-50 text-[#A8A29E] hover:text-red-500"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   );
@@ -237,12 +355,11 @@ export default function LookupValuesPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      {/* Page header */}
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-[#1C1917]">Lookup Values</h1>
           <p className="text-sm text-[#A8A29E] mt-0.5">
-            Manage the dropdown options used across the system — account types, categories, channels, and more.
+            시스템 전반에서 사용되는 드롭다운 옵션을 관리합니다.
           </p>
         </div>
         {!hasAny && (
@@ -259,7 +376,6 @@ export default function LookupValuesPage() {
         )}
       </div>
 
-      {/* Group cards */}
       {isLoading ? (
         <div className="text-center py-12 text-sm text-[#A8A29E]">Loading…</div>
       ) : (
