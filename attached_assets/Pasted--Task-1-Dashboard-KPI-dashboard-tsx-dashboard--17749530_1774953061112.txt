@@ -1,0 +1,213 @@
+## Task 1 — Dashboard KPI 요약 위젯 구현 — 진행해
+
+dashboard.tsx 와 백엔드 dashboard 라우트에만 수정한다.
+다른 파일은 절대 건드리지 않는다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### STEP 1. 파일 읽기 (수정 전 필수)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+아래 파일을 읽는다:
+① artifacts/edubee-camp/src/pages/dashboard.tsx
+   → StatCard 컴포넌트 props 구조 (line 40~61)
+   → isSAorAD 블록 내 카드 배치 구조
+   → useQuery 데이터 바인딩 패턴
+② artifacts/api-server/src/routes/dashboard.ts 또는
+   dashboard-crm.ts 에서 GET /api/dashboard/stats 엔드포인트
+   → 현재 응답 구조 (어떤 필드를 반환하는지)
+
+읽기 완료 후 아래를 보고한다:
+- StatCard props 구조
+- /api/dashboard/stats 현재 응답 필드 목록
+- isSAorAD 블록에서 KPI 카드 삽입할 정확한 줄 번호
+
+수정하지 않는다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### STEP 2. 백엔드 수정
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GET /api/dashboard/stats 응답에 KPI 요약 필드를 추가한다.
+기존 응답 구조는 절대 변경하지 않는다 — 필드만 추가한다.
+
+추가할 집계 쿼리 (기존 쿼리 다음에 병렬 추가):
+
+  // KPI 요약 집계 — 이번 달 기준
+  const now       = new Date();
+  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1)
+                        .toISOString().split('T')[0];
+  const periodEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+                        .toISOString().split('T')[0];
+
+  const kpiRes = await db.execute(sql`
+    SELECT
+      COALESCE(SUM(cp.ar_amount), 0)                                AS ar_scheduled,
+      COALESCE(SUM(
+        CASE WHEN cp.ar_status = 'paid' THEN cp.ar_amount ELSE 0 END
+      ), 0)                                                         AS ar_collected,
+      COALESCE(SUM(cp.ap_amount), 0)                                AS ap_scheduled,
+      COALESCE(SUM(
+        CASE WHEN cp.ap_status = 'paid' THEN cp.ap_amount ELSE 0 END
+      ), 0)                                                         AS ap_paid,
+      COALESCE(SUM(cp.ar_amount), 0)
+        - COALESCE(SUM(
+            CASE WHEN cp.ap_status = 'paid' THEN cp.ap_amount ELSE 0 END
+          ), 0)                                                     AS net_revenue,
+      COUNT(DISTINCT c.owner_id)                                    AS active_staff_count
+    FROM contract_products cp
+    JOIN contracts c ON cp.contract_id = c.id
+    WHERE cp.status IN ('pending', 'active')
+      AND cp.ar_due_date >= ${periodStart}
+      AND cp.ar_due_date <= ${periodEnd}
+  `);
+  const kpi = kpiRes.rows[0] as any;
+
+  // 성과급 합계 (staff_kpi_periods — 이번 달 draft 이상)
+  const incentiveRes = await db.execute(sql`
+    SELECT COALESCE(SUM(incentive_amount), 0) AS total_incentive
+    FROM staff_kpi_periods
+    WHERE period_type  = 'monthly'
+      AND period_start = ${periodStart}
+  `);
+  const totalIncentive = Number(
+    (incentiveRes.rows[0] as any)?.total_incentive ?? 0
+  );
+
+기존 응답 객체에 아래 필드를 추가한다:
+
+  // 기존 return { ... } 에 추가
+  kpiSummary: {
+    periodStart,
+    periodEnd,
+    arScheduled:    Number(kpi.ar_scheduled   ?? 0),
+    arCollected:    Number(kpi.ar_collected   ?? 0),
+    apScheduled:    Number(kpi.ap_scheduled   ?? 0),
+    apPaid:         Number(kpi.ap_paid        ?? 0),
+    netRevenue:     Number(kpi.net_revenue    ?? 0),
+    activeStaff:    Number(kpi.active_staff_count ?? 0),
+    totalIncentive,
+  }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### STEP 3. 프론트엔드 수정 (dashboard.tsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+수정 위치: isSAorAD 블록 — 기존 StatCard 4개 다음에 추가
+기존 StatCard 컴포넌트를 그대로 재사용한다.
+
+[A] 타입 확장
+  useQuery 응답 타입 또는 stats 변수에 kpiSummary 필드 추가:
+
+  // 기존 stats 타입 정의 또는 캐스팅 부분에 추가
+  kpiSummary?: {
+    periodStart:    string;
+    periodEnd:      string;
+    arScheduled:    number;
+    arCollected:    number;
+    apScheduled:    number;
+    apPaid:         number;
+    netRevenue:     number;
+    activeStaff:    number;
+    totalIncentive: number;
+  };
+
+[B] 금액 포맷 헬퍼
+  파일 내 기존 포맷 함수가 있으면 재사용.
+  없으면 StatCard 바로 위에 인라인 추가:
+
+  const fmtAUD = (n: number) =>
+    new Intl.NumberFormat('en-AU', {
+      style:                 'currency',
+      currency:              'AUD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(n);
+
+[C] KPI 구분선 + 카드 3개 추가
+  isSAorAD 블록의 기존 StatCard 목록 바로 다음,
+  차트 섹션 이전에 삽입한다:
+
+  {/* ── KPI 요약 ─────────────────────────── */}
+  {stats?.kpiSummary && (
+    <>
+      {/* 구분선 + 섹션 제목 */}
+      <div className="col-span-2 md:col-span-4 flex items-center gap-3 mt-2">
+        <span className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+          💰 이번 달 KPI
+        </span>
+        <span className="text-xs text-gray-400">
+          {stats.kpiSummary.periodStart} ~ {stats.kpiSummary.periodEnd}
+        </span>
+        <div className="flex-1 border-t border-gray-200" />
+        
+          href="/admin/kpi/staff"
+          className="text-xs text-blue-500 hover:text-blue-700"
+        >
+          상세 보기 →
+        </a>
+      </div>
+
+      {/* 넷 매출 카드 */}
+      <StatCard
+        icon="📊"
+        label="넷 매출 (이번 달)"
+        value={fmtAUD(stats.kpiSummary.netRevenue)}
+        sub={
+          stats.kpiSummary.netRevenue >= 0
+            ? '▲ AR 수금 − AP 지급'
+            : '▼ AR 수금 − AP 지급'
+        }
+        color={stats.kpiSummary.netRevenue >= 0 ? 'text-blue-600' : 'text-red-500'}
+      />
+
+      {/* AR 수금 카드 */}
+      <StatCard
+        icon="💵"
+        label="AR 수금"
+        value={fmtAUD(stats.kpiSummary.arCollected)}
+        sub={`예정 ${fmtAUD(stats.kpiSummary.arScheduled)}`}
+        color="text-green-600"
+      />
+
+      {/* 성과급 합계 카드 */}
+      <StatCard
+        icon="🎯"
+        label="성과급 합계"
+        value={fmtAUD(stats.kpiSummary.totalIncentive)}
+        sub={`${stats.kpiSummary.activeStaff}명 집계`}
+        color="text-amber-600"
+      />
+    </>
+  )}
+
+  ⚠️ StatCard 의 실제 props 명칭이 다르면
+     STEP 1에서 확인한 실제 props 명으로 교체한다.
+  ⚠️ color prop 이 StatCard 에 없으면 해당 prop 제거.
+  ⚠️ 기존 grid-cols-2 md:grid-cols-4 구조 유지.
+     구분선 div 의 col-span 은 실제 그리드 열 수에 맞게 조정.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### STEP 4. 검증
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+① npx tsc --noEmit → dashboard.tsx 신규 오류 0개
+② 서버 재기동
+③ API 확인:
+   GET /api/dashboard/stats
+   → 응답에 kpiSummary 필드 포함 확인
+   → netRevenue / arCollected / totalIncentive 값 확인
+④ 브라우저 /admin/dashboard 접속
+   → KPI 카드 3개 렌더링 확인
+   → "상세 보기 →" 링크 /admin/kpi/staff 이동 확인
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### 완료 보고 형식
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 수정된 파일: [목록]
+✅ 수정 내용: [설명]
+✅ 검증 결과:
+   - tsc dashboard.tsx: [신규 오류 수]
+   - API kpiSummary 응답: [필드 값]
+   - 브라우저 카드 렌더링: [정상/오류]
+⚠️ 다음 작업: Task 2 — KPI 스케줄러 대기 중

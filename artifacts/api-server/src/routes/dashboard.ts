@@ -46,6 +46,46 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
         SELECT status, COUNT(*)::int as count FROM applications GROUP BY status ORDER BY count DESC
       `);
 
+      // KPI 요약 집계 — 이번 달 기준
+      const now = new Date();
+      const periodStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString().split("T")[0];
+      const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        .toISOString().split("T")[0];
+
+      const kpiRes = await db.execute(sql`
+        SELECT
+          COALESCE(SUM(cp.ar_amount), 0)                                AS ar_scheduled,
+          COALESCE(SUM(
+            CASE WHEN cp.ar_status = 'paid' THEN cp.ar_amount ELSE 0 END
+          ), 0)                                                         AS ar_collected,
+          COALESCE(SUM(cp.ap_amount), 0)                                AS ap_scheduled,
+          COALESCE(SUM(
+            CASE WHEN cp.ap_status = 'paid' THEN cp.ap_amount ELSE 0 END
+          ), 0)                                                         AS ap_paid,
+          COALESCE(SUM(cp.ar_amount), 0)
+            - COALESCE(SUM(
+                CASE WHEN cp.ap_status = 'paid' THEN cp.ap_amount ELSE 0 END
+              ), 0)                                                     AS net_revenue,
+          COUNT(DISTINCT c.owner_id)                                    AS active_staff_count
+        FROM contract_products cp
+        JOIN contracts c ON cp.contract_id = c.id
+        WHERE cp.status IN ('pending', 'active')
+          AND cp.ar_due_date >= ${periodStart}
+          AND cp.ar_due_date <= ${periodEnd}
+      `);
+      const kpi = kpiRes.rows[0] as any;
+
+      const incentiveRes = await db.execute(sql`
+        SELECT COALESCE(SUM(incentive_amount), 0) AS total_incentive
+        FROM staff_kpi_periods
+        WHERE period_type  = 'monthly'
+          AND period_start = ${periodStart}
+      `);
+      const totalIncentive = Number(
+        (incentiveRes.rows[0] as any)?.total_incentive ?? 0
+      );
+
       return res.json({
         role,
         totalApplications: Number(totalApps.count),
@@ -60,6 +100,17 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
         recentApplications,
         recentLeads,
         applicationsByStatus: (appsByStatus.rows as any[]).map(r => ({ status: r.status, count: r.count })),
+        kpiSummary: {
+          periodStart,
+          periodEnd,
+          arScheduled:    Number(kpi.ar_scheduled    ?? 0),
+          arCollected:    Number(kpi.ar_collected    ?? 0),
+          apScheduled:    Number(kpi.ap_scheduled    ?? 0),
+          apPaid:         Number(kpi.ap_paid         ?? 0),
+          netRevenue:     Number(kpi.net_revenue     ?? 0),
+          activeStaff:    Number(kpi.active_staff_count ?? 0),
+          totalIncentive,
+        },
       });
     }
 

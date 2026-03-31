@@ -23,6 +23,17 @@ interface DashboardStats {
   recentApplications: { id: string; applicationNumber: string; status: string; createdAt: string; studentName?: string }[];
   recentLeads: { id: string; studentName: string; status: string; createdAt: string }[];
   applicationsByStatus: { status: string; count: number }[];
+  kpiSummary?: {
+    periodStart:    string;
+    periodEnd:      string;
+    arScheduled:    number;
+    arCollected:    number;
+    apScheduled:    number;
+    apPaid:         number;
+    netRevenue:     number;
+    activeStaff:    number;
+    totalIncentive: number;
+  };
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -36,6 +47,14 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const PIE_COLORS = ["#F5821F", "#16A34A", "#CA8A04", "#A8A29E", "#57534E", "#DC2626"];
+
+const fmtAUD = (n: number) =>
+  new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(n);
 
 function StatCard({ icon: Icon, label, value, sub }: {
   icon: React.ElementType; label: string; value: number | string; sub?: string;
@@ -194,6 +213,43 @@ export default function Dashboard() {
           {isEA && (
             <StatCard icon={TrendingUp} label="Contracted" value={stats?.contractedApplications ?? 0}
               sub="converted to contract" />
+          )}
+
+          {/* ── KPI 요약 (SA / AD 전용) ────────────────────────────── */}
+          {isSAorAD && stats?.kpiSummary && (
+            <>
+              <div className="col-span-2 md:col-span-4 flex items-center gap-3 mt-2">
+                <span className="text-sm font-semibold uppercase tracking-wide" style={{ color: "#57534E" }}>
+                  이번 달 KPI
+                </span>
+                <span className="text-xs" style={{ color: "#A8A29E" }}>
+                  {stats.kpiSummary.periodStart} ~ {stats.kpiSummary.periodEnd}
+                </span>
+                <div className="flex-1 border-t" style={{ borderColor: "#E8E6E2" }} />
+                <Link href="/admin/kpi/staff" className="text-xs font-medium hover:underline" style={{ color: "#F5821F" }}>
+                  상세 보기 →
+                </Link>
+              </div>
+
+              <StatCard
+                icon={TrendingUp}
+                label="넷 매출 (이번 달)"
+                value={fmtAUD(stats.kpiSummary.netRevenue)}
+                sub="AR 수금 − AP 지급"
+              />
+              <StatCard
+                icon={Banknote}
+                label="AR 수금"
+                value={fmtAUD(stats.kpiSummary.arCollected)}
+                sub={`예정 ${fmtAUD(stats.kpiSummary.arScheduled)}`}
+              />
+              <StatCard
+                icon={Target}
+                label="성과급 합계"
+                value={fmtAUD(stats.kpiSummary.totalIncentive)}
+                sub={`${stats.kpiSummary.activeStaff}명 집계`}
+              />
+            </>
           )}
         </div>
       )}
