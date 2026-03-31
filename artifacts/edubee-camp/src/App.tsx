@@ -426,7 +426,7 @@ function Router() {
 
       {/* AI Chatbot */}
       <Route path="/admin/chatbot">
-        <AdminRoute title="AI 챗봇"><ChatbotAdminPage /></AdminRoute>
+        <AdminRoute title="AI Chatbot"><ChatbotAdminPage /></AdminRoute>
       </Route>
 
       {/* Users */}
