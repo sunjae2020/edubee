@@ -5,6 +5,7 @@
  * - Cosine similarity search (no paid vector DB needed)
  * - Embeddings persisted to PostgreSQL, loaded into memory on startup
  * - Google Docs extraction handles paragraphs + tables
+ * - Scope: "internal" (admin staff only) | "public" (landing page widget)
  */
 
 import { GoogleGenAI } from "@google/genai";
@@ -14,11 +15,14 @@ import { eq, desc } from "drizzle-orm";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
+export type KBScope = "internal" | "public";
+
 interface DocMeta {
   id: string;
   title: string;
   source?: string;
   sourceType: string;
+  scope: KBScope;
   content: string;
   chunkCount: number;
   lastUpdated: string;
@@ -35,7 +39,8 @@ interface EmbeddingEntry {
 
 let documents: DocMeta[] = [];
 let embeddings: EmbeddingEntry[] = [];
-let cachedSystemPrompt: string | null = null;
+let cachedInternalPrompt: string | null = null;
+let cachedPublicPrompt: string | null = null;
 let initialized = false;
 
 // ─── Gemini helper ─────────────────────────────────────────────────────────
@@ -50,7 +55,6 @@ async function generateEmbedding(text: string): Promise<number[]> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
 
-  // gemini-embedding-001 is Google's production embedding model (v1beta endpoint)
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`,
     {
@@ -129,35 +133,65 @@ export function extractTextFromGoogleDoc(docData: any): string {
   return text.trim();
 }
 
-// ─── System prompt ─────────────────────────────────────────────────────────
+// ─── System prompts ────────────────────────────────────────────────────────
 
-function rebuildSystemPrompt() {
-  if (documents.length === 0) {
-    cachedSystemPrompt = null;
-    return;
+function rebuildSystemPrompts() {
+  const internalDocs = documents.filter(d => d.scope === "internal");
+  const publicDocs   = documents.filter(d => d.scope === "public");
+
+  // Internal prompt (staff-focused, strict)
+  if (internalDocs.length === 0) {
+    cachedInternalPrompt = null;
+  } else {
+    const docContent = internalDocs
+      .map((d) => `=== ${d.title} ===\n${d.content}`)
+      .join("\n\n---\n\n");
+
+    cachedInternalPrompt = `You are the dedicated internal assistant for Edubee Camp platform, available to staff only.
+
+## Absolute Rules
+1. Answer only based on the information in the [Internal Documents] below
+2. Never speculate or fill in with external knowledge
+3. Do not answer questions about stocks, weather, news, or anything outside the platform
+4. Reply in the same language as the question (Korean → Korean, English → English)
+5. If you cannot find relevant information, say:
+   "I'm sorry, I couldn't find that information in the registered documents. Please contact support@edubee.com."
+
+## Response Style
+- Clear and concise answers
+- Mention which document the information comes from when relevant
+- Use numbered lists for complex information
+
+[Internal Documents]
+${docContent}`;
   }
 
-  const docContent = documents
-    .map((d) => `=== ${d.title} ===\n${d.content}`)
-    .join("\n\n---\n\n");
+  // Public prompt (customer-facing, friendly)
+  if (publicDocs.length === 0) {
+    cachedPublicPrompt = null;
+  } else {
+    const docContent = publicDocs
+      .map((d) => `=== ${d.title} ===\n${d.content}`)
+      .join("\n\n---\n\n");
 
-  cachedSystemPrompt = `당신은 Edubee Camp 플랫폼의 전용 내부 도우미입니다.
+    cachedPublicPrompt = `You are a friendly AI assistant for Edubee Camp, helping prospective students and parents learn about our programs.
 
-## 절대적 규칙
-1. 반드시 아래 [내부 문서]에 있는 정보만을 기반으로 답변하세요
-2. 문서에 없는 내용은 절대 추측하거나 외부 지식으로 보완하지 마세요
-3. 주식, 날씨, 뉴스, 플랫폼 외부 정보에 대한 질문에는 답변하지 마세요
-4. 한국어로 질문하면 한국어로, 영어로 질문하면 영어로 답변하세요
-5. 문서에서 관련 내용을 찾을 수 없으면 반드시 이렇게 말하세요:
-   "죄송합니다. 해당 내용은 현재 등록된 문서에서 찾을 수 없습니다. 담당자(support@edubee.com)에게 문의해 주세요."
+## Rules
+1. Answer only based on the information in the [Public Documents] below
+2. Be warm, welcoming, and encouraging
+3. Do not answer questions unrelated to Edubee Camp programs
+4. Reply in the same language as the question
+5. If you cannot find relevant information, say:
+   "I don't have that information right now. Please contact our team at support@edubee.com or use the contact form — we'd love to help!"
 
-## 답변 스타일
-- 명확하고 간결하게 답변하세요
-- 관련 있는 경우 어느 문서의 정보인지 언급하세요
-- 복잡한 내용은 번호 목록으로 정리하세요
+## Response Style
+- Friendly and approachable tone
+- Keep answers concise and easy to understand
+- Encourage prospective students to apply or get in touch
 
-[내부 문서]
+[Public Documents]
 ${docContent}`;
+  }
 }
 
 // ─── Initialization ────────────────────────────────────────────────────────
@@ -175,6 +209,7 @@ export async function initKnowledgeBase() {
       title: d.title,
       source: d.source ?? undefined,
       sourceType: d.sourceType,
+      scope: (d.scope as KBScope) ?? "internal",
       content: d.content,
       chunkCount: chunks.filter((c) => c.docId === d.id).length,
       lastUpdated: d.updatedAt?.toISOString() ?? new Date().toISOString(),
@@ -187,8 +222,8 @@ export async function initKnowledgeBase() {
       embedding: c.embedding as number[],
     }));
 
-    rebuildSystemPrompt();
-    console.log(`[KB] Initialized with ${documents.length} docs, ${embeddings.length} chunks`);
+    rebuildSystemPrompts();
+    console.log(`[KB] Initialized with ${documents.length} docs (${documents.filter(d=>d.scope==="internal").length} internal, ${documents.filter(d=>d.scope==="public").length} public), ${embeddings.length} chunks`);
   } catch (e) {
     console.error("[KB] Init failed:", e);
   }
@@ -196,14 +231,20 @@ export async function initKnowledgeBase() {
 
 // ─── Document management ───────────────────────────────────────────────────
 
-export async function addDocumentToKB(docId: string, title: string, content: string, source?: string, sourceType = "manual") {
+export async function addDocumentToKB(
+  docId: string,
+  title: string,
+  content: string,
+  source?: string,
+  sourceType = "manual",
+  scope: KBScope = "internal"
+) {
   const chunks = chunkText(content);
 
-  // Persist chunks + embeddings to DB
   await db.delete(chatChunks).where(eq(chatChunks.docId, docId));
 
   const embeddingEntries: EmbeddingEntry[] = [];
-  console.log(`[KB] Generating embeddings for "${title}" (${chunks.length} chunks)...`);
+  console.log(`[KB] Generating embeddings for "${title}" (${chunks.length} chunks, scope=${scope})...`);
 
   for (const chunk of chunks) {
     const chunkId = `${docId}-${chunk.index}`;
@@ -220,13 +261,13 @@ export async function addDocumentToKB(docId: string, title: string, content: str
     embeddingEntries.push({ chunkId, docId, text: chunk.text, embedding });
   }
 
-  // Update in-memory store
   documents = documents.filter((d) => d.id !== docId);
   documents.unshift({
     id: docId,
     title,
     source,
     sourceType,
+    scope,
     content,
     chunkCount: chunks.length,
     lastUpdated: new Date().toISOString(),
@@ -235,25 +276,38 @@ export async function addDocumentToKB(docId: string, title: string, content: str
   embeddings = embeddings.filter((e) => e.docId !== docId);
   embeddings.push(...embeddingEntries);
 
-  rebuildSystemPrompt();
-  console.log(`[KB] Added "${title}" — ${chunks.length} chunks embedded`);
+  rebuildSystemPrompts();
+  console.log(`[KB] Added "${title}" — ${chunks.length} chunks embedded (scope=${scope})`);
 }
 
 export async function removeDocumentFromKB(docId: string) {
-  // DB cascade deletes chunks via FK
   documents = documents.filter((d) => d.id !== docId);
   embeddings = embeddings.filter((e) => e.docId !== docId);
-  rebuildSystemPrompt();
+  rebuildSystemPrompts();
 }
 
 // ─── Retrieval ─────────────────────────────────────────────────────────────
 
-export async function retrieveContext(query: string, topK = 4): Promise<{ text: string; docTitle: string; score: number }[]> {
+export async function retrieveContext(
+  query: string,
+  topK = 4,
+  scope?: KBScope
+): Promise<{ text: string; docTitle: string; score: number }[]> {
   if (embeddings.length === 0) return [];
+
+  const scopedDocIds = scope
+    ? new Set(documents.filter(d => d.scope === scope).map(d => d.id))
+    : null;
+
+  const filteredEmbeddings = scopedDocIds
+    ? embeddings.filter(e => scopedDocIds.has(e.docId))
+    : embeddings;
+
+  if (filteredEmbeddings.length === 0) return [];
 
   const queryEmbedding = await generateEmbedding(query);
 
-  const scored = embeddings.map((item) => {
+  const scored = filteredEmbeddings.map((item) => {
     const doc = documents.find((d) => d.id === item.docId);
     return {
       text: item.text,
@@ -268,20 +322,28 @@ export async function retrieveContext(query: string, topK = 4): Promise<{ text: 
 
 // ─── Getters ───────────────────────────────────────────────────────────────
 
-export function getSystemPrompt() {
-  return cachedSystemPrompt;
+export function getSystemPrompt(scope: KBScope = "internal") {
+  return scope === "public" ? cachedPublicPrompt : cachedInternalPrompt;
 }
 
-export function getKnowledgeBaseStatus() {
+export function getKnowledgeBaseStatus(scope?: KBScope) {
+  const filteredDocs = scope ? documents.filter(d => d.scope === scope) : documents;
+  const filteredEmbeds = scope
+    ? embeddings.filter(e => filteredDocs.some(d => d.id === e.docId))
+    : embeddings;
+
   return {
-    documentCount: documents.length,
-    totalChunks: embeddings.length,
-    hasSystemPrompt: !!cachedSystemPrompt,
-    documents: documents.map((d) => ({
+    documentCount: filteredDocs.length,
+    totalChunks: filteredEmbeds.length,
+    internalCount: documents.filter(d => d.scope === "internal").length,
+    publicCount: documents.filter(d => d.scope === "public").length,
+    hasSystemPrompt: scope === "public" ? !!cachedPublicPrompt : !!cachedInternalPrompt,
+    documents: filteredDocs.map((d) => ({
       id: d.id,
       title: d.title,
       source: d.source,
       sourceType: d.sourceType,
+      scope: d.scope,
       chunkCount: d.chunkCount,
       lastUpdated: d.lastUpdated,
     })),

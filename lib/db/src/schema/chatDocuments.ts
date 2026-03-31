@@ -7,6 +7,7 @@ export const chatDocuments = pgTable("chat_documents", {
   title: varchar("title", { length: 500 }).notNull(),
   source: varchar("source", { length: 1000 }),
   sourceType: varchar("source_type", { length: 50 }).notNull().default("manual"),
+  scope: varchar("scope", { length: 20 }).notNull().default("internal"),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
