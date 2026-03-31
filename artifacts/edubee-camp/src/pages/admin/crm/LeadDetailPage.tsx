@@ -510,6 +510,29 @@ export default function LeadDetailPage() {
     onError: () => toast({ title: "Failed to save lead", variant: "destructive" }),
   });
 
+  // ── assigned staff quick-save ─────────────────────────────────────────────
+  const [staffSaving, setStaffSaving] = useState(false);
+  const saveAssignedStaff = async (staffId: string | null) => {
+    if (!lead) return;
+    setStaffSaving(true);
+    try {
+      await axios.put(`${BASE}/api/crm/leads/${id}`, {
+        fullName: lead.fullName, email: lead.email, phone: lead.phone,
+        nationality: lead.nationality, source: lead.source,
+        inquiryType: lead.inquiryType, budget: lead.budget,
+        expectedStartDate: lead.expectedStartDate, notes: lead.notes,
+        status: lead.status, accountId: lead.accountId,
+        assignedStaffId: staffId,
+      });
+      qc.invalidateQueries({ queryKey: ["crm-lead", id] });
+      toast({ title: "Assigned staff updated" });
+    } catch {
+      toast({ title: "Failed to update assigned staff", variant: "destructive" });
+    } finally {
+      setStaffSaving(false);
+    }
+  };
+
   // ── account save ──────────────────────────────────────────────────────────
   const [savingAccount, setSavingAccount] = useState(false);
   const saveAccount = async (accountId: string | null, _name: string | null) => {
@@ -881,6 +904,27 @@ export default function LeadDetailPage() {
             </div>
           )}
 
+          {/* Assigned Staff */}
+          <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest mb-3">Assigned Staff</p>
+            <Select
+              value={lead.assignedStaffId ?? "none"}
+              onValueChange={v => saveAssignedStaff(v === "none" ? null : v)}
+              disabled={staffSaving}
+            >
+              <SelectTrigger className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 focus-visible:ring-offset-0">
+                <SelectValue placeholder="— unassigned —" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— unassigned —</SelectItem>
+                {staffList.map(s => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {staffSaving && <p className="text-xs text-stone-400 mt-1.5 flex items-center gap-1"><Loader2 size={11} className="animate-spin" /> Saving…</p>}
+          </div>
+
           {/* System Info */}
           <SystemInfoSection
             id={lead.id}
@@ -890,8 +934,6 @@ export default function LeadDetailPage() {
             isActive={lead.isActive ?? true}
             onToggleActive={() => toggleActiveMutation.mutate()}
             isToggling={toggleActiveMutation.isPending}
-            ownerName={lead.assignedStaffName ?? null}
-            ownerLabel="Assigned Staff"
           />
         </div>
       )}
