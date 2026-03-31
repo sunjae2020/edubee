@@ -45,7 +45,6 @@ function relativeTime(dateStr: string | null | undefined): string {
 
 function fmtDate(d: string | null | undefined): string {
   return formatDate(d);
-});
 }
 
 export default function ReportsPage() {

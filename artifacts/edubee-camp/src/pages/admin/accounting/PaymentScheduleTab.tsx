@@ -74,10 +74,6 @@ function fmt(val: string | number | null | undefined): string {
 
 function fmtDate(d: string | null | undefined): string {
   return formatDate(d);
-});
-  } catch {
-    return d;
-  }
 }
 
 // ─── KPI card ─────────────────────────────────────────────────────────────────

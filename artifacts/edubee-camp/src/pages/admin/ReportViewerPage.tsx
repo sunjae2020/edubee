@@ -36,7 +36,6 @@ interface Section {
 
 function fmtDate(d: string | null | undefined): string {
   return formatDate(d);
-});
 }
 
 // ── Shared sub-components ─────────────────────────────────────────
