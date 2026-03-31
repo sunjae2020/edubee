@@ -2713,7 +2713,25 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
     toDate:           contract.toDate     ? contract.toDate.substring(0, 10)     : "",
     contractAmount:   contract.contractAmount != null ? String(contract.contractAmount) : "",
     notes:            contract.notes            ?? "",
+    ownerId:          contract.owner?.id        ?? contract.ownerId ?? "",
   });
+
+  const [staffList, setStaffList] = useState<{ id: string; full_name: string }[]>([]);
+
+  useEffect(() => {
+    axios
+      .get(`${BASE}/api/users?limit=100`)
+      .then((res) => {
+        const list = res.data?.data ?? res.data ?? [];
+        setStaffList(
+          list.map((u: any) => ({
+            id:        u.id,
+            full_name: u.full_name ?? u.fullName ?? u.name ?? "",
+          }))
+        );
+      })
+      .catch(() => {});
+  }, []);
 
   const mut = useMutation({
     mutationFn: (data: typeof form) =>
@@ -2781,6 +2799,26 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
             {field("Contract To",   "toDate",   "date")}
           </div>
           {field("Contract Amount (AUD)", "contractAmount", "number", { step: "0.01" })}
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] mb-1">
+              담당자 (Owner)
+            </label>
+            <select
+              value={form.ownerId}
+              onChange={e => setForm(p => ({ ...p, ownerId: e.target.value }))}
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#F5821F] bg-white"
+            >
+              <option value="">— 담당자 선택 —</option>
+              {staffList.map(s => (
+                <option key={s.id} value={s.id}>{s.full_name}</option>
+              ))}
+            </select>
+            {!form.ownerId && (
+              <p className="text-xs text-[#F5821F] mt-1">
+                담당자를 선택해야 KPI가 정상 집계됩니다.
+              </p>
+            )}
+          </div>
           <div>
             <label className="block text-xs font-semibold text-[#57534E] mb-1">Notes</label>
             <textarea
