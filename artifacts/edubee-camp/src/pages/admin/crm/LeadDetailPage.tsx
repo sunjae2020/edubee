@@ -809,19 +809,6 @@ export default function LeadDetailPage() {
                     </SelectContent>
                   </Select>
                 </FieldGroup>
-                <FieldGroup label="Assigned Staff">
-                  <Select value={form.assignedStaffId || "none"} onValueChange={v => set("assignedStaffId", v === "none" ? "" : v)}>
-                    <SelectTrigger className={INPUT_CLS}>
-                      <SelectValue placeholder="— unassigned —" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">— unassigned —</SelectItem>
-                      {staffList.map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FieldGroup>
               </FormRow>
               <FormRow>
                 <FieldGroup label="Inquiry Type">
