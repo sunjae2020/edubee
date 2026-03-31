@@ -33,7 +33,7 @@ async function calcAndSaveAllStaffKpi(
         WHERE assigned_staff_id = ${staff.id}
           AND created_at >= ${periodStart}
           AND created_at <= ${periodEnd}
-          AND status = 'Active'
+          AND status NOT IN ('closed', 'lost', 'disqualified')
       `);
       const leadCount = Number((leadRes.rows[0] as any).cnt ?? 0);
 

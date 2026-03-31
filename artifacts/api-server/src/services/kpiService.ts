@@ -111,14 +111,14 @@ export async function calcStaffKpi(
   const staff = staffRow.rows[0] as { id: string; full_name: string };
   if (!staff) throw new Error(`Staff not found: ${staffId}`);
 
-  // ② 활동 KPI — 리드 수
+  // ② 활동 KPI — 리드 수 (closed/lost 제외한 활성 리드)
   const leadRes = await db.execute(sql`
     SELECT COUNT(*) AS lead_count
     FROM leads
     WHERE assigned_staff_id = ${staffId}
       AND created_at >= ${periodStart}::date
       AND created_at <  ${periodEnd}::date + INTERVAL '1 day'
-      AND status = 'Active'
+      AND status NOT IN ('closed', 'lost', 'disqualified')
   `);
   const leadCount = Number((leadRes.rows[0] as any).lead_count ?? 0);
 
@@ -129,7 +129,7 @@ export async function calcStaffKpi(
     WHERE camp_provider_id = ${staffId}
       AND created_at >= ${periodStart}::date
       AND created_at <  ${periodEnd}::date + INTERVAL '1 day'
-      AND status = 'Active'
+      AND status IN ('active', 'signed', 'completed')
   `);
   const conversionCount = Number((convRes.rows[0] as any).conversion_count ?? 0);
   const conversionRate =
