@@ -1,0 +1,318 @@
+## KPI 기능 구현 — Phase 1: DB 스키마 마이그레이션
+
+지금은 Phase 1만 진행한다.
+코드 수정 전 파일을 반드시 읽고, 변경 목록을 먼저 보고한 뒤
+내가 "진행해"라고 하기 전까지 수정하지 않는다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### 작업 목표
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+KPI 기능 구현을 위한 DB 스키마 변경 4가지:
+
+  [A] staff_kpi_periods → Drizzle 스키마 등록 + AR/AP/목표/성과급 컬럼 추가
+  [B] kpi_targets       → 신규 테이블 생성 (직원/팀별 목표 + 성과급 설정)
+  [C] team_kpi_periods  → 신규 테이블 생성 (팀 KPI 집계)
+  [D] 마이그레이션 SQL  → 실제 DB에 적용할 ALTER/CREATE 문 작성
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### STEP 1. 파일 읽기 (수정 전 필수)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+아래 파일을 전부 읽는다:
+① /db/schema.ts                   ← 전체 내용
+② /db/migrations/ 디렉토리        ← 파일 목록 + 가장 최근 마이그레이션 파일 내용
+③ /server/src/routes/teams.ts     ← teams 라우트 구조 파악용
+④ /server/src/routes/users.ts     ← users 라우트 구조 파악용
+
+읽기 완료 후 아래를 보고한다:
+- schema.ts 에서 현재 마지막 테이블 정의가 어디인지 (줄 번호)
+- migrations 폴더 내 최신 파일명
+- teams 테이블 Drizzle 정의 현황 (있는지 없는지)
+
+수정은 하지 않는다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### STEP 2. 변경 계획 보고 (수정 전)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+아래 변경 내용을 파일별로 정리하여 보고한다.
+보고 후 내가 "진행해"라고 할 때까지 기다린다.
+
+[A] /db/schema.ts 에 추가할 내용:
+
+  ─────────────────────────────────────
+  1. staff_kpi_periods (기존 DB 테이블을 Drizzle에 등록)
+  ─────────────────────────────────────
+  export const staffKpiPeriods = pgTable('staff_kpi_periods', {
+    id:                     uuid('id').primaryKey().defaultRandom(),
+    staffId:                uuid('staff_id').notNull().references(() => users.id),
+    periodType:             varchar('period_type', { length: 20 }).notNull(),
+                            // monthly | quarterly | half_year | yearly
+    periodStart:            date('period_start').notNull(),
+    periodEnd:              date('period_end').notNull(),
+
+    // ── 활동 KPI ──────────────────────────────────
+    leadCount:              integer('lead_count').notNull().default(0),
+    conversionCount:        integer('conversion_count').notNull().default(0),
+    conversionRate:         numeric('conversion_rate', { precision: 8, scale: 4 }),
+    paymentProcessedCount:  integer('payment_processed_count').notNull().default(0),
+    visaGrantedCount:       integer('visa_granted_count').notNull().default(0),
+
+    // ── 파이낸스 KPI (신규 추가) ───────────────────
+    arScheduled:            numeric('ar_scheduled', { precision: 12, scale: 2 }).default('0'),
+                            // 기간 내 AR 예정 합계
+    arCollected:            numeric('ar_collected', { precision: 12, scale: 2 }).default('0'),
+                            // 실제 수금 합계 (ar_status='paid')
+    arOverdue:              numeric('ar_overdue', { precision: 12, scale: 2 }).default('0'),
+                            // 연체 합계 (ar_status='overdue')
+    apScheduled:            numeric('ap_scheduled', { precision: 12, scale: 2 }).default('0'),
+                            // 기간 내 AP 예정 합계
+    apPaid:                 numeric('ap_paid', { precision: 12, scale: 2 }).default('0'),
+                            // 실제 지급 합계 (ap_status='paid')
+    netRevenue:             numeric('net_revenue', { precision: 12, scale: 2 }).default('0'),
+                            // ar_collected - ap_paid (자동 계산)
+
+    // ── 목표 & 성과급 (신규 추가) ─────────────────
+    targetAmount:           numeric('target_amount', { precision: 12, scale: 2 }).default('0'),
+                            // kpi_targets 에서 복사된 목표 금액
+    excessAmount:           numeric('excess_amount', { precision: 12, scale: 2 }).default('0'),
+                            // net_revenue - target_amount (초과분)
+    bonusType:              varchar('bonus_type', { length: 20 }),
+                            // percentage | fixed | none
+    bonusRate:              numeric('bonus_rate', { precision: 8, scale: 4 }),
+                            // 성과급 % (예: 0.0500 = 5%)
+    bonusFixed:             numeric('bonus_fixed', { precision: 12, scale: 2 }),
+                            // 고정 성과급 금액
+    bonusAmount:            numeric('bonus_amount', { precision: 12, scale: 2 }).default('0'),
+                            // 최종 계산된 성과급 (excess * rate 또는 fixed)
+    attributedRevenue:      numeric('attributed_revenue', { precision: 12, scale: 2 }).default('0'),
+                            // 기존 컬럼 유지 (하위 호환)
+    incentiveRate:          numeric('incentive_rate', { precision: 8, scale: 4 }),
+    incentiveAmount:        numeric('incentive_amount', { precision: 12, scale: 2 }).default('0'),
+    bonusTier:              varchar('bonus_tier', { length: 50 }),
+                            // standard | silver | gold | platinum
+
+    // ── 승인 흐름 ──────────────────────────────────
+    status:                 varchar('status', { length: 20 }).notNull().default('draft'),
+                            // draft | submitted | approved | paid | rejected
+    approvedBy:             uuid('approved_by').references(() => users.id),
+    approvedAt:             timestamp('approved_at'),
+    paidAt:                 timestamp('paid_at'),
+    notes:                  text('notes'),
+
+    createdOn:              timestamp('created_on').notNull().defaultNow(),
+    modifiedOn:             timestamp('modified_on').notNull().defaultNow(),
+  });
+  // UNIQUE(staff_id, period_type, period_start) — DB에 이미 존재
+
+  ─────────────────────────────────────
+  2. kpi_targets (신규 테이블)
+  ─────────────────────────────────────
+  export const kpiTargets = pgTable('kpi_targets', {
+    id:           uuid('id').primaryKey().defaultRandom(),
+
+    // 직원 또는 팀 중 하나만 설정 (둘 다 NULL이면 전사 기본값)
+    staffId:      uuid('staff_id').references(() => users.id),
+    teamId:       uuid('team_id').references(() => teams.id),
+
+    periodType:   varchar('period_type', { length: 20 }).notNull(),
+                  // monthly | quarterly | half_year | yearly
+
+    // 목표 금액
+    targetAmount: numeric('target_amount', { precision: 12, scale: 2 }).notNull().default('0'),
+
+    // 성과급 설정
+    bonusType:    varchar('bonus_type', { length: 20 }).notNull().default('none'),
+                  // percentage | fixed | none
+    bonusRate:    numeric('bonus_rate', { precision: 8, scale: 4 }),
+                  // percentage 일 때 사용 (예: 0.0500 = 5%)
+    bonusFixed:   numeric('bonus_fixed', { precision: 12, scale: 2 }),
+                  // fixed 일 때 사용 (초과 달성 시 지급 고정액)
+
+    // 유효 기간
+    validFrom:    date('valid_from').notNull(),
+    validTo:      date('valid_to'),
+
+    description:  text('description'),
+    status:       varchar('status', { length: 20 }).notNull().default('Active'),
+    createdBy:    uuid('created_by').notNull().references(() => users.id),
+    createdOn:    timestamp('created_on').notNull().defaultNow(),
+    modifiedOn:   timestamp('modified_on').notNull().defaultNow(),
+  });
+
+  ─────────────────────────────────────
+  3. team_kpi_periods (신규 테이블)
+  ─────────────────────────────────────
+  // staff_kpi_periods 와 동일 구조 + teamId
+  // users.team_id 기준으로 소속 직원 KPI를 롤업 집계
+  export const teamKpiPeriods = pgTable('team_kpi_periods', {
+    id:                   uuid('id').primaryKey().defaultRandom(),
+    teamId:               uuid('team_id').notNull().references(() => teams.id),
+    periodType:           varchar('period_type', { length: 20 }).notNull(),
+    periodStart:          date('period_start').notNull(),
+    periodEnd:            date('period_end').notNull(),
+
+    // ── 활동 KPI (팀 합산) ────────────────────────
+    memberCount:          integer('member_count').notNull().default(0),
+    leadCount:            integer('lead_count').notNull().default(0),
+    conversionCount:      integer('conversion_count').notNull().default(0),
+    conversionRate:       numeric('conversion_rate', { precision: 8, scale: 4 }),
+    paymentProcessedCount: integer('payment_processed_count').notNull().default(0),
+    visaGrantedCount:     integer('visa_granted_count').notNull().default(0),
+
+    // ── 파이낸스 KPI (팀 합산) ────────────────────
+    arScheduled:          numeric('ar_scheduled', { precision: 12, scale: 2 }).default('0'),
+    arCollected:          numeric('ar_collected', { precision: 12, scale: 2 }).default('0'),
+    arOverdue:            numeric('ar_overdue', { precision: 12, scale: 2 }).default('0'),
+    apScheduled:          numeric('ap_scheduled', { precision: 12, scale: 2 }).default('0'),
+    apPaid:               numeric('ap_paid', { precision: 12, scale: 2 }).default('0'),
+    netRevenue:           numeric('net_revenue', { precision: 12, scale: 2 }).default('0'),
+
+    // ── 목표 & 팀 성과급 ──────────────────────────
+    targetAmount:         numeric('target_amount', { precision: 12, scale: 2 }).default('0'),
+    excessAmount:         numeric('excess_amount', { precision: 12, scale: 2 }).default('0'),
+    bonusType:            varchar('bonus_type', { length: 20 }),
+    bonusRate:            numeric('bonus_rate', { precision: 8, scale: 4 }),
+    bonusFixed:           numeric('bonus_fixed', { precision: 12, scale: 2 }),
+    bonusAmount:          numeric('bonus_amount', { precision: 12, scale: 2 }).default('0'),
+
+    // ── 승인 흐름 ─────────────────────────────────
+    status:               varchar('status', { length: 20 }).notNull().default('draft'),
+    approvedBy:           uuid('approved_by').references(() => users.id),
+    approvedAt:           timestamp('approved_at'),
+    paidAt:               timestamp('paid_at'),
+    notes:                text('notes'),
+
+    createdOn:            timestamp('created_on').notNull().defaultNow(),
+    modifiedOn:           timestamp('modified_on').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniquePeriod: unique().on(table.teamId, table.periodType, table.periodStart),
+  }));
+
+[B] 마이그레이션 SQL 파일 생성
+  위치: /db/migrations/ (기존 규칙에 맞는 파일명으로)
+  내용:
+
+  -- KPI 기능: staff_kpi_periods 컬럼 추가
+  ALTER TABLE staff_kpi_periods
+    ADD COLUMN IF NOT EXISTS ar_scheduled          NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS ar_collected          NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS ar_overdue            NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS ap_scheduled          NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS ap_paid               NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS net_revenue           NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS target_amount         NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS excess_amount         NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS bonus_type            VARCHAR(20),
+    ADD COLUMN IF NOT EXISTS bonus_rate            NUMERIC(8,4),
+    ADD COLUMN IF NOT EXISTS bonus_fixed           NUMERIC(12,2),
+    ADD COLUMN IF NOT EXISTS bonus_amount          NUMERIC(12,2) DEFAULT 0;
+
+  -- period_type 에 quarterly, half_year, yearly 추가 허용
+  -- (VARCHAR 타입이므로 별도 변경 불필요)
+
+  -- kpi_targets 신규 생성
+  CREATE TABLE IF NOT EXISTS kpi_targets (
+    id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    staff_id       UUID         REFERENCES users(id),
+    team_id        UUID         REFERENCES teams(id),
+    period_type    VARCHAR(20)  NOT NULL,
+    target_amount  NUMERIC(12,2) NOT NULL DEFAULT 0,
+    bonus_type     VARCHAR(20)  NOT NULL DEFAULT 'none',
+    bonus_rate     NUMERIC(8,4),
+    bonus_fixed    NUMERIC(12,2),
+    valid_from     DATE         NOT NULL,
+    valid_to       DATE,
+    description    TEXT,
+    status         VARCHAR(20)  NOT NULL DEFAULT 'Active',
+    created_by     UUID         NOT NULL REFERENCES users(id),
+    created_on     TIMESTAMP    NOT NULL DEFAULT NOW(),
+    modified_on    TIMESTAMP    NOT NULL DEFAULT NOW(),
+    -- staff 또는 team 중 하나는 필수
+    CONSTRAINT kpi_targets_target_check
+      CHECK (staff_id IS NOT NULL OR team_id IS NOT NULL)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_kpi_targets_staff
+    ON kpi_targets(staff_id) WHERE staff_id IS NOT NULL;
+  CREATE INDEX IF NOT EXISTS idx_kpi_targets_team
+    ON kpi_targets(team_id) WHERE team_id IS NOT NULL;
+
+  -- team_kpi_periods 신규 생성
+  CREATE TABLE IF NOT EXISTS team_kpi_periods (
+    id                      UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    team_id                 UUID         NOT NULL REFERENCES teams(id),
+    period_type             VARCHAR(20)  NOT NULL,
+    period_start            DATE         NOT NULL,
+    period_end              DATE         NOT NULL,
+    member_count            INTEGER      NOT NULL DEFAULT 0,
+    lead_count              INTEGER      NOT NULL DEFAULT 0,
+    conversion_count        INTEGER      NOT NULL DEFAULT 0,
+    conversion_rate         NUMERIC(8,4),
+    payment_processed_count INTEGER      NOT NULL DEFAULT 0,
+    visa_granted_count      INTEGER      NOT NULL DEFAULT 0,
+    ar_scheduled            NUMERIC(12,2) DEFAULT 0,
+    ar_collected            NUMERIC(12,2) DEFAULT 0,
+    ar_overdue              NUMERIC(12,2) DEFAULT 0,
+    ap_scheduled            NUMERIC(12,2) DEFAULT 0,
+    ap_paid                 NUMERIC(12,2) DEFAULT 0,
+    net_revenue             NUMERIC(12,2) DEFAULT 0,
+    target_amount           NUMERIC(12,2) DEFAULT 0,
+    excess_amount           NUMERIC(12,2) DEFAULT 0,
+    bonus_type              VARCHAR(20),
+    bonus_rate              NUMERIC(8,4),
+    bonus_fixed             NUMERIC(12,2),
+    bonus_amount            NUMERIC(12,2) DEFAULT 0,
+    status                  VARCHAR(20)  NOT NULL DEFAULT 'draft',
+    approved_by             UUID         REFERENCES users(id),
+    approved_at             TIMESTAMP,
+    paid_at                 TIMESTAMP,
+    notes                   TEXT,
+    created_on              TIMESTAMP    NOT NULL DEFAULT NOW(),
+    modified_on             TIMESTAMP    NOT NULL DEFAULT NOW(),
+    UNIQUE(team_id, period_type, period_start)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_team_kpi_periods_team
+    ON team_kpi_periods(team_id);
+  CREATE INDEX IF NOT EXISTS idx_team_kpi_periods_period
+    ON team_kpi_periods(period_type, period_start);
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### STEP 3. 검증 (변경 완료 후)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+변경 완료 후 아래 순서로 검증하고 결과를 보고한다:
+
+① npx tsc --noEmit → 오류 0개 확인
+② 서버 기동 → import 오류 없음 확인
+③ SQL 실행:
+
+  -- staff_kpi_periods 컬럼 추가 확인
+  SELECT column_name, data_type
+  FROM information_schema.columns
+  WHERE table_name = 'staff_kpi_periods'
+    AND column_name IN (
+      'ar_scheduled','ar_collected','ar_overdue',
+      'ap_scheduled','ap_paid','net_revenue',
+      'target_amount','excess_amount',
+      'bonus_type','bonus_rate','bonus_fixed','bonus_amount'
+    )
+  ORDER BY column_name;
+
+  -- kpi_targets 생성 확인
+  SELECT COUNT(*) FROM kpi_targets;
+
+  -- team_kpi_periods 생성 확인
+  SELECT COUNT(*) FROM team_kpi_periods;
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### 작업 완료 보고 형식
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 수정된 파일: [목록]
+✅ 수정 내용: [설명]
+✅ 검증 결과: [tsc / 서버 / DB 각각 결과]
+⚠️ 다음에 할 작업: Phase 2 — KPI 집계 서비스 구현
