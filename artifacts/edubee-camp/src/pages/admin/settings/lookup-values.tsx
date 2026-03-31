@@ -282,7 +282,7 @@ function LookupItemsPanel({ group, groupLabel, onBack }: { group: string; groupL
       {/* Drag hint */}
       {displayed.length > 1 && !isLoading && (
         <p className="text-[11px] text-[#A8A29E] mb-2 flex items-center gap-1">
-          <GripVertical className="w-3 h-3" /> 왼쪽 핸들을 드래그해 순서를 변경하세요
+          <GripVertical className="w-3 h-3" /> Drag the handle to reorder items
         </p>
       )}
 
