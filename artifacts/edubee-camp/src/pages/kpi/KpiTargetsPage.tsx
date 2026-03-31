@@ -301,8 +301,9 @@ export default function KpiTargetsPage() {
       ) : (
         <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden"
           style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)' }}>
-          <table className="w-full text-sm">
-            <thead className="bg-[#FAFAF9] border-b border-[#E8E6E2]">
+          <div className="overflow-x-auto overflow-y-auto max-h-[520px]">
+          <table className="w-full text-sm min-w-[720px]">
+            <thead className="bg-[#FAFAF9] border-b border-[#E8E6E2] sticky top-0 z-10">
               <tr>
                 {HEADERS.map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-[#A8A29E] uppercase tracking-wider">
@@ -383,6 +384,7 @@ export default function KpiTargetsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>
