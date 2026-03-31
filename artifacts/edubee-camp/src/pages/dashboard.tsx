@@ -220,34 +220,34 @@ export default function Dashboard() {
             <>
               <div className="col-span-2 md:col-span-4 flex items-center gap-3 mt-2">
                 <span className="text-sm font-semibold uppercase tracking-wide" style={{ color: "#57534E" }}>
-                  이번 달 KPI
+                  This Month's KPI
                 </span>
                 <span className="text-xs" style={{ color: "#A8A29E" }}>
                   {stats.kpiSummary.periodStart} ~ {stats.kpiSummary.periodEnd}
                 </span>
                 <div className="flex-1 border-t" style={{ borderColor: "#E8E6E2" }} />
                 <Link href="/admin/kpi/staff" className="text-xs font-medium hover:underline" style={{ color: "#F5821F" }}>
-                  상세 보기 →
+                  View Details →
                 </Link>
               </div>
 
               <StatCard
                 icon={TrendingUp}
-                label="넷 매출 (이번 달)"
+                label="Net Revenue (This Month)"
                 value={fmtAUD(stats.kpiSummary.netRevenue)}
-                sub="AR 수금 − AP 지급"
+                sub="AR Collected − AP Paid"
               />
               <StatCard
                 icon={Banknote}
-                label="AR 수금"
+                label="AR Collected"
                 value={fmtAUD(stats.kpiSummary.arCollected)}
-                sub={`예정 ${fmtAUD(stats.kpiSummary.arScheduled)}`}
+                sub={`Scheduled ${fmtAUD(stats.kpiSummary.arScheduled)}`}
               />
               <StatCard
                 icon={Target}
-                label="성과급 합계"
+                label="Total Incentive"
                 value={fmtAUD(stats.kpiSummary.totalIncentive)}
-                sub={`${stats.kpiSummary.activeStaff}명 집계`}
+                sub={`${stats.kpiSummary.activeStaff} staff included`}
               />
             </>
           )}
