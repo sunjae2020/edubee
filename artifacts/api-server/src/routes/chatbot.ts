@@ -10,10 +10,12 @@ import {
   initKnowledgeBase,
   addDocumentToKB,
   removeDocumentFromKB,
+  updateDocumentScopeInMemory,
   retrieveContext,
   getSystemPrompt,
   getKnowledgeBaseStatus,
   extractTextFromGoogleDoc,
+  type KBScope,
 } from "../services/knowledgeBase.js";
 
 const router = Router();
@@ -61,20 +63,28 @@ router.get("/chatbot/status", authenticate, async (_req, res) => {
 });
 
 // ─── GET /api/chatbot/docs ─────────────────────────────────────────────────
-router.get("/chatbot/docs", authenticate, requireRole(...ADMIN_ROLES), async (_req, res) => {
+router.get("/chatbot/docs", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const docs = await db.select({
+    const { scope } = req.query as { scope?: string };
+    const query = db.select({
       id: chatDocuments.id,
       title: chatDocuments.title,
       source: chatDocuments.source,
       sourceType: chatDocuments.sourceType,
+      scope: chatDocuments.scope,
       createdAt: chatDocuments.createdAt,
       preview: sql<string>`left(${chatDocuments.content}, 200)`,
       chunkCount: sql<number>`(
         select count(*)::int from chat_chunks where doc_id = chat_documents.id
       )`,
     }).from(chatDocuments).orderBy(desc(chatDocuments.createdAt));
-    res.json(docs);
+
+    const docs = await query;
+    const filtered = scope && (scope === "internal" || scope === "public")
+      ? docs.filter(d => d.scope === scope)
+      : docs;
+
+    res.json(filtered);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Failed to fetch documents" });
@@ -84,18 +94,20 @@ router.get("/chatbot/docs", authenticate, requireRole(...ADMIN_ROLES), async (_r
 // ─── POST /api/chatbot/docs ────────────────────────────────────────────────
 router.post("/chatbot/docs", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { title, content, source, sourceType = "manual" } = req.body as {
-      title: string; content: string; source?: string; sourceType?: string;
+    const { title, content, source, sourceType = "manual", scope = "internal" } = req.body as {
+      title: string; content: string; source?: string; sourceType?: string; scope?: KBScope;
     };
     if (!title || !content) {
       return res.status(400).json({ error: "title and content are required" });
     }
+    const validScope: KBScope = scope === "public" ? "public" : "internal";
+
     const [doc] = await db.insert(chatDocuments)
-      .values({ title, content, source, sourceType })
+      .values({ title, content, source, sourceType, scope: validScope })
       .returning();
 
     ensureKB().then(() =>
-      addDocumentToKB(doc.id, title, content, source, sourceType)
+      addDocumentToKB(doc.id, title, content, source, sourceType, validScope)
         .catch((e) => console.error("[KB] embed error:", e))
     );
 
@@ -125,22 +137,25 @@ router.post(
       if (!content) return res.status(400).json({ error: "파일 내용이 비어 있습니다." });
 
       const title: string = (req.body.title as string) || req.file.originalname;
+      const rawScope = req.body.scope as string;
+      const validScope: KBScope = rawScope === "public" ? "public" : "internal";
 
       const [doc] = await db.insert(chatDocuments).values({
         title,
         content,
         source: req.file.originalname,
         sourceType: "file",
+        scope: validScope,
       }).returning();
 
       ensureKB().then(() =>
-        addDocumentToKB(doc.id, title, content, req.file!.originalname, "file")
+        addDocumentToKB(doc.id, title, content, req.file!.originalname, "file", validScope)
           .catch((e) => console.error("[KB] embed error:", e))
       );
 
       return res.status(201).json({
         success: true,
-        document: { id: doc.id, title: doc.title, source: doc.source },
+        document: { id: doc.id, title: doc.title, source: doc.source, scope: doc.scope },
       });
     } catch (e: any) {
       console.error("[chatbot/upload]", e);
@@ -187,19 +202,18 @@ router.post("/chatbot/docs/sync-all", authenticate, requireRole(...ADMIN_ROLES),
         const freshContent = extractTextFromGoogleDoc(docRes.data);
         if (!freshContent) throw new Error("Document appears to be empty");
 
-        // Update DB content
         await db.update(chatDocuments)
           .set({ content: freshContent, title: docRes.data.title ?? dbDoc.title })
           .where(eq(chatDocuments.id, dbDoc.id));
 
-        // Re-embed
         await ensureKB();
         await addDocumentToKB(
           dbDoc.id,
           docRes.data.title ?? dbDoc.title,
           freshContent,
           dbDoc.source ?? undefined,
-          "google_doc"
+          "google_doc",
+          (dbDoc.scope as KBScope) ?? "internal"
         );
 
         results.push({ title: dbDoc.title, status: "synced" });
@@ -221,7 +235,7 @@ router.post("/chatbot/docs/sync-all", authenticate, requireRole(...ADMIN_ROLES),
 
 // ─── POST /api/chatbot/docs/google ────────────────────────────────────────
 router.post("/chatbot/docs/google", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
-  const { url } = req.body as { url: string };
+  const { url, scope } = req.body as { url: string; scope?: KBScope };
   if (!url) return res.status(400).json({ error: "url is required" });
 
   const saJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -230,6 +244,8 @@ router.post("/chatbot/docs/google", authenticate, requireRole(...ADMIN_ROLES), a
       error: "GOOGLE_SERVICE_ACCOUNT_JSON is not configured. Please add the Google Service Account secret.",
     });
   }
+
+  const validScope: KBScope = scope === "public" ? "public" : "internal";
 
   try {
     const docIdMatch = url.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
@@ -254,11 +270,11 @@ router.post("/chatbot/docs/google", authenticate, requireRole(...ADMIN_ROLES), a
     if (!content) return res.status(400).json({ error: "Document appears to be empty" });
 
     const [doc] = await db.insert(chatDocuments).values({
-      title, content, source: url, sourceType: "google_doc",
+      title, content, source: url, sourceType: "google_doc", scope: validScope,
     }).returning();
 
     ensureKB().then(() =>
-      addDocumentToKB(doc.id, title, content, url, "google_doc")
+      addDocumentToKB(doc.id, title, content, url, "google_doc", validScope)
         .catch((e) => console.error("[KB] embed error:", e))
     );
 
@@ -268,6 +284,29 @@ router.post("/chatbot/docs/google", authenticate, requireRole(...ADMIN_ROLES), a
     if (e?.status === 403) return res.status(403).json({ error: "Access denied. Share the document with the service account email." });
     if (e?.status === 404) return res.status(404).json({ error: "Document not found." });
     return res.status(500).json({ error: e?.message ?? "Failed to fetch Google Doc" });
+  }
+});
+
+// ─── PATCH /api/chatbot/docs/:id/scope — change scope (no re-embedding) ──
+router.patch("/chatbot/docs/:id/scope", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { scope } = req.body as { scope: KBScope };
+    if (scope !== "internal" && scope !== "public") {
+      return res.status(400).json({ error: "scope must be 'internal' or 'public'" });
+    }
+    const [updated] = await db.update(chatDocuments)
+      .set({ scope, updatedAt: new Date() })
+      .where(eq(chatDocuments.id, req.params.id))
+      .returning({ id: chatDocuments.id, title: chatDocuments.title, scope: chatDocuments.scope });
+    if (!updated) return res.status(404).json({ error: "Document not found" });
+
+    // Update in-memory scope without re-embedding (content unchanged)
+    updateDocumentScopeInMemory(updated.id, scope);
+
+    return res.json({ success: true, scope });
+  } catch (e) {
+    console.error("[PATCH /chatbot/docs/:id/scope]", e);
+    return res.status(500).json({ error: "Failed to update scope" });
   }
 });
 
@@ -289,7 +328,7 @@ router.delete("/chatbot/session/:sessionId", authenticate, (req, res) => {
   res.json({ cleared: true });
 });
 
-// ─── POST /api/chatbot/message ─────────────────────────────────────────────
+// ─── POST /api/chatbot/message — internal staff: all docs ─────────────────
 router.post("/chatbot/message", authenticate, async (req, res) => {
   const { question, sessionId = "default" } = req.body as {
     question: string;
@@ -301,15 +340,15 @@ router.post("/chatbot/message", authenticate, async (req, res) => {
     await ensureKB();
     const genAI = getGenAI();
 
-    const systemPrompt = getSystemPrompt();
-
+    // Staff can access all documents (no scope filter)
+    const systemPrompt = getSystemPrompt("internal");
     const relevantChunks = await retrieveContext(question, 4);
     const contextText = relevantChunks
-      .map((c, i) => `[관련 문서 ${i + 1} — ${c.docTitle} (관련도 ${(c.score * 100).toFixed(0)}%)]\n${c.text}`)
+      .map((c, i) => `[Related Document ${i + 1} — ${c.docTitle} (Relevance ${(c.score * 100).toFixed(0)}%)]\n${c.text}`)
       .join("\n\n");
 
     const augmentedMessage = relevantChunks.length > 0
-      ? `[검색된 관련 내용]\n${contextText}\n\n[사용자 질문]\n${question}`
+      ? `[Retrieved Context]\n${contextText}\n\n[User Question]\n${question}`
       : question;
 
     if (!sessions.has(sessionId)) sessions.set(sessionId, []);
@@ -359,9 +398,9 @@ router.post("/chatbot/message", authenticate, async (req, res) => {
   } catch (e: any) {
     console.error("[chatbot/message]", e);
     if (!res.headersSent) {
-      res.status(500).json({ error: e?.message ?? "AI 응답 생성에 실패했습니다." });
+      res.status(500).json({ error: e?.message ?? "AI response generation failed." });
     } else {
-      res.write(`data: ${JSON.stringify({ error: "AI 응답 생성에 실패했습니다." })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: "AI response generation failed." })}\n\n`);
       res.end();
     }
   }

@@ -447,8 +447,8 @@ router.post("/public/chatbot/message", async (req, res) => {
   try {
     await ensureKBPublic();
     const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const systemPrompt = getSystemPrompt();
-    const relevantChunks = await retrieveContext(question, 4);
+    const systemPrompt = getSystemPrompt("public");
+    const relevantChunks = await retrieveContext(question, 4, "public");
     const contextText = relevantChunks
       .map((c, i) => `[관련 문서 ${i + 1} — ${c.docTitle} (관련도 ${(c.score * 100).toFixed(0)}%)]\n${c.text}`)
       .join("\n\n");

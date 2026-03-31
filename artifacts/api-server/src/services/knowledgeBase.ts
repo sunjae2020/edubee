@@ -286,6 +286,15 @@ export async function removeDocumentFromKB(docId: string) {
   rebuildSystemPrompts();
 }
 
+export function updateDocumentScopeInMemory(docId: string, scope: KBScope) {
+  const doc = documents.find((d) => d.id === docId);
+  if (doc) {
+    doc.scope = scope;
+    rebuildSystemPrompts();
+    console.log(`[KB] Scope updated for "${doc.title}": ${scope}`);
+  }
+}
+
 // ─── Retrieval ─────────────────────────────────────────────────────────────
 
 export async function retrieveContext(
