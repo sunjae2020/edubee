@@ -11,7 +11,9 @@ const ADMIN_ROLES = ["super_admin", "admin"];
 // ── GET /api/teams ────────────────────────────────────────────────────────────
 router.get("/teams", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const { search, type, status } = req.query as Record<string, string>;
+    const { search, type, status, page = "1", pageSize = "20" } = req.query as Record<string, string>;
+    const pageNum  = Math.max(1, parseInt(page));
+    const pageSz   = Math.min(100, Math.max(1, parseInt(pageSize)));
 
     const allTeams = await db.select().from(teams).orderBy(teams.name);
     const filtered = allTeams.filter(t => {
@@ -21,8 +23,11 @@ router.get("/teams", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator
       return true;
     });
 
-    const teamIds = filtered.map(t => t.id);
-    if (teamIds.length === 0) return res.json({ data: [], total: 0 });
+    const total   = filtered.length;
+    const sliced  = filtered.slice((pageNum - 1) * pageSz, pageNum * pageSz);
+
+    const teamIds = sliced.map(t => t.id);
+    if (teamIds.length === 0) return res.json({ data: [], total, page: pageNum, pageSize: pageSz, totalPages: Math.max(1, Math.ceil(total / pageSz)) });
 
     // Member count per team
     const memberCounts = await db
@@ -35,20 +40,20 @@ router.get("/teams", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator
     for (const r of memberCounts) if (r.teamId) countMap[r.teamId] = Number(r.cnt);
 
     // Team leads
-    const leadIds = filtered.map(t => t.teamLeadId).filter(Boolean) as string[];
+    const leadIds = sliced.map(t => t.teamLeadId).filter(Boolean) as string[];
     const leads = leadIds.length
       ? await db.select({ id: users.id, fullName: users.fullName }).from(users).where(inArray(users.id, leadIds))
       : [];
     const leadMap: Record<string, string> = {};
     for (const l of leads) leadMap[l.id] = l.fullName;
 
-    const data = filtered.map(t => ({
+    const data = sliced.map(t => ({
       ...t,
       memberCount: countMap[t.id] ?? 0,
       teamLeadName: t.teamLeadId ? (leadMap[t.teamLeadId] ?? null) : null,
     }));
 
-    return res.json({ data, total: data.length });
+    return res.json({ data, total, page: pageNum, pageSize: pageSz, totalPages: Math.max(1, Math.ceil(total / pageSz)) });
   } catch (err) {
     console.error("GET /api/teams error:", err);
     return res.status(500).json({ error: "Internal Server Error" });

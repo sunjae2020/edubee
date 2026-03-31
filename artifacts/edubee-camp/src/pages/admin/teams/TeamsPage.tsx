@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ListToolbar } from "@/components/ui/list-toolbar";
 import { useLocation } from "wouter";
-import { Users, Plus, ChevronRight, Loader2, Trash2 } from "lucide-react";
+import { Users, Plus, ChevronRight, Loader2, Trash2, Search } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { ListPagination } from "@/components/ui/list-pagination";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -41,9 +41,19 @@ interface Team {
   createdAt: string;
 }
 
+interface TeamsResponse {
+  data: Team[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 const EMPTY_FORM = {
   name: "", description: "", type: "agent_team", color: "#F5821F", teamLeadId: "", status: "active",
 };
+
+const PAGE_SIZE = 20;
 
 export default function TeamsPage() {
   const { toast } = useToast();
@@ -52,24 +62,37 @@ export default function TeamsPage() {
   const { user: currentUser } = useAuth();
   const isAdmin = ["super_admin", "admin"].includes(currentUser?.role ?? "");
 
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [searchInput, setSearchInput] = useState("");
+  const [search,      setSearch]      = useState("");
+  const [typeFilter,  setTypeFilter]  = useState("all");
+  const [statusFilter,setStatusFilter]= useState("all");
+  const [page,        setPage]        = useState(1);
+  const [showCreate,  setShowCreate]  = useState(false);
+  const [form,        setForm]        = useState(EMPTY_FORM);
 
-  const { data, isLoading } = useQuery<{ data: Team[]; total: number }>({
-    queryKey: ["teams", { search, type: typeFilter, status: statusFilter }],
+  const queryKey = ["teams", { search, type: typeFilter, status: statusFilter, page, pageSize: PAGE_SIZE }];
+
+  const { data, isLoading } = useQuery<TeamsResponse>({
+    queryKey,
     queryFn: () => {
-      const params: Record<string, string> = {};
-      if (search) params.search = search;
-      if (typeFilter !== "all") params.type = typeFilter;
-      if (statusFilter !== "all") params.status = statusFilter;
-      return axios.get(`${BASE}/api/teams`, { params }).then(r => r.data);
+      const params = new URLSearchParams();
+      params.set("page",     String(page));
+      params.set("pageSize", String(PAGE_SIZE));
+      if (search                   ) params.set("search", search);
+      if (typeFilter   !== "all"   ) params.set("type",   typeFilter);
+      if (statusFilter !== "all"   ) params.set("status", statusFilter);
+      return axios.get(`${BASE}/api/teams?${params}`).then(r => r.data);
     },
+    placeholderData: prev => prev,
   });
 
-  const teams: Team[] = data?.data ?? [];
+  const teams:      Team[] = data?.data       ?? [];
+  const total:      number = data?.total      ?? 0;
+  const totalPages: number = data?.totalPages ?? 1;
+
+  const handleSearch = useCallback(() => { setSearch(searchInput); setPage(1); }, [searchInput]);
+  const handleTypeChange   = (v: string) => { setTypeFilter(v);   setPage(1); };
+  const handleStatusChange = (v: string) => { setStatusFilter(v); setPage(1); };
 
   const createTeam = useMutation({
     mutationFn: (body: typeof EMPTY_FORM) => axios.post(`${BASE}/api/teams`, body).then(r => r.data),
@@ -92,124 +115,198 @@ export default function TeamsPage() {
   const typeLabelFor = (type: string) => TEAM_TYPES.find(t => t.key === type)?.label ?? type;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Teams</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Organise staff into teams and track performance</p>
+    <div className="flex flex-col h-full">
+
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div className="px-6 pt-6 pb-4 border-b border-[var(--e-border)] bg-[var(--e-bg-page)]">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">Teams</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Organise staff into teams and track performance</p>
+          </div>
+          {isAdmin && (
+            <Button
+              className="bg-[#F5821F] hover:bg-[#e0721a] text-white gap-2"
+              onClick={() => setShowCreate(true)}
+            >
+              <Plus className="w-4 h-4" /> New Team
+            </Button>
+          )}
         </div>
-        {isAdmin && (
-          <Button className="bg-[#F5821F] hover:bg-[#e0721a] text-white gap-2" onClick={() => setShowCreate(true)}>
-            <Plus className="w-4 h-4" /> New Team
-          </Button>
+
+        {/* ── Filters ─────────────────────────────────────────────── */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 flex-1 min-w-[200px] max-w-[320px]">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                className="pl-8 h-9 text-sm"
+                placeholder="Search teams…"
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleSearch()}
+              />
+            </div>
+            <Button variant="outline" size="sm" className="h-9 px-3 shrink-0" onClick={handleSearch}>
+              Search
+            </Button>
+          </div>
+
+          <Select value={typeFilter} onValueChange={handleTypeChange}>
+            <SelectTrigger className="h-9 w-44 text-sm">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {TEAM_TYPES.map(t => (
+                <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={handleStatusChange}>
+            <SelectTrigger className="h-9 w-36 text-sm">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {total > 0 && (
+            <span className="text-xs text-muted-foreground ml-1">
+              {total.toLocaleString()} team{total !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Table ──────────────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-auto">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-[var(--e-border)] bg-[var(--e-bg-page)]">
+              <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Team</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Team Lead</th>
+              <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Members</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+              {isAdmin && <th className="px-4 py-3 w-10" />}
+              <th className="px-4 py-3 w-8" />
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading && (
+              <tr>
+                <td colSpan={isAdmin ? 7 : 6} className="text-center py-12 text-muted-foreground text-sm">
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-[#F5821F]" />
+                </td>
+              </tr>
+            )}
+            {!isLoading && teams.length === 0 && (
+              <tr>
+                <td colSpan={isAdmin ? 7 : 6} className="text-center py-16 text-muted-foreground text-sm">
+                  <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  No teams found
+                </td>
+              </tr>
+            )}
+            {teams.map((team, i) => (
+              <tr
+                key={team.id}
+                onClick={() => setLocation(`${BASE}/admin/teams/${team.id}`)}
+                className={`border-b border-[var(--e-border)] cursor-pointer transition-colors hover:bg-[#FFF8F5] ${
+                  i % 2 === 0 ? "bg-white" : "bg-[#FAFAF9]"
+                }`}
+              >
+                {/* Team name + colour badge + description */}
+                <td className="px-6 py-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
+                      style={{ backgroundColor: team.color || "#F5821F" }}
+                    >
+                      {team.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-medium text-foreground leading-snug">{team.name}</div>
+                      {team.description && (
+                        <div className="text-xs text-muted-foreground truncate max-w-[200px]">{team.description}</div>
+                      )}
+                    </div>
+                  </div>
+                </td>
+
+                {/* Type */}
+                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                  {typeLabelFor(team.type)}
+                </td>
+
+                {/* Team Lead */}
+                <td className="px-4 py-3">
+                  {team.teamLeadName
+                    ? <span className="text-foreground">{team.teamLeadName}</span>
+                    : <span className="text-muted-foreground">—</span>
+                  }
+                </td>
+
+                {/* Members */}
+                <td className="px-4 py-3 text-center">
+                  <span className="inline-flex items-center gap-1 text-sm font-medium text-foreground">
+                    <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                    {team.memberCount}
+                  </span>
+                </td>
+
+                {/* Status */}
+                <td className="px-4 py-3">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_COLORS[team.status] ?? "bg-gray-100 text-gray-500"}`}>
+                    {team.status}
+                  </span>
+                </td>
+
+                {/* Delete (admin only) */}
+                {isAdmin && (
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <button
+                      className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
+                      onClick={() => {
+                        if (confirm(`Delete team "${team.name}"? Members will be unassigned.`)) {
+                          deleteTeam.mutate(team.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                )}
+
+                {/* Chevron */}
+                <td className="px-4 py-3">
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ── Pagination ─────────────────────────────────────────────────── */}
+      <div className="px-6 py-3 border-t border-[var(--e-border)] bg-[var(--e-bg-page)]">
+        <ListPagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          onChange={setPage}
+        />
+        {totalPages <= 1 && total > 0 && (
+          <p className="text-xs text-muted-foreground">{total.toLocaleString()} team{total !== 1 ? "s" : ""}</p>
         )}
       </div>
 
-      {/* Filters */}
-      <ListToolbar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search teams…"
-        filters={[
-          {
-            value: typeFilter, onChange: setTypeFilter,
-            options: [{ value: "all", label: "All Types" }, ...TEAM_TYPES.map(t => ({ value: t.key, label: t.label }))],
-          },
-          {
-            value: statusFilter, onChange: setStatusFilter,
-            options: [
-              { value: "all", label: "All Statuses" },
-              { value: "active",   label: "Active" },
-              { value: "inactive", label: "Inactive" },
-            ],
-          },
-        ]}
-      />
-
-      {/* Table */}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-40">
-          <Loader2 className="w-6 h-6 animate-spin text-[#F5821F]" />
-        </div>
-      ) : teams.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No teams found</p>
-        </div>
-      ) : (
-        <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Team</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Team Lead</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Members</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
-                {isAdmin && <th className="px-4 py-3 w-10" />}
-                <th className="px-4 py-3 w-10" />
-              </tr>
-            </thead>
-            <tbody>
-              {teams.map((team, i) => (
-                <tr
-                  key={team.id}
-                  className={`border-b border-border last:border-0 hover:bg-muted/20 cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}
-                  onClick={() => setLocation(`${BASE}/admin/teams/${team.id}`)}
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
-                        style={{ backgroundColor: team.color || "#F5821F" }}>
-                        {team.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="font-medium text-foreground">{team.name}</div>
-                        {team.description && (
-                          <div className="text-xs text-muted-foreground truncate max-w-[220px]">{team.description}</div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{typeLabelFor(team.type)}</td>
-                  <td className="px-4 py-3 text-foreground">{team.teamLeadName ?? <span className="text-muted-foreground">—</span>}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center gap-1 text-sm font-medium">
-                      <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                      {team.memberCount}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_COLORS[team.status] ?? "bg-gray-100 text-gray-500"}`}>
-                      {team.status}
-                    </span>
-                  </td>
-                  {isAdmin && (
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      <button
-                        className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
-                        onClick={() => {
-                          if (confirm(`Delete team "${team.name}"? Members will be unassigned.`)) {
-                            deleteTeam.mutate(team.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  )}
-                  <td className="px-4 py-3">
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Create Dialog */}
+      {/* ── Create Dialog ───────────────────────────────────────────────── */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -218,13 +315,20 @@ export default function TeamsPage() {
           <div className="space-y-4 mt-2">
             <div className="space-y-1.5">
               <Label>Team Name <span className="text-red-500">*</span></Label>
-              <Input placeholder="e.g. Bangkok Agents" value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+              <Input
+                placeholder="e.g. Bangkok Agents"
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Description</Label>
-              <Textarea placeholder="Describe this team's purpose…" rows={3} value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+              <Textarea
+                placeholder="Describe this team's purpose…"
+                rows={3}
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -239,10 +343,17 @@ export default function TeamsPage() {
               <div className="space-y-1.5">
                 <Label>Colour</Label>
                 <div className="flex items-center gap-2">
-                  <input type="color" value={form.color}
+                  <input
+                    type="color"
+                    value={form.color}
                     onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
-                    className="w-10 h-9 rounded border border-border cursor-pointer p-0.5" />
-                  <Input value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} className="font-mono text-sm" />
+                    className="w-10 h-9 rounded border border-border cursor-pointer p-0.5"
+                  />
+                  <Input
+                    value={form.color}
+                    onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
+                    className="font-mono text-sm"
+                  />
                 </div>
               </div>
             </div>
