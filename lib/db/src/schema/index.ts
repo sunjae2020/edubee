@@ -16,3 +16,4 @@ export * from "./crm";
 export * from "./product-catalog";
 export * from "./account-service-profiles";
 export * from "./teams";
+export * from "./kpi";

@@ -127,30 +127,6 @@ export const agentCommissionConfigs = pgTable("agent_commission_configs", {
   modifiedOn:     timestamp("modified_on").notNull().defaultNow(),
 });
 
-// ── Staff KPI Periods ──────────────────────────────────────────────────────
-export const staffKpiPeriods = pgTable("staff_kpi_periods", {
-  id:                    uuid("id").primaryKey().defaultRandom(),
-  staffId:               uuid("staff_id").notNull().references(() => users.id),
-  periodType:            varchar("period_type", { length: 20 }).notNull(),
-  periodStart:           date("period_start").notNull(),
-  periodEnd:             date("period_end").notNull(),
-  leadCount:             integer("lead_count").notNull().default(0),
-  conversionCount:       integer("conversion_count").notNull().default(0),
-  conversionRate:        decimal("conversion_rate", { precision: 8, scale: 4 }),
-  attributedRevenue:     decimal("attributed_revenue", { precision: 12, scale: 2 }).notNull().default("0"),
-  paymentProcessedCount: integer("payment_processed_count").notNull().default(0),
-  visaGrantedCount:      integer("visa_granted_count").notNull().default(0),
-  incentiveRate:         decimal("incentive_rate", { precision: 8, scale: 4 }),
-  incentiveAmount:       decimal("incentive_amount", { precision: 12, scale: 2 }).notNull().default("0"),
-  bonusTier:             varchar("bonus_tier", { length: 50 }),
-  status:                varchar("status", { length: 20 }).notNull().default("draft"),
-  approvedBy:            uuid("approved_by").references(() => users.id),
-  approvedAt:            timestamp("approved_at"),
-  paidAt:                timestamp("paid_at"),
-  notes:                 text("notes"),
-  createdOn:             timestamp("created_on").notNull().defaultNow(),
-  modifiedOn:            timestamp("modified_on").notNull().defaultNow(),
-}, (t) => [unique().on(t.staffId, t.periodType, t.periodStart)]);
 
 // ── Tax Invoices ───────────────────────────────────────────────────────────
 export const taxInvoices = pgTable("tax_invoices", {
