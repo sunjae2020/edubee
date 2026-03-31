@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs, ROLE_HIERARCHY, ROLE_LABELS, ROLE_EMOJIS } from "@/hooks/use-view-as";
 import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Clock, ClipboardList, RefreshCw, CalendarCheck, FileText, AlertTriangle, BarChart3, Receipt, LucideIcon, Layers, Sun, Moon } from "lucide-react";
+import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Clock, ClipboardList, RefreshCw, CalendarCheck, FileText, AlertTriangle, BarChart3, Receipt, LucideIcon, Layers, Sun, Moon, Search, X } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import axios from "axios";
@@ -78,6 +78,10 @@ export function Header({ collapsed, onToggle, title }: Props) {
   const { theme, toggleTheme } = useTheme();
   const [location, navigate] = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
+  const [viewAsOpen, setViewAsOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
   const myRole = user?.role ?? "";
@@ -120,6 +124,17 @@ export function Header({ collapsed, onToggle, title }: Props) {
     return acc;
   }, {});
 
+  const availableRoles = Object.keys(grouped).sort(
+    (a, b) => (ROLE_HIERARCHY[b] ?? 0) - (ROLE_HIERARCHY[a] ?? 0)
+  );
+
+  const filteredUsers = switchableUsers.filter(u => {
+    const roleMatch = !selectedRole || u.role === selectedRole;
+    const q = searchQuery.trim().toLowerCase();
+    const nameMatch = !q || u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+    return roleMatch && nameMatch;
+  });
+
   if (!user) return null;
 
   return (
@@ -143,7 +158,10 @@ export function Header({ collapsed, onToggle, title }: Props) {
         <div className="flex items-center gap-1.5">
           {/* Role view switcher */}
           {canSwitch && (
-            <DropdownMenu>
+            <DropdownMenu open={viewAsOpen} onOpenChange={(o) => {
+              setViewAsOpen(o);
+              if (!o) { setSelectedRole(null); setSearchQuery(""); }
+            }}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant={isImpersonating ? "default" : "outline"}
@@ -158,57 +176,104 @@ export function Header({ collapsed, onToggle, title }: Props) {
                   <ChevronDown className="w-3 h-3 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="text-xs text-[#A8A29E] py-1 px-2">My View</DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={clearViewAs}
-                  className={!isImpersonating ? "bg-[#FEF0E3] font-medium" : ""}
-                >
-                  <div className="w-5 h-5 rounded-full bg-[#FEF0E3] flex items-center justify-center text-[10px] font-bold mr-2 text-[#F5821F]">
-                    {user.fullName.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-medium truncate">{user.fullName}</div>
-                    <div className="text-[10px] text-[#A8A29E] truncate flex items-center gap-1">
-                      <Layers className="w-2.5 h-2.5" />
-                      {ROLE_LABELS[myRole]} · My Account
+              <DropdownMenuContent align="end" className="w-72 p-0" onCloseAutoFocus={e => e.preventDefault()}>
+                {/* My View */}
+                <div className="px-2 pt-2 pb-1">
+                  <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide px-1 mb-1">My View</p>
+                  <button
+                    onClick={() => { clearViewAs(); setViewAsOpen(false); }}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors ${!isImpersonating ? "bg-[#FEF0E3]" : "hover:bg-[#F4F3F1]"}`}
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[#FEF0E3] flex items-center justify-center text-[10px] font-bold text-[#F5821F] shrink-0">
+                      {user.fullName.substring(0, 2).toUpperCase()}
                     </div>
-                  </div>
-                </DropdownMenuItem>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium truncate">{user.fullName}</div>
+                      <div className="text-[10px] text-[#A8A29E] flex items-center gap-1">
+                        <Layers className="w-2.5 h-2.5" />{ROLE_LABELS[myRole]} · My Account
+                      </div>
+                    </div>
+                    {!isImpersonating && <div className="w-1.5 h-1.5 rounded-full bg-[#F5821F] shrink-0" />}
+                  </button>
+                </div>
 
                 {switchableUsers.length > 0 && (
                   <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-xs text-[#A8A29E] py-1 px-2">View as another user</DropdownMenuLabel>
-                    {Object.entries(grouped).map(([role, users]) => (
-                      <div key={role}>
-                        <DropdownMenuLabel className="text-[10px] text-[#A8A29E]/70 py-0.5 px-3 font-normal">
-                          {ROLE_EMOJIS[role]} {ROLE_LABELS[role]}
-                        </DropdownMenuLabel>
-                        {users.map(u => (
-                          <DropdownMenuItem
-                            key={u.id}
-                            onClick={() => setViewAs(u)}
-                            className={viewAsUser?.id === u.id ? "bg-[#FEF0E3]" : ""}
+                    <div className="border-t border-[#E8E6E2] mx-2" />
+                    <div className="px-2 pt-2">
+                      <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide px-1 mb-2">View as another user</p>
+
+                      {/* Role filter pills */}
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        <button
+                          onClick={() => { setSelectedRole(null); setSearchQuery(""); setTimeout(() => searchRef.current?.focus(), 50); }}
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${!selectedRole ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
+                        >
+                          All
+                        </button>
+                        {availableRoles.map(role => (
+                          <button
+                            key={role}
+                            onClick={() => { setSelectedRole(role); setSearchQuery(""); setTimeout(() => searchRef.current?.focus(), 50); }}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${selectedRole === role ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
                           >
-                            <div className="w-5 h-5 rounded-full bg-[#F4F3F1] flex items-center justify-center text-[10px] font-bold mr-2">
-                              {u.fullName.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-xs font-medium truncate">{u.fullName}</div>
-                              <div className="text-[10px] text-[#A8A29E] truncate">{u.email}</div>
-                            </div>
-                          </DropdownMenuItem>
+                            {ROLE_EMOJIS[role]} {ROLE_LABELS[role]}
+                          </button>
                         ))}
                       </div>
-                    ))}
+
+                      {/* Search input */}
+                      <div className="relative mb-2">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#A8A29E]" />
+                        <input
+                          ref={searchRef}
+                          type="text"
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          onKeyDown={e => e.stopPropagation()}
+                          onClick={e => e.stopPropagation()}
+                          placeholder={selectedRole ? `Search ${ROLE_LABELS[selectedRole]}…` : "Search by name or email…"}
+                          className="w-full pl-7 pr-7 py-1.5 text-xs border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] focus:outline-none focus:ring-1 focus:ring-[#F5821F] focus:border-[#F5821F]"
+                        />
+                        {searchQuery && (
+                          <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-[#78716C]">
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* User list */}
+                    <div className="max-h-52 overflow-y-auto px-2 pb-2">
+                      {filteredUsers.length === 0 ? (
+                        <div className="text-center py-4 text-[11px] text-[#A8A29E]">No users found</div>
+                      ) : (
+                        filteredUsers.map(u => (
+                          <button
+                            key={u.id}
+                            onClick={() => { setViewAs(u); setViewAsOpen(false); setSelectedRole(null); setSearchQuery(""); }}
+                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors mb-0.5 ${viewAsUser?.id === u.id ? "bg-[#FEF0E3]" : "hover:bg-[#F4F3F1]"}`}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-[#F4F3F1] flex items-center justify-center text-[10px] font-bold shrink-0">
+                              {u.fullName.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-medium truncate">{u.fullName}</div>
+                              <div className="text-[10px] text-[#A8A29E] truncate flex items-center gap-1">
+                                <span>{ROLE_EMOJIS[u.role]}</span>
+                                <span>{ROLE_LABELS[u.role]}</span>
+                              </div>
+                            </div>
+                            {viewAsUser?.id === u.id && <div className="w-1.5 h-1.5 rounded-full bg-[#F5821F] shrink-0" />}
+                          </button>
+                        ))
+                      )}
+                    </div>
                   </>
                 )}
+
                 {switchableUsers.length === 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled className="text-xs text-[#A8A29E]">No other users to switch to</DropdownMenuItem>
-                  </>
+                  <div className="px-2 pb-3 text-center text-[11px] text-[#A8A29E]">No other users to switch to</div>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
