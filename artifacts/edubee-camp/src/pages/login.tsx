@@ -119,6 +119,12 @@ export default function Login() {
                   </FormItem>
                 )}
               />
+              <div className="flex justify-end -mt-1">
+                <Link href="/forgot-password" className="text-xs" style={{ color: '#F5821F' }}>
+                  Forgot password?
+                </Link>
+              </div>
+
               <Button type="submit" className="w-full h-10 font-semibold gap-2" disabled={isLoading}>
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
               </Button>

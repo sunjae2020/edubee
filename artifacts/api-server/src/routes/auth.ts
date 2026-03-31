@@ -4,6 +4,7 @@ import { users, refreshTokens, accounts, authLogs } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { authenticate } from "../middleware/authenticate.js";
 
 const router = Router();
@@ -347,6 +348,64 @@ router.post("/register", async (req, res) => {
   } catch (err) {
     console.error("Register error:", err);
     return res.status(500).json({ success: false, error: "SERVER_ERROR", message: "An unexpected error occurred. Please try again." });
+  }
+});
+
+// POST /api/auth/forgot-password
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body as { email?: string };
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Email is required." });
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  try {
+    const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
+
+    if (user) {
+      const token = crypto.randomBytes(32).toString("hex");
+      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await db.update(users)
+        .set({ passwordResetToken: token, passwordResetExpires: expires })
+        .where(eq(users.id, user.id));
+      console.log(`[PasswordReset] Reset link for ${normalizedEmail}: /reset-password?token=${token}`);
+    }
+
+    return res.json({ success: true, message: "If this email is registered, you will receive a password reset link." });
+  } catch (err) {
+    console.error("Forgot password error:", err);
+    return res.status(500).json({ success: false, message: "An unexpected error occurred. Please try again." });
+  }
+});
+
+// POST /api/auth/reset-password
+router.post("/reset-password", async (req, res) => {
+  const { token, password } = req.body as { token?: string; password?: string };
+
+  if (!token || !password) {
+    return res.status(400).json({ success: false, error: "INVALID_TOKEN", message: "Token and password are required." });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ success: false, message: "Password must be at least 8 characters." });
+  }
+
+  try {
+    const [user] = await db.select().from(users).where(eq(users.passwordResetToken, token)).limit(1);
+
+    if (!user || !user.passwordResetExpires || new Date(user.passwordResetExpires) < new Date()) {
+      return res.status(400).json({ success: false, error: "INVALID_TOKEN", message: "Invalid or expired reset link. Please request a new one." });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+    await db.update(users)
+      .set({ passwordHash: hash, passwordResetToken: null, passwordResetExpires: null, failedLoginAttempts: 0, lockedUntil: null })
+      .where(eq(users.id, user.id));
+
+    return res.json({ success: true, message: "Password reset successfully. You can now log in." });
+  } catch (err) {
+    console.error("Reset password error:", err);
+    return res.status(500).json({ success: false, message: "An unexpected error occurred. Please try again." });
   }
 });
 

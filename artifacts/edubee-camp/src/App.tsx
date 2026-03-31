@@ -10,6 +10,8 @@ import "@/lib/i18n";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import Dashboard from "@/pages/dashboard";
 import DashboardCrmPage from "@/pages/admin/DashboardCrmPage";
 import Users from "@/pages/users";
@@ -150,6 +152,8 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
 
       {/* /admin bare path → dashboard */}
       <Route path="/admin"><Redirect to="/admin/dashboard" /></Route>
