@@ -229,7 +229,6 @@ export default function Register() {
           <div className="flex items-center gap-3 mb-8">
             <img src={logoImg} alt="Edubee" className="h-12 w-auto object-contain"
               style={{ filter: "brightness(0) invert(1)" }} />
-            <span className="text-white text-lg font-semibold">Edubee CRM</span>
           </div>
           <h1 className="text-white text-2xl font-bold leading-snug mb-3">
             All-in-One Platform for Study Abroad Agencies
