@@ -9,6 +9,7 @@ import "@/lib/i18n";
 
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
+import Register from "@/pages/Register";
 import Dashboard from "@/pages/dashboard";
 import DashboardCrmPage from "@/pages/admin/DashboardCrmPage";
 import Users from "@/pages/users";
@@ -148,6 +149,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
 
       {/* /admin bare path → dashboard */}
       <Route path="/admin"><Redirect to="/admin/dashboard" /></Route>

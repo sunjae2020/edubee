@@ -268,6 +268,88 @@ router.get("/me", authenticate, async (req, res) => {
   }
 });
 
+// GET /api/auth/check-email?email=xxx
+router.get("/check-email", async (req, res) => {
+  const email = ((req.query.email as string) || "").toLowerCase().trim();
+  if (!email) {
+    return res.status(400).json({ available: false, message: "Email is required." });
+  }
+  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+  if (existing) {
+    return res.json({ available: false, message: "This email is already registered." });
+  }
+  return res.json({ available: true });
+});
+
+// POST /api/auth/register
+router.post("/register", async (req, res) => {
+  try {
+    const { organisation, user, account, service_modules } = req.body as {
+      organisation: { name: string; phone_number?: string; organization_url?: string; address_line_1?: string };
+      user: { first_name: string; last_name: string; email: string; password: string };
+      account: { account_type: string; plan: string };
+      service_modules: string[];
+    };
+
+    if (!organisation?.name || !user?.first_name || !user?.last_name || !user?.email || !user?.password) {
+      return res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: "Required fields are missing." });
+    }
+    if (user.password.length < 8) {
+      return res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: "Password must be at least 8 characters." });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(user.email)) {
+      return res.status(400).json({ success: false, error: "VALIDATION_ERROR", message: "Invalid email format." });
+    }
+
+    const normalizedEmail = user.email.toLowerCase().trim();
+
+    const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, normalizedEmail)).limit(1);
+    if (existing) {
+      return res.status(409).json({ success: false, error: "EMAIL_ALREADY_EXISTS", message: "This email is already registered." });
+    }
+
+    const passwordHash = await bcrypt.hash(user.password, 10);
+
+    const result = await db.transaction(async (tx) => {
+      const [newUser] = await tx.insert(users).values({
+        email: normalizedEmail,
+        passwordHash,
+        role: "Admin",
+        fullName: `${user.first_name} ${user.last_name}`,
+        status: "active",
+      }).returning();
+
+      const [newAccount] = await tx.insert(accounts).values({
+        name: organisation.name,
+        accountType: account?.account_type || "Agent",
+        ownerId: newUser.id,
+        email: normalizedEmail,
+        phoneNumber: organisation.phone_number || null,
+        website: organisation.organization_url || null,
+        address: organisation.address_line_1 || null,
+        status: "Active",
+        manualInput: false,
+        firstName: user.first_name,
+        lastName: user.last_name,
+      } as any).returning();
+
+      return { newUser, newAccount };
+    });
+
+    return res.json({
+      success: true,
+      message: "Account created successfully.",
+      userId: result.newUser.id,
+      organisationId: result.newAccount.id,
+      accountId: result.newAccount.id,
+    });
+  } catch (err) {
+    console.error("Register error:", err);
+    return res.status(500).json({ success: false, error: "SERVER_ERROR", message: "An unexpected error occurred. Please try again." });
+  }
+});
+
 // POST /api/auth/change-password — logged-in user changes own password
 router.post("/change-password", authenticate, async (req, res) => {
   const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword: string };

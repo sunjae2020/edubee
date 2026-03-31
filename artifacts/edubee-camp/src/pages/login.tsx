@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect } from "wouter";
+import { Redirect, Link } from "wouter";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -160,6 +160,13 @@ export default function Login() {
             )}
           </div>
         </div>
+
+        <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#57534E' }}>
+          Don't have an account?{' '}
+          <Link href="/register" style={{ color: '#F5821F', fontWeight: 500 }}>
+            Start for free →
+          </Link>
+        </p>
 
         <div className="flex justify-center">
           <LanguageSwitcher />
