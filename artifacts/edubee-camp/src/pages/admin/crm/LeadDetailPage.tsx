@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { NameFieldGroup } from "@/components/common/NameFieldGroup";
 import { useAuth } from "@/hooks/use-auth";
+import { useLookup } from "@/hooks/use-lookup";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -39,10 +40,6 @@ const CHANNEL_ICONS: Record<string, React.ElementType> = {
 };
 const CHANNELS = ["Call", "Email", "SMS", "Meeting", "WhatsApp", "LINE", "KakaoTalk"];
 
-const INQUIRY_TYPES = [
-  "General Enquiry", "Camp Program", "Language School",
-  "Accommodation", "Airport Transfer", "Insurance", "Visa", "Other",
-];
 const SOURCES = [
   "Website", "Referral", "Social Media", "Email", "Phone",
   "Agent", "Camp Application", "Walk-in", "Other",
@@ -395,6 +392,7 @@ export default function LeadDetailPage() {
   const [, navigate]  = useLocation();
   const { toast }     = useToast();
   const qc            = useQueryClient();
+  const inquiryTypes  = useLookup("inquiry_type");
   const [tab, setTab] = useState("details");
   const [showConvertConfirm, setShowConvertConfirm] = useState(false);
   const [activityForm, setActivityForm] = useState({ channel: "Call", scheduledAt: "", description: "" });
@@ -818,7 +816,7 @@ export default function LeadDetailPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">—</SelectItem>
-                      {INQUIRY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      {inquiryTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </FieldGroup>

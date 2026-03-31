@@ -13,13 +13,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { useToast } from "@/hooks/use-toast";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { TableFooter } from "@/components/ui/table-footer";
+import { useLookup } from "@/hooks/use-lookup";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
 
-const TITLES       = ["Mr", "Mrs", "Ms", "Dr", "Prof"];
-const ACCOUNT_TYPES = ["Student", "Agent", "School", "Partner"];
-const SNS_TYPES    = ["WhatsApp", "WeChat", "Line", "KakaoTalk", "Telegram", "Other"];
+const TITLES = ["Mr", "Mrs", "Ms", "Dr", "Prof"];
 const CHANNELS     = ["Online Ads", "Referral", "Walk-in", "Camp", "Other"];
 
 interface Contact {
@@ -117,6 +116,8 @@ export default function ContactsPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const contactTypes = useLookup("contact_type");
+  const snsTypes     = useLookup("sns_type");
   const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
 
   const [search, setSearch]           = useState("");
@@ -230,7 +231,7 @@ export default function ContactsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
-            {ACCOUNT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            {contactTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -380,7 +381,7 @@ export default function ContactsPage() {
                 <Input value={form.officeNumber ?? ""} onChange={e => patch("officeNumber", e.target.value)} className="h-9 text-sm" placeholder="+82 2 0000 0000" />
               </FormField>
               <FormField label="SNS Type">
-                <SelectField value={form.snsType} onChange={v => patch("snsType", v)} options={SNS_TYPES} placeholder="SNS Type" />
+                <SelectField value={form.snsType} onChange={v => patch("snsType", v)} options={snsTypes} placeholder="SNS Type" />
               </FormField>
             </div>
 
@@ -409,7 +410,7 @@ export default function ContactsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormField label="Account Type">
-                <SelectField value={form.accountType} onChange={v => patch("accountType", v)} options={ACCOUNT_TYPES} placeholder="Account Type" />
+                <SelectField value={form.accountType} onChange={v => patch("accountType", v)} options={contactTypes} placeholder="Account Type" />
               </FormField>
               <FormField label="Status">
                 <SelectField value={form.status} onChange={v => patch("status", v)} options={["Active", "Inactive"]} placeholder="Status" />

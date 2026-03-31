@@ -16,30 +16,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useLookup } from "@/hooks/use-lookup";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const ACCOUNT_TYPES = [
-  "Student", "Client", "Company", "School",
-  "Sub_Agency", "Super_Agency",
-  "Supplier", "Staff", "Branch",
-  "Agent", "Provider", "Organisation",
-];
 const INDIVIDUAL_TYPES = ["Student", "Client"];
-const CATEGORY_MAP: Record<string, string[]> = {
-  Student:      [],
-  Client:       [],
-  Company:      [],
-  School:       ["Language School", "University", "TAFE", "High School", "Other"],
-  Sub_Agency:   [],
-  Super_Agency: [],
-  Supplier:     ["Homestay", "Dormitory", "Pickup", "Insurance", "Migration Agent", "Tour Operator", "Other"],
-  Staff:        [],
-  Branch:       [],
-  Agent:        ["Sub-agent", "Super-agent", "Referral Partner"],
-  Provider:     ["Homestay", "Dormitory", "Pickup", "Insurance", "Migration Agent", "Tour Operator", "Other"],
-  Organisation: ["Head Office", "Branch", "Partner Organisation"],
-};
 
 function getAccountTypeBadge(accountType?: string | null): { bg: string; text: string; label: string } {
   switch (accountType) {
@@ -658,6 +639,8 @@ export default function AccountDetailPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const accountTypes     = useLookup("account_type");
+  const accountCategories = useLookup("account_category");
 
   const isNew = !!matchNew;
   const id    = matchId ? (params?.id ?? "") : "";
@@ -822,7 +805,7 @@ export default function AccountDetailPage() {
     return <div className="flex items-center justify-center h-64 text-stone-400 text-sm">Loading…</div>;
   }
 
-  const categories = CATEGORY_MAP[form.accountType ?? "Student"] ?? [];
+  const categories = INDIVIDUAL_TYPES.includes(form.accountType ?? "") ? [] : accountCategories;
 
   return (
     <div className="p-6 space-y-5">
@@ -981,7 +964,7 @@ export default function AccountDetailPage() {
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {ACCOUNT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        {accountTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </Field>

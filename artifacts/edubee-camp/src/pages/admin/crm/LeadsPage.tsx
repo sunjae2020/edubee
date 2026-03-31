@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { useLookup } from "@/hooks/use-lookup";
 import { TableFooter } from "@/components/ui/table-footer";
 import { NameFieldGroup } from "@/components/common/NameFieldGroup";
 import { ClientNameCell } from "@/components/common/ClientNameCell";
@@ -36,7 +37,6 @@ const STATUS_COLORS: Record<string, string> = {
   unqualified: "bg-[#F4F3F1] text-[#57534E]",
 };
 
-const INQUIRY_TYPES = ["Summer Camp", "Study Abroad", "Internship", "Accommodation", "Guardian", "Other"];
 
 interface Lead {
   id: string;
@@ -148,6 +148,7 @@ export default function CrmLeadsPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const inquiryTypes = useLookup("inquiry_type");
   const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
 
   const [view, setView]           = useState<"table" | "kanban">("table");
@@ -434,7 +435,7 @@ export default function CrmLeadsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-stone-600">Inquiry Type</Label>
-                <SelectField value={form.inquiryType} onChange={v => setForm(f => ({ ...f, inquiryType: v }))} options={INQUIRY_TYPES} placeholder="Type" />
+                <SelectField value={form.inquiryType} onChange={v => setForm(f => ({ ...f, inquiryType: v }))} options={inquiryTypes} placeholder="Type" />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

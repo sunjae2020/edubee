@@ -15,16 +15,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
+import { useLookup } from "@/hooks/use-lookup";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const ACCOUNT_TYPES = ["Student", "Organisation", "Agent", "School", "Staff", "Other"];
 const ACCOUNT_STATUSES = ["Active", "Inactive"];
 const CONTACT_STATUSES = ["Active", "Inactive"];
-const SNS_TYPES = ["WeChat", "WhatsApp", "LINE", "KakaoTalk", "Instagram", "Facebook", "Other"];
 const GENDERS = ["Male", "Female", "Other", "Prefer not to say"];
 const TITLES = ["Mr", "Mrs", "Ms", "Miss", "Dr", "Prof"];
-const INFLUX_CHANNELS = ["Website", "Referral", "Social Media", "Email", "Phone", "Agent", "Walk-in", "Other"];
 
 const ROLE_LABELS: Record<string, string> = { primary: "Primary", secondary: "Secondary", both: "Both" };
 const ROLE_COLORS: Record<string, string> = {
@@ -197,7 +195,7 @@ function AddAccountModal({ contactId, contactName, existingIds, onClose, onSucce
               <Select value={accountType} onValueChange={setAccountType}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {ACCOUNT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {contactTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -251,6 +249,7 @@ function EditAccountModal({ contactId, account, onClose, onSuccess }: {
   const [accountType, setAccountType] = useState(account.accountType ?? "");
   const [status, setStatus] = useState(account.status ?? "Active");
   const { toast } = useToast();
+  const contactTypes = useLookup("contact_type");
 
   const updateMut = useMutation({
     mutationFn: () => axios.patch(
@@ -274,7 +273,7 @@ function EditAccountModal({ contactId, account, onClose, onSuccess }: {
           <Select value={accountType} onValueChange={setAccountType}>
             <SelectTrigger className="h-9"><SelectValue placeholder="Select type" /></SelectTrigger>
             <SelectContent>
-              {ACCOUNT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              {contactTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -423,6 +422,9 @@ export default function ContactDetailPage() {
   const [, params]   = useRoute("/admin/crm/contacts/:id");
   const [, navigate] = useLocation();
   const { toast }    = useToast();
+  const contactTypes   = useLookup("contact_type");
+  const snsTypes       = useLookup("sns_type");
+  const influxChannels = useLookup("influx_channel");
   const qc           = useQueryClient();
   const id           = params?.id ?? "";
 
@@ -678,7 +680,7 @@ export default function ContactDetailPage() {
               <SelectTrigger className={INPUT_CLS}><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">—</SelectItem>
-                {INFLUX_CHANNELS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {influxChannels.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
           </FieldGroup>
@@ -694,7 +696,7 @@ export default function ContactDetailPage() {
               <SelectTrigger className={INPUT_CLS}><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">—</SelectItem>
-                {SNS_TYPES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {snsTypes.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
           </FieldGroup>

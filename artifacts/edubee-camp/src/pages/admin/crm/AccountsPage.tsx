@@ -11,21 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { TableFooter } from "@/components/ui/table-footer";
+import { useLookup } from "@/hooks/use-lookup";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
 
 const INDIVIDUAL_TYPES = ["Student", "Client"];
 
-const ACCOUNT_TYPES = [
-  "Student",
-  "Agent", "School",
-  "Sub_Agency", "Super_Agency",
-  "Supplier", "Staff", "Branch",
-  "Provider", "Organisation",
-  // legacy types still in DB
-  "Company", "Institute", "Agency", "Accommodation", "Private",
-];
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
   Student:       { bg: "#FEF0E3", text: "#F5821F" },
@@ -88,6 +80,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function AccountsPage() {
   const [, navigate] = useLocation();
+  const accountTypes = useLookup("account_type");
   const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const [search, setSearch]             = useState("");
   const [filterType, setFilterType]     = useState("all");
@@ -149,7 +142,7 @@ export default function AccountsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
-            {ACCOUNT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            {accountTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={v => { setFilterStatus(v); setPage(1); }}>
