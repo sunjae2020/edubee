@@ -396,11 +396,17 @@ router.post("/chatbot/message", authenticate, async (req, res) => {
     })}\n\n`);
     res.end();
   } catch (e: any) {
-    console.error("[chatbot/message]", e);
+    const raw = String(e?.message ?? "");
+    const is429 = e?.status === 429 || raw.includes("429") || raw.includes("RESOURCE_EXHAUSTED");
+    const userMsg = is429
+      ? "AI response quota exceeded. Please try again in a moment."
+      : "AI response generation failed.";
+    if (is429) console.warn("[chatbot/message] Gemini 429 quota exceeded");
+    else console.error("[chatbot/message]", e);
     if (!res.headersSent) {
-      res.status(500).json({ error: e?.message ?? "AI response generation failed." });
+      res.status(is429 ? 429 : 500).json({ error: userMsg });
     } else {
-      res.write(`data: ${JSON.stringify({ error: "AI response generation failed." })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: userMsg })}\n\n`);
       res.end();
     }
   }

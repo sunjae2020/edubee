@@ -65,10 +65,38 @@ async function generateEmbedding(text: string): Promise<number[]> {
   );
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(`Embedding API error ${response.status}: ${JSON.stringify(err)}`);
+    const errMsg = `Embedding API error ${response.status}: ${JSON.stringify(err)}`;
+    console.error(`[KB] ${errMsg}`);
+    throw Object.assign(new Error(errMsg), { status: response.status });
   }
   const data = await response.json() as { embedding?: { values: number[] } };
   return data.embedding?.values ?? [];
+}
+
+// ─── Keyword fallback search (used when embedding quota is exhausted) ───────
+
+function keywordSearch(
+  query: string,
+  pool: EmbeddingEntry[],
+  topK: number
+): { text: string; docTitle: string; score: number }[] {
+  const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+  if (words.length === 0) return [];
+
+  const scored = pool.map((item) => {
+    const doc = documents.find((d) => d.id === item.docId);
+    const haystack = item.text.toLowerCase();
+    let hits = 0;
+    for (const w of words) if (haystack.includes(w)) hits++;
+    return {
+      text: item.text,
+      docTitle: doc?.title ?? "Unknown",
+      score: hits / words.length,
+    };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, topK).filter((s) => s.score > 0);
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {
@@ -246,9 +274,23 @@ export async function addDocumentToKB(
   const embeddingEntries: EmbeddingEntry[] = [];
   console.log(`[KB] Generating embeddings for "${title}" (${chunks.length} chunks, scope=${scope})...`);
 
+  let quotaExhausted = false;
   for (const chunk of chunks) {
     const chunkId = `${docId}-${chunk.index}`;
-    const embedding = await generateEmbedding(chunk.text);
+    let embedding: number[] = [];
+
+    if (!quotaExhausted) {
+      try {
+        embedding = await generateEmbedding(chunk.text);
+      } catch (err: any) {
+        if (err?.status === 429 || String(err?.message).includes("429") || String(err?.message).includes("RESOURCE_EXHAUSTED")) {
+          console.warn("[KB] Embedding quota exceeded — saving chunks without embeddings (keyword search will be used)");
+          quotaExhausted = true;
+        } else {
+          throw err;
+        }
+      }
+    }
 
     await db.insert(chatChunks).values({
       id: chunkId,
@@ -314,19 +356,25 @@ export async function retrieveContext(
 
   if (filteredEmbeddings.length === 0) return [];
 
-  const queryEmbedding = await generateEmbedding(query);
-
-  const scored = filteredEmbeddings.map((item) => {
-    const doc = documents.find((d) => d.id === item.docId);
-    return {
-      text: item.text,
-      docTitle: doc?.title ?? "Unknown",
-      score: cosineSimilarity(queryEmbedding, item.embedding),
-    };
-  });
-
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, topK).filter((s) => s.score > 0.3);
+  try {
+    const queryEmbedding = await generateEmbedding(query);
+    const scored = filteredEmbeddings.map((item) => {
+      const doc = documents.find((d) => d.id === item.docId);
+      return {
+        text: item.text,
+        docTitle: doc?.title ?? "Unknown",
+        score: cosineSimilarity(queryEmbedding, item.embedding),
+      };
+    });
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, topK).filter((s) => s.score > 0.3);
+  } catch (err: any) {
+    if (err?.status === 429 || String(err?.message).includes("429") || String(err?.message).includes("RESOURCE_EXHAUSTED")) {
+      console.warn("[KB] Embedding quota exceeded — falling back to keyword search");
+      return keywordSearch(query, filteredEmbeddings, topK);
+    }
+    throw err;
+  }
 }
 
 // ─── Getters ───────────────────────────────────────────────────────────────

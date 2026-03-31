@@ -502,11 +502,17 @@ router.post("/public/chatbot/message", async (req, res) => {
     })}\n\n`);
     res.end();
   } catch (e: any) {
-    console.error("[public/chatbot/message]", e);
+    const raw = String(e?.message ?? "");
+    const is429 = e?.status === 429 || raw.includes("429") || raw.includes("RESOURCE_EXHAUSTED");
+    const userMsg = is429
+      ? "AI 응답 할당량이 초과되었습니다. 잠시 후 다시 시도해 주세요."
+      : "AI 응답 생성에 실패했습니다.";
+    if (is429) console.warn("[public/chatbot/message] Gemini 429 quota exceeded");
+    else console.error("[public/chatbot/message]", e);
     if (!res.headersSent) {
-      res.status(500).json({ error: e?.message ?? "AI 응답 생성에 실패했습니다." });
+      res.status(is429 ? 429 : 500).json({ error: userMsg });
     } else {
-      res.write(`data: ${JSON.stringify({ error: "AI 응답 생성에 실패했습니다." })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: userMsg })}\n\n`);
       res.end();
     }
   }
