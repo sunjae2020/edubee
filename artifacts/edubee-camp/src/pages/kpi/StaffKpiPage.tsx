@@ -6,10 +6,15 @@ import { ActivityKpiSection } from '@/components/kpi/ActivityKpiSection';
 import { FinanceKpiSection }  from '@/components/kpi/FinanceKpiSection';
 import { IncentiveSection }   from '@/components/kpi/IncentiveSection';
 import { useStaffKpi, useKpiApproval } from '@/hooks/useKpi';
+import { BarChart2, ChevronDown } from 'lucide-react';
 
 interface StaffItem { id: string; full_name: string; }
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const SELECT_CLS =
+  'text-sm border border-[#E8E6E2] rounded-lg px-3 py-2 bg-white text-[#1C1917] ' +
+  'focus:outline-none focus:ring-2 focus:ring-[#F5821F]/40 focus:border-[#F5821F] transition-colors';
 
 export default function StaffKpiPage() {
   const { user: currentUser } = useAuth();
@@ -50,42 +55,53 @@ export default function StaffKpiPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">직원 KPI</h1>
-          <p className="text-sm text-gray-500 mt-0.5">직원별 활동 및 파이낸스 성과 분석</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 bg-[#FEF0E3]">
+            <BarChart2 className="w-5 h-5 text-[#F5821F]" strokeWidth={1.8} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-[#1C1917]">Staff KPI</h1>
+            <p className="text-sm text-[#A8A29E] mt-0.5">Activity and finance performance by staff member</p>
+          </div>
         </div>
+
         {canApprove && (
-          <select
-            value={selectedStaffId}
-            onChange={e => setSelectedStaffId(e.target.value)}
-            className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">직원 선택...</option>
-            {staffList.map(s => (
-              <option key={s.id} value={s.id}>{s.full_name}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedStaffId}
+              onChange={e => setSelectedStaffId(e.target.value)}
+              className={`${SELECT_CLS} pr-8 appearance-none`}
+            >
+              <option value="">Select staff...</option>
+              {staffList.map(s => (
+                <option key={s.id} value={s.id}>{s.full_name}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E] pointer-events-none" />
+          </div>
         )}
       </div>
 
       <KpiFilterBar filter={filter} onChange={setFilter} onRefresh={handleRefresh} loading={loading} />
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-          ⚠️ {error}
+        <div className="flex items-center gap-2 p-4 bg-[#FEF2F2] border border-[#FECACA] rounded-xl text-[#DC2626] text-sm">
+          <span className="font-medium">Error:</span> {error}
         </div>
       )}
 
       {loading && (
-        <div className="flex justify-center py-12 text-3xl animate-spin">⟳</div>
+        <div className="flex justify-center py-16">
+          <div className="w-8 h-8 border-2 border-[#F5821F] border-t-transparent rounded-full animate-spin" />
+        </div>
       )}
 
       {data && !loading && (
         <>
           <div className="flex items-center gap-3 px-1">
-            <span className="text-base font-semibold text-gray-800">{data.staffName}</span>
-            <span className="text-sm text-gray-400">{data.periodStart} ~ {data.periodEnd}</span>
+            <span className="text-base font-semibold text-[#1C1917]">{data.staffName}</span>
+            <span className="text-sm text-[#A8A29E]">{data.periodStart} – {data.periodEnd}</span>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -112,9 +128,11 @@ export default function StaffKpiPage() {
       )}
 
       {!data && !loading && !error && (
-        <div className="flex flex-col items-center py-16 text-gray-400">
-          <span className="text-4xl mb-3">📊</span>
-          <p className="text-sm">직원을 선택하고 조회 버튼을 눌러주세요.</p>
+        <div className="flex flex-col items-center py-16 gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#FEF0E3] flex items-center justify-center">
+            <BarChart2 className="w-6 h-6 text-[#F5821F]" strokeWidth={1.5} />
+          </div>
+          <p className="text-sm text-[#A8A29E]">Select a staff member and click Search.</p>
         </div>
       )}
     </div>

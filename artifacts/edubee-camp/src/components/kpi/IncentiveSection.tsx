@@ -1,5 +1,6 @@
 import React from 'react';
 import { StaffKpiResult, KpiStatus, IncentiveType } from '../../types/kpi';
+import { Target, Save, Send, CheckCheck, Banknote, BadgeCheck } from 'lucide-react';
 
 interface Props {
   data: Pick<StaffKpiResult,
@@ -16,12 +17,12 @@ interface Props {
   processing?:  boolean;
 }
 
-const STATUS_CFG: Record<KpiStatus, { label: string; color: string; bg: string }> = {
-  draft:     { label: 'Draft',     color: 'text-gray-600',   bg: 'bg-gray-100'   },
-  submitted: { label: 'Submitted', color: 'text-blue-600',   bg: 'bg-blue-100'   },
-  approved:  { label: 'Approved',  color: 'text-green-600',  bg: 'bg-green-100'  },
-  paid:      { label: 'Paid',      color: 'text-purple-600', bg: 'bg-purple-100' },
-  rejected:  { label: 'Rejected',  color: 'text-red-600',    bg: 'bg-red-100'    },
+const STATUS_CFG: Record<KpiStatus, { label: string; textColor: string; bg: string; border: string }> = {
+  draft:     { label: 'Draft',     textColor: 'text-[#57534E]',  bg: 'bg-[#F4F3F1]', border: 'border-[#E8E6E2]' },
+  submitted: { label: 'Submitted', textColor: 'text-[#2563EB]',  bg: 'bg-[#EFF6FF]', border: 'border-[#BFDBFE]' },
+  approved:  { label: 'Approved',  textColor: 'text-[#16A34A]',  bg: 'bg-[#F0FDF4]', border: 'border-[#BBF7D0]' },
+  paid:      { label: 'Paid',      textColor: 'text-[#F5821F]',  bg: 'bg-[#FEF0E3]', border: 'border-[#F5821F]/30' },
+  rejected:  { label: 'Rejected',  textColor: 'text-[#DC2626]',  bg: 'bg-[#FEF2F2]', border: 'border-[#FECACA]' },
 };
 
 const fmt = (n: number) =>
@@ -30,11 +31,14 @@ const fmt = (n: number) =>
 function incentiveLabel(
   type: IncentiveType | null, rate: number | null, fixed: number | null
 ): string {
-  if (!type || type === 'none') return '성과급 없음';
-  if (type === 'percentage' && rate) return `초과분의 ${(rate * 100).toFixed(1)}%`;
-  if (type === 'fixed' && fixed)     return `고정 ${fmt(fixed)}`;
-  return '-';
+  if (!type || type === 'none') return 'No incentive';
+  if (type === 'percentage' && rate) return `${(rate * 100).toFixed(1)}% of surplus`;
+  if (type === 'fixed' && fixed)     return `Fixed ${fmt(fixed)}`;
+  return '—';
 }
+
+const BTN_BASE =
+  'w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed';
 
 export const IncentiveSection: React.FC<Props> = ({
   data, canApprove,
@@ -45,77 +49,102 @@ export const IncentiveSection: React.FC<Props> = ({
   const cfg    = status ? STATUS_CFG[status] : null;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-5 h-full">
+    <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 h-full flex flex-col"
+      style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)' }}>
+
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-          🎯 성과급 (Incentive)
+        <h3 className="text-xs font-semibold text-[#A8A29E] uppercase tracking-wider">
+          Incentive
         </h3>
         {cfg && (
-          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.color}`}>
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.bg} ${cfg.textColor} ${cfg.border}`}>
             {cfg.label}
           </span>
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3 flex-1">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">성과급 방식</span>
-          <span className="text-sm font-medium text-gray-800">
+          <span className="text-sm text-[#57534E]">Incentive Type</span>
+          <span className="text-sm font-medium text-[#1C1917]">
             {incentiveLabel(data.incentiveType, data.incentiveRate, data.incentiveFixed)}
           </span>
         </div>
+
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">초과 달성액</span>
-          <span className={`text-sm font-medium ${data.excessAmount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+          <span className="text-sm text-[#57534E]">Surplus Amount</span>
+          <span className={`text-sm font-medium ${data.excessAmount > 0 ? 'text-[#16A34A]' : 'text-[#A8A29E]'}`}>
             {fmt(data.excessAmount)}
           </span>
         </div>
-        <div className="flex justify-between items-center p-3 rounded-lg bg-amber-50 border border-yellow-200">
-          <span className="text-sm font-semibold text-gray-700">💰 최종 성과급</span>
-          <span className="text-lg font-bold text-amber-600">{fmt(data.incentiveAmount)}</span>
+
+        <div className="flex items-center justify-between p-3 rounded-xl bg-[#FEF0E3] border border-[#F5821F]/20">
+          <div className="flex items-center gap-1.5">
+            <Target className="w-4 h-4 text-[#F5821F]" strokeWidth={1.8} />
+            <span className="text-sm font-semibold text-[#1C1917]">Final Incentive</span>
+          </div>
+          <span className="text-lg font-bold text-[#F5821F]">{fmt(data.incentiveAmount)}</span>
         </div>
       </div>
 
       <div className="mt-4 flex flex-col gap-2">
         {(!status || status === 'draft') && (
           <button
-            onClick={onCalculate} disabled={calculating}
-            className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            onClick={onCalculate}
+            disabled={calculating}
+            className={`${BTN_BASE} bg-[#F5821F] text-white hover:bg-[#D96A0A] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(245,130,31,0.25)] active:bg-[#C25E08]`}
           >
-            {calculating ? '계산 중...' : '💾 계산 & 저장'}
+            {calculating
+              ? <><Save className="w-4 h-4 animate-pulse" /> Calculating...</>
+              : <><Save className="w-4 h-4" /> Calculate &amp; Save</>
+            }
           </button>
         )}
 
         {status === 'draft' && data.kpiPeriodId && (
           <button
-            onClick={() => onApprove(data.kpiPeriodId!)} disabled={processing}
-            className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            onClick={() => onApprove(data.kpiPeriodId!)}
+            disabled={processing}
+            className={`${BTN_BASE} bg-[#1C1917] text-white hover:bg-[#57534E]`}
           >
-            {processing ? '처리 중...' : '📤 승인 요청'}
+            {processing
+              ? <><Send className="w-4 h-4 animate-pulse" /> Processing...</>
+              : <><Send className="w-4 h-4" /> Submit for Approval</>
+            }
           </button>
         )}
 
         {status === 'submitted' && canApprove && data.kpiPeriodId && (
           <button
-            onClick={() => onApprove(data.kpiPeriodId!)} disabled={processing}
-            className="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
+            onClick={() => onApprove(data.kpiPeriodId!)}
+            disabled={processing}
+            className={`${BTN_BASE} bg-[#16A34A] text-white hover:bg-[#15803D]`}
           >
-            {processing ? '처리 중...' : '✅ 승인'}
+            {processing
+              ? <><CheckCheck className="w-4 h-4 animate-pulse" /> Processing...</>
+              : <><CheckCheck className="w-4 h-4" /> Approve</>
+            }
           </button>
         )}
 
         {status === 'approved' && canApprove && data.kpiPeriodId && (
           <button
-            onClick={() => onPay(data.kpiPeriodId!)} disabled={processing}
-            className="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:opacity-50 transition-colors"
+            onClick={() => onPay(data.kpiPeriodId!)}
+            disabled={processing}
+            className={`${BTN_BASE} bg-[#F5821F] text-white hover:bg-[#D96A0A] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(245,130,31,0.25)]`}
           >
-            {processing ? '처리 중...' : '💸 지급 처리'}
+            {processing
+              ? <><Banknote className="w-4 h-4 animate-pulse" /> Processing...</>
+              : <><Banknote className="w-4 h-4" /> Mark as Paid</>
+            }
           </button>
         )}
 
         {status === 'paid' && (
-          <div className="w-full px-4 py-2 text-sm font-medium text-center text-purple-600 bg-purple-50 border border-purple-200 rounded-md">
-            ✨ 지급 완료
+          <div className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+            text-sm font-semibold text-[#F5821F] bg-[#FEF0E3] border border-[#F5821F]/30">
+            <BadgeCheck className="w-4 h-4" />
+            Payment Complete
           </div>
         )}
       </div>
