@@ -150,12 +150,16 @@ export async function calcStaffKpi(
   const visaGrantedCount = Number((visaRes.rows[0] as any).visa_count ?? 0);
 
   // ⑤ 활동 KPI — 결제 처리 건수
-  // payment_lines.staff_id 가 현재 NULL이므로 payment_headers.created_by 로 우회
+  // payment_lines.staff_id 직접 사용 (backfill 완료 후 정확한 집계)
+  // payment_headers.created_by 도 OR 조건으로 병행 (안전망)
   const paymentRes = await db.execute(sql`
     SELECT COUNT(*) AS payment_count
     FROM payment_lines pl
     JOIN payment_headers ph ON pl.payment_header_id = ph.id
-    WHERE ph.created_by = ${staffId}
+    WHERE (
+            pl.staff_id   = ${staffId}
+         OR ph.created_by = ${staffId}
+          )
       AND ph.payment_date >= ${periodStart}::date
       AND ph.payment_date <  ${periodEnd}::date + INTERVAL '1 day'
   `);
@@ -163,6 +167,16 @@ export async function calcStaffKpi(
     (paymentRes.rows[0] as any).payment_count ?? 0
   );
 
+  // ⚠️ AR/AP 집계는 contracts.owner_id 기준
+  // 현재 DB: contracts 51건 중 50건 owner_id = NULL (2026-03 기준)
+  // → KPI 금액이 낮게 집계되는 원인
+  //
+  // 해결 방법 (운영 프로세스):
+  // 1. 계약 생성 시 owner_id 필수 입력 (UI에서 required 처리 필요)
+  // 2. 기존 데이터: 계약 담당자 확인 후 수동 입력 필요
+  //    UPDATE contracts SET owner_id = '{담당자_uuid}'
+  //    WHERE id = '{contract_id}';
+  // 3. leads.assigned_staff_id 도 동일하게 입력 필요 (현재 6.7% 만 입력)
   // ⑥ 파이낸스 KPI — AR/AP (contracts.camp_provider_id 기준)
   const arApRes = await db.execute(sql`
     SELECT
@@ -174,6 +188,7 @@ export async function calcStaffKpi(
     FROM contract_products cp
     JOIN contracts c ON cp.contract_id = c.id
     WHERE c.camp_provider_id = ${staffId}
+      AND cp.status IN ('pending', 'active')
       AND cp.ar_due_date >= ${periodStart}::date
       AND cp.ar_due_date <  ${periodEnd}::date + INTERVAL '1 day'
   `);
