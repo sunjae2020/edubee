@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/date-format";
 import React, { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -232,8 +233,7 @@ const STAGES: Array<{ key: string; label: string }> = [
 const SCHOOL_STATUSES = ["researching", "applied", "offer_received", "accepted", "rejected", "enrolled"];
 
 function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  try { return format(parseISO(d), "MMM d, yyyy"); } catch { return d; }
+  return formatDate(d);
 }
 
 function VisaExpiryBadge({ expiryDate }: { expiryDate: string | null | undefined }) {
@@ -1025,7 +1025,7 @@ export default function StudyAbroadDetailPage() {
                     <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-800">
                       <Calendar className="w-3.5 h-3.5 text-[#F5821F]" />
                       {iv.scheduledDatetime
-                        ? format(new Date(iv.scheduledDatetime), "PPP · HH:mm")
+                        ? formatDateTime(iv.scheduledDatetime)
                         : "Date TBD"}
                     </div>
                     {iv.timezone && (

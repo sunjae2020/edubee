@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/date-format";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -45,8 +46,7 @@ interface PaymentDetail {
   journalEntries?: JournalEntry[];
 }
 
-const fmtDate = (d?: string | null) =>
-  d ? format(new Date(d), "dd MMM yyyy") : "—";
+const fmtDate = (d?: string | null) => formatDate(d);
 const fmtAud = (v?: string | null) =>
   v ? Number(v).toLocaleString("en-AU", { style: "currency", currency: "AUD" }) : "—";
 

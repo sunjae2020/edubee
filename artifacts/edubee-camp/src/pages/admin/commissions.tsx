@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -198,8 +199,8 @@ export default function Commissions() {
                   {c.description ? (c.description.length > 55 ? c.description.slice(0, 55) + "…" : c.description) : "—"}
                 </td>
                 <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
-                <td className="px-4 py-3 text-[#A8A29E] text-xs">{c.createdOn ? format(new Date(c.createdOn), "dd MMM yyyy") : "—"}</td>
-                <td className="px-4 py-3 text-[#A8A29E] text-xs">{c.modifiedOn ? format(new Date(c.modifiedOn), "dd MMM yyyy") : "—"}</td>
+                <td className="px-4 py-3 text-[#A8A29E] text-xs">{c.createdOn ? formatDate(c.createdOn) : "—"}</td>
+                <td className="px-4 py-3 text-[#A8A29E] text-xs">{c.modifiedOn ? formatDate(c.modifiedOn) : "—"}</td>
               </tr>
             ))}
           </tbody>

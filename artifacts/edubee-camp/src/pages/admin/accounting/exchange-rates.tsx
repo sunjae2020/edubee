@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -68,14 +69,12 @@ const defaultForm = {
   source: "manual",
 };
 
-function fmtDate(dateStr?: string) {
-  if (!dateStr) return "—";
-  try { return format(parseISO(dateStr), "MMM d, yyyy"); } catch { return dateStr; }
+function fmtDate(d: string | null | undefined): string {
+  return formatDate(d);
 }
 
-function fmtDateTime(dateStr?: string) {
-  if (!dateStr) return "—";
-  try { return format(parseISO(dateStr), "MMM d, yyyy HH:mm"); } catch { return dateStr; }
+function fmtDateTime(d: string | null | undefined): string {
+  return formatDateTime(d);
 }
 
 export default function ExchangeRates() {

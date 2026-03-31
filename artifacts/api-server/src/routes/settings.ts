@@ -116,10 +116,26 @@ router.post("/test-email", authenticate, requireRole(...SUPER_ADMIN), async (req
   }
 });
 
+// ─── GET /settings/display (public — all authenticated users) ────────────────
+router.get("/display", authenticate, async (req, res) => {
+  try {
+    const rows = await db.select().from(platformSettings)
+      .where(inArray(platformSettings.key, ["general.dateFormat"]));
+    const cfg: Record<string, string> = {};
+    for (const row of rows) cfg[row.key] = row.value ?? "";
+    return res.json({
+      dateFormat: cfg["general.dateFormat"] ?? "DD/MM/YYYY",
+    });
+  } catch (err) {
+    console.error("GET /settings/display error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // ─── GET /settings/general ───────────────────────────────────────────────────
 router.get("/general", authenticate, requireRole(...SUPER_ADMIN), async (req, res) => {
   try {
-    const keys = ["general.platformName", "general.defaultCurrency", "general.supportEmail", "general.supportPhone", "general.activeLanguages"];
+    const keys = ["general.platformName", "general.defaultCurrency", "general.supportEmail", "general.supportPhone", "general.activeLanguages", "general.dateFormat"];
     const rows = await db.select().from(platformSettings).where(inArray(platformSettings.key, keys));
     const cfg: Record<string, string> = {};
     for (const row of rows) cfg[row.key] = row.value ?? "";
@@ -129,6 +145,7 @@ router.get("/general", authenticate, requireRole(...SUPER_ADMIN), async (req, re
       supportEmail: cfg["general.supportEmail"] ?? "",
       supportPhone: cfg["general.supportPhone"] ?? "",
       activeLanguages: cfg["general.activeLanguages"] ? JSON.parse(cfg["general.activeLanguages"]) : ["en", "ko", "ja", "th"],
+      dateFormat: cfg["general.dateFormat"] ?? "DD/MM/YYYY",
     });
   } catch (err) {
     console.error("GET /settings/general error:", err);
@@ -139,7 +156,7 @@ router.get("/general", authenticate, requireRole(...SUPER_ADMIN), async (req, re
 // ─── PUT /settings/general ───────────────────────────────────────────────────
 router.put("/general", authenticate, requireRole(...SUPER_ADMIN), async (req, res) => {
   try {
-    const { platformName, defaultCurrency, supportEmail, supportPhone, activeLanguages } = req.body;
+    const { platformName, defaultCurrency, supportEmail, supportPhone, activeLanguages, dateFormat } = req.body;
     const now = new Date();
     const upserts = [
       { key: "general.platformName", value: String(platformName ?? "Edubee Camp"), updatedAt: now },
@@ -147,6 +164,7 @@ router.put("/general", authenticate, requireRole(...SUPER_ADMIN), async (req, re
       { key: "general.supportEmail", value: String(supportEmail ?? ""), updatedAt: now },
       { key: "general.supportPhone", value: String(supportPhone ?? ""), updatedAt: now },
       { key: "general.activeLanguages", value: JSON.stringify(activeLanguages ?? ["en", "ko", "ja", "th"]), updatedAt: now },
+      { key: "general.dateFormat", value: String(dateFormat ?? "DD/MM/YYYY"), updatedAt: now },
     ];
     for (const row of upserts) {
       await db.insert(platformSettings).values(row)

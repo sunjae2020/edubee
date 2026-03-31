@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import {
   Settings, Mail, Globe, Phone, Send, Loader2, CheckCircle2,
-  Eye, EyeOff, ExternalLink, Key, Palette, Copy, Check, Upload, ImageIcon, Trash2,
+  Eye, EyeOff, ExternalLink, Key, Palette, Copy, Check, Upload, ImageIcon, Trash2, CalendarDays,
 } from "lucide-react";
+import { DATE_FORMAT_OPTIONS, setGlobalDateFormat, type DateFormatKey } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const CURRENCIES = ["AUD", "USD", "SGD", "PHP", "THB", "KRW", "JPY", "GBP"];
@@ -501,6 +502,7 @@ export default function GeneralSettings() {
     supportEmail: "",
     supportPhone: "",
     activeLanguages: ["en", "ko", "ja", "th"] as string[],
+    dateFormat: "DD/MM/YYYY" as DateFormatKey,
   });
 
   const [resend, setResend] = useState({
@@ -524,12 +526,14 @@ export default function GeneralSettings() {
 
   useEffect(() => {
     if (generalData) {
+      const fmt = (generalData.dateFormat ?? "DD/MM/YYYY") as DateFormatKey;
       setGeneral({
         platformName: generalData.platformName ?? "Edubee Camp",
         defaultCurrency: generalData.defaultCurrency ?? "AUD",
         supportEmail: generalData.supportEmail ?? "",
         supportPhone: generalData.supportPhone ?? "",
         activeLanguages: generalData.activeLanguages ?? ["en", "ko", "ja", "th"],
+        dateFormat: fmt,
       });
       if (!testTarget) setTestTarget(generalData.supportEmail ?? "");
     }
@@ -547,7 +551,10 @@ export default function GeneralSettings() {
 
   const saveGeneral = useMutation({
     mutationFn: () => axios.put(`${BASE}/api/settings/general`, general).then(r => r.data),
-    onSuccess: () => toast({ title: "General settings saved" }),
+    onSuccess: () => {
+      setGlobalDateFormat(general.dateFormat);
+      toast({ title: "General settings saved" });
+    },
     onError: () => toast({ variant: "destructive", title: "Failed to save settings" }),
   });
 
@@ -636,6 +643,18 @@ export default function GeneralSettings() {
                 <Select value={general.defaultCurrency} onValueChange={v => setGeneral(s => ({ ...s, defaultCurrency: v }))}>
                   <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="text-xs flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5 text-[#F5821F]" /> Date Format</Label>
+                <p className="text-[11px] text-stone-400 mt-0.5 mb-1.5">Applied across all pages — tables, detail views, reports (Admin Info timestamps are excluded).</p>
+                <Select value={general.dateFormat} onValueChange={v => setGeneral(s => ({ ...s, dateFormat: v as DateFormatKey }))}>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {DATE_FORMAT_OPTIONS.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
             </div>

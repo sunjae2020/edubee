@@ -5,6 +5,7 @@ import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useAuth } from "@/hooks/use-auth";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -1353,14 +1354,14 @@ export default function ProductDetail() {
                     <div>
                       <FL>Created On</FL>
                       <p className="text-sm" style={{ color: "var(--e-text-1)" }}>
-                        {rec.createdAt ? format(new Date(rec.createdAt), "PPP p") : "—"}
+                        {rec.createdAt ? formatDateTime(rec.createdAt) : "—"}
                       </p>
                     </div>
                     <div>
                       <FL>Modified On</FL>
                       <p className="text-sm" style={{ color: "var(--e-text-1)" }}>
                         {(rec.modifiedOn ?? rec.updatedAt)
-                          ? format(new Date(rec.modifiedOn ?? rec.updatedAt), "PPP p")
+                          ? formatDateTime(rec.modifiedOn ?? rec.updatedAt)
                           : "—"}
                       </p>
                     </div>

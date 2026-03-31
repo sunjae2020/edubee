@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -180,7 +181,7 @@ function printReceipt(rcp: Receipt) {
     <tbody>
       <tr><td>Payment Method</td><td>${methodLabel}</td></tr>
       <tr><td>Receipt Date</td><td>${rcp.receiptDate ?? "—"}</td></tr>
-      ${rcp.confirmedAt ? `<tr><td>Confirmed At</td><td>${format(new Date(rcp.confirmedAt), "MMM d, yyyy HH:mm")}</td></tr>` : ""}
+      ${rcp.confirmedAt ? `<tr><td>Confirmed At</td><td>${formatDateTime(rcp.confirmedAt)}</td></tr>` : ""}
     </tbody>
   </table>
   ${rcp.notes ? `<div class="notes"><h3>Notes</h3><p>${rcp.notes}</p></div>` : ""}
@@ -533,7 +534,7 @@ export default function Receipts() {
                     {PAYMENT_METHODS.find(m => m.value === r.paymentMethod)?.label ?? r.paymentMethod?.replace(/_/g, " ") ?? "—"}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {r.receiptDate ? format(new Date(r.receiptDate), "MMM d, yyyy") : "—"}
+                    {formatDate(r.receiptDate)}
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                   <td className="px-4 py-3"><ChevronRight className="w-4 h-4 text-muted-foreground" /></td>

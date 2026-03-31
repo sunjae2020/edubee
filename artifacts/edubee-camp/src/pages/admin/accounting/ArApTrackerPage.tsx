@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PaymentScheduleTab from "./PaymentScheduleTab";
 import { useLocation } from "wouter";
@@ -77,8 +78,7 @@ function fmt(amount: string | null | undefined): string {
 }
 
 function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  try { return format(new Date(d), "MMM d, yyyy"); } catch { return d; }
+  return formatDate(d);
 }
 
 // ─── KPI Card ────────────────────────────────────────────────────────────────

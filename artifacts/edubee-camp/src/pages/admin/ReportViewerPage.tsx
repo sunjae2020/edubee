@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -33,9 +34,9 @@ interface Section {
   content: Record<string, unknown>;
 }
 
-function fmtDate(d: string | Date | null | undefined): string {
-  if (!d) return "—";
-  return new Date(d as string).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
+function fmtDate(d: string | null | undefined): string {
+  return formatDate(d);
+});
 }
 
 // ── Shared sub-components ─────────────────────────────────────────
@@ -563,8 +564,8 @@ export default function ReportViewerPage() {
   const sp = (report.sections?.find(s => s.sectionType === "student_profile")?.content ?? {}) as Record<string, unknown>;
   const studentName = (sp.fullName as string) || report.reportTitle || "Student";
   const programName = (sp.programName as string) || "";
-  const startDate = sp.startDate ? new Date(sp.startDate as string).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : "";
-  const endDate = sp.endDate ? new Date(sp.endDate as string).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : "";
+  const startDate = sp.startDate ? formatDate(sp.startDate as string) : "";
+  const endDate = sp.endDate ? formatDate(sp.endDate as string) : "";
 
   const visibleSections = [...(report.sections ?? [])]
     .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))

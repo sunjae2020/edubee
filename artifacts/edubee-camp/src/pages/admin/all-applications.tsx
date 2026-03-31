@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -390,7 +391,7 @@ export default function AllApplicationsPage() {
                   {row.assignedStaffName ?? "—"}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
-                  {row.createdAt ? new Date(row.createdAt).toLocaleDateString("en-AU") : "—"}
+                  {row.createdAt ? formatDate(row.createdAt) : "—"}
                 </td>
               </tr>
             ))}

@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/date-format";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -58,7 +59,7 @@ function fmtDatetime(d?: string | null): { date: string; time: string } {
   if (!d) return { date: "—", time: "—" };
   try {
     const dt = parseISO(d);
-    return { date: format(dt, "MMM d, yyyy"), time: format(dt, "h:mm a") };
+    return { date: formatDate(dt), time: format(dt, "h:mm a") };
   } catch { return { date: d, time: "" }; }
 }
 
@@ -267,8 +268,8 @@ export default function PickupManagement() {
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{row.vehicleInfo ?? "—"}</td>
                   <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{row.createdAt ? new Date(row.createdAt).toLocaleDateString("en-AU", { day:"2-digit", month:"short", year:"numeric" }) : "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString("en-AU", { day:"2-digit", month:"short", year:"numeric" }) : "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{row.createdAt ? formatDate(row.createdAt) : "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{row.updatedAt ? formatDate(row.updatedAt) : "—"}</td>
                   <td className="px-4 py-3"><ChevronRight className="w-4 h-4 text-muted-foreground" /></td>
                 </tr>
               );

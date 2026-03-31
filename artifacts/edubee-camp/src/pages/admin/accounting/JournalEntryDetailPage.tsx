@@ -1,4 +1,5 @@
 import { useParams, useLocation } from "wouter";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -122,7 +123,7 @@ export default function JournalEntryDetailPage() {
         <div className="grid grid-cols-2 gap-x-8 gap-y-5">
           <InfoRow
             label="Entry Date"
-            value={entry.entryDate ? format(new Date(entry.entryDate), "dd MMM yyyy") : "—"}
+            value={formatDate(entry.entryDate)}
           />
           <InfoRow label="Entry Type" value={entry.entryType} />
           <InfoRow
@@ -135,7 +136,7 @@ export default function JournalEntryDetailPage() {
           />
           <InfoRow
             label="Created"
-            value={entry.createdOn ? format(new Date(entry.createdOn), "dd MMM yyyy, HH:mm") : "—"}
+            value={formatDateTime(entry.createdOn)}
           />
         </div>
 

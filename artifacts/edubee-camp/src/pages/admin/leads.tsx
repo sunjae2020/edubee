@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -191,7 +192,7 @@ export default function Leads() {
                       </div>
                     )}
                     <div className="text-[10px] text-muted-foreground mt-2">
-                      {format(new Date(lead.createdAt), "MMM d, yyyy")}
+                      {formatDate(lead.createdAt)}
                     </div>
                   </div>
                 ))}
@@ -295,7 +296,7 @@ export default function Leads() {
                 </div>
                 <SheetTitle className="text-xl">{selectedLead.studentName}</SheetTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Lead created {format(new Date(selectedLead.createdAt), "MMMM d, yyyy")}
+                  Lead created {formatDate(selectedLead.createdAt)}
                 </p>
               </SheetHeader>
 
@@ -396,11 +397,11 @@ export default function Leads() {
                 <div className="bg-muted/30 rounded-xl p-4 space-y-2 text-xs">
                   <div className="flex justify-between text-muted-foreground">
                     <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Created</span>
-                    <span className="font-medium text-foreground">{format(new Date(selectedLead.createdAt), "MMM d, yyyy · HH:mm")}</span>
+                    <span className="font-medium text-foreground">{formatDateTime(selectedLead.createdAt)}</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Last Updated</span>
-                    <span className="font-medium text-foreground">{format(new Date(selectedLead.updatedAt), "MMM d, yyyy · HH:mm")}</span>
+                    <span className="font-medium text-foreground">{formatDateTime(selectedLead.updatedAt)}</span>
                   </div>
                 </div>
 

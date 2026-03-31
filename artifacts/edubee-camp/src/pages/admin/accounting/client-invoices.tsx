@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -279,7 +280,7 @@ export default function ClientInvoices() {
                 <td className="px-4 py-3 text-right">
                   <DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} />
                 </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">{r.issuedAt ? format(new Date(r.issuedAt), "MMM d, yyyy") : "—"}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(r.issuedAt)}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{r.dueDate ?? "—"}</td>
                 <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                 <td className="px-4 py-3">
@@ -328,9 +329,9 @@ export default function ClientInvoices() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Student</span><span className="font-medium">{selected.studentName ?? "—"}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Contract</span><span className="font-mono text-xs">{selected.contractId?.slice(0, 8)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Amount</span><DualAmount amount={selected.originalAmount ?? selected.totalAmount} currency={selected.originalCurrency ?? selected.currency} audEquivalent={selected.audEquivalent} /></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Issued</span><span>{selected.issuedAt ? format(new Date(selected.issuedAt), "MMM d, yyyy") : "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Issued</span><span>{formatDate(selected.issuedAt)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Due</span><span>{selected.dueDate ?? "—"}</span></div>
-                {selected.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">Paid At</span><span>{format(new Date(selected.paidAt), "MMM d, yyyy")}</span></div>}
+                {selected.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">Paid At</span><span>{formatDate(selected.paidAt)}</span></div>}
               </div>
               {selected.notes && <div><div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notes</div><p className="text-sm">{selected.notes}</p></div>}
               <div className="flex gap-2 pt-2">

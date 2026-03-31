@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -166,7 +167,7 @@ function printInvoice(inv: Invoice) {
     </div>
     <div class="section">
       <h3>Invoice Details</h3>
-      <p><span class="label">Date Issued: </span>${inv.issuedAt ? format(new Date(inv.issuedAt), "MMMM d, yyyy") : "—"}</p>
+      <p><span class="label">Date Issued: </span>${formatDate(inv.issuedAt)}</p>
       <p><span class="label">Due Date: </span>${inv.dueDate ?? "—"}</p>
       ${inv.contractNumber ? `<p><span class="label">Contract: </span>${inv.contractNumber}</p>` : ""}
       ${inv.agentName ? `<p><span class="label">Agent: </span>${inv.agentName}</p>` : ""}
@@ -585,7 +586,7 @@ function InvoiceDetailSheet({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Issued</span>
-              <span>{invoice.issuedAt ? format(new Date(invoice.issuedAt), "MMM d, yyyy") : "—"}</span>
+              <span>{formatDate(invoice.issuedAt)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Due</span>
@@ -594,7 +595,7 @@ function InvoiceDetailSheet({
             {invoice.paidAt && (
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Paid At</span>
-                <span>{format(new Date(invoice.paidAt), "MMM d, yyyy")}</span>
+                <span>{formatDate(invoice.paidAt)}</span>
               </div>
             )}
           </div>
@@ -716,7 +717,7 @@ function ClientTab() {
                     {r.contractNumber && <div className="text-xs text-muted-foreground font-mono">{r.contractNumber}</div>}
                   </td>
                   <td className="px-4 py-3 text-right"><DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{r.issuedAt ? format(new Date(r.issuedAt), "MMM d, yyyy") : "—"}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(r.issuedAt)}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.dueDate ?? "—"}</td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                   <td className="px-4 py-3">
@@ -819,7 +820,7 @@ function AgentTab() {
                     {r.contractNumber && <div className="text-xs text-muted-foreground font-mono">{r.contractNumber}</div>}
                   </td>
                   <td className="px-4 py-3 text-right"><DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{r.issuedAt ? format(new Date(r.issuedAt), "MMM d, yyyy") : "—"}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(r.issuedAt)}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.dueDate ?? "—"}</td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                   <td className="px-4 py-3">

@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/date-format";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -48,8 +49,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  try { return format(parseISO(d), "MMM d, yyyy"); } catch { return d; }
+  return formatDate(d);
 }
 
 export default function VisaServicePage() {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import axios from "axios";
@@ -170,9 +171,8 @@ export default function TasksPage() {
     },
   });
 
-  function fmtDate(s?: string | null) {
-    if (!s) return "—";
-    try { return format(new Date(s), "MMM d, yyyy"); } catch { return s; }
+  function fmtDate(d: string | null | undefined): string {
+  return formatDate(d);
   }
 
   const allUsers: { id: string; fullName: string }[] = usersData?.data ?? [];

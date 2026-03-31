@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -62,13 +63,11 @@ interface Receipt {
   updatedAt?: string | null;
 }
 
-function fmtDate(d?: string | null) {
-  if (!d) return "—";
-  try { return format(new Date(d), "d MMM yyyy"); } catch { return d; }
+function fmtDate(d: string | null | undefined): string {
+  return formatDate(d);
 }
-function fmtDateTime(d?: string | null) {
-  if (!d) return "—";
-  try { return format(new Date(d), "d MMM yyyy HH:mm"); } catch { return d; }
+function fmtDateTime(d: string | null | undefined): string {
+  return formatDateTime(d);
 }
 function fmtAmount(amount?: string | number | null, currency?: string | null) {
   if (!amount) return "—";

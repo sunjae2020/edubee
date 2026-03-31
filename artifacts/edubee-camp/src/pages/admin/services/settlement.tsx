@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/date-format";
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -29,8 +30,7 @@ interface Rec {
 }
 
 function fmtDate(d?: string | null) {
-  if (!d) return "—";
-  try { return format(parseISO(d), "dd MMM yyyy"); } catch { return d; }
+  return formatDate(d);
 }
 function fmtMoney(n?: string | number | null) {
   if (n == null || n === "") return "—";

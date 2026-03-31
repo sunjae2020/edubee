@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -60,7 +61,7 @@ interface Account {
   modifiedOn?: string | null;
 }
 
-const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+const fmtDate = (d?: string | null) => formatDate(d);
 
 function TypeBadge({ type }: { type?: string | null }) {
   const t = type ?? "—";

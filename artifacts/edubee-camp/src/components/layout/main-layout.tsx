@@ -3,6 +3,7 @@ import { AppSidebar } from "./app-sidebar";
 import { Header } from "./header";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
+import { useDateFormatLoader } from "@/hooks/use-date-format";
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(() =>
@@ -21,6 +22,7 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
   const { isAuthenticated, isLoading } = useAuth();
   const isMobile = useMediaQuery("(max-width: 767px)");
   const isTablet = useMediaQuery("(max-width: 1023px)");
+  useDateFormatLoader();
 
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem("edubee_sidebar_collapsed") === "1"; }

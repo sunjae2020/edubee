@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
@@ -25,9 +26,8 @@ function fmtAud(val: string | number | null | undefined) {
   if (isNaN(n)) return "—";
   return `A$${n.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
-function fmtDate(val: string | null | undefined) {
-  if (!val) return "—";
-  try { return format(new Date(val), "dd MMM yyyy"); } catch { return val; }
+function fmtDate(d: string | null | undefined): string {
+  return formatDate(d);
 }
 
 const TABS = [

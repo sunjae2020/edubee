@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -535,7 +536,7 @@ function AccountLookup({ value, onChange, excludeId, placeholder }: {
 
 // ── LedgerTab ─────────────────────────────────────────────────────────────────
 const fmtAmt = (n: any) => n != null ? `$${Number(n).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
-const fmtD   = (d: any) => d ? new Date(d).toLocaleDateString("en-AU") : "—";
+const fmtD   = (d: any) => d ? formatDate(d) : "—";
 
 const LDGR_SRC: Record<string, { bg: string; text: string }> = {
   payment:     { bg: "#DCFCE7", text: "#16A34A" },
@@ -1526,7 +1527,7 @@ export default function AccountDetailPage() {
                         </td>
                         <td className="px-4 py-3 text-stone-500 text-xs">
                           {c.from_date || c.to_date
-                            ? `${c.from_date ? new Date(c.from_date).toLocaleDateString() : "?"} – ${c.to_date ? new Date(c.to_date).toLocaleDateString() : "?"}`
+                            ? `${c.from_date ? formatDate(c.from_date) : "?"} – ${c.to_date ? formatDate(c.to_date) : "?"}`
                             : "—"}
                         </td>
                         <td className="px-4 py-3 text-stone-500">{c.owner_name || "—"}</td>
@@ -1622,7 +1623,7 @@ export default function AccountDetailPage() {
               {account?.accountType === "Student" && (
                 <>
                   <QI label="Nationality">{account.primaryContact?.nationality || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Date of Birth">{account.primaryContact?.dob ? new Date(account.primaryContact.dob).toLocaleDateString() : <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Date of Birth">{account.primaryContact?.dob ? formatDate(account.primaryContact.dob) : <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Email">{account.primaryContact?.email || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Phone">{account.primaryContact?.mobile || <span className="text-[#A8A29E]">—</span>}</QI>
                   {account.primaryContact?.snsType && (

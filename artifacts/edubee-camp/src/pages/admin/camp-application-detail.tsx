@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -634,7 +635,7 @@ export default function CampApplicationDetail() {
                   onChange={v => setField("studentCount", v ? Number(v) : null)}
                   inputType="number"
                 />
-                <DetailRow label="Submitted" value={app.createdAt ? format(new Date(app.createdAt), "PPP") : "—"} />
+                <DetailRow label="Submitted" value={app.createdAt ? formatDate(app.createdAt) : "—"} />
               </DetailSection>
 
               <DetailSection title="Package Info">
@@ -683,7 +684,7 @@ export default function CampApplicationDetail() {
                 <EditableField
                   label="Preferred Start"
                   isEditing={isEditing}
-                  value={app.preferredStartDate ? format(new Date(app.preferredStartDate), "PPP") : "—"}
+                  value={app.preferredStartDate ? formatDate(app.preferredStartDate) : "—"}
                   editValue={getValue("preferredStartDate") ?? ""}
                   onChange={v => setField("preferredStartDate", v)}
                   inputType="date"
@@ -801,7 +802,7 @@ export default function CampApplicationDetail() {
                   }
                 />
                 <DetailRow label="Lead ID"   value={app.leadId} />
-                <DetailRow label="Quoted At" value={app.quotedAt ? format(new Date(app.quotedAt), "PPP p") : "—"} />
+                <DetailRow label="Quoted At" value={app.quotedAt ? formatDateTime(app.quotedAt) : "—"} />
               </DetailSection>
 
               <div className="lg:col-span-2">
@@ -866,7 +867,7 @@ export default function CampApplicationDetail() {
                       <td className="px-4 py-3 capitalize">
                         <span className="px-1.5 py-0.5 bg-muted rounded text-xs">{p.participantType ?? "child"}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm">{p.dateOfBirth ? format(new Date(p.dateOfBirth), "MMM d, yyyy") : "—"}</td>
+                      <td className="px-4 py-3 text-sm">{p.dateOfBirth ? formatDate(p.dateOfBirth) : "—"}</td>
                       <td className="px-4 py-3 capitalize text-sm">{p.gender ?? "—"}</td>
                       <td className="px-4 py-3 text-sm">{p.nationality ?? "—"}</td>
                       <td className="px-4 py-3 text-sm">{p.grade ?? "—"}</td>

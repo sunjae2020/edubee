@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, TrendingUp, TrendingDown, AlertCircle, CheckCircle, Clock } from "lucide-react";
 
@@ -72,13 +73,8 @@ function fmt(val: string | number | null | undefined): string {
 }
 
 function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  try {
-    return new Date(d).toLocaleDateString("en-AU", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+  return formatDate(d);
+});
   } catch {
     return d;
   }

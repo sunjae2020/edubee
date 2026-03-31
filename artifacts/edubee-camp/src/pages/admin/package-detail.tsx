@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -1074,10 +1075,10 @@ export default function PackageDetail() {
                             : "—"}
                         </td>
                         <td className="px-3 py-2 text-xs text-muted-foreground">
-                          {c.startDate ? format(new Date(c.startDate as string), "dd MMM yyyy") : "—"}
+                          {c.startDate ? formatDate(c.startDate as string) : "—"}
                         </td>
                         <td className="px-3 py-2 text-xs text-muted-foreground">
-                          {c.endDate ? format(new Date(c.endDate as string), "dd MMM yyyy") : "—"}
+                          {c.endDate ? formatDate(c.endDate as string) : "—"}
                         </td>
                       </tr>
                     ))}

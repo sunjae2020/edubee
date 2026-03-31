@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -558,7 +559,7 @@ export default function ApplicationDetail() {
                         );
                         let display = String(val);
                         if (f.type === "date") {
-                          try { display = format(new Date(val), "MMM d, yyyy"); } catch {}
+                          try { display = formatDate(val); } catch {}
                         }
                         return (
                           <div key={f.key}>
@@ -617,7 +618,7 @@ export default function ApplicationDetail() {
                       <td className="px-4 py-3 capitalize">
                         <span className="px-1.5 py-0.5 bg-muted rounded text-xs">{p.participantType ?? "child"}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm">{p.dateOfBirth ? format(new Date(p.dateOfBirth), "MMM d, yyyy") : "—"}</td>
+                      <td className="px-4 py-3 text-sm">{p.dateOfBirth ? formatDate(p.dateOfBirth) : "—"}</td>
                       <td className="px-4 py-3 capitalize text-sm">{p.gender ?? "—"}</td>
                       <td className="px-4 py-3 text-sm">{p.nationality ?? "—"}</td>
                       <td className="px-4 py-3 text-sm">{p.grade ?? "—"}</td>

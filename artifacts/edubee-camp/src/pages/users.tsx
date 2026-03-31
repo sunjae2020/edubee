@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -248,10 +249,10 @@ export default function Users() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs" style={{ color: "#A8A29E" }}>
-                    {user.lastLoginAt ? format(new Date(user.lastLoginAt), "MMM d, yyyy") : "Never"}
+                    {user.lastLoginAt ? formatDate(user.lastLoginAt) : "Never"}
                   </td>
                   <td className="px-4 py-3 text-xs" style={{ color: "#A8A29E" }}>
-                    {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "—"}
+                    {user.createdAt ? formatDate(user.createdAt) : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-end">

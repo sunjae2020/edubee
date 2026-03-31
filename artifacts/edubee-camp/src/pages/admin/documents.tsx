@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -265,7 +266,7 @@ export default function DocumentsPage() {
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{doc.uploadedByName ?? "—"}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
-                      {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : "—"}
+                      {doc.createdAt ? formatDate(doc.createdAt) : "—"}
                     </td>
                     <td className="px-4 py-2.5">
                       {doc.status && (

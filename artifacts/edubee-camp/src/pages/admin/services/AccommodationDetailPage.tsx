@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/date-format";
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -68,8 +69,7 @@ const WELFARE_STATUS_STYLE: Record<string, { bg: string; text: string }> = {
 };
 
 function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  try { return format(parseISO(d), "MMM d, yyyy"); } catch { return d; }
+  return formatDate(d);
 }
 
 function calcTotal(checkin?: string | null, checkout?: string | null, weeklyRate?: string | null): string {

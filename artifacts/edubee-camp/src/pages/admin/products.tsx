@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, Fragment } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -398,10 +399,10 @@ export default function Products() {
                     {p.location ?? <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-3 py-3 text-xs text-[#57534E] whitespace-nowrap">
-                    {p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : <span className="text-muted-foreground">—</span>}
+                    {p.createdAt ? formatDate(p.createdAt) : <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-3 py-3 text-xs text-[#57534E] whitespace-nowrap">
-                    {p.updatedAt ? new Date(p.updatedAt).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : <span className="text-muted-foreground">—</span>}
+                    {p.updatedAt ? formatDate(p.updatedAt) : <span className="text-muted-foreground">—</span>}
                   </td>
                 </tr>
               ))

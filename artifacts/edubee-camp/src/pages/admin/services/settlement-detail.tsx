@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/date-format";
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,8 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function fmtDate(d?: string | null) {
-  if (!d) return "—";
-  try { return format(parseISO(d), "dd MMM yyyy"); } catch { return d; }
+  return formatDate(d);
 }
 function fmtMoney(n?: string | number | null) {
   if (n == null || n === "") return "—";

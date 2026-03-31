@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -40,7 +41,7 @@ interface Pagination { total: number; page: number; pageSize: number; totalPages
 interface Summary { activeCount: number; arOutstanding: number; apPayable: number; commissionEstimate: number }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-const fmtDate = (d?: string) => (d ? format(new Date(d), "dd MMM yyyy") : "—");
+const fmtDate = (d?: string | null) => formatDate(d);
 const fmtMoney = (n: number) => `$${n.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function duration(from?: string, to?: string) {

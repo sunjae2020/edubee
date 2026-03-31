@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -42,7 +43,7 @@ interface QuoteRow {
   modifiedOn?: string | null;
 }
 
-const fmtDate = (d?: string | null) => d ? format(new Date(d), "dd MMM yyyy") : "—";
+const fmtDate = (d?: string | null) => formatDate(d);
 
 function StatusBadge({ status }: { status: string }) {
   return (
@@ -205,7 +206,7 @@ export default function QuotesPage() {
                 </td>
                 <td className="px-4 py-3"><StatusBadge status={q.quoteStatus} /></td>
                 <td className="px-4 py-3 text-stone-600">
-                  {q.expiryDate ? format(new Date(q.expiryDate), "MMM d, yyyy") : "—"}
+                  {formatDate(q.expiryDate)}
                 </td>
                 <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(q.createdOn)}</td>
                 <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{fmtDate(q.modifiedOn)}</td>

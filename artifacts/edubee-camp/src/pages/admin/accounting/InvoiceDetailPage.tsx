@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -62,9 +63,8 @@ interface Invoice {
   updatedAt?: string | null;
 }
 
-function fmtDate(d?: string | null) {
-  if (!d) return "—";
-  try { return format(new Date(d), "d MMM yyyy"); } catch { return d; }
+function fmtDate(d: string | null | undefined): string {
+  return formatDate(d);
 }
 
 function fmtAmount(amount?: string | number | null, currency?: string | null) {
@@ -264,7 +264,7 @@ async function printInvoice(inv: Invoice) {
 <div class="inv-title"><h2>INVOICE</h2><p>${inv.invoiceNumber ?? "—"}</p><span class="badge">${(inv.status ?? "draft").replace(/_/g, " ")}</span></div></div>
 <hr class="divider"/>
 <div class="grid"><div class="section"><h3>Bill To</h3><p>${inv.studentName ?? "—"}</p>${inv.studentEmail ? `<p class="label">${inv.studentEmail}</p>` : ""}</div>
-<div class="section"><h3>Invoice Details</h3><p><span class="label">Date Issued: </span>${inv.issuedAt ? format(new Date(inv.issuedAt), "MMMM d, yyyy") : "—"}</p><p><span class="label">Due Date: </span>${inv.dueDate ?? "—"}</p>${inv.contractNumber ? `<p><span class="label">Contract: </span>${inv.contractNumber}</p>` : ""}${inv.agentName ? `<p><span class="label">Agent: </span>${inv.agentName}</p>` : ""}</div></div>
+<div class="section"><h3>Invoice Details</h3><p><span class="label">Date Issued: </span>${inv.issuedAt ? formatDate(inv.issuedAt) : "—"}</p><p><span class="label">Due Date: </span>${inv.dueDate ?? "—"}</p>${inv.contractNumber ? `<p><span class="label">Contract: </span>${inv.contractNumber}</p>` : ""}${inv.agentName ? `<p><span class="label">Agent: </span>${inv.agentName}</p>` : ""}</div></div>
 <table><thead><tr><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
 <tbody><tr><td>${inv.invoiceType ? inv.invoiceType.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase()) : "Service"} — ${inv.studentName ?? ""}</td><td style="text-align:right">${amountStr}</td></tr></tbody>
 <tfoot><tr class="total-row"><td>Total Due</td><td style="text-align:right">${amountStr}</td></tr></tfoot></table>

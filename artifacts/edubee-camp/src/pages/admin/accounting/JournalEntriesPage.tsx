@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -83,8 +84,7 @@ function fmtAmt(v: number | string | null | undefined, showSign = false): string
 }
 
 function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  try { return format(new Date(d), "d MMM yyyy"); } catch { return d; }
+  return formatDate(d);
 }
 
 function entryTypeLabel(key: string | null | undefined): string {

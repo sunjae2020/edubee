@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -211,7 +212,7 @@ export default function Applications() {
                     <AppStatusBadge status={app.applicationStatus ?? app.status} />
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {app.createdAt ? format(new Date(app.createdAt), "MMM d, yyyy") : "—"}
+                    {app.createdAt ? formatDate(app.createdAt) : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <ChevronRight className="w-4 h-4 text-muted-foreground" />

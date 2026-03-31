@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -231,7 +232,7 @@ export default function Transactions() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {r.transactionDate ? format(new Date(r.transactionDate), "MMM d, yyyy") : r.createdAt ? format(new Date(r.createdAt), "MMM d, yyyy") : "—"}
+                  {r.transactionDate ? formatDate(r.transactionDate) : formatDate(r.createdAt)}
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.bankReference ?? "—"}</td>
                 <td className="px-4 py-3">

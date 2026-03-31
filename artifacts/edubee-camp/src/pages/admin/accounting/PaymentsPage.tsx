@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -103,8 +104,7 @@ function fmtAmt(v: string | null | undefined): string {
   return `A$${Number(v).toLocaleString("en-AU", { minimumFractionDigits: 2 })}`;
 }
 function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  try { return format(new Date(d), "MMM d, yyyy"); } catch { return d; }
+  return formatDate(d);
 }
 function parseNotes(notes: string | null | undefined): { receivedFromName?: string; paidToName?: string; notes?: string } {
   if (!notes) return {};

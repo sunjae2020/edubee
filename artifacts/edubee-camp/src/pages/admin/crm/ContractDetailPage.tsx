@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, Fragment } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
@@ -21,7 +22,7 @@ import { fetchLogoSrc, logoImgHtml } from "@/lib/branding";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-const fmtDate = (d?: string | null) => (d ? format(new Date(d), "dd MMM yyyy") : "—");
+const fmtDate = (d?: string | null) => formatDate(d);
 const fmtMoney = (n?: number | null) =>
   n != null ? `$${n.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
 const fmtNum = (n?: number | null) => (n != null ? n.toLocaleString() : "—");
@@ -278,7 +279,7 @@ async function printInstalment(cp: any, contract: any, idx: number) {
   const itemName = cp.name ?? `Instalment ${instNo}`;
   const amount = fmtMoney(cp.arAmount);
   const dueDate = fmtDate(cp.arDueDate);
-  const todayDate = format(new Date(), "dd MMM yyyy");
+  const todayDate = formatDate(new Date());
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>${invRef}</title>
@@ -2398,17 +2399,9 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
     return "—";
   };
 
-  const fmtDateShort = (raw: string | null | undefined) => {
-    if (!raw) return "—";
-    const d = new Date(raw);
-    if (isNaN(d.getTime())) return "—";
-    return d.toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "2-digit" });
-  };
+  const fmtDateShort = (raw: string | null | undefined) => formatDate(raw);
 
-  const fmtDate = (raw: string | null | undefined) => {
-    if (!raw) return "—";
-    return new Date(raw).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
-  };
+  const fmtDate = (raw: string | null | undefined) => formatDate(raw);
 
   const getServiceDates = (key: string, data: any): { from: string | null; to: string | null; dur: string | null } => {
     if (!data) return { from: null, to: null, dur: null };
@@ -3059,7 +3052,7 @@ function ActivityTab({ contractId }: { contractId: string }) {
               <p className="text-[13px] font-medium text-[#1C1917]">{item.title}</p>
               {item.detail && <p className="text-[12px] text-[#57534E] mt-0.5">{item.detail}</p>}
               <p className="text-[11px] text-[#A8A29E] mt-1">
-                {item.actor_name} · {item.occurred_at ? format(new Date(item.occurred_at), "dd MMM yyyy HH:mm") : "—"}
+                {item.actor_name} · {item.occurred_at ? formatDateTime(item.occurred_at) : "—"}
               </p>
             </div>
           </div>

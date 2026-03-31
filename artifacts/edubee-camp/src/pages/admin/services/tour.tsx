@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -79,9 +80,9 @@ function ContractCard({ rec, onViewContract }: { rec: Rec; onViewContract: () =>
           <div className="flex items-start gap-1 col-span-2">
             <CalendarRange className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
             <span className="text-muted-foreground">
-              {rec.contractStartDate ? format(new Date(rec.contractStartDate), "MMM d, yyyy") : "—"}
+              {formatDate(rec.contractStartDate)}
               {" · "}
-              {rec.contractEndDate ? format(new Date(rec.contractEndDate), "MMM d, yyyy") : "—"}
+              {formatDate(rec.contractEndDate)}
             </span>
           </div>
         )}
@@ -178,12 +179,12 @@ export default function TourManagement() {
                 <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F5821F]">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.clientName ?? r.studentName ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.tourName ?? "—"}</td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">{r.tourDate ? format(new Date(r.tourDate), "MMM d, yyyy") : "—"}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(r.tourDate)}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground max-w-[120px] truncate">{r.meetingPoint ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.groupSize ?? "—"}</td>
                 <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-                <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{r.createdAt ? format(new Date(r.createdAt), "dd MMM yyyy") : "—"}</td>
-                <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{r.updatedAt ? format(new Date(r.updatedAt), "dd MMM yyyy") : "—"}</td>
+                <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
+                <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{formatDate(r.updatedAt)}</td>
                 <td className="px-4 py-3"><ChevronRight className="w-4 h-4 text-muted-foreground" /></td>
               </tr>
             ))}
@@ -214,7 +215,7 @@ export default function TourManagement() {
                 <dl className="space-y-3">
                   {[
                     ["Tour Name", selected.tourName],
-                    ["Date", selected.tourDate ? format(new Date(selected.tourDate), "MMM d, yyyy") : null],
+                    ["Date", selected.tourDate ? formatDate(selected.tourDate) : null],
                     ["Meeting Point", selected.meetingPoint],
                     ["Group Size", selected.groupSize ? String(selected.groupSize) : null],
                     ["Notes", selected.specialNotes],

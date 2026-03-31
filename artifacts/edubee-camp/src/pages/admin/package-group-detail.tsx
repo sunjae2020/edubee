@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
@@ -453,7 +454,7 @@ export default function PackageGroupDetail() {
                     className="h-8 px-2 text-sm border border-[#F5821F] rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F] w-full"
                   />
                 ) : (
-                  <span className="text-sm">{group.startDate ? format(new Date(group.startDate), "PPP") : <span className="text-muted-foreground/60">—</span>}</span>
+                  <span className="text-sm">{group.startDate ? formatDate(group.startDate) : <span className="text-muted-foreground/60">—</span>}</span>
                 )}
               </DetailRow>
               <DetailRow label="End Date">
@@ -465,7 +466,7 @@ export default function PackageGroupDetail() {
                     className="h-8 px-2 text-sm border border-[#F5821F] rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F] w-full"
                   />
                 ) : (
-                  <span className="text-sm">{group.endDate ? format(new Date(group.endDate), "PPP") : <span className="text-muted-foreground/60">—</span>}</span>
+                  <span className="text-sm">{group.endDate ? formatDate(group.endDate) : <span className="text-muted-foreground/60">—</span>}</span>
                 )}
               </DetailRow>
             </DetailSection>
@@ -527,8 +528,8 @@ export default function PackageGroupDetail() {
                   <span className="text-muted-foreground/60 text-sm">—</span>
                 )}
               </DetailRow>
-              <DetailRow label="Created" value={group.createdAt ? format(new Date(group.createdAt), "PPP") : "—"} />
-              <DetailRow label="Updated" value={group.updatedAt ? format(new Date(group.updatedAt), "PPP") : "—"} />
+              <DetailRow label="Created" value={group.createdAt ? formatDate(group.createdAt) : "—"} />
+              <DetailRow label="Updated" value={group.updatedAt ? formatDate(group.updatedAt) : "—"} />
             </DetailSection>
             <DetailSection title="Description (EN)" className="lg:col-span-2">
               {isEditing ? (
@@ -781,7 +782,7 @@ export default function PackageGroupDetail() {
                       waitlist: "bg-amber-100 text-amber-700",
                       closed: "bg-red-100 text-red-700",
                     };
-                    const fmtDate = (d: string | null) => d ? format(new Date(d), "MMM d, yyyy") : "—";
+                    const fmtDate = (d?: string | null) => formatDate(d);
                     return (
                       <tr key={s.id} className="border-b last:border-0 hover:bg-[#FEF0E3]/50">
                         <td className="px-4 py-3">

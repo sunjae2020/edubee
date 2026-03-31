@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import axios from "axios";
@@ -135,8 +136,8 @@ export default function Reports() {
                 <h3 className="font-semibold text-sm">{r.reportTitle ?? "Untitled Report"}</h3>
                 {r.summaryNotes && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{r.summaryNotes}</p>}
                 <div className="text-[10px] text-muted-foreground mt-1.5">
-                  Created: {r.createdAt ? new Date(r.createdAt).toLocaleDateString("en-AU") : "—"}
-                  {r.publishedAt && ` · Published: ${new Date(r.publishedAt).toLocaleDateString("en-AU")}`}
+                  Created: {r.createdAt ? formatDate(r.createdAt) : "—"}
+                  {r.publishedAt && ` · Published: ${formatDate(r.publishedAt)}`}
                 </div>
               </div>
               <div className="flex gap-2 shrink-0" onClick={e => e.stopPropagation()}>

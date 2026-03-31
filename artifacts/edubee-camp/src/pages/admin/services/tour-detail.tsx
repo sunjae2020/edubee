@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -119,7 +120,7 @@ function BillTab({ record }: { record: any }) {
           <div className="flex items-center justify-between">
             <span className="text-stone-400">Tour Date</span>
             <span className="text-stone-700 text-xs">
-              {record.tourDate ? format(new Date(record.tourDate), "dd MMM yyyy") : "—"}
+              {formatDate(record.tourDate)}
             </span>
           </div>
           <div className="flex items-center justify-between">
@@ -214,7 +215,7 @@ export default function TourMgtDetail() {
                     <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
                   </Select>
                 } />
-              <DetailRow label="Tour Date" value={rec.tourDate ? format(new Date(rec.tourDate), "PPP") : "—"} />
+              <DetailRow label="Tour Date" value={rec.tourDate ? formatDate(rec.tourDate) : "—"} />
               <EditableField label="Tour Name" isEditing={isEditing} value={rec.tourName}
                 editValue={getValue("tourName")} onEdit={v => setField("tourName", v)} />
               <EditableField label="Meeting Point" isEditing={isEditing} value={rec.meetingPoint}

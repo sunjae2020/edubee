@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -137,7 +138,7 @@ function KanbanCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
         </p>
       )}
       <p className="text-[11px] text-[#A8A29E]">
-        {lead.createdAt ? format(new Date(lead.createdAt), "MMM d, yyyy") : "—"}
+        {lead.createdAt ? formatDate(lead.createdAt) : "—"}
       </p>
     </div>
   );
@@ -341,10 +342,10 @@ export default function CrmLeadsPage() {
                     <td className="px-4 py-3 text-stone-600">{l.inquiryType ?? "—"}</td>
                     <td className="px-4 py-3"><StatusBadge status={l.status} /></td>
                     <td className="px-4 py-3 text-xs text-stone-500 whitespace-nowrap">
-                      {l.createdAt ? format(new Date(l.createdAt), "MMM d, yyyy") : "—"}
+                      {l.createdAt ? formatDate(l.createdAt) : "—"}
                     </td>
                     <td className="px-4 py-3 text-xs text-stone-500 whitespace-nowrap">
-                      {l.updatedAt ? format(new Date(l.updatedAt), "MMM d, yyyy") : "—"}
+                      {l.updatedAt ? formatDate(l.updatedAt) : "—"}
                     </td>
                     <td className="px-4 py-3 text-sm text-stone-600">{l.assignedStaffName ?? "—"}</td>
                     <td className="px-4 py-3">

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -186,8 +187,8 @@ export default function UserDetail() {
                     </SelectContent>
                   </Select>
                 } />
-              <DetailRow label="Created" value={userRec.createdAt ? format(new Date(userRec.createdAt), "PPP") : "—"} />
-              <DetailRow label="Last Login" value={userRec.lastLoginAt ? format(new Date(userRec.lastLoginAt), "PPp") : "—"} />
+              <DetailRow label="Created" value={userRec.createdAt ? formatDate(userRec.createdAt) : "—"} />
+              <DetailRow label="Last Login" value={userRec.lastLoginAt ? formatDateTime(userRec.lastLoginAt) : "—"} />
             </DetailSection>
 
             <DetailSection title="Profile">

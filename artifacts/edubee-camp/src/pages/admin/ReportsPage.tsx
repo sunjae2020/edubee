@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -42,9 +43,9 @@ function relativeTime(dateStr: string | null | undefined): string {
   return `${Math.floor(months / 12)} yr ago`;
 }
 
-function fmtDate(d: string | null | undefined) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
+function fmtDate(d: string | null | undefined): string {
+  return formatDate(d);
+});
 }
 
 export default function ReportsPage() {

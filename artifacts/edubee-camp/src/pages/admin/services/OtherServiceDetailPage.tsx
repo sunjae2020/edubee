@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/date-format";
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -61,9 +62,8 @@ interface OtherServiceRecord {
   updatedAt?: string;
 }
 
-function fmtDate(v?: string | null) {
-  if (!v) return "—";
-  try { return format(parseISO(v), "d MMM yyyy"); } catch { return v; }
+function fmtDate(d: string | null | undefined): string {
+  return formatDate(d);
 }
 function fmtMoney(v?: string | null, currency = "AUD") {
   if (!v) return "—";

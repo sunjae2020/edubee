@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/date-format";
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -62,8 +63,7 @@ const STAGES = [
 ];
 
 function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  try { return format(parseISO(d), "MMM d, yyyy"); } catch { return d; }
+  return formatDate(d);
 }
 
 function StageStepper({ current, onSelect }: { current: string; onSelect: (s: string) => void }) {

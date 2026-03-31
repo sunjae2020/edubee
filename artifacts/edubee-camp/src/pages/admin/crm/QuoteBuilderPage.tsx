@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -1947,13 +1948,13 @@ export default function QuoteBuilderPage() {
             <div>
               <p className="mb-0.5">Created On</p>
               <p className="text-gray-700 font-medium">
-                {quote?.createdOn ? format(new Date(quote.createdOn), "dd MMM yyyy, HH:mm") : "—"}
+                {quote?.createdOn ? formatDateTime(quote.createdOn) : "—"}
               </p>
             </div>
             <div>
               <p className="mb-0.5">Modified On</p>
               <p className="text-gray-700 font-medium">
-                {quote?.modifiedOn ? format(new Date(quote.modifiedOn), "dd MMM yyyy, HH:mm") : "—"}
+                {quote?.modifiedOn ? formatDateTime(quote.modifiedOn) : "—"}
               </p>
             </div>
           </div>

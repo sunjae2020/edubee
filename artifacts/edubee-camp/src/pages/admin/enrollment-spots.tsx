@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { differenceInDays } from "date-fns";
@@ -35,14 +36,6 @@ interface GroupedData {
   totalAvailable: number;
 }
 
-function formatDate(d: string | null): string {
-  if (!d) return "—";
-  try {
-    return format(new Date(d), "MMM d, yyyy");
-  } catch {
-    return "—";
-  }
-}
 
 function formatPeriod(start: string | null, end: string | null): string {
   if (!start && !end) return "—";

@@ -1,3 +1,4 @@
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -205,10 +206,8 @@ export default function PickupMgtDetail() {
 
   const fmtDt = (d?: string | null, tz?: string | null) => {
     if (!d) return "—";
-    try {
-      const formatted = format(parseISO(d), "PPp");
-      return tz ? `${formatted} (${tz})` : formatted;
-    } catch { return d; }
+    const formatted = formatDateTime(d);
+    return tz ? `${formatted} (${tz})` : formatted;
   };
 
   const toDatetimeLocal = (d?: string | null) => {

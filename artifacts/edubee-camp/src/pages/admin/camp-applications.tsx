@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -309,10 +310,10 @@ export default function CampApplications() {
                   <td className="px-4 py-3 text-muted-foreground text-xs">{app.packageName ?? "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground">{app.applicantNationality ?? "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {app.preferredStartDate ? format(new Date(app.preferredStartDate), "MMM d, yyyy") : "—"}
+                    {app.preferredStartDate ? formatDate(app.preferredStartDate) : "—"}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {app.createdAt ? format(new Date(app.createdAt), "MMM d, yyyy") : "—"}
+                    {app.createdAt ? formatDate(app.createdAt) : "—"}
                   </td>
                   <td className="px-4 py-3"><AppStatusBadge status={app.status} /></td>
                   <td className="px-4 py-3"><ChevronRight className="w-4 h-4 text-muted-foreground" /></td>
@@ -412,8 +413,8 @@ export default function CampApplications() {
                           <DetailRow label="Email" value={selectedApp.applicantEmail} />
                           <DetailRow label="Phone" value={selectedApp.applicantPhone} />
                           <DetailRow label="Participants" value={selectedApp.participantCount} />
-                          <DetailRow label="Preferred Start" value={selectedApp.preferredStartDate ? format(new Date(selectedApp.preferredStartDate), "MMM d, yyyy") : undefined} />
-                          <DetailRow label="Created" value={format(new Date(selectedApp.createdAt), "MMM d, yyyy")} />
+                          <DetailRow label="Preferred Start" value={selectedApp.preferredStartDate ? formatDate(selectedApp.preferredStartDate) : undefined} />
+                          <DetailRow label="Created" value={formatDate(selectedApp.createdAt)} />
                         </dl>
                         <div>
                           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Change Status</h4>
@@ -452,11 +453,11 @@ export default function CampApplications() {
                           </span>
                         </div>
                         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {p.dateOfBirth && <DetailRow label="Date of Birth" value={format(new Date(p.dateOfBirth), "MMM d, yyyy")} />}
+                          {p.dateOfBirth && <DetailRow label="Date of Birth" value={formatDate(p.dateOfBirth)} />}
                           {p.gender && <DetailRow label="Gender" value={p.gender} />}
                           {p.nationality && <DetailRow label="Nationality" value={p.nationality} />}
                           {p.passportNumber && <DetailRow label="Passport No." value={p.passportNumber} />}
-                          {p.passportExpiry && <DetailRow label="Passport Expiry" value={format(new Date(p.passportExpiry), "MMM d, yyyy")} />}
+                          {p.passportExpiry && <DetailRow label="Passport Expiry" value={formatDate(p.passportExpiry)} />}
                           {p.grade && <DetailRow label="Grade" value={p.grade} />}
                           {p.schoolName && <DetailRow label="School" value={p.schoolName} />}
                           {p.englishLevel && <DetailRow label="English Level" value={p.englishLevel} />}
@@ -484,7 +485,7 @@ export default function CampApplications() {
                           </div>
                         </div>
                         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <DetailRow label="Scheduled" value={format(new Date(iv.scheduledDatetime), "MMM d, yyyy HH:mm")} />
+                          <DetailRow label="Scheduled" value={formatDateTime(iv.scheduledDatetime)} />
                           <DetailRow label="Timezone" value={iv.timezone} />
                           {iv.meetingLink && (
                             <div className="col-span-2 flex flex-col gap-0.5">

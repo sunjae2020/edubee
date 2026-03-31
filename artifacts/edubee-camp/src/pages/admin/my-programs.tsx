@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useAuth } from "@/hooks/use-auth";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -132,7 +133,7 @@ export default function MyPrograms() {
 
                   {!hasStarted && c.startDate && (
                     <div className="flex items-center gap-1.5 text-xs text-[#F5821F] mb-3">
-                      <Clock className="w-3.5 h-3.5" /> Starts {new Date(c.startDate).toLocaleDateString("en-AU", { day: "numeric", month: "long" })}
+                      <Clock className="w-3.5 h-3.5" /> Starts {formatDate(c.startDate)}
                     </div>
                   )}
                 </div>
@@ -143,7 +144,7 @@ export default function MyPrograms() {
                     <div className="flex items-center gap-2">
                       <ReportSymbol name="report" size={14} color="#16A34A" />
                       <span className="text-xs font-medium text-[#16A34A]">Program Report Available</span>
-                      <span className="text-[10px] text-[#16A34A]">Published {new Date(report.publishedAt!).toLocaleDateString("en-AU")}</span>
+                      <span className="text-[10px] text-[#16A34A]">Published {formatDate(report.publishedAt!)}</span>
                     </div>
                     <Button
                       size="sm"

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -472,7 +473,7 @@ export default function PackageGroups() {
                   <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-muted-foreground">
-                        Created {format(new Date(g.createdAt), "MMM d, yyyy")}
+                        Created {formatDate(g.createdAt)}
                       </span>
                       {g.sortOrder != null && (
                         <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">

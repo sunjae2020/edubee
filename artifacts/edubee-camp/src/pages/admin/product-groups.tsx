@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
@@ -161,7 +162,7 @@ export default function ProductGroups() {
                 </td>
                 <td className="px-4 py-3 text-[#57534E]">{g.productCount ?? 0}</td>
                 <td className="px-4 py-3"><StatusBadge status={g.status} /></td>
-                <td className="px-4 py-3 text-[#A8A29E] text-xs">{g.createdOn ? format(new Date(g.createdOn), "dd MMM yyyy") : "—"}</td>
+                <td className="px-4 py-3 text-[#A8A29E] text-xs">{g.createdOn ? formatDate(g.createdOn) : "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1">
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-[#57534E] hover:bg-[#F4F3F1]" onClick={() => openEdit(g)}>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
@@ -720,7 +721,7 @@ export default function LeadDetailPage() {
                       <FileText size={14} className="text-[#F5821F] shrink-0" />
                       <span className="font-mono text-sm text-[#1C1917] font-medium">{q.quoteRefNumber}</span>
                       {q.createdOn && (
-                        <span className="text-xs text-muted-foreground">{format(new Date(q.createdOn), "MMM d, yyyy HH:mm")}</span>
+                        <span className="text-xs text-muted-foreground">{formatDateTime(q.createdOn)}</span>
                       )}
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F4F3F1] text-[#57534E]">
                         {q.quoteStatus}
@@ -884,9 +885,7 @@ export default function LeadDetailPage() {
                 <div>
                   <p className="text-xs text-stone-400 mb-0.5">Preferred Start</p>
                   <p className="text-sm font-medium text-stone-800">
-                    {lead.campApplication.preferredStartDate
-                      ? format(new Date(lead.campApplication.preferredStartDate), "MMM d, yyyy")
-                      : "—"}
+                    {formatDate(lead.campApplication.preferredStartDate)}
                   </p>
                 </div>
                 <div>
@@ -1001,11 +1000,11 @@ export default function LeadDetailPage() {
                       {act.scheduledAt && (
                         <span className="flex items-center gap-1 text-xs text-stone-400">
                           <Calendar size={10} />
-                          {format(new Date(act.scheduledAt), "MMM d, yyyy HH:mm")}
+                          {formatDateTime(act.scheduledAt)}
                         </span>
                       )}
                       <span className="text-xs text-stone-300 ml-auto">
-                        {format(new Date(act.createdOn), "MMM d, yyyy")}
+                        {formatDate(act.createdOn)}
                       </span>
                     </div>
                     <p className="text-sm text-stone-700 whitespace-pre-wrap">{act.description}</p>
