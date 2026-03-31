@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { AppSidebar } from "./app-sidebar";
 import { Header } from "./header";
+import { AdminChatWidget } from "./AdminChatWidget";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 import { useDateFormatLoader } from "@/hooks/use-date-format";
@@ -89,6 +90,8 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
           </div>
         </main>
       </div>
+
+      <AdminChatWidget />
     </div>
   );
 }
