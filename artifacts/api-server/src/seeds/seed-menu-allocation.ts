@@ -86,6 +86,7 @@ const ITEMS_BY_CATEGORY: Record<string, { name: string; route_key: string; icon_
     { name: "Doc Permissions",   route_key: "doc-permissions",    icon_name: "FileSearch",     sort_order: 4 },
     { name: "Impersonation Logs",route_key: "impersonation-logs", icon_name: "UserSearch",     sort_order: 5 },
     { name: "Data Manager",      route_key: "data-manager",       icon_name: "FolderOpen",     sort_order: 6 },
+    { name: "Lookup Values",     route_key: "lookup-values",      icon_name: "Tags",           sort_order: 7 },
   ],
 };
 
