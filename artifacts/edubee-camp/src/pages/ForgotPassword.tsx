@@ -61,7 +61,6 @@ export default function ForgotPassword() {
           <div className="flex items-center gap-3 mb-10">
             <img src={logoImg} alt="Edubee" className="h-12 w-auto object-contain"
               style={{ filter: "brightness(0) invert(1)" }} />
-            <span className="text-white text-lg font-semibold">Edubee CRM</span>
           </div>
 
           <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center mb-6">
