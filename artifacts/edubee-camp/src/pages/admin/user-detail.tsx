@@ -85,8 +85,16 @@ export default function UserDetail() {
   });
   const userProducts: any[] = userProductsData ?? [];
 
+  const { data: teamsData } = useQuery({
+    queryKey: ["teams-for-user-select"],
+    queryFn: () => axios.get(`${BASE}/api/teams`).then(r => r.data?.data ?? []),
+    enabled: ADMIN_ROLES.includes(currentUser?.role ?? ""),
+  });
+  const teamList: { id: string; name: string }[] = teamsData ?? [];
+
   const userRec = data?.data ?? data;
   const canEdit = ADMIN_ROLES.includes(currentUser?.role ?? "");
+  const userTeamName = teamList.find(t => t.id === userRec?.teamId)?.name ?? null;
 
   const balance = balanceData?.data;
   const entries: any[] = entriesData?.data ?? [];
@@ -166,6 +174,16 @@ export default function UserDetail() {
                   <Select value={getValue("status")} onValueChange={v => setField("status", v)}>
                     <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
                     <SelectContent>{ALL_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
+                  </Select>
+                } />
+              <EditableField label="Team" isEditing={isEditing && canEdit} value={userTeamName ?? "—"}
+                editChildren={
+                  <Select value={getValue("teamId") ?? "none"} onValueChange={v => setField("teamId", v === "none" ? null : v)}>
+                    <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue placeholder="No team" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No team</SelectItem>
+                      {teamList.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                    </SelectContent>
                   </Select>
                 } />
               <DetailRow label="Created" value={userRec.createdAt ? format(new Date(userRec.createdAt), "PPP") : "—"} />

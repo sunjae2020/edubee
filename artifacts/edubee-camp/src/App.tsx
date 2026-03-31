@@ -33,6 +33,8 @@ import PickupMgtDetail from "@/pages/admin/services/pickup-detail";
 import TourMgtDetail from "@/pages/admin/services/tour-detail";
 import SettlementMgtDetail from "@/pages/admin/services/settlement-detail";
 import UserDetail from "@/pages/admin/user-detail";
+import TeamsPage from "@/pages/admin/teams/TeamsPage";
+import TeamDetailPage from "@/pages/admin/teams/TeamDetailPage";
 
 // Services
 import PickupManagement from "@/pages/admin/services/pickup";
@@ -424,6 +426,14 @@ function Router() {
       </Route>
       <Route path="/admin/users">
         <AdminRoute title="Users"><Users /></AdminRoute>
+      </Route>
+
+      {/* Teams */}
+      <Route path="/admin/teams/:id">
+        <AdminRoute title="Team Detail"><TeamDetailPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/teams">
+        <AdminRoute title="Teams"><TeamsPage /></AdminRoute>
       </Route>
 
       {/* Settings */}

@@ -11,7 +11,7 @@ import {
   GraduationCap, Building2, Car, Map,
   Receipt, FileCheck, ArrowLeftRight, RefreshCw,
   Wallet, BarChart2,
-  Users, Settings, Lock, Grid2x2, FileSearch, UserSearch,
+  Users, Users2, Settings, Lock, Grid2x2, FileSearch, UserSearch,
   Ticket, FolderOpen, Bot,
   BookOpen, CreditCard, BookMarked, Briefcase, Shield, Wrench, Stamp,
   Tag, Percent, BadgeDollarSign,
@@ -148,6 +148,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
 
   const adminItems: NavItem[] = [];
   if (isSAorAD)  adminItems.push({ icon: Users,        label: "Users",      href: "/admin/users"       });
+  if (isSAorAD)  adminItems.push({ icon: Users2,       label: "Teams",      href: "/admin/teams"       });
   if (isParent)  adminItems.push({ icon: GraduationCap, label: "My Programs", href: "/admin/my-programs" });
   if (adminItems.length > 0)
     nav.push({ key: "admin", label: "Admin", catIcon: Grid2x2, items: adminItems });

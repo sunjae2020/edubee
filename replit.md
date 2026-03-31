@@ -231,3 +231,26 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `/api/ledger/balance/:userId`, `/api/commissions`
 - `/api/applications`, `/api/packages`
 - `/api/dashboard/stats`, `/api/dashboard/crm/kpi`
+
+## Team Feature (Implemented)
+### New Database Objects
+- `teams` table: id, name, description, type, color, team_lead_id (→users), status, created_at, updated_at
+- `users.team_id UUID` column added (→teams, ON DELETE SET NULL)
+
+### New API Endpoints (`/api/teams`)
+- `GET /api/teams` — list with search/type/status filters + member counts + lead names
+- `GET /api/teams/:id` — detail with members array + teamLeadName
+- `GET /api/teams/:id/performance` — member count, totalApplications, approvedApplications
+- `POST /api/teams` — create team (admin only)
+- `PATCH /api/teams/:id` — update team (admin only)
+- `DELETE /api/teams/:id` — delete team, unassigns members (admin only)
+- `PATCH /api/teams/:id/members` — bulk add/remove members `{ add: string[], remove: string[] }`
+
+### New Frontend Pages
+- `/admin/teams` → `TeamsPage.tsx` — filterable list with colour badges, member count, create dialog, delete
+- `/admin/teams/:id` → `TeamDetailPage.tsx` — detail + members tab + performance stats + add/remove members dialog
+
+### Updated Pages
+- `user-detail.tsx`: Team assignment select in Account section (admin only, links to team API)
+- `app-sidebar.tsx`: "Teams" link added to Admin section (Users2 icon)
+- `App.tsx`: Team routes registered under AdminRoute guard

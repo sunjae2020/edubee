@@ -129,6 +129,7 @@ router.get("/:id", authenticate, async (req, res) => {
       platformCommRate: users.platformCommRate,
       status: users.status,
       lastLoginAt: users.lastLoginAt,
+      teamId: users.teamId,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     }).from(users).where(eq(users.id, req.params.id)).limit(1);
