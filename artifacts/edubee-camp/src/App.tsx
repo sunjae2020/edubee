@@ -35,6 +35,9 @@ import SettlementMgtDetail from "@/pages/admin/services/settlement-detail";
 import UserDetail from "@/pages/admin/user-detail";
 import TeamsPage from "@/pages/admin/teams/TeamsPage";
 import TeamDetailPage from "@/pages/admin/teams/TeamDetailPage";
+import StaffKpiPage   from "@/pages/kpi/StaffKpiPage";
+import TeamKpiPage    from "@/pages/kpi/TeamKpiPage";
+import KpiTargetsPage from "@/pages/kpi/KpiTargetsPage";
 
 // Services
 import PickupManagement from "@/pages/admin/services/pickup";
@@ -434,6 +437,17 @@ function Router() {
       </Route>
       <Route path="/admin/teams">
         <AdminRoute title="Teams"><TeamsPage /></AdminRoute>
+      </Route>
+
+      {/* KPI */}
+      <Route path="/admin/kpi/staff">
+        <AdminRoute title="Staff KPI"><StaffKpiPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/kpi/team">
+        <AdminRoute title="Team KPI"><TeamKpiPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/kpi/targets">
+        <AdminRoute title="KPI Targets"><KpiTargetsPage /></AdminRoute>
       </Route>
 
       {/* Settings */}

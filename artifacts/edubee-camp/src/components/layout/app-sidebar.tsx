@@ -148,7 +148,10 @@ function buildNav(effectiveRole: string): NavGroup[] {
 
   const adminItems: NavItem[] = [];
   if (isSAorAD)  adminItems.push({ icon: Users,        label: "Users",      href: "/admin/users"       });
-  if (isSAorAD)  adminItems.push({ icon: Users2,       label: "Teams",      href: "/admin/teams"       });
+  if (isSAorAD)  adminItems.push({ icon: Users2,       label: "Teams",         href: "/admin/teams"          });
+  if (isSAorAD)  adminItems.push({ icon: BarChart2,    label: "Staff KPI",     href: "/admin/kpi/staff"      });
+  if (isSAorAD)  adminItems.push({ icon: Users2,       label: "Team KPI",      href: "/admin/kpi/team"       });
+  if (isSAorAD)  adminItems.push({ icon: Target,       label: "KPI Targets",   href: "/admin/kpi/targets"    });
   if (isParent)  adminItems.push({ icon: GraduationCap, label: "My Programs", href: "/admin/my-programs" });
   if (adminItems.length > 0)
     nav.push({ key: "admin", label: "Admin", catIcon: Grid2x2, items: adminItems });
