@@ -336,13 +336,14 @@ router.post("/crm/leads/:id/convert-to-quote", authenticate, requireRole(...ADMI
     const [newQuote] = await db.insert(quotes).values({
       quoteRefNumber,
       leadId:           lead.id,
-      contactId:        lead.contactId    || null,
-      customerName:     customerName      || null,
-      studentAccountId: lead.accountId    || null,
-      accountName:      accountName       || null,
+      contactId:        lead.contactId      || null,
+      customerName:     customerName        || null,
+      studentAccountId: lead.accountId      || null,
+      accountName:      accountName         || null,
       expiryDate:       expiryDate,
       quoteStatus:      "Draft",
-      createdBy:        user?.id          ?? null,
+      createdBy:        user?.id            ?? null,
+      ownerId:          lead.assignedStaffId || null,
     }).returning();
 
     return res.status(201).json({ quoteId: newQuote.id, quoteRefNumber: newQuote.quoteRefNumber,
