@@ -10,6 +10,7 @@ import {
 } from "../services/kpiService.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { runKpiSchedulerNow } from "../jobs/kpiScheduler.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
@@ -412,6 +413,26 @@ router.patch(
       `);
 
       res.json({ success: true, message: "지급 처리 완료되었습니다." });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  }
+);
+
+// ─────────────────────────────────────────────
+// POST /api/kpi/scheduler/run
+// 스케줄러 즉시 수동 실행 (Admin/SuperAdmin 전용, 테스트용)
+// Body: { periodType?: 'monthly' | 'quarterly' }
+// ─────────────────────────────────────────────
+router.post(
+  "/scheduler/run",
+  authenticate,
+  requireRole(...ADMIN_ROLES),
+  async (req: Request, res: Response) => {
+    try {
+      const { periodType } = req.body;
+      const result = await runKpiSchedulerNow(periodType ?? "monthly");
+      res.json(result);
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }

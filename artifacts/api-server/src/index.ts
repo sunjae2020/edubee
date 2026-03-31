@@ -6,6 +6,7 @@ import { markOverdueArItems } from "./seeds/arap-overdue.js";
 import { seedUsersIfEmpty } from "./seeds/seed-users.js";
 import { seedMenuAllocation } from "./seeds/seed-menu-allocation.js";
 import { startTaxInvoiceScheduler } from "./jobs/taxInvoiceScheduler.js";
+import { startKpiScheduler, runKpiSchedulerNow } from "./jobs/kpiScheduler.js";
 
 const rawPort = process.env["PORT"];
 
@@ -28,6 +29,7 @@ const server = app.listen(port, () => {
   seedMenuAllocation();
   markOverdueArItems();
   startTaxInvoiceScheduler();
+  startKpiScheduler();
 });
 
 // CHECK 1.3 — Replit: prevent 120s reverse-proxy hard-cut
