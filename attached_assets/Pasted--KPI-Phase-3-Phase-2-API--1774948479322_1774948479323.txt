@@ -1,0 +1,1693 @@
+## KPI Phase 3 — 프론트엔드 대시보드 구현
+
+Phase 2(백엔드 API)가 완료된 상태에서 진행한다.
+파일을 먼저 읽고, 변경 계획을 보고한 뒤
+내가 "진행해"라고 하기 전까지 수정하지 않는다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### STEP 1. 사전 파일 읽기 (수정 전 필수)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+아래 파일을 전부 읽는다:
+① client/src/pages/ 디렉토리 구조 전체
+② client/src/components/ 디렉토리 구조 전체
+③ 라우팅 설정 파일 (App.tsx 또는 router 설정 파일)
+④ 기존 페이지 1개 (가장 복잡한 페이지)
+   → 아래 항목 파악용:
+     - API 호출 방식 (fetch / axios / react-query 등)
+     - API base URL 설정 방식
+     - 공통 레이아웃 컴포넌트 import 경로
+     - Tailwind CSS 사용 여부 및 공통 스타일 패턴
+     - TypeScript 인터페이스 정의 위치 (types 폴더 등)
+⑤ ArApTrackerPage.tsx
+   → KpiCard 컴포넌트 패턴 확인용
+
+읽기 완료 후 아래를 보고한다:
+- API 호출 방식 및 base URL
+- 라우팅 등록 방식 (React Router v6 등)
+- 공통 레이아웃 컴포넌트명 및 import 경로
+- 기존 KpiCard 컴포넌트 위치 및 props 구조
+- 금액 포맷 유틸 함수 존재 여부 (formatCurrency 등)
+- 날짜 포맷 유틸 함수 존재 여부
+
+수정은 하지 않는다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### STEP 2. 변경 계획 보고 (수정 전)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+생성/수정할 파일 목록을 보고한다.
+내가 "진행해"라고 할 때까지 기다린다.
+
+  [A] 타입 정의
+      client/src/types/kpi.ts  (신규)
+
+  [B] API 훅
+      client/src/hooks/useKpi.ts  (신규)
+
+  [C] 공통 컴포넌트 (4개)
+      client/src/components/kpi/KpiFilterBar.tsx
+      client/src/components/kpi/ActivityKpiSection.tsx
+      client/src/components/kpi/FinanceKpiSection.tsx
+      client/src/components/kpi/IncentiveSection.tsx
+
+  [D] 페이지 (3개)
+      client/src/pages/kpi/StaffKpiPage.tsx
+      client/src/pages/kpi/TeamKpiPage.tsx
+      client/src/pages/kpi/KpiTargetsPage.tsx
+
+  [E] 라우팅 등록
+      App.tsx 또는 router 설정 파일 (3개 경로 추가)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### STEP 3. 구현 내용
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+──────────────────────────────────────
+[A] client/src/types/kpi.ts  신규 생성
+──────────────────────────────────────
+
+export type KpiPeriodType = 'monthly' | 'quarterly' | 'half_year' | 'yearly';
+
+export type KpiStatus = 'draft' | 'submitted' | 'approved' | 'paid' | 'rejected';
+
+export type IncentiveType = 'percentage' | 'fixed' | 'none';
+
+// ── 직원 KPI 결과 ─────────────────────────────
+export interface StaffKpiResult {
+  staffId:               string;
+  staffName:             string;
+  periodType:            KpiPeriodType;
+  periodStart:           string;
+  periodEnd:             string;
+  // 활동 KPI
+  leadCount:             number;
+  conversionCount:       number;
+  conversionRate:        number;
+  paymentProcessedCount: number;
+  visaGrantedCount:      number;
+  // 파이낸스 KPI
+  arScheduled:           number;
+  arCollected:           number;
+  arOverdue:             number;
+  apScheduled:           number;
+  apPaid:                number;
+  netRevenue:            number;
+  // 목표 & 성과급
+  targetAmount:          number;
+  excessAmount:          number;
+  incentiveType:         IncentiveType | null;
+  incentiveRate:         number | null;
+  incentiveFixed:        number | null;
+  incentiveAmount:       number;
+  // 레코드 상태
+  kpiPeriodId?:          string;
+  kpiStatus?:            KpiStatus;
+}
+
+// ── 팀 KPI 결과 ───────────────────────────────
+export interface TeamKpiResult {
+  teamId:                string;
+  teamName:              string;
+  memberCount:           number;
+  members:               StaffKpiResult[];
+  leadCount:             number;
+  conversionCount:       number;
+  conversionRate:        number;
+  arScheduled:           number;
+  arCollected:           number;
+  arOverdue:             number;
+  apScheduled:           number;
+  apPaid:                number;
+  netRevenue:            number;
+  targetAmount:          number;
+  excessAmount:          number;
+  incentiveType:         IncentiveType | null;
+  incentiveRate:         number | null;
+  incentiveFixed:        number | null;
+  incentiveAmount:       number;
+  kpiPeriodId?:          string;
+  kpiStatus?:            KpiStatus;
+}
+
+// ── KPI 전체 요약 ─────────────────────────────
+export interface KpiSummary {
+  totalStaff:        number;
+  totalLeads:        number;
+  totalConversions:  number;
+  totalArCollected:  number;
+  totalApPaid:       number;
+  totalNetRevenue:   number;
+  totalIncentive:    number;
+}
+
+export interface KpiSummaryResponse {
+  period:  { periodType: string; periodStart: string; periodEnd: string };
+  summary: KpiSummary;
+  staff:   StaffKpiResult[];
+}
+
+// ── KPI 목표 설정 ─────────────────────────────
+export interface KpiTarget {
+  id:             string;
+  staffId?:       string;
+  teamId?:        string;
+  staffName?:     string;
+  teamName?:      string;
+  periodType:     KpiPeriodType;
+  targetAmount:   number;
+  incentiveType:  IncentiveType;
+  incentiveRate?: number;
+  incentiveFixed?: number;
+  validFrom:      string;
+  validTo?:       string;
+  description?:   string;
+  status:         string;
+  createdOn:      string;
+}
+
+export interface KpiTargetForm {
+  staffId?:       string;
+  teamId?:        string;
+  periodType:     KpiPeriodType;
+  targetAmount:   number | '';
+  incentiveType:  IncentiveType;
+  incentiveRate?: number | '';
+  incentiveFixed?: number | '';
+  validFrom:      string;
+  validTo?:       string;
+  description?:   string;
+}
+
+// ── 필터 상태 ─────────────────────────────────
+export interface KpiFilter {
+  periodType:  KpiPeriodType;
+  yearMonth:   string;    // 'YYYY-MM'
+}
+
+──────────────────────────────────────
+[B] client/src/hooks/useKpi.ts  신규 생성
+──────────────────────────────────────
+
+// API 호출 방식은 STEP 1에서 확인한 실제 패턴을 사용한다.
+// base URL도 STEP 1에서 확인한 방식을 사용한다.
+
+import { useState, useCallback } from 'react';
+import {
+  StaffKpiResult, TeamKpiResult,
+  KpiSummaryResponse, KpiTarget, KpiTargetForm,
+  KpiFilter, KpiPeriodType,
+} from '../types/kpi';
+
+const API_BASE = '/* STEP1에서 확인한 실제 API base URL */';
+
+// ── 공통 fetch 헬퍼 ──────────────────────────
+async function apiFetch<T>(
+  path: string,
+  options?: RequestInit
+): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'API Error');
+  return json.data as T;
+}
+
+// ── 직원 KPI 훅 ──────────────────────────────
+export function useStaffKpi() {
+  const [data,    setData]    = useState<StaffKpiResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
+
+  const fetch = useCallback(async (
+    staffId: string,
+    filter:  KpiFilter
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiFetch<StaffKpiResult>(
+        `/kpi/staff/${staffId}?periodType=${filter.periodType}&yearMonth=${filter.yearMonth}`
+      );
+      setData(result);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const calculate = useCallback(async (
+    staffId: string,
+    filter:  KpiFilter
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiFetch<StaffKpiResult>(
+        `/kpi/calculate/staff/${staffId}`,
+        {
+          method: 'POST',
+          body:   JSON.stringify({
+            periodType: filter.periodType,
+            yearMonth:  filter.yearMonth,
+          }),
+        }
+      );
+      setData(result);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { data, loading, error, fetch, calculate };
+}
+
+// ── 팀 KPI 훅 ────────────────────────────────
+export function useTeamKpi() {
+  const [data,    setData]    = useState<TeamKpiResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
+
+  const fetch = useCallback(async (
+    teamId: string,
+    filter: KpiFilter
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiFetch<TeamKpiResult>(
+        `/kpi/team/${teamId}?periodType=${filter.periodType}&yearMonth=${filter.yearMonth}`
+      );
+      setData(result);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const calculate = useCallback(async (
+    teamId: string,
+    filter: KpiFilter
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiFetch<TeamKpiResult>(
+        `/kpi/calculate/team/${teamId}`,
+        {
+          method: 'POST',
+          body:   JSON.stringify({
+            periodType: filter.periodType,
+            yearMonth:  filter.yearMonth,
+          }),
+        }
+      );
+      setData(result);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { data, loading, error, fetch, calculate };
+}
+
+// ── KPI 요약 훅 ───────────────────────────────
+export function useKpiSummary() {
+  const [data,    setData]    = useState<KpiSummaryResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
+
+  const fetch = useCallback(async (filter: KpiFilter) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiFetch<KpiSummaryResponse>(
+        `/kpi/summary?periodType=${filter.periodType}&yearMonth=${filter.yearMonth}`
+      );
+      setData(result);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { data, loading, error, fetch };
+}
+
+// ── 목표 설정 훅 ──────────────────────────────
+export function useKpiTargets() {
+  const [targets,  setTargets]  = useState<KpiTarget[]>([]);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState<string | null>(null);
+  const [saving,   setSaving]   = useState(false);
+
+  const fetchTargets = useCallback(async (
+    params?: { staffId?: string; teamId?: string }
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const qs = params?.staffId
+        ? `?staffId=${params.staffId}`
+        : params?.teamId
+        ? `?teamId=${params.teamId}`
+        : '';
+      const result = await apiFetch<KpiTarget[]>(`/kpi/targets${qs}`);
+      setTargets(result);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const createTarget = useCallback(async (
+    form: KpiTargetForm & { createdBy: string }
+  ) => {
+    setSaving(true);
+    try {
+      await apiFetch('/kpi/targets', {
+        method: 'POST',
+        body:   JSON.stringify(form),
+      });
+      await fetchTargets();
+    } finally {
+      setSaving(false);
+    }
+  }, [fetchTargets]);
+
+  const updateTarget = useCallback(async (
+    id:   string,
+    form: Partial<KpiTargetForm>
+  ) => {
+    setSaving(true);
+    try {
+      await apiFetch(`/kpi/targets/${id}`, {
+        method: 'PUT',
+        body:   JSON.stringify(form),
+      });
+      await fetchTargets();
+    } finally {
+      setSaving(false);
+    }
+  }, [fetchTargets]);
+
+  return { targets, loading, error, saving, fetchTargets, createTarget, updateTarget };
+}
+
+// ── 승인/지급 훅 ──────────────────────────────
+export function useKpiApproval() {
+  const [processing, setProcessing] = useState(false);
+
+  const approve = useCallback(async (
+    kpiPeriodId: string,
+    type:        'staff' | 'team',
+    approvedBy:  string
+  ) => {
+    setProcessing(true);
+    try {
+      await apiFetch(`/kpi/approve/${kpiPeriodId}`, {
+        method: 'PATCH',
+        body:   JSON.stringify({ type, approvedBy }),
+      });
+    } finally {
+      setProcessing(false);
+    }
+  }, []);
+
+  const pay = useCallback(async (
+    kpiPeriodId: string,
+    type:        'staff' | 'team'
+  ) => {
+    setProcessing(true);
+    try {
+      await apiFetch(`/kpi/pay/${kpiPeriodId}`, {
+        method: 'PATCH',
+        body:   JSON.stringify({ type }),
+      });
+    } finally {
+      setProcessing(false);
+    }
+  }, []);
+
+  return { processing, approve, pay };
+}
+
+──────────────────────────────────────
+[C-1] client/src/components/kpi/KpiFilterBar.tsx
+──────────────────────────────────────
+
+// 기간 유형 + 연월 선택 필터바
+// 기존 프로젝트 UI 컴포넌트 패턴에 맞게 Tailwind 스타일 적용
+
+import React from 'react';
+import { KpiFilter, KpiPeriodType } from '../../types/kpi';
+
+interface Props {
+  filter:    KpiFilter;
+  onChange:  (filter: KpiFilter) => void;
+  onRefresh: () => void;
+  loading?:  boolean;
+}
+
+const PERIOD_OPTIONS: { value: KpiPeriodType; label: string }[] = [
+  { value: 'monthly',   label: '월별'    },
+  { value: 'quarterly', label: '분기별'  },
+  { value: 'half_year', label: '반기별'  },
+  { value: 'yearly',    label: '연간'    },
+];
+
+// yearMonth 선택 옵션 생성 (최근 12개월 + 향후 3개월)
+function generateMonthOptions(): { value: string; label: string }[] {
+  const options = [];
+  const now = new Date();
+  for (let i = -12; i <= 3; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = `${d.getFullYear()}년 ${d.getMonth() + 1}월`;
+    options.push({ value, label });
+  }
+  return options.reverse();
+}
+
+export const KpiFilterBar: React.FC<Props> = ({
+  filter, onChange, onRefresh, loading
+}) => {
+  const monthOptions = generateMonthOptions();
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-lg border border-gray-200">
+      {/* 기간 유형 */}
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-medium text-gray-600 whitespace-nowrap">
+          기간 유형
+        </label>
+        <select
+          value={filter.periodType}
+          onChange={e => onChange({
+            ...filter,
+            periodType: e.target.value as KpiPeriodType
+          })}
+          className="text-sm border border-gray-300 rounded-md px-3 py-1.5
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {PERIOD_OPTIONS.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* 기준 연월 (monthly/quarterly/half_year/yearly 공통으로 기준월 사용) */}
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-medium text-gray-600 whitespace-nowrap">
+          기준 월
+        </label>
+        <select
+          value={filter.yearMonth}
+          onChange={e => onChange({ ...filter, yearMonth: e.target.value })}
+          className="text-sm border border-gray-300 rounded-md px-3 py-1.5
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {monthOptions.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* 조회 버튼 */}
+      <button
+        onClick={onRefresh}
+        disabled={loading}
+        className="ml-auto flex items-center gap-2 px-4 py-1.5
+                   bg-blue-600 text-white text-sm font-medium rounded-md
+                   hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed
+                   transition-colors"
+      >
+        {loading ? (
+          <span className="animate-spin">⟳</span>
+        ) : (
+          <span>🔍</span>
+        )}
+        조회
+      </button>
+    </div>
+  );
+};
+
+──────────────────────────────────────
+[C-2] client/src/components/kpi/ActivityKpiSection.tsx
+──────────────────────────────────────
+
+import React from 'react';
+import { StaffKpiResult } from '../../types/kpi';
+
+interface Props {
+  data: Pick<
+    StaffKpiResult,
+    | 'leadCount' | 'conversionCount' | 'conversionRate'
+    | 'paymentProcessedCount' | 'visaGrantedCount'
+  >;
+}
+
+interface MetricItemProps {
+  icon:    string;
+  label:   string;
+  value:   string | number;
+  sub?:    string;
+  color?:  string;
+}
+
+const MetricItem: React.FC<MetricItemProps> = ({
+  icon, label, value, sub, color = 'text-gray-900'
+}) => (
+  <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+    <span className="text-2xl mb-1">{icon}</span>
+    <span className="text-xs text-gray-500 mb-1">{label}</span>
+    <span className={`text-2xl font-bold ${color}`}>{value}</span>
+    {sub && <span className="text-xs text-gray-400 mt-0.5">{sub}</span>}
+  </div>
+);
+
+export const ActivityKpiSection: React.FC<Props> = ({ data }) => (
+  <div className="bg-white rounded-lg border border-gray-200 p-5">
+    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+      📋 활동 KPI
+    </h3>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <MetricItem
+        icon="👥" label="신규 리드"
+        value={data.leadCount}
+        sub="건"
+      />
+      <MetricItem
+        icon="✅" label="전환 (계약)"
+        value={data.conversionCount}
+        sub="건"
+        color="text-green-600"
+      />
+      <MetricItem
+        icon="📈" label="전환율"
+        value={`${data.conversionRate.toFixed(1)}%`}
+        color={data.conversionRate >= 30 ? 'text-green-600' : 'text-orange-500'}
+      />
+      <MetricItem
+        icon="💳" label="결제 처리"
+        value={data.paymentProcessedCount}
+        sub="건"
+      />
+      <MetricItem
+        icon="🛂" label="비자 승인"
+        value={data.visaGrantedCount}
+        sub="건"
+        color="text-blue-600"
+      />
+    </div>
+  </div>
+);
+
+──────────────────────────────────────
+[C-3] client/src/components/kpi/FinanceKpiSection.tsx
+──────────────────────────────────────
+
+import React from 'react';
+import { StaffKpiResult } from '../../types/kpi';
+
+interface Props {
+  data: Pick<
+    StaffKpiResult,
+    | 'arScheduled' | 'arCollected' | 'arOverdue'
+    | 'apScheduled' | 'apPaid'
+    | 'netRevenue'  | 'targetAmount' | 'excessAmount'
+  >;
+  currency?: string;
+}
+
+// 금액 포맷 (프로젝트에 formatCurrency 유틸이 있으면 그것을 사용)
+function fmt(amount: number, currency = 'AUD'): string {
+  return new Intl.NumberFormat('en-AU', {
+    style:    'currency',
+    currency,
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
+interface RowProps {
+  label:   string;
+  value:   number;
+  sub?:    string;
+  indent?: boolean;
+  bold?:   boolean;
+  color?:  string;
+  currency?: string;
+}
+
+const FinanceRow: React.FC<RowProps> = ({
+  label, value, sub, indent, bold, color = 'text-gray-900', currency
+}) => (
+  <div className={`flex items-center justify-between py-2
+    ${indent ? 'pl-4' : ''}
+    ${bold   ? 'border-t border-gray-200 mt-1 pt-3' : ''}
+  `}>
+    <span className={`text-sm ${bold ? 'font-semibold text-gray-700' : 'text-gray-500'}`}>
+      {indent && <span className="mr-1 text-gray-300">└</span>}
+      {label}
+      {sub && <span className="ml-1 text-xs text-gray-400">({sub})</span>}
+    </span>
+    <span className={`text-sm font-medium ${color} ${bold ? 'text-base font-bold' : ''}`}>
+      {fmt(value, currency)}
+    </span>
+  </div>
+);
+
+export const FinanceKpiSection: React.FC<Props> = ({ data, currency = 'AUD' }) => {
+  const isExcess   = data.excessAmount > 0;
+  const isShortfall = data.excessAmount < 0;
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-5">
+      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+        💰 파이낸스 KPI
+      </h3>
+
+      <div className="space-y-0">
+        {/* AR 섹션 */}
+        <FinanceRow
+          label="AR 수금 예정"   value={data.arScheduled}
+          sub="기간 내 합계"     currency={currency}
+        />
+        <FinanceRow
+          label="AR 실제 수금"   value={data.arCollected}
+          indent color="text-green-600"  currency={currency}
+        />
+        {data.arOverdue > 0 && (
+          <FinanceRow
+            label="AR 연체"      value={data.arOverdue}
+            indent color="text-red-500"  currency={currency}
+          />
+        )}
+
+        {/* AP 섹션 */}
+        <div className="my-2 border-t border-dashed border-gray-100" />
+        <FinanceRow
+          label="AP 지급 예정"   value={data.apScheduled}
+          sub="기간 내 합계"     currency={currency}
+        />
+        <FinanceRow
+          label="AP 실제 지급"   value={data.apPaid}
+          indent color="text-orange-500" currency={currency}
+        />
+
+        {/* 넷 매출 */}
+        <FinanceRow
+          label="넷 매출"
+          value={data.netRevenue}
+          sub="수금 - 지급"
+          bold
+          color={data.netRevenue >= 0 ? 'text-blue-600' : 'text-red-500'}
+          currency={currency}
+        />
+
+        {/* 목표 */}
+        <div className="my-2 border-t border-dashed border-gray-100" />
+        <FinanceRow
+          label="목표 금액"      value={data.targetAmount}
+          currency={currency}
+        />
+
+        {/* 초과/미달 */}
+        <div className="flex items-center justify-between py-2 px-3 mt-2 rounded-lg
+          bg-gradient-to-r
+          ${isExcess    ? 'from-green-50 to-emerald-50 border border-green-200' : ''}
+          ${isShortfall ? 'from-red-50 to-rose-50 border border-red-200' : ''}
+          ${!isExcess && !isShortfall ? 'from-gray-50 to-gray-50 border border-gray-200' : ''}
+        ">
+          <span className="text-sm font-semibold text-gray-700">
+            {isExcess ? '✅ 초과 달성' : isShortfall ? '⚠️ 목표 미달' : '➖ 목표 달성'}
+          </span>
+          <span className={`text-base font-bold
+            ${isExcess    ? 'text-green-600' : ''}
+            ${isShortfall ? 'text-red-500'   : ''}
+            ${!isExcess && !isShortfall ? 'text-gray-500' : ''}
+          `}>
+            {isExcess ? '+' : ''}{fmt(data.excessAmount, currency)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+──────────────────────────────────────
+[C-4] client/src/components/kpi/IncentiveSection.tsx
+──────────────────────────────────────
+
+import React from 'react';
+import { StaffKpiResult, KpiStatus, IncentiveType } from '../../types/kpi';
+
+interface Props {
+  data:        Pick<StaffKpiResult,
+    'excessAmount' | 'incentiveType' | 'incentiveRate'
+    | 'incentiveFixed' | 'incentiveAmount'
+    | 'kpiPeriodId'  | 'kpiStatus'
+  >;
+  entityType:  'staff' | 'team';
+  canApprove:  boolean;   // Admin/SuperAdmin 만 true
+  onCalculate: () => void;
+  onApprove:   (id: string) => void;
+  onPay:       (id: string) => void;
+  calculating?: boolean;
+  processing?:  boolean;
+}
+
+const STATUS_CONFIG: Record<KpiStatus, { label: string; color: string; bg: string }> = {
+  draft:     { label: 'Draft',     color: 'text-gray-600',  bg: 'bg-gray-100'  },
+  submitted: { label: 'Submitted', color: 'text-blue-600',  bg: 'bg-blue-100'  },
+  approved:  { label: 'Approved',  color: 'text-green-600', bg: 'bg-green-100' },
+  paid:      { label: 'Paid',      color: 'text-purple-600',bg: 'bg-purple-100'},
+  rejected:  { label: 'Rejected',  color: 'text-red-600',   bg: 'bg-red-100'   },
+};
+
+function fmtAUD(n: number) {
+  return new Intl.NumberFormat('en-AU', {
+    style: 'currency', currency: 'AUD'
+  }).format(n);
+}
+
+function incentiveLabel(
+  type: IncentiveType | null,
+  rate: number | null,
+  fixed: number | null
+): string {
+  if (!type || type === 'none') return '성과급 없음';
+  if (type === 'percentage' && rate)
+    return `초과분의 ${(rate * 100).toFixed(1)}%`;
+  if (type === 'fixed' && fixed)
+    return `고정 ${fmtAUD(fixed)}`;
+  return '-';
+}
+
+export const IncentiveSection: React.FC<Props> = ({
+  data, entityType, canApprove,
+  onCalculate, onApprove, onPay,
+  calculating, processing,
+}) => {
+  const status = data.kpiStatus as KpiStatus | undefined;
+  const cfg    = status ? STATUS_CONFIG[status] : null;
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+          🎯 성과급 (Incentive)
+        </h3>
+        {/* 상태 뱃지 */}
+        {cfg && (
+          <span className={`text-xs font-medium px-2.5 py-1 rounded-full
+            ${cfg.bg} ${cfg.color}`}>
+            {cfg.label}
+          </span>
+        )}
+      </div>
+
+      {/* 성과급 계산 결과 */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-500">성과급 방식</span>
+          <span className="text-sm font-medium text-gray-800">
+            {incentiveLabel(data.incentiveType, data.incentiveRate, data.incentiveFixed)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-500">초과 달성액</span>
+          <span className={`text-sm font-medium
+            ${data.excessAmount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+            {fmtAUD(data.excessAmount)}
+          </span>
+        </div>
+        {/* 최종 성과급 */}
+        <div className="flex justify-between items-center p-3 rounded-lg
+          bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200">
+          <span className="text-sm font-semibold text-gray-700">
+            💰 최종 성과급
+          </span>
+          <span className="text-lg font-bold text-amber-600">
+            {fmtAUD(data.incentiveAmount)}
+          </span>
+        </div>
+      </div>
+
+      {/* 승인 흐름 버튼 */}
+      <div className="mt-4 flex flex-wrap gap-2">
+
+        {/* 계산/저장 버튼 (draft 또는 미저장) */}
+        {(!status || status === 'draft') && (
+          <button
+            onClick={onCalculate}
+            disabled={calculating}
+            className="flex-1 px-4 py-2 text-sm font-medium text-white
+              bg-blue-600 rounded-md hover:bg-blue-700
+              disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {calculating ? '계산 중...' : '💾 계산 & 저장'}
+          </button>
+        )}
+
+        {/* 승인 요청 버튼 (draft → submitted, 본인 또는 Admin) */}
+        {status === 'draft' && data.kpiPeriodId && (
+          <button
+            onClick={() => onApprove(data.kpiPeriodId!)}
+            disabled={processing}
+            className="flex-1 px-4 py-2 text-sm font-medium text-white
+              bg-indigo-600 rounded-md hover:bg-indigo-700
+              disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {processing ? '처리 중...' : '📤 승인 요청'}
+          </button>
+        )}
+
+        {/* 승인 버튼 (submitted → approved, Admin만) */}
+        {status === 'submitted' && canApprove && data.kpiPeriodId && (
+          <button
+            onClick={() => onApprove(data.kpiPeriodId!)}
+            disabled={processing}
+            className="flex-1 px-4 py-2 text-sm font-medium text-white
+              bg-green-600 rounded-md hover:bg-green-700
+              disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {processing ? '처리 중...' : '✅ 승인'}
+          </button>
+        )}
+
+        {/* 지급 처리 버튼 (approved → paid, Admin만) */}
+        {status === 'approved' && canApprove && data.kpiPeriodId && (
+          <button
+            onClick={() => onPay(data.kpiPeriodId!)}
+            disabled={processing}
+            className="flex-1 px-4 py-2 text-sm font-medium text-white
+              bg-purple-600 rounded-md hover:bg-purple-700
+              disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {processing ? '처리 중...' : '💸 지급 처리'}
+          </button>
+        )}
+
+        {/* 지급 완료 표시 */}
+        {status === 'paid' && (
+          <div className="flex-1 px-4 py-2 text-sm font-medium text-center
+            text-purple-600 bg-purple-50 border border-purple-200 rounded-md">
+            ✨ 지급 완료
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+──────────────────────────────────────
+[D-1] client/src/pages/kpi/StaffKpiPage.tsx
+──────────────────────────────────────
+
+import React, { useState, useEffect } from 'react';
+import { KpiFilter } from '../../types/kpi';
+import { KpiFilterBar }       from '../../components/kpi/KpiFilterBar';
+import { ActivityKpiSection } from '../../components/kpi/ActivityKpiSection';
+import { FinanceKpiSection }  from '../../components/kpi/FinanceKpiSection';
+import { IncentiveSection }   from '../../components/kpi/IncentiveSection';
+import {
+  useStaffKpi, useKpiApproval
+} from '../../hooks/useKpi';
+
+// ⚠️ 공통 레이아웃 컴포넌트, useAuth 훅은 STEP 1에서 확인한
+//    실제 import 경로로 교체한다.
+
+export const StaffKpiPage: React.FC = () => {
+  // 현재 로그인 유저 (STEP 1에서 확인한 실제 useAuth 패턴 사용)
+  const currentUser = { id: 'REPLACE_WITH_AUTH', role: 'Admin' };
+  const canApprove  = ['Admin', 'SuperAdmin'].includes(currentUser.role);
+
+  // 직원 선택 상태 (기본: 본인)
+  const [selectedStaffId, setSelectedStaffId] = useState<string>(currentUser.id);
+  const [staffList, setStaffList] = useState<{id: string; full_name: string}[]>([]);
+
+  // 필터 상태 (기본: 이번 달)
+  const now = new Date();
+  const defaultYearMonth =
+    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [filter, setFilter] = useState<KpiFilter>({
+    periodType: 'monthly',
+    yearMonth:  defaultYearMonth,
+  });
+
+  const { data, loading, error, fetch, calculate } = useStaffKpi();
+  const { processing, approve, pay }               = useKpiApproval();
+
+  // 직원 목록 로드 (Admin이면 전체, 아니면 본인만)
+  useEffect(() => {
+    // STEP 1에서 확인한 실제 users API 경로로 교체
+    fetch(selectedStaffId, filter);
+  }, []);
+
+  const handleRefresh = () => fetch(selectedStaffId, filter);
+
+  const handleCalculate = () => calculate(selectedStaffId, filter);
+
+  const handleApprove = async (id: string) => {
+    await approve(id, 'staff', currentUser.id);
+    await fetch(selectedStaffId, filter);
+  };
+
+  const handlePay = async (id: string) => {
+    await pay(id, 'staff');
+    await fetch(selectedStaffId, filter);
+  };
+
+  return (
+    // STEP 1에서 확인한 실제 레이아웃 컴포넌트로 감싼다
+    <div className="p-6 space-y-5 max-w-5xl mx-auto">
+
+      {/* 페이지 헤더 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">직원 KPI</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            직원별 활동 및 파이낸스 성과 분석
+          </p>
+        </div>
+        {/* Admin: 직원 선택 드롭다운 */}
+        {canApprove && (
+          <select
+            value={selectedStaffId}
+            onChange={e => setSelectedStaffId(e.target.value)}
+            className="text-sm border border-gray-300 rounded-md px-3 py-1.5
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {/* 직원 목록은 실제 API로 교체 */}
+            <option value={currentUser.id}>본인</option>
+          </select>
+        )}
+      </div>
+
+      {/* 필터 바 */}
+      <KpiFilterBar
+        filter={filter}
+        onChange={setFilter}
+        onRefresh={handleRefresh}
+        loading={loading}
+      />
+
+      {/* 에러 */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* 로딩 */}
+      {loading && (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin text-3xl">⟳</div>
+        </div>
+      )}
+
+      {/* KPI 데이터 */}
+      {data && !loading && (
+        <>
+          {/* 직원명 + 기간 표시 */}
+          <div className="flex items-center gap-3 px-1">
+            <span className="text-base font-semibold text-gray-800">
+              {data.staffName}
+            </span>
+            <span className="text-sm text-gray-400">
+              {data.periodStart} ~ {data.periodEnd}
+            </span>
+          </div>
+
+          {/* 3개 섹션 그리드 */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* 활동 KPI — 전체 너비 */}
+            <div className="lg:col-span-3">
+              <ActivityKpiSection data={data} />
+            </div>
+
+            {/* 파이낸스 KPI */}
+            <div className="lg:col-span-2">
+              <FinanceKpiSection data={data} />
+            </div>
+
+            {/* 성과급 */}
+            <div className="lg:col-span-1">
+              <IncentiveSection
+                data={data}
+                entityType="staff"
+                canApprove={canApprove}
+                onCalculate={handleCalculate}
+                onApprove={handleApprove}
+                onPay={handlePay}
+                calculating={loading}
+                processing={processing}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* 데이터 없음 */}
+      {!data && !loading && !error && (
+        <div className="flex flex-col items-center py-16 text-gray-400">
+          <span className="text-4xl mb-3">📊</span>
+          <p className="text-sm">기간을 선택하고 조회 버튼을 눌러주세요.</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default StaffKpiPage;
+
+──────────────────────────────────────
+[D-2] client/src/pages/kpi/TeamKpiPage.tsx
+──────────────────────────────────────
+
+import React, { useState, useEffect } from 'react';
+import { KpiFilter, TeamKpiResult } from '../../types/kpi';
+import { KpiFilterBar }       from '../../components/kpi/KpiFilterBar';
+import { ActivityKpiSection } from '../../components/kpi/ActivityKpiSection';
+import { FinanceKpiSection }  from '../../components/kpi/FinanceKpiSection';
+import { IncentiveSection }   from '../../components/kpi/IncentiveSection';
+import { useTeamKpi, useKpiApproval } from '../../hooks/useKpi';
+
+export const TeamKpiPage: React.FC = () => {
+  const currentUser = { id: 'REPLACE_WITH_AUTH', role: 'Admin' };
+  const canApprove  = ['Admin', 'SuperAdmin'].includes(currentUser.role);
+
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [teamList, setTeamList] = useState<{id: string; name: string}[]>([]);
+  const [expandedStaff, setExpandedStaff] = useState<string | null>(null);
+
+  const now = new Date();
+  const defaultYearMonth =
+    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [filter, setFilter] = useState<KpiFilter>({
+    periodType: 'monthly',
+    yearMonth:  defaultYearMonth,
+  });
+
+  const { data, loading, error, fetch, calculate } = useTeamKpi();
+  const { processing, approve, pay }               = useKpiApproval();
+
+  // 팀 목록 로드 (STEP 1에서 확인한 실제 teams API 경로로 교체)
+  useEffect(() => {
+    // fetch teams and setTeamList
+  }, []);
+
+  const handleRefresh = () => {
+    if (selectedTeamId) fetch(selectedTeamId, filter);
+  };
+
+  const handleCalculate = () => {
+    if (selectedTeamId) calculate(selectedTeamId, filter);
+  };
+
+  const handleApprove = async (id: string) => {
+    await approve(id, 'team', currentUser.id);
+    if (selectedTeamId) await fetch(selectedTeamId, filter);
+  };
+
+  const handlePay = async (id: string) => {
+    await pay(id, 'team');
+    if (selectedTeamId) await fetch(selectedTeamId, filter);
+  };
+
+  return (
+    <div className="p-6 space-y-5 max-w-6xl mx-auto">
+
+      {/* 헤더 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">팀 KPI</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            팀 단위 성과 분석 및 직원별 상세 내역
+          </p>
+        </div>
+        {/* 팀 선택 */}
+        <select
+          value={selectedTeamId}
+          onChange={e => setSelectedTeamId(e.target.value)}
+          className="text-sm border border-gray-300 rounded-md px-3 py-1.5
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">팀 선택...</option>
+          {teamList.map(t => (
+            <option key={t.id} value={t.id}>{t.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* 필터 바 */}
+      <KpiFilterBar
+        filter={filter}
+        onChange={setFilter}
+        onRefresh={handleRefresh}
+        loading={loading}
+      />
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          ⚠️ {error}
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin text-3xl">⟳</div>
+        </div>
+      )}
+
+      {data && !loading && (
+        <>
+          {/* 팀명 + 기간 + 멤버 수 */}
+          <div className="flex items-center gap-3 px-1">
+            <span className="text-base font-semibold text-gray-800">
+              {data.teamName}
+            </span>
+            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">
+              {data.memberCount}명
+            </span>
+            <span className="text-sm text-gray-400">
+              {data.members[0]?.periodStart} ~ {data.members[0]?.periodEnd}
+            </span>
+          </div>
+
+          {/* 팀 합산 KPI */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-3">
+              <ActivityKpiSection data={data} />
+            </div>
+            <div className="lg:col-span-2">
+              <FinanceKpiSection data={data} />
+            </div>
+            <div className="lg:col-span-1">
+              <IncentiveSection
+                data={data}
+                entityType="team"
+                canApprove={canApprove}
+                onCalculate={handleCalculate}
+                onApprove={handleApprove}
+                onPay={handlePay}
+                calculating={loading}
+                processing={processing}
+              />
+            </div>
+          </div>
+
+          {/* 직원별 상세 (접기/펼치기) */}
+          <div className="bg-white rounded-lg border border-gray-200">
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700">
+                👤 직원별 상세 내역
+              </h3>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {data.members.map(member => (
+                <div key={member.staffId}>
+                  {/* 직원 요약 행 */}
+                  <button
+                    onClick={() => setExpandedStaff(
+                      expandedStaff === member.staffId ? null : member.staffId
+                    )}
+                    className="w-full flex items-center justify-between px-5 py-3
+                      hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-800">
+                        {member.staffName}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        리드 {member.leadCount} · 전환 {member.conversionCount}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium text-blue-600">
+                        {new Intl.NumberFormat('en-AU', {
+                          style: 'currency', currency: 'AUD'
+                        }).format(member.netRevenue)}
+                      </span>
+                      <span className="text-gray-400 text-xs">
+                        {expandedStaff === member.staffId ? '▲' : '▼'}
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* 직원 상세 펼침 */}
+                  {expandedStaff === member.staffId && (
+                    <div className="px-5 pb-4 bg-gray-50">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-3">
+                        <ActivityKpiSection data={member} />
+                        <FinanceKpiSection  data={member} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {!selectedTeamId && !loading && (
+        <div className="flex flex-col items-center py-16 text-gray-400">
+          <span className="text-4xl mb-3">👥</span>
+          <p className="text-sm">팀을 선택하고 조회 버튼을 눌러주세요.</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TeamKpiPage;
+
+──────────────────────────────────────
+[D-3] client/src/pages/kpi/KpiTargetsPage.tsx
+──────────────────────────────────────
+
+import React, { useState, useEffect } from 'react';
+import { KpiTarget, KpiTargetForm, KpiPeriodType, IncentiveType } from '../../types/kpi';
+import { useKpiTargets } from '../../hooks/useKpi';
+
+const PERIOD_LABELS: Record<KpiPeriodType, string> = {
+  monthly:   '월별',
+  quarterly: '분기별',
+  half_year: '반기별',
+  yearly:    '연간',
+};
+
+const INCENTIVE_LABELS: Record<IncentiveType, string> = {
+  percentage: '% 성과급',
+  fixed:      '고정 성과급',
+  none:       '없음',
+};
+
+const EMPTY_FORM: KpiTargetForm = {
+  staffId:      '',
+  teamId:       '',
+  periodType:   'monthly',
+  targetAmount: '',
+  incentiveType: 'none',
+  incentiveRate: '',
+  incentiveFixed: '',
+  validFrom:    '',
+  validTo:      '',
+  description:  '',
+};
+
+export const KpiTargetsPage: React.FC = () => {
+  const currentUser = { id: 'REPLACE_WITH_AUTH', role: 'Admin' };
+  const {
+    targets, loading, saving,
+    fetchTargets, createTarget, updateTarget
+  } = useKpiTargets();
+
+  const [showForm, setShowForm]   = useState(false);
+  const [form, setForm]           = useState<KpiTargetForm>(EMPTY_FORM);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [staffList, setStaffList] = useState<{id: string; full_name: string}[]>([]);
+  const [teamList,  setTeamList]  = useState<{id: string; name: string}[]>([]);
+
+  useEffect(() => {
+    fetchTargets();
+    // STEP 1에서 확인한 실제 API로 직원/팀 목록 로드
+  }, []);
+
+  const handleSubmit = async () => {
+    if (!form.targetAmount || !form.validFrom) return;
+    if (!form.staffId && !form.teamId) return;
+
+    if (editingId) {
+      await updateTarget(editingId, form);
+    } else {
+      await createTarget({ ...form, createdBy: currentUser.id });
+    }
+    setShowForm(false);
+    setForm(EMPTY_FORM);
+    setEditingId(null);
+  };
+
+  const handleEdit = (t: KpiTarget) => {
+    setForm({
+      staffId:       t.staffId      || '',
+      teamId:        t.teamId       || '',
+      periodType:    t.periodType,
+      targetAmount:  t.targetAmount,
+      incentiveType: t.incentiveType,
+      incentiveRate: t.incentiveRate  ?? '',
+      incentiveFixed: t.incentiveFixed ?? '',
+      validFrom:     t.validFrom,
+      validTo:       t.validTo     || '',
+      description:   t.description || '',
+    });
+    setEditingId(t.id);
+    setShowForm(true);
+  };
+
+  return (
+    <div className="p-6 space-y-5 max-w-5xl mx-auto">
+
+      {/* 헤더 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">KPI 목표 설정</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            직원/팀별 목표 금액 및 성과급 기준 관리
+          </p>
+        </div>
+        <button
+          onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY_FORM); }}
+          className="px-4 py-2 text-sm font-medium text-white
+            bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+        >
+          + 목표 추가
+        </button>
+      </div>
+
+      {/* 목표 설정 폼 */}
+      {showForm && (
+        <div className="bg-white rounded-lg border border-blue-200 p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-700">
+            {editingId ? '목표 수정' : '새 목표 설정'}
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* 대상: 직원 또는 팀 */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                대상 직원
+              </label>
+              <select
+                value={form.staffId}
+                onChange={e => setForm({ ...form, staffId: e.target.value, teamId: '' })}
+                className="w-full text-sm border border-gray-300 rounded-md px-3 py-1.5"
+              >
+                <option value="">선택 (팀 목표면 비워두기)</option>
+                {staffList.map(s => (
+                  <option key={s.id} value={s.id}>{s.full_name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                대상 팀
+              </label>
+              <select
+                value={form.teamId}
+                onChange={e => setForm({ ...form, teamId: e.target.value, staffId: '' })}
+                className="w-full text-sm border border-gray-300 rounded-md px-3 py-1.5"
+              >
+                <option value="">선택 (직원 목표면 비워두기)</option>
+                {teamList.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 기간 유형 */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                기간 유형 *
+              </label>
+              <select
+                value={form.periodType}
+                onChange={e => setForm({ ...form, periodType: e.target.value as KpiPeriodType })}
+                className="w-full text-sm border border-gray-300 rounded-md px-3 py-1.5"
+              >
+                {(Object.entries(PERIOD_LABELS) as [KpiPeriodType, string][]).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 목표 금액 */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                목표 금액 (AUD) *
+              </label>
+              <input
+                type="number" min="0" step="1000"
+                value={form.targetAmount}
+                onChange={e => setForm({ ...form, targetAmount: Number(e.target.value) })}
+                placeholder="예: 30000"
+                className="w-full text-sm border border-gray-300 rounded-md px-3 py-1.5"
+              />
+            </div>
+
+            {/* 성과급 방식 */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                성과급 방식
+              </label>
+              <select
+                value={form.incentiveType}
+                onChange={e => setForm({ ...form, incentiveType: e.target.value as IncentiveType })}
+                className="w-full text-sm border border-gray-300 rounded-md px-3 py-1.5"
+              >
+                {(Object.entries(INCENTIVE_LABELS) as [IncentiveType, string][]).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 성과급 비율 (percentage) */}
+            {form.incentiveType === 'percentage' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  성과급 비율 (%) *
+                </label>
+                <input
+                  type="number" min="0" max="100" step="0.5"
+                  value={form.incentiveRate}
+                  onChange={e => setForm({ ...form, incentiveRate: Number(e.target.value) / 100 })}
+                  placeholder="예: 5 (5% 입력)"
+                  className="w-full text-sm border border-gray-300 rounded-md px-3 py-1.5"
+                />
+                <p className="text-xs text-gray-400 mt-0.5">
+                  입력값: {form.incentiveRate
+                    ? `${(Number(form.incentiveRate) * 100).toFixed(1)}%`
+                    : '-'}
+                </p>
+              </div>
+            )}
+
+            {/* 고정 성과급 (fixed) */}
+            {form.incentiveType === 'fixed' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  고정 성과급 금액 (AUD) *
+                </label>
+                <input
+                  type="number" min="0" step="100"
+                  value={form.incentiveFixed}
+                  onChange={e => setForm({ ...form, incentiveFixed: Number(e.target.value) })}
+                  placeholder="예: 500"
+                  className="w-full text-sm border border-gray-300 rounded-md px-3 py-1.5"
+                />
+              </div>
+            )}
+
+            {/* 유효 기간 */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                유효 시작일 *
+              </label>
+              <input
+                type="date"
+                value={form.validFrom}
+                onChange={e => setForm({ ...form, validFrom: e.target.value })}
+                className="w-full text-sm border border-gray-300 rounded-md px-3 py-1.5"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                유효 종료일 (비워두면 영구 적용)
+              </label>
+              <input
+                type="date"
+                value={form.validTo}
+                onChange={e => setForm({ ...form, validTo: e.target.value })}
+                className="w-full text-sm border border-gray-300 rounded-md px-3 py-1.5"
+              />
+            </div>
+
+            {/* 설명 */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                메모
+              </label>
+              <input
+                type="text"
+                value={form.description}
+                onChange={e => setForm({ ...form, description: e.target.value })}
+                placeholder="예: 2026년 상반기 목표"
+                className="w-full text-sm border border-gray-300 rounded-md px-3 py-1.5"
+              />
+            </div>
+          </div>
+
+          {/* 폼 버튼 */}
+          <div className="flex gap-2 pt-2">
+            <button
+              onClick={handleSubmit}
+              disabled={saving}
+              className="px-5 py-2 text-sm font-medium text-white
+                bg-blue-600 rounded-md hover:bg-blue-700
+                disabled:opacity-50 transition-colors"
+            >
+              {saving ? '저장 중...' : editingId ? '수정' : '저장'}
+            </button>
+            <button
+              onClick={() => { setShowForm(false); setEditingId(null); }}
+              className="px-5 py-2 text-sm font-medium text-gray-600
+                bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 목표 목록 테이블 */}
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin text-3xl">⟳</div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                {['대상','기간 유형','목표 금액','성과급 방식','유효 기간','상태',''].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-medium
+                    text-gray-500 uppercase tracking-wide">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {targets.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400 text-sm">
+                    설정된 목표가 없습니다.
+                  </td>
+                </tr>
+              ) : targets.map(t => (
+                <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 font-medium text-gray-800">
+                    {t.staffName
+                      ? `👤 ${t.staffName}`
+                      : t.teamName
+                      ? `👥 ${t.teamName}`
+                      : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {PERIOD_LABELS[t.periodType]}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-blue-600">
+                    {new Intl.NumberFormat('en-AU', {
+                      style: 'currency', currency: 'AUD'
+                    }).format(t.targetAmount)}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {INCENTIVE_LABELS[t.incentiveType]}
+                    {t.incentiveType === 'percentage' && t.incentiveRate &&
+                      ` (${(t.incentiveRate * 100).toFixed(1)}%)`}
+                    {t.incentiveType === 'fixed' && t.incentiveFixed &&
+                      ` ($${t.incentiveFixed})`}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">
+                    {t.validFrom}
+                    {t.validTo ? ` ~ ${t.validTo}` : ' ~'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs px-2 py-0.5 rounded-full
+                      ${t.status === 'Active'
+                        ? 'bg-green-100 text-green-600'
+                        : 'bg-gray-100 text-gray-500'}`}>
+                      {t.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => handleEdit(t)}
+                      className="text-xs text-blue-500 hover:text-blue-700"
+                    >
+                      수정
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default KpiTargetsPage;
+
+──────────────────────────────────────
+[E] 라우팅 등록 (3개 경로 추가)
+──────────────────────────────────────
+
+STEP 1에서 확인한 실제 라우팅 파일을 읽고
+기존 패턴과 동일하게 아래 3개 경로를 추가한다.
+다른 라우트는 절대 수정하지 않는다.
+
+  import StaffKpiPage    from './pages/kpi/StaffKpiPage';
+  import TeamKpiPage     from './pages/kpi/TeamKpiPage';
+  import KpiTargetsPage  from './pages/kpi/KpiTargetsPage';
+
+  <Route path="/kpi/staff"   element={<StaffKpiPage   />} />
+  <Route path="/kpi/team"    element={<TeamKpiPage    />} />
+  <Route path="/kpi/targets" element={<KpiTargetsPage />} />
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### STEP 4. 검증 (전체 완료 후)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+① npx tsc --noEmit → 오류 0개 확인
+② 서버 기동 → import 오류 없음 확인
+③ 브라우저 접속 확인:
+   - /kpi/staff   → 페이지 렌더링 정상
+   - /kpi/team    → 페이지 렌더링 정상
+   - /kpi/targets → 페이지 렌더링 정상, 목표 추가 버튼 동작
+④ 필터 조회 테스트:
+   - 직원 KPI 페이지에서 기간 선택 후 조회
+   - ActivityKpiSection, FinanceKpiSection, IncentiveSection 3개 렌더링 확인
+   - 목표 설정 없을 때: 목표 금액 $0, 성과급 없음 표시 확인
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### 완료 보고 형식
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 수정된 파일: [목록]
+✅ 수정 내용: [설명]
+✅ 검증 결과:
+   - tsc: [오류 수]
+   - 서버: [정상/오류]
+   - /kpi/staff:   [렌더링 정상/오류]
+   - /kpi/team:    [렌더링 정상/오류]
+   - /kpi/targets: [렌더링 정상/오류]
+   - 필터 조회 동작: [정상/오류]
+⚠️ 추가 작업: [있는 경우]
