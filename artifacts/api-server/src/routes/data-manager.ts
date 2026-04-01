@@ -7,8 +7,18 @@ import {
   contractProducts, pickupMgt, tourMgt,
   settlementMgt, exchangeRates, packageGroups, packages, products,
   enrollmentSpots, importHistory,
+  // CRM
+  contacts, accounts, quotes,
+  // Camp
+  campApplications, campTourMgt,
+  // Finance
+  invoices, transactions, receipts,
+  contractFinanceItems, userLedger, accountLedgerEntries,
+  // Services
+  accommodationMgt, studyAbroadMgt, internshipMgt, guardianMgt, visaServicesMgt,
+  // Accounting
+  journalEntries, paymentHeaders, paymentLines, paymentStatements, productCostLines,
 } from "@workspace/db/schema";
-import { invoices, transactions, receipts } from "@workspace/db/schema";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { eq, sql, and, gte, lte, count } from "drizzle-orm";
@@ -73,11 +83,23 @@ interface ExportConfig {
 }
 
 const EXPORT_CONFIGS: Record<string, ExportConfig> = {
+  // ── Users & Access ────────────────────────────────────────────────────────
   users: {
     table: users,
-    columns: ["id", "email", "role", "full_name", "phone", "company_name", "country_of_ops", "platform_comm_rate", "status", "last_login_at", "created_at"],
-    dbColumns: ["id", "email", "role", "full_name", "phone", "company_name", "country_of_ops", "platform_comm_rate", "status", "last_login_at", "created_at"],
+    columns: ["id", "email", "role", "staff_role", "full_name", "first_name", "last_name", "english_name", "original_name", "phone", "whatsapp", "line_id", "avatar_url", "timezone", "preferred_lang", "company_name", "business_reg_no", "country_of_ops", "platform_comm_rate", "team_id", "status", "invited_at", "last_login_at", "created_at"],
+    dbColumns: ["id", "email", "role", "staffRole", "fullName", "firstName", "lastName", "englishName", "originalName", "phone", "whatsapp", "lineId", "avatarUrl", "timezone", "preferredLang", "companyName", "businessRegNo", "countryOfOps", "platformCommRate", "teamId", "status", "invitedAt", "lastLoginAt", "createdAt"],
   },
+  accounts: {
+    table: accounts,
+    columns: ["id", "name", "account_type", "account_category", "parent_account_id", "primary_contact_id", "secondary_contact_id", "phone_number", "phone_number_2", "email", "website", "address", "secondary_address", "country", "state", "city", "postal_code", "abn", "is_product_source", "is_product_provider", "found_year", "total_capacity", "description", "bank_account_type", "owner_id", "status", "portal_access", "portal_role", "portal_email", "portal_last_login_at", "portal_invited_at", "first_name", "last_name", "english_name", "original_name", "created_on", "modified_on"],
+    dbColumns: ["id", "name", "accountType", "accountCategory", "parentAccountId", "primaryContactId", "secondaryContactId", "phoneNumber", "phoneNumber2", "email", "website", "address", "secondaryAddress", "country", "state", "city", "postalCode", "abn", "isProductSource", "isProductProvider", "foundYear", "totalCapacity", "description", "bankAccountType", "ownerId", "status", "portalAccess", "portalRole", "portalEmail", "portalLastLoginAt", "portalInvitedAt", "firstName", "lastName", "englishName", "originalName", "createdOn", "modifiedOn"],
+  },
+  contacts: {
+    table: contacts,
+    columns: ["id", "first_name", "last_name", "title", "dob", "gender", "nationality", "email", "mobile", "office_number", "sns_type", "sns_id", "influx_channel", "important_date_1", "important_date_2", "english_name", "original_name", "full_name", "description", "status", "account_type", "created_on", "modified_on"],
+    dbColumns: ["id", "firstName", "lastName", "title", "dob", "gender", "nationality", "email", "mobile", "officeNumber", "snsType", "snsId", "influxChannel", "importantDate1", "importantDate2", "englishName", "originalName", "fullName", "description", "status", "accountType", "createdOn", "modifiedOn"],
+  },
+  // ── Sales ─────────────────────────────────────────────────────────────────
   leads: {
     table: leads,
     columns: ["id", "agent_id", "full_name", "email", "phone", "nationality", "source", "status", "notes", "created_at"],
@@ -90,54 +112,133 @@ const EXPORT_CONFIGS: Record<string, ExportConfig> = {
   },
   application_participants: {
     table: applicationParticipants,
-    columns: ["application_id", "participant_type", "sequence_order", "full_name", "date_of_birth", "gender", "nationality", "grade", "school_name", "english_level", "medical_conditions", "dietary_requirements", "email", "phone"],
-    dbColumns: ["applicationId", "participantType", "sequenceOrder", "fullName", "dateOfBirth", "gender", "nationality", "grade", "schoolName", "englishLevel", "medicalConditions", "dietaryRequirements", "email", "phone"],
+    columns: ["id", "application_id", "participant_type", "sequence_order", "full_name", "date_of_birth", "gender", "nationality", "grade", "school_name", "english_level", "medical_conditions", "dietary_requirements", "email", "phone"],
+    dbColumns: ["id", "applicationId", "participantType", "sequenceOrder", "fullName", "dateOfBirth", "gender", "nationality", "grade", "schoolName", "englishLevel", "medicalConditions", "dietaryRequirements", "email", "phone"],
   },
+  camp_applications: {
+    table: campApplications,
+    columns: ["id", "application_ref", "package_group_id", "package_id", "applicant_first_name", "applicant_last_name", "applicant_original_name", "applicant_english_name", "applicant_name", "applicant_email", "applicant_phone", "applicant_nationality", "applicant_dob", "adult_count", "student_count", "preferred_start_date", "special_requirements", "dietary_requirements", "medical_conditions", "emergency_contact_name", "emergency_contact_phone", "lead_id", "contract_id", "assigned_staff_id", "agent_account_id", "application_status", "status", "created_at"],
+    dbColumns: ["id", "applicationRef", "packageGroupId", "packageId", "applicantFirstName", "applicantLastName", "applicantOriginalName", "applicantEnglishName", "applicantName", "applicantEmail", "applicantPhone", "applicantNationality", "applicantDob", "adultCount", "studentCount", "preferredStartDate", "specialRequirements", "dietaryRequirements", "medicalConditions", "emergencyContactName", "emergencyContactPhone", "leadId", "contractId", "assignedStaffId", "agentAccountId", "applicationStatus", "status", "createdAt"],
+  },
+  quotes: {
+    table: quotes,
+    columns: ["id", "quote_ref_number", "lead_id", "contact_id", "customer_contact_id", "student_account_id", "agent_account_id", "account_name", "customer_name", "original_name", "quote_status", "expiry_date", "is_template", "notes", "owner_id", "created_by", "created_on", "modified_on"],
+    dbColumns: ["id", "quoteRefNumber", "leadId", "contactId", "customerContactId", "studentAccountId", "agentAccountId", "accountName", "customerName", "originalName", "quoteStatus", "expiryDate", "isTemplate", "notes", "ownerId", "createdBy", "createdOn", "modifiedOn"],
+  },
+  // ── Contracts ─────────────────────────────────────────────────────────────
   contracts: {
     table: contracts,
-    columns: ["contract_number", "application_id", "camp_provider_id", "total_amount", "currency", "status", "start_date", "end_date", "created_at"],
-    dbColumns: ["contractNumber", "applicationId", "campProviderId", "totalAmount", "currency", "status", "startDate", "endDate", "createdAt"],
+    columns: ["id", "contract_number", "application_id", "camp_provider_id", "total_amount", "currency", "status", "start_date", "end_date", "created_at"],
+    dbColumns: ["id", "contractNumber", "applicationId", "campProviderId", "totalAmount", "currency", "status", "startDate", "endDate", "createdAt"],
   },
   contract_products: {
     table: contractProducts,
-    columns: ["contract_id", "product_id", "quantity", "unit_price", "total_price", "status"],
-    dbColumns: ["contractId", "productId", "quantity", "unitPrice", "totalPrice", "status"],
+    columns: ["id", "contract_id", "product_id", "quantity", "unit_price", "total_price", "status"],
+    dbColumns: ["id", "contractId", "productId", "quantity", "unitPrice", "totalPrice", "status"],
+  },
+  contract_finance_items: {
+    table: contractFinanceItems,
+    columns: ["id", "contract_id", "item_type", "item_category", "cost_center", "label", "linked_product_id", "linked_partner_id", "linked_agent_id", "estimated_amount", "actual_amount", "currency", "commission_type", "commission_rate", "commission_fixed", "due_date", "paid_date", "status", "is_auto_generated", "notes", "created_at"],
+    dbColumns: ["id", "contractId", "itemType", "itemCategory", "costCenter", "label", "linkedProductId", "linkedPartnerId", "linkedAgentId", "estimatedAmount", "actualAmount", "currency", "commissionType", "commissionRate", "commissionFixed", "dueDate", "paidDate", "status", "isAutoGenerated", "notes", "createdAt"],
+  },
+  // ── Services ──────────────────────────────────────────────────────────────
+  accommodation_mgt: {
+    table: accommodationMgt,
+    columns: ["id", "contract_id", "lead_id", "student_account_id", "assigned_staff_id", "provider_account_id", "accommodation_type", "checkin_date", "checkout_date", "meal_included", "room_type", "weekly_rate", "partner_weekly_cost", "host_name", "host_address", "host_contact", "distance_to_school", "relocation_reason", "settlement_id", "status", "notes", "created_at"],
+    dbColumns: ["id", "contractId", "leadId", "studentAccountId", "assignedStaffId", "providerAccountId", "accommodationType", "checkinDate", "checkoutDate", "mealIncluded", "roomType", "weeklyRate", "partnerWeeklyCost", "hostName", "hostAddress", "hostContact", "distanceToSchool", "relocationReason", "settlementId", "status", "notes", "createdAt"],
   },
   pickup_mgt: {
     table: pickupMgt,
-    columns: ["contract_id", "driver_id", "pickup_type", "from_location", "to_location", "pickup_datetime", "vehicle_info", "status"],
-    dbColumns: ["contractId", "driverId", "pickupType", "fromLocation", "toLocation", "pickupDatetime", "vehicleInfo", "status"],
+    columns: ["id", "contract_id", "driver_id", "pickup_type", "from_location", "to_location", "pickup_datetime", "vehicle_info", "status"],
+    dbColumns: ["id", "contractId", "driverId", "pickupType", "fromLocation", "toLocation", "pickupDatetime", "vehicleInfo", "status"],
   },
   tour_mgt: {
     table: tourMgt,
-    columns: ["contract_id", "tour_company_id", "tour_name", "tour_date", "start_time", "end_time", "meeting_point", "status"],
-    dbColumns: ["contractId", "tourCompanyId", "tourName", "tourDate", "startTime", "endTime", "meetingPoint", "status"],
+    columns: ["id", "contract_id", "tour_company_id", "tour_name", "tour_date", "start_time", "end_time", "meeting_point", "status"],
+    dbColumns: ["id", "contractId", "tourCompanyId", "tourName", "tourDate", "startTime", "endTime", "meetingPoint", "status"],
+  },
+  camp_tour_mgt: {
+    table: campTourMgt,
+    columns: ["id", "contract_id", "camp_application_id", "tour_provider_account_id", "tour_name", "tour_type", "tour_date", "tour_duration_hours", "pickup_location", "booking_reference", "partner_cost", "retail_price", "status", "notes", "ar_status", "ap_status", "created_at"],
+    dbColumns: ["id", "contractId", "campApplicationId", "tourProviderAccountId", "tourName", "tourType", "tourDate", "tourDurationHours", "pickupLocation", "bookingReference", "partnerCost", "retailPrice", "status", "notes", "arStatus", "apStatus", "createdAt"],
   },
   settlement_mgt: {
     table: settlementMgt,
-    columns: ["contract_id", "provider_user_id", "provider_role", "gross_amount", "commission_rate", "commission_amount", "net_amount", "currency", "original_currency", "original_net_amount", "aud_equivalent", "exchange_rate_to_aud", "status", "settlement_date"],
-    dbColumns: ["contractId", "providerUserId", "providerRole", "grossAmount", "commissionRate", "commissionAmount", "netAmount", "currency", "originalCurrency", "originalNetAmount", "audEquivalent", "exchangeRateToAud", "status", "settlementDate"],
+    columns: ["id", "contract_id", "provider_user_id", "provider_role", "gross_amount", "commission_rate", "commission_amount", "net_amount", "currency", "original_currency", "original_net_amount", "aud_equivalent", "exchange_rate_to_aud", "status", "settlement_date"],
+    dbColumns: ["id", "contractId", "providerUserId", "providerRole", "grossAmount", "commissionRate", "commissionAmount", "netAmount", "currency", "originalCurrency", "originalNetAmount", "audEquivalent", "exchangeRateToAud", "status", "settlementDate"],
   },
+  study_abroad_mgt: {
+    table: studyAbroadMgt,
+    columns: ["id", "contract_id", "lead_id", "student_account_id", "assigned_staff_id", "application_stage", "coe_number", "coe_expiry_date", "visa_type", "visa_application_date", "visa_decision_date", "visa_expiry_date", "visa_granted", "departure_date", "orientation_completed", "status", "notes", "program_context", "institute_account_id", "program_name", "program_type", "program_start_date", "program_end_date", "weekly_hours", "student_first_name", "student_last_name", "student_english_name", "student_original_name", "student_date_of_birth", "student_gender", "student_nationality", "student_grade", "created_at"],
+    dbColumns: ["id", "contractId", "leadId", "studentAccountId", "assignedStaffId", "applicationStage", "coeNumber", "coeExpiryDate", "visaType", "visaApplicationDate", "visaDecisionDate", "visaExpiryDate", "visaGranted", "departureDate", "orientationCompleted", "status", "notes", "programContext", "instituteAccountId", "programName", "programType", "programStartDate", "programEndDate", "weeklyHours", "studentFirstName", "studentLastName", "studentEnglishName", "studentOriginalName", "studentDateOfBirth", "studentGender", "studentNationality", "studentGrade", "createdAt"],
+  },
+  internship_mgt: {
+    table: internshipMgt,
+    columns: ["id", "contract_id", "lead_id", "student_account_id", "assigned_staff_id", "english_level", "host_company_id", "position_title", "employment_type", "hourly_rate", "resume_prepared", "cover_letter_prepared", "interview_date", "interview_result", "start_date", "end_date", "placement_fee_type", "reference_letter_issued", "status", "notes", "created_at"],
+    dbColumns: ["id", "contractId", "leadId", "studentAccountId", "assignedStaffId", "englishLevel", "hostCompanyId", "positionTitle", "employmentType", "hourlyRate", "resumePrepared", "coverLetterPrepared", "interviewDate", "interviewResult", "startDate", "endDate", "placementFeeType", "referenceLetterIssued", "status", "notes", "createdAt"],
+  },
+  guardian_mgt: {
+    table: guardianMgt,
+    columns: ["id", "contract_id", "lead_id", "student_account_id", "assigned_staff_id", "guardian_staff_id", "service_start_date", "service_end_date", "billing_cycle", "school_id", "official_guardian_registered", "school_guardian_registration_date", "emergency_contact", "status", "service_fee", "notes", "created_at"],
+    dbColumns: ["id", "contractId", "leadId", "studentAccountId", "assignedStaffId", "guardianStaffId", "serviceStartDate", "serviceEndDate", "billingCycle", "schoolId", "officialGuardianRegistered", "schoolGuardianRegistrationDate", "emergencyContact", "status", "serviceFee", "notes", "createdAt"],
+  },
+  visa_services_mgt: {
+    table: visaServicesMgt,
+    columns: ["id", "contract_id", "assigned_staff_id", "partner_id", "visa_type", "country", "application_date", "appointment_date", "submission_date", "decision_date", "visa_number", "start_date", "end_date", "status", "service_fee", "ap_cost", "notes", "created_at"],
+    dbColumns: ["id", "contractId", "assignedStaffId", "partnerId", "visaType", "country", "applicationDate", "appointmentDate", "submissionDate", "decisionDate", "visaNumber", "startDate", "endDate", "status", "serviceFee", "apCost", "notes", "createdAt"],
+  },
+  // ── Finance ───────────────────────────────────────────────────────────────
   invoices: {
     table: invoices,
-    columns: ["invoice_number", "contract_id", "invoice_type", "recipient_id", "subtotal", "tax_amount", "total_amount", "original_currency", "original_amount", "aud_equivalent", "currency", "status", "issued_at", "due_date", "paid_at"],
-    dbColumns: ["invoiceNumber", "contractId", "invoiceType", "recipientId", "subtotal", "taxAmount", "totalAmount", "originalCurrency", "originalAmount", "audEquivalent", "currency", "status", "issuedAt", "dueDate", "paidAt"],
+    columns: ["id", "invoice_number", "contract_id", "invoice_type", "recipient_id", "subtotal", "tax_amount", "total_amount", "original_currency", "original_amount", "aud_equivalent", "exchange_rate_to_aud", "currency", "status", "issued_at", "due_date", "paid_at", "notes", "finance_item_id", "agent_id", "commission_amount", "net_amount", "balance_due", "ar_status", "created_at"],
+    dbColumns: ["id", "invoiceNumber", "contractId", "invoiceType", "recipientId", "subtotal", "taxAmount", "totalAmount", "originalCurrency", "originalAmount", "audEquivalent", "exchangeRateToAud", "currency", "status", "issuedAt", "dueDate", "paidAt", "notes", "financeItemId", "agentId", "commissionAmount", "netAmount", "balanceDue", "arStatus", "createdAt"],
+  },
+  journal_entries: {
+    table: journalEntries,
+    columns: ["id", "entry_date", "payment_header_id", "payment_line_id", "debit_coa", "credit_coa", "amount", "description", "student_account_id", "partner_id", "staff_id", "contract_id", "invoice_id", "entry_type", "auto_generated", "created_by", "created_on"],
+    dbColumns: ["id", "entryDate", "paymentHeaderId", "paymentLineId", "debitCoa", "creditCoa", "amount", "description", "studentAccountId", "partnerId", "staffId", "contractId", "invoiceId", "entryType", "autoGenerated", "createdBy", "createdOn"],
   },
   transactions: {
     table: transactions,
-    columns: ["contract_id", "invoice_id", "transaction_type", "amount", "currency", "original_currency", "original_amount", "aud_equivalent", "exchange_rate_to_aud", "description", "bank_reference", "transaction_date"],
-    dbColumns: ["contractId", "invoiceId", "transactionType", "amount", "currency", "originalCurrency", "originalAmount", "audEquivalent", "exchangeRateToAud", "description", "bankReference", "transactionDate"],
+    columns: ["id", "contract_id", "invoice_id", "transaction_type", "amount", "currency", "original_currency", "original_amount", "aud_equivalent", "exchange_rate_to_aud", "description", "bank_reference", "transaction_date"],
+    dbColumns: ["id", "contractId", "invoiceId", "transactionType", "amount", "currency", "originalCurrency", "originalAmount", "audEquivalent", "exchangeRateToAud", "description", "bankReference", "transactionDate"],
   },
   receipts: {
     table: receipts,
-    columns: ["receipt_number", "invoice_id", "payer_id", "amount", "currency", "original_currency", "original_amount", "aud_equivalent", "payment_method", "receipt_date", "status"],
-    dbColumns: ["receiptNumber", "invoiceId", "payerId", "amount", "currency", "originalCurrency", "originalAmount", "audEquivalent", "paymentMethod", "receiptDate", "status"],
+    columns: ["id", "receipt_number", "invoice_id", "payer_id", "amount", "currency", "original_currency", "original_amount", "aud_equivalent", "payment_method", "receipt_date", "status"],
+    dbColumns: ["id", "receiptNumber", "invoiceId", "payerId", "amount", "currency", "originalCurrency", "originalAmount", "audEquivalent", "paymentMethod", "receiptDate", "status"],
+  },
+  payment_headers: {
+    table: paymentHeaders,
+    columns: ["id", "payment_ref", "contract_id", "invoice_id", "payment_date", "total_amount", "currency", "payment_method", "payment_type", "received_from", "paid_to", "bank_reference", "notes", "created_by", "approved_by", "status", "created_on"],
+    dbColumns: ["id", "paymentRef", "contractId", "invoiceId", "paymentDate", "totalAmount", "currency", "paymentMethod", "paymentType", "receivedFrom", "paidTo", "bankReference", "notes", "createdBy", "approvedBy", "status", "createdOn"],
+  },
+  payment_lines: {
+    table: paymentLines,
+    columns: ["id", "payment_header_id", "invoice_id", "contract_product_id", "coa_code", "split_type", "amount", "staff_id", "description", "created_on"],
+    dbColumns: ["id", "paymentHeaderId", "invoiceId", "contractProductId", "coaCode", "splitType", "amount", "staffId", "description", "createdOn"],
+  },
+  payment_statements: {
+    table: paymentStatements,
+    columns: ["id", "statement_ref", "statement_date", "statement_scope", "contract_id", "student_account_id", "total_paid_amount", "total_outstanding", "total_contract_amount", "line_item_count", "issued_by", "sent_to_email", "sent_at", "issue_reason", "notes", "status", "created_on"],
+    dbColumns: ["id", "statementRef", "statementDate", "statementScope", "contractId", "studentAccountId", "totalPaidAmount", "totalOutstanding", "totalContractAmount", "lineItemCount", "issuedBy", "sentToEmail", "sentAt", "issueReason", "notes", "status", "createdOn"],
+  },
+  account_ledger_entries: {
+    table: accountLedgerEntries,
+    columns: ["id", "account_id", "source_type", "source_id", "contract_id", "entry_type", "amount", "currency", "original_amount", "original_currency", "aud_equivalent", "exchange_rate_to_aud", "status", "description", "entry_date", "created_by", "created_at"],
+    dbColumns: ["id", "accountId", "sourceType", "sourceId", "contractId", "entryType", "amount", "currency", "originalAmount", "originalCurrency", "audEquivalent", "exchangeRateToAud", "status", "description", "entryDate", "createdBy", "createdAt"],
+  },
+  user_ledger: {
+    table: userLedger,
+    columns: ["id", "contract_id", "finance_item_id", "user_id", "entry_type", "cost_center", "amount", "currency", "description", "reference_type", "reference_id", "transaction_date", "status", "created_by", "created_at"],
+    dbColumns: ["id", "contractId", "financeItemId", "userId", "entryType", "costCenter", "amount", "currency", "description", "referenceType", "referenceId", "transactionDate", "status", "createdBy", "createdAt"],
   },
   exchange_rates: {
     table: exchangeRates,
-    columns: ["from_currency", "to_currency", "rate", "effective_date", "source", "created_at"],
-    dbColumns: ["fromCurrency", "toCurrency", "rate", "effectiveDate", "source", "createdAt"],
+    columns: ["id", "from_currency", "to_currency", "rate", "effective_date", "source", "created_at"],
+    dbColumns: ["id", "fromCurrency", "toCurrency", "rate", "effectiveDate", "source", "createdAt"],
   },
+  // ── Packages ──────────────────────────────────────────────────────────────
   package_groups: {
     table: packageGroups,
     columns: ["id", "camp_provider_id", "name_en", "name_ko", "name_ja", "name_th", "location", "country_code", "status", "created_at"],
@@ -152,6 +253,27 @@ const EXPORT_CONFIGS: Record<string, ExportConfig> = {
     table: products,
     columns: ["id", "provider_account_id", "product_name", "product_type", "description", "cost", "currency", "status"],
     dbColumns: ["id", "providerAccountId", "productName", "productType", "description", "cost", "currency", "status"],
+  },
+  product_cost_lines: {
+    table: productCostLines,
+    columns: ["id", "contract_product_id", "cost_type", "partner_id", "staff_id", "calc_type", "rate", "base_amount", "calculated_amount", "coa_code", "description", "status", "paid_at", "payment_header_id", "created_on"],
+    dbColumns: ["id", "contractProductId", "costType", "partnerId", "staffId", "calcType", "rate", "baseAmount", "calculatedAmount", "coaCode", "description", "status", "paidAt", "paymentHeaderId", "createdOn"],
+  },
+  // ── CRM (aliases) ─────────────────────────────────────────────────────────
+  crm_leads: {
+    table: leads,
+    columns: ["id", "agent_id", "full_name", "email", "phone", "nationality", "source", "status", "notes", "created_at"],
+    dbColumns: ["id", "agentId", "fullName", "email", "phone", "nationality", "source", "status", "notes", "createdAt"],
+  },
+  crm_contacts: {
+    table: contacts,
+    columns: ["id", "first_name", "last_name", "title", "dob", "gender", "nationality", "email", "mobile", "office_number", "sns_type", "sns_id", "influx_channel", "important_date_1", "important_date_2", "english_name", "original_name", "full_name", "description", "status", "account_type", "created_on", "modified_on"],
+    dbColumns: ["id", "firstName", "lastName", "title", "dob", "gender", "nationality", "email", "mobile", "officeNumber", "snsType", "snsId", "influxChannel", "importantDate1", "importantDate2", "englishName", "originalName", "fullName", "description", "status", "accountType", "createdOn", "modifiedOn"],
+  },
+  crm_contracts: {
+    table: contracts,
+    columns: ["id", "contract_number", "application_id", "camp_provider_id", "total_amount", "currency", "status", "start_date", "end_date", "created_at"],
+    dbColumns: ["id", "contractNumber", "applicationId", "campProviderId", "totalAmount", "currency", "status", "startDate", "endDate", "createdAt"],
   },
 };
 

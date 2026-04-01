@@ -62,7 +62,6 @@ const EXPORT_GROUPS = [
     icon: Building2,
     color: "text-teal-500",
     tables: [
-      { key: "institute_mgt", label: "Institute" },
       { key: "accommodation_mgt", label: "Accommodation" },
       { key: "pickup_mgt", label: "Pickup" },
       { key: "tour_mgt", label: "Tour" },
