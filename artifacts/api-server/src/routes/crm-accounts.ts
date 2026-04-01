@@ -169,7 +169,7 @@ router.post("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (r
 
     let name = (body.name as string | undefined) ?? "";
 
-    if (!body.manualInput && body.accountType === "Student" && body.primaryContactId) {
+    if (!body.manualInput && ["Student", "Client"].includes(body.accountType as string) && body.primaryContactId) {
       const [c] = await db.select().from(contacts).where(eq(contacts.id, body.primaryContactId as string));
       if (c) name = await buildStudentAutoName(c);
     }
@@ -227,7 +227,7 @@ router.put("/crm/accounts/:id", authenticate, requireRole(...ADMIN_ROLES), async
 
     let name = (body.name as string | undefined) ?? existing.name;
 
-    if (!body.manualInput && body.accountType === "Student" && body.primaryContactId) {
+    if (!body.manualInput && ["Student", "Client"].includes(body.accountType as string) && body.primaryContactId) {
       const [c] = await db.select().from(contacts).where(eq(contacts.id, body.primaryContactId as string));
       if (c) name = await buildStudentAutoName(c, id);
     }
