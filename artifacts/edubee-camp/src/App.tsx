@@ -138,6 +138,11 @@ import EnrollmentSpots from "@/pages/admin/enrollment-spots";
 // Notifications
 import Notifications from "@/pages/admin/notifications";
 
+// Application Form Management
+import ApplicationFormList    from "@/pages/admin/application-forms/list";
+import ApplicationFormEdit    from "@/pages/admin/application-forms/edit";
+import ApplicationFormPartners from "@/pages/admin/application-forms/partners";
+
 import { MainLayout } from "@/components/layout/main-layout";
 
 const queryClient = new QueryClient({
@@ -490,6 +495,20 @@ function Router() {
       {/* Notifications */}
       <Route path="/admin/notifications">
         <AdminRoute title="Notifications"><Notifications /></AdminRoute>
+      </Route>
+
+      {/* Application Form Management */}
+      <Route path="/admin/application-forms/new">
+        <AdminRoute title="New Application Form"><ApplicationFormEdit /></AdminRoute>
+      </Route>
+      <Route path="/admin/application-forms/:id/edit">
+        <AdminRoute title="Edit Application Form"><ApplicationFormEdit /></AdminRoute>
+      </Route>
+      <Route path="/admin/application-forms/:id/partners">
+        <AdminRoute title="Partner Links"><ApplicationFormPartners /></AdminRoute>
+      </Route>
+      <Route path="/admin/application-forms">
+        <AdminRoute title="Application Forms"><ApplicationFormList /></AdminRoute>
       </Route>
 
       {/* Legacy redirects */}

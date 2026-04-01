@@ -57,6 +57,7 @@ import costLinesRouter from "./cost-lines.js";
 import allApplicationsRouter from "./all-applications.js";
 import teamsRouter from "./teams.js";
 import kpiRouter from "./kpi.js";
+import applicationFormsRouter from "./application-forms.js";
 
 const router: IRouter = Router();
 
@@ -118,5 +119,6 @@ router.use(costLinesRouter);
 router.use(allApplicationsRouter);
 router.use(teamsRouter);
 router.use("/kpi", kpiRouter);
+router.use(applicationFormsRouter);
 
 export default router;
