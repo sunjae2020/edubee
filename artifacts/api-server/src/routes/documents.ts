@@ -391,7 +391,7 @@ router.get("/documents/by-entity", async (req, res) => {
     let rawDocs: any[] = [];
     const SERVICE_TYPES = ["pickup_mgt", "tour_mgt"];
 
-    if (entityType === "application" || entityType === "contract") {
+    if (entityType === "application" || entityType === "contract" || entityType === "camp_application") {
       const conds: SQL[] = [
         eq(documents.referenceType, entityType),
         eq(documents.referenceId, entityId),

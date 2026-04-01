@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronDown, ChevronUp, Loader2, Users, GraduationCap } from "lucide-react";
+import { ChevronLeft, ChevronDown, ChevronUp, Loader2, Users, GraduationCap, Paperclip, X, FileText, Upload } from "lucide-react";
 import DatePickerInput from "@/components/shared/DatePickerInput";
 import SignaturePad from "@/components/shared/SignaturePad";
 
@@ -42,6 +42,127 @@ interface StudentParticipant {
   medicalConditions: string;
   dietaryRequirements: string;
   specialNeeds: string;
+}
+
+// ── Document Types ───────────────────────────────────────────────────────────
+interface StagedFile {
+  id: string;
+  file: File;
+  documentName: string;
+  category: string;
+}
+
+const CAMP_DOC_CATEGORIES: { value: string; label: string }[] = [
+  { value: "PASSPORT",     label: "Passport" },
+  { value: "PHOTO_ID",     label: "Photo / ID Card" },
+  { value: "MEDICAL",      label: "Medical Documents" },
+  { value: "CONSENT",      label: "Consent Form" },
+  { value: "INSURANCE",    label: "Travel / Health Insurance" },
+  { value: "ACADEMIC",     label: "School / Academic Records" },
+  { value: "APPLICATION",  label: "Application Form" },
+  { value: "OTHER",        label: "Other" },
+];
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// ── Documents Section component ──────────────────────────────────────────────
+function DocumentsSection({
+  files,
+  onChange,
+}: { files: StagedFile[]; onChange: (files: StagedFile[]) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const addFiles = (incoming: FileList | null) => {
+    if (!incoming) return;
+    const newEntries: StagedFile[] = Array.from(incoming).map(f => ({
+      id: `${Date.now()}-${Math.random()}`,
+      file: f,
+      documentName: f.name.replace(/\.[^.]+$/, ""),
+      category: "OTHER",
+    }));
+    onChange([...files, ...newEntries]);
+  };
+
+  const remove = (id: string) => onChange(files.filter(f => f.id !== id));
+  const update = (id: string, key: "documentName" | "category", value: string) =>
+    onChange(files.map(f => (f.id === id ? { ...f, [key]: value } : f)));
+
+  return (
+    <div className="space-y-3">
+      {/* Drop zone */}
+      <div
+        onDragOver={e => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={e => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files); }}
+        onClick={() => inputRef.current?.click()}
+        className={`
+          flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed cursor-pointer transition-colors
+          ${dragging ? "border-[#F5821F] bg-orange-50" : "border-border hover:border-[#F5821F]/60 hover:bg-orange-50/40"}
+        `}
+      >
+        <Upload className="w-7 h-7 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground text-center">
+          <span className="font-semibold text-[#F5821F]">Click to browse</span> or drag & drop files here
+        </p>
+        <p className="text-xs text-muted-foreground">PDF, JPG, PNG, DOCX — max 20 MB per file</p>
+        <input ref={inputRef} type="file" multiple className="hidden" onChange={e => addFiles(e.target.files)} />
+      </div>
+
+      {/* Staged file list */}
+      {files.length > 0 && (
+        <div className="space-y-2">
+          {files.map(sf => (
+            <div key={sf.id} className="flex items-start gap-2 p-3 rounded-lg bg-muted/40 border border-border">
+              <FileText className="w-4 h-4 mt-1 shrink-0 text-muted-foreground" />
+              <div className="flex-1 grid grid-cols-2 gap-2 min-w-0">
+                <div>
+                  <p className="text-[10px] font-semibold text-[#57534E] uppercase tracking-wide mb-0.5">Document Name</p>
+                  <Input
+                    value={sf.documentName}
+                    onChange={e => update(sf.id, "documentName", e.target.value)}
+                    className="h-8 text-sm border-border focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F]"
+                  />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-[#57534E] uppercase tracking-wide mb-0.5">Category</p>
+                  <select
+                    value={sf.category}
+                    onChange={e => update(sf.id, "category", e.target.value)}
+                    className="h-8 w-full rounded-md border border-border px-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-[#F5821F]/40 focus:border-[#F5821F]"
+                  >
+                    {CAMP_DOC_CATEGORIES.map(c => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <p className="col-span-2 text-[11px] text-muted-foreground truncate">
+                  {sf.file.name} &middot; {formatBytes(sf.file.size)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => remove(sf.id)}
+                className="text-muted-foreground hover:text-red-500 transition-colors mt-0.5"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {files.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {files.length} file{files.length !== 1 ? "s" : ""} ready to upload
+        </p>
+      )}
+    </div>
+  );
 }
 
 const emptyAdult = (): AdultParticipant => ({
@@ -330,6 +451,9 @@ export default function AdminCampApplicationForm() {
   // ── 기타
   const [notes,           setNotes]           = useState("");
 
+  // ── 첨부 문서
+  const [stagedFiles,     setStagedFiles]     = useState<StagedFile[]>([]);
+
   // ── Sync participant arrays with counts
   useEffect(() => {
     setAdults(prev => {
@@ -375,7 +499,7 @@ export default function AdminCampApplicationForm() {
   };
 
   const submit = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       // Build participants array
       const participantPayload = [
         // Adults
@@ -416,7 +540,7 @@ export default function AdminCampApplicationForm() {
         })),
       ];
 
-      return axios.post(`${BASE}/api/camp-applications`, {
+      const appResp = await axios.post(`${BASE}/api/camp-applications`, {
         applicantFirstName:    firstName,
         applicantLastName:     lastName,
         applicantOriginalName: originalName || undefined,
@@ -439,7 +563,30 @@ export default function AdminCampApplicationForm() {
         signatureDate:         signDate        || undefined,
         notes:                 notes           || undefined,
         participants:          participantPayload.length > 0 ? participantPayload : undefined,
-      }).then(r => r.data);
+      });
+      const newApp = appResp.data;
+
+      // Upload staged documents
+      if (stagedFiles.length > 0) {
+        const token = localStorage.getItem("edubee_token") ?? "";
+        for (const sf of stagedFiles) {
+          const fd = new FormData();
+          fd.append("file", sf.file);
+          fd.append("referenceType", "camp_application");
+          fd.append("referenceId", newApp.id);
+          fd.append("documentName", sf.documentName || sf.file.name);
+          fd.append("documentCategory", sf.category);
+          fd.append("status", "pending_review");
+          await axios.post(`${BASE}/api/documents`, fd, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          });
+        }
+      }
+
+      return newApp;
     },
 
     onSuccess: (data) => {
@@ -638,6 +785,22 @@ export default function AdminCampApplicationForm() {
             </Field>
           </div>
         </Section>
+
+        {/* 첨부 문서 */}
+        <div className="rounded-xl border border-border overflow-hidden">
+          <div className="bg-[#F5821F] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
+            <Paperclip className="w-4 h-4" />
+            Documents
+            {stagedFiles.length > 0 && (
+              <span className="ml-auto bg-white/20 rounded-full px-2 py-0.5 text-xs">
+                {stagedFiles.length}
+              </span>
+            )}
+          </div>
+          <div className="bg-card p-5">
+            <DocumentsSection files={stagedFiles} onChange={setStagedFiles} />
+          </div>
+        </div>
 
         {/* 서명 */}
         <Section title="Declaration & Signature">

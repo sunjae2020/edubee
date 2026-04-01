@@ -237,7 +237,7 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
   const [extraName, setExtraName] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const referenceType = ["application", "contract", "user", "other_services_mgt"].includes(entityType) ? entityType : "contract";
+  const referenceType = ["application", "contract", "camp_application", "user", "other_services_mgt"].includes(entityType) ? entityType : "contract";
   const cats = activeTab === "student"
     ? STUDENT_DOC_CATEGORIES
     : activeTab === "staff"
