@@ -118,6 +118,7 @@ router.post("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), asy
       emergencyContactName, emergencyContactPhone,
       notes, assignedStaffId, agentAccountId,
       signatureImage, signatureDate,
+      participants,
     } = req.body;
 
     if (!applicantFirstName || !applicantLastName || !applicantEmail) {
@@ -171,6 +172,38 @@ router.post("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), asy
       signatureDate:   signatureDate   || null,
       notes:           notes           || null,
     }).returning();
+
+    // Insert participants
+    if (Array.isArray(participants) && participants.length > 0) {
+      const participantRows = participants.map((p: any) => ({
+        campApplicationId: newApp.id,
+        participantType:   p.participantType ?? "child",
+        sequenceOrder:     p.sequenceOrder   ?? 1,
+        fullName:          p.fullName || `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim(),
+        firstName:         p.firstName         || null,
+        lastName:          p.lastName          || null,
+        fullNameNative:    p.fullNameNative    || null,
+        englishName:       p.englishName       || null,
+        dateOfBirth:       p.dateOfBirth       || null,
+        gender:            p.gender            || null,
+        nationality:       p.nationality       || null,
+        passportNumber:    p.passportNumber    || null,
+        passportExpiry:    p.passportExpiry    || null,
+        grade:             p.grade             || null,
+        schoolName:        p.schoolName        || null,
+        englishLevel:      p.englishLevel      || null,
+        medicalConditions: p.medicalConditions || null,
+        dietaryRequirements: p.dietaryRequirements || null,
+        specialNeeds:      p.specialNeeds      || null,
+        relationshipToStudent: p.relationshipToStudent || null,
+        isEmergencyContact: p.isEmergencyContact ?? false,
+        email:             p.email             || null,
+        phone:             p.phone             || null,
+        whatsapp:          p.whatsapp          || null,
+        lineId:            p.lineId            || null,
+      }));
+      await db.insert(applicationParticipants).values(participantRows);
+    }
 
     return res.status(201).json(newApp);
   } catch (err) {
