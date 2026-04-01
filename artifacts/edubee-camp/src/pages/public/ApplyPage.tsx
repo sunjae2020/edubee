@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { CheckCircle2, ChevronRight, ChevronLeft, Loader2, Plus, Trash2, Users, GraduationCap, Calendar, FileText } from "lucide-react";
+import SignaturePad from "@/components/shared/SignaturePad";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -497,7 +498,7 @@ function ContactStep({
 // ─── Step 4: Review & Submit ──────────────────────────────────────────────────
 function SubmitStep({
   group, pkg, students, contact, preferredStart, specialRequests, referralSource, referralCode,
-  onBack, onSubmit, isLoading, primaryLanguage, onLanguage,
+  onBack, onSubmit, isLoading, primaryLanguage, onLanguage, signatureImage, onSignatureChange,
 }: {
   group: PackageGroup | undefined; pkg: Package | undefined;
   students: Student[]; contact: Contact;
@@ -505,6 +506,7 @@ function SubmitStep({
   referralSource: string; referralCode: string;
   onBack: () => void; onSubmit: () => void; isLoading: boolean;
   primaryLanguage: string; onLanguage: (v: string) => void;
+  signatureImage: string | null; onSignatureChange: (v: string | null) => void;
 }) {
   const [terms, setTerms] = useState(false);
 
@@ -578,6 +580,16 @@ function SubmitStep({
         </select>
       </div>
 
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <SignaturePad
+          label="Signature (Draw to sign)"
+          value={signatureImage}
+          onChange={onSignatureChange}
+          height={180}
+        />
+        <p className="text-xs text-gray-400 mt-2">Draw your signature using mouse or touch. Tap Clear to redo.</p>
+      </div>
+
       <div className="bg-orange-50 rounded-xl border border-orange-200 p-5 space-y-3">
         <h4 className="font-semibold text-orange-800 text-sm">Terms & Conditions</h4>
         <p className="text-xs text-orange-700 leading-relaxed">
@@ -606,7 +618,7 @@ function SubmitStep({
         <button
           type="button"
           onClick={onSubmit}
-          disabled={!terms || isLoading}
+          disabled={!terms || !signatureImage || isLoading}
           className="flex items-center gap-2 px-7 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition"
         >
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -662,6 +674,7 @@ export default function ApplyPage() {
     fullName: "", firstName: "", lastName: "",
     email: "", phone: "", whatsapp: "", lineId: "", relationship: "",
   });
+  const [signatureImage, setSignatureImage] = useState<string | null>(null);
   const [successRef, setSuccessRef] = useState<string | null>(null);
 
   const { data: groups = [], isLoading: loadingGroups } = useQuery<PackageGroup[]>({
@@ -720,6 +733,7 @@ export default function ApplyPage() {
         primaryLanguage,
         specialRequests: specialRequests || undefined,
         termsAccepted: true,
+        signatureImage: signatureImage || undefined,
         participants,
       }).then(r => r.data);
     },
@@ -800,6 +814,8 @@ export default function ApplyPage() {
               onBack={() => setStep(2)}
               onSubmit={() => submitMutation.mutate()}
               isLoading={submitMutation.isPending}
+              signatureImage={signatureImage}
+              onSignatureChange={setSignatureImage}
             />
           )}
         </div>

@@ -238,6 +238,7 @@ const publicApplicationSchema = z.object({
   referralAgentCode: z.string().optional(),
   primaryLanguage: z.string().default("en"),
   specialRequests: z.string().optional(),
+  signatureImage: z.string().optional(),
   termsAccepted: z.literal(true),
   participants: z.array(participantSchema).min(1),
 });
@@ -308,6 +309,7 @@ router.post("/public/applications", async (req, res) => {
         referralAgentCode: data.referralAgentCode ?? null,
         primaryLanguage: data.primaryLanguage,
         specialRequests: data.specialRequests ?? null,
+        signatureImage: data.signatureImage ?? null,
         termsAccepted: true,
         termsAcceptedAt: new Date(),
         status: "pending",

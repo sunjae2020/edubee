@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, Loader2, Upload } from "lucide-react";
+import SignaturePad from "@/components/shared/SignaturePad";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -82,7 +83,6 @@ export default function ApplicationForm() {
   const { toast } = useToast();
   const passportRef  = useRef<HTMLInputElement>(null);
   const enrolmentRef = useRef<HTMLInputElement>(null);
-  const signatureRef = useRef<HTMLInputElement>(null);
 
   // ── Service checkboxes
   const [services, setServices] = useState<string[]>([]);
@@ -164,8 +164,8 @@ export default function ApplicationForm() {
   const [declInternship,     setDeclInternship]     = useState(false);
 
   // ── Signature & Date
-  const [signatureName, setSignatureName] = useState("");
-  const [signDate,      setSignDate]      = useState("");
+  const [signatureImage, setSignatureImage] = useState<string | null>(null);
+  const [signDate,       setSignDate]       = useState("");
 
   // ── Declaration checkboxes
   const [declAgree, setDeclAgree] = useState(false);
@@ -173,7 +173,6 @@ export default function ApplicationForm() {
   // ── Files (display only — not uploaded to server in this version)
   const [passportFile,  setPassportFile]  = useState<File | null>(null);
   const [enrolmentFile, setEnrolmentFile] = useState<File | null>(null);
-  const [signatureFile, setSignatureFile] = useState<File | null>(null);
 
   // ── Notes / Agent
   const [notes, setNotes]   = useState("");
@@ -254,8 +253,8 @@ export default function ApplicationForm() {
         industry:            intProgram      || undefined,
         companyPreference:   intCity         || undefined,
         // signature
-        signatureName:       signatureName || undefined,
-        signatureDate:       signDate      || undefined,
+        signatureImage:      signatureImage || undefined,
+        signatureDate:       signDate       || undefined,
         // notes
         notes: extraNotes || undefined,
       };
@@ -719,34 +718,16 @@ export default function ApplicationForm() {
               onChange={e => setEnrolmentFile(e.target.files?.[0] ?? null)} />
           </div>
 
-          {/* Signature */}
-          <div>
-            <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-2">Signature</p>
-            <div
-              onClick={() => signatureRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-[#F5821F]/60 cursor-pointer py-6 transition-colors bg-muted/20"
-            >
-              <Upload className="w-5 h-5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                {signatureFile ? signatureFile.name : "Browse Files"}
-              </span>
-            </div>
-            <input ref={signatureRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
-              onChange={e => setSignatureFile(e.target.files?.[0] ?? null)} />
-          </div>
         </div>
 
-        {/* Signature text + Date */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-          <div>
-            <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Signature</p>
-            <Input
-              value={signatureName}
-              onChange={e => setSignatureName(e.target.value)}
-              placeholder="Type your full name as signature"
-              className="h-9 text-sm italic"
-            />
-          </div>
+        {/* Signature pad + Date */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5 items-start">
+          <SignaturePad
+            label="Signature (Draw)"
+            value={signatureImage}
+            onChange={setSignatureImage}
+            height={160}
+          />
           <div>
             <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Date</p>
             <Input

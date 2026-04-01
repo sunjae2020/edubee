@@ -114,6 +114,7 @@ export const applications = pgTable("applications", {
   lastName:           varchar("last_name",     { length: 100 }),
   englishName:        varchar("english_name",  { length: 100 }),
   originalName:       varchar("original_name", { length: 200 }),
+  signatureImage:     text("signature_image"),
   isActive:           boolean("is_active").notNull().default(true),
 });
 
