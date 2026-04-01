@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const APPLY_BASE = "https://edubee-crm-20260327.replit.app";
 
 interface PartnerAccount { id: string; name: string; accountType: string; email: string | null; }
 interface ApplicationFormPartner {
@@ -321,7 +322,7 @@ export default function ApplicationFormPartners() {
     </div>
   );
 
-  const baseUrl = `https://edubee.co/apply/${form.slug}`;
+  const baseUrl = `${APPLY_BASE}/${form.slug}`;
 
   return (
     <div className="min-h-screen bg-[#FAFAF9]">

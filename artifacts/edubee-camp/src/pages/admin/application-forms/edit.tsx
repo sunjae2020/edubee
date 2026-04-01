@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft, Loader2, Copy, Check } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const APPLY_BASE = "https://edubee-crm-20260327.replit.app";
 
 function toSlug(v: string) {
   return v.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-");
@@ -77,7 +78,7 @@ export default function ApplicationFormEdit() {
   });
 
   const copySlug = () => {
-    navigator.clipboard.writeText(`https://edubee.co/apply/${slug}`);
+    navigator.clipboard.writeText(`${APPLY_BASE}/${slug}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -155,7 +156,7 @@ export default function ApplicationFormEdit() {
               {slug && (
                 <div className="flex items-center gap-2 mt-1.5">
                   <p className="text-xs text-[#A8A29E] flex-1 font-mono bg-[#F4F3F1] px-3 py-1.5 rounded-lg overflow-hidden text-ellipsis whitespace-nowrap">
-                    https://edubee.co/apply/{slug}
+                    {APPLY_BASE}/{slug}
                   </p>
                   <button
                     type="button"
