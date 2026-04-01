@@ -1,4 +1,4 @@
-import { format, isValid } from "date-fns";
+import { format, isValid, parse } from "date-fns";
 
 export const DATE_FORMAT_OPTIONS = [
   { value: "DD/MM/YYYY", label: "DD/MM/YYYY  (31/03/2026)", token: "dd/MM/yyyy" },
@@ -25,8 +25,15 @@ export function getGlobalDateFormat(): DateFormatKey {
 
 function toDate(d: Date | string | null | undefined): Date | null {
   if (!d) return null;
-  const parsed = typeof d === "string" ? new Date(d) : d;
-  return isValid(parsed) ? parsed : null;
+  if (typeof d === "string") {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+      const parsed = parse(d, "yyyy-MM-dd", new Date());
+      return isValid(parsed) ? parsed : null;
+    }
+    const parsed = new Date(d);
+    return isValid(parsed) ? parsed : null;
+  }
+  return isValid(d) ? d : null;
 }
 
 function getToken(): string {
