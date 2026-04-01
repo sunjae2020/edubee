@@ -145,8 +145,7 @@ export default function UserDetail() {
           {ADMIN_ROLES.includes(currentUser?.role ?? "") && (
             <TabsTrigger value="documents">Documents</TabsTrigger>
           )}
-          {PARTNER_PRODUCT_ROLES.includes(userRec?.role ?? "") &&
-            (ADMIN_ROLES.includes(currentUser?.role ?? "") || currentUser?.id === id) && (
+          {false && (
             <TabsTrigger value="products">My Products</TabsTrigger>
           )}
         </TabsList>
@@ -302,8 +301,7 @@ export default function UserDetail() {
         )}
 
         {/* My Products Tab (PART 4) */}
-        {PARTNER_PRODUCT_ROLES.includes(userRec?.role ?? "") &&
-          (ADMIN_ROLES.includes(currentUser?.role ?? "") || currentUser?.id === id) && (
+        {false && (
           <TabsContent value="products">
             {(() => {
               const canEditProducts = ADMIN_ROLES.includes(currentUser?.role ?? "") || currentUser?.id === id;
