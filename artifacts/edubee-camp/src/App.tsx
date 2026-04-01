@@ -8,6 +8,7 @@ import { DisplayCurrencyProvider } from "@/context/DisplayCurrencyContext";
 import "@/lib/i18n";
 
 import Landing from "@/pages/landing";
+import ApplyPage from "@/pages/public/ApplyPage";
 import Login from "@/pages/login";
 import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -151,6 +152,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/apply" component={ApplyPage} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
