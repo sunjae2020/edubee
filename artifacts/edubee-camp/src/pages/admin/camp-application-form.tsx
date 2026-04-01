@@ -214,8 +214,8 @@ const textareaCls = "text-sm border-border focus-visible:ring-[#F5821F]/40 focus
 
 // ── Adult Participant Card ───────────────────────────────────────────────────
 function AdultCard({
-  index, data, onChange,
-}: { index: number; data: AdultParticipant; onChange: (d: AdultParticipant) => void }) {
+  index, data, onChange, isAutoFilled,
+}: { index: number; data: AdultParticipant; onChange: (d: AdultParticipant) => void; isAutoFilled?: boolean }) {
   const [open, setOpen] = useState(true);
   const set = (k: keyof AdultParticipant, v: string | boolean) =>
     onChange({ ...data, [k]: v });
@@ -225,16 +225,21 @@ function AdultCard({
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-blue-50 hover:bg-blue-100 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-orange-50 hover:bg-orange-100 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-blue-600" />
-          <span className="text-sm font-semibold text-blue-800">
+          <Users className="w-4 h-4 text-[#F5821F]" />
+          <span className="text-sm font-semibold text-[#92400E]">
             Adult {index + 1}
             {data.firstName && ` — ${data.firstName} ${data.lastName}`.trim()}
           </span>
+          {isAutoFilled && (
+            <span className="text-[10px] font-medium bg-[#F5821F]/15 text-[#F5821F] px-2 py-0.5 rounded-full">
+              From Primary Contact
+            </span>
+          )}
         </div>
-        {open ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4 text-blue-600" />}
+        {open ? <ChevronUp className="w-4 h-4 text-[#F5821F]" /> : <ChevronDown className="w-4 h-4 text-[#F5821F]" />}
       </button>
 
       {open && (
@@ -464,6 +469,24 @@ export default function AdminCampApplicationForm() {
       return prev.slice(0, adultCount);
     });
   }, [adultCount]);
+
+  // ── Auto-fill Adult 1 from Primary Contact info
+  useEffect(() => {
+    if (adultCount <= 0) return;
+    setAdults(prev => {
+      if (prev.length === 0) return prev;
+      const updated = [...prev];
+      updated[0] = {
+        ...updated[0],
+        firstName: firstName,
+        lastName:  lastName,
+        fullNameNative: originalName,
+        phone:     phone,
+        email:     email,
+      };
+      return updated;
+    });
+  }, [firstName, lastName, originalName, phone, email, adultCount]);
 
   useEffect(() => {
     setStudents(prev => {
@@ -735,13 +758,13 @@ export default function AdminCampApplicationForm() {
         {/* ── Dynamic Participants ─────────────────────────────────────────── */}
         {adults.length > 0 && (
           <div className="rounded-xl border border-border overflow-hidden">
-            <div className="bg-blue-600 text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
+            <div className="bg-[#F5821F] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
               <Users className="w-4 h-4" />
               Adult Participants ({adults.length})
             </div>
             <div className="p-4 space-y-3">
               {adults.map((a, i) => (
-                <AdultCard key={i} index={i} data={a} onChange={d => updateAdult(i, d)} />
+                <AdultCard key={i} index={i} data={a} onChange={d => updateAdult(i, d)} isAutoFilled={i === 0} />
               ))}
             </div>
           </div>
