@@ -63,14 +63,39 @@ function resolvePeriod(
 // GET /api/kpi/staff/:staffId
 // 직원 KPI 조회 (계산만, 저장 안함)
 // Query: ?periodType=monthly&yearMonth=2026-03
+// Access: admin/super_admin 전체 + 본인 + team_manager(팀원만)
 // ─────────────────────────────────────────────
 router.get(
   "/staff/:staffId",
   authenticate,
-  requireRole(...ADMIN_ROLES, "camp_coordinator"),
   async (req: Request, res: Response) => {
     try {
-      const { staffId }  = req.params;
+      const { staffId }   = req.params;
+      const currentUser   = (req as any).user as { id: string; role: string };
+      const role          = currentUser?.role ?? "";
+
+      // ── 접근 제어 ────────────────────────────────────────────────────────
+      if (!ADMIN_ROLES.includes(role)) {
+        if (currentUser.id === staffId) {
+          // 본인 KPI → 허용
+        } else if (role === "team_manager") {
+          // 팀장 → 같은 팀 직원만 허용
+          const rows = await db.execute(sql`
+            SELECT team_id FROM users WHERE id = ${staffId} LIMIT 1
+          `);
+          const targetTeamId = (rows.rows?.[0] as any)?.team_id;
+          const myRows = await db.execute(sql`
+            SELECT team_id FROM users WHERE id = ${currentUser.id} LIMIT 1
+          `);
+          const myTeamId = (myRows.rows?.[0] as any)?.team_id;
+          if (!targetTeamId || targetTeamId !== myTeamId) {
+            return res.status(403).json({ success: false, error: "Access denied: not your team member" });
+          }
+        } else {
+          return res.status(403).json({ success: false, error: "Access denied" });
+        }
+      }
+
       const periodType   = (req.query.periodType as string) || "monthly";
       const yearMonth    = req.query.yearMonth as string | undefined;
       const period       = resolvePeriod(periodType, yearMonth);
