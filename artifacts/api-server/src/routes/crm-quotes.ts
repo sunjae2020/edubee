@@ -16,7 +16,7 @@ const router = Router();
 function fmtDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
-const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
+const ADMIN_ROLES = ["super_admin","admin","finance","admission","team_manager","consultant","camp_coordinator"];
 
 function genQuoteRef() {
   return "QTE-" + Date.now().toString(36).toUpperCase().padStart(8, "0");

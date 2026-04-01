@@ -173,7 +173,7 @@ export default function PickupMgtDetail() {
   const productsList: any[] = Array.isArray(productsData) ? productsData : (productsData?.data ?? []);
 
   const rec = data?.data ?? data;
-  const canEdit = !["partner_hotel", "partner_tour"].includes(user?.role ?? "");
+  const canEdit = true;
 
   const updateRec = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>

@@ -11,7 +11,7 @@ import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router();
-const STAFF_ROLES  = ["super_admin", "admin", "camp_coordinator"];
+const STAFF_ROLES  = ["super_admin", "admin", "finance", "admission", "team_manager", "camp_coordinator"];
 const ADMIN_ROLES  = ["super_admin", "admin"];
 
 // ─── JE mapping ─────────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@ import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router();
-const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
+const ADMIN_ROLES = ["super_admin","admin","finance","admission","team_manager","consultant","camp_coordinator"];
 const PAGE_SIZE = 20;
 
 const KANBAN_STATUSES = ["new", "open", "in_progress", "qualified", "unqualified"];

@@ -48,7 +48,7 @@ router.get("/contracts/:id/finance", authenticate, async (req, res) => {
     const data = await buildFinanceSummary(req.params.id);
 
     // Education agents: only show their own items
-    if (user.role === "education_agent") {
+    if (false) { // education_agent role removed
       data.receivable = data.receivable.filter(
         i => i.linkedAgentId === user.id || i.itemCategory === "agent_invoice"
       );

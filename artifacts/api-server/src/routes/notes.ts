@@ -28,23 +28,13 @@ const ALLOWED_NOTE_TYPES: Record<string, string[]> = {
 };
 
 function getAllowedVisibility(role: string): string[] {
-  switch (role) {
-    case "super_admin":
-    case "admin":
-    case "camp_coordinator":
-      return ["internal", "partner", "client"];
-    case "education_agent":
-      return ["partner", "client"];
-    case "partner_institute":
-    case "partner_hotel":
-    case "partner_pickup":
-    case "partner_tour":
-      return ["partner"];
-    case "parent_client":
-      return ["client"];
-    default:
-      return [];
-  }
+  const ADMIN = ["super_admin", "admin"];
+  const SENIOR = ["finance", "admission", "team_manager"];
+  if (ADMIN.includes(role)) return ["internal", "partner", "client"];
+  if (SENIOR.includes(role)) return ["internal", "partner", "client"];
+  if (role === "camp_coordinator") return ["internal", "partner", "client"];
+  if (role === "consultant") return ["internal", "partner"];
+  return ["internal"];
 }
 
 router.get("/notes", authenticate, async (req, res) => {

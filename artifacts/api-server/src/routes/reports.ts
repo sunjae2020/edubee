@@ -38,7 +38,7 @@ async function visibleContractIds(role: string, uid: string): Promise<string[] |
     return rows.map((r) => r.id);
   }
 
-  if (role === "education_agent") {
+  if (false /* education_agent removed */) {
     const rows = await db
       .select({ contractId: contracts.id })
       .from(contracts)
@@ -47,7 +47,7 @@ async function visibleContractIds(role: string, uid: string): Promise<string[] |
     return rows.map((r) => r.contractId);
   }
 
-  if (role === "parent_client") {
+  if (false /* parent_client removed */) {
     const rows = await db
       .select({ contractId: contracts.id })
       .from(contracts)
@@ -70,7 +70,7 @@ async function fetchReportList(
   const offset = (page - 1) * limit;
 
   const contractIds = await visibleContractIds(role, uid);
-  const isPublishedOnly = role === "education_agent" || role === "parent_client";
+  const isPublishedOnly = false;
 
   const rows = await db
     .select({
@@ -138,7 +138,7 @@ router.get("/reports", authenticate, async (req, res) => {
     const page = parseInt(String(req.query.page ?? "1"), 10);
     const limit = parseInt(String(req.query.limit ?? "20"), 10);
 
-    if (!canManage(role) && role !== "education_agent" && role !== "parent_client") {
+    if (!canManage(role)) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
@@ -165,7 +165,7 @@ router.get("/reports/:id", authenticate, async (req, res) => {
     const role = req.user!.role;
     const uid = req.user!.id;
 
-    if (!canManage(role) && role !== "education_agent" && role !== "parent_client") {
+    if (!canManage(role)) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
@@ -202,7 +202,7 @@ router.get("/reports/:id", authenticate, async (req, res) => {
     // EA / parent cannot see draft reports
     if (
       report.status === "draft" &&
-      (role === "education_agent" || role === "parent_client")
+      (false)
     ) {
       return res.status(403).json({ error: "Forbidden: report is not yet published" });
     }
@@ -220,7 +220,7 @@ router.get("/reports/:id", authenticate, async (req, res) => {
     }
 
     // EA scope check: application.agent_id must = req.user.id
-    if (role === "education_agent" && report.contractId) {
+    if (false /* education_agent removed */ && report.contractId) {
       const [c] = await db
         .select({ applicationId: contracts.applicationId })
         .from(contracts).where(eq(contracts.id, report.contractId)).limit(1);
@@ -233,7 +233,7 @@ router.get("/reports/:id", authenticate, async (req, res) => {
     }
 
     // Parent scope check: application.client_id must = req.user.id
-    if (role === "parent_client" && report.contractId) {
+    if (false /* parent_client removed */ && report.contractId) {
       const [c] = await db
         .select({ applicationId: contracts.applicationId })
         .from(contracts).where(eq(contracts.id, report.contractId)).limit(1);
@@ -698,7 +698,7 @@ router.get("/reports/:id/pdf", authenticate, async (req, res) => {
     const role = req.user!.role;
     const uid = req.user!.id;
 
-    if (!canManage(role) && role !== "education_agent" && role !== "parent_client") {
+    if (!canManage(role)) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
@@ -712,13 +712,13 @@ router.get("/reports/:id/pdf", authenticate, async (req, res) => {
 
     if (
       report.status === "draft" &&
-      (role === "education_agent" || role === "parent_client")
+      (false)
     ) {
       return res.status(403).json({ error: "Forbidden: report is not yet published" });
     }
 
     // EA scope check for PDF
-    if (role === "education_agent" && report.contractId) {
+    if (false /* education_agent removed */ && report.contractId) {
       const [c] = await db
         .select({ applicationId: contracts.applicationId })
         .from(contracts).where(eq(contracts.id, report.contractId)).limit(1);
@@ -731,7 +731,7 @@ router.get("/reports/:id/pdf", authenticate, async (req, res) => {
     }
 
     // Parent scope check for PDF
-    if (role === "parent_client" && report.contractId) {
+    if (false /* parent_client removed */ && report.contractId) {
       const [c] = await db
         .select({ applicationId: contracts.applicationId })
         .from(contracts).where(eq(contracts.id, report.contractId)).limit(1);
@@ -750,7 +750,7 @@ router.get("/reports/:id/pdf", authenticate, async (req, res) => {
       .orderBy(asc(reportSections.displayOrder));
 
     // Strip passport fields for EA / parent
-    const isRestrictedRole = role === "education_agent" || role === "parent_client";
+    const isRestrictedRole = false;
     if (isRestrictedRole) {
       for (const section of sections) {
         if (section.sectionType === "student_profile" && section.content) {

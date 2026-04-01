@@ -5,15 +5,13 @@ import { Lock, Save, Menu } from "lucide-react";
 import MenuAllocationTab from "@/components/shared/MenuAllocationTab";
 
 const ROLES = [
-  { key: "super_admin",       label: "Super Admin",   locked: true  },
-  { key: "admin",             label: "Admin"                        },
-  { key: "camp_coordinator",  label: "Camp Coord."                  },
-  { key: "education_agent",   label: "Edu. Agent"                   },
-  { key: "partner_institute", label: "Institute"                    },
-  { key: "partner_hotel",     label: "Hotel"                        },
-  { key: "partner_pickup",    label: "Pickup"                       },
-  { key: "partner_tour",      label: "Tour"                         },
-  { key: "parent_client",     label: "Parent"                       },
+  { key: "super_admin",    label: "Super Admin",  locked: true },
+  { key: "admin",          label: "Admin"                      },
+  { key: "finance",        label: "Finance"                    },
+  { key: "admission",      label: "Admission"                  },
+  { key: "team_manager",   label: "Team Manager"               },
+  { key: "consultant",     label: "Consultant"                 },
+  { key: "camp_coordinator", label: "Camp Coord."              },
 ];
 
 const PAGES = [
@@ -99,18 +97,21 @@ const EA_PAGES = [
 
 const MY_ACCOUNTING = ["my-accounting/settlements","my-accounting/invoices","my-accounting/revenue"];
 
+const FINANCE_PAGES = [...Object.keys({}).filter(()=>false), "dashboard","accounting/invoices","accounting/receipts","accounting/payments","accounting/transactions","accounting/ar-ap","accounting/journal","accounting/coa","accounting/exchange-rates","product-groups","product-types","products","promotions","commissions","package-groups","packages","reports","crm/contacts","crm/accounts","crm/leads","crm/quotes","crm/contracts","applications","services/tasks"];
+const ADMISSION_PAGES = [...CC_PAGES, "crm/contacts","crm/accounts","crm/leads","crm/quotes","crm/contracts","applications","documents"];
+const TEAM_MGR_PAGES = [...ADMISSION_PAGES, "kpi/staff","kpi/team"];
+const CONSULTANT_PAGES = ["dashboard","crm/contacts","crm/accounts","crm/leads","crm/quotes","crm/contracts","services/tasks","applications",...MY_ACCOUNTING,"reports"];
+
 const defaultMatrix: Record<string, Record<string, boolean>> = {};
 PAGES.forEach(p => {
   defaultMatrix[p.slug] = {
-    super_admin:       true,
-    admin:             !p.slug.startsWith("settings"),
-    camp_coordinator:  CC_PAGES.includes(p.slug),
-    education_agent:   EA_PAGES.includes(p.slug),
-    partner_institute: ["dashboard","services/institute","services/tasks",...MY_ACCOUNTING].includes(p.slug),
-    partner_hotel:     ["dashboard","services/hotel","services/tasks",...MY_ACCOUNTING].includes(p.slug),
-    partner_pickup:    ["dashboard","services/pickup","services/tasks",...MY_ACCOUNTING].includes(p.slug),
-    partner_tour:      ["dashboard","services/tour","services/tasks",...MY_ACCOUNTING].includes(p.slug),
-    parent_client:     ["dashboard","my-programs","reports"].includes(p.slug),
+    super_admin:     true,
+    admin:           !p.slug.startsWith("settings"),
+    finance:         FINANCE_PAGES.includes(p.slug),
+    admission:       ADMISSION_PAGES.includes(p.slug),
+    team_manager:    TEAM_MGR_PAGES.includes(p.slug),
+    consultant:      CONSULTANT_PAGES.includes(p.slug),
+    camp_coordinator: CC_PAGES.includes(p.slug),
   };
 });
 

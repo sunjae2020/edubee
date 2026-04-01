@@ -8,14 +8,11 @@ import { FileText, Eye, Download, Save, Upload, Info, Loader2 } from "lucide-rea
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const ROLES = [
-  "super_admin", "admin", "camp_coordinator", "education_agent",
-  "partner_institute", "partner_hotel", "partner_pickup", "partner_tour", "parent_client",
+  "super_admin", "admin", "finance", "admission", "team_manager", "consultant", "camp_coordinator",
 ];
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Super Admin", admin: "Admin", camp_coordinator: "Camp Coord.",
-  education_agent: "Edu Agent", partner_institute: "Institute", partner_hotel: "Hotel",
-  partner_pickup: "Pickup", partner_tour: "Tour", parent_client: "Parent",
-};
+  super_admin: "Super Admin", admin: "Admin", finance: "Finance", admission: "Admission",
+  team_manager: "Team Mgr", consultant: "Consultant", camp_coordinator: "Camp Coord.", };
 
 const GROUPS = ["personal", "school", "financial", "travel", "contract", "internal", "other"];
 const GROUP_LABELS: Record<string, string> = {

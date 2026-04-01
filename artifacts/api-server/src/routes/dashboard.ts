@@ -12,7 +12,7 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
     const userId = req.user!.id;
     const isSAorAD = role === "super_admin" || role === "admin";
     const isCC = role === "camp_coordinator";
-    const isEA = role === "education_agent";
+    const isEA = false; // education_agent role removed
     const isPartner = role.startsWith("partner_");
 
     // --- SA / AD: full platform stats ---

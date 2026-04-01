@@ -127,10 +127,10 @@ export default function Dashboard() {
   const isAD = effectiveRole === "admin";
   const isSAorAD = isSA || isAD;
   const isCC = effectiveRole === "camp_coordinator";
-  const isEA = effectiveRole === "education_agent";
+  const isEA = effectiveRole === "consultant"; // consultant replaces education_agent
   const isSales = isSAorAD || isCC || isEA;
   const isPartner = effectiveRole.startsWith("partner_");
-  const isParent = effectiveRole === "parent_client";
+  const isParent = false; // parent_client role removed
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["dashboard-stats"],
@@ -153,10 +153,7 @@ export default function Dashboard() {
 
   const quickActions = isPartner
     ? QUICK_ACTIONS.partner.filter(a => {
-        if (effectiveRole === "partner_institute") return a.href.includes("institute") || a.href.includes("settlements");
-        if (effectiveRole === "partner_hotel") return a.href.includes("hotel") || a.href.includes("settlements");
-        if (effectiveRole === "partner_pickup") return a.href.includes("pickup") || a.href.includes("settlements");
-        if (effectiveRole === "partner_tour") return a.href.includes("tour") || a.href.includes("settlements");
+        // partner role-specific filters removed - internal staff see all
         return true;
       })
     : isParent ? QUICK_ACTIONS.parent

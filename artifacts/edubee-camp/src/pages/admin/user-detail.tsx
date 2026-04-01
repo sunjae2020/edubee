@@ -22,23 +22,20 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const ALL_ROLES = [
-  "super_admin", "admin", "camp_coordinator", "education_agent",
-  "partner_institute", "partner_hotel", "partner_pickup", "partner_tour", "parent_client",
+  "super_admin", "admin", "finance", "admission", "team_manager",
+  "consultant", "camp_coordinator",
 ];
 const ALL_STATUSES = ["active", "inactive", "suspended", "pending_verification"];
 const ADMIN_ROLES = ["super_admin", "admin"];
-const PARTNER_PRODUCT_ROLES = ["partner_institute", "partner_hotel", "partner_pickup", "partner_tour"];
 
 const ROLE_COLORS: Record<string, string> = {
   super_admin: "bg-purple-100 text-purple-700",
   admin: "bg-blue-100 text-blue-700",
   camp_coordinator: "bg-orange-100 text-orange-700",
-  education_agent: "bg-teal-100 text-teal-700",
-  partner_institute: "bg-green-100 text-green-700",
-  partner_hotel: "bg-yellow-100 text-yellow-700",
-  partner_pickup: "bg-pink-100 text-pink-700",
-  partner_tour: "bg-indigo-100 text-indigo-700",
-  parent_client: "bg-gray-100 text-gray-600",
+  finance: "bg-emerald-100 text-emerald-700",
+  admission: "bg-purple-100 text-purple-700",
+  team_manager: "bg-blue-100 text-blue-700",
+  consultant: "bg-teal-100 text-teal-700",
 };
 
 const ENTRY_TYPE_COLORS: Record<string, string> = {
@@ -201,7 +198,7 @@ export default function UserDetail() {
               <DetailRow label="2FA Enabled" value={userRec.twoFactorEnabled ? "Yes" : "No"} />
             </DetailSection>
 
-            {(userRec.role === "camp_coordinator" || userRec.role === "education_agent") && (
+            {(userRec.role === "camp_coordinator" || userRec.role === "consultant") && (
               <DetailSection title="Business Info" className="lg:col-span-2">
                 <EditableField label="Company Name" isEditing={isEditing} value={userRec.companyName}
                   editValue={getValue("companyName")} onEdit={v => setField("companyName", v)} />

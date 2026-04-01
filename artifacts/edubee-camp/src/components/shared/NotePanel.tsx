@@ -61,7 +61,7 @@ export function NotePanel({
   const [noteType, setNoteType] = useState(allowedNoteTypes[0] ?? "internal");
   const [visibility, setVisibility] = useState<"internal" | "partner" | "client">(defaultVisibility);
 
-  const isAdmin = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
+  const isAdmin = ["super_admin","admin","finance","admission","team_manager","consultant","camp_coordinator"].includes(user?.role ?? "");
 
   const { data, isLoading } = useQuery({
     queryKey: ["notes", entityType, entityId],

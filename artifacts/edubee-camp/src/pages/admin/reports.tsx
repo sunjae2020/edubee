@@ -36,7 +36,7 @@ export default function Reports() {
   const role = user?.role ?? "";
   const canCreate = ["super_admin", "admin", "camp_coordinator"].includes(role);
   const canEdit = canCreate;
-  const isViewOnly = role === "education_agent" || role === "parent_client";
+  const isViewOnly = false; // all internal staff can manage reports
 
   async function downloadPdf(reportId: string, reportTitle: string) {
     setPdfLoading(true);

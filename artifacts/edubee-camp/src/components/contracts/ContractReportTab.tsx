@@ -34,7 +34,7 @@ export function ContractReportTab({ contractId }: { contractId: string }) {
   const [pdfLoading, setPdfLoading] = useState(false);
 
   const role = user?.role ?? "";
-  const canCreate = ["super_admin", "admin", "camp_coordinator"].includes(role);
+  const canCreate = ["super_admin","admin","finance","admission","team_manager","consultant","camp_coordinator"].includes(role);
   const canEdit = canCreate;
   const canPublish = canCreate;
   const canUnpublish = ["super_admin", "admin"].includes(role);

@@ -24,7 +24,7 @@ export default function MyRevenue() {
   const byMonth = revenue?.byMonth ?? [];
   const maxAmount = Math.max(...byMonth.map(m => m.amount), 1);
 
-  const isCC = user?.role === "camp_coordinator";
+  const isCC = ["camp_coordinator","consultant"].includes(user?.role ?? "");
 
   return (
     <div className="p-6 space-y-6">

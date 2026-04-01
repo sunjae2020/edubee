@@ -28,11 +28,11 @@ interface User {
 }
 
 const ALL_ROLES = [
-  "super_admin", "admin", "camp_coordinator", "education_agent",
-  "partner_institute", "partner_hotel", "partner_pickup", "partner_tour", "parent_client",
+  "super_admin", "admin", "finance", "admission", "team_manager",
+  "consultant", "camp_coordinator",
 ];
 
-const emptyForm = { fullName: "", email: "", password: "", role: "education_agent", status: "active" };
+const emptyForm = { fullName: "", email: "", password: "", role: "consultant", status: "active" };
 
 export default function Users() {
   const qc = useQueryClient();
@@ -47,7 +47,7 @@ export default function Users() {
   const PAGE_SIZE = 10;
   const [form, setForm] = useState(emptyForm);
 
-  const currentRole = currentUser?.role ?? "parent_client";
+  const currentRole = currentUser?.role ?? "consultant";
   const myLevel = ROLE_HIERARCHY[currentRole] ?? 0;
 
   const { data: users = [], isLoading } = useQuery<User[]>({

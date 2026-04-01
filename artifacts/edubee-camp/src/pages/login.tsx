@@ -19,15 +19,10 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const DEMO_ACCOUNTS = [
-  { emoji: "👑", label: "Super Admin",   email: "superadmin@edubee.com",  password: "Admin123!" },
-  { emoji: "🛡️", label: "Admin",         email: "admin@edubee.com",        password: "Admin123!" },
-  { emoji: "📋", label: "Coordinator",   email: "coordinator@edubee.com",  password: "Admin123!" },
-  { emoji: "🎓", label: "Agent",         email: "agent@edubee.com",        password: "Admin123!" },
-  { emoji: "🏫", label: "Institute",     email: "institute@example.com",   password: "Admin123!" },
-  { emoji: "🏨", label: "Hotel",         email: "hotel@example.com",       password: "Admin123!" },
-  { emoji: "🚗", label: "Pickup",        email: "driver@pickup.com",       password: "Admin123!" },
-  { emoji: "🗺️", label: "Tour",          email: "guide@tours.com",         password: "Admin123!" },
-  { emoji: "👪", label: "Parent",        email: "parent@example.com",      password: "Admin123!" },
+  { emoji: "👑", label: "Super Admin",  email: "superadmin@edubee.com", password: "Admin123!" },
+  { emoji: "🛡️", label: "Admin",        email: "admin@edubee.com",       password: "Admin123!" },
+  { emoji: "📋", label: "Coordinator", email: "coordinator@edubee.com", password: "Admin123!" },
+  { emoji: "💼", label: "Consultant",  email: "agent@edubee.com",       password: "Admin123!" },
 ];
 
 export default function Login() {

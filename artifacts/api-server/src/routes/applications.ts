@@ -30,7 +30,7 @@ router.get("/leads", authenticate, async (req, res) => {
     if (agentId) conditions.push(eq(leads.agentId, agentId));
     if (status) conditions.push(eq(leads.status, status));
     if (search) conditions.push(or(ilike(leads.fullName, `%${search}%`), ilike(leads.email, `%${search}%`))!);
-    if (req.user!.role === "education_agent") conditions.push(eq(leads.agentId, req.user!.id));
+    // Internal staff see all leads
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(leads).where(whereClause);
@@ -48,7 +48,7 @@ router.get("/leads", authenticate, async (req, res) => {
 router.post("/leads", authenticate, async (req, res) => {
   try {
     const body = req.body;
-    if (req.user!.role === "education_agent") body.agentId = req.user!.id;
+    // consultant sets their own agentId if applicable
     const [lead] = await db.insert(leads).values(body).returning();
     return res.status(201).json(lead);
   } catch (err) {
@@ -131,8 +131,8 @@ router.get("/applications/stats", authenticate, async (req, res) => {
   try {
     const buildCount = async (extra?: SQL) => {
       const conditions: SQL[] = [];
-      if (req.user!.role === "education_agent") conditions.push(eq(applications.agentId, req.user!.id));
-      if (req.user!.role === "parent_client") conditions.push(eq(applications.clientId, req.user!.id));
+      // Internal staff see all applications
+      // parent_client no longer in user system
       if (extra) conditions.push(extra);
       const where = conditions.length ? and(...conditions) : undefined;
       const [r] = await db.select({ count: count() }).from(applications).where(where);
@@ -170,8 +170,7 @@ router.get("/applications", authenticate, async (req, res) => {
       ilike(applications.applicantName, `%${search}%`),
       ilike(applications.applicantEmail, `%${search}%`),
     )!);
-    if (req.user!.role === "education_agent") conditions.push(eq(applications.agentId, req.user!.id));
-    if (req.user!.role === "parent_client") conditions.push(eq(applications.clientId, req.user!.id));
+    // Internal staff see all applications
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(applications).where(whereClause);
@@ -207,7 +206,7 @@ router.get("/applications", authenticate, async (req, res) => {
 router.post("/applications", authenticate, async (req, res) => {
   try {
     const body = req.body;
-    if (req.user!.role === "education_agent") body.agentId = req.user!.id;
+    // consultant sets agentId manually if needed
     body.applicationNumber = generateApplicationNumber();
     const fn = (body.applicantFirstName ?? "").trim();
     const ln = (body.applicantLastName  ?? "").trim();

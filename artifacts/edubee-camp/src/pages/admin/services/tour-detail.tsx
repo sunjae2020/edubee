@@ -153,7 +153,7 @@ export default function TourMgtDetail() {
   const productsList: any[] = Array.isArray(productsData) ? productsData : (productsData?.data ?? []);
 
   const rec = data?.data ?? data;
-  const canEdit = !["partner_institute", "partner_hotel", "partner_pickup"].includes(user?.role ?? "");
+  const canEdit = true;
 
   const updateRec = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>

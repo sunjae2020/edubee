@@ -241,9 +241,9 @@ function NewInvoiceModal({
 
   const partnerTypes = [
     { value: "partner_school", label: "Partner — School" },
-    { value: "partner_hotel", label: "Partner — Hotel" },
-    { value: "partner_tour", label: "Partner — Tour" },
-    { value: "partner_pickup", label: "Partner — Pickup" },
+    { value: "partner_hotel", label: "Vendor — Hotel" },
+    { value: "partner_tour", label: "Vendor — Tour" },
+    { value: "partner_pickup", label: "Vendor — Pickup" },
     { value: "partner_other", label: "Partner — Other" },
   ];
 

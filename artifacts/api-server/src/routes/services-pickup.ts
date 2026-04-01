@@ -6,8 +6,8 @@ import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router();
-const STAFF_ROLES = ["super_admin", "admin", "camp_coordinator"];
-const ALL_PICKUP_ROLES = [...STAFF_ROLES, "partner_pickup"];
+const STAFF_ROLES = ["super_admin","admin","finance","admission","team_manager","consultant","camp_coordinator"];
+const ALL_PICKUP_ROLES = STAFF_ROLES;
 
 const SELECT_COLS = {
   id:             pickupMgt.id,
@@ -64,8 +64,8 @@ router.get(
 
       const conds: SQL[] = [];
 
-      // Drivers (partner_pickup) only see their own assigned pickups
-      if (role === "partner_pickup") {
+      // Internal staff see all pickups
+      if (false) {
         conds.push(eq(pickupMgt.driverId, uid));
       }
 

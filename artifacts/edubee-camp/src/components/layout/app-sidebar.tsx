@@ -29,12 +29,17 @@ type NavGroup = { key: string; label: string; catIcon: LucideIcon; items: NavIte
 // ── Build nav ─────────────────────────────────────────────────────────────
 
 function buildNav(effectiveRole: string): NavGroup[] {
-  const isSA      = effectiveRole === "super_admin";
-  const isSAorAD  = isSA || effectiveRole === "admin";
-  const isCC      = effectiveRole === "camp_coordinator";
-  const isEA      = effectiveRole === "education_agent";
-  const isPartner = effectiveRole.startsWith("partner_");
-  const isParent  = effectiveRole === "parent_client";
+  const isSA         = effectiveRole === "super_admin";
+  const isAdmin      = isSA || effectiveRole === "admin";
+  const isSAorAD     = isAdmin;
+  const isFinance    = effectiveRole === "finance";
+  const isAdmission  = effectiveRole === "admission";
+  const isTeamMgr    = effectiveRole === "team_manager";
+  const isConsultant = effectiveRole === "consultant";
+  const isCC         = effectiveRole === "camp_coordinator";
+
+  const isOps     = isAdmin || isAdmission || isTeamMgr || isCC;
+  const isSenior  = isAdmin || isFinance || isAdmission || isTeamMgr;
 
   const nav: NavGroup[] = [];
 
@@ -44,40 +49,36 @@ function buildNav(effectiveRole: string): NavGroup[] {
   });
 
   const crmItems: NavItem[] = [];
-  if (isSAorAD || isCC) {
-    crmItems.push(
-      { icon: Users,     label: "Contacts", href: "/admin/crm/contacts" },
-      { icon: Building2, label: "Accounts", href: "/admin/crm/accounts" },
-      { icon: Target,    label: "Leads",    href: "/admin/crm/leads"    },
-      { icon: FileText,  label: "Quotes",     href: "/admin/crm/quotes"     },
-      { icon: FileCheck, label: "Contracts",  href: "/admin/crm/contracts"  },
-    );
-  }
+  crmItems.push(
+    { icon: Users,     label: "Contacts",  href: "/admin/crm/contacts"  },
+    { icon: Building2, label: "Accounts",  href: "/admin/crm/accounts"  },
+    { icon: Target,    label: "Leads",     href: "/admin/crm/leads"     },
+    { icon: FileText,  label: "Quotes",    href: "/admin/crm/quotes"    },
+    { icon: FileCheck, label: "Contracts", href: "/admin/crm/contracts" },
+  );
   crmItems.push({ icon: Ticket, label: "Tasks & CS", href: "/admin/services/tasks" });
   nav.push({ key: "crm", label: "CRM", catIcon: Users, items: crmItems });
 
-  if (isSAorAD || isCC || isEA) {
+  {
     const salesItems: NavItem[] = [
       { icon: ClipboardList, label: "All Applications", href: "/admin/all-applications" },
     ];
-    if (isSAorAD)
+    if (isSenior || isOps)
       salesItems.push({ icon: FolderOpen, label: "Documents", href: "/admin/documents" });
     nav.push({ key: "sales", label: "Sales", catIcon: ClipboardList, items: salesItems });
   }
 
-  const campItems: NavItem[] = [];
-  if (isSAorAD || isCC) {
-    campItems.push(
-      { icon: ListChecks, label: "Enrollment Spots", href: "/admin/enrollment-spots" },
-    );
+  if (isOps) {
+    nav.push({
+      key: "camp", label: "Camp", catIcon: GraduationCap,
+      items: [{ icon: ListChecks, label: "Enrollment Spots", href: "/admin/enrollment-spots" }],
+    });
   }
-  if (campItems.length > 0)
-    nav.push({ key: "camp", label: "Camp", catIcon: GraduationCap, items: campItems });
 
-  if (isSAorAD || isCC || effectiveRole === "partner_pickup" || effectiveRole === "partner_tour") {
-    const serviceItems: NavItem[] = [];
-    if (isSAorAD || isCC) {
-      serviceItems.push(
+  if (isOps) {
+    nav.push({
+      key: "services", label: "Services", catIcon: Briefcase,
+      items: [
         { icon: GraduationCap, label: "Study Abroad",      href: "/admin/services/study-abroad"  },
         { icon: Building2,     label: "Accommodation",     href: "/admin/services/accommodation"  },
         { icon: Briefcase,     label: "Internship",        href: "/admin/services/internship"     },
@@ -85,16 +86,13 @@ function buildNav(effectiveRole: string): NavGroup[] {
         { icon: FileCheck,     label: "Settlement",        href: "/admin/services/settlement"     },
         { icon: Wrench,        label: "Other Services",    href: "/admin/services/other"          },
         { icon: Stamp,         label: "Visa Services",     href: "/admin/services/visa"           },
-      );
-    }
-    if (isSAorAD || isCC || effectiveRole === "partner_pickup")
-      serviceItems.push({ icon: Car,  label: "Pickup / Transfer", href: "/admin/services/pickup" });
-    if (isSAorAD || isCC || effectiveRole === "partner_tour")
-      serviceItems.push({ icon: Map,  label: "Tour Management",   href: "/admin/services/tour"   });
-    nav.push({ key: "services", label: "Services", catIcon: Briefcase, items: serviceItems });
+        { icon: Car,           label: "Pickup / Transfer", href: "/admin/services/pickup"         },
+        { icon: Map,           label: "Tour Management",   href: "/admin/services/tour"           },
+      ],
+    });
   }
 
-  if (isSAorAD || isCC) {
+  if (isAdmin || isFinance) {
     nav.push({
       key: "products-catalog", label: "Products", catIcon: ShoppingBag,
       items: [
@@ -110,36 +108,34 @@ function buildNav(effectiveRole: string): NavGroup[] {
   }
 
   const financeItems: NavItem[] = [];
-  if (isSAorAD) {
+  if (isAdmin || isFinance) {
     financeItems.push(
-      { icon: Receipt,       label: "Invoices",          href: "/admin/accounting/invoices"       },
-      { icon: FileCheck,     label: "Receipts",          href: "/admin/accounting/receipts"       },
-      { icon: CreditCard,    label: "Payments",          href: "/admin/accounting/payments"       },
-      { icon: ArrowLeftRight,label: "Transactions",      href: "/admin/accounting/transactions"   },
-      { icon: ArrowLeftRight,label: "AR / AP Tracker",   href: "/admin/accounting/ar-ap"         },
-      { icon: BookMarked,    label: "Journal Entries",   href: "/admin/accounting/journal"        },
-      { icon: BookOpen,      label: "Chart of Accounts", href: "/admin/accounting/coa"            },
-      { icon: RefreshCw,     label: "Exchange Rates",    href: "/admin/accounting/exchange-rates" },
+      { icon: Receipt,        label: "Invoices",          href: "/admin/accounting/invoices"       },
+      { icon: FileCheck,      label: "Receipts",          href: "/admin/accounting/receipts"       },
+      { icon: CreditCard,     label: "Payments",          href: "/admin/accounting/payments"       },
+      { icon: ArrowLeftRight, label: "Transactions",      href: "/admin/accounting/transactions"   },
+      { icon: ArrowLeftRight, label: "AR / AP Tracker",   href: "/admin/accounting/ar-ap"          },
+      { icon: BookMarked,     label: "Journal Entries",   href: "/admin/accounting/journal"        },
+      { icon: BookOpen,       label: "Chart of Accounts", href: "/admin/accounting/coa"            },
+      { icon: RefreshCw,      label: "Exchange Rates",    href: "/admin/accounting/exchange-rates" },
     );
   }
-  if (isCC || isEA || isPartner) {
+  if (isCC || isConsultant) {
     financeItems.push(
       { icon: Wallet,    label: "My Settlements", href: "/admin/my-accounting/settlements" },
-      { icon: FileText,  label: "My Invoices",   href: "/admin/my-accounting/invoices"    },
-      { icon: BarChart2, label: "My Revenue",    href: "/admin/my-accounting/revenue"     },
+      { icon: FileText,  label: "My Invoices",    href: "/admin/my-accounting/invoices"    },
+      { icon: BarChart2, label: "My Revenue",     href: "/admin/my-accounting/revenue"     },
     );
   }
   if (financeItems.length > 0)
     nav.push({ key: "finance", label: "Finance", catIcon: Wallet, items: financeItems });
 
-  if (!isParent) {
-    nav.push({
-      key: "reports", label: "Reports", catIcon: BarChart2,
-      items: [{ icon: ReportNavIcon as unknown as LucideIcon, label: "Program Reports", href: "/admin/reports" }],
-    });
-  }
+  nav.push({
+    key: "reports", label: "Reports", catIcon: BarChart2,
+    items: [{ icon: ReportNavIcon as unknown as LucideIcon, label: "Program Reports", href: "/admin/reports" }],
+  });
 
-  if (isSAorAD) {
+  if (isAdmin) {
     nav.push({
       key: "ai", label: "AI Assistant", catIcon: Bot,
       items: [{ icon: Bot, label: "AI Chatbot", href: "/admin/chatbot" }],
@@ -147,26 +143,35 @@ function buildNav(effectiveRole: string): NavGroup[] {
   }
 
   const adminItems: NavItem[] = [];
-  if (isSAorAD)  adminItems.push({ icon: Users,        label: "Users",      href: "/admin/users"       });
-  if (isSAorAD)  adminItems.push({ icon: Users2,       label: "Teams",         href: "/admin/teams"          });
-  if (isSAorAD)  adminItems.push({ icon: BarChart2,    label: "Staff KPI",     href: "/admin/kpi/staff"      });
-  if (isSAorAD)  adminItems.push({ icon: Users2,       label: "Team KPI",      href: "/admin/kpi/team"       });
-  if (isSAorAD)  adminItems.push({ icon: Target,       label: "KPI Targets",   href: "/admin/kpi/targets"    });
-  if (isParent)  adminItems.push({ icon: GraduationCap, label: "My Programs", href: "/admin/my-programs" });
+  if (isAdmin) {
+    adminItems.push(
+      { icon: Users,     label: "Users",  href: "/admin/users"  },
+      { icon: Users2,    label: "Teams",  href: "/admin/teams"  },
+    );
+  }
+  if (isAdmin || isTeamMgr) {
+    adminItems.push(
+      { icon: BarChart2, label: "Staff KPI",  href: "/admin/kpi/staff"   },
+      { icon: Users2,    label: "Team KPI",   href: "/admin/kpi/team"    },
+    );
+  }
+  if (isAdmin) {
+    adminItems.push({ icon: Target, label: "KPI Targets", href: "/admin/kpi/targets" });
+  }
   if (adminItems.length > 0)
     nav.push({ key: "admin", label: "Admin", catIcon: Grid2x2, items: adminItems });
 
-  if (isSAorAD) {
+  if (isAdmin) {
     nav.push({
       key: "settings", label: "Settings", catIcon: Settings,
       items: [
-        { icon: Settings,    label: "General",            href: "/admin/settings/general"            },
-        { icon: Lock,        label: "Page Access",        href: "/admin/settings/page-access"        },
-        { icon: Grid2x2,     label: "Field Permissions",  href: "/admin/settings/field-permissions"  },
-        { icon: FileSearch,  label: "Doc Permissions",    href: "/admin/settings/doc-permissions"    },
-        { icon: UserSearch,  label: "Impersonation Logs", href: "/admin/settings/impersonation-logs" },
-        { icon: FolderOpen,  label: "Data Manager",       href: "/admin/settings/data-manager"       },
-        { icon: Tags,        label: "Lookup Values",      href: "/admin/settings/lookup-values"       },
+        { icon: Settings,   label: "General",            href: "/admin/settings/general"            },
+        { icon: Lock,       label: "Page Access",        href: "/admin/settings/page-access"        },
+        { icon: Grid2x2,    label: "Field Permissions",  href: "/admin/settings/field-permissions"  },
+        { icon: FileSearch, label: "Doc Permissions",    href: "/admin/settings/doc-permissions"    },
+        { icon: UserSearch, label: "Impersonation Logs", href: "/admin/settings/impersonation-logs" },
+        { icon: FolderOpen, label: "Data Manager",       href: "/admin/settings/data-manager"       },
+        { icon: Tags,       label: "Lookup Values",      href: "/admin/settings/lookup-values"      },
       ],
     });
   }
@@ -375,7 +380,7 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
   const { user }                     = useAuth();
   const { viewAsUser, isImpersonating } = useViewAs();
 
-  const effectiveRole = viewAsUser?.role ?? user?.role ?? "parent_client";
+  const effectiveRole = viewAsUser?.role ?? user?.role ?? "consultant";
   const nav           = buildNav(effectiveRole);
 
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(readCollapsed);

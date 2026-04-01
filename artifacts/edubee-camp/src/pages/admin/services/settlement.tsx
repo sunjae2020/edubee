@@ -74,7 +74,7 @@ export default function Settlement() {
   const [form, setForm] = useState<Partial<Rec>>({});
 
   const role = user?.role ?? "";
-  const canCreate = ["super_admin", "admin", "camp_coordinator"].includes(role);
+  const canCreate = ["super_admin","admin","admission","team_manager","camp_coordinator"].includes(role);
 
   const { data, isLoading } = useQuery({
     queryKey: ["services-settlement", statusFilter, sortBy, sortDir],

@@ -7,6 +7,7 @@ import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router();
 
+const ALL_INTERNAL_ROLES = ["super_admin","admin","finance","admission","team_manager","consultant","camp_coordinator"] as const;
 const ADMIN_ROLES = ["super_admin", "admin"] as const;
 
 function generateTaskNumber(): string {
@@ -32,35 +33,19 @@ async function notifyAdmins(type: string, title: string, message: string, refere
 }
 
 function buildScopeConditions(role: string, uid: string): SQL | undefined {
-  const conditions: SQL[] = [];
   if (role === "camp_coordinator") {
-    conditions.push(or(
+    return or(
       eq(tasks.assignedTo, uid),
       eq(tasks.assignedTeam, "camp_coordinator"),
-    )!);
-  } else if (role === "education_agent") {
-    conditions.push(or(
+    )!;
+  }
+  if (role === "consultant") {
+    return or(
       eq(tasks.assignedTo, uid),
       eq(tasks.submittedBy, uid),
-    )!);
-  } else if (role.startsWith("partner_")) {
-    const serviceMap: Record<string, string> = {
-      partner_institute: "institute",
-      partner_hotel: "hotel",
-      partner_pickup: "pickup",
-      partner_tour: "tour",
-    };
-    const svcType = serviceMap[role];
-    const orConditions: SQL[] = [eq(tasks.assignedTo, uid)];
-    if (svcType) orConditions.push(eq(tasks.relatedServiceType, svcType));
-    conditions.push(or(...orConditions)!);
-  } else if (role === "parent_client") {
-    conditions.push(and(
-      eq(tasks.submittedBy, uid),
-      eq(tasks.visibility, "shared"),
-    )!);
+    )!;
   }
-  return conditions.length > 0 ? conditions[0] : undefined;
+  return undefined;
 }
 
 // ── PUBLIC: create cs_request from landing page ──────────────────────────────
@@ -147,10 +132,11 @@ router.get("/tasks/:id", authenticate, async (req, res) => {
     const [task] = await db.select().from(tasks).where(eq(tasks.id, req.params.id)).limit(1);
     if (!task) return res.status(404).json({ error: "Not Found" });
 
-    if (role === "parent_client" && (task.submittedBy !== uid || task.visibility !== "shared"))
+    if (false) {
       return res.status(403).json({ error: "Forbidden" });
+    }
 
-    const isInternal = !["parent_client"].includes(role);
+    const isInternal = true;
     const commentsWhere = isInternal
       ? eq(taskComments.taskId, task.id)
       : and(eq(taskComments.taskId, task.id), eq(taskComments.isInternal, false));
@@ -173,7 +159,7 @@ router.get("/tasks/:id", authenticate, async (req, res) => {
 });
 
 // ── CREATE task (admin) ──────────────────────────────────────────────────────
-router.post("/tasks", authenticate, requireRole("super_admin", "admin", "camp_coordinator", "education_agent"), async (req, res) => {
+router.post("/tasks", authenticate, requireRole(...ALL_INTERNAL_ROLES), async (req, res) => {
   try {
     const body = req.body;
     const taskNumber = generateTaskNumber();
@@ -238,7 +224,7 @@ router.post("/tasks/:id/comments", authenticate, async (req, res) => {
     const { content, isInternal = false } = req.body;
     if (!content) return res.status(400).json({ error: "content required" });
 
-    const forcePublic = role === "parent_client";
+    const forcePublic = false;
     const [u] = await db.select({ name: users.fullName }).from(users).where(eq(users.id, uid)).limit(1);
 
     const [comment] = await db.insert(taskComments).values({

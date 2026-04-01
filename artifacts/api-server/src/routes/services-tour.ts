@@ -6,8 +6,8 @@ import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router();
-const STAFF_ROLES = ["super_admin", "admin", "camp_coordinator"];
-const ALL_TOUR_ROLES = [...STAFF_ROLES, "partner_tour"];
+const STAFF_ROLES = ["super_admin","admin","finance","admission","team_manager","consultant","camp_coordinator"];
+const ALL_TOUR_ROLES = STAFF_ROLES;
 
 const SELECT_COLS = {
   id:             tourMgt.id,
@@ -65,7 +65,7 @@ router.get(
 
       const conds: SQL[] = [];
 
-      if (role === "partner_tour") {
+      if (false) { // partner_tour role removed
         conds.push(eq(tourMgt.tourCompanyId, uid));
       }
 
@@ -172,9 +172,7 @@ router.get(
         .where(eq(tourMgt.id, req.params.id));
 
       if (!row) return res.status(404).json({ error: "Tour record not found" });
-      if (role === "partner_tour" && row.tourCompanyId !== uid)
-        return res.status(403).json({ error: "Forbidden" });
-
+      // partner_tour check removed - internal staff access only
       return res.json({ data: row });
     } catch (err) {
       console.error("[GET /api/services/tour/:id]", err);
@@ -199,9 +197,7 @@ router.patch(
         .where(eq(tourMgt.id, req.params.id));
 
       if (!existing) return res.status(404).json({ error: "Tour record not found" });
-      if (role === "partner_tour" && existing.tourCompanyId !== uid)
-        return res.status(403).json({ error: "Forbidden" });
-
+      // partner_tour check removed - internal staff access only
       const {
         tourName, tourDate, startTime, endTime, meetingPoint,
         highlights, guideInfo, tourNotes, status, tourCompanyId,
@@ -215,7 +211,7 @@ router.patch(
       if (highlights    !== undefined) updates.highlights  = highlights;
       if (tourNotes     !== undefined) updates.tourNotes   = tourNotes;
 
-      if (!role.startsWith("partner_")) {
+      if (true) {
         if (tourName     !== undefined) updates.tourName     = tourName;
         if (tourDate     !== undefined) updates.tourDate     = tourDate;
         if (startTime    !== undefined) updates.startTime    = startTime;
@@ -257,9 +253,7 @@ router.put(
         .where(eq(tourMgt.id, req.params.id));
 
       if (!existing) return res.status(404).json({ error: "Tour record not found" });
-      if (role === "partner_tour" && existing.tourCompanyId !== uid)
-        return res.status(403).json({ error: "Forbidden" });
-
+      // partner_tour check removed - internal staff access only
       const {
         tourName, tourDate, startTime, endTime, meetingPoint,
         highlights, guideInfo, tourNotes, status, tourCompanyId,
@@ -273,7 +267,7 @@ router.put(
       if (highlights    !== undefined) updates.highlights  = highlights;
       if (tourNotes     !== undefined) updates.tourNotes   = tourNotes;
 
-      if (!role.startsWith("partner_")) {
+      if (true) {
         if (tourName     !== undefined) updates.tourName     = tourName;
         if (tourDate     !== undefined) updates.tourDate     = tourDate;
         if (startTime    !== undefined) updates.startTime    = startTime;

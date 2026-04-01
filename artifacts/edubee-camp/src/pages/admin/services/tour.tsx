@@ -111,7 +111,7 @@ export default function TourManagement() {
   const [selected, setSelected] = useState<Rec | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<Rec>>({});
-  const isAdmin = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
+  const isAdmin = ["super_admin","admin","admission","team_manager","camp_coordinator"].includes(user?.role ?? "");
 
   useEffect(() => { setPage(1); }, [sortBy, sortDir]);
 

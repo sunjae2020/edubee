@@ -91,8 +91,7 @@ router.post("/", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => 
 
 const ROLE_HIERARCHY: Record<string, number> = {
   super_admin: 100, admin: 80, camp_coordinator: 60,
-  education_agent: 40, partner_institute: 30, partner_hotel: 30,
-  partner_pickup: 30, partner_tour: 30, parent_client: 20,
+  finance: 70, admission: 65, team_manager: 60, consultant: 50, camp_coordinator: 40,
 };
 
 router.get("/switchable", authenticate, async (req, res) => {

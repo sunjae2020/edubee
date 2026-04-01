@@ -58,7 +58,7 @@ export default function MySettlements() {
   const filtered = statusFilter === "all" ? rows : rows.filter(r => r.status === statusFilter);
   const sorted = useSorted(filtered, sortBy, sortDir);
 
-  const isCC = user?.role === "camp_coordinator";
+  const isCC = ["camp_coordinator","consultant"].includes(user?.role ?? "");
 
   return (
     <div className="p-6 space-y-4">

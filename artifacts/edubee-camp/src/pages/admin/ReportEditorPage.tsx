@@ -591,7 +591,7 @@ export default function ReportEditorPage() {
   const autoSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const role = user?.role ?? "";
-  const isViewOnly = ["education_agent", "parent_client"].includes(role);
+  const isViewOnly = false; // all internal staff can edit reports
 
   const { data: reportData, isLoading: reportLoading } = useQuery({
     queryKey: ["report", id],

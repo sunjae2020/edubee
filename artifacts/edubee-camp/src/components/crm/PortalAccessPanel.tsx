@@ -50,7 +50,7 @@ const PORTAL_ROLES = [
   { value: "hotel",         label: "Hotel"          },
   { value: "pickup",        label: "Pickup"         },
   { value: "tour",          label: "Tour"           },
-  { value: "parent_client", label: "Parent / Client"},
+  { value: "consultant", label: "Consultant (Account Portal)" },
 ];
 
 interface Props {

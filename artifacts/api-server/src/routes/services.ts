@@ -78,7 +78,7 @@ router.get("/services/pickup/:id", authenticate, async (req, res) => {
     if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "Not Found" });
     const [rec] = await db.select().from(pickupMgt).where(eq(pickupMgt.id, req.params.id)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
-    if (role === "partner_pickup" && rec.driverId !== uid) return res.status(403).json({ error: "Forbidden" });
+    // Internal staff: no ownership restriction
     const [enriched] = await enrichWithContractInfo([rec]);
     return res.json({ data: enriched });
   } catch (err) {
@@ -92,7 +92,7 @@ router.put("/services/pickup/:id", authenticate, async (req, res) => {
     const uid = req.user!.id;
     const [rec] = await db.select().from(pickupMgt).where(eq(pickupMgt.id, req.params.id)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
-    if (role === "partner_pickup" && rec.driverId !== uid) return res.status(403).json({ error: "Forbidden" });
+    // Internal staff: no ownership restriction
 
     const { vehicleInfo, driverNotes, status, pickupType, fromLocation, toLocation, pickupDatetime, driverId } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };
@@ -122,7 +122,7 @@ router.get("/services/tour", authenticate, async (req, res) => {
     const role = req.user!.role;
     const uid = req.user!.id;
     let query = db.select().from(tourMgt);
-    const data = role === "partner_tour"
+    const data = false
       ? await query.where(eq(tourMgt.tourCompanyId, uid))
       : await query;
     return res.json({ data: await enrichWithContractInfo(data) });
@@ -138,7 +138,7 @@ router.get("/services/tour/:id", authenticate, async (req, res) => {
     if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "Not Found" });
     const [rec] = await db.select().from(tourMgt).where(eq(tourMgt.id, req.params.id)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
-    if (role === "partner_tour" && rec.tourCompanyId !== uid) return res.status(403).json({ error: "Forbidden" });
+    // Internal staff: no ownership restriction
     const [enriched] = await enrichWithContractInfo([rec]);
     return res.json({ data: enriched });
   } catch (err) {
@@ -152,7 +152,7 @@ router.put("/services/tour/:id", authenticate, async (req, res) => {
     const uid = req.user!.id;
     const [rec] = await db.select().from(tourMgt).where(eq(tourMgt.id, req.params.id)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
-    if (role === "partner_tour" && rec.tourCompanyId !== uid) return res.status(403).json({ error: "Forbidden" });
+    // Internal staff: no ownership restriction
 
     const { highlights, guideInfo, tourNotes, status, tourName, tourDate, startTime, endTime, meetingPoint, tourCompanyId } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };
@@ -184,7 +184,7 @@ router.get("/services/settlement", authenticate, async (req, res) => {
     const role = req.user!.role;
     const uid = req.user!.id;
 
-    if (role === "parent_client") return res.status(403).json({ error: "Forbidden" });
+    // Internal staff only: access granted
 
     const { contractId, providerId, status, overallStatus, sortBy = "createdAt", sortDir = "desc" } = req.query as Record<string, string>;
     const colMap: Record<string, unknown> = { createdAt: settlementMgt.createdAt, arrivalDate: settlementMgt.arrivalDate, settlementDate: settlementMgt.settlementDate };
@@ -207,7 +207,7 @@ router.get("/services/settlement", authenticate, async (req, res) => {
       const data = rawData.filter(s => s.contractId && contractIds.includes(s.contractId));
       const enriched = await enrichWithContractInfo(data);
       return res.json({ data: await enrichSettlementConsultants(enriched) });
-    } else if (role === "education_agent") {
+    } else if (role === "consultant") {
       conditions.push(eq(settlementMgt.providerUserId, uid));
     }
 
@@ -272,7 +272,7 @@ router.get("/services/settlement/:id", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
     const uid  = req.user!.id;
-    if (role === "parent_client") return res.status(403).json({ error: "Forbidden" });
+    // Internal staff only: access granted
 
     if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "Not Found" });
 

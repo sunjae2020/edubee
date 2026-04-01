@@ -394,7 +394,7 @@ export default function SettlementMgtDetail() {
   const [editField, setEditField] = useState<string | null>(null);
   const [editVal, setEditVal] = useState<string>("");
 
-  const isAdmin = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "");
+  const isAdmin = ["super_admin","admin","admission","team_manager","camp_coordinator"].includes(user?.role ?? "");
 
   const { data: rec, isLoading, isError, error, refetch } = useQuery<SettlementRec>({
     queryKey: ["settlement-detail", id],

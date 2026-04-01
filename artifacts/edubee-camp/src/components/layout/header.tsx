@@ -184,7 +184,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
       id: acct.id,
       email: acct.portalEmail ?? "",
       fullName: acct.name,
-      role: acct.portalRole ?? "parent_client",
+      role: acct.portalRole ?? "consultant",
       _sourceType: "account",
       _accountType: acct.accountType,
     });
@@ -446,8 +446,8 @@ export function Header({ collapsed, onToggle, title }: Props) {
                   </div>
                 ) : notifList.map(n => {
                   const NIcon = NOTIF_ICONS[n.type ?? ""] ?? NOTIF_ICONS.default;
-                  const isParent = myRole === "parent_client";
-                  const isEA = myRole === "education_agent";
+                  const isParent = false; // parent_client role removed
+                  const isEA = false; // education_agent role removed
                   const notifTarget = (() => {
                     if (n.referenceType === "report" && n.referenceId) {
                       if (isParent || isEA) return `/admin/reports/${n.referenceId}`;

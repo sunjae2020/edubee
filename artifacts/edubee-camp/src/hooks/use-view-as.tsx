@@ -1,22 +1,20 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 
 export const ROLE_HIERARCHY: Record<string, number> = {
-  super_admin: 100, admin: 80, camp_coordinator: 60,
-  education_agent: 40, partner_institute: 30, partner_hotel: 30,
-  partner_pickup: 30, partner_tour: 30, parent_client: 20,
+  super_admin: 100, admin: 80, finance: 70, admission: 65,
+  team_manager: 60, consultant: 50, camp_coordinator: 40,
 };
 
 export const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Super Admin", admin: "Admin", camp_coordinator: "Camp Coordinator",
-  education_agent: "Education Agent", partner_institute: "Partner Institute",
-  partner_hotel: "Partner Hotel", partner_pickup: "Partner Pickup",
-  partner_tour: "Partner Tour", parent_client: "Parent Client",
+  super_admin: "Super Admin", admin: "Admin", finance: "Finance",
+  admission: "Admission", team_manager: "Team Manager",
+  consultant: "Consultant", camp_coordinator: "Camp Coordinator",
 };
 
 export const ROLE_EMOJIS: Record<string, string> = {
-  super_admin: "👑", admin: "🛡️", camp_coordinator: "📋",
-  education_agent: "🎓", partner_institute: "🏫", partner_hotel: "🏨",
-  partner_pickup: "🚗", partner_tour: "🗺️", parent_client: "👪",
+  super_admin: "👑", admin: "🛡️", finance: "💰",
+  admission: "📝", team_manager: "👥", consultant: "💼",
+  camp_coordinator: "📋",
 };
 
 const SESSION_KEY = "edubee_view_as";

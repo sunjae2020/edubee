@@ -82,7 +82,7 @@ export default function TasksPage() {
   const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const qc = useQueryClient();
   const role = user?.role ?? "";
-  const isParent = role === "parent_client";
+  const isParent = false;
   const isAdmin = ["super_admin", "admin"].includes(role);
 
   const [taskTypeTab, setTaskTypeTab] = useState<TaskTypeTab>("internal");

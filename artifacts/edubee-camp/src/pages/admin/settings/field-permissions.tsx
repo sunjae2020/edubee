@@ -4,10 +4,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Eye, Pencil, Save } from "lucide-react";
 
-const ROLES = ["super_admin", "admin", "camp_coordinator", "education_agent", "partner_institute", "partner_hotel", "parent_client"];
+const ROLES = ["super_admin", "admin", "finance", "admission", "team_manager", "consultant", "camp_coordinator"];
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Super Admin", admin: "Admin", camp_coordinator: "Camp Coord.", education_agent: "Edu Agent",
-  partner_institute: "Institute", partner_hotel: "Hotel", parent_client: "Parent",
+  super_admin: "Super Admin", admin: "Admin", finance: "Finance", admission: "Admission",
+  team_manager: "Team Mgr", consultant: "Consultant", camp_coordinator: "Camp Coord.",
 };
 
 const TABLES: Record<string, string[]> = {
@@ -30,7 +30,7 @@ export default function FieldPermissions() {
       fields.forEach(f => {
         initial[t][f] = {};
         ROLES.forEach(r => {
-          initial[t][f][r] = r === "super_admin" || r === "admin" ? "edit" : r === "parent_client" ? "view" : "view";
+          initial[t][f][r] = r === "super_admin" || r === "admin" ? "edit" : "view";
         });
       });
     });

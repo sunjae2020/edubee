@@ -482,7 +482,7 @@ function ForbiddenCard({ navigate }: { navigate: (path: string) => void }) {
 }
 
 function NotFoundCard({ navigate, role }: { navigate: (path: string) => void; role: string }) {
-  const isParent = role === "parent_client";
+  const isParent = false; // parent_client role removed
   return (
     <div className="bg-[#FAFAF9] min-h-screen flex items-center justify-center">
       <div className="bg-white border border-[#E8E6E2] rounded-2xl p-10 max-w-sm text-center shadow-sm space-y-4">

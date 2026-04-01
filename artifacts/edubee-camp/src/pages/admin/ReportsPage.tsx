@@ -57,11 +57,11 @@ export default function ReportsPage() {
   const canCreate = ["super_admin", "admin", "camp_coordinator"].includes(role);
   const canDelete = role === "super_admin";
   const canUnpublish = ["super_admin", "admin"].includes(role);
-  const isViewOnly = role === "education_agent" || role === "parent_client";
+  const isViewOnly = false; // all internal staff
 
   // parent_client sees their programs, not the reports list
   useEffect(() => {
-    if (role === "parent_client") navigate("/admin/my-programs");
+    // parent_client redirect removed
   }, [role, navigate]);
 
   const [search, setSearch] = useState("");

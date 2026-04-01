@@ -507,7 +507,7 @@ export default function EntityDocumentsTab({ entityType, entityId, mode = "full"
   const [activeTab, setActiveTab] = useState<TabType>("student");
   const [uploadOpen, setUploadOpen] = useState(false);
 
-  const role = user?.role ?? "parent_client";
+  const role = user?.role ?? "consultant";
   const isAdmin = ["super_admin", "admin"].includes(role);
 
   const { data: studentGroups = [], isLoading: loadingStudent } = useQuery<DocGroup[]>({
