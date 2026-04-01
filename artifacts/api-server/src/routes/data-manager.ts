@@ -52,8 +52,10 @@ const BATCH_SIZE = 1000;
 const IMPORT_BATCH = 100;
 
 const ALLOWED_CURRENCIES = ["KRW", "THB", "JPY", "USD", "PHP", "SGD", "GBP", "AUD"];
-const VALID_ROLES = ["super_admin", "admin", "camp_coordinator", "agent", "camp_provider", "hotel", "driver", "tour_company"];
+const VALID_ROLES = ["super_admin", "admin", "finance", "admission", "team_manager", "consultant", "camp_coordinator"];
 const VALID_PRODUCT_TYPES = ["institute", "hotel", "pickup", "tour", "settlement"];
+const VALID_ACCOUNT_TYPES = ["individual", "business", "school", "institute", "hotel", "tour_company", "other"];
+const VALID_GENDERS = ["male", "female", "other", "prefer_not_to_say"];
 
 function escapeCsv(val: unknown): string {
   if (val === null || val === undefined) return "";
@@ -279,8 +281,40 @@ const EXPORT_CONFIGS: Record<string, ExportConfig> = {
 
 const TEMPLATES: Record<string, { columns: string[]; example: string[] }> = {
   users: {
-    columns: ["email", "role", "full_name", "phone", "company_name", "country_of_ops"],
-    example: ["#EXAMPLE", "agent@example.com", "agent", "John Smith", "+61412345678", "Smith Education", "AU"],
+    columns: ["email", "role", "staff_role", "full_name", "first_name", "last_name", "english_name", "original_name", "phone", "whatsapp", "line_id", "timezone", "preferred_lang", "company_name", "business_reg_no", "country_of_ops", "status"],
+    example: ["#EXAMPLE", "staff@edubee.com", "consultant", "", "Jane", "Smith", "Jane Smith", "제인 스미스", "+61412345678", "+61412345678", "jane_line", "Australia/Sydney", "en", "Edubee", "", "AU", "active"],
+  },
+  accounts: {
+    columns: ["name", "account_type", "account_category", "phone_number", "email", "website", "address", "country", "state", "city", "postal_code", "abn", "description", "status", "first_name", "last_name", "english_name", "original_name"],
+    example: ["#EXAMPLE", "Sydney English School", "school", "individual", "+61292345678", "admin@ses.edu.au", "https://ses.edu.au", "123 Oxford St", "AU", "NSW", "Sydney", "2000", "123456789", "English language school", "active", "John", "Lee", "John Lee", "이준호"],
+  },
+  contacts: {
+    columns: ["first_name", "last_name", "full_name", "english_name", "original_name", "title", "dob", "gender", "nationality", "email", "mobile", "office_number", "sns_type", "sns_id", "description", "status"],
+    example: ["#EXAMPLE", "Ji-ho", "Kim", "Ji-ho Kim", "Ji-ho Kim", "김지호", "Mr", "1995-03-15", "male", "KR", "jiho@example.com", "+821012345678", "", "kakao", "jihokakao", "Regular student client", "active"],
+  },
+  leads: {
+    columns: ["full_name", "email", "phone", "nationality", "source", "status", "notes", "agent_id"],
+    example: ["#EXAMPLE", "Min-jun Park", "minjun@example.com", "+821099887766", "KR", "website", "new", "Interested in 4-week program", ""],
+  },
+  applications: {
+    columns: ["application_number", "agent_id", "client_id", "package_group_id", "package_id", "status", "total_children", "total_adults", "preferred_start_date", "primary_language", "referral_source"],
+    example: ["#EXAMPLE", "APP-2025-0001", "", "", "uuid-of-package-group", "uuid-of-package", "pending", "2", "0", "2025-07-01", "KO", "website"],
+  },
+  camp_applications: {
+    columns: ["application_ref", "package_group_id", "package_id", "applicant_name", "applicant_first_name", "applicant_last_name", "applicant_english_name", "applicant_original_name", "applicant_email", "applicant_phone", "applicant_nationality", "applicant_dob", "adult_count", "student_count", "preferred_start_date", "special_requirements", "dietary_requirements", "medical_conditions", "emergency_contact_name", "emergency_contact_phone", "agent_account_id", "application_status", "status"],
+    example: ["#EXAMPLE", "CAMP-2025-001", "uuid-of-package-group", "uuid-of-package", "Soo-jin Lee", "Soo-jin", "Lee", "Soo-jin Lee", "이수진", "soojin@example.com", "+821011112222", "KR", "2010-05-20", "1", "1", "2025-07-01", "", "No peanuts", "None", "Parent Kim", "+821033334444", "", "pending", "active"],
+  },
+  contracts: {
+    columns: ["contract_number", "application_id", "camp_provider_id", "total_amount", "currency", "status", "start_date", "end_date"],
+    example: ["#EXAMPLE", "CTR-2025-0001", "uuid-of-application", "uuid-of-provider", "5500.00", "AUD", "active", "2025-07-01", "2025-07-29"],
+  },
+  invoices: {
+    columns: ["invoice_number", "contract_id", "invoice_type", "recipient_id", "total_amount", "currency", "original_currency", "original_amount", "aud_equivalent", "exchange_rate_to_aud", "status", "issued_at", "due_date", "notes"],
+    example: ["#EXAMPLE", "INV-2025-0001", "uuid-of-contract", "client", "uuid-of-recipient", "5500.00", "AUD", "AUD", "5500.00", "5500.00", "1.0", "unpaid", "2025-06-01", "2025-06-15", "First invoice"],
+  },
+  receipts: {
+    columns: ["receipt_number", "invoice_id", "payer_id", "amount", "currency", "original_currency", "original_amount", "aud_equivalent", "payment_method", "receipt_date", "status"],
+    example: ["#EXAMPLE", "RCP-2025-0001", "uuid-of-invoice", "uuid-of-payer", "2750.00", "AUD", "KRW", "2750000", "2750.00", "bank_transfer", "2025-06-05", "confirmed"],
   },
   exchange_rates: {
     columns: ["from_currency", "to_currency", "rate", "effective_date", "source"],
@@ -290,13 +324,21 @@ const TEMPLATES: Record<string, { columns: string[]; example: string[] }> = {
     columns: ["product_name", "product_type", "description", "cost", "currency"],
     example: ["#EXAMPLE", "English Immersion Course", "institute", "4-week intensive course", "1500.00", "AUD"],
   },
+  package_groups: {
+    columns: ["name_en", "name_ko", "name_ja", "name_th", "location", "country_code", "status", "camp_provider_id"],
+    example: ["#EXAMPLE", "Sydney English Academy", "시드니 영어 아카데미", "シドニー英語アカデミー", "", "Sydney CBD", "AU", "active", ""],
+  },
+  packages: {
+    columns: ["package_group_id", "name", "duration_days", "max_participants", "price_aud", "price_usd", "price_krw", "price_jpy", "price_thb", "price_php", "price_sgd", "price_gbp", "status"],
+    example: ["#EXAMPLE", "uuid-of-package-group", "4 Week Standard", "28", "30", "1500.00", "980.00", "1350000", "145000", "35000", "55000", "1800.00", "1200.00", "active"],
+  },
   enrollment_spots: {
     columns: ["package_group_id", "grade_label", "total_spots"],
     example: ["#EXAMPLE", "uuid-of-package-group", "Grade 7", "20"],
   },
   transactions: {
-    columns: ["contract_id", "transaction_type", "amount", "currency", "original_currency", "original_amount", "description", "bank_reference", "transaction_date"],
-    example: ["#EXAMPLE", "uuid-of-contract", "payment", "2500.00", "AUD", "AUD", "2500.00", "Initial payment", "REF123456", "2025-01-15"],
+    columns: ["contract_id", "transaction_type", "amount", "currency", "original_currency", "original_amount", "aud_equivalent", "exchange_rate_to_aud", "description", "bank_reference", "transaction_date"],
+    example: ["#EXAMPLE", "uuid-of-contract", "payment", "2500.00", "AUD", "AUD", "2500.00", "2500.00", "1.0", "Initial payment", "REF123456", "2025-01-15"],
   },
 };
 
@@ -387,7 +429,7 @@ async function importUsers(rows: Record<string, string>[], importedBy: string) {
     if (!row.role) { errors.push({ row: rowNum, field: "role", message: "Required" }); continue; }
     if (row.role === "super_admin") { errors.push({ row: rowNum, field: "role", message: "Cannot import super_admin role" }); continue; }
     if (!VALID_ROLES.includes(row.role)) { errors.push({ row: rowNum, field: "role", message: `Role must be one of: ${VALID_ROLES.filter(r => r !== "super_admin").join(", ")}` }); continue; }
-    if (!row.full_name) { errors.push({ row: rowNum, field: "full_name", message: "Required" }); continue; }
+    if (!row.full_name && !row.first_name && !row.last_name) { errors.push({ row: rowNum, field: "full_name", message: "full_name or first_name/last_name required" }); continue; }
     valid.push({ rowIdx: i, data: row });
   }
   let success = 0;
@@ -398,21 +440,498 @@ async function importUsers(rows: Record<string, string>[], importedBy: string) {
     try {
       await db.transaction(async (tx) => {
         for (const { data } of batch) {
+          const firstName = data.first_name || null;
+          const lastName = data.last_name || null;
+          const computedFullName = data.full_name || [firstName, lastName].filter(Boolean).join(" ");
           const existing = await tx.select({ id: users.id }).from(users).where(eq(users.email, data.email));
           if (existing.length > 0) {
-            errors.push({ row: 0, field: "email", message: `Email already exists: ${data.email}` });
-            continue;
+            await tx.update(users).set({
+              role: data.role as any,
+              fullName: computedFullName,
+              firstName: firstName,
+              lastName: lastName,
+              englishName: data.english_name || null,
+              originalName: data.original_name || null,
+              phone: data.phone || null,
+              whatsapp: data.whatsapp || null,
+              lineId: data.line_id || null,
+              timezone: data.timezone || null,
+              preferredLang: data.preferred_lang || null,
+              companyName: data.company_name || null,
+              businessRegNo: data.business_reg_no || null,
+              countryOfOps: data.country_of_ops || null,
+              staffRole: (data.staff_role || null) as any,
+            }).where(eq(users.email, data.email));
+          } else {
+            await tx.insert(users).values({
+              email: data.email,
+              role: data.role as any,
+              fullName: computedFullName,
+              firstName: firstName,
+              lastName: lastName,
+              englishName: data.english_name || null,
+              originalName: data.original_name || null,
+              phone: data.phone || null,
+              whatsapp: data.whatsapp || null,
+              lineId: data.line_id || null,
+              timezone: data.timezone || null,
+              preferredLang: data.preferred_lang || null,
+              companyName: data.company_name || null,
+              businessRegNo: data.business_reg_no || null,
+              countryOfOps: data.country_of_ops || null,
+              staffRole: (data.staff_role || null) as any,
+              status: (data.status as any) || "pending",
+              passwordHash,
+            });
           }
-          await tx.insert(users).values({
-            email: data.email,
-            role: data.role as any,
-            fullName: data.full_name,
-            phone: data.phone || null,
-            companyName: data.company_name || null,
-            countryOfOps: data.country_of_ops || null,
-            status: "pending",
-            passwordHash,
+          success++;
+        }
+      });
+    } catch {
+      errors.push({ row: 0, field: "batch", message: `Batch ${b / IMPORT_BATCH + 1} failed` });
+    }
+  }
+  return { success, errors };
+}
+
+async function importAccounts(rows: Record<string, string>[], _importedBy: string) {
+  const errors: { row: number; field: string; message: string }[] = [];
+  const valid: { rowIdx: number; data: typeof rows[0] }[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    if (!row.name) { errors.push({ row: rowNum, field: "name", message: "Required" }); continue; }
+    if (!row.account_type) { errors.push({ row: rowNum, field: "account_type", message: "Required" }); continue; }
+    if (!VALID_ACCOUNT_TYPES.includes(row.account_type)) { errors.push({ row: rowNum, field: "account_type", message: `Must be one of: ${VALID_ACCOUNT_TYPES.join(", ")}` }); continue; }
+    valid.push({ rowIdx: i, data: row });
+  }
+  let success = 0;
+  for (let b = 0; b < valid.length; b += IMPORT_BATCH) {
+    const batch = valid.slice(b, b + IMPORT_BATCH);
+    try {
+      await db.transaction(async (tx) => {
+        for (const { data } of batch) {
+          await tx.insert(accounts).values({
+            name: data.name,
+            accountType: data.account_type as any,
+            accountCategory: (data.account_category || null) as any,
+            phoneNumber: data.phone_number || null,
+            phoneNumber2: data.phone_number_2 || null,
+            email: data.email || null,
+            website: data.website || null,
+            address: data.address || null,
+            country: data.country || null,
+            state: data.state || null,
+            city: data.city || null,
+            postalCode: data.postal_code || null,
+            abn: data.abn || null,
+            description: data.description || null,
+            status: (data.status as any) || "active",
+            firstName: data.first_name || null,
+            lastName: data.last_name || null,
+            englishName: data.english_name || null,
+            originalName: data.original_name || null,
           });
+          success++;
+        }
+      });
+    } catch {
+      errors.push({ row: 0, field: "batch", message: `Batch ${b / IMPORT_BATCH + 1} failed` });
+    }
+  }
+  return { success, errors };
+}
+
+async function importContacts(rows: Record<string, string>[], _importedBy: string) {
+  const errors: { row: number; field: string; message: string }[] = [];
+  const valid: { rowIdx: number; data: typeof rows[0] }[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    if (!row.first_name && !row.full_name) { errors.push({ row: rowNum, field: "first_name", message: "first_name or full_name required" }); continue; }
+    valid.push({ rowIdx: i, data: row });
+  }
+  let success = 0;
+  for (let b = 0; b < valid.length; b += IMPORT_BATCH) {
+    const batch = valid.slice(b, b + IMPORT_BATCH);
+    try {
+      await db.transaction(async (tx) => {
+        for (const { data } of batch) {
+          const firstName = data.first_name || data.full_name || "";
+          const lastName = data.last_name || null;
+          const fullName = data.full_name || [firstName, lastName].filter(Boolean).join(" ");
+          await tx.insert(contacts).values({
+            firstName,
+            lastName: lastName || "",
+            fullName,
+            englishName: data.english_name || null,
+            originalName: data.original_name || null,
+            title: (data.title || null) as any,
+            dob: data.dob || null,
+            gender: (data.gender || null) as any,
+            nationality: data.nationality || null,
+            email: data.email || null,
+            mobile: data.mobile || null,
+            officeNumber: data.office_number || null,
+            snsType: (data.sns_type || null) as any,
+            snsId: data.sns_id || null,
+            description: data.description || null,
+            status: (data.status as any) || "active",
+          });
+          success++;
+        }
+      });
+    } catch {
+      errors.push({ row: 0, field: "batch", message: `Batch ${b / IMPORT_BATCH + 1} failed` });
+    }
+  }
+  return { success, errors };
+}
+
+async function importLeads(rows: Record<string, string>[], importedBy: string) {
+  const errors: { row: number; field: string; message: string }[] = [];
+  const valid: { rowIdx: number; data: typeof rows[0] }[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    if (!row.full_name) { errors.push({ row: rowNum, field: "full_name", message: "Required" }); continue; }
+    valid.push({ rowIdx: i, data: row });
+  }
+  let success = 0;
+  for (let b = 0; b < valid.length; b += IMPORT_BATCH) {
+    const batch = valid.slice(b, b + IMPORT_BATCH);
+    try {
+      await db.transaction(async (tx) => {
+        for (const { data } of batch) {
+          await tx.insert(leads).values({
+            fullName: data.full_name,
+            email: data.email || null,
+            phone: data.phone || null,
+            nationality: data.nationality || null,
+            source: (data.source || null) as any,
+            status: (data.status as any) || "new",
+            notes: data.notes || null,
+            agentId: data.agent_id || importedBy,
+          });
+          success++;
+        }
+      });
+    } catch {
+      errors.push({ row: 0, field: "batch", message: `Batch ${b / IMPORT_BATCH + 1} failed` });
+    }
+  }
+  return { success, errors };
+}
+
+async function importApplications(rows: Record<string, string>[], _importedBy: string) {
+  const errors: { row: number; field: string; message: string }[] = [];
+  const valid: { rowIdx: number; data: typeof rows[0] }[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    if (!row.package_group_id) { errors.push({ row: rowNum, field: "package_group_id", message: "Required" }); continue; }
+    if (!row.status) { errors.push({ row: rowNum, field: "status", message: "Required" }); continue; }
+    valid.push({ rowIdx: i, data: row });
+  }
+  let success = 0;
+  for (let b = 0; b < valid.length; b += IMPORT_BATCH) {
+    const batch = valid.slice(b, b + IMPORT_BATCH);
+    try {
+      await db.transaction(async (tx) => {
+        for (const { data } of batch) {
+          const vals: any = {
+            packageGroupId: data.package_group_id,
+            packageId: data.package_id || null,
+            agentId: data.agent_id || null,
+            clientId: data.client_id || null,
+            status: data.status as any,
+            totalChildren: data.total_children ? parseInt(data.total_children) : 0,
+            totalAdults: data.total_adults ? parseInt(data.total_adults) : 0,
+            preferredStartDate: data.preferred_start_date || null,
+            primaryLanguage: data.primary_language || null,
+            referralSource: data.referral_source || null,
+          };
+          if (data.application_number) {
+            await tx.insert(applications).values({ ...vals, applicationNumber: data.application_number })
+              .onConflictDoUpdate({ target: [applications.applicationNumber], set: vals });
+          } else {
+            await tx.insert(applications).values(vals);
+          }
+          success++;
+        }
+      });
+    } catch {
+      errors.push({ row: 0, field: "batch", message: `Batch ${b / IMPORT_BATCH + 1} failed` });
+    }
+  }
+  return { success, errors };
+}
+
+async function importCampApplications(rows: Record<string, string>[], importedBy: string) {
+  const errors: { row: number; field: string; message: string }[] = [];
+  const valid: { rowIdx: number; data: typeof rows[0] }[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    if (!row.applicant_name && !row.applicant_first_name) { errors.push({ row: rowNum, field: "applicant_name", message: "applicant_name or applicant_first_name required" }); continue; }
+    if (!row.package_group_id) { errors.push({ row: rowNum, field: "package_group_id", message: "Required" }); continue; }
+    valid.push({ rowIdx: i, data: row });
+  }
+  let success = 0;
+  for (let b = 0; b < valid.length; b += IMPORT_BATCH) {
+    const batch = valid.slice(b, b + IMPORT_BATCH);
+    try {
+      await db.transaction(async (tx) => {
+        for (const { data } of batch) {
+          const vals: any = {
+            packageGroupId: data.package_group_id,
+            packageId: data.package_id || null,
+            applicantName: data.applicant_name || [data.applicant_first_name, data.applicant_last_name].filter(Boolean).join(" "),
+            applicantFirstName: data.applicant_first_name || null,
+            applicantLastName: data.applicant_last_name || null,
+            applicantEnglishName: data.applicant_english_name || null,
+            applicantOriginalName: data.applicant_original_name || null,
+            applicantEmail: data.applicant_email || null,
+            applicantPhone: data.applicant_phone || null,
+            applicantNationality: data.applicant_nationality || null,
+            applicantDob: data.applicant_dob || null,
+            adultCount: data.adult_count ? parseInt(data.adult_count) : 0,
+            studentCount: data.student_count ? parseInt(data.student_count) : 0,
+            preferredStartDate: data.preferred_start_date || null,
+            specialRequirements: data.special_requirements || null,
+            dietaryRequirements: data.dietary_requirements || null,
+            medicalConditions: data.medical_conditions || null,
+            emergencyContactName: data.emergency_contact_name || null,
+            emergencyContactPhone: data.emergency_contact_phone || null,
+            agentAccountId: data.agent_account_id || null,
+            assignedStaffId: data.assigned_staff_id || null,
+            applicationStatus: (data.application_status || "pending") as any,
+            status: (data.status || "active") as any,
+          };
+          if (data.application_ref) {
+            await tx.insert(campApplications).values({ ...vals, applicationRef: data.application_ref })
+              .onConflictDoUpdate({ target: [campApplications.applicationRef], set: vals });
+          } else {
+            await tx.insert(campApplications).values(vals);
+          }
+          success++;
+        }
+      });
+    } catch {
+      errors.push({ row: 0, field: "batch", message: `Batch ${b / IMPORT_BATCH + 1} failed` });
+    }
+  }
+  return { success, errors };
+}
+
+async function importContracts(rows: Record<string, string>[], _importedBy: string) {
+  const errors: { row: number; field: string; message: string }[] = [];
+  const valid: { rowIdx: number; data: typeof rows[0] }[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    if (!row.total_amount || isNaN(Number(row.total_amount))) { errors.push({ row: rowNum, field: "total_amount", message: "Must be a number" }); continue; }
+    if (!row.currency || !ALLOWED_CURRENCIES.includes(row.currency.toUpperCase())) { errors.push({ row: rowNum, field: "currency", message: `Must be one of: ${ALLOWED_CURRENCIES.join(", ")}` }); continue; }
+    if (!row.status) { errors.push({ row: rowNum, field: "status", message: "Required" }); continue; }
+    valid.push({ rowIdx: i, data: row });
+  }
+  let success = 0;
+  for (let b = 0; b < valid.length; b += IMPORT_BATCH) {
+    const batch = valid.slice(b, b + IMPORT_BATCH);
+    try {
+      await db.transaction(async (tx) => {
+        for (const { data } of batch) {
+          const vals: any = {
+            applicationId: data.application_id || null,
+            campProviderId: data.camp_provider_id || null,
+            totalAmount: data.total_amount,
+            currency: data.currency.toUpperCase(),
+            status: data.status as any,
+            startDate: data.start_date || null,
+            endDate: data.end_date || null,
+          };
+          if (data.contract_number) {
+            await tx.insert(contracts).values({ ...vals, contractNumber: data.contract_number })
+              .onConflictDoUpdate({ target: [contracts.contractNumber], set: vals });
+          } else {
+            await tx.insert(contracts).values(vals);
+          }
+          success++;
+        }
+      });
+    } catch {
+      errors.push({ row: 0, field: "batch", message: `Batch ${b / IMPORT_BATCH + 1} failed` });
+    }
+  }
+  return { success, errors };
+}
+
+async function importPackageGroups(rows: Record<string, string>[], _importedBy: string) {
+  const errors: { row: number; field: string; message: string }[] = [];
+  const valid: { rowIdx: number; data: typeof rows[0] }[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    if (!row.name_en) { errors.push({ row: rowNum, field: "name_en", message: "Required" }); continue; }
+    if (!row.country_code) { errors.push({ row: rowNum, field: "country_code", message: "Required" }); continue; }
+    valid.push({ rowIdx: i, data: row });
+  }
+  let success = 0;
+  for (let b = 0; b < valid.length; b += IMPORT_BATCH) {
+    const batch = valid.slice(b, b + IMPORT_BATCH);
+    try {
+      await db.transaction(async (tx) => {
+        for (const { data } of batch) {
+          await tx.insert(packageGroups).values({
+            campProviderId: data.camp_provider_id || null,
+            nameEn: data.name_en,
+            nameKo: data.name_ko || null,
+            nameJa: data.name_ja || null,
+            nameTh: data.name_th || null,
+            location: data.location || null,
+            countryCode: data.country_code,
+            status: (data.status as any) || "active",
+          });
+          success++;
+        }
+      });
+    } catch {
+      errors.push({ row: 0, field: "batch", message: `Batch ${b / IMPORT_BATCH + 1} failed` });
+    }
+  }
+  return { success, errors };
+}
+
+async function importPackages(rows: Record<string, string>[], _importedBy: string) {
+  const errors: { row: number; field: string; message: string }[] = [];
+  const valid: { rowIdx: number; data: typeof rows[0] }[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    if (!row.package_group_id) { errors.push({ row: rowNum, field: "package_group_id", message: "Required" }); continue; }
+    if (!row.name) { errors.push({ row: rowNum, field: "name", message: "Required" }); continue; }
+    if (!row.duration_days || isNaN(Number(row.duration_days))) { errors.push({ row: rowNum, field: "duration_days", message: "Must be a number" }); continue; }
+    valid.push({ rowIdx: i, data: row });
+  }
+  let success = 0;
+  for (let b = 0; b < valid.length; b += IMPORT_BATCH) {
+    const batch = valid.slice(b, b + IMPORT_BATCH);
+    try {
+      await db.transaction(async (tx) => {
+        for (const { data } of batch) {
+          await tx.insert(packages).values({
+            packageGroupId: data.package_group_id,
+            name: data.name,
+            durationDays: parseInt(data.duration_days),
+            maxParticipants: data.max_participants ? parseInt(data.max_participants) : null,
+            priceAud: data.price_aud || null,
+            priceUsd: data.price_usd || null,
+            priceKrw: data.price_krw || null,
+            priceJpy: data.price_jpy || null,
+            priceThb: data.price_thb || null,
+            pricePhp: data.price_php || null,
+            priceSgd: data.price_sgd || null,
+            priceGbp: data.price_gbp || null,
+            status: (data.status as any) || "active",
+          });
+          success++;
+        }
+      });
+    } catch {
+      errors.push({ row: 0, field: "batch", message: `Batch ${b / IMPORT_BATCH + 1} failed` });
+    }
+  }
+  return { success, errors };
+}
+
+async function importInvoices(rows: Record<string, string>[], _importedBy: string) {
+  const errors: { row: number; field: string; message: string }[] = [];
+  const valid: { rowIdx: number; data: typeof rows[0] }[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    if (!row.invoice_type) { errors.push({ row: rowNum, field: "invoice_type", message: "Required" }); continue; }
+    if (!row.total_amount || isNaN(Number(row.total_amount))) { errors.push({ row: rowNum, field: "total_amount", message: "Must be a number" }); continue; }
+    if (!row.currency || !ALLOWED_CURRENCIES.includes(row.currency.toUpperCase())) { errors.push({ row: rowNum, field: "currency", message: `Must be one of: ${ALLOWED_CURRENCIES.join(", ")}` }); continue; }
+    if (!row.status) { errors.push({ row: rowNum, field: "status", message: "Required" }); continue; }
+    valid.push({ rowIdx: i, data: row });
+  }
+  let success = 0;
+  for (let b = 0; b < valid.length; b += IMPORT_BATCH) {
+    const batch = valid.slice(b, b + IMPORT_BATCH);
+    try {
+      await db.transaction(async (tx) => {
+        for (const { data } of batch) {
+          const vals: any = {
+            contractId: data.contract_id || null,
+            invoiceType: data.invoice_type as any,
+            recipientId: data.recipient_id || null,
+            subtotal: data.subtotal || data.total_amount,
+            taxAmount: data.tax_amount || "0",
+            totalAmount: data.total_amount,
+            originalCurrency: data.original_currency || data.currency,
+            originalAmount: data.original_amount || data.total_amount,
+            audEquivalent: data.aud_equivalent || data.total_amount,
+            exchangeRateToAud: data.exchange_rate_to_aud || "1",
+            currency: data.currency.toUpperCase(),
+            status: data.status as any,
+            issuedAt: data.issued_at ? new Date(data.issued_at) : new Date(),
+            dueDate: data.due_date || null,
+            paidAt: data.paid_at ? new Date(data.paid_at) : null,
+            notes: data.notes || null,
+          };
+          if (data.invoice_number) {
+            await tx.insert(invoices).values({ ...vals, invoiceNumber: data.invoice_number })
+              .onConflictDoUpdate({ target: [invoices.invoiceNumber], set: vals });
+          } else {
+            await tx.insert(invoices).values(vals);
+          }
+          success++;
+        }
+      });
+    } catch {
+      errors.push({ row: 0, field: "batch", message: `Batch ${b / IMPORT_BATCH + 1} failed` });
+    }
+  }
+  return { success, errors };
+}
+
+async function importReceipts(rows: Record<string, string>[], _importedBy: string) {
+  const errors: { row: number; field: string; message: string }[] = [];
+  const valid: { rowIdx: number; data: typeof rows[0] }[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    if (!row.invoice_id) { errors.push({ row: rowNum, field: "invoice_id", message: "Required" }); continue; }
+    if (!row.amount || isNaN(Number(row.amount))) { errors.push({ row: rowNum, field: "amount", message: "Must be a number" }); continue; }
+    if (!row.currency || !ALLOWED_CURRENCIES.includes(row.currency.toUpperCase())) { errors.push({ row: rowNum, field: "currency", message: `Must be one of: ${ALLOWED_CURRENCIES.join(", ")}` }); continue; }
+    if (!row.receipt_date || !isValidDate(row.receipt_date)) { errors.push({ row: rowNum, field: "receipt_date", message: "Must be YYYY-MM-DD format" }); continue; }
+    valid.push({ rowIdx: i, data: row });
+  }
+  let success = 0;
+  for (let b = 0; b < valid.length; b += IMPORT_BATCH) {
+    const batch = valid.slice(b, b + IMPORT_BATCH);
+    try {
+      await db.transaction(async (tx) => {
+        for (const { data } of batch) {
+          const vals: any = {
+            invoiceId: data.invoice_id,
+            payerId: data.payer_id || null,
+            amount: data.amount,
+            currency: data.currency.toUpperCase(),
+            originalCurrency: data.original_currency || data.currency,
+            originalAmount: data.original_amount || data.amount,
+            audEquivalent: data.aud_equivalent || data.amount,
+            paymentMethod: (data.payment_method || "bank_transfer") as any,
+            receiptDate: data.receipt_date,
+            status: (data.status as any) || "confirmed",
+          };
+          if (data.receipt_number) {
+            await tx.insert(receipts).values({ ...vals, receiptNumber: data.receipt_number })
+              .onConflictDoUpdate({ target: [receipts.receiptNumber], set: vals });
+          } else {
+            await tx.insert(receipts).values(vals);
+          }
           success++;
         }
       });
@@ -581,6 +1100,16 @@ async function importTransactions(rows: Record<string, string>[], importedBy: st
 
 const IMPORTERS: Record<string, (rows: Record<string, string>[], importedBy: string) => Promise<{ success: number; errors: any[] }>> = {
   users: importUsers,
+  accounts: importAccounts,
+  contacts: importContacts,
+  leads: importLeads,
+  applications: importApplications,
+  camp_applications: importCampApplications,
+  contracts: importContracts,
+  package_groups: importPackageGroups,
+  packages: importPackages,
+  invoices: importInvoices,
+  receipts: importReceipts,
   exchange_rates: importExchangeRates,
   products: importProducts,
   enrollment_spots: importEnrollmentSpots,
