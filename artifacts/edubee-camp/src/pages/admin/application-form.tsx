@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, Loader2, Upload } from "lucide-react";
 import SignaturePad from "@/components/shared/SignaturePad";
+import DatePickerInput from "@/components/shared/DatePickerInput";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -165,7 +166,7 @@ export default function ApplicationForm() {
 
   // ── Signature & Date
   const [signatureImage, setSignatureImage] = useState<string | null>(null);
-  const [signDate,       setSignDate]       = useState("");
+  const [signDate,       setSignDate]       = useState(() => new Date().toISOString().slice(0, 10));
 
   // ── Declaration checkboxes
   const [declAgree, setDeclAgree] = useState(false);
@@ -325,8 +326,8 @@ export default function ApplicationForm() {
           <Field label="Nationality" required>
             <Input className={inputCls} value={nationality} onChange={e => setNationality(e.target.value)} placeholder="e.g. Korean" />
           </Field>
-          <Field label="Date of Birth (DD/MM/YYYY)" required>
-            <Input className={inputCls} type="date" value={dob} onChange={e => setDob(e.target.value)} />
+          <Field label="Date of Birth" required>
+            <DatePickerInput value={dob} onChange={setDob} fromYear={1920} toYear={new Date().getFullYear()} />
           </Field>
         </div>
 
@@ -341,7 +342,7 @@ export default function ApplicationForm() {
             <Input className={inputCls} value={passportNo} onChange={e => setPassportNo(e.target.value)} placeholder="Passport number" />
           </Field>
           <Field label="Passport Expiry Date">
-            <Input className={inputCls} type="date" value={passportExpiry} onChange={e => setPassportExpiry(e.target.value)} />
+            <DatePickerInput value={passportExpiry} onChange={setPassportExpiry} fromYear={new Date().getFullYear()} toYear={new Date().getFullYear() + 20} />
           </Field>
           <Field label="Additional Passport Country">
             <Input className={inputCls} value={addlPassport} onChange={e => setAddlPassport(e.target.value)} placeholder="None (or country)" />
@@ -402,10 +403,10 @@ export default function ApplicationForm() {
             <Input className={inputCls} value={course} onChange={e => setCourse(e.target.value)} placeholder="Course name" />
           </Field>
           <Field label="Enrollment From">
-            <Input className={inputCls} type="date" value={enrollmentFrom} onChange={e => setEnrollmentFrom(e.target.value)} />
+            <DatePickerInput value={enrollmentFrom} onChange={setEnrollmentFrom} fromYear={new Date().getFullYear() - 2} toYear={new Date().getFullYear() + 10} />
           </Field>
           <Field label="Enrollment To">
-            <Input className={inputCls} type="date" value={enrollmentTo} onChange={e => setEnrollmentTo(e.target.value)} />
+            <DatePickerInput value={enrollmentTo} onChange={setEnrollmentTo} fromYear={new Date().getFullYear() - 2} toYear={new Date().getFullYear() + 10} />
           </Field>
         </div>
         <Field label="Note">
@@ -730,11 +731,11 @@ export default function ApplicationForm() {
           />
           <div>
             <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Date</p>
-            <Input
-              type="date"
+            <DatePickerInput
               value={signDate}
-              onChange={e => setSignDate(e.target.value)}
-              className="h-9 text-sm"
+              onChange={setSignDate}
+              fromYear={new Date().getFullYear() - 1}
+              toYear={new Date().getFullYear() + 5}
             />
           </div>
         </div>
