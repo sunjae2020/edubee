@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   FileText, Upload, Download, Eye, Trash2, ChevronDown, ChevronRight,
-  AlertTriangle, File, FileImage, Loader2, X, GraduationCap, Briefcase, Clock,
+  AlertTriangle, File, FileImage, Loader2, X, GraduationCap, Briefcase, Clock, UserCog,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -44,10 +44,20 @@ export const CONSULTATION_DOC_CATEGORIES = [
   { code: "OTHER",         label: "Other",                        group: "consultation" },
 ] as const;
 
-const EXPIRY_CATS = ["PASSPORT", "FINANCIAL", "ENGLISH_TEST", "VISA_DOC"];
+export const USER_DOC_CATEGORIES = [
+  { code: "EMPLOYMENT_CONTRACT", label: "Employment Contract",  group: "staff" },
+  { code: "ID_COPY",             label: "ID / Passport Copy",   group: "staff" },
+  { code: "WORK_VISA",           label: "Work Visa / Permit",   group: "staff" },
+  { code: "CERTIFICATE",         label: "Certificate / License",group: "staff" },
+  { code: "TRAINING",            label: "Training Document",    group: "staff" },
+  { code: "NDA",                 label: "NDA / Agreement",      group: "staff" },
+  { code: "STAFF_OTHER",         label: "Other",                group: "staff" },
+] as const;
+
+const EXPIRY_CATS = ["PASSPORT", "FINANCIAL", "ENGLISH_TEST", "VISA_DOC", "WORK_VISA", "ID_COPY"];
 const SUBMITTED_CATS = ["VISA_DOC", "COE", "OFFER_LETTER"];
 
-type TabType = "student" | "consultation";
+type TabType = "student" | "consultation" | "staff";
 
 interface Props {
   entityType: EntityType;
@@ -227,7 +237,11 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
   const [uploading, setUploading] = useState(false);
 
   const referenceType = ["application", "contract", "user", "other_services_mgt"].includes(entityType) ? entityType : "contract";
-  const cats = activeTab === "student" ? STUDENT_DOC_CATEGORIES : CONSULTATION_DOC_CATEGORIES;
+  const cats = activeTab === "student"
+    ? STUDENT_DOC_CATEGORIES
+    : activeTab === "staff"
+    ? USER_DOC_CATEGORIES
+    : CONSULTATION_DOC_CATEGORIES;
   const showExpiry = EXPIRY_CATS.includes(docCategory);
   const showSubmitted = SUBMITTED_CATS.includes(docCategory);
 
@@ -277,8 +291,16 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {activeTab === "student" ? <GraduationCap className="w-4 h-4 text-[#F5821F]" /> : <Briefcase className="w-4 h-4 text-[#F5821F]" />}
-            {activeTab === "student" ? "Upload Student Document" : "Upload Consultation & Contract File"}
+            {activeTab === "student"
+              ? <GraduationCap className="w-4 h-4 text-[#F5821F]" />
+              : activeTab === "staff"
+              ? <UserCog className="w-4 h-4 text-[#F5821F]" />
+              : <Briefcase className="w-4 h-4 text-[#F5821F]" />}
+            {activeTab === "student"
+              ? "Upload Student Document"
+              : activeTab === "staff"
+              ? "Upload Staff Document"
+              : "Upload Consultation & Contract File"}
           </DialogTitle>
         </DialogHeader>
 
@@ -499,29 +521,78 @@ function GroupedDocList({ groups, activeTab, onDelete, permCheck, isAdmin, onUpl
   );
 }
 
+// ─── User (Staff) flat document list ─────────────────────────────────────────
+function StaffDocList({ docs, onDelete, isAdmin, permCheck, onUpload }: {
+  docs: DocRecord[];
+  onDelete: (id: string) => void;
+  isAdmin: boolean;
+  permCheck?: PermCheck;
+  onUpload: () => void;
+}) {
+  if (docs.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <FileText className="w-8 h-8 mx-auto mb-3 opacity-20" />
+        <p className="text-sm mb-3">No staff documents uploaded yet.</p>
+        {(permCheck?.canUpload || isAdmin) && (
+          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={onUpload}>
+            <Upload className="w-3.5 h-3.5" /> Upload Document
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border bg-white overflow-hidden">
+      {docs.map(doc => (
+        <DocRow key={doc.id} doc={doc} onDelete={onDelete} showExpiry />
+      ))}
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function EntityDocumentsTab({ entityType, entityId, mode = "full" }: Props) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>("student");
+  const isUserEntity = entityType === "user";
+  const [activeTab, setActiveTab] = useState<TabType>(isUserEntity ? "staff" : "student");
   const [uploadOpen, setUploadOpen] = useState(false);
 
   const role = user?.role ?? "consultant";
   const isAdmin = ["super_admin", "admin"].includes(role);
 
+  // ── User entity: single flat query (no group filter) ──────────────────────
+  const { data: staffDocs = [], isLoading: loadingStaff } = useQuery<DocRecord[]>({
+    queryKey: ["entity-documents", entityType, entityId, "staff"],
+    queryFn: () =>
+      axios.get(`${BASE}/api/documents/by-entity`, { params: { entityType, entityId } })
+        .then(r => {
+          // by-entity returns DocGroup[] for non-user, but for user we flatten
+          const raw = r.data;
+          if (Array.isArray(raw) && raw.length > 0 && "documents" in raw[0]) {
+            return (raw as DocGroup[]).flatMap((g: DocGroup) => g.documents);
+          }
+          return raw as DocRecord[];
+        }),
+    enabled: !!entityId && isUserEntity,
+  });
+
+  // ── Non-user entity: student + consultation queries ───────────────────────
   const { data: studentGroups = [], isLoading: loadingStudent } = useQuery<DocGroup[]>({
     queryKey: ["entity-documents", entityType, entityId, "student"],
     queryFn: () =>
       axios.get(`${BASE}/api/documents/by-entity`, { params: { entityType, entityId, group: "student" } }).then(r => r.data),
-    enabled: !!entityId,
+    enabled: !!entityId && !isUserEntity,
   });
 
   const { data: consultGroups = [], isLoading: loadingConsult } = useQuery<DocGroup[]>({
     queryKey: ["entity-documents", entityType, entityId, "consultation"],
     queryFn: () =>
       axios.get(`${BASE}/api/documents/by-entity`, { params: { entityType, entityId, group: "consultation" } }).then(r => r.data),
-    enabled: !!entityId,
+    enabled: !!entityId && !isUserEntity,
   });
 
   const { data: permCheck } = useQuery<PermCheck>({
@@ -540,14 +611,73 @@ export default function EntityDocumentsTab({ entityType, entityId, mode = "full"
     onError: () => toast({ variant: "destructive", title: "Delete failed" }),
   });
 
+  function invalidate() {
+    qc.invalidateQueries({ queryKey: ["entity-documents", entityType, entityId] });
+  }
+
+  // ── User entity rendering ─────────────────────────────────────────────────
+  if (isUserEntity) {
+    if (loadingStaff) {
+      return (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+          <span className="text-sm">Loading documents…</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <UserCog className="w-4 h-4 text-[#F5821F]" />
+            <span className="text-sm font-semibold text-neutral-700">Staff Documents</span>
+            {staffDocs.length > 0 && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-[#FEF0E3] text-[#F5821F]">
+                {staffDocs.length}
+              </span>
+            )}
+          </div>
+          {mode === "full" && (permCheck?.canUpload || isAdmin) && (
+            <Button
+              size="sm"
+              className="bg-[#F5821F] hover:bg-[#d97706] text-white h-7 text-xs px-2.5 shrink-0"
+              onClick={() => setUploadOpen(true)}
+            >
+              <Upload className="w-3 h-3 mr-1" /> Upload
+            </Button>
+          )}
+        </div>
+
+        <StaffDocList
+          docs={staffDocs}
+          onDelete={id => deleteMut.mutate(id)}
+          isAdmin={isAdmin}
+          permCheck={permCheck}
+          onUpload={() => setUploadOpen(true)}
+        />
+
+        {uploadOpen && (
+          <UploadModal
+            open={uploadOpen}
+            onClose={() => setUploadOpen(false)}
+            entityType={entityType}
+            entityId={entityId}
+            activeTab="staff"
+            availableCategories={permCheck?.availableCategories ?? []}
+            canUploadExtra={permCheck?.canUploadExtra ?? isAdmin}
+            onSuccess={invalidate}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ── Non-user entity rendering (original two-tab layout) ───────────────────
   const studentCount = studentGroups.reduce((s, g) => s + g.documents.length, 0);
   const consultCount = consultGroups.reduce((s, g) => s + g.documents.length, 0);
   const currentGroups = activeTab === "student" ? studentGroups : consultGroups;
   const isLoading = activeTab === "student" ? loadingStudent : loadingConsult;
-
-  function invalidate() {
-    qc.invalidateQueries({ queryKey: ["entity-documents", entityType, entityId] });
-  }
 
   if (isLoading) {
     return (
