@@ -216,29 +216,26 @@ export default function UserDetail() {
             </DetailSection>
 
             <DetailSection title="Profile">
+              <EditableField label="First Name" isEditing={isEditing} value={userRec.firstName}
+                editValue={getValue("firstName")} onEdit={v => setField("firstName", v)} />
+              <EditableField label="Last Name" isEditing={isEditing} value={userRec.lastName}
+                editValue={getValue("lastName")} onEdit={v => setField("lastName", v)} />
+              <EditableField label="English Name (Nickname)" isEditing={isEditing} value={userRec.englishName}
+                editValue={getValue("englishName")} onEdit={v => setField("englishName", v)} />
+            </DetailSection>
+
+            <DetailSection title="Contact Detail">
               <EditableField label="Phone" isEditing={isEditing} value={userRec.phone}
                 editValue={getValue("phone")} onEdit={v => setField("phone", v)} />
-              <EditableField label="Country" isEditing={isEditing} value={userRec.country}
-                editValue={getValue("country")} onEdit={v => setField("country", v)} />
-              <EditableField label="Language" isEditing={isEditing} value={userRec.preferredLanguage}
-                editValue={getValue("preferredLanguage")} onEdit={v => setField("preferredLanguage", v)} />
+              <EditableField label="WhatsApp" isEditing={isEditing} value={userRec.whatsapp}
+                editValue={getValue("whatsapp")} onEdit={v => setField("whatsapp", v)} />
+              <EditableField label="LINE ID" isEditing={isEditing} value={userRec.lineId}
+                editValue={getValue("lineId")} onEdit={v => setField("lineId", v)} />
+              <EditableField label="Preferred Language" isEditing={isEditing} value={userRec.preferredLang}
+                editValue={getValue("preferredLang")} onEdit={v => setField("preferredLang", v)} />
               <DetailRow label="2FA Enabled" value={userRec.twoFactorEnabled ? "Yes" : "No"} />
             </DetailSection>
 
-            {(userRec.role === "camp_coordinator" || userRec.role === "consultant") && (
-              <DetailSection title="Business Info" className="lg:col-span-2">
-                <EditableField label="Company Name" isEditing={isEditing} value={userRec.companyName}
-                  editValue={getValue("companyName")} onEdit={v => setField("companyName", v)} />
-                <EditableField label="Business Reg #" isEditing={isEditing} value={userRec.businessRegNo}
-                  editValue={getValue("businessRegNo")} onEdit={v => setField("businessRegNo", v)} />
-                <EditableField label="Country of Ops" isEditing={isEditing} value={userRec.countryOfOps}
-                  editValue={getValue("countryOfOps")} onEdit={v => setField("countryOfOps", v)} />
-                {userRec.role === "camp_coordinator" && (
-                  <EditableField label="Platform Commission %" isEditing={isEditing} value={userRec.platformCommRate}
-                    editValue={getValue("platformCommRate")} onEdit={v => setField("platformCommRate", v)} type="number" />
-                )}
-              </DetailSection>
-            )}
             <div className="lg:col-span-2">
               <SystemInfoSection owner={userRec.id ?? null} createdAt={userRec.createdAt} updatedAt={userRec.updatedAt} />
             </div>
