@@ -144,6 +144,7 @@ router.get("/:id", authenticate, async (req, res) => {
       firstName: users.firstName,
       lastName: users.lastName,
       englishName: users.englishName,
+      originalName: users.originalName,
       phone: users.phone,
       whatsapp: users.whatsapp,
       lineId: users.lineId,

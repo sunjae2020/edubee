@@ -181,8 +181,14 @@ export default function UserDetail() {
         <TabsContent value="account">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <DetailSection title="Account">
-              <EditableField label="Full Name" isEditing={isEditing} value={userRec.fullName}
-                editValue={getValue("fullName")} onEdit={v => setField("fullName", v)} />
+              <DetailRow
+                label="Full Name"
+                value={
+                  isEditing
+                    ? [getValue("firstName"), getValue("lastName")].filter(Boolean).join(" ") || userRec.fullName || "—"
+                    : userRec.fullName || "—"
+                }
+              />
               <DetailRow label="Email" value={userRec.email} />
               <EditableField label="Role" isEditing={isEditing} value={(userRec.role ?? "").replace(/_/g, " ")}
                 editChildren={
@@ -217,11 +223,21 @@ export default function UserDetail() {
 
             <DetailSection title="Profile">
               <EditableField label="First Name" isEditing={isEditing} value={userRec.firstName}
-                editValue={getValue("firstName")} onEdit={v => setField("firstName", v)} />
+                editValue={getValue("firstName")} onEdit={v => {
+                  setField("firstName", v);
+                  const ln = getValue("lastName") ?? "";
+                  setField("fullName", [v, ln].filter(Boolean).join(" "));
+                }} />
               <EditableField label="Last Name" isEditing={isEditing} value={userRec.lastName}
-                editValue={getValue("lastName")} onEdit={v => setField("lastName", v)} />
+                editValue={getValue("lastName")} onEdit={v => {
+                  setField("lastName", v);
+                  const fn = getValue("firstName") ?? "";
+                  setField("fullName", [fn, v].filter(Boolean).join(" "));
+                }} />
               <EditableField label="English Name (Nickname)" isEditing={isEditing} value={userRec.englishName}
                 editValue={getValue("englishName")} onEdit={v => setField("englishName", v)} />
+              <EditableField label="Original Name (Native)" isEditing={isEditing} value={userRec.originalName}
+                editValue={getValue("originalName")} onEdit={v => setField("originalName", v)} />
             </DetailSection>
 
             <DetailSection title="Contact Detail">
