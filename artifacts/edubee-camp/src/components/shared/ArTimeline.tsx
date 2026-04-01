@@ -7,7 +7,7 @@ import {
   CheckCircle2, FileText, CreditCard, Receipt,
   Clock, AlertCircle, ExternalLink, ChevronDown, ChevronRight, ArrowUpRight,
 } from "lucide-react";
-import { format } from "date-fns";
+import { formatDate } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -255,10 +255,10 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
                       <FileText className="w-3 h-3 text-blue-600" />
                     </div>
                     <span className="text-muted-foreground text-xs w-16 shrink-0">Issued</span>
-                    <span className="text-xs">{format(new Date(inv.issuedAt), "d MMM yyyy")}</span>
+                    <span className="text-xs">{formatDate(inv.issuedAt)}</span>
                     {inv.dueDate && (
                       <span className="ml-auto text-[11px] text-muted-foreground">
-                        Due: {inv.dueDate}
+                        Due: {formatDate(inv.dueDate)}
                       </span>
                     )}
                   </div>
@@ -274,7 +274,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
                     <span className="font-mono text-xs font-medium">{fmt(t.audEquivalent ?? t.amount, t.currency)}</span>
                     {t.transactionDate && (
                       <span className="text-[11px] text-muted-foreground">
-                        {format(new Date(t.transactionDate), "d MMM yyyy")}
+                        {formatDate(t.transactionDate)}
                       </span>
                     )}
                     {t.bankReference && (
@@ -307,7 +307,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
                     </button>
                     {r.receiptDate && (
                       <span className="text-[11px] text-muted-foreground">
-                        {format(new Date(r.receiptDate), "d MMM yyyy")}
+                        {formatDate(r.receiptDate)}
                       </span>
                     )}
                     <StatusPill status={r.status} />
@@ -321,7 +321,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
                       <CheckCircle2 className="w-3 h-3 text-green-600" />
                     </div>
                     <span className="text-muted-foreground text-xs w-16 shrink-0">Paid</span>
-                    <span className="text-xs font-medium text-green-700">{format(new Date(inv.paidAt), "d MMM yyyy")}</span>
+                    <span className="text-xs font-medium text-green-700">{formatDate(inv.paidAt)}</span>
                   </div>
                 )}
 
@@ -358,7 +358,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
                   {inv.transactions.length} payment{inv.transactions.length !== 1 ? "s" : ""}
                   {" · "}
                   {inv.receipts.length} receipt{inv.receipts.length !== 1 ? "s" : ""}
-                  {inv.issuedAt ? ` · Issued ${format(new Date(inv.issuedAt), "d MMM yyyy")}` : ""}
+                  {inv.issuedAt ? ` · Issued ${formatDate(inv.issuedAt)}` : ""}
                 </span>
                 <span className={`font-mono font-medium ${inv.balance.outstanding > 0 ? "text-red-500" : "text-green-600"}`}>
                   {inv.balance.outstanding > 0 ? `${fmt(inv.balance.outstanding)} outstanding` : "Fully paid"}

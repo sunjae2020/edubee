@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { formatDateTime } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -30,8 +31,7 @@ function authHeaders(extra?: Record<string, string>) {
 }
 
 function fmtDate(value: string | null | undefined) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" });
+  return formatDateTime(value);
 }
 
 function getUserRole() {

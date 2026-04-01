@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
 import { ReportStatusBadge } from "@/components/shared/ReportStatusBadge";
 import { useState, useCallback } from "react";
+import { formatDate } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -22,8 +23,7 @@ interface Report {
 }
 
 function fmtDate(d: string | null | undefined) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
+  return formatDate(d);
 }
 
 export function ContractReportTab({ contractId }: { contractId: string }) {

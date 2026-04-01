@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { formatDateTime } from "@/lib/date-format";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs, ROLE_HIERARCHY, ROLE_LABELS, ROLE_EMOJIS } from "@/hooks/use-view-as";
 import { useTheme } from "@/hooks/use-theme";
@@ -477,7 +478,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                         {n.message && <div className="text-[10px] mt-0.5 leading-snug line-clamp-2" style={{ color: "var(--e-text-2)" }}>{n.message}</div>}
                         <div className="text-[9px] mt-1 flex items-center gap-1" style={{ color: "var(--e-text-3)" }}>
                           <Clock className="w-2.5 h-2.5" />
-                          {n.createdAt ? new Date(n.createdAt).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                          {formatDateTime(n.createdAt)}
                         </div>
                       </div>
                       {!n.isRead && <div className="w-2 h-2 rounded-full bg-[#F5821F] mt-1 shrink-0" />}

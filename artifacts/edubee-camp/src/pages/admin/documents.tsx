@@ -336,7 +336,7 @@ export default function DocumentsPage() {
                     </span>
                     <span className="text-xs text-muted-foreground">{log.userId?.slice(0, 8)}…</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{new Date(log.accessedAt).toLocaleString()}</span>
+                  <span className="text-xs text-muted-foreground">{formatDateTime(log.accessedAt)}</span>
                 </div>
               ))}
             </div>

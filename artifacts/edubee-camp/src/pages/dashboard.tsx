@@ -13,6 +13,7 @@ import {
   CalendarCheck, ArrowRight,
 } from "lucide-react";
 
+import { formatDate } from "@/lib/date-format";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 interface DashboardStats {
@@ -357,7 +358,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusBadge status={app.status} />
-                    <span className="text-xs" style={{ color: "#A8A29E" }}>{new Date(app.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs" style={{ color: "#A8A29E" }}>{formatDate(app.createdAt)}</span>
                   </div>
                 </div>
               ))}
@@ -383,7 +384,7 @@ export default function Dashboard() {
                   <div className="text-sm font-medium" style={{ color: "#1C1917" }}>{lead.studentName}</div>
                   <div className="flex items-center gap-3">
                     <StatusBadge status={lead.status} />
-                    <span className="text-xs" style={{ color: "#A8A29E" }}>{new Date(lead.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs" style={{ color: "#A8A29E" }}>{formatDate(lead.createdAt)}</span>
                   </div>
                 </div>
               ))}

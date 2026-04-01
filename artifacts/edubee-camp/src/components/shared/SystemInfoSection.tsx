@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Copy, Check, ToggleLeft, ToggleRight, Loader2 } from "lucide-react";
 import { DetailSection } from "./DetailPageLayout";
+import { formatDateTime } from "@/lib/date-format";
 
 interface SystemInfoSectionProps {
   id?: string | null;
@@ -17,11 +18,7 @@ interface SystemInfoSectionProps {
   statusLabel?: string;
 }
 
-function fmt(val?: string | null) {
-  if (!val) return "—";
-  try { return new Date(val).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }); }
-  catch { return val; }
-}
+const fmt = (val?: string | null) => formatDateTime(val);
 
 export function SystemInfoSection({
   id,

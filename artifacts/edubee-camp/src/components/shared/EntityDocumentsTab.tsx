@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { differenceInDays, parseISO, isPast } from "date-fns";
+import { formatDate } from "@/lib/date-format";
 import axios from "axios";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -186,7 +187,7 @@ function DocRow({ doc, onDelete, showExpiry = false }: { doc: DocRecord; onDelet
           )}
           {doc.uploadedByName && <span>by {doc.uploadedByName}</span>}
           {doc.fileSizeBytes ? <span>· {formatBytes(doc.fileSizeBytes)}</span> : null}
-          <span>· {new Date(doc.createdAt).toLocaleDateString()}</span>
+          <span>· {formatDate(doc.createdAt)}</span>
         </div>
       </div>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

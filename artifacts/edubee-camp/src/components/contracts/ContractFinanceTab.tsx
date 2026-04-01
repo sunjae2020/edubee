@@ -14,6 +14,7 @@ import {
   TrendingUp, TrendingDown, DollarSign, Zap, StickyNote, Loader2, RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -205,7 +206,7 @@ function FinanceRow({ item, onConfirm, onEdit, onDelete, currency = "AUD" }: {
         )}
       </div>
       <div className="text-xs text-[#57534E] w-24 text-right shrink-0">
-        {item.dueDate ? new Date(item.dueDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+        {formatDate(item.dueDate)}
       </div>
       <ActionMenu item={item} onConfirm={onConfirm} onEdit={onEdit} onDelete={onDelete} />
     </div>
@@ -811,7 +812,7 @@ export function ContractFinanceTab({ contractId, currency = "AUD" }: {
                     {ledgerEntries.map((e: any) => (
                       <tr key={e.id} className="border-b border-[#E8E6E2] last:border-0 hover:bg-[#FAFAF9]">
                         <td className="px-4 py-2.5 text-xs text-[#57534E] whitespace-nowrap">
-                          {e.transactionDate ? new Date(e.transactionDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+                          {formatDate(e.transactionDate)}
                         </td>
                         <td className="px-4 py-2.5">
                           <span className={cn("text-xs font-bold px-2 py-0.5 rounded",

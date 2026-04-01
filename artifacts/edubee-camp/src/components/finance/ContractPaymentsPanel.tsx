@@ -2,12 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { CreditCard, ExternalLink, ArrowRight } from "lucide-react";
+import { formatDate } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const fmtMoney = (n: any) =>
   n != null ? `$${Number(n).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
-const fmtDate = (d: any) => (d ? new Date(d).toLocaleDateString("en-AU") : "—");
+const fmtDate = (d: any) => formatDate(d);
 
 const PTYPE_BADGE: Record<string, { bg: string; text: string; label: string }> = {
   trust_receipt:     { bg: "#DCFCE7", text: "#16A34A", label: "Received" },
