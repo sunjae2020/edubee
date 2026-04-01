@@ -20,29 +20,19 @@ const INDIVIDUAL_TYPES = ["Student", "Client"];
 
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  Student:       { bg: "#FEF0E3", text: "#F5821F" },
-  Agent:         { bg: "#F4F3F1", text: "#57534E" },
-  School:        { bg: "#DCFCE7", text: "#15803D" },
-  Sub_Agency:    { bg: "#EDE9FE", text: "#7C3AED" },
-  Super_Agency:  { bg: "#EDE9FE", text: "#7C3AED" },
-  Supplier:      { bg: "#F0F9FF", text: "#0369A1" },
-  Staff:         { bg: "#F4F3F1", text: "#57534E" },
-  Branch:        { bg: "#FEF9C3", text: "#CA8A04" },
-  Provider:      { bg: "#F4F3F1", text: "#57534E" },
-  Organisation:  { bg: "#F4F3F1", text: "#57534E" },
-  // legacy
-  Company:       { bg: "#E0F2FE", text: "#0369A1" },
-  Institute:     { bg: "#DCFCE7", text: "#16A34A" },
-  Agency:        { bg: "#F3E8FF", text: "#7C3AED" },
-  Accommodation: { bg: "#FEF0E3", text: "#F5821F" },
-  Private:       { bg: "#FFF7ED", text: "#C2410C" },
+  Student:      { bg: "#FEF0E3", text: "#F5821F" },
+  Client:       { bg: "#FCE7F3", text: "#BE185D" },
+  Company:      { bg: "#E0F2FE", text: "#0369A1" },
+  Agent:        { bg: "#F4F3F1", text: "#57534E" },
+  Institute:    { bg: "#DCFCE7", text: "#16A34A" },
+  Partner:      { bg: "#EDE9FE", text: "#7C3AED" },
+  Organization: { bg: "#FEF9C3", text: "#CA8A04" },
 };
 
 interface Account {
   id: string;
   name: string;
   accountType?: string | null;
-  accountCategory?: string | null;
   phoneNumber?: string | null;
   status: string;
   ownerId: string;
@@ -106,7 +96,7 @@ export default function AccountsPage() {
   const sorted = useSorted(rows, sortBy, sortDir);
   const total: number   = data?.total ?? 0;
 
-  const COLS = 7;
+  const COLS = 6;
 
   return (
     <div className="space-y-4">
@@ -164,7 +154,6 @@ export default function AccountsPage() {
             <tr className="border-b bg-muted/30">
               <SortableTh col="name" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Name</SortableTh>
               <SortableTh col="accountType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</SortableTh>
-              <SortableTh col="accountCategory" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Category</SortableTh>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Original Name</th>
               <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</SortableTh>
               <SortableTh col="createdOn" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Created</SortableTh>
@@ -204,7 +193,6 @@ export default function AccountsPage() {
                     onClick={() => navigate(`/admin/crm/accounts/${row.id}`)}>
                     <td className="px-4 py-3 font-medium text-[#1C1917]">{displayName}</td>
                     <td className="px-4 py-3"><TypeBadge type={row.accountType} /></td>
-                    <td className="px-4 py-3 text-sm text-[#57534E]">{row.accountCategory ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="px-4 py-3 text-sm text-[#57534E]">{originalName}</td>
                     <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
                     <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDate(row.createdOn)}</td>

@@ -27,15 +27,10 @@ function getAccountTypeBadge(accountType?: string | null): { bg: string; text: s
     case "Student":      return { bg: "#FEF0E3", text: "#F5821F", label: "Student" };
     case "Client":       return { bg: "#FCE7F3", text: "#BE185D", label: "Client" };
     case "Company":      return { bg: "#E0F2FE", text: "#0369A1", label: "Company" };
-    case "School":       return { bg: "#DCFCE7", text: "#16A34A", label: "School" };
-    case "Sub_Agency":   return { bg: "#EDE9FE", text: "#7C3AED", label: "Sub Agency" };
-    case "Super_Agency": return { bg: "#EDE9FE", text: "#7C3AED", label: "Super Agency" };
-    case "Supplier":     return { bg: "#F0F9FF", text: "#0369A1", label: "Supplier" };
-    case "Staff":        return { bg: "#F4F3F1", text: "#57534E", label: "Staff" };
-    case "Branch":       return { bg: "#FEF9C3", text: "#CA8A04", label: "Branch" };
     case "Agent":        return { bg: "#F4F3F1", text: "#57534E", label: "Agent" };
-    case "Provider":     return { bg: "#F4F3F1", text: "#57534E", label: "Provider" };
-    case "Organisation": return { bg: "#F4F3F1", text: "#57534E", label: "Organisation" };
+    case "Institute":    return { bg: "#DCFCE7", text: "#16A34A", label: "Institute" };
+    case "Partner":      return { bg: "#EDE9FE", text: "#7C3AED", label: "Partner" };
+    case "Organization": return { bg: "#FEF9C3", text: "#CA8A04", label: "Organization" };
     default:             return { bg: "#F4F3F1", text: "#57534E", label: accountType ?? "—" };
   }
 }
@@ -45,7 +40,6 @@ interface Account {
   name: string;
   manualInput: boolean;
   accountType?: string | null;
-  accountCategory?: string | null;
   parentAccountId?: string | null;
   primaryContactId?: string | null;
   secondaryContactId?: string | null;
@@ -105,33 +99,14 @@ function getTabs(accountType?: string | null) {
   switch (accountType) {
     case "Student":
     case "Client":
-    case "Private":
-      return [...base, leads, contracts, ledger];
-
     case "Company":
-    case "Branch":
-    case "Organisation":
-      return [...base, leads, contracts, serviceProfiles, ledger];
+      return [...base, leads, contracts, ledger, portal];
 
-    case "Supplier":
-      return [...base, serviceProfiles, products, ledger, portal];
-
-    case "School":
-    case "Institute":
-      return [...base, leads, contracts, serviceProfiles, products, ledger, portal];
-
-    case "Sub_Agency":
-    case "Super_Agency":
-    case "Agency":
     case "Agent":
-      return [...base, leads, contracts, commission, ledger, portal];
-
-    case "Provider":
-    case "Accommodation":
-      return [...base, serviceProfiles, leads, contracts, ledger, portal];
-
-    case "Staff":
-      return [...base, leads, contracts, ledger];
+    case "Institute":
+    case "Partner":
+    case "Organization":
+      return [...base, leads, contracts, serviceProfiles, products, commission, ledger, portal];
 
     default:
       return [...base, leads, contracts, ledger, portal];
@@ -640,7 +615,6 @@ export default function AccountDetailPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const accountTypes     = useLookup("account_type");
-  const accountCategories = useLookup("account_category");
 
   const isNew = !!matchNew;
   const id    = matchId ? (params?.id ?? "") : "";
@@ -716,7 +690,7 @@ export default function AccountDetailPage() {
   });
 
   const emptyForm: FormData = {
-    name: "", manualInput: false, accountType: "Student", accountCategory: undefined as any,
+    name: "", manualInput: false, accountType: "Student",
     parentAccountId: undefined as any, primaryContactId: undefined as any, secondaryContactId: undefined as any,
     phoneNumber: undefined as any, phoneNumber2: undefined as any, fax: undefined as any,
     email: undefined as any, website: undefined as any, websiteUrl2: undefined as any,
@@ -741,7 +715,6 @@ export default function AccountDetailPage() {
         name:                       autoName,
         manualInput:                account.manualInput ?? false,
         accountType:                account.accountType ?? "Student",
-        accountCategory:            account.accountCategory ?? undefined,
         parentAccountId:            account.parentAccountId ?? undefined,
         primaryContactId:           account.primaryContactId ?? undefined,
         secondaryContactId:         account.secondaryContactId ?? undefined,
@@ -805,8 +778,6 @@ export default function AccountDetailPage() {
     return <div className="flex items-center justify-center h-64 text-stone-400 text-sm">Loading…</div>;
   }
 
-  const categories = INDIVIDUAL_TYPES.includes(form.accountType ?? "") ? [] : accountCategories;
-
   return (
     <div className="p-6 space-y-5">
       {/* Header */}
@@ -841,7 +812,6 @@ export default function AccountDetailPage() {
                   setForm({
                     name: autoName, manualInput: account.manualInput ?? false,
                     accountType: account.accountType ?? "Student",
-                    accountCategory: account.accountCategory ?? undefined,
                     parentAccountId: account.parentAccountId ?? undefined,
                     primaryContactId: account.primaryContactId ?? undefined,
                     secondaryContactId: account.secondaryContactId ?? undefined,
@@ -959,7 +929,7 @@ export default function AccountDetailPage() {
                     )}
                   </Field>
                   <Field label="Account Type" required>
-                    <Select value={form.accountType ?? ""} onValueChange={v => { set("accountType", v); set("accountCategory", undefined as any); }}>
+                    <Select value={form.accountType ?? ""} onValueChange={v => set("accountType", v)}>
                       <SelectTrigger className="h-10 text-sm border-[#E8E6E2]">
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
@@ -968,19 +938,6 @@ export default function AccountDetailPage() {
                       </SelectContent>
                     </Select>
                   </Field>
-                  {categories.length > 0 && (
-                    <Field label="Category">
-                      <Select value={form.accountCategory ?? "none"} onValueChange={v => set("accountCategory", v === "none" ? undefined as any : v)}>
-                        <SelectTrigger className="h-10 text-sm border-[#E8E6E2]">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">—</SelectItem>
-                          {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </Field>
-                  )}
                   <Field label="Status">
                     <Select value={form.status} onValueChange={v => set("status", v)}>
                       <SelectTrigger className="h-10 text-sm border-[#E8E6E2]">
@@ -1602,8 +1559,8 @@ export default function AccountDetailPage() {
                 })()}
               </div>
 
-              {/* Student */}
-              {account?.accountType === "Student" && (
+              {/* Student / Client */}
+              {(account?.accountType === "Student" || account?.accountType === "Client") && (
                 <>
                   <QI label="Nationality">{account.primaryContact?.nationality || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Date of Birth">{account.primaryContact?.dob ? formatDate(account.primaryContact.dob) : <span className="text-[#A8A29E]">—</span>}</QI>
@@ -1616,15 +1573,10 @@ export default function AccountDetailPage() {
                 </>
               )}
 
-              {/* School */}
-              {account?.accountType === "School" && (
+              {/* Company */}
+              {account?.accountType === "Company" && (
                 <>
                   <QI label="Country">{account.country || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Website">
-                    {account.website
-                      ? <a href={account.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[#F5821F] hover:underline" style={{fontSize:13}}><ExternalLink size={11}/>{account.website.replace(/^https?:\/\//, "")}</a>
-                      : <span className="text-[#A8A29E]">—</span>}
-                  </QI>
                   <QI label="ABN">{account.abn || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Phone">{account.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Email">{account.email || <span className="text-[#A8A29E]">—</span>}</QI>
@@ -1632,72 +1584,24 @@ export default function AccountDetailPage() {
                 </>
               )}
 
-              {/* Sub_Agency / Super_Agency */}
-              {(account?.accountType === "Sub_Agency" || account?.accountType === "Super_Agency") && (
+              {/* Agent / Institute / Partner / Organization */}
+              {["Agent","Institute","Partner","Organization"].includes(account?.accountType ?? "") && (
                 <>
-                  <QI label="Country">{account.country || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Country">{account?.country || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Website">
-                    {account.website
+                    {account?.website
                       ? <a href={account.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[#F5821F] hover:underline" style={{fontSize:13}}><ExternalLink size={11}/>{account.website.replace(/^https?:\/\//, "")}</a>
                       : <span className="text-[#A8A29E]">—</span>}
                   </QI>
-                  <QI label="ABN">{account.abn || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Phone">{account.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Email">{account.email || <span className="text-[#A8A29E]">—</span>}</QI>
-                  {account?.accountType === "Super_Agency" && (
-                    <QI label="Parent Account">
-                      {account.parentAccount
-                        ? <button className="text-[#F5821F] hover:underline text-[13px]" onClick={() => navigate(`/admin/crm/accounts/${account.parentAccount!.id}`)}>{account.parentAccount.name}</button>
-                        : <span className="text-[#A8A29E]">—</span>}
-                    </QI>
-                  )}
-                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account.ownerId?.slice(0,8)}…</span></QI>
+                  <QI label="ABN">{account?.abn || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Phone">{account?.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Email">{account?.email || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account?.ownerId?.slice(0,8)}…</span></QI>
                 </>
               )}
 
-              {/* Supplier */}
-              {account?.accountType === "Supplier" && (
-                <>
-                  <QI label="Category">{account.accountCategory || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Country">{account.country || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="ABN">{account.abn || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Phone">{account.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Email">{account.email || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Website">
-                    {account.website
-                      ? <a href={account.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[#F5821F] hover:underline" style={{fontSize:13}}><ExternalLink size={11}/>{account.website.replace(/^https?:\/\//, "")}</a>
-                      : <span className="text-[#A8A29E]">—</span>}
-                  </QI>
-                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account.ownerId?.slice(0,8)}…</span></QI>
-                </>
-              )}
-
-              {/* Staff */}
-              {account?.accountType === "Staff" && (
-                <>
-                  <QI label="Email">{account.email || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Phone">{account.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account.ownerId?.slice(0,8)}…</span></QI>
-                </>
-              )}
-
-              {/* Branch */}
-              {account?.accountType === "Branch" && (
-                <>
-                  <QI label="Parent Account">
-                    {account.parentAccount
-                      ? <button className="text-[#F5821F] hover:underline text-[13px]" onClick={() => navigate(`/admin/crm/accounts/${account.parentAccount!.id}`)}>{account.parentAccount.name}</button>
-                      : <span className="text-[#A8A29E]">—</span>}
-                  </QI>
-                  <QI label="Country">{account.country || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Address">{account.address || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Phone">{account.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account.ownerId?.slice(0,8)}…</span></QI>
-                </>
-              )}
-
-              {/* Default: Agent / Provider / Organisation / unknown */}
-              {!["Student","School","Sub_Agency","Super_Agency","Supplier","Staff","Branch"].includes(account?.accountType ?? "") && (
+              {/* Default fallback */}
+              {!["Student","Client","Company","Agent","Institute","Partner","Organization"].includes(account?.accountType ?? "") && (
                 <>
                   <QI label="Country">{account?.country || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Phone">{account?.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>

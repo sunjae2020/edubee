@@ -54,7 +54,7 @@ const IMPORT_BATCH = 100;
 const ALLOWED_CURRENCIES = ["KRW", "THB", "JPY", "USD", "PHP", "SGD", "GBP", "AUD"];
 const VALID_ROLES = ["super_admin", "admin", "finance", "admission", "team_manager", "consultant", "camp_coordinator"];
 const VALID_PRODUCT_TYPES = ["institute", "hotel", "pickup", "tour", "settlement"];
-const VALID_ACCOUNT_TYPES = ["individual", "business", "school", "institute", "hotel", "tour_company", "other"];
+const VALID_ACCOUNT_TYPES = ["Student", "Client", "Company", "Agent", "Institute", "Partner", "Organization"];
 const VALID_GENDERS = ["male", "female", "other", "prefer_not_to_say"];
 
 function escapeCsv(val: unknown): string {

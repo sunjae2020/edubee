@@ -10,8 +10,7 @@ router.use(authenticate, requireRole("super_admin", "admin"));
 
 // ── Lookup groups metadata ──────────────────────────────────────────────────
 export const LOOKUP_GROUPS: Record<string, { label: string; description: string }> = {
-  account_type:     { label: "Account Type",       description: "Types for CRM Accounts (e.g. Student, Agent, School)" },
-  account_category: { label: "Account Category",   description: "Sub-categories per account type" },
+  account_type:     { label: "Account Type",       description: "Types for CRM Accounts (e.g. Student, Agent, Institute)" },
   contact_type:     { label: "Contact Type",        description: "Types for CRM Contacts" },
   influx_channel:   { label: "Influx Channel",      description: "How leads heard about us" },
   sns_type:         { label: "SNS / Messaging",     description: "Social & messaging platforms" },
