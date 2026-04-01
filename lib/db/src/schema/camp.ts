@@ -113,6 +113,9 @@ export const campApplications = pgTable("camp_applications", {
   status:                varchar("status", { length: 20 }).notNull().default("Active"),
   quoteId:               uuid("quote_id").references(() => quotes.id),
   quotedAt:              timestamp("quoted_at"),
+  signatureImage:        text("signature_image"),
+  signatureDate:         date("signature_date"),
+  notes:                 text("notes"),
   createdAt:             timestamp("created_at").notNull().defaultNow(),
   updatedAt:             timestamp("updated_at").notNull().defaultNow(),
 });

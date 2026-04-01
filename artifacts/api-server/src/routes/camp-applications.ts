@@ -117,6 +117,7 @@ router.post("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), asy
       specialRequirements, dietaryRequirements, medicalConditions,
       emergencyContactName, emergencyContactPhone,
       notes, assignedStaffId, agentAccountId,
+      signatureImage, signatureDate,
     } = req.body;
 
     if (!applicantFirstName || !applicantLastName || !applicantEmail) {
@@ -166,6 +167,9 @@ router.post("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), asy
       status: "Active",
       assignedStaffId: assignedStaffId || null,
       agentAccountId:  agentAccountId  || null,
+      signatureImage:  signatureImage  || null,
+      signatureDate:   signatureDate   || null,
+      notes:           notes           || null,
     }).returning();
 
     return res.status(201).json(newApp);

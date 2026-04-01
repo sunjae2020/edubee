@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft, Loader2 } from "lucide-react";
+import DatePickerInput from "@/components/shared/DatePickerInput";
+import SignaturePad from "@/components/shared/SignaturePad";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -75,6 +77,10 @@ export default function AdminCampApplicationForm() {
   const [ecName,          setEcName]          = useState("");
   const [ecPhone,         setEcPhone]         = useState("");
 
+  // ── 서명
+  const [signatureImage,  setSignatureImage]  = useState<string | null>(null);
+  const [signDate,        setSignDate]        = useState("");
+
   // ── 기타
   const [notes,           setNotes]           = useState("");
 
@@ -121,9 +127,11 @@ export default function AdminCampApplicationForm() {
         specialRequirements:   specialReqs  || undefined,
         dietaryRequirements:   dietaryReqs  || undefined,
         medicalConditions:     medicalCond  || undefined,
-        emergencyContactName:  ecName       || undefined,
-        emergencyContactPhone: ecPhone      || undefined,
-        notes:                 notes        || undefined,
+        emergencyContactName:  ecName          || undefined,
+        emergencyContactPhone: ecPhone         || undefined,
+        signatureImage:        signatureImage  || undefined,
+        signatureDate:         signDate        || undefined,
+        notes:                 notes           || undefined,
       }).then(r => r.data),
 
     onSuccess: (data) => {
@@ -257,11 +265,12 @@ export default function AdminCampApplicationForm() {
               />
             </Field>
             <Field label="Date of Birth">
-              <Input
-                type="date"
+              <DatePickerInput
                 value={dob}
-                onChange={e => setDob(e.target.value)}
-                className={inputCls}
+                onChange={setDob}
+                placeholder="DD/MM/YYYY"
+                fromYear={1920}
+                toYear={new Date().getFullYear()}
               />
             </Field>
           </div>
@@ -300,11 +309,12 @@ export default function AdminCampApplicationForm() {
           </div>
           <div className="grid grid-cols-3 gap-4">
             <Field label="Preferred Start Date">
-              <Input
-                type="date"
+              <DatePickerInput
                 value={preferredStart}
-                onChange={e => setPreferredStart(e.target.value)}
-                className={inputCls}
+                onChange={setPreferredStart}
+                placeholder="DD/MM/YYYY"
+                fromYear={new Date().getFullYear()}
+                toYear={new Date().getFullYear() + 5}
               />
             </Field>
             <Field label="Adults">
@@ -376,6 +386,27 @@ export default function AdminCampApplicationForm() {
                 onChange={e => setEcPhone(e.target.value)}
                 placeholder="+82 10-0000-0000"
                 className={inputCls}
+              />
+            </Field>
+          </div>
+        </Section>
+
+        {/* 서명 */}
+        <Section title="Declaration & Signature">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <SignaturePad
+              label="Signature (Draw)"
+              value={signatureImage}
+              onChange={setSignatureImage}
+              height={160}
+            />
+            <Field label="Date">
+              <DatePickerInput
+                value={signDate}
+                onChange={setSignDate}
+                placeholder="DD/MM/YYYY"
+                fromYear={new Date().getFullYear() - 1}
+                toYear={new Date().getFullYear() + 5}
               />
             </Field>
           </div>
