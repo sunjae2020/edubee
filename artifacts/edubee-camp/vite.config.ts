@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
@@ -14,12 +14,32 @@ if (rawPort && (Number.isNaN(port) || port <= 0)) {
 
 const basePath = process.env.BASE_PATH ?? "/";
 
+// SPA fallback for the PREVIEW (production) server only.
+// The dev server already handles SPA routing natively via transformIndexHtml.
+// vite preview uses sirv which returns 404 for unknown paths — this fixes it.
+function spaFallback(): Plugin {
+  return {
+    name: "spa-fallback",
+    configurePreviewServer(server) {
+      server.middlewares.use((req: any, _res: any, next: any) => {
+        const url: string = req.url ?? "/";
+        // Let through anything that looks like a static asset (has a file extension)
+        if (/\.[a-zA-Z0-9]{1,8}(\?.*)?$/.test(url)) return next();
+        // All other paths are client-side routes → serve index.html
+        req.url = "/index.html";
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
   base: basePath,
   plugins: [
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    spaFallback(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
