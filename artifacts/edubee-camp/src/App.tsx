@@ -10,6 +10,7 @@ import "@/lib/i18n";
 import Landing from "@/pages/landing";
 import ApplyPage from "@/pages/public/ApplyPage";
 import LeadInquiryPage from "@/pages/public/LeadInquiryPage";
+import PublicFormGateway from "@/pages/public/PublicFormGateway";
 import Login from "@/pages/login";
 import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -520,6 +521,9 @@ function Router() {
       <Route path="/users">
         <AdminRoute title="Users"><Users /></AdminRoute>
       </Route>
+
+      {/* Public form gateway — handles /{slug} for all form types */}
+      <Route path="/:slug" component={PublicFormGateway} />
 
       <Route component={NotFound} />
     </Switch>

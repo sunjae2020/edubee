@@ -522,8 +522,28 @@ router.post("/public/chatbot/message", async (req, res) => {
   }
 });
 
+// ── GET /api/public/form/:slug ─────────────────────────────────────────────
+// Returns form info for any form type (gateway lookup)
+router.get("/public/form/:slug", async (req, res) => {
+  try {
+    const [form] = await db
+      .select({ id: applicationForms.id, name: applicationForms.name, description: applicationForms.description, formType: applicationForms.formType, status: applicationForms.status, redirectUrl: applicationForms.redirectUrl })
+      .from(applicationForms)
+      .where(eq(applicationForms.slug, req.params.slug))
+      .limit(1);
+
+    if (!form) return res.status(404).json({ error: "Form not found" });
+    if (form.status !== "active") return res.status(403).json({ error: "This form is currently inactive" });
+
+    return res.json(form);
+  } catch (err) {
+    console.error("[GET /public/form/:slug]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // ── GET /api/public/inquiry-form/:slug ─────────────────────────────────────
-// Returns basic form info for the public lead inquiry page
+// Kept for backward compat — delegates to /public/form/:slug with type check
 router.get("/public/inquiry-form/:slug", async (req, res) => {
   try {
     const [form] = await db

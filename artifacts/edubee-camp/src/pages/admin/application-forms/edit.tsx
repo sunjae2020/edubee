@@ -79,9 +79,7 @@ export default function ApplicationFormEdit() {
     },
   });
 
-  const publicUrl = formType === "lead_inquiry"
-    ? `${APPLY_BASE}/inquiry/${slug}`
-    : `${APPLY_BASE}/${slug}`;
+  const publicUrl = `${APPLY_BASE}/${slug}`;
 
   const copySlug = () => {
     navigator.clipboard.writeText(publicUrl);

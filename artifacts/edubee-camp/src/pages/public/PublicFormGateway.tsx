@@ -1,9 +1,19 @@
-import { useParams } from "wouter";
+import { useEffect } from "react";
+import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import LeadInquiryContent, { LeadFormInfo } from "./LeadInquiryContent";
+import LeadInquiryContent from "./LeadInquiryContent";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+interface FormInfo {
+  id: string;
+  name: string;
+  description: string | null;
+  formType: string;
+  status: string;
+  redirectUrl: string | null;
+}
 
 function Spinner() {
   return (
@@ -23,25 +33,41 @@ function NotFoundState() {
           </svg>
         </div>
         <h2 className="text-lg font-bold text-gray-800 mb-1">Form Not Found</h2>
-        <p className="text-sm text-gray-500">This inquiry form doesn't exist or is no longer available.</p>
+        <p className="text-sm text-gray-500">This form doesn't exist or is no longer available.</p>
       </div>
     </div>
   );
 }
 
-export default function LeadInquiryPage() {
+function CampApplicationRedirect({ slug }: { slug: string }) {
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    sessionStorage.setItem("formSlug", slug);
+    navigate("/apply");
+  }, [slug, navigate]);
+
+  return <Spinner />;
+}
+
+export default function PublicFormGateway() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
 
-  const { data: formInfo, isLoading, isError } = useQuery<LeadFormInfo>({
-    queryKey: ["public-inquiry-form", slug],
+  const { data: form, isLoading, isError } = useQuery<FormInfo>({
+    queryKey: ["public-form", slug],
     queryFn: () => axios.get(`${BASE}/api/public/form/${slug}`).then(r => r.data),
     enabled: !!slug,
     retry: false,
   });
 
   if (isLoading) return <Spinner />;
-  if (isError || !formInfo) return <NotFoundState />;
+  if (isError || !form) return <NotFoundState />;
 
-  return <LeadInquiryContent formInfo={formInfo} />;
+  if (form.formType === "lead_inquiry") {
+    return <LeadInquiryContent formInfo={form} />;
+  }
+
+  // camp_application and any other types → redirect to /apply with slug context
+  return <CampApplicationRedirect slug={slug} />;
 }
