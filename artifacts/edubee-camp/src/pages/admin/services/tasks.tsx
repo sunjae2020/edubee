@@ -115,7 +115,7 @@ export default function TasksPage() {
 
   const { data: usersData } = useQuery({
     queryKey: ["users-list"],
-    queryFn: () => axios.get(`${BASE}/api/users?limit=100`).then(r => r.data),
+    queryFn: () => axios.get(`${BASE}/api/users?limit=100`).then(r => r.data?.data ?? []),
     enabled: isAdmin,
   });
 
@@ -175,7 +175,7 @@ export default function TasksPage() {
   return formatDate(d);
   }
 
-  const allUsers: { id: string; fullName: string }[] = usersData?.data ?? [];
+  const allUsers: { id: string; fullName: string }[] = usersData ?? [];
 
   const kanbanCols = STATUSES.map(s => ({ key: s, label: STATUS_LABELS[s], tasks: tasks.filter(t => t.status === s) }));
 

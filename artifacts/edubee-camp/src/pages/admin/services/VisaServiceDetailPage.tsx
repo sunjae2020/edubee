@@ -109,9 +109,9 @@ function OverviewTab({
 
   const { data: usersData } = useQuery({
     queryKey: ["users-list"],
-    queryFn: () => axios.get(`${BASE}/api/users`).then(r => r.data),
+    queryFn: () => axios.get(`${BASE}/api/users`).then(r => r.data?.data ?? []),
   });
-  const usersList: { id: string; fullName?: string | null }[] = usersData?.data ?? usersData ?? [];
+  const usersList: { id: string; fullName?: string | null }[] = usersData ?? [];
 
   const [assignedStaffId, setAssignedStaffId] = useState(record.assignedStaffId ?? "");
 
