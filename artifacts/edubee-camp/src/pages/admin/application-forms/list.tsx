@@ -17,6 +17,7 @@ interface ApplicationForm {
   name: string;
   slug: string;
   description: string | null;
+  formType: string;
   visibility: string;
   status: string;
   sourceFormId: string | null;
@@ -114,17 +115,19 @@ export default function ApplicationFormList() {
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
+  const [formTypeFilter, setFormTypeFilter] = useState("");
   const [visibility, setVisibility] = useState("");
   const [status, setStatus] = useState("active");
   const [cloneTarget, setCloneTarget] = useState<ApplicationForm | null>(null);
 
   const { data: forms = [], isLoading } = useQuery<ApplicationForm[]>({
-    queryKey: ["application-forms", search, visibility, status],
+    queryKey: ["application-forms", search, formTypeFilter, visibility, status],
     queryFn: () => {
       const params = new URLSearchParams();
-      if (search)     params.set("search", search);
-      if (visibility) params.set("visibility", visibility);
-      if (status)     params.set("status", status);
+      if (search)         params.set("search", search);
+      if (formTypeFilter) params.set("formType", formTypeFilter);
+      if (visibility)     params.set("visibility", visibility);
+      if (status)         params.set("status", status);
       return axios.get(`${BASE}/api/application-forms?${params}`).then(r => r.data);
     },
   });
@@ -175,6 +178,11 @@ export default function ApplicationFormList() {
             className="pl-9 h-8 text-sm border-[#E8E6E2] focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F]"
           />
         </div>
+        <select value={formTypeFilter} onChange={e => setFormTypeFilter(e.target.value)} className={selCls}>
+          <option value="">All Types</option>
+          <option value="camp_application">Camp Application</option>
+          <option value="lead_inquiry">Lead Inquiry</option>
+        </select>
         <select value={visibility} onChange={e => setVisibility(e.target.value)} className={selCls}>
           <option value="">All Visibility</option>
           <option value="public">Public</option>
@@ -204,6 +212,7 @@ export default function ApplicationFormList() {
               <thead>
                 <tr className="border-b border-[#E8E6E2] bg-[#F4F3F1]">
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Form Name</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Type</th>
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Visibility</th>
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Partners</th>
                   <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Source</th>
@@ -224,6 +233,13 @@ export default function ApplicationFormList() {
                       </button>
                       {form.slug && (
                         <p className="text-[11px] text-[#A8A29E] mt-0.5">/{form.slug}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {form.formType === "lead_inquiry" ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">Lead Inquiry</span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#FEF0E3] text-[#F5821F]">Camp App</span>
                       )}
                     </td>
                     <td className="px-4 py-3">

@@ -52,13 +52,14 @@ async function enrichPartners(rows: any[]): Promise<any[]> {
 // ── GET /api/application-forms ─────────────────────────────────────────────
 router.get("/application-forms", requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { search, visibility, status } = req.query as Record<string, string>;
+    const { search, visibility, status, formType } = req.query as Record<string, string>;
 
     let query = db.select().from(applicationForms).$dynamic();
     const conds: any[] = [];
     if (search)     conds.push(ilike(applicationForms.name, `%${search}%`));
     if (visibility) conds.push(eq(applicationForms.visibility, visibility));
     if (status)     conds.push(eq(applicationForms.status, status));
+    if (formType)   conds.push(eq(applicationForms.formType, formType));
     if (conds.length > 0) query = query.where(and(...conds));
 
     const forms = await query.orderBy(applicationForms.createdOn);
@@ -105,6 +106,7 @@ router.post("/application-forms", requireRole(...ADMIN_ROLES), async (req, res) 
       name,
       slug,
       description: description || null,
+      formType: (req.body.formType as string) || "camp_application",
       visibility: visibility || "private",
       redirectUrl: redirectUrl || null,
       organisationId: organisationId || null,
@@ -144,6 +146,7 @@ router.put("/application-forms/:id", requireRole(...ADMIN_ROLES), async (req, re
         ...(name        !== undefined && { name }),
         ...(slug        !== undefined && { slug }),
         ...(description !== undefined && { description: description || null }),
+        ...(req.body.formType !== undefined && { formType: req.body.formType }),
         ...(visibility  !== undefined && { visibility }),
         ...(redirectUrl !== undefined && { redirectUrl: redirectUrl || null }),
         ...(organisationId !== undefined && { organisationId: organisationId || null }),

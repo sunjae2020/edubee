@@ -24,6 +24,7 @@ export default function ApplicationFormEdit() {
   const [name,        setName]        = useState("");
   const [slug,        setSlug]        = useState("");
   const [slugManual,  setSlugManual]  = useState(false);
+  const [formType,    setFormType]    = useState<"camp_application" | "lead_inquiry">("camp_application");
   const [description, setDescription] = useState("");
   const [visibility,  setVisibility]  = useState<"public" | "private">("private");
   const [redirectUrl, setRedirectUrl] = useState("");
@@ -47,6 +48,7 @@ export default function ApplicationFormEdit() {
     if (formData && !isNew) {
       setName(formData.name ?? "");
       setSlug(formData.slug ?? "");
+      setFormType(formData.formType ?? "camp_application");
       setDescription(formData.description ?? "");
       setVisibility(formData.visibility ?? "private");
       setRedirectUrl(formData.redirectUrl ?? "");
@@ -62,7 +64,7 @@ export default function ApplicationFormEdit() {
 
   const save = useMutation({
     mutationFn: () => {
-      const payload = { name, slug, description: description || null, visibility, redirectUrl: redirectUrl || null, status: status ? "active" : "inactive" };
+      const payload = { name, slug, formType, description: description || null, visibility, redirectUrl: redirectUrl || null, status: status ? "active" : "inactive" };
       return isNew
         ? axios.post(`${BASE}/api/application-forms`, payload).then(r => r.data)
         : axios.put(`${BASE}/api/application-forms/${params.id}`, payload).then(r => r.data);
@@ -77,8 +79,12 @@ export default function ApplicationFormEdit() {
     },
   });
 
+  const publicUrl = formType === "lead_inquiry"
+    ? `${APPLY_BASE}/inquiry/${slug}`
+    : `${APPLY_BASE}/${slug}`;
+
   const copySlug = () => {
-    navigator.clipboard.writeText(`${APPLY_BASE}/${slug}`);
+    navigator.clipboard.writeText(publicUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -156,7 +162,7 @@ export default function ApplicationFormEdit() {
               {slug && (
                 <div className="flex items-center gap-2 mt-1.5">
                   <p className="text-xs text-[#A8A29E] flex-1 font-mono bg-[#F4F3F1] px-3 py-1.5 rounded-lg overflow-hidden text-ellipsis whitespace-nowrap">
-                    {APPLY_BASE}/{slug}
+                    {publicUrl}
                   </p>
                   <button
                     type="button"
@@ -167,6 +173,34 @@ export default function ApplicationFormEdit() {
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Form Type */}
+            <div className="space-y-2">
+              <label className="block text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">
+                Form Type <span className="text-red-500">*</span>
+              </label>
+              <div className="space-y-2">
+                {([
+                  { value: "camp_application", label: "Camp Application", desc: "Collects student and camp program application details" },
+                  { value: "lead_inquiry",     label: "Lead Inquiry",     desc: "Captures general interest and contact details — creates a lead in the CRM" },
+                ] as const).map(opt => (
+                  <label key={opt.value} className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="formType"
+                      value={opt.value}
+                      checked={formType === opt.value}
+                      onChange={() => setFormType(opt.value)}
+                      className="mt-0.5 accent-[#F5821F]"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-[#1C1917]">{opt.label}</p>
+                      <p className="text-xs text-[#A8A29E]">{opt.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
             </div>
 
             {/* Visibility */}

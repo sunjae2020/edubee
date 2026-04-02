@@ -12,6 +12,8 @@ import {
   applicationGrade,
   exchangeRates,
   campApplications,
+  applicationForms,
+  leads,
 } from "@workspace/db/schema";
 import { eq, and, inArray, sql, desc, isNotNull, asc } from "drizzle-orm";
 import {
@@ -517,6 +519,83 @@ router.post("/public/chatbot/message", async (req, res) => {
       res.write(`data: ${JSON.stringify({ error: userMsg })}\n\n`);
       res.end();
     }
+  }
+});
+
+// ── GET /api/public/inquiry-form/:slug ─────────────────────────────────────
+// Returns basic form info for the public lead inquiry page
+router.get("/public/inquiry-form/:slug", async (req, res) => {
+  try {
+    const [form] = await db
+      .select({ id: applicationForms.id, name: applicationForms.name, description: applicationForms.description, formType: applicationForms.formType, status: applicationForms.status, redirectUrl: applicationForms.redirectUrl })
+      .from(applicationForms)
+      .where(and(eq(applicationForms.slug, req.params.slug), eq(applicationForms.formType, "lead_inquiry")))
+      .limit(1);
+
+    if (!form) return res.status(404).json({ error: "Form not found" });
+    if (form.status !== "active") return res.status(403).json({ error: "This form is currently inactive" });
+
+    return res.json(form);
+  } catch (err) {
+    console.error("[GET /public/inquiry-form/:slug]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── POST /api/public/lead-inquiry ──────────────────────────────────────────
+// Accepts a lead inquiry submission and creates a lead in the CRM
+router.post("/public/lead-inquiry", async (req, res) => {
+  try {
+    const {
+      formId,
+      firstName,
+      lastName,
+      email,
+      phone,
+      nationality,
+      inquiryType,
+      message,
+      budget,
+      expectedStartDate,
+      referralSource,
+    } = req.body;
+
+    if (!firstName && !lastName) return res.status(400).json({ error: "Name is required" });
+    if (!email && !phone) return res.status(400).json({ error: "Email or phone is required" });
+
+    // Verify the form exists and is active (optional - just validate if formId given)
+    if (formId) {
+      const [form] = await db
+        .select({ id: applicationForms.id, status: applicationForms.status })
+        .from(applicationForms)
+        .where(and(eq(applicationForms.id, formId), eq(applicationForms.formType, "lead_inquiry")))
+        .limit(1);
+      if (!form || form.status !== "active") {
+        return res.status(400).json({ error: "Invalid or inactive form" });
+      }
+    }
+
+    const fullName = [firstName, lastName].filter(Boolean).join(" ");
+
+    const [lead] = await db.insert(leads).values({
+      fullName,
+      firstName: firstName || null,
+      lastName: lastName || null,
+      email: email || null,
+      phone: phone || null,
+      nationality: nationality || null,
+      inquiryType: inquiryType || null,
+      notes: message || null,
+      source: referralSource || "web_form",
+      budget: budget ? String(budget) : null,
+      expectedStartDate: expectedStartDate || null,
+      status: "new",
+    }).returning({ id: leads.id, fullName: leads.fullName, leadRefNumber: leads.leadRefNumber });
+
+    return res.status(201).json({ success: true, leadId: lead.id, fullName: lead.fullName });
+  } catch (err) {
+    console.error("[POST /public/lead-inquiry]", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

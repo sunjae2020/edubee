@@ -8,6 +8,7 @@ export const applicationForms = pgTable("application_forms", {
   name:         varchar("name",         { length: 255 }).notNull(),
   slug:         varchar("slug",         { length: 100 }).notNull().unique(),
   description:  text("description"),
+  formType:     varchar("form_type",    { length: 30  }).notNull().default("camp_application"),
   visibility:   varchar("visibility",   { length: 20  }).notNull().default("private"),
   redirectUrl:  varchar("redirect_url", { length: 500 }),
   sourceFormId: uuid("source_form_id").references((): any => applicationForms.id),

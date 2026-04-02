@@ -9,6 +9,7 @@ import "@/lib/i18n";
 
 import Landing from "@/pages/landing";
 import ApplyPage from "@/pages/public/ApplyPage";
+import LeadInquiryPage from "@/pages/public/LeadInquiryPage";
 import Login from "@/pages/login";
 import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -158,6 +159,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/apply" component={ApplyPage} />
+      <Route path="/inquiry/:slug" component={LeadInquiryPage} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
