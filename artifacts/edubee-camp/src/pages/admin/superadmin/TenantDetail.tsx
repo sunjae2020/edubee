@@ -179,10 +179,15 @@ export default function TenantDetail() {
     enabled: !!id,
   });
 
-  const { data: plans = [], isLoading: plansLoading } = useQuery<PlatformPlan[]>({
-    queryKey: ["platform-plans"],
-    queryFn: () => axios.get(`${BASE}/api/platform-plans`).then(r => r.data?.data ?? r.data),
+  const { data: plansRaw, isLoading: plansLoading } = useQuery<PlatformPlan[]>({
+    queryKey: ["platform-plans", "v2"],
+    queryFn: async () => {
+      const r = await axios.get(`${BASE}/api/platform-plans`);
+      const result = r.data?.data ?? r.data;
+      return Array.isArray(result) ? result : [];
+    },
   });
+  const plans: PlatformPlan[] = Array.isArray(plansRaw) ? plansRaw : [];
 
   const [form, setForm] = useState<Record<string, any> | null>(null);
   const [dirty, setDirty] = useState(false);
