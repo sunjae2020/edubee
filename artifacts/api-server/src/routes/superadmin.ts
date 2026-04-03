@@ -152,7 +152,22 @@ router.post("/superadmin/tenants", ...guard, async (req, res) => {
     try {
       await onboardTenant(created.id);
     } catch (seedErr) {
-      console.error("[Onboarding] Seed failed (non-fatal):", seedErr);
+      // Soft Delete the partially-created organisation
+      await db
+        .update(organisations)
+        .set({ status: "Inactive", modifiedOn: new Date() })
+        .where(eq(organisations.id, created.id));
+
+      console.error("[ONBOARDING FAILED] organisationId:", created.id, seedErr);
+
+      return res.status(500).json({
+        success: false,
+        message: "테넌트 온보딩 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+        organisationId: created.id,
+        ...(process.env.NODE_ENV === "development" && {
+          error: (seedErr as Error).message,
+        }),
+      });
     }
 
     console.log(`[Invite] ${ownerEmail ?? "—"} → ${subdomain ?? "—"}.edubee.com`);
