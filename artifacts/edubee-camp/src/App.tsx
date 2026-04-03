@@ -95,6 +95,8 @@ import TenantList from "@/pages/admin/superadmin/TenantList";
 import TenantDetail from "@/pages/admin/superadmin/TenantDetail";
 import PlatformPlans from "@/pages/admin/superadmin/PlatformPlans";
 import StripeSettings from "@/pages/admin/superadmin/StripeSettings";
+import PlatformCrm from "@/pages/admin/superadmin/PlatformCrm";
+import PlatformCrmDetail from "@/pages/admin/superadmin/PlatformCrmDetail";
 import SuperAdminGuard from "@/components/guards/SuperAdminGuard";
 import { useTenantTheme } from "@/hooks/use-tenant-theme";
 import Products from "@/pages/admin/products";
@@ -545,6 +547,18 @@ function Router() {
       <Route path="/superadmin/stripe-settings">
         <SuperAdminGuard>
           <SuperAdminLayout><StripeSettings /></SuperAdminLayout>
+        </SuperAdminGuard>
+      </Route>
+      <Route path="/superadmin/crm/:id">
+        {(params) => (
+          <SuperAdminGuard>
+            <PlatformCrmDetail />
+          </SuperAdminGuard>
+        )}
+      </Route>
+      <Route path="/superadmin/crm">
+        <SuperAdminGuard>
+          <PlatformCrm />
         </SuperAdminGuard>
       </Route>
       <Route path="/superadmin">

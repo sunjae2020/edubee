@@ -297,11 +297,28 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `plan-billing.tsx`: Current plan summary with usage bars, plan comparison cards with features, payment info
 
 ### Super Admin Panel (`artifacts/edubee-camp/src/pages/admin/superadmin/`)
-- `SuperAdminLayout.tsx`: Dark sidebar layout with red ⚠️ SUPER ADMIN MODE banner; auth logic delegated to guard
+- `SuperAdminLayout.tsx`: Dark sidebar layout with red ⚠️ SUPER ADMIN MODE banner; nav: Dashboard / Tenants / SaaS CRM / Plans / Stripe
 - `SuperAdminDashboard.tsx`: Platform stats (total/active/trial tenants, users, students), plan distribution chart
 - `TenantList.tsx`: Paginated tenant table with search, inline plan change, suspend/activate
 - `TenantDetail.tsx`: Full tenant detail + seed-status panel
 - `PlatformPlans.tsx`: CRUD for platform plan catalogue
+- `StripeSettings.tsx`: API key status, webhook URL copy, plan Price ID editor
+- `PlatformCrm.tsx`: SaaS Prospect list with pipeline stats (New/Contacted/Demo/Trial/Converted/Lost), search, status filter
+- `PlatformCrmDetail.tsx`: Prospect detail — company info, status picker, notes editor, contacts panel, activity timeline
+
+### Platform CRM Tables (Phase 4)
+- `platform_prospects` — SaaS subscription prospect companies (no organisation_id; 13 cols)
+- `platform_contacts` — Contacts at prospect companies (8 cols, FK → platform_prospects, CASCADE)
+- `platform_activities` — Sales activity log: call/email/demo/meeting/note (10 cols, FK → platform_prospects)
+- Schema: `lib/db/src/schema/platform-crm.ts` — exported from index
+- API: `artifacts/api-server/src/routes/platform-crm.ts` — all endpoints require `superAdminOnly` middleware
+  - `GET /api/platform-crm/stats` — pipeline count by status
+  - `GET/POST /api/platform-crm/prospects` — list + create
+  - `GET/PATCH/DELETE /api/platform-crm/prospects/:id` — detail (includes contacts + activities), update, delete
+  - `POST /api/platform-crm/prospects/:id/contacts` — add contact
+  - `PATCH/DELETE /api/platform-crm/contacts/:id` — edit/remove contact
+  - `POST /api/platform-crm/prospects/:id/activities` — log activity
+  - `DELETE /api/platform-crm/activities/:id` — remove activity
 
 ### CRM / SuperAdmin Separation (Audited & Fixed)
 - `app-sidebar.tsx`: SuperAdmin links removed from CRM sidebar (role-conditional nav block deleted)

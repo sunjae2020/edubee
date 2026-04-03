@@ -61,6 +61,7 @@ import applicationFormsRouter from "./application-forms.js";
 import tenantSettingsRouter from "./tenant-settings.js";
 import superAdminRouter from "./superadmin.js";
 import platformPlansRouter from "./platformPlans.js";
+import platformCrmRouter from "./platform-crm.js";
 import { tenantResolver } from "../middleware/tenantResolver.js";
 
 const router: IRouter = Router();
@@ -130,5 +131,6 @@ router.use("/kpi", kpiRouter);
 router.use(applicationFormsRouter);
 router.use(superAdminRouter);
 router.use(platformPlansRouter);
+router.use(platformCrmRouter);
 
 export default router;

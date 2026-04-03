@@ -18,3 +18,4 @@ export * from "./account-service-profiles";
 export * from "./teams";
 export * from "./kpi";
 export * from "./application-forms";
+export * from "./platform-crm";
