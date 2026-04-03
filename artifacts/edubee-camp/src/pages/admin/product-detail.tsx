@@ -22,7 +22,22 @@ import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const CURRENCIES = ["AUD", "USD", "NZD", "GBP", "EUR", "SGD", "CAD"];
+const PREVIEW_CURRENCIES_KEY = "exchange-rate-preview-currencies";
+const DEFAULT_PREVIEW_CURRENCIES = ["AUD", "USD", "NZD", "GBP", "EUR", "SGD", "CAD"];
+
+function loadPreviewCurrencies(): string[] {
+  try {
+    const stored = localStorage.getItem(PREVIEW_CURRENCIES_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const list = parsed as string[];
+        return list.includes("AUD") ? list : ["AUD", ...list];
+      }
+    }
+  } catch {}
+  return DEFAULT_PREVIEW_CURRENCIES;
+}
 const NONE = "__none__";
 
 const INSTALLMENTS = [
@@ -348,6 +363,8 @@ export default function ProductDetail() {
   const { toast } = useToast();
   const { user } = useAuth();
   const canEdit = ["super_admin", "admin"].includes(user?.role ?? "");
+
+  const [availableCurrencies] = useState<string[]>(loadPreviewCurrencies);
 
   const [form, setForm] = useState<Record<string, any>>({
     productName: "", fromDate: "", toDate: "", durationWeeks: "",
@@ -1286,7 +1303,7 @@ export default function ProductDetail() {
                     <SelectField
                       value={g("currency") || "AUD"}
                       onChange={sf("currency")}
-                      options={CURRENCIES.map(c => ({ value: c, label: c }))}
+                      options={availableCurrencies.map(c => ({ value: c, label: c }))}
                     />
                   </div>
                 </div>
