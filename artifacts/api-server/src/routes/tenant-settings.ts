@@ -144,7 +144,13 @@ router.get("/domain", ...settingsAccess, async (_req, res) => {
   try {
     const org = await getOrg();
     if (!org) return res.status(404).json({ error: "Organisation not found" });
-    return res.json({ subdomain: org.subdomain, customDomain: org.customDomain });
+    return res.json({
+      subdomain:    org.subdomain,
+      customDomain: org.customDomain,
+      planType:     org.planType,
+      dnsStatus:    org.dnsStatus   ?? null,
+      sslStatus:    org.sslStatus   ?? null,
+    });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
