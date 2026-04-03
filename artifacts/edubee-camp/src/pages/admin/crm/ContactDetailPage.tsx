@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
-import { resizeImageForUpload } from "@/lib/imageResize";
+import { ImageCropDialog } from "@/components/shared/ImageCropDialog";
 import { useLookup } from "@/hooks/use-lookup";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -446,6 +446,7 @@ export default function ContactDetailPage() {
   const [form, setForm]       = useState(EMPTY_FORM);
   const [isDirty, setIsDirty] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const set = (key: keyof typeof EMPTY_FORM, value: string) => {
@@ -548,18 +549,23 @@ export default function ContactDetailPage() {
     onError: () => toast({ title: "Failed to save contact", variant: "destructive" }),
   });
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !id) return;
     if (!file.type.startsWith("image/")) {
       toast({ title: "Image files only (JPG, PNG, etc.)", variant: "destructive" });
       return;
     }
+    if (photoInputRef.current) photoInputRef.current.value = "";
+    setPendingFile(file);
+  };
+
+  const doUploadContact = async (cropped: File) => {
+    setPendingFile(null);
     setUploadingPhoto(true);
     try {
-      const resized = await resizeImageForUpload(file);
       const fd = new FormData();
-      fd.append("file", resized);
+      fd.append("file", cropped);
       const { data: uploadResult } = await axios.post(`${BASE}/api/storage/uploads/direct`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -570,7 +576,6 @@ export default function ContactDetailPage() {
       toast({ title: "Failed to upload photo", variant: "destructive" });
     } finally {
       setUploadingPhoto(false);
-      if (photoInputRef.current) photoInputRef.current.value = "";
     }
   };
 
@@ -797,6 +802,12 @@ export default function ContactDetailPage() {
         recordIdLabel="Contact ID"
         createdAt={contact.createdAt}
         updatedAt={contact.updatedAt}
+      />
+
+      <ImageCropDialog
+        file={pendingFile}
+        onConfirm={doUploadContact}
+        onCancel={() => setPendingFile(null)}
       />
     </div>
   );

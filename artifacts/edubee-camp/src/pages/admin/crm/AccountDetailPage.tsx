@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useLookup } from "@/hooks/use-lookup";
-import { resizeImageForUpload } from "@/lib/imageResize";
+import { ImageCropDialog } from "@/components/shared/ImageCropDialog";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -631,20 +631,26 @@ export default function AccountDetailPage() {
   const [tab, setTab] = useState("overview");
   const [copiedId, setCopiedId] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !id) return;
     if (!file.type.startsWith("image/")) {
       toast({ title: "Image files only (JPG, PNG, etc.)", variant: "destructive" });
       return;
     }
+    if (photoInputRef.current) photoInputRef.current.value = "";
+    setPendingFile(file);
+  };
+
+  const doUploadAccount = async (cropped: File) => {
+    setPendingFile(null);
     setUploadingPhoto(true);
     try {
-      const resized = await resizeImageForUpload(file);
       const fd = new FormData();
-      fd.append("file", resized);
+      fd.append("file", cropped);
       const { data: uploadResult } = await axios.post(`${BASE}/api/storage/uploads/direct`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -655,7 +661,6 @@ export default function AccountDetailPage() {
       toast({ title: "Failed to upload photo", variant: "destructive" });
     } finally {
       setUploadingPhoto(false);
-      if (photoInputRef.current) photoInputRef.current.value = "";
     }
   };
 
@@ -1743,6 +1748,12 @@ export default function AccountDetailPage() {
           </div>
         )}
       </div>
+
+      <ImageCropDialog
+        file={pendingFile}
+        onConfirm={doUploadAccount}
+        onCancel={() => setPendingFile(null)}
+      />
     </div>
   );
 }

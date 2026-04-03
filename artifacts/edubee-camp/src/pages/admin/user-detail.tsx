@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { resizeImageForUpload } from "@/lib/imageResize";
+import { ImageCropDialog } from "@/components/shared/ImageCropDialog";
 import { TrendingUp, TrendingDown, Minus, Pencil, Plus, Package, BarChart2, ExternalLink, Camera, Loader2 } from "lucide-react";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import ProductDrawer from "@/components/shared/ProductDrawer";
@@ -60,6 +60,7 @@ export default function UserDetail() {
   const [editProductId, setEditProductId] = useState<string | null>(null);
   const [createProductMode, setCreateProductMode] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({
@@ -122,18 +123,23 @@ export default function UserDetail() {
     onSave: async (data) => { await updateUser.mutateAsync(data); },
   });
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !id) return;
     if (!file.type.startsWith("image/")) {
       toast({ title: "Image files only (JPG, PNG, etc.)", variant: "destructive" });
       return;
     }
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+    setPendingAvatar(file);
+  };
+
+  const doUploadAvatar = async (cropped: File) => {
+    setPendingAvatar(null);
     setUploadingAvatar(true);
     try {
-      const resized = await resizeImageForUpload(file);
       const fd = new FormData();
-      fd.append("file", resized);
+      fd.append("file", cropped);
       const { data: uploadResult } = await axios.post(`${BASE}/api/storage/uploads/direct`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -144,7 +150,6 @@ export default function UserDetail() {
       toast({ title: "Failed to upload photo", variant: "destructive" });
     } finally {
       setUploadingAvatar(false);
-      if (avatarInputRef.current) avatarInputRef.current.value = "";
     }
   };
 
@@ -518,6 +523,12 @@ export default function UserDetail() {
           qc.invalidateQueries({ queryKey: ["user-products", id] });
           if (createProductMode) { setCreateProductMode(false); setProductDrawerOpen(false); }
         }}
+      />
+
+      <ImageCropDialog
+        file={pendingAvatar}
+        onConfirm={doUploadAvatar}
+        onCancel={() => setPendingAvatar(null)}
       />
     </DetailPageLayout>
   );
