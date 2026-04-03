@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import axios from "axios";
 
 export interface TenantTheme {
   organisationId: string | null;
@@ -30,32 +31,34 @@ const DEFAULT_THEME: TenantTheme = {
 
 /**
  * 테넌트 테마를 로드하고 CSS 변수로 document에 주입
- * App.tsx 내부 컴포넌트에서 1회 호출
+ * App.tsx 내부 컴포넌트에서 1회 호출.
+ * 임프로소네이션 변경 시 "edubee:impersonation-changed" 이벤트를 들어 자동 재로드.
  */
 export function useTenantTheme() {
   const [theme, setTheme] = useState<TenantTheme>(DEFAULT_THEME);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadTheme = async () => {
-      try {
-        const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-        const res = await fetch(`${BASE}/api/settings/theme`);
-        if (!res.ok) throw new Error("Theme fetch failed");
-
-        const data: TenantTheme = await res.json();
-        setTheme(data);
-        applyThemeToDom(data);
-      } catch (err) {
-        console.warn("[useTenantTheme] 기본 테마 사용:", err);
-        applyThemeToDom(DEFAULT_THEME);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadTheme();
+  const loadTheme = useCallback(async () => {
+    try {
+      const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+      // axios 사용 → X-Organisation-Id 헤더가 인터셉터에 의해 자동 첨부됨
+      const { data } = await axios.get<TenantTheme>(`${BASE}/api/settings/theme`);
+      setTheme(data);
+      applyThemeToDom(data);
+    } catch (err) {
+      console.warn("[useTenantTheme] 기본 테마 사용:", err);
+      applyThemeToDom(DEFAULT_THEME);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadTheme();
+    // 임프로소네이션 변경 시 테마 재로드
+    window.addEventListener("edubee:impersonation-changed", loadTheme);
+    return () => window.removeEventListener("edubee:impersonation-changed", loadTheme);
+  }, [loadTheme]);
 
   return { theme, isLoading };
 }

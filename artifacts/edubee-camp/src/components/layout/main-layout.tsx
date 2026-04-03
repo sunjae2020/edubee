@@ -5,6 +5,7 @@ import { AdminChatWidget } from "./AdminChatWidget";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect, useLocation } from "wouter";
 import { useDateFormatLoader } from "@/hooks/use-date-format";
+import { useQueryClient } from "@tanstack/react-query";
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(() =>
@@ -21,18 +22,23 @@ function useMediaQuery(query: string) {
 
 function ImpersonationBanner() {
   const [, navigate] = useLocation();
+  const qc = useQueryClient();
   const orgId   = sessionStorage.getItem("edubee_impersonate_org_id");
   const orgName = sessionStorage.getItem("edubee_impersonate_org_name") ?? "Unknown Tenant";
   const returnPath = sessionStorage.getItem("edubee_impersonate_return") ?? "/superadmin/tenants";
   if (!orgId) return null;
   return (
     <div className="flex items-center justify-between px-4 py-1.5 text-sm font-medium text-white" style={{ background: "#D96A0A" }}>
-      <span>Viewing as <strong>{orgName}</strong> — API requests scoped to this tenant</span>
+      <span>Viewing as <strong>{orgName}</strong></span>
       <button
         onClick={() => {
           sessionStorage.removeItem("edubee_impersonate_org_id");
           sessionStorage.removeItem("edubee_impersonate_org_name");
           sessionStorage.removeItem("edubee_impersonate_return");
+          // 캐시 초기화 → 원래 테넌트 데이터로 재fetch
+          qc.clear();
+          // 테마 훅에 임프로소네이션 종료 알림 → 브랜딩 복원
+          window.dispatchEvent(new Event("edubee:impersonation-changed"));
           navigate(returnPath);
         }}
         className="ml-4 px-3 py-0.5 rounded bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition-colors"
