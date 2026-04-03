@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
+import { applyThemeToDom } from "@/hooks/use-tenant-theme";
 import {
   Save, Loader2, Palette, Code2, AlertTriangle,
   ChevronDown, ChevronUp, Upload, Link,
@@ -147,7 +148,7 @@ export default function Branding() {
 
   const colorMutation = useMutation({
     mutationFn: (data: any) => axios.put(`${BASE}/api/settings/branding`, data).then(r => r.data),
-    onSuccess: () => {
+    onSuccess: (_res, variables) => {
       qc.invalidateQueries({ queryKey: ["settings-branding"] });
       setForm(p => {
         const next = { ...p };
@@ -156,6 +157,19 @@ export default function Branding() {
         delete next.accentColor;
         delete next.customCss;
         return next;
+      });
+      applyThemeToDom({
+        organisationId: null,
+        companyName:    branding?.companyName ?? "",
+        logoUrl:        variables.logoUrl   ?? branding?.logoUrl   ?? null,
+        faviconUrl:     variables.faviconUrl ?? branding?.faviconUrl ?? null,
+        primaryColor:   variables.primaryColor   ?? branding?.primaryColor   ?? "#F5821F",
+        secondaryColor: variables.secondaryColor ?? branding?.secondaryColor ?? "#1C1917",
+        accentColor:    variables.accentColor    ?? branding?.accentColor    ?? "#FEF0E3",
+        customCss:      variables.customCss ?? branding?.customCss ?? null,
+        subdomain:      null,
+        planType:       branding?.planType ?? "starter",
+        features:       branding?.features ?? {},
       });
       toast({ title: "Saved", description: "Branding settings updated." });
     },

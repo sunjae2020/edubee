@@ -63,8 +63,9 @@ export function useTenantTheme() {
 /**
  * 테마를 CSS 변수로 document.documentElement에 주입
  * 모든 CSS 에서 var(--color-primary) 로 사용 가능
+ * branding.tsx 저장 후 즉시 반영을 위해 export
  */
-function applyThemeToDom(theme: TenantTheme): void {
+export function applyThemeToDom(theme: TenantTheme): void {
   const root = document.documentElement;
 
   // ── 색상 변수 ──────────────────────────────────────

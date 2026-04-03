@@ -239,6 +239,7 @@ router.put("/superadmin/tenants/:id", ...guard, async (req, res) => {
     const {
       name, tradingName, subdomain, customDomain, ownerEmail,
       planType, planStatus, status, maxUsers, maxStudents, trialEndsAt, features,
+      logoUrl, faviconUrl, primaryColor, secondaryColor, accentColor,
     } = req.body;
 
     // Subdomain uniqueness check (skip if unchanged)
@@ -267,7 +268,12 @@ router.put("/superadmin/tenants/:id", ...guard, async (req, res) => {
         ...(maxUsers     !== undefined && { maxUsers }),
         ...(maxStudents  !== undefined && { maxStudents }),
         ...(trialEndsAt  !== undefined && { trialEndsAt: trialEndsAt ? new Date(trialEndsAt) : null }),
-        ...(features     !== undefined && { features }),
+        ...(features       !== undefined && { features }),
+        ...(logoUrl        !== undefined && { logoUrl }),
+        ...(faviconUrl     !== undefined && { faviconUrl }),
+        ...(primaryColor   !== undefined && { primaryColor }),
+        ...(secondaryColor !== undefined && { secondaryColor }),
+        ...(accentColor    !== undefined && { accentColor }),
         modifiedOn: new Date(),
       })
       .where(eq(organisations.id, req.params.id))

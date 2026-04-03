@@ -5,7 +5,7 @@ import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, ArrowLeft, Building2, Globe, Mail, Users, GraduationCap,
-  CreditCard, Calendar, Save, ExternalLink, Clock, Check, Zap,
+  CreditCard, Calendar, Save, ExternalLink, Clock, Check, Zap, Palette, Image,
 } from "lucide-react";
 import { formatDate } from "@/lib/date-format";
 
@@ -81,6 +81,31 @@ const FEATURE_LABELS: Array<{ key: keyof PlatformPlan; label: string }> = [
 
 function fmtLimit(v: number) {
   return v >= 9999 ? "Unlimited" : v.toLocaleString();
+}
+
+function ColorSwatch({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const safe = /^#[0-9A-Fa-f]{6}$/.test(value) ? value : "#000000";
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">{label}</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={safe}
+          onChange={e => onChange(e.target.value)}
+          className="w-9 h-9 rounded-lg border border-[#E8E6E2] cursor-pointer p-0.5 shrink-0"
+        />
+        <input
+          type="text"
+          value={value || ""}
+          onChange={e => onChange(e.target.value)}
+          maxLength={7}
+          className="flex-1 h-9 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm font-mono focus:outline-none focus:border-[#F5821F] uppercase bg-white"
+          placeholder="#F5821F"
+        />
+      </div>
+    </div>
+  );
 }
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
@@ -205,17 +230,22 @@ export default function TenantDetail() {
   const save = useMutation({
     mutationFn: () =>
       axios.put(`${BASE}/api/superadmin/tenants/${id}`, {
-        name:         val("name"),
-        tradingName:  val("trading_name") || undefined,
-        subdomain:    val("subdomain")    || undefined,
-        customDomain: val("custom_domain") || undefined,
-        ownerEmail:   val("owner_email")  || undefined,
-        planType:     val("plan_type"),
-        planStatus:   val("plan_status"),
-        status:       val("status"),
-        maxUsers:     val("max_users")    ? Number(val("max_users"))    : undefined,
-        maxStudents:  val("max_students") ? Number(val("max_students")) : undefined,
-        trialEndsAt:  val("trial_ends_at") || undefined,
+        name:           val("name"),
+        tradingName:    val("trading_name")  || undefined,
+        subdomain:      val("subdomain")     || undefined,
+        customDomain:   val("custom_domain") || undefined,
+        ownerEmail:     val("owner_email")   || undefined,
+        planType:       val("plan_type"),
+        planStatus:     val("plan_status"),
+        status:         val("status"),
+        maxUsers:       val("max_users")    ? Number(val("max_users"))    : undefined,
+        maxStudents:    val("max_students") ? Number(val("max_students")) : undefined,
+        trialEndsAt:    val("trial_ends_at") || undefined,
+        logoUrl:        val("logo_url")        || undefined,
+        faviconUrl:     val("favicon_url")     || undefined,
+        primaryColor:   val("primary_color")   || undefined,
+        secondaryColor: val("secondary_color") || undefined,
+        accentColor:    val("accent_color")    || undefined,
       }).then(r => r.data),
     onSuccess: () => {
       toast({ title: "Tenant updated" });
@@ -374,6 +404,107 @@ export default function TenantDetail() {
           <Field label={<><GraduationCap size={11} /> Max Students Override</>}>
             <input className={inp} type="number" min={1} value={val("max_students", selectedPlan?.maxStudents ?? 500)} onChange={e => set("max_students", e.target.value)} />
           </Field>
+        </div>
+      </Section>
+
+      {/* Branding */}
+      <Section title="Branding & Visual Identity">
+        <div className="space-y-5">
+          <div className="grid grid-cols-3 gap-4">
+            <ColorSwatch
+              label="Primary Colour"
+              value={val("primary_color", "#F5821F")}
+              onChange={v => set("primary_color", v)}
+            />
+            <ColorSwatch
+              label="Secondary Colour"
+              value={val("secondary_color", "#1C1917")}
+              onChange={v => set("secondary_color", v)}
+            />
+            <ColorSwatch
+              label="Accent Colour"
+              value={val("accent_color", "#FEF0E3")}
+              onChange={v => set("accent_color", v)}
+            />
+          </div>
+
+          {/* Live colour preview */}
+          <div
+            className="rounded-xl border border-[#E8E6E2] p-4"
+            style={{ background: val("accent_color", "#FEF0E3") }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: val("secondary_color", "#1C1917") }}>
+              Colour Preview
+            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <button
+                className="h-8 px-4 rounded-lg text-xs font-semibold text-white"
+                style={{ background: val("primary_color", "#F5821F") }}
+              >
+                Primary Button
+              </button>
+              <button
+                className="h-8 px-4 rounded-lg text-xs font-semibold border-2"
+                style={{ color: val("primary_color", "#F5821F"), borderColor: val("primary_color", "#F5821F"), background: "transparent" }}
+              >
+                Outline
+              </button>
+              <span
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                style={{ background: val("primary_color", "#F5821F"), color: "#fff" }}
+              >
+                Badge
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 pt-1">
+            <Field label={<><Image size={11} /> Logo URL</>}>
+              <div className="space-y-1.5">
+                <input
+                  className={inp}
+                  placeholder="https://cdn.example.com/logo.png"
+                  value={val("logo_url")}
+                  onChange={e => set("logo_url", e.target.value)}
+                />
+                {val("logo_url") && (
+                  <div className="h-16 border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] flex items-center justify-center overflow-hidden">
+                    <img
+                      src={val("logo_url")}
+                      alt="Logo preview"
+                      className="max-h-full max-w-full object-contain p-2"
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  </div>
+                )}
+              </div>
+            </Field>
+            <Field label={<><Palette size={11} /> Favicon URL</>}>
+              <div className="space-y-1.5">
+                <input
+                  className={inp}
+                  placeholder="https://cdn.example.com/favicon.ico"
+                  value={val("favicon_url")}
+                  onChange={e => set("favicon_url", e.target.value)}
+                />
+                {val("favicon_url") && (
+                  <div className="h-16 border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] flex items-center justify-center overflow-hidden">
+                    <img
+                      src={val("favicon_url")}
+                      alt="Favicon preview"
+                      className="h-8 w-8 object-contain"
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  </div>
+                )}
+              </div>
+            </Field>
+          </div>
+
+          <p className="text-xs text-[#A8A29E]">
+            Tenants can also upload logo/favicon images directly from their own Settings → Branding page.
+            Changes here are saved with the main Save Changes button above.
+          </p>
         </div>
       </Section>
 
