@@ -5,27 +5,47 @@ import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, ArrowLeft, Building2, Globe, Mail, Users, GraduationCap,
-  CreditCard, Calendar, Save, ExternalLink, Clock,
+  CreditCard, Calendar, Save, ExternalLink, Clock, Check, Zap,
 } from "lucide-react";
 import { formatDate } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+type PlatformPlan = {
+  id: string;
+  code: string;
+  name: string;
+  priceMonthly: string;
+  priceAnnually: string;
+  maxUsers: number;
+  maxStudents: number;
+  maxBranches: number;
+  storageGb: number;
+  featureCommission: boolean;
+  featureVisa: boolean;
+  featureServiceModules: boolean;
+  featureMultiBranch: boolean;
+  featureAiAssistant: boolean;
+  featureAccounting: boolean;
+  featureAvetmiss: boolean;
+  featureApiAccess: boolean;
+  featureWhiteLabel: boolean;
+  isPopular: boolean;
+  isActive: boolean;
+};
+
+// ── Design constants ───────────────────────────────────────────────────────────
+
 const inp = `w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white placeholder-[#A8A29E] focus:outline-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)] transition-all`;
 const readInp = `w-full h-10 px-3 border border-[#F4F3F1] rounded-lg text-sm text-[#57534E] bg-[#FAFAF9] cursor-not-allowed select-none`;
 
-const PLANS = [
-  { value: "solo",       label: "Solo"       },
-  { value: "starter",    label: "Starter"    },
-  { value: "growth",     label: "Growth"     },
-  { value: "enterprise", label: "Enterprise" },
-];
-
 const PLAN_STATUS = [
-  { value: "trial",  label: "Trial (30 days)" },
-  { value: "active", label: "Active"           },
-  { value: "past_due", label: "Past Due"       },
-  { value: "cancelled", label: "Cancelled"     },
+  { value: "trial",     label: "Trial (30 days)" },
+  { value: "active",    label: "Active"           },
+  { value: "past_due",  label: "Past Due"         },
+  { value: "cancelled", label: "Cancelled"        },
 ];
 
 const ORG_STATUS = [
@@ -40,6 +60,31 @@ const STATUS_COLOR: Record<string, { bg: string; color: string }> = {
   Cancelled: { bg: "#F4F3F1", color: "#57534E" },
 };
 
+const PLAN_COLOR: Record<string, { bg: string; color: string; border: string }> = {
+  solo:       { bg: "#FAFAF9", color: "#57534E",  border: "#E8E6E2" },
+  starter:    { bg: "#FEF0E3", color: "#C2410C",  border: "#FDE0C0" },
+  growth:     { bg: "#ECFDF5", color: "#065F46",  border: "#A7F3D0" },
+  enterprise: { bg: "#F5F3FF", color: "#6D28D9",  border: "#DDD6FE" },
+};
+
+const FEATURE_LABELS: Array<{ key: keyof PlatformPlan; label: string }> = [
+  { key: "featureCommission",     label: "Commission Auto-Calc"              },
+  { key: "featureVisa",           label: "Visa Management"                   },
+  { key: "featureServiceModules", label: "Services (Pickup/Homestay/Intern)" },
+  { key: "featureMultiBranch",    label: "Multi-Branch"                      },
+  { key: "featureAiAssistant",    label: "AI Assistant"                      },
+  { key: "featureAccounting",     label: "Accounting"                        },
+  { key: "featureAvetmiss",       label: "AVETMISS Reporting"                },
+  { key: "featureApiAccess",      label: "REST API / Webhook"                },
+  { key: "featureWhiteLabel",     label: "White-label"                       },
+];
+
+function fmtLimit(v: number) {
+  return v >= 9999 ? "Unlimited" : v.toLocaleString();
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl" style={{ background: "#FFFFFF", border: "1px solid #E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
@@ -51,14 +96,76 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">{label}</label>
+      <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide flex items-center gap-1">{label}</label>
       {children}
     </div>
   );
 }
+
+// ── Plan info card (shown below the Plan dropdown) ────────────────────────────
+
+function PlanInfoCard({ plan }: { plan: PlatformPlan }) {
+  const c = PLAN_COLOR[plan.code] ?? PLAN_COLOR.solo;
+  const isContact = Number(plan.priceMonthly) === 0;
+  const activeFeatures = FEATURE_LABELS.filter(f => plan[f.key]);
+
+  return (
+    <div
+      className="rounded-xl mt-4 p-4 space-y-3"
+      style={{ background: c.bg, border: `1.5px solid ${c.border}` }}
+    >
+      {/* Price + limits row */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          {plan.isPopular && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: "#FEF0E3", color: "#F5821F" }}>
+              Most Popular
+            </span>
+          )}
+          <span className="font-bold" style={{ color: c.color, fontSize: 18 }}>
+            {isContact ? "Contact us" : `$${Number(plan.priceMonthly).toFixed(0)}/mo`}
+          </span>
+          {!isContact && (
+            <span className="text-xs text-[#A8A29E]">
+              (${Number(plan.priceAnnually).toFixed(0)}/yr annual)
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-xs text-[#57534E]">
+          <span className="flex items-center gap-1"><Users size={11} /> {fmtLimit(plan.maxUsers)} users</span>
+          <span className="text-[#D4D0CB]">·</span>
+          <span className="flex items-center gap-1"><GraduationCap size={11} /> {fmtLimit(plan.maxStudents)} students</span>
+          <span className="text-[#D4D0CB]">·</span>
+          <span className="flex items-center gap-1"><Building2 size={11} /> {fmtLimit(plan.maxBranches)} branches</span>
+        </div>
+      </div>
+
+      {/* Features */}
+      {activeFeatures.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {activeFeatures.map(f => (
+            <span
+              key={f.key as string}
+              className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium"
+              style={{ background: "rgba(255,255,255,0.7)", color: c.color, border: `1px solid ${c.border}` }}
+            >
+              <Check size={9} strokeWidth={3} /> {f.label}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {activeFeatures.length === 0 && (
+        <p className="text-xs text-[#A8A29E]">CRM core only (Lead → Invoice)</p>
+      )}
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function TenantDetail() {
   const { id } = useParams<{ id: string }>();
@@ -66,10 +173,15 @@ export default function TenantDetail() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  const { data: org, isLoading } = useQuery<any>({
+  const { data: org, isLoading: orgLoading } = useQuery<any>({
     queryKey: ["tenant", id],
     queryFn: () => axios.get(`${BASE}/api/superadmin/tenants/${id}`).then(r => r.data),
     enabled: !!id,
+  });
+
+  const { data: plans = [], isLoading: plansLoading } = useQuery<PlatformPlan[]>({
+    queryKey: ["platform-plans"],
+    queryFn: () => axios.get(`${BASE}/api/platform-plans`).then(r => r.data),
   });
 
   const [form, setForm] = useState<Record<string, any> | null>(null);
@@ -83,20 +195,22 @@ export default function TenantDetail() {
   const val = (k: string, fallback?: any) =>
     form?.[k] !== undefined ? form[k] : (org?.[k] ?? fallback ?? "");
 
+  const selectedPlan = plans.find(p => p.code === val("plan_type"));
+
   const save = useMutation({
     mutationFn: () =>
       axios.put(`${BASE}/api/superadmin/tenants/${id}`, {
-        name:        val("name"),
-        tradingName: val("trading_name") || undefined,
-        subdomain:   val("subdomain")    || undefined,
+        name:         val("name"),
+        tradingName:  val("trading_name") || undefined,
+        subdomain:    val("subdomain")    || undefined,
         customDomain: val("custom_domain") || undefined,
-        ownerEmail:  val("owner_email")  || undefined,
-        planType:    val("plan_type"),
-        planStatus:  val("plan_status"),
-        status:      val("status"),
-        maxUsers:    val("max_users") ? Number(val("max_users")) : undefined,
-        maxStudents: val("max_students") ? Number(val("max_students")) : undefined,
-        trialEndsAt: val("trial_ends_at") || undefined,
+        ownerEmail:   val("owner_email")  || undefined,
+        planType:     val("plan_type"),
+        planStatus:   val("plan_status"),
+        status:       val("status"),
+        maxUsers:     val("max_users")    ? Number(val("max_users"))    : undefined,
+        maxStudents:  val("max_students") ? Number(val("max_students")) : undefined,
+        trialEndsAt:  val("trial_ends_at") || undefined,
       }).then(r => r.data),
     onSuccess: () => {
       toast({ title: "Tenant updated" });
@@ -106,11 +220,15 @@ export default function TenantDetail() {
       setDirty(false);
     },
     onError: (e: any) => {
-      toast({ title: "Error", description: e?.response?.data?.error ?? "Failed to update tenant", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: e?.response?.data?.error ?? "Failed to update tenant",
+        variant: "destructive",
+      });
     },
   });
 
-  if (isLoading) {
+  if (orgLoading || plansLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 size={24} className="animate-spin text-[#F5821F]" />
@@ -146,10 +264,7 @@ export default function TenantDetail() {
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold text-[#1C1917]">{org.name}</h1>
-              <span
-                className="text-xs px-2.5 py-0.5 rounded-full font-semibold"
-                style={statusStyle}
-              >
+              <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold" style={statusStyle}>
                 {val("status")}
               </span>
             </div>
@@ -181,7 +296,7 @@ export default function TenantDetail() {
           <Field label="Trading Name">
             <input className={inp} placeholder="Optional" value={val("trading_name")} onChange={e => set("trading_name", e.target.value)} />
           </Field>
-          <Field label={<span className="flex items-center gap-1"><Globe size={11} /> Subdomain</span> as any}>
+          <Field label={<><Globe size={11} /> Subdomain</>}>
             <div className="relative">
               <input
                 className={inp}
@@ -192,10 +307,10 @@ export default function TenantDetail() {
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#A8A29E]">.edubee.com</span>
             </div>
           </Field>
-          <Field label={<span className="flex items-center gap-1"><ExternalLink size={11} /> Custom Domain</span> as any}>
+          <Field label={<><ExternalLink size={11} /> Custom Domain</>}>
             <input className={inp} placeholder="app.acmeedu.com" value={val("custom_domain")} onChange={e => set("custom_domain", e.target.value)} />
           </Field>
-          <Field label={<span className="flex items-center gap-1"><Mail size={11} /> Owner Email</span> as any}>
+          <Field label={<><Mail size={11} /> Owner Email</>}>
             <input className={inp} type="email" value={val("owner_email")} onChange={e => set("owner_email", e.target.value)} />
           </Field>
         </div>
@@ -204,9 +319,13 @@ export default function TenantDetail() {
       {/* Plan & Billing */}
       <Section title="Plan & Billing">
         <div className="grid grid-cols-2 gap-4">
-          <Field label={<span className="flex items-center gap-1"><CreditCard size={11} /> Plan</span> as any}>
+          <Field label={<><CreditCard size={11} /> Plan</>}>
             <select className={inp} value={val("plan_type")} onChange={e => set("plan_type", e.target.value)}>
-              {PLANS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              {plans.filter(p => p.isActive).map(p => (
+                <option key={p.code} value={p.code}>
+                  {p.name}{p.isPopular ? " ★" : ""}
+                </option>
+              ))}
             </select>
           </Field>
           <Field label="Plan Status">
@@ -214,7 +333,7 @@ export default function TenantDetail() {
               {PLAN_STATUS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
             </select>
           </Field>
-          <Field label={<span className="flex items-center gap-1"><Calendar size={11} /> Trial Ends At</span> as any}>
+          <Field label={<><Calendar size={11} /> Trial Ends At</>}>
             <input
               className={inp}
               type="date"
@@ -229,13 +348,26 @@ export default function TenantDetail() {
           </Field>
         </div>
 
-        {/* Limits */}
+        {/* Selected plan info card */}
+        {selectedPlan && (
+          <div>
+            <p className="mt-4 mb-1 text-xs font-semibold text-[#57534E] uppercase tracking-wide flex items-center gap-1">
+              <Zap size={11} /> {selectedPlan.name} Plan — Included Features
+            </p>
+            <PlanInfoCard plan={selectedPlan} />
+          </div>
+        )}
+
+        {/* Custom limits override */}
         <div className="grid grid-cols-2 gap-4 mt-4 pt-4" style={{ borderTop: "1px solid #F4F3F1" }}>
-          <Field label={<span className="flex items-center gap-1"><Users size={11} /> Max Users</span> as any}>
-            <input className={inp} type="number" min={1} value={val("max_users", 10)} onChange={e => set("max_users", e.target.value)} />
+          <p className="col-span-2 text-xs text-[#A8A29E]">
+            Override per-tenant limits (leave as plan default if not customised)
+          </p>
+          <Field label={<><Users size={11} /> Max Users Override</>}>
+            <input className={inp} type="number" min={1} value={val("max_users", selectedPlan?.maxUsers ?? 10)} onChange={e => set("max_users", e.target.value)} />
           </Field>
-          <Field label={<span className="flex items-center gap-1"><GraduationCap size={11} /> Max Students</span> as any}>
-            <input className={inp} type="number" min={1} value={val("max_students", 500)} onChange={e => set("max_students", e.target.value)} />
+          <Field label={<><GraduationCap size={11} /> Max Students Override</>}>
+            <input className={inp} type="number" min={1} value={val("max_students", selectedPlan?.maxStudents ?? 500)} onChange={e => set("max_students", e.target.value)} />
           </Field>
         </div>
       </Section>
@@ -246,7 +378,7 @@ export default function TenantDetail() {
           <Field label="Tenant ID">
             <input className={readInp} readOnly value={org.id} />
           </Field>
-          <Field label={<span className="flex items-center gap-1"><Clock size={11} /> Created On</span> as any}>
+          <Field label={<><Clock size={11} /> Created On</>}>
             <input className={readInp} readOnly value={formatDate(org.created_on)} />
           </Field>
           <Field label="Onboarded At">
