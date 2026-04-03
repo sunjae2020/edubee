@@ -422,17 +422,30 @@ export default function TenantDetail() {
           </div>
         </div>
 
-        <button
-          onClick={() => save.mutate()}
-          disabled={!dirty || save.isPending}
-          className="h-9 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-40 transition-all"
-          style={{ background: "#F5821F" }}
-          onMouseEnter={e => { if (dirty && !save.isPending) e.currentTarget.style.background = "#D96A0A"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "#F5821F"; }}
-        >
-          {save.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-          Save Changes
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+              const url = `${window.location.origin}${base}/admin/dashboard?impersonateOrg=${org.id}&impersonateOrgName=${encodeURIComponent(org.name)}`;
+              window.open(url, "_blank");
+            }}
+            className="h-9 px-4 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#E8E6E2] text-[#1C1917] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+          >
+            <ExternalLink size={14} />
+            Open Admin Panel
+          </button>
+          <button
+            onClick={() => save.mutate()}
+            disabled={!dirty || save.isPending}
+            className="h-9 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-40 transition-all"
+            style={{ background: "#F5821F" }}
+            onMouseEnter={e => { if (dirty && !save.isPending) e.currentTarget.style.background = "#D96A0A"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#F5821F"; }}
+          >
+            {save.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            Save Changes
+          </button>
+        </div>
       </div>
 
       {/* Company Info */}

@@ -19,6 +19,27 @@ function useMediaQuery(query: string) {
   return matches;
 }
 
+function ImpersonationBanner() {
+  const orgId   = sessionStorage.getItem("edubee_impersonate_org_id");
+  const orgName = sessionStorage.getItem("edubee_impersonate_org_name") ?? "Unknown Tenant";
+  if (!orgId) return null;
+  return (
+    <div className="flex items-center justify-between px-4 py-1.5 text-sm font-medium text-white" style={{ background: "#D96A0A" }}>
+      <span>Impersonating <strong>{orgName}</strong> — All API requests are scoped to this tenant</span>
+      <button
+        onClick={() => {
+          sessionStorage.removeItem("edubee_impersonate_org_id");
+          sessionStorage.removeItem("edubee_impersonate_org_name");
+          window.location.reload();
+        }}
+        className="ml-4 px-3 py-0.5 rounded bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition-colors"
+      >
+        Exit Impersonation
+      </button>
+    </div>
+  );
+}
+
 export function MainLayout({ children, title }: { children: React.ReactNode; title?: string }) {
   const { isAuthenticated, isLoading } = useAuth();
   const isMobile = useMediaQuery("(max-width: 767px)");
@@ -84,6 +105,7 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header collapsed={sidebarCollapsed} onToggle={toggleCollapsed} title={title} />
+        <ImpersonationBanner />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8" style={{ background: "var(--e-bg-page)" }}>
           <div className="mx-auto max-w-7xl">
             {children}

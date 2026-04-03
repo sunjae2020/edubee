@@ -1,4 +1,5 @@
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -607,12 +608,30 @@ function Router() {
   );
 }
 
+function ImpersonationInit() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const orgId = params.get("impersonateOrg");
+    const orgName = params.get("impersonateOrgName");
+    if (orgId) {
+      sessionStorage.setItem("edubee_impersonate_org_id", orgId);
+      if (orgName) sessionStorage.setItem("edubee_impersonate_org_name", decodeURIComponent(orgName));
+      params.delete("impersonateOrg");
+      params.delete("impersonateOrgName");
+      const clean = params.toString();
+      window.history.replaceState({}, "", window.location.pathname + (clean ? `?${clean}` : ""));
+    }
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <DisplayCurrencyProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <ImpersonationInit />
             <ViewAsProvider>
               <AuthProvider>
                 <Router />

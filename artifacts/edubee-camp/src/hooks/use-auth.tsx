@@ -5,12 +5,14 @@ import { useLocation } from "wouter";
 import { getViewAsUserId } from "./use-view-as";
 import axios from "axios";
 
-// Attach JWT + View-As to every axios request
+// Attach JWT + View-As + Impersonation to every axios request
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem("edubee_token");
   const viewAsId = getViewAsUserId();
+  const impersonateOrgId = sessionStorage.getItem("edubee_impersonate_org_id");
   if (token) config.headers["Authorization"] = `Bearer ${token}`;
   if (viewAsId) config.headers["X-View-As-User-Id"] = viewAsId;
+  if (impersonateOrgId) config.headers["X-Organisation-Id"] = impersonateOrgId;
   return config;
 });
 
