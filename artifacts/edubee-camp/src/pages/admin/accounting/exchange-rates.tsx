@@ -151,6 +151,8 @@ export default function ExchangeRates() {
   const [previewCurrencies, setPreviewCurrencies] = useState<string[]>(loadPreviewCurrencies);
   const [showAddPreview, setShowAddPreview] = useState(false);
   const [previewCurrencySearch, setPreviewCurrencySearch] = useState("");
+  const [fromSearch, setFromSearch] = useState("");
+  const [toSearch, setToSearch] = useState("");
   const [managedCurrencies, setManagedCurrencies] = useState<string[]>(loadManagedCurrencies);
   const [showManageCurrencies, setShowManageCurrencies] = useState(false);
   const [currencySearch, setCurrencySearch] = useState("");
@@ -230,8 +232,27 @@ export default function ExchangeRates() {
         title: "Exchange rate saved",
         description: `1 ${vars.fromCurrency} = ${rateDisplay} ${vars.toCurrency}`,
       });
+      // Auto-add both currencies to managed list and Live Preview
+      setManagedCurrencies(prev => {
+        const next = [...prev];
+        for (const code of [vars.fromCurrency, vars.toCurrency]) {
+          if (code !== "AUD" && !next.includes(code)) next.push(code);
+        }
+        saveManagedCurrencies(next);
+        return next;
+      });
+      setPreviewCurrencies(prev => {
+        const next = [...prev];
+        for (const code of [vars.fromCurrency, vars.toCurrency]) {
+          if (code !== "AUD" && !next.includes(code)) next.push(code);
+        }
+        savePreviewCurrencies(next);
+        return next;
+      });
       setShowCreate(false);
       setForm(defaultForm);
+      setFromSearch("");
+      setToSearch("");
     },
     onError: () => toast({ title: "Failed to add rate", variant: "destructive" }),
   });
@@ -509,7 +530,7 @@ export default function ExchangeRates() {
       </div>
 
       {/* Add Rate Dialog */}
-      <Dialog open={showCreate} onOpenChange={v => { if (!v) { setShowCreate(false); setForm(defaultForm); } }}>
+      <Dialog open={showCreate} onOpenChange={v => { if (!v) { setShowCreate(false); setForm(defaultForm); setFromSearch(""); setToSearch(""); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Add Exchange Rate</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
@@ -519,21 +540,51 @@ export default function ExchangeRates() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">From Currency</Label>
-                <Select value={form.fromCurrency} onValueChange={v => setForm(f => ({ ...f, fromCurrency: v }))}>
+                <Select value={form.fromCurrency} onValueChange={v => { setForm(f => ({ ...f, fromCurrency: v })); setFromSearch(""); }}>
                   <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="AUD">🇦🇺 AUD</SelectItem>
-                    {managedCurrencies.map(c => <SelectItem key={c} value={c}>{FLAG[c] ?? ""} {c}</SelectItem>)}
+                    <div className="px-2 py-1.5 sticky top-0 bg-white z-10">
+                      <Input
+                        placeholder="Search…"
+                        value={fromSearch}
+                        onChange={e => setFromSearch(e.target.value)}
+                        className="h-7 text-xs"
+                        onKeyDown={e => e.stopPropagation()}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    </div>
+                    {[{ code: "AUD", name: "Australian Dollar", flag: "🇦🇺" }, ...WORLD_CURRENCIES]
+                      .filter(c => {
+                        const q = fromSearch.trim().toLowerCase();
+                        return !q || c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q);
+                      })
+                      .map(c => <SelectItem key={c.code} value={c.code}>{c.flag} {c.code} — {c.name}</SelectItem>)
+                    }
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="text-xs">To Currency</Label>
-                <Select value={form.toCurrency} onValueChange={v => setForm(f => ({ ...f, toCurrency: v }))}>
+                <Select value={form.toCurrency} onValueChange={v => { setForm(f => ({ ...f, toCurrency: v })); setToSearch(""); }}>
                   <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="AUD">🇦🇺 AUD</SelectItem>
-                    {managedCurrencies.map(c => <SelectItem key={c} value={c}>{FLAG[c] ?? ""} {c}</SelectItem>)}
+                    <div className="px-2 py-1.5 sticky top-0 bg-white z-10">
+                      <Input
+                        placeholder="Search…"
+                        value={toSearch}
+                        onChange={e => setToSearch(e.target.value)}
+                        className="h-7 text-xs"
+                        onKeyDown={e => e.stopPropagation()}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    </div>
+                    {[{ code: "AUD", name: "Australian Dollar", flag: "🇦🇺" }, ...WORLD_CURRENCIES]
+                      .filter(c => {
+                        const q = toSearch.trim().toLowerCase();
+                        return !q || c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q);
+                      })
+                      .map(c => <SelectItem key={c.code} value={c.code}>{c.flag} {c.code} — {c.name}</SelectItem>)
+                    }
                   </SelectContent>
                 </Select>
               </div>
