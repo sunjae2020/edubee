@@ -500,6 +500,34 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
         )}
       </nav>
 
+      {/* Platform Admin link — super_admin only */}
+      {isSA && (
+        <div className="px-3 pb-1 shrink-0">
+          <Link href="/superadmin">
+            <div
+              className="flex items-center gap-2.5 px-2 h-9 rounded-lg cursor-pointer transition-all duration-150 select-none"
+              style={{
+                background: "rgba(239,68,68,0.08)",
+                color: "#dc2626",
+                border: "1px solid rgba(239,68,68,0.2)",
+              }}
+              title={collapsed ? "Platform Admin" : undefined}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLDivElement).style.background = "rgba(239,68,68,0.15)";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLDivElement).style.background = "rgba(239,68,68,0.08)";
+              }}
+            >
+              <Shield size={15} strokeWidth={2} style={{ color: "#dc2626", flexShrink: 0 }} />
+              {!collapsed && (
+                <span className="text-[13px] font-semibold truncate">Platform Admin</span>
+              )}
+            </div>
+          </Link>
+        </div>
+      )}
+
       {/* User footer */}
       {user && (
         <div className="p-3 shrink-0" style={{ borderTop: "1px solid var(--e-border)" }}>
