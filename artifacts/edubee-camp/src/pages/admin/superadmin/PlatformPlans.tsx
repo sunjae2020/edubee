@@ -260,16 +260,20 @@ function FormPanel({
 // ── Plan card ─────────────────────────────────────────────────────────────────
 
 const CHIP_LABELS: Array<{ key: keyof PlatformPlan; label: string }> = [
-  { key: "featureCommission",     label: "Commission"   },
-  { key: "featureVisa",           label: "Visa"         },
-  { key: "featureServiceModules", label: "Services"     },
-  { key: "featureMultiBranch",    label: "Multi-Branch" },
-  { key: "featureAiAssistant",    label: "AI"           },
-  { key: "featureAccounting",     label: "Accounting"   },
-  { key: "featureAvetmiss",       label: "AVETMISS"     },
-  { key: "featureApiAccess",      label: "API"          },
-  { key: "featureWhiteLabel",     label: "White-label"  },
+  { key: "featureCommission",     label: "Commission Auto-Calc" },
+  { key: "featureVisa",           label: "Visa Management"      },
+  { key: "featureServiceModules", label: "Services (Pickup/Homestay/Internship)" },
+  { key: "featureMultiBranch",    label: "Multi-Branch"         },
+  { key: "featureAiAssistant",    label: "AI Assistant"         },
+  { key: "featureAccounting",     label: "Accounting"           },
+  { key: "featureAvetmiss",       label: "AVETMISS Reporting"   },
+  { key: "featureApiAccess",      label: "REST API / Webhook"   },
+  { key: "featureWhiteLabel",     label: "White-label"          },
 ];
+
+function fmtLimit(val: number) {
+  return val >= 9999 ? "Unlimited" : val.toLocaleString();
+}
 
 function PlanCard({
   plan,
@@ -305,19 +309,27 @@ function PlanCard({
 
       {/* Pricing */}
       <div className="mb-2">
-        <span className="font-bold text-[#1C1917]" style={{ fontSize: 22 }}>
-          ${Number(plan.priceMonthly).toFixed(0)}<span className="text-sm font-normal text-[#57534E]"> / mo</span>
-        </span>
-        <span className="ml-3 text-xs text-[#57534E]">${Number(plan.priceAnnually).toFixed(0)} / yr annual</span>
+        {Number(plan.priceMonthly) === 0 ? (
+          <span className="font-bold text-[#F5821F]" style={{ fontSize: 22 }}>
+            Contact us<span className="text-sm font-normal text-[#57534E]"> for pricing</span>
+          </span>
+        ) : (
+          <>
+            <span className="font-bold text-[#1C1917]" style={{ fontSize: 22 }}>
+              ${Number(plan.priceMonthly).toFixed(0)}<span className="text-sm font-normal text-[#57534E]"> / mo</span>
+            </span>
+            <span className="ml-3 text-xs text-[#57534E]">${Number(plan.priceAnnually).toFixed(0)} / yr annual</span>
+          </>
+        )}
       </div>
 
       {/* Limits */}
       <div className="flex items-center gap-3 text-xs text-[#57534E] mb-3 flex-wrap">
-        <span className="flex items-center gap-1"><Users size={12} /> {plan.maxUsers} users</span>
+        <span className="flex items-center gap-1"><Users size={12} /> {fmtLimit(plan.maxUsers)} users</span>
         <span className="text-[#D4D0CB]">·</span>
-        <span className="flex items-center gap-1"><GraduationCap size={12} /> {plan.maxStudents?.toLocaleString()} students</span>
+        <span className="flex items-center gap-1"><GraduationCap size={12} /> {fmtLimit(plan.maxStudents)} students</span>
         <span className="text-[#D4D0CB]">·</span>
-        <span className="flex items-center gap-1"><Building2 size={12} /> {plan.maxBranches} branches</span>
+        <span className="flex items-center gap-1"><Building2 size={12} /> {fmtLimit(plan.maxBranches)} branches</span>
       </div>
 
       {/* Feature chips */}
