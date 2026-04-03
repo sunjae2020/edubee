@@ -1328,7 +1328,7 @@ export default function QuoteBuilderPage() {
       ? new Date(expiryDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" })
       : "";
 
-    // Payment Plan rows (with due date column)
+    // Payment Plan rows (with due date and provider columns)
     const paymentRows = activeLines.map((l) => {
       const subtotal = Number(l.price ?? 0) * (l.quantity ?? 1);
       const dueDateStr = l.dueDate
@@ -1340,7 +1340,7 @@ export default function QuoteBuilderPage() {
       return `
       <tr>
         <td>${l.name || l.productName || "Item"}${isInitial}</td>
-        <td style="color:#888;font-size:11px">${l.itemDescription ?? ""}</td>
+        <td style="color:#888;font-size:11px">${l.providerName ?? "—"}</td>
         <td style="text-align:center">${dueDateStr || "—"}</td>
         <td style="text-align:center">${l.quantity ?? 1}</td>
         <td style="text-align:right">$${Number(l.price ?? 0).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
@@ -1424,7 +1424,7 @@ export default function QuoteBuilderPage() {
       <table>
         <thead><tr>
           <th>Item / Payment</th>
-          <th>Description</th>
+          <th>Provider</th>
           <th style="text-align:center">Due Date</th>
           <th style="text-align:center">Qty</th>
           <th style="text-align:right">Unit Price</th>
