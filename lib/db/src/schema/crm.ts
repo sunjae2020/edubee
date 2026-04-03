@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { leads } from "./applications";
+import { organisations } from "./settings";
 
 export const contacts = pgTable("contacts", {
   id:             uuid("id").primaryKey().defaultRandom(),
@@ -37,6 +38,7 @@ export const contacts = pgTable("contacts", {
   accountType:     varchar("account_type", { length: 50 }).notNull().default("Student"),
   createdOn:       timestamp("created_on").notNull().defaultNow(),
   modifiedOn:      timestamp("modified_on").notNull().defaultNow(),
+  organisationId:  uuid("organisation_id").references(() => organisations.id),
 });
 
 export const accounts = pgTable("accounts", {
@@ -92,6 +94,7 @@ export const accounts = pgTable("accounts", {
   englishName:                varchar("english_name",  { length: 100 }),
   originalName:               varchar("original_name", { length: 200 }),
   profileImageUrl:            text("profile_image_url"),
+  organisationId:             uuid("organisation_id").references(() => organisations.id),
 });
 
 export const lead_activities = pgTable("lead_activities", {
@@ -124,6 +127,7 @@ export const quotes = pgTable("quotes", {
   createdOn:           timestamp("created_on").notNull().defaultNow(),
   modifiedOn:          timestamp("modified_on").notNull().defaultNow(),
   campApplicationId:   uuid("camp_application_id"),
+  organisationId:      uuid("organisation_id").references(() => organisations.id),
 });
 
 export const quote_products = pgTable("quote_products", {

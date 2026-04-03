@@ -19,6 +19,7 @@ import { users } from "./users";
 import { contracts } from "./contracts";
 import { products } from "./packages";
 import { accounts, contacts } from "./crm";
+import { organisations } from "./settings";
 
 export const exchangeRates = pgTable(
   "exchange_rates",
@@ -168,6 +169,7 @@ export const invoices = pgTable("invoices", {
   sentAt: timestamp("sent_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  organisationId: uuid("organisation_id").references(() => organisations.id),
 });
 
 export const transactions = pgTable("transactions", {
@@ -195,6 +197,7 @@ export const transactions = pgTable("transactions", {
   costCenterCode:  varchar("cost_center_code", { length: 10 }),
   creditAmount:    decimal("credit_amount", { precision: 12, scale: 2 }),
   status:          varchar("status", { length: 20 }).default("Active"),
+  organisationId:  uuid("organisation_id").references(() => organisations.id),
 });
 
 // ── Receipts (extended) ────────────────────────────────────────────────────

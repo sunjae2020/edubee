@@ -38,6 +38,7 @@ router.get("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req,
     const offset   = (pageNum - 1) * limitNum;
 
     const conditions: SQL[] = [];
+    if (req.tenant) conditions.push(eq(quotes.organisationId, req.tenant.id));
     if (quoteStatus)               conditions.push(eq(quotes.quoteStatus, quoteStatus));
     if (isTemplate === "true")     conditions.push(eq(quotes.isTemplate, true));
     else if (isTemplate === "false") conditions.push(eq(quotes.isTemplate, false));
@@ -173,7 +174,8 @@ router.post("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req
       expiryDate: expiryDate ?? null,
       isTemplate: isTemplate ?? false,
       notes,
-      createdBy: user?.id ?? null,
+      createdBy:      user?.id ?? null,
+      organisationId: req.tenant?.id ?? null,
     }).returning();
 
     if (Array.isArray(lineItems) && lineItems.length > 0) {

@@ -13,6 +13,7 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { users } from "./users";
+import { organisations } from "./settings";
 import { packageGroups, packages, enrollmentSpots } from "./packages";
 import { accounts } from "./crm";
 
@@ -41,6 +42,7 @@ export const leads = pgTable("leads", {
   createdAt:         timestamp("created_at").defaultNow(),
   updatedAt:         timestamp("updated_at").defaultNow(),
   isActive:          boolean("is_active").notNull().default(true),
+  organisationId:    uuid("organisation_id").references(() => organisations.id),
 });
 
 export const applications = pgTable("applications", {

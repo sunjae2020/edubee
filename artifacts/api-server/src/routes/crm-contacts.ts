@@ -18,6 +18,7 @@ router.get("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (re
     const offset   = (pageNum - 1) * limitNum;
 
     const conditions: SQL[] = [];
+    if (req.tenant) conditions.push(eq(contacts.organisationId, req.tenant.id));
     if (status)      conditions.push(eq(contacts.status, status));
     if (accountType) conditions.push(eq(contacts.accountType, accountType));
     if (nationality) conditions.push(eq(contacts.nationality, nationality));
@@ -234,8 +235,9 @@ router.post("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (r
       firstName, lastName, englishName, title, dob, gender, nationality, email, mobile,
       officeNumber, snsType, snsId, influxChannel, importantDate1, importantDate2,
       originalName, fullName, description,
-      status:      status      ?? "Active",
-      accountType: accountType ?? "Student",
+      status:         status      ?? "Active",
+      accountType:    accountType ?? "Student",
+      organisationId: req.tenant?.id ?? null,
     }).returning();
 
     return res.status(201).json(created);

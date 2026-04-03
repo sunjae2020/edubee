@@ -69,6 +69,8 @@ router.use(healthRouter);
 router.use(storageRouter);
 // ── Tenant resolver: reads X-Organisation-Id header → req.tenantId / req.tenant ──
 router.use(tenantResolver);
+// ── Public settings route (theme, no auth) — registered early before auth-guarded routers ──
+router.use("/settings", tenantSettingsRouter);
 router.use("/auth", authRouter);
 router.use("/users", usersRouter);
 router.use(packagesRouter);
@@ -86,7 +88,6 @@ router.use(notesRouter);
 router.use("/data-manager", dataManagerRouter);
 router.use(ledgerRouter);
 router.use(documentsRouter);
-router.use("/settings", tenantSettingsRouter);
 router.use("/settings", settingsRouter);
 router.use(settingsLookupsRouter);
 router.use(chatbotRouter);

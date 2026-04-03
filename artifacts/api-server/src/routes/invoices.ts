@@ -30,6 +30,7 @@ router.get(
 
       // Build where conditions
       const conditions: any[] = [];
+      if (req.tenant) conditions.push(eq(invoices.organisationId, req.tenant.id));
       if (invoiceType) {
         conditions.push(eq(invoices.invoiceType, invoiceType));
       }
@@ -156,6 +157,7 @@ router.post(
         currency: currency || "AUD",
         createdAt: new Date(),
         updatedAt: new Date(),
+        organisationId: req.tenant?.id ?? null,
       }).returning();
 
       return res.status(201).json(newInvoice);

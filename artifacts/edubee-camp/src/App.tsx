@@ -95,6 +95,7 @@ import TenantList from "@/pages/admin/superadmin/TenantList";
 import TenantDetail from "@/pages/admin/superadmin/TenantDetail";
 import PlatformPlans from "@/pages/admin/superadmin/PlatformPlans";
 import SuperAdminGuard from "@/components/guards/SuperAdminGuard";
+import { useTenantTheme } from "@/hooks/use-tenant-theme";
 import Products from "@/pages/admin/products";
 import ProductDetail from "@/pages/admin/product-detail";
 import ProductGroups from "@/pages/admin/product-groups";
@@ -169,6 +170,9 @@ function AdminRoute({ children, title }: { children: React.ReactNode; title?: st
 }
 
 function Router() {
+  // 앱 초기화 시 테넌트 테마 로드 + CSS 변수 주입 (백그라운드)
+  useTenantTheme();
+
   return (
     <Switch>
       <Route path="/" component={Landing} />

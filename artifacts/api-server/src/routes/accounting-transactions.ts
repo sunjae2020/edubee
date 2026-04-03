@@ -18,6 +18,7 @@ router.get("/transactions", authenticate, async (req, res) => {
     const offset = (page - 1) * limit;
 
     const conditions: SQL[] = [];
+    if (req.tenant) conditions.push(eq(transactions.organisationId, req.tenant.id));
     if (status)          conditions.push(eq(transactions.status, status));
     if (transactionType) conditions.push(eq(transactions.transactionType, transactionType));
     if (search)          conditions.push(ilike(transactions.description, `%${search}%`));
@@ -87,6 +88,7 @@ router.post("/transactions", authenticate, requireRole(...ADMIN_ROLES), async (r
         transactionDate: transactionDate || null,
         createdBy:      (req as any).user?.id || null,
         status:         "Active",
+        organisationId: req.tenant?.id ?? null,
       })
       .returning();
 

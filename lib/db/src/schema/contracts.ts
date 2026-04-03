@@ -16,6 +16,7 @@ import { users } from "./users";
 import { applications } from "./applications";
 import { products } from "./packages";
 import { accounts } from "./crm";
+import { organisations } from "./settings";
 
 export const contracts = pgTable("contracts", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -51,6 +52,7 @@ export const contracts = pgTable("contracts", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   isActive:  boolean("is_active").notNull().default(true),
+  organisationId: uuid("organisation_id").references(() => organisations.id),
 });
 
 export const contractProducts = pgTable("contract_products", {

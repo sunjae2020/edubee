@@ -65,6 +65,7 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
 
     // Build dynamic WHERE fragments
     const conds: ReturnType<typeof sql>[] = [sql`1=1`];
+    if (req.tenant)       conds.push(sql`c.organisation_id = ${req.tenant.id}::uuid`);
     if (search)           conds.push(sql`(c.contract_number ILIKE ${"%" + search + "%"} OR c.student_name ILIKE ${"%" + search + "%"})`);
     if (status)           conds.push(sql`c.status = ${status}`);
     if (dateFrom)         conds.push(sql`c.start_date >= ${dateFrom}::date`);

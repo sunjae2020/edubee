@@ -80,6 +80,7 @@ router.get("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (re
     const offset   = (pageNum - 1) * limitNum;
 
     const conditions: SQL[] = [];
+    if (req.tenant) conditions.push(eq(accounts.organisationId, req.tenant.id));
     if (status)       conditions.push(eq(accounts.status, status));
     if (account_type) conditions.push(eq(accounts.accountType, account_type));
     if (search) {
@@ -208,6 +209,7 @@ router.post("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (r
       description:                body.description as string | undefined,
       ownerId:                    body.ownerId as string,
       status:                     (body.status as string | undefined) ?? "Active",
+      organisationId:             req.tenant?.id ?? null,
     }).returning();
 
     return res.status(201).json(created);

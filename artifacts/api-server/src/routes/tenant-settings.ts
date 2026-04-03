@@ -770,4 +770,52 @@ router.delete("/domain/custom", ...settingsAccess, async (_req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// GET /theme — 테넌트 테마 설정 반환 (공개 엔드포인트, 인증 불필요)
+// tenantResolver 에서 주입된 req.tenant 사용
+// 앱 초기화 시 첫 번째 API 호출로 사용
+// ─────────────────────────────────────────────────────────────
+router.get("/theme", async (req, res) => {
+  try {
+    const org = req.tenant;
+
+    if (!org) {
+      return res.json(getDefaultTheme());
+    }
+
+    return res.json({
+      organisationId:  org.id,
+      companyName:     org.name,
+      logoUrl:         org.logoUrl        ?? null,
+      faviconUrl:      org.faviconUrl     ?? null,
+      primaryColor:    org.primaryColor   ?? "#F5821F",
+      secondaryColor:  org.secondaryColor ?? "#1C1917",
+      accentColor:     org.accentColor    ?? "#FEF0E3",
+      customCss:       org.customCss      ?? null,
+      subdomain:       org.subdomain      ?? null,
+      planType:        org.planType       ?? "starter",
+      features:        org.features       ?? {},
+    });
+  } catch (err) {
+    console.error("[GET /settings/theme]", err);
+    return res.json(getDefaultTheme());
+  }
+});
+
+function getDefaultTheme() {
+  return {
+    organisationId:  null,
+    companyName:     "Edubee CRM",
+    logoUrl:         null,
+    faviconUrl:      null,
+    primaryColor:    "#F5821F",
+    secondaryColor:  "#1C1917",
+    accentColor:     "#FEF0E3",
+    customCss:       null,
+    subdomain:       null,
+    planType:        "starter",
+    features:        {},
+  };
+}
+
 export default router;

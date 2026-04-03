@@ -43,6 +43,7 @@ router.get("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, 
     const offset   = (pageNum - 1) * limitNum;
 
     const conditions: SQL[] = [];
+    if (req.tenant) conditions.push(eq(leads.organisationId, req.tenant.id));
     if (leadStatus)      conditions.push(eq(leads.status, leadStatus));
     if (assignedStaffId) conditions.push(eq(leads.assignedStaffId, assignedStaffId));
     if (search) {
@@ -208,7 +209,8 @@ router.post("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req,
       expectedStartDate: expectedStartDate || null,
       contactId:         contactId         || null,
       accountId:         accountId         || null,
-      status: status ?? "new",
+      status:         status ?? "new",
+      organisationId: req.tenant?.id ?? null,
     }).returning();
 
     return res.status(201).json(created);
