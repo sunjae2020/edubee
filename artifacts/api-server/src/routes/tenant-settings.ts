@@ -23,13 +23,19 @@ async function getOrg() {
   return rows[0] ?? null;
 }
 
+// req.tenant(X-Organisation-Id 헤더 또는 서브도메인으로 이미 해석됨)를 우선,
+// 없으면 MVP 폴백(첫 번째 Active 조직)
+async function getOrgForReq(req: Request) {
+  return req.tenant ?? await getOrg();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Company Profile
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/company", ...settingsAccess, async (_req, res) => {
+router.get("/company", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
     return res.json(org);
   } catch (err) {
@@ -40,7 +46,7 @@ router.get("/company", ...settingsAccess, async (_req, res) => {
 
 router.put("/company", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     const {
@@ -90,9 +96,9 @@ router.put("/company", ...settingsAccess, async (req, res) => {
 // Branding
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/branding", ...anyUser, async (_req, res) => {
+router.get("/branding", ...anyUser, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
     return res.json({
       logoUrl:        org.logoUrl,
@@ -110,7 +116,7 @@ router.get("/branding", ...anyUser, async (_req, res) => {
 
 router.put("/branding", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     const { logoUrl, faviconUrl, primaryColor, secondaryColor, accentColor, customCss } = req.body;
@@ -140,9 +146,9 @@ router.put("/branding", ...settingsAccess, async (req, res) => {
 // Domain & Access
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/domain", ...settingsAccess, async (_req, res) => {
+router.get("/domain", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
     return res.json({
       subdomain:    org.subdomain,
@@ -158,7 +164,7 @@ router.get("/domain", ...settingsAccess, async (_req, res) => {
 
 router.put("/domain", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     const { subdomain, customDomain } = req.body;
@@ -191,7 +197,7 @@ router.post("/domain/check", ...settingsAccess, async (req, res) => {
       });
     }
 
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     const rows = await db
       .select({ id: organisations.id })
       .from(organisations)
@@ -212,9 +218,9 @@ router.post("/domain/check", ...settingsAccess, async (req, res) => {
 // Plan & Billing
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/plan", ...anyUser, async (_req, res) => {
+router.get("/plan", ...anyUser, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     const userCount = await db.execute(
@@ -239,7 +245,7 @@ router.get("/plan", ...anyUser, async (_req, res) => {
   }
 });
 
-router.get("/plans/available", ...anyUser, async (_req, res) => {
+router.get("/plans/available", ...anyUser, async (req, res) => {
   try {
     const plans = await db
       .select()
@@ -256,7 +262,7 @@ router.get("/plans/available", ...anyUser, async (_req, res) => {
 // Users & Invitations
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/users", ...settingsAccess, async (_req, res) => {
+router.get("/users", ...settingsAccess, async (req, res) => {
   try {
     const rows = await db.execute(
       sql`SELECT id, full_name, email, role, is_active, created_at, last_login_at
@@ -269,9 +275,9 @@ router.get("/users", ...settingsAccess, async (_req, res) => {
   }
 });
 
-router.get("/invitations", ...settingsAccess, async (_req, res) => {
+router.get("/invitations", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     const invs = await db
@@ -288,7 +294,7 @@ router.get("/invitations", ...settingsAccess, async (_req, res) => {
 
 router.post("/invitations", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     const { email, role } = req.body as { email: string; role: string };
@@ -340,7 +346,7 @@ router.post("/invitations", ...settingsAccess, async (req, res) => {
 
 router.delete("/invitations/:id", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     await db
@@ -370,7 +376,7 @@ router.delete("/invitations/:id", ...settingsAccess, async (req, res) => {
 router.post("/branding/logo", ...settingsAccess, async (req, res) => {
   try {
     const { logoBase64 } = req.body;
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     if (!logoBase64) {
@@ -414,7 +420,7 @@ router.post("/branding/logo", ...settingsAccess, async (req, res) => {
 router.post("/branding/favicon", ...settingsAccess, async (req, res) => {
   try {
     const { faviconBase64 } = req.body;
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     if (!faviconBase64) {
@@ -461,7 +467,7 @@ router.post("/branding/favicon", ...settingsAccess, async (req, res) => {
 router.put("/domain/subdomain", ...settingsAccess, async (req, res) => {
   try {
     const { subdomain } = req.body;
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     if (!subdomain) {
@@ -510,7 +516,7 @@ router.put("/domain/subdomain", ...settingsAccess, async (req, res) => {
 router.put("/domain/custom", ...settingsAccess, async (req, res) => {
   try {
     const { customDomain } = req.body;
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ message: "테넌트를 찾을 수 없습니다." });
 
     if (!customDomain) {
@@ -584,9 +590,9 @@ router.put("/domain/custom", ...settingsAccess, async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 // Fix 10 — GET /domain/dns-instructions : DNS 레코드 설정 안내
 // ─────────────────────────────────────────────────────────────
-router.get("/domain/dns-instructions", ...settingsAccess, async (_req, res) => {
+router.get("/domain/dns-instructions", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     const [cfg] = await db
@@ -643,9 +649,9 @@ router.get("/domain/dns-instructions", ...settingsAccess, async (_req, res) => {
 // ─────────────────────────────────────────────────────────────
 // Fix 11 — POST /domain/custom/verify : DNS 인증 실행
 // ─────────────────────────────────────────────────────────────
-router.post("/domain/custom/verify", ...settingsAccess, async (_req, res) => {
+router.post("/domain/custom/verify", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     const [cfg] = await db
@@ -728,9 +734,9 @@ router.post("/domain/custom/verify", ...settingsAccess, async (_req, res) => {
 // ─────────────────────────────────────────────────────────────
 // Fix 12 — GET /domain/custom/status : 인증·SSL 상태 폴링
 // ─────────────────────────────────────────────────────────────
-router.get("/domain/custom/status", ...settingsAccess, async (_req, res) => {
+router.get("/domain/custom/status", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     const [cfg] = await db
@@ -768,9 +774,9 @@ router.get("/domain/custom/status", ...settingsAccess, async (_req, res) => {
 // ─────────────────────────────────────────────────────────────
 // Fix 13 — DELETE /domain/custom : 커스텀 도메인 제거
 // ─────────────────────────────────────────────────────────────
-router.delete("/domain/custom", ...settingsAccess, async (_req, res) => {
+router.delete("/domain/custom", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     await db
@@ -854,7 +860,7 @@ router.post("/billing/checkout", ...settingsAccess, async (req, res) => {
     const { planType, billingCycle } = req.body as { planType: string; billingCycle?: string };
     if (!planType) return res.status(400).json({ error: "planType is required" });
 
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     const baseUrl = org.subdomain
@@ -880,7 +886,7 @@ router.post("/billing/checkout", ...settingsAccess, async (req, res) => {
 // POST /settings/billing/portal — Open Stripe Customer Portal
 router.post("/billing/portal", ...settingsAccess, async (req, res) => {
   try {
-    const org = await getOrg();
+    const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     const customerId = (org as any).stripeCustomerId as string | undefined;
