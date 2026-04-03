@@ -108,18 +108,36 @@ export async function seedMenuAllocation() {
     await db.execute(sql`UPDATE menu_items SET status = 'Inactive', modified_on = NOW()`);
 
     for (const cat of CATEGORIES) {
-      const catResult = await db.execute(sql`
-        INSERT INTO menu_categories (name, sort_order)
-        VALUES (${cat.name}, ${cat.sort_order})
-        RETURNING id
+      // Find existing category by name, or insert new one
+      const existingCat = await db.execute(sql`
+        SELECT id FROM menu_categories WHERE name = ${cat.name} LIMIT 1
       `);
-      const catId = (catResult.rows[0] as any).id as string;
+      let catId: string;
+      if ((existingCat.rows as any[]).length > 0) {
+        catId = (existingCat.rows[0] as any).id;
+        await db.execute(sql`
+          UPDATE menu_categories SET sort_order = ${cat.sort_order}, status = 'Active', modified_on = NOW()
+          WHERE id = ${catId}
+        `);
+      } else {
+        const catResult = await db.execute(sql`
+          INSERT INTO menu_categories (name, sort_order) VALUES (${cat.name}, ${cat.sort_order}) RETURNING id
+        `);
+        catId = (catResult.rows[0] as any).id;
+      }
 
       const items = ITEMS_BY_CATEGORY[cat.name] ?? [];
       for (const item of items) {
         await db.execute(sql`
           INSERT INTO menu_items (category_id, name, route_key, icon_name, sort_order)
           VALUES (${catId}, ${item.name}, ${item.route_key}, ${item.icon_name}, ${item.sort_order})
+          ON CONFLICT (route_key) DO UPDATE
+            SET category_id = EXCLUDED.category_id,
+                name        = EXCLUDED.name,
+                icon_name   = EXCLUDED.icon_name,
+                sort_order  = EXCLUDED.sort_order,
+                status      = 'Active',
+                modified_on = NOW()
         `);
       }
     }
