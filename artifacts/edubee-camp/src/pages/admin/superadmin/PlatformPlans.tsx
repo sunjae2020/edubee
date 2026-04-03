@@ -6,6 +6,12 @@ import { Loader2, Plus, Pencil, Trash2, Check, X } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+const FEATURE_LABELS: Record<string, string> = {
+  camp_module:  "Camp(Package) Module",
+  accounting:   "Accounting Module",
+  ai_assistant: "AI Assistant",
+};
+
 const EMPTY = {
   code: "", name: "", priceMonthly: "", priceAnnually: "",
   maxUsers: "", maxStudents: "", isPopular: false,
@@ -126,7 +132,7 @@ export default function PlatformPlans() {
       <div className="space-y-2">
         <p className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Features</p>
         <FeatureToggle
-          label="Camp Module" checked={form.features?.camp_module ?? false}
+          label="Camp(Package) Module" checked={form.features?.camp_module ?? false}
           onChange={v => setForm((p: any) => ({ ...p, features: { ...p.features, camp_module: v } }))}
         />
         <FeatureToggle
@@ -213,7 +219,7 @@ export default function PlatformPlans() {
                       {Object.entries(plan.features ?? {}).map(([k, v]) => (
                         <div key={k} className={`flex items-center gap-1.5 ${v ? "text-[#15803D]" : "text-[#D4D0CB]"}`}>
                           <Check size={10} strokeWidth={2.5} />
-                          <span className="capitalize">{k.replace(/_/g, " ")}</span>
+                          <span>{FEATURE_LABELS[k] ?? k.replace(/_/g, " ")}</span>
                         </div>
                       ))}
                     </div>
