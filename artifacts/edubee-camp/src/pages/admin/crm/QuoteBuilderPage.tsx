@@ -1315,66 +1315,145 @@ export default function QuoteBuilderPage() {
     if (!quote) return;
     const logoSrc = await fetchLogoSrc();
     const brandHtml = logoSrc ? logoImgHtml(logoSrc) : `<div class="brand">Edubee Camp</div>`;
-    const total = activeLines.reduce((s, l) => s + Number(l.price ?? 0) * (l.quantity ?? 1), 0);
-    const rows = activeLines.map((l) => `
+
+    // Owner name
+    const ownerUser = usersList.find(u => u.id === ownerId);
+    const ownerName = ownerUser ? (ownerUser.fullName ?? ownerUser.email ?? "") : "";
+
+    // Created On formatted
+    const createdOnFmt = quote.createdOn
+      ? new Date(quote.createdOn).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" })
+      : "";
+    const expiryFmt = expiryDate
+      ? new Date(expiryDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" })
+      : "";
+
+    // Payment Plan rows (with due date column)
+    const paymentRows = activeLines.map((l) => {
+      const subtotal = Number(l.price ?? 0) * (l.quantity ?? 1);
+      const dueDateStr = l.dueDate
+        ? new Date(l.dueDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" })
+        : "";
+      const isInitial = l.isInitialPayment
+        ? `<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:999px;margin-left:4px">Initial</span>`
+        : "";
+      return `
       <tr>
-        <td>${l.name || l.productName || "Item"}</td>
-        <td>${l.itemDescription ?? ""}</td>
+        <td>${l.name || l.productName || "Item"}${isInitial}</td>
+        <td style="color:#888;font-size:11px">${l.itemDescription ?? ""}</td>
+        <td style="text-align:center">${dueDateStr || "—"}</td>
         <td style="text-align:center">${l.quantity ?? 1}</td>
         <td style="text-align:right">$${Number(l.price ?? 0).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
-        <td style="text-align:right">$${(Number(l.price ?? 0) * (l.quantity ?? 1)).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
-      </tr>`).join("");
+        <td style="text-align:right;font-weight:600">$${subtotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
+      </tr>`;
+    }).join("");
+
+    // Quote Summary — grouped by provider
+    const grouped: Record<string, QuoteProduct[]> = {};
+    for (const item of activeLines) {
+      const key = item.providerName ?? "Manual / Other";
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    }
+    const grandTotal = activeLines.reduce((s, l) => s + Number(l.price ?? 0) * (l.quantity ?? 1), 0);
+    const initialTotal = activeLines
+      .filter(l => l.isInitialPayment)
+      .reduce((s, l) => s + Number(l.price ?? 0) * (l.quantity ?? 1), 0);
+
+    const summaryRows = Object.entries(grouped).map(([provider, rows]) => {
+      const sub = rows.reduce((s, r) => s + Number(r.price ?? 0) * r.quantity, 0);
+      const items = rows.map(r => `
+        <tr>
+          <td style="padding:4px 8px 4px 16px;font-size:12px;color:#555">${r.name || r.productName || "Item"}</td>
+          <td style="text-align:center;padding:4px 8px;font-size:11px;color:#888">×${r.quantity}</td>
+          <td style="text-align:right;padding:4px 8px;font-size:12px;color:#555">$${(Number(r.price ?? 0) * r.quantity).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
+        </tr>`).join("");
+      return `
+        <tr style="background:#fafafa">
+          <td colspan="2" style="padding:8px 8px 4px;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em">${provider}</td>
+          <td style="text-align:right;padding:8px 8px 4px;font-size:12px;font-weight:600;color:#555">$${sub.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
+        </tr>${items}`;
+    }).join("");
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
       <title>Quote ${quote.quoteRefNumber ?? ""}</title>
       <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:Arial,sans-serif;color:#333;padding:32px;font-size:13px}
-        .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:16px;border-bottom:3px solid #F5821F}
+        .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #F5821F}
         .brand{font-size:22px;font-weight:700;color:#F5821F}
         .ref{font-size:13px;color:#888;margin-top:4px}
-        .meta{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-bottom:28px;background:#fdf8f4;padding:16px;border-radius:6px;font-size:12px}
-        .meta-label{color:#888;margin-bottom:1px}
+        .meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 20px;margin-bottom:24px;background:#fdf8f4;padding:16px;border-radius:6px;font-size:12px}
+        .meta-label{color:#888;margin-bottom:2px;font-size:11px}
         .meta-value{font-weight:600;color:#333}
-        table{width:100%;border-collapse:collapse;margin-bottom:20px}
-        th{background:#fdf8f4;padding:10px 12px;text-align:left;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #e5e0db}
-        td{padding:9px 12px;border-bottom:1px solid #f0ece8;vertical-align:top}
-        .total-row td{font-weight:700;font-size:15px;border-top:2px solid #e5e0db;border-bottom:none;padding-top:14px}
-        .total-row td:last-child{color:#F5821F;font-size:18px}
-        .footer{margin-top:24px;font-size:11px;color:#aaa;text-align:center}
+        .section-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin:20px 0 8px}
+        table{width:100%;border-collapse:collapse;margin-bottom:8px}
+        th{background:#fdf8f4;padding:9px 10px;text-align:left;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #e5e0db}
+        td{padding:8px 10px;border-bottom:1px solid #f0ece8;vertical-align:top;font-size:12px}
+        .total-row td{font-weight:700;font-size:14px;border-top:2px solid #e5e0db;border-bottom:none;padding-top:12px}
+        .total-row td:last-child{color:#F5821F;font-size:16px}
+        .notes-box{background:#fdf8f4;padding:12px 16px;border-radius:6px;font-size:12px;color:#555;margin:16px 0;line-height:1.6}
+        .notes-label{font-weight:700;color:#444;margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+        .footer{margin-top:28px;font-size:10px;color:#bbb;text-align:center;border-top:1px solid #eee;padding-top:12px}
         @media print{body{padding:16px}.no-print{display:none}}
       </style>
     </head><body>
+      <!-- Header -->
       <div class="header">
         <div>${brandHtml}<div class="ref">Quote ${quote.quoteRefNumber ?? ""}</div></div>
-        <div style="text-align:right;font-size:12px;color:#888">
-          ${quote.expiryDate ? `<div>Expiry: ${quote.expiryDate}</div>` : ""}
-          <div style="margin-top:4px;font-size:11px;background:#${quoteStatus === "Accepted" ? "d1fae5;color:#065f46" : quoteStatus === "Sent" ? "dbeafe;color:#1e40af" : "fef3c7;color:#92400e"};padding:2px 8px;border-radius:999px;display:inline-block">${quoteStatus}</div>
+        <div style="text-align:right;font-size:12px">
+          <div style="font-size:11px;background:#${quoteStatus === "Accepted" ? "d1fae5;color:#065f46" : quoteStatus === "Sent" ? "dbeafe;color:#1e40af" : "fef3c7;color:#92400e"};padding:3px 10px;border-radius:999px;display:inline-block;font-weight:600;margin-bottom:6px">${quoteStatus}</div>
+          ${expiryFmt ? `<div style="color:#888;font-size:11px">Expiry: <strong style="color:#333">${expiryFmt}</strong></div>` : ""}
+          ${createdOnFmt ? `<div style="color:#888;font-size:11px;margin-top:2px">Created: <strong style="color:#333">${createdOnFmt}</strong></div>` : ""}
+          ${ownerName ? `<div style="color:#888;font-size:11px;margin-top:2px">Owner: <strong style="color:#333">${ownerName}</strong></div>` : ""}
         </div>
       </div>
+
+      <!-- Customer Info -->
       <div class="meta">
         ${customerName ? `<div><div class="meta-label">Customer Name</div><div class="meta-value">${customerName}</div></div>` : ""}
-        ${studentAccountName ? `<div><div class="meta-label">Client Account</div><div class="meta-value">${studentAccountName}${clientAccountEmail ? `<br><span style="font-weight:400;color:#888">${clientAccountEmail}</span>` : ""}</div></div>` : ""}
+        ${originalName ? `<div><div class="meta-label">Original Name</div><div class="meta-value">${originalName}</div></div>` : ""}
+        ${studentAccountName ? `<div><div class="meta-label">Client Account</div><div class="meta-value">${studentAccountName}${clientAccountEmail ? `<div style="font-weight:400;color:#888;font-size:11px">${clientAccountEmail}</div>` : ""}</div></div>` : ""}
+        ${expiryFmt ? `<div><div class="meta-label">Expiry Date</div><div class="meta-value">${expiryFmt}</div></div>` : ""}
+        ${createdOnFmt ? `<div><div class="meta-label">Created On</div><div class="meta-value">${createdOnFmt}</div></div>` : ""}
+        ${ownerName ? `<div><div class="meta-label">Owner</div><div class="meta-value">${ownerName}</div></div>` : ""}
       </div>
+
+      <!-- Payment Plan -->
+      <div class="section-title">Payment Plan</div>
       <table>
         <thead><tr>
-          <th>Item / Payment</th><th>Description</th>
+          <th>Item / Payment</th>
+          <th>Description</th>
+          <th style="text-align:center">Due Date</th>
           <th style="text-align:center">Qty</th>
-          <th style="text-align:right">Amount</th>
+          <th style="text-align:right">Unit Price</th>
           <th style="text-align:right">Subtotal</th>
         </tr></thead>
-        <tbody>${rows}</tbody>
-        <tfoot><tr class="total-row">
-          <td colspan="4" style="text-align:right">Total</td>
-          <td style="text-align:right">$${total.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
-        </tr></tfoot>
+        <tbody>${paymentRows}</tbody>
+        ${initialTotal > 0 ? `<tfoot><tr><td colspan="5" style="text-align:right;font-size:11px;color:#888;padding:6px 10px;border-bottom:none">Initial Payment</td><td style="text-align:right;font-weight:600;color:#F5821F;padding:6px 10px;border-bottom:none">$${initialTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td></tr></tfoot>` : ""}
       </table>
-      ${notes ? `<div style="background:#fdf8f4;padding:12px 16px;border-radius:6px;font-size:12px;color:#666;margin-bottom:16px"><strong>Notes:</strong> ${notes}</div>` : ""}
-      <div class="footer">Generated by Edubee Camp CRM</div>
+
+      <!-- Quote Summary -->
+      <div class="section-title">Quote Summary</div>
+      <table>
+        <tbody>${summaryRows}</tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="2" style="text-align:right">Grand Total</td>
+            <td style="text-align:right">$${grandTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- Notes -->
+      ${notes ? `<div class="notes-box"><div class="notes-label">Notes</div>${notes}</div>` : ""}
+
+      <div class="footer">Generated by Edubee Camp CRM &nbsp;·&nbsp; Quote ${quote.quoteRefNumber ?? ""}</div>
       <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>
     </body></html>`;
 
-    const w = window.open("", "_blank", "width=900,height=700");
+    const w = window.open("", "_blank", "width=960,height=800");
     if (w) { w.document.write(html); w.document.close(); }
   };
 
