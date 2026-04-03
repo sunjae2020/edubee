@@ -7,10 +7,11 @@ import { superAdminOnly } from "../middleware/superAdminOnly.js";
 
 const router = Router();
 const guard  = [authenticate, superAdminOnly];
+const authOnly = [authenticate];
 
 // ─── List all active plans ────────────────────────────────────────────────────
 
-router.get("/api/platform-plans", ...guard, async (_req, res) => {
+router.get("/api/platform-plans", ...authOnly, async (_req, res) => {
   try {
     const plans = await db
       .select()
@@ -26,7 +27,7 @@ router.get("/api/platform-plans", ...guard, async (_req, res) => {
 
 // ─── Get single plan ──────────────────────────────────────────────────────────
 
-router.get("/api/platform-plans/:id", ...guard, async (req, res) => {
+router.get("/api/platform-plans/:id", ...authOnly, async (req, res) => {
   try {
     const [plan] = await db
       .select()
