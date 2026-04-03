@@ -71,9 +71,16 @@ interface Account {
     id: string; firstName: string; lastName: string;
     originalName?: string | null;
     fullName?: string | null;
-    email?: string | null; mobile?: string | null;
-    nationality?: string | null; dob?: string | null;
-    snsType?: string | null; snsId?: string | null;
+    englishName?: string | null;
+    title?: string | null;
+    gender?: string | null;
+    email?: string | null;
+    mobile?: string | null;
+    officeNumber?: string | null;
+    nationality?: string | null;
+    dob?: string | null;
+    snsType?: string | null;
+    snsId?: string | null;
   } | null;
   secondaryContact?: { id: string; firstName: string; lastName: string } | null;
   parentAccount?: { id: string; name: string } | null;
@@ -1559,17 +1566,41 @@ export default function AccountDetailPage() {
                 })()}
               </div>
 
-              {/* Student / Client */}
+              {/* ── Owner row (all types) ── */}
+              {(() => {
+                const ownerName = staffList.find(s => s.id === account?.ownerId)?.name;
+                return (
+                  <QI label="Owner">
+                    {ownerName
+                      ? <span className="text-[#1C1917] font-medium">{ownerName}</span>
+                      : <span className="text-[#A8A29E]">—</span>}
+                  </QI>
+                );
+              })()}
+
+              {/* Student / Client — contact-based fields */}
               {(account?.accountType === "Student" || account?.accountType === "Client") && (
                 <>
+                  {account.primaryContact && (
+                    <QI label="Contact">
+                      <button
+                        onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)}
+                        className="text-[#F5821F] hover:underline font-medium text-right"
+                      >
+                        {account.primaryContact.firstName} {account.primaryContact.lastName?.toUpperCase()}
+                      </button>
+                    </QI>
+                  )}
                   <QI label="Nationality">{account.primaryContact?.nationality || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Date of Birth">{account.primaryContact?.dob ? formatDate(account.primaryContact.dob) : <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Email">{account.primaryContact?.email || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Phone">{account.primaryContact?.mobile || <span className="text-[#A8A29E]">—</span>}</QI>
+                  <QI label="Mobile">{account.primaryContact?.mobile || <span className="text-[#A8A29E]">—</span>}</QI>
+                  {account.primaryContact?.officeNumber && (
+                    <QI label="Office">{account.primaryContact.officeNumber}</QI>
+                  )}
                   {account.primaryContact?.snsType && (
                     <QI label="SNS">{account.primaryContact.snsType}{account.primaryContact.snsId ? ` · ${account.primaryContact.snsId}` : ""}</QI>
                   )}
-                  <QI label="Owner">{account.ownerId ? <span className="text-[#A8A29E] text-xs">{account.ownerId.slice(0, 8)}…</span> : <span className="text-[#A8A29E]">—</span>}</QI>
                 </>
               )}
 
@@ -1580,7 +1611,21 @@ export default function AccountDetailPage() {
                   <QI label="ABN">{account.abn || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Phone">{account.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Email">{account.email || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account.ownerId?.slice(0,8)}…</span></QI>
+                  {account.primaryContact && (
+                    <>
+                      <div className="pt-2 pb-1 mt-1 border-t border-[#E8E6E2]">
+                        <span className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider">Primary Contact</span>
+                      </div>
+                      <QI label="Name">
+                        <button onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)} className="text-[#F5821F] hover:underline font-medium">
+                          {account.primaryContact.firstName} {account.primaryContact.lastName?.toUpperCase()}
+                        </button>
+                      </QI>
+                      {account.primaryContact.email && <QI label="Email">{account.primaryContact.email}</QI>}
+                      {account.primaryContact.mobile && <QI label="Mobile">{account.primaryContact.mobile}</QI>}
+                      {account.primaryContact.officeNumber && <QI label="Office">{account.primaryContact.officeNumber}</QI>}
+                    </>
+                  )}
                 </>
               )}
 
@@ -1596,7 +1641,21 @@ export default function AccountDetailPage() {
                   <QI label="ABN">{account?.abn || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Phone">{account?.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Email">{account?.email || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account?.ownerId?.slice(0,8)}…</span></QI>
+                  {account?.primaryContact && (
+                    <>
+                      <div className="pt-2 pb-1 mt-1 border-t border-[#E8E6E2]">
+                        <span className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider">Primary Contact</span>
+                      </div>
+                      <QI label="Name">
+                        <button onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)} className="text-[#F5821F] hover:underline font-medium">
+                          {account.primaryContact.firstName} {account.primaryContact.lastName?.toUpperCase()}
+                        </button>
+                      </QI>
+                      {account.primaryContact.email && <QI label="Email">{account.primaryContact.email}</QI>}
+                      {account.primaryContact.mobile && <QI label="Mobile">{account.primaryContact.mobile}</QI>}
+                      {account.primaryContact.officeNumber && <QI label="Office">{account.primaryContact.officeNumber}</QI>}
+                    </>
+                  )}
                 </>
               )}
 
@@ -1606,7 +1665,20 @@ export default function AccountDetailPage() {
                   <QI label="Country">{account?.country || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Phone">{account?.phoneNumber || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Email">{account?.email || <span className="text-[#A8A29E]">—</span>}</QI>
-                  <QI label="Owner"><span className="text-[#A8A29E] text-xs">{account?.ownerId?.slice(0,8)}…</span></QI>
+                  {account?.primaryContact && (
+                    <>
+                      <div className="pt-2 pb-1 mt-1 border-t border-[#E8E6E2]">
+                        <span className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider">Primary Contact</span>
+                      </div>
+                      <QI label="Name">
+                        <button onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)} className="text-[#F5821F] hover:underline font-medium">
+                          {account.primaryContact.firstName} {account.primaryContact.lastName?.toUpperCase()}
+                        </button>
+                      </QI>
+                      {account.primaryContact.email && <QI label="Email">{account.primaryContact.email}</QI>}
+                      {account.primaryContact.mobile && <QI label="Mobile">{account.primaryContact.mobile}</QI>}
+                    </>
+                  )}
                 </>
               )}
             </div>
