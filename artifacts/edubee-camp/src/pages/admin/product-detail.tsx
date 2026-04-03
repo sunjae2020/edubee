@@ -22,6 +22,18 @@ import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+const CURRENCY_SYMBOL: Record<string, string> = {
+  AUD: "A$", USD: "$",  NZD: "NZ$", GBP: "£",  EUR: "€",  SGD: "S$",
+  CAD: "C$", HKD: "HK$",JPY: "¥",  KRW: "₩",  CNY: "¥",  THB: "฿",
+  PHP: "₱",  INR: "₹",  IDR: "Rp",  MYR: "RM",  VND: "₫",  TWD: "NT$",
+  CHF: "Fr", SEK: "kr",  NOK: "kr",  DKK: "kr",  ZAR: "R",   BRL: "R$",
+  MXN: "$",  AED: "د.إ", SAR: "ر.س",QAR: "ر.ق",KWD: "د.ك",PKR: "₨",
+  BDT: "৳",  LKR: "Rs",  MMK: "K",   KHR: "៛",  LAK: "₭",  BND: "B$",
+  NPR: "₨",  PLN: "zł",  CZK: "Kč",  HUF: "Ft",  RON: "lei", TRY: "₺",
+  RUB: "₽",  UAH: "₴",  EGP: "£",   NGN: "₦",  KES: "KSh", CLP: "$",
+  COP: "$",  PEN: "S/",  ARS: "$",
+};
+
 const PREVIEW_CURRENCIES_KEY = "exchange-rate-preview-currencies";
 const DEFAULT_PREVIEW_CURRENCIES = ["AUD", "USD", "NZD", "GBP", "EUR", "SGD", "CAD"];
 
@@ -1295,7 +1307,7 @@ export default function ProductDetail() {
                       value={String(g("price") ?? "")}
                       onChange={sf("price")}
                       placeholder="0.00"
-                      prefix="$"
+                      prefix={CURRENCY_SYMBOL[g("currency") || "AUD"] ?? "$"}
                     />
                   </div>
                   <div>
