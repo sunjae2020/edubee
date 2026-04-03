@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useLookup } from "@/hooks/use-lookup";
+import { resizeImageForUpload } from "@/lib/imageResize";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -641,8 +642,9 @@ export default function AccountDetailPage() {
     }
     setUploadingPhoto(true);
     try {
+      const resized = await resizeImageForUpload(file);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", resized);
       const { data: uploadResult } = await axios.post(`${BASE}/api/storage/uploads/direct`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });

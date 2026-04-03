@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { resizeImageForUpload } from "@/lib/imageResize";
 import { TrendingUp, TrendingDown, Minus, Pencil, Plus, Package, BarChart2, ExternalLink, Camera, Loader2 } from "lucide-react";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import ProductDrawer from "@/components/shared/ProductDrawer";
@@ -130,8 +131,9 @@ export default function UserDetail() {
     }
     setUploadingAvatar(true);
     try {
+      const resized = await resizeImageForUpload(file);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", resized);
       const { data: uploadResult } = await axios.post(`${BASE}/api/storage/uploads/direct`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
