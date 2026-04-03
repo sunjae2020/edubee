@@ -125,18 +125,33 @@ export type NewTenantAuditLog = typeof tenantAuditLogs.$inferInsert;
 
 // ── Platform Plans (Super Admin managed) ─────────────────────────────────────
 export const platformPlans = pgTable("platform_plans", {
-  id:             uuid("id").primaryKey().defaultRandom(),
-  name:           varchar("name", { length: 100 }).notNull(),
-  code:           varchar("code", { length: 50  }).notNull().unique(),
-  priceMonthly:   decimal("price_monthly",  { precision: 10, scale: 2 }),
-  priceAnnually:  decimal("price_annually", { precision: 10, scale: 2 }),
-  maxUsers:       integer("max_users"),
-  maxStudents:    integer("max_students"),
-  features:       jsonb("features"),
-  isPopular:      boolean("is_popular").default(false),
-  status:         varchar("status", { length: 20 }).notNull().default("Active"),
-  createdOn:      timestamp("created_on").notNull().defaultNow(),
-  modifiedOn:     timestamp("modified_on").notNull().defaultNow(),
+  id:                    uuid("id").primaryKey().defaultRandom(),
+  name:                  varchar("name", { length: 100 }).notNull(),
+  code:                  varchar("code", { length: 50  }).notNull().unique(),
+  priceMonthly:          decimal("price_monthly",  { precision: 10, scale: 2 }),
+  priceAnnually:         decimal("price_annually", { precision: 10, scale: 2 }),
+  maxUsers:              integer("max_users"),
+  maxStudents:           integer("max_students"),
+  maxBranches:           integer("max_branches").notNull().default(1),
+  storageGb:             integer("storage_gb").notNull().default(10),
+  // Individual feature flags
+  featureCommission:     boolean("feature_commission").notNull().default(false),
+  featureVisa:           boolean("feature_visa").notNull().default(false),
+  featureServiceModules: boolean("feature_service_modules").notNull().default(false),
+  featureMultiBranch:    boolean("feature_multi_branch").notNull().default(false),
+  featureAiAssistant:    boolean("feature_ai_assistant").notNull().default(false),
+  featureAccounting:     boolean("feature_accounting").notNull().default(false),
+  featureAvetmiss:       boolean("feature_avetmiss").notNull().default(false),
+  featureApiAccess:      boolean("feature_api_access").notNull().default(false),
+  featureWhiteLabel:     boolean("feature_white_label").notNull().default(false),
+  // Legacy JSONB features (kept for backwards compat)
+  features:              jsonb("features"),
+  isPopular:             boolean("is_popular").default(false),
+  isActive:              boolean("is_active").notNull().default(true),
+  sortOrder:             integer("sort_order").notNull().default(0),
+  status:                varchar("status", { length: 20 }).notNull().default("Active"),
+  createdOn:             timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:            timestamp("modified_on").notNull().defaultNow(),
 });
 
 export type PlatformPlan    = typeof platformPlans.$inferSelect;

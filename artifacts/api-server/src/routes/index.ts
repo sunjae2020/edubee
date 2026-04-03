@@ -60,6 +60,7 @@ import kpiRouter from "./kpi.js";
 import applicationFormsRouter from "./application-forms.js";
 import tenantSettingsRouter from "./tenant-settings.js";
 import superAdminRouter from "./superadmin.js";
+import platformPlansRouter from "./platformPlans.js";
 
 const router: IRouter = Router();
 
@@ -124,5 +125,6 @@ router.use("/kpi", kpiRouter);
 router.use(applicationFormsRouter);
 router.use(tenantSettingsRouter);
 router.use(superAdminRouter);
+router.use(platformPlansRouter);
 
 export default router;
