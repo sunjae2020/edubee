@@ -92,6 +92,7 @@ import PlanBilling from "@/pages/admin/settings/plan-billing";
 import SuperAdminLayout from "@/pages/admin/superadmin/SuperAdminLayout";
 import SuperAdminDashboard from "@/pages/admin/superadmin/SuperAdminDashboard";
 import TenantList from "@/pages/admin/superadmin/TenantList";
+import PlatformPlans from "@/pages/admin/superadmin/PlatformPlans";
 import Products from "@/pages/admin/products";
 import ProductDetail from "@/pages/admin/product-detail";
 import ProductGroups from "@/pages/admin/product-groups";
@@ -519,6 +520,9 @@ function Router() {
       {/* Super Admin */}
       <Route path="/superadmin/tenants">
         <SuperAdminLayout><TenantList /></SuperAdminLayout>
+      </Route>
+      <Route path="/superadmin/plans">
+        <SuperAdminLayout><PlatformPlans /></SuperAdminLayout>
       </Route>
       <Route path="/superadmin">
         <SuperAdminLayout><SuperAdminDashboard /></SuperAdminLayout>
