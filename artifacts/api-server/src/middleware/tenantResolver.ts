@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { db } from "@workspace/db";
 import { organisations } from "@workspace/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 
 declare global {
   namespace Express {
@@ -26,7 +26,8 @@ const SYSTEM_SUBDOMAINS = new Set([
  * 우선순위:
  *   1순위: X-Organisation-Id 헤더 (기존 방식 — Phase 1 호환)
  *   2순위: 서브도메인 자동 감지 (Phase 2 신규)
- *   3순위: 둘 다 없으면 통과 (공개 라우트, 로그인, superadmin 등)
+ *   3순위: MVP 폴백 — superadmin/auth 제외, 첫 번째 Active 조직으로 자동 해석
+ *   4순위: 완전 통과 (superadmin, auth 등)
  */
 export async function tenantResolver(
   req: Request,
@@ -84,8 +85,27 @@ export async function tenantResolver(
       return;
     }
 
-    // ── 3순위: 테넌트 식별 없음 — 통과 ──────────────────────
-    // 공개 라우트, 로그인, superadmin 등
+    // ── 3순위: MVP 폴백 — 첫 번째 Active 조직 자동 해석 ─────
+    // superadmin, auth 라우트는 테넌트 컨텍스트 불필요 → 건너뜀
+    // 나머지 모든 라우트(settings/theme, camp, finance 등)는 자동 해석
+    const skipPaths = ["/superadmin", "/auth", "/public"];
+    const shouldFallback = !skipPaths.some((p) => req.path.startsWith(p));
+
+    if (shouldFallback) {
+      const [org] = await db
+        .select()
+        .from(organisations)
+        .where(eq(organisations.status as any, "Active"))
+        .orderBy(asc(organisations.createdOn))
+        .limit(1);
+
+      if (org) {
+        req.tenantId = org.id;
+        req.tenant   = org;
+      }
+    }
+
+    // ── 4순위: 완전 통과 ─────────────────────────────────────
     next();
   } catch (err) {
     console.error("[tenantResolver]", err);
