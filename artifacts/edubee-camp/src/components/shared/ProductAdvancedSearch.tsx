@@ -18,7 +18,7 @@ interface ProductAdvancedSearchProps {
   options?: {
     searchCategories?: { value: string; label: string }[];
     productGroups?: { value: string; label: string }[];
-    productTypes?: { value: string; label: string }[];
+    productTypes?: { value: string; label: string; groupId?: string | null }[];
     countries?: { value: string; label: string }[];
     locations?: { value: string; label: string }[];
   };
@@ -123,9 +123,24 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
 
   const searchCategories = options.searchCategories ?? DEFAULT_SEARCH_CATEGORIES;
   const productGroups    = options.productGroups ?? [];
-  const productTypes     = options.productTypes  ?? [];
+  const allProductTypes  = options.productTypes  ?? [];
   const countries        = options.countries     ?? [];
   const locations        = options.locations      ?? [];
+
+  // Cascade: when a group is selected, show only types belonging to that group
+  const filteredProductTypes = filters.productGroup
+    ? allProductTypes.filter(t => t.groupId === filters.productGroup)
+    : allProductTypes;
+
+  // When group changes, clear productType if it no longer belongs to the new group
+  const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newGroup = e.target.value;
+    setFilters(f => {
+      const typeStillValid = newGroup === ""
+        || allProductTypes.some(t => t.value === f.productType && t.groupId === newGroup);
+      return { ...f, productGroup: newGroup, productType: typeStillValid ? f.productType : "" };
+    });
+  };
 
   return (
     <div style={S.wrapper}>
@@ -185,7 +200,7 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
             <div style={S.fieldGroup}>
               <label style={S.label}>Product Group</label>
               <div style={S.selectWrap}>
-                <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.productGroup} onChange={set("productGroup")}>
+                <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.productGroup} onChange={handleGroupChange}>
                   <option value="">All Groups</option>
                   {productGroups.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </FocusSelect>
@@ -193,13 +208,20 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
               </div>
             </div>
 
-            {/* Product Type */}
+            {/* Product Type — filtered by selected group */}
             <div style={S.fieldGroup}>
-              <label style={S.label}>Product Type</label>
+              <label style={S.label}>
+                Product Type
+                {filters.productGroup && filteredProductTypes.length > 0 && (
+                  <span style={{ marginLeft: 6, color: "#F5821F", fontWeight: 700 }}>
+                    ({filteredProductTypes.length})
+                  </span>
+                )}
+              </label>
               <div style={S.selectWrap}>
                 <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.productType} onChange={set("productType")}>
                   <option value="">All Types</option>
-                  {productTypes.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  {filteredProductTypes.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </FocusSelect>
                 <span style={S.chevron}><ChevronDown size={13} strokeWidth={1.5} /></span>
               </div>

@@ -171,7 +171,7 @@ export default function Products() {
     ),
     staleTime: 60_000,
   });
-  const { data: productTypeOpts = [] } = useQuery<{ id: string; name: string }[]>({
+  const { data: productTypeOpts = [] } = useQuery<{ id: string; name: string; productGroupId?: string | null }[]>({
     queryKey: ["lookup-product-types"],
     queryFn: () => axios.get(`${BASE}/api/products-lookup/product-types`).then(r => r.data),
     staleTime: 60_000,
@@ -324,7 +324,7 @@ export default function Products() {
         onSearch={handleSearch}
         options={{
           productGroups: productGroupOpts.map(g => ({ value: g.id, label: g.name })),
-          productTypes:  productTypeOpts.map(t => ({ value: t.id, label: t.name })),
+          productTypes:  productTypeOpts.map(t => ({ value: t.id, label: t.name, groupId: t.productGroupId ?? null })),
           countries: countryOpts,
           locations: locationOpts,
         }}

@@ -522,7 +522,7 @@ router.delete("/packages/:id/products/:productId", authenticate, requireRole(...
 
 router.get("/products-lookup/product-types", authenticate, async (_req, res) => {
   try {
-    const rows = await db.select({ id: productTypes.id, name: productTypes.name })
+    const rows = await db.select({ id: productTypes.id, name: productTypes.name, productGroupId: productTypes.productGroupId })
       .from(productTypes).where(eq(productTypes.status, "Active")).orderBy(asc(productTypes.name));
     res.json(rows);
   } catch (err) { res.status(500).json({ error: "Failed" }); }
