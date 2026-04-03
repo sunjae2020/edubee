@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { ZoomIn, ZoomOut } from "lucide-react";
@@ -145,6 +145,7 @@ export function ImageCropDialog({ file, onConfirm, onCancel }: Props) {
       <DialogContent className="sm:max-w-xs">
         <DialogHeader>
           <DialogTitle className="text-base">Crop Profile Photo</DialogTitle>
+          <DialogDescription className="sr-only">Drag to reposition and use the slider to zoom the image before saving.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

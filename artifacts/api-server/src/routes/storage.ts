@@ -2,7 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import multer from "multer";
 import { randomUUID } from "crypto";
 import { z } from "zod";
-import { ObjectStorageService, ObjectNotFoundError, objectStorageClient } from "../lib/objectStorage.js";
+import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage.js";
 import { authenticate } from "../middleware/authenticate.js";
 
 const router: IRouter = Router();
@@ -39,7 +39,7 @@ router.post("/storage/uploads/request-url", authenticate, async (req: Request, r
 });
 
 // Direct upload — client sends the file as multipart/form-data.
-// The server writes directly to GCS, bypassing the sidecar signed-URL endpoint.
+// The server obtains a sidecar-signed URL and PUTs the buffer there.
 router.post(
   "/storage/uploads/direct",
   authenticate,
@@ -50,20 +50,10 @@ router.post(
       return;
     }
     try {
-      const privateDir = objectStorageService.getPrivateObjectDir().replace(/^\//, "");
-      const parts = privateDir.split("/");
-      const bucketName = parts[0];
-      const dirPrefix = parts.slice(1).join("/");
-      const objectName = `${dirPrefix}/uploads/${randomUUID()}`;
-
-      const bucket = objectStorageClient.bucket(bucketName);
-      const file = bucket.file(objectName);
-      await file.save(req.file.buffer, {
-        contentType: req.file.mimetype,
-        resumable: false,
-      });
-
-      const objectPath = `/objects/uploads/${objectName.split("/uploads/")[1]}`;
+      const objectPath = await objectStorageService.uploadBuffer(
+        req.file.buffer,
+        req.file.mimetype,
+      );
       res.json({ objectPath });
     } catch (error) {
       console.error("Error uploading file directly", error);

@@ -189,6 +189,41 @@ export class ObjectStorageService {
     return normalizedPath;
   }
 
+  /**
+   * Upload a raw buffer to object storage via a sidecar-generated signed URL.
+   * This avoids GCS SDK credential issues in the Replit dev environment.
+   */
+  async uploadBuffer(buffer: Buffer, contentType: string): Promise<string> {
+    const privateDir = this.getPrivateObjectDir();
+    const cleanDir = privateDir.replace(/^\//, "");
+    const parts = cleanDir.split("/");
+    const bucketName = parts[0];
+    const dirPrefix = parts.slice(1).join("/");
+    const objectId = randomUUID();
+    const objectName = dirPrefix ? `${dirPrefix}/uploads/${objectId}` : `uploads/${objectId}`;
+
+    const signedUrl = await signObjectURL({
+      bucketName,
+      objectName,
+      method: "PUT",
+      ttlSec: 300,
+    });
+
+    const uploadResp = await fetch(signedUrl, {
+      method: "PUT",
+      body: buffer,
+      headers: { "Content-Type": contentType },
+      signal: AbortSignal.timeout(60_000),
+    });
+
+    if (!uploadResp.ok) {
+      const text = await uploadResp.text().catch(() => "");
+      throw new Error(`GCS PUT failed: ${uploadResp.status} ${text}`);
+    }
+
+    return `/objects/uploads/${objectId}`;
+  }
+
   async canAccessObjectEntity({
     userId,
     objectFile,
