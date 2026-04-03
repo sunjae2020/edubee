@@ -63,8 +63,9 @@ router.get("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req,
       .orderBy(orderExpr);
 
     const enriched = await Promise.all(data.map(async q => {
-      const products = await db.select().from(quote_products).where(eq(quote_products.quoteId, q.id));
-      const total = products.reduce((sum, p) => sum + Number(p.total ?? 0), 0);
+      const products = await db.select().from(quote_products)
+        .where(and(eq(quote_products.quoteId, q.id), eq(quote_products.status, "Active")));
+      const total = products.reduce((sum, p) => sum + Number(p.price ?? 0) * (p.quantity ?? 1), 0);
       let accountFirstName: string | null = null;
       let accountLastName: string | null = null;
       let accountOriginalName: string | null = null;
@@ -113,9 +114,9 @@ router.get("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (
     const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
     if (!quote) return res.status(404).json({ error: "Quote not found" });
     const products = await db.select().from(quote_products)
-      .where(eq(quote_products.quoteId, req.params.id))
-      .orderBy(quote_products.sortOrder);
-    const total = products.reduce((sum, p) => sum + Number(p.total ?? 0), 0);
+      .where(and(eq(quote_products.quoteId, req.params.id), eq(quote_products.status, "Active")))
+      .orderBy(quote_products.sortIndex);
+    const total = products.reduce((sum, p) => sum + Number(p.price ?? 0) * (p.quantity ?? 1), 0);
 
     // Fetch linked lead info (if any)
     let linkedLead: { id: string; leadRefNumber: string | null; firstName: string | null; lastName: string | null; fullName: string | null; status: string | null } | null = null;

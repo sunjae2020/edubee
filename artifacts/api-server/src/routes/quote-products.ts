@@ -127,6 +127,13 @@ router.patch("/quote-products/:id", authenticate, requireRole(...ADMIN_ROLES), a
     if (sort_index !== undefined)       updates.sortIndex        = Number(sort_index);
     if (product_id !== undefined)       updates.productId        = product_id ?? null;
 
+    // Recalculate total whenever price or quantity changes
+    if (price !== undefined || quantity !== undefined) {
+      const effectivePrice = price !== undefined ? Number(price) : Number(existing.price ?? 0);
+      const effectiveQty   = quantity !== undefined ? Number(quantity) : (existing.quantity ?? 1);
+      updates.total = String(effectivePrice * effectiveQty);
+    }
+
     const [updated] = await db.update(quote_products).set(updates)
       .where(eq(quote_products.id, req.params.id)).returning();
 
