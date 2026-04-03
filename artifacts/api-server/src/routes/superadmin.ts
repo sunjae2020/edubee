@@ -4,6 +4,7 @@ import { organisations, platformPlans } from "@workspace/db/schema";
 import { eq, ilike, sql, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { superAdminOnly } from "../middleware/superAdminOnly.js";
+import { onboardTenant, getSeedStatus } from "../services/onboardingService.js";
 
 const router = Router();
 const guard  = [authenticate, superAdminOnly];
@@ -147,9 +148,38 @@ router.post("/superadmin/tenants", ...guard, async (req, res) => {
       })
       .returning();
 
+    // Run onboarding seed (ensures global master data + marks onboardedAt)
+    try {
+      await onboardTenant(created.id);
+    } catch (seedErr) {
+      console.error("[Onboarding] Seed failed (non-fatal):", seedErr);
+    }
+
+    console.log(`[Invite] ${ownerEmail ?? "—"} → ${subdomain ?? "—"}.edubee.com`);
     return res.status(201).json(created);
   } catch (err) {
     console.error("POST /api/superadmin/tenants", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Seed Status
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.get("/superadmin/tenants/:id/seed-status", ...guard, async (req, res) => {
+  try {
+    const org = await db
+      .select({ id: organisations.id })
+      .from(organisations)
+      .where(eq(organisations.id, req.params.id))
+      .limit(1);
+    if (!org.length) return res.status(404).json({ error: "Tenant not found" });
+
+    const status = await getSeedStatus(req.params.id);
+    return res.json(status);
+  } catch (err) {
+    console.error("GET /api/superadmin/tenants/:id/seed-status", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

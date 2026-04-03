@@ -181,7 +181,7 @@ export default function TenantDetail() {
 
   const { data: plans = [], isLoading: plansLoading } = useQuery<PlatformPlan[]>({
     queryKey: ["platform-plans"],
-    queryFn: () => axios.get(`${BASE}/api/platform-plans`).then(r => r.data),
+    queryFn: () => axios.get(`${BASE}/api/platform-plans`).then(r => r.data?.data ?? r.data),
   });
 
   const [form, setForm] = useState<Record<string, any> | null>(null);
