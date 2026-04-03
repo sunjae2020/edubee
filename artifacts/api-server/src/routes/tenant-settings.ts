@@ -7,6 +7,7 @@ import { requireRole } from "../middleware/requireRole.js";
 import { sql } from "drizzle-orm";
 import crypto from "crypto";
 import dns from "dns/promises";
+import { isReservedSubdomain } from "../utils/reservedSubdomains.js";
 
 const router = Router();
 
@@ -173,6 +174,14 @@ router.post("/domain/check", ...settingsAccess, async (req, res) => {
   try {
     const { subdomain } = req.body as { subdomain: string };
     if (!subdomain) return res.status(400).json({ error: "subdomain required" });
+
+    if (isReservedSubdomain(subdomain)) {
+      return res.json({
+        available: false,
+        reason: "reserved",
+        message: "시스템에서 사용 중인 예약어입니다.",
+      });
+    }
 
     const org = await getOrg();
     const rows = await db
@@ -439,13 +448,7 @@ router.put("/domain/subdomain", ...settingsAccess, async (req, res) => {
       });
     }
 
-    const RESERVED = [
-      "admin", "superadmin", "api", "www", "mail", "ftp", "smtp",
-      "support", "billing", "app", "static", "cdn", "assets",
-      "dev", "development", "staging", "test", "demo", "sandbox",
-      "edubee", "crm", "platform", "portal", "login", "auth",
-    ];
-    if (RESERVED.includes(subdomain.toLowerCase())) {
+    if (isReservedSubdomain(subdomain)) {
       return res.status(400).json({
         available: false,
         reason: "reserved",
