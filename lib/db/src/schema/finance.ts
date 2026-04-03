@@ -205,6 +205,7 @@ export const receipts = pgTable("receipts", {
   id: uuid("id").primaryKey().defaultRandom(),
   receiptNumber: varchar("receipt_number", { length: 50 }).unique(),
   invoiceId: uuid("invoice_id").references(() => invoices.id),
+  organisationId: uuid("organisation_id").references(() => organisations.id),
   payerId: uuid("payer_id").references(() => users.id),
   amount: decimal("amount", { precision: 12, scale: 2 }),
   originalCurrency: varchar("original_currency", { length: 10 }),

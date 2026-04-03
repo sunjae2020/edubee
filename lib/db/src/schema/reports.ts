@@ -12,6 +12,7 @@ import {
 import { users } from "./users";
 import { contracts } from "./contracts";
 import { applications } from "./applications";
+import { organisations } from "./settings";
 
 export const importHistory = pgTable("import_history", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -95,6 +96,7 @@ export const tasks = pgTable("tasks", {
   ratedAt: timestamp("rated_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  organisationId: uuid("organisation_id").references(() => organisations.id),
 });
 
 export const taskAttachments = pgTable("task_attachments", {

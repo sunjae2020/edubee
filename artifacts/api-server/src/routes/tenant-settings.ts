@@ -8,6 +8,8 @@ import { sql } from "drizzle-orm";
 import crypto from "crypto";
 import dns from "dns/promises";
 import { isReservedSubdomain } from "../utils/reservedSubdomains.js";
+import { sendInvitationEmail } from "../services/emailService.js";
+import { createCheckoutSession, createPortalSession } from "../services/stripeService.js";
 
 const router = Router();
 
@@ -302,7 +304,25 @@ router.post("/invitations", ...settingsAccess, async (req, res) => {
       })
       .returning();
 
-    return res.status(201).json(inv);
+    // Send invitation email — failure does NOT rollback the invitation record
+    const emailResult = await sendInvitationEmail({
+      toEmail:     email.toLowerCase().trim(),
+      inviterName: (req as any).user?.fullName ?? 'Admin',
+      companyName: org.name ?? 'Edubee CRM',
+      role,
+      inviteToken: token,
+      subdomain:   org.subdomain ?? null,
+      expiresAt,
+    }).catch((err) => {
+      console.error('[EMAIL] Invitation email exception:', err);
+      return { success: false as const, error: String(err) };
+    });
+
+    return res.status(201).json({
+      ...inv,
+      emailSent:  emailResult.success,
+      emailError: emailResult.success ? undefined : emailResult.error,
+    });
   } catch (err: any) {
     if (err?.code === "23505") {
       return res.status(409).json({ error: "An invitation for this email already exists" });
@@ -817,5 +837,67 @@ function getDefaultTheme() {
     features:        {},
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Stripe Billing
+// ─────────────────────────────────────────────────────────────────────────────
+
+// POST /settings/billing/checkout — Create Stripe Checkout Session
+router.post("/billing/checkout", ...settingsAccess, async (req, res) => {
+  try {
+    const { planType, billingCycle } = req.body as { planType: string; billingCycle?: string };
+    if (!planType) return res.status(400).json({ error: "planType is required" });
+
+    const org = await getOrg();
+    if (!org) return res.status(404).json({ error: "Organisation not found" });
+
+    const baseUrl = org.subdomain
+      ? `https://${org.subdomain}.edubee.com`
+      : process.env.APP_URL ?? '';
+
+    const { url, sessionId } = await createCheckoutSession({
+      organisationId: org.id,
+      planType,
+      billingCycle:   (billingCycle ?? 'monthly') as 'monthly' | 'annually',
+      successUrl:     `${baseUrl}/admin/settings/plan?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl:      `${baseUrl}/admin/settings/plan?cancelled=true`,
+      customerEmail:  org.ownerEmail ?? undefined,
+    });
+
+    return res.json({ url, sessionId });
+  } catch (err) {
+    console.error("[POST /settings/billing/checkout]", err);
+    return res.status(500).json({ error: "Failed to create checkout session." });
+  }
+});
+
+// POST /settings/billing/portal — Open Stripe Customer Portal
+router.post("/billing/portal", ...settingsAccess, async (req, res) => {
+  try {
+    const org = await getOrg();
+    if (!org) return res.status(404).json({ error: "Organisation not found" });
+
+    const customerId = (org as any).stripeCustomerId as string | undefined;
+    if (!customerId) {
+      return res.status(400).json({
+        error: "No billing information found. Please subscribe to a plan first.",
+      });
+    }
+
+    const baseUrl = org.subdomain
+      ? `https://${org.subdomain}.edubee.com`
+      : process.env.APP_URL ?? '';
+
+    const portalUrl = await createPortalSession({
+      customerId,
+      returnUrl: `${baseUrl}/admin/settings/plan`,
+    });
+
+    return res.json({ url: portalUrl });
+  } catch (err) {
+    console.error("[POST /settings/billing/portal]", err);
+    return res.status(500).json({ error: "Failed to open billing portal." });
+  }
+});
 
 export default router;

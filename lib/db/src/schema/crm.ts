@@ -98,13 +98,14 @@ export const accounts = pgTable("accounts", {
 });
 
 export const lead_activities = pgTable("lead_activities", {
-  id:          uuid("id").primaryKey().defaultRandom(),
-  leadId:      uuid("lead_id").references(() => leads.id).notNull(),
-  channel:     varchar("channel", { length: 50 }).notNull(),
-  scheduledAt: timestamp("scheduled_at"),
-  description: text("description").notNull(),
-  createdBy:   uuid("created_by").references(() => users.id),
-  createdOn:   timestamp("created_on").notNull().defaultNow(),
+  id:             uuid("id").primaryKey().defaultRandom(),
+  leadId:         uuid("lead_id").references(() => leads.id).notNull(),
+  channel:        varchar("channel", { length: 50 }).notNull(),
+  scheduledAt:    timestamp("scheduled_at"),
+  description:    text("description").notNull(),
+  createdBy:      uuid("created_by").references(() => users.id),
+  createdOn:      timestamp("created_on").notNull().defaultNow(),
+  organisationId: uuid("organisation_id").references(() => organisations.id),
 });
 
 export const quotes = pgTable("quotes", {
@@ -133,6 +134,7 @@ export const quotes = pgTable("quotes", {
 export const quote_products = pgTable("quote_products", {
   id:                uuid("id").primaryKey().defaultRandom(),
   quoteId:           uuid("quote_id").references(() => quotes.id).notNull(),
+  organisationId:    uuid("organisation_id").references(() => organisations.id),
   productId:         uuid("product_id"),
   manualInput:       boolean("manual_input").notNull().default(false),
   name:              varchar("name",            { length: 255 }),

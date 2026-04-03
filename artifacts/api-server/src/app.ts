@@ -1,10 +1,15 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import router from "./routes";
+import webhookRoutes from "./routes/webhook.js";
 
 const app: Express = express();
 
 app.use(cors());
+
+// ⚠️ Stripe webhook MUST be registered BEFORE express.json() to receive raw body
+app.use("/api/webhook", webhookRoutes);
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 

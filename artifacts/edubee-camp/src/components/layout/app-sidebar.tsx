@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs } from "@/hooks/use-view-as";
+import { useFeature } from "@/hooks/useFeature";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
 import { EdubeeLogo } from "@/components/shared/EdubeeLogo";
 import {
@@ -388,9 +389,16 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
   const { user }                     = useAuth();
   const { viewAsUser, isImpersonating } = useViewAs();
 
-  const effectiveRole = viewAsUser?.role ?? user?.role ?? "consultant";
-  const isSA          = effectiveRole === "super_admin";
-  const nav           = buildNav(effectiveRole);
+  const effectiveRole   = viewAsUser?.role ?? user?.role ?? "consultant";
+  const isSA            = effectiveRole === "super_admin";
+  const campFeature     = useFeature("camp_module");
+  const accountingFeat  = useFeature("accounting");
+
+  const nav = buildNav(effectiveRole).filter(group => {
+    if (group.key === "camp"    && !campFeature.enabled)    return false;
+    if (group.key === "finance" && !accountingFeat.enabled) return false;
+    return true;
+  });
 
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(readCollapsed);
 

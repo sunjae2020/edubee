@@ -58,6 +58,7 @@ export const contracts = pgTable("contracts", {
 export const contractProducts = pgTable("contract_products", {
   id: uuid("id").primaryKey().defaultRandom(),
   contractId: uuid("contract_id").references(() => contracts.id),
+  organisationId: uuid("organisation_id").references(() => organisations.id),
   productId: uuid("product_id").references(() => products.id),
   quantity: integer("quantity").default(1),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }),

@@ -5,6 +5,8 @@ import { eq, ilike, sql, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { superAdminOnly } from "../middleware/superAdminOnly.js";
 import { onboardTenant, getSeedStatus } from "../services/onboardingService.js";
+import { getDefaultFeatures } from "../middleware/featureGuard.js";
+import { sendTenantCreatedEmail } from "../services/emailService.js";
 
 const router = Router();
 const guard  = [authenticate, superAdminOnly];
@@ -144,6 +146,7 @@ router.post("/superadmin/tenants", ...guard, async (req, res) => {
         planType:   planType   ?? "starter",
         planStatus: planStatus ?? "trial",
         trialEndsAt,
+        features:   getDefaultFeatures(planType ?? "starter"),
         status: "Active",
       })
       .returning();
@@ -162,11 +165,21 @@ router.post("/superadmin/tenants", ...guard, async (req, res) => {
 
       return res.status(500).json({
         success: false,
-        message: "테넌트 온보딩 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+        message: "Tenant onboarding failed. Please try again.",
         organisationId: created.id,
         ...(process.env.NODE_ENV === "development" && {
           error: (seedErr as Error).message,
         }),
+      });
+    }
+
+    // Send tenant creation email to owner — does NOT affect the 201 response
+    if (created.ownerEmail) {
+      await sendTenantCreatedEmail({
+        toEmail:   created.ownerEmail,
+        orgName:   created.name,
+        subdomain: created.subdomain ?? '',
+        planType:  created.planType  ?? 'starter',
       });
     }
 

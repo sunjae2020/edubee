@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { users, refreshTokens, accounts, authLogs } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { users, refreshTokens, accounts, authLogs, tenantInvitations, organisations } from "@workspace/db/schema";
+import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { authenticate } from "../middleware/authenticate.js";
+import { sendWelcomeEmail } from "../services/emailService.js";
 
 const router = Router();
 
@@ -433,6 +434,92 @@ router.post("/change-password", authenticate, async (req, res) => {
   await writeAuthLog("staff", authUser.id, authUser.email, "password_change", ip, ua);
 
   return res.json({ success: true, message: "Password changed successfully." });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/auth/accept-invite — Create account from invitation token
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/accept-invite", async (req, res) => {
+  try {
+    const { token, password, firstName, lastName } = req.body as {
+      token: string; password: string; firstName: string; lastName: string;
+    };
+
+    if (!token || !password || !firstName || !lastName) {
+      return res.status(400).json({ message: "token, password, firstName and lastName are required." });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters." });
+    }
+
+    // 1. Look up token
+    const [invite] = await db
+      .select().from(tenantInvitations)
+      .where(
+        and(
+          eq(tenantInvitations.token, token),
+          eq(tenantInvitations.status, "Pending")
+        )
+      ).limit(1);
+
+    if (!invite) {
+      return res.status(400).json({ message: "Invalid or already-used invitation link." });
+    }
+
+    // 2. Check expiry
+    if (new Date() > invite.expiresAt) {
+      await db.update(tenantInvitations)
+        .set({ status: "Expired" })
+        .where(eq(tenantInvitations.id, invite.id));
+      return res.status(400).json({ message: "Invitation link has expired." });
+    }
+
+    // 3. Check if user with this email already exists
+    const [existing] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, invite.email))
+      .limit(1);
+
+    if (existing) {
+      return res.status(409).json({ message: "An account with this email already exists." });
+    }
+
+    // 4. Create user account
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await db.insert(users).values({
+      fullName:    `${firstName} ${lastName}`.trim(),
+      email:       invite.email,
+      passwordHash,
+      role:        invite.role as any,
+      status:      "active",
+    } as any);
+
+    // 5. Mark invitation as accepted
+    await db.update(tenantInvitations)
+      .set({ status: "Accepted", acceptedAt: new Date() })
+      .where(eq(tenantInvitations.id, invite.id));
+
+    // 6. Send welcome email (non-blocking)
+    const [org] = await db.select().from(organisations)
+      .where(eq(organisations.id, invite.organisationId)).limit(1);
+
+    sendWelcomeEmail({
+      toEmail:     invite.email,
+      userName:    `${firstName} ${lastName}`,
+      companyName: org?.name ?? 'Edubee CRM',
+      loginUrl:    `https://${org?.subdomain ?? 'app'}.edubee.com/login`,
+    }).catch(err => console.error('[EMAIL] Welcome email failed:', err));
+
+    return res.json({
+      success: true,
+      message: "Account created successfully. Please sign in.",
+    });
+  } catch (err) {
+    console.error("[POST /accept-invite]", err);
+    return res.status(500).json({ message: "Server error." });
+  }
 });
 
 export default router;
