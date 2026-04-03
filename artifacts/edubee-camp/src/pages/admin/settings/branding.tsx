@@ -2,7 +2,10 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Loader2, Palette, Code2, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Save, Loader2, Palette, Code2, AlertTriangle,
+  ChevronDown, ChevronUp, Upload, Link,
+} from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -42,6 +45,91 @@ function ColorPicker({ label, value, onChange }: { label: string; value: string;
   );
 }
 
+function UploadZone({
+  label, hint, accept, previewHeight,
+  value, isPending, onFile, onClear,
+}: {
+  label: string;
+  hint: string;
+  accept: string;
+  previewHeight: string;
+  value?: string | null;
+  isPending: boolean;
+  onFile: (file: File) => void;
+  onClear: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+
+  return (
+    <div className="space-y-2">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) onFile(file);
+          e.target.value = "";
+        }}
+      />
+      <label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">{label}</label>
+
+      {value ? (
+        <div className={`relative w-full ${previewHeight} rounded-xl border border-[#E8E6E2] bg-[#FAFAF9] flex items-center justify-center overflow-hidden`}>
+          <img src={value} alt={label} className="max-h-full max-w-full object-contain p-3" />
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100 gap-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={isPending}
+              className="h-8 px-3 rounded-lg text-xs font-semibold bg-white text-[#1C1917] shadow flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {isPending ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
+              Change
+            </button>
+            <button
+              type="button"
+              onClick={onClear}
+              disabled={isPending}
+              className="h-8 px-3 rounded-lg text-xs font-semibold bg-white text-red-500 shadow disabled:opacity-50"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={isPending}
+          className={`w-full ${previewHeight} rounded-xl border-2 border-dashed border-[#E8E6E2] flex flex-col items-center justify-center gap-2 hover:border-[#F5821F] hover:bg-[#FEF0E3] transition-colors disabled:opacity-50 cursor-pointer`}
+        >
+          {isPending ? (
+            <Loader2 size={22} className="animate-spin text-[#F5821F]" />
+          ) : (
+            <>
+              <Upload size={22} className="text-[#A8A29E]" />
+              <span className="text-xs font-medium text-[#57534E]">Click to upload</span>
+              <span className="text-[10px] text-[#A8A29E]">{hint}</span>
+            </>
+          )}
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setShowUrlInput(p => !p)}
+        className="flex items-center gap-1.5 text-[11px] text-[#A8A29E] hover:text-[#57534E] transition-colors"
+      >
+        <Link size={10} />
+        {showUrlInput ? "Hide URL input" : "Or enter URL manually"}
+      </button>
+    </div>
+  );
+}
+
 export default function Branding() {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -57,20 +145,61 @@ export default function Branding() {
 
   const set = (key: string) => (val: string) => setForm(p => ({ ...p, [key]: val }));
 
-  const mutation = useMutation({
+  const colorMutation = useMutation({
     mutationFn: (data: any) => axios.put(`${BASE}/api/settings/branding`, data).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["settings-branding"] });
-      setForm({});
+      setForm(p => {
+        const next = { ...p };
+        delete next.primaryColor;
+        delete next.secondaryColor;
+        delete next.accentColor;
+        delete next.customCss;
+        return next;
+      });
       toast({ title: "Saved", description: "Branding settings updated." });
     },
     onError: () => toast({ title: "Error", description: "Failed to save branding.", variant: "destructive" }),
   });
 
+  const uploadFile = (
+    file: File,
+    endpoint: string,
+    payloadKey: string,
+    responseKey: string,
+    formKey: string,
+  ) => new Promise<void>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const base64 = e.target?.result as string;
+        const res = await axios.post(`${BASE}${endpoint}`, { [payloadKey]: base64 });
+        qc.invalidateQueries({ queryKey: ["settings-branding"] });
+        setForm(p => ({ ...p, [formKey]: res.data[responseKey] }));
+        toast({ title: "Uploaded", description: res.data.message });
+        resolve();
+      } catch (err: any) {
+        const msg = err.response?.data?.message || "Upload failed.";
+        toast({ title: "Upload failed", description: msg, variant: "destructive" });
+        reject(err);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const logoMutation = useMutation({
+    mutationFn: (file: File) =>
+      uploadFile(file, "/api/settings/branding/logo", "logoBase64", "logoUrl", "logoUrl"),
+  });
+
+  const faviconMutation = useMutation({
+    mutationFn: (file: File) =>
+      uploadFile(file, "/api/settings/branding/favicon", "faviconBase64", "faviconUrl", "faviconUrl"),
+  });
+
   const handleSave = () => {
-    mutation.mutate({
-      logoUrl:        merged.logoUrl,
-      faviconUrl:     merged.faviconUrl,
+    colorMutation.mutate({
       primaryColor:   merged.primaryColor   || "#F5821F",
       secondaryColor: merged.secondaryColor || "#1C1917",
       accentColor:    merged.accentColor    || "#FEF0E3",
@@ -97,54 +226,44 @@ export default function Branding() {
         </div>
         <button
           onClick={handleSave}
-          disabled={mutation.isPending}
+          disabled={colorMutation.isPending}
           className="h-10 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
           style={{ background: "#F5821F" }}
         >
-          {mutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+          {colorMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           Save Branding
         </button>
       </div>
 
-      {/* Logo */}
+      {/* Logo & Favicon Upload */}
       <Card title="Logo & Favicon" icon={Palette}>
         <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Logo URL</label>
-              <input
-                type="url"
-                value={merged.logoUrl || ""}
-                onChange={e => set("logoUrl")(e.target.value)}
-                className="w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[#F5821F] bg-white"
-                placeholder="https://…/logo.png"
-              />
-              <p className="text-[11px] text-[#A8A29E]">PNG, JPG, SVG — recommended 400×150px</p>
-            </div>
-            {merged.logoUrl && (
-              <div className="w-full h-24 rounded-lg border border-[#E8E6E2] flex items-center justify-center bg-[#FAFAF9] p-3">
-                <img src={merged.logoUrl} alt="Logo preview" className="max-h-full max-w-full object-contain" />
-              </div>
-            )}
-          </div>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Favicon URL</label>
-              <input
-                type="url"
-                value={merged.faviconUrl || ""}
-                onChange={e => set("faviconUrl")(e.target.value)}
-                className="w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[#F5821F] bg-white"
-                placeholder="https://…/favicon.ico"
-              />
-              <p className="text-[11px] text-[#A8A29E]">ICO or PNG 32×32px</p>
-            </div>
-            {merged.faviconUrl && (
-              <div className="w-16 h-16 rounded-lg border border-[#E8E6E2] flex items-center justify-center bg-[#FAFAF9] p-2">
-                <img src={merged.faviconUrl} alt="Favicon preview" className="max-h-full max-w-full object-contain" />
-              </div>
-            )}
-          </div>
+          <UploadZone
+            label="Logo"
+            hint="PNG, JPG, SVG, WEBP — max 2MB"
+            accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+            previewHeight="h-28"
+            value={merged.logoUrl}
+            isPending={logoMutation.isPending}
+            onFile={(file) => logoMutation.mutate(file)}
+            onClear={() => {
+              setForm(p => ({ ...p, logoUrl: "" }));
+              colorMutation.mutate({ logoUrl: null });
+            }}
+          />
+          <UploadZone
+            label="Favicon"
+            hint="ICO or PNG 32×32px — max 500KB"
+            accept="image/x-icon,image/vnd.microsoft.icon,image/png"
+            previewHeight="h-28"
+            value={merged.faviconUrl}
+            isPending={faviconMutation.isPending}
+            onFile={(file) => faviconMutation.mutate(file)}
+            onClear={() => {
+              setForm(p => ({ ...p, faviconUrl: "" }));
+              colorMutation.mutate({ faviconUrl: null });
+            }}
+          />
         </div>
       </Card>
 
@@ -220,11 +339,11 @@ export default function Branding() {
       <div className="flex justify-end pb-6">
         <button
           onClick={handleSave}
-          disabled={mutation.isPending}
+          disabled={colorMutation.isPending}
           className="h-10 px-6 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
           style={{ background: "#F5821F" }}
         >
-          {mutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+          {colorMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           Save Branding
         </button>
       </div>

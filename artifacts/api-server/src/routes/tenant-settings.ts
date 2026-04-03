@@ -324,6 +324,99 @@ router.delete("/invitations/:id", ...settingsAccess, async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+// BRANDING UPLOAD — Fix 14~15
+// Base64 → DB 직접 저장 (Replit PostgreSQL Helium / GCS 차단)
+// ═══════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────
+// Fix 14 — POST /branding/logo : 로고 업로드
+// Body: { logoBase64: "data:image/png;base64,..." }
+// ─────────────────────────────────────────────────────────────
+router.post("/branding/logo", ...settingsAccess, async (req, res) => {
+  try {
+    const { logoBase64 } = req.body;
+    const org = await getOrg();
+    if (!org) return res.status(404).json({ message: "Organisation not found" });
+
+    if (!logoBase64) {
+      return res.status(400).json({ message: "로고 이미지 데이터가 없습니다." });
+    }
+
+    const base64Regex = /^data:image\/(png|jpeg|jpg|svg\+xml|webp);base64,/;
+    if (!base64Regex.test(logoBase64)) {
+      return res.status(400).json({
+        message: "PNG, JPG, SVG, WEBP 형식의 이미지만 업로드 가능합니다.",
+      });
+    }
+
+    const base64Data    = logoBase64.split(",")[1] ?? "";
+    const estimatedBytes = Math.ceil((base64Data.length * 3) / 4);
+    const MAX_BYTES     = 2 * 1024 * 1024; // 2MB
+
+    if (estimatedBytes > MAX_BYTES) {
+      return res.status(400).json({
+        message: "로고 파일은 2MB 이하여야 합니다.",
+        estimatedSize: `${(estimatedBytes / 1024).toFixed(0)}KB`,
+      });
+    }
+
+    await db
+      .update(organisations)
+      .set({ logoUrl: logoBase64, modifiedOn: new Date() })
+      .where(eq(organisations.id, org.id));
+
+    return res.json({ success: true, logoUrl: logoBase64, message: "로고가 저장됐습니다." });
+  } catch (err) {
+    console.error("[POST /branding/logo]", err);
+    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Fix 15 — POST /branding/favicon : 파비콘 업로드
+// Body: { faviconBase64: "data:image/png;base64,..." }
+// ─────────────────────────────────────────────────────────────
+router.post("/branding/favicon", ...settingsAccess, async (req, res) => {
+  try {
+    const { faviconBase64 } = req.body;
+    const org = await getOrg();
+    if (!org) return res.status(404).json({ message: "Organisation not found" });
+
+    if (!faviconBase64) {
+      return res.status(400).json({ message: "파비콘 이미지 데이터가 없습니다." });
+    }
+
+    const base64Regex = /^data:image\/(x-icon|vnd\.microsoft\.icon|png);base64,/;
+    if (!base64Regex.test(faviconBase64)) {
+      return res.status(400).json({
+        message: "ICO 또는 PNG 형식의 파비콘만 업로드 가능합니다.",
+      });
+    }
+
+    const base64Data     = faviconBase64.split(",")[1] ?? "";
+    const estimatedBytes = Math.ceil((base64Data.length * 3) / 4);
+    const MAX_BYTES      = 500 * 1024; // 500KB
+
+    if (estimatedBytes > MAX_BYTES) {
+      return res.status(400).json({
+        message: "파비콘 파일은 500KB 이하여야 합니다.",
+        estimatedSize: `${(estimatedBytes / 1024).toFixed(0)}KB`,
+      });
+    }
+
+    await db
+      .update(organisations)
+      .set({ faviconUrl: faviconBase64, modifiedOn: new Date() })
+      .where(eq(organisations.id, org.id));
+
+    return res.json({ success: true, faviconUrl: faviconBase64, message: "파비콘이 저장됐습니다." });
+  } catch (err) {
+    console.error("[POST /branding/favicon]", err);
+    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
 // DOMAIN API — Fix 8~13
 // ═══════════════════════════════════════════════════════════════
 
