@@ -44,6 +44,7 @@ interface Contact {
   accountType: string;
   createdOn?: string | null;
   modifiedOn?: string | null;
+  profileImageUrl?: string | null;
 }
 
 type FormData = Partial<Omit<Contact, "id" | "createdOn" | "modifiedOn">>;
@@ -259,15 +260,31 @@ export default function ContactsPage() {
             )}
             {sorted.map(c => {
               const displayName = c.fullName || `${c.firstName} ${c.lastName}`.trim();
+              const initials = [`${c.firstName ?? ""}`.charAt(0), `${c.lastName ?? ""}`.charAt(0)]
+                .filter(Boolean).join("").toUpperCase() || (displayName || "?").slice(0, 2).toUpperCase();
+              const imgSrc = c.profileImageUrl
+                ? `${BASE}/api/storage/objects/${c.profileImageUrl.replace(/^\/objects\//, "")}`
+                : null;
               return (
                 <tr key={c.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => navigate(`/admin/crm/contacts/${c.id}`)}
-                      className="font-medium text-stone-800 hover:text-[#F5821F] transition-colors text-left"
-                    >
-                      {displayName}
-                    </button>
+                    <div className="flex items-center gap-2.5">
+                      {imgSrc ? (
+                        <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-stone-200">
+                          <img src={imgSrc} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 bg-[#FDE8D2] text-[#C2460A]">
+                          {initials}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => navigate(`/admin/crm/contacts/${c.id}`)}
+                        className="font-medium text-stone-800 hover:text-[#F5821F] transition-colors text-left"
+                      >
+                        {displayName}
+                      </button>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-stone-600">{c.originalName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{c.nationality ?? "—"}</td>
