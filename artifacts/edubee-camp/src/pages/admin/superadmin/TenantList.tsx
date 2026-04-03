@@ -8,10 +8,18 @@ import { formatDate } from "@/lib/date-format";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const PLAN_STYLE: Record<string, { bg: string; color: string }> = {
-  starter:      { bg: "#F4F3F1", color: "#57534E" },
-  professional: { bg: "#FEF0E3", color: "#C2410C" },
-  enterprise:   { bg: "#F5F3FF", color: "#6D28D9" },
+  solo:       { bg: "#F4F3F1", color: "#57534E"  },
+  starter:    { bg: "#FEF0E3", color: "#C2410C"  },
+  growth:     { bg: "#ECFDF5", color: "#065F46"  },
+  enterprise: { bg: "#F5F3FF", color: "#6D28D9"  },
 };
+
+const PLANS = [
+  { value: "solo",       label: "Solo"       },
+  { value: "starter",    label: "Starter"    },
+  { value: "growth",     label: "Growth"     },
+  { value: "enterprise", label: "Enterprise" },
+];
 
 const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   Active:    { bg: "#F0FDF4", color: "#15803D" },
@@ -99,9 +107,9 @@ function AddTenantPanel({ onClose, onSaved }: { onClose: () => void; onSaved: ()
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Plan</label>
           <select className={inp} value={form.planType} onChange={e => set("planType", e.target.value)}>
-            <option value="starter">Starter</option>
-            <option value="professional">Professional</option>
-            <option value="enterprise">Enterprise</option>
+            {PLANS.map(p => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
           </select>
         </div>
 
@@ -254,8 +262,8 @@ export default function TenantList() {
                         value={t.plan_type ?? "starter"}
                         onChange={e => changePlan.mutate({ id: t.id, planType: e.target.value })}
                       >
-                        {["starter", "professional", "enterprise"].map(p => (
-                          <option key={p} value={p} className="bg-white text-[#1C1917]">{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+                        {PLANS.map(p => (
+                          <option key={p.value} value={p.value} className="bg-white text-[#1C1917]">{p.label}</option>
                         ))}
                       </select>
                     </td>
