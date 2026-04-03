@@ -94,6 +94,7 @@ import SuperAdminDashboard from "@/pages/admin/superadmin/SuperAdminDashboard";
 import TenantList from "@/pages/admin/superadmin/TenantList";
 import TenantDetail from "@/pages/admin/superadmin/TenantDetail";
 import PlatformPlans from "@/pages/admin/superadmin/PlatformPlans";
+import SuperAdminGuard from "@/components/guards/SuperAdminGuard";
 import Products from "@/pages/admin/products";
 import ProductDetail from "@/pages/admin/product-detail";
 import ProductGroups from "@/pages/admin/product-groups";
@@ -518,18 +519,28 @@ function Router() {
         <AdminRoute title="Plan & Billing"><PlanBilling /></AdminRoute>
       </Route>
 
-      {/* Super Admin */}
+      {/* ── Super Admin (role=super_admin only) ── */}
       <Route path="/superadmin/tenants/:id">
-        {(params) => <SuperAdminLayout><TenantDetail /></SuperAdminLayout>}
+        {(params) => (
+          <SuperAdminGuard>
+            <SuperAdminLayout><TenantDetail /></SuperAdminLayout>
+          </SuperAdminGuard>
+        )}
       </Route>
       <Route path="/superadmin/tenants">
-        <SuperAdminLayout><TenantList /></SuperAdminLayout>
+        <SuperAdminGuard>
+          <SuperAdminLayout><TenantList /></SuperAdminLayout>
+        </SuperAdminGuard>
       </Route>
       <Route path="/superadmin/plans">
-        <SuperAdminLayout><PlatformPlans /></SuperAdminLayout>
+        <SuperAdminGuard>
+          <SuperAdminLayout><PlatformPlans /></SuperAdminLayout>
+        </SuperAdminGuard>
       </Route>
       <Route path="/superadmin">
-        <SuperAdminLayout><SuperAdminDashboard /></SuperAdminLayout>
+        <SuperAdminGuard>
+          <SuperAdminLayout><SuperAdminDashboard /></SuperAdminLayout>
+        </SuperAdminGuard>
       </Route>
 
       {/* My Programs */}

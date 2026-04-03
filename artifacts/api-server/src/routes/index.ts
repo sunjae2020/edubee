@@ -61,11 +61,14 @@ import applicationFormsRouter from "./application-forms.js";
 import tenantSettingsRouter from "./tenant-settings.js";
 import superAdminRouter from "./superadmin.js";
 import platformPlansRouter from "./platformPlans.js";
+import { tenantResolver } from "../middleware/tenantResolver.js";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(storageRouter);
+// ── Tenant resolver: reads X-Organisation-Id header → req.tenantId / req.tenant ──
+router.use(tenantResolver);
 router.use("/auth", authRouter);
 router.use("/users", usersRouter);
 router.use(packagesRouter);

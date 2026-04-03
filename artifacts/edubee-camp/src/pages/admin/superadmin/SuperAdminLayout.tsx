@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { LayoutDashboard, Building2, CreditCard } from "lucide-react";
@@ -11,27 +10,28 @@ const NAV = [
 ];
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
-  const [location, navigate] = useLocation();
-  const { user, isLoading }  = useAuth();
+  const [location] = useLocation();
+  const { user }   = useAuth();
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? location === href : location.startsWith(href);
 
-  useEffect(() => {
-    if (!isLoading && user && user.role !== "super_admin") {
-      navigate("/admin/dashboard");
-    }
-    if (!isLoading && !user) {
-      navigate("/login");
-    }
-  }, [user, isLoading, navigate]);
-
-  if (isLoading || !user || user.role !== "super_admin") {
-    return null;
-  }
-
   return (
-    <div className="flex h-screen bg-[#FAFAF9]">
+    <div className="flex flex-col h-screen bg-[#FAFAF9]">
+      {/* ⚠️ Super Admin 경고 배너 */}
+      <div style={{
+        background: "#DC2626",
+        color: "#FFFFFF",
+        textAlign: "center",
+        padding: "5px 12px",
+        fontSize: "11px",
+        fontWeight: 600,
+        letterSpacing: "0.06em",
+        flexShrink: 0,
+      }}>
+        ⚠️ &nbsp;SUPER ADMIN MODE — 전체 테넌트 데이터에 접근 중입니다
+      </div>
+    <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
       <aside className="w-56 flex flex-col border-r border-[#E8E6E2] bg-[#1C1917] shrink-0">
         <div className="px-4 py-5 border-b border-white/10">
@@ -82,6 +82,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>
+    </div>
     </div>
   );
 }

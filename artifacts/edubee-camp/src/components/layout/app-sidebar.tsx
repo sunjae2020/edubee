@@ -184,16 +184,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
     });
   }
 
-  if (isSA) {
-    nav.push({
-      key: "superadmin", label: "Super Admin", catIcon: Shield,
-      items: [
-        { icon: LayoutDashboard, label: "Platform Overview", href: "/superadmin"         },
-        { icon: Building2,       label: "Tenants",           href: "/superadmin/tenants" },
-      ],
-    });
-  }
-
   return nav;
 }
 
