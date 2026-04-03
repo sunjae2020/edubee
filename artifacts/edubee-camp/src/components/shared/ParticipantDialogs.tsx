@@ -195,14 +195,14 @@ export function ParticipantEditDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ClipboardList className="w-4 h-4 text-[--e-orange]" />
+            <ClipboardList className="w-4 h-4 text-(--e-orange)" />
             Edit Participant — {(participant?.firstName || participant?.fullName?.split(" ")[0]) ?? ""} {participant?.lastName ? participant.lastName.toUpperCase() : (participant?.fullName?.split(" ").slice(1).join(" ").toUpperCase() ?? "")}
           </DialogTitle>
         </DialogHeader>
         <ParticipantFormFields form={form} setForm={setForm} />
         <div className="flex justify-end gap-2 pt-4 border-t mt-4">
           <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSave} disabled={saving || !form.firstName || !form.lastName}>
+          <Button size="sm" className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5" onClick={handleSave} disabled={saving || !form.firstName || !form.lastName}>
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Save Changes
           </Button>
@@ -262,14 +262,14 @@ export function ParticipantAddDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="w-4 h-4 text-[--e-orange]" />
+            <UserPlus className="w-4 h-4 text-(--e-orange)" />
             Add Participant
           </DialogTitle>
         </DialogHeader>
         <ParticipantFormFields form={form} setForm={setForm} />
         <div className="flex justify-end gap-2 pt-4 border-t mt-4">
           <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSave} disabled={saving || !form.firstName || !form.lastName}>
+          <Button size="sm" className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5" onClick={handleSave} disabled={saving || !form.firstName || !form.lastName}>
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Add Participant
           </Button>

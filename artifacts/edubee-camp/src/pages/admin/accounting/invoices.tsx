@@ -29,7 +29,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 };
 const STATUS_COLORS: Record<string, string> = {
   draft:            "bg-[#F4F3F1] text-[#57534E]",
-  sent:             "bg-[--e-orange-lt] text-[--e-orange]",
+  sent:             "bg-(--e-orange-lt) text-(--e-orange)",
   paid:             "bg-[#DCFCE7] text-[#16A34A]",
   overdue:          "bg-[#FEF2F2] text-[#DC2626]",
   cancelled:        "bg-[#F4F3F1] text-[#A8A29E]",
@@ -289,7 +289,7 @@ function NewInvoiceModal({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Plus className="w-4 h-4 text-[--e-orange]" /> New Invoice
+            <Plus className="w-4 h-4 text-(--e-orange)" /> New Invoice
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-1">
@@ -309,7 +309,7 @@ function NewInvoiceModal({
                     key={c.id}
                     className={cn(
                       "w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors",
-                      form.contractId === c.id && "bg-[--e-orange-lt]"
+                      form.contractId === c.id && "bg-(--e-orange-lt)"
                     )}
                     onClick={() => { f("contractId", c.id); setContractSearch(""); }}
                   >
@@ -372,7 +372,7 @@ function NewInvoiceModal({
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
+          <Button className="bg-(--e-orange) hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
             {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Creating…</> : "Create Invoice"}
           </Button>
         </DialogFooter>
@@ -419,7 +419,7 @@ function EmailInvoiceModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Mail className="w-4 h-4 text-[--e-orange]" /> Send Invoice by Email
+            <Mail className="w-4 h-4 text-(--e-orange)" /> Send Invoice by Email
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -445,7 +445,7 @@ function EmailInvoiceModal({
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => { onClose(); setEmail(""); }} disabled={sending}>Cancel</Button>
-          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSend} disabled={sending}>
+          <Button className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5" onClick={handleSend} disabled={sending}>
             {sending ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Sending…</> : <><Send className="w-3.5 h-3.5" />Send Email</>}
           </Button>
         </DialogFooter>
@@ -490,7 +490,7 @@ function RecordPaymentModal({ invoice, open, onClose, onSuccess }: {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-[--e-orange]" /> Record Payment
+            <CreditCard className="w-4 h-4 text-(--e-orange)" /> Record Payment
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -516,7 +516,7 @@ function RecordPaymentModal({ invoice, open, onClose, onSuccess }: {
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
+          <Button className="bg-(--e-orange) hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
             {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Recording…</> : "Record Payment"}
           </Button>
         </DialogFooter>
@@ -574,7 +574,7 @@ function InvoiceDetailSheet({
               <span className="text-muted-foreground">Contract</span>
               {invoice.contractId ? (
                 <button
-                  className="flex items-center gap-1 text-[--e-orange] hover:underline font-mono text-xs font-medium"
+                  className="flex items-center gap-1 text-(--e-orange) hover:underline font-mono text-xs font-medium"
                   onClick={() => { onClose(); navigate(`/admin/crm/contracts/${invoice.contractId}`); }}
                 >
                   {invoice.contractNumber ?? invoice.contractId.slice(0, 8)}
@@ -614,7 +614,7 @@ function InvoiceDetailSheet({
             {invoice.status === "draft" && (
               <Button
                 size="sm"
-                className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5 col-span-2"
+                className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5 col-span-2"
                 onClick={() => onUpdate(invoice.id, { status: "sent", issuedAt: new Date().toISOString() })}
               >
                 <Send className="w-3.5 h-3.5" /> Mark as Sent
@@ -623,7 +623,7 @@ function InvoiceDetailSheet({
             {canPay(invoice.status) && (
               <Button
                 size="sm"
-                className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5"
+                className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5"
                 onClick={() => { onClose(); onPayment(invoice); }}
               >
                 <CreditCard className="w-3.5 h-3.5" /> Record Payment
@@ -712,7 +712,7 @@ function ClientTab() {
                   <Receipt className="w-8 h-8 mx-auto mb-3 opacity-30" />No client invoices found
                 </td></tr>
               ) : sorted.map(r => (
-                <tr key={r.id} className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
+                <tr key={r.id} className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{r.studentName ?? "—"}</div>
@@ -730,7 +730,7 @@ function ClientTab() {
                         </Button>
                       )}
                       {canPay(r.status) && (
-                        <Button size="sm" className="h-6 text-[10px] gap-1 px-2 bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={e => { e.stopPropagation(); setPaymentTarget(r); }}>
+                        <Button size="sm" className="h-6 text-[10px] gap-1 px-2 bg-(--e-orange) hover:bg-[#d97706] text-white" onClick={e => { e.stopPropagation(); setPaymentTarget(r); }}>
                           <CreditCard className="w-2.5 h-2.5" /> Pay
                         </Button>
                       )}
@@ -815,7 +815,7 @@ function AgentTab() {
                   <FileText className="w-8 h-8 mx-auto mb-3 opacity-30" />No agent invoices found
                 </td></tr>
               ) : sorted.map(r => (
-                <tr key={r.id} className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
+                <tr key={r.id} className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{r.studentName ?? "—"}</div>
@@ -910,7 +910,7 @@ function PartnerTab() {
                   <Handshake className="w-8 h-8 mx-auto mb-3 opacity-30" />No partner invoices found
                 </td></tr>
               ) : sorted.map(r => (
-                <tr key={r.id} className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
+                <tr key={r.id} className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{r.studentName ?? "—"}</div>
@@ -968,7 +968,7 @@ export default function Invoices() {
               className={cn(
                 "flex items-center gap-2 px-5 py-2.5 text-sm border-b-2 transition-colors font-medium whitespace-nowrap",
                 isActive
-                  ? "border-[--e-orange] text-[--e-orange]"
+                  ? "border-(--e-orange) text-(--e-orange)"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
               )}
             >

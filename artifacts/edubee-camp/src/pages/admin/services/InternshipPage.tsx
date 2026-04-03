@@ -68,7 +68,7 @@ function PipelineStepper({
               <button
                 onClick={() => onSelect(isActive ? "" : stage.key)}
                 className={`flex-1 flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-lg transition-all group min-w-0 ${
-                  isActive ? "ring-2 ring-[--e-orange] ring-offset-1" : "hover:bg-stone-50"
+                  isActive ? "ring-2 ring-(--e-orange) ring-offset-1" : "hover:bg-stone-50"
                 }`}
               >
                 <div
@@ -78,7 +78,7 @@ function PipelineStepper({
                   {counts[stage.key] ?? 0}
                 </div>
                 <span className={`text-[10px] font-medium text-center leading-tight w-full ${
-                  isActive ? "text-[--e-orange]" : "text-stone-500 group-hover:text-stone-800"
+                  isActive ? "text-(--e-orange)" : "text-stone-500 group-hover:text-stone-800"
                 }`}>
                   {stage.label}
                 </span>
@@ -181,7 +181,7 @@ export default function InternshipPage() {
         </div>
         {activeStage && (
           <button onClick={() => { setActiveStage(""); setPage(1); }}
-            className="text-xs text-[--e-orange] hover:underline font-medium">
+            className="text-xs text-(--e-orange) hover:underline font-medium">
             Clear: {STAGES.find(s => s.key === activeStage)?.label}
           </button>
         )}
@@ -222,7 +222,7 @@ export default function InternshipPage() {
               return (
                 <tr
                   key={row.id}
-                  className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer"
+                  className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/services/internship/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-medium text-stone-800">{row.clientName ?? row.studentName ?? "—"}</td>
@@ -264,13 +264,13 @@ export default function InternshipPage() {
                 <input type="text" value={createForm.contractId}
                   onChange={e => setCreateForm(f => ({ ...f, contractId: e.target.value }))}
                   placeholder="Paste contract UUID…"
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-(--e-orange)" />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Notes</label>
                 <textarea rows={2} value={createForm.notes}
                   onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange] resize-none" />
+                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-(--e-orange) resize-none" />
               </div>
             </div>
             <div className="px-6 py-4 border-t border-[#E8E6E2] flex justify-end gap-2">

@@ -14,7 +14,7 @@ function Card({ title, icon: Icon, children }: { title: string; icon: any; child
   return (
     <div className="bg-white rounded-xl border border-[#E8E6E2] p-6 space-y-4" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
       <div className="flex items-center gap-2 border-b border-[#E8E6E2] pb-3">
-        <Icon size={16} className="text-[--e-orange]" strokeWidth={1.5} />
+        <Icon size={16} className="text-(--e-orange)" strokeWidth={1.5} />
         <h2 className="text-sm font-semibold text-[#1C1917] uppercase tracking-wide">{title}</h2>
       </div>
       {children}
@@ -38,7 +38,7 @@ function ColorPicker({ label, value, onChange }: { label: string; value: string;
           value={value || ""}
           onChange={e => onChange(e.target.value)}
           maxLength={7}
-          className="flex-1 h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm font-mono focus:outline-none focus:border-[--e-orange] uppercase"
+          className="flex-1 h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm font-mono focus:outline-none focus:border-(--e-orange) uppercase"
           placeholder="var(--e-orange)"
         />
       </div>
@@ -107,10 +107,10 @@ function UploadZone({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={isPending}
-          className={`w-full ${previewHeight} rounded-xl border-2 border-dashed border-[#E8E6E2] flex flex-col items-center justify-center gap-2 hover:border-[--e-orange] hover:bg-[--e-orange-lt] transition-colors disabled:opacity-50 cursor-pointer`}
+          className={`w-full ${previewHeight} rounded-xl border-2 border-dashed border-[#E8E6E2] flex flex-col items-center justify-center gap-2 hover:border-(--e-orange) hover:bg-(--e-orange-lt) transition-colors disabled:opacity-50 cursor-pointer`}
         >
           {isPending ? (
-            <Loader2 size={22} className="animate-spin text-[--e-orange]" />
+            <Loader2 size={22} className="animate-spin text-(--e-orange)" />
           ) : (
             <>
               <Upload size={22} className="text-[#A8A29E]" />
@@ -137,7 +137,7 @@ function UploadZone({
             value={urlValue}
             onChange={e => setUrlValue(e.target.value)}
             placeholder={`https://cdn.example.com/${label.toLowerCase()}.png`}
-            className="flex-1 h-9 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-xs focus:outline-none focus:border-[--e-orange] bg-white"
+            className="flex-1 h-9 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-xs focus:outline-none focus:border-(--e-orange) bg-white"
           />
           <button
             type="button"
@@ -250,7 +250,7 @@ export default function Branding() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-48">
-      <Loader2 size={24} className="animate-spin text-[--e-orange]" />
+      <Loader2 size={24} className="animate-spin text-(--e-orange)" />
     </div>
   );
 
@@ -359,7 +359,7 @@ export default function Branding() {
           className="w-full flex items-center justify-between p-6 text-left"
         >
           <div className="flex items-center gap-2">
-            <Code2 size={16} className="text-[--e-orange]" strokeWidth={1.5} />
+            <Code2 size={16} className="text-(--e-orange)" strokeWidth={1.5} />
             <span className="text-sm font-semibold text-[#1C1917] uppercase tracking-wide">Advanced: Custom CSS</span>
           </div>
           {showCss ? <ChevronUp size={16} className="text-[#A8A29E]" /> : <ChevronDown size={16} className="text-[#A8A29E]" />}
@@ -374,7 +374,7 @@ export default function Branding() {
             <textarea
               value={merged.customCss || ""}
               onChange={e => set("customCss")(e.target.value)}
-              className="w-full h-48 px-3 py-2 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm font-mono focus:outline-none focus:border-[--e-orange] resize-none bg-[#FAFAF9]"
+              className="w-full h-48 px-3 py-2 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm font-mono focus:outline-none focus:border-(--e-orange) resize-none bg-[#FAFAF9]"
               placeholder={`/* Custom CSS */\n.sidebar { background: #1C1917; }`}
             />
           </div>

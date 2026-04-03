@@ -43,7 +43,7 @@ const FUNNEL_COLORS: Record<string, string> = {
 };
 
 const TIER_STYLES: Record<string, string> = {
-  platinum: "bg-[--e-orange-lt] text-[--e-orange]",
+  platinum: "bg-(--e-orange-lt) text-(--e-orange)",
   gold:     "bg-[#FEF9C3] text-[#CA8A04]",
   silver:   "bg-[#F4F3F1] text-[#57534E]",
   standard: "bg-[#F4F3F1] text-[#A8A29E]",

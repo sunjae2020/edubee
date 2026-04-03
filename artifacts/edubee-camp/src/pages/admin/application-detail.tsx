@@ -122,7 +122,7 @@ function SvcField({ def, value, onChange }: { def: SvcFieldDef; value: string; o
         <select
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[--e-orange]/50"
+          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-(--e-orange)/50"
         >
           <option value="">Please Select</option>
           {(def.options ?? []).map(o => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
@@ -341,7 +341,7 @@ export default function ApplicationDetail() {
             app.quoteId ? (
               <a
                 href={`${BASE}/admin/crm/quotes/${app.quoteId}`}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-[--e-orange] text-[--e-orange] text-xs font-medium hover:bg-[--e-orange-lt] transition-colors"
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-(--e-orange) text-(--e-orange) text-xs font-medium hover:bg-(--e-orange-lt) transition-colors"
               >
                 <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
                 View Quote →
@@ -349,7 +349,7 @@ export default function ApplicationDetail() {
             ) : (
               <Button
                 size="sm"
-                className="h-8 gap-1.5 text-xs bg-[--e-orange] hover:bg-[--e-orange-hover] text-white"
+                className="h-8 gap-1.5 text-xs bg-(--e-orange) hover:bg-(--e-orange-hover) text-white"
                 onClick={() => setConvertQuoteDialog(true)}
                 disabled={convertToQuote.isPending}
               >
@@ -372,7 +372,7 @@ export default function ApplicationDetail() {
                 value={(app.applicationStatus ?? "submitted").replace(/_/g, " ")}
                 editChildren={
                   <Select value={getValue("applicationStatus") ?? "submitted"} onValueChange={v => setField("applicationStatus", v)}>
-                    <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-sm border-(--e-orange)"><SelectValue /></SelectTrigger>
                     <SelectContent>{APPLICATION_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
                   </Select>
                 }
@@ -384,7 +384,7 @@ export default function ApplicationDetail() {
                 {serviceTypes.length === 0
                   ? <span className="text-sm text-muted-foreground">—</span>
                   : serviceTypes.map(t => (
-                    <span key={t} className="px-2 py-0.5 rounded-full bg-[--e-orange-lt] text-[--e-orange] text-xs font-medium border border-[--e-orange]/20">
+                    <span key={t} className="px-2 py-0.5 rounded-full bg-(--e-orange-lt) text-(--e-orange) text-xs font-medium border border-(--e-orange)/20">
                       {SERVICE_META[t]?.icon} {SERVICE_META[t]?.label ?? t.replace(/_/g, " ")}
                     </span>
                   ))
@@ -442,7 +442,7 @@ export default function ApplicationDetail() {
                 value={app.notes ? app.notes.slice(0, 120) + (app.notes.length > 120 ? "…" : "") : null}
                 editChildren={
                   <textarea
-                    className="w-full rounded-md border border-[--e-orange] bg-background px-3 py-1.5 text-sm resize-y min-h-[80px] focus:outline-none"
+                    className="w-full rounded-md border border-(--e-orange) bg-background px-3 py-1.5 text-sm resize-y min-h-[80px] focus:outline-none"
                     value={getValue("notes") ?? ""}
                     onChange={e => setField("notes", e.target.value)}
                   />
@@ -458,7 +458,7 @@ export default function ApplicationDetail() {
                     value={currentAssignedStaffId ?? ""}
                     onValueChange={v => setField("assignedStaffId", v === "__none__" ? null : v as any)}
                   >
-                    <SelectTrigger className="h-8 text-sm border-[--e-orange]">
+                    <SelectTrigger className="h-8 text-sm border-(--e-orange)">
                       <SelectValue placeholder="Select staff..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -480,7 +480,7 @@ export default function ApplicationDetail() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Quote</span>
                   <a href={`${BASE}/admin/crm/quotes/${app.quoteId}`}
-                    className="flex items-center gap-1 text-sm text-[--e-orange] hover:underline">
+                    className="flex items-center gap-1 text-sm text-(--e-orange) hover:underline">
                     View Quote <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -507,7 +507,7 @@ export default function ApplicationDetail() {
             {/* Toolbar */}
             {canEdit && (
               <div className="flex justify-end">
-                <Button size="sm" className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-1.5"
+                <Button size="sm" className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white gap-1.5"
                   onClick={() => { setNewSvcType(""); setNewSvcForm({}); setAddSvcDialog(true); }}
                   disabled={availableToAdd.length === 0}
                 >
@@ -581,7 +581,7 @@ export default function ApplicationDetail() {
           <div className="space-y-3">
             {canEdit && (
               <div className="flex justify-end">
-                <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setAddParticipant(true)}>
+                <Button size="sm" className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5" onClick={() => setAddParticipant(true)}>
                   <Plus className="w-3.5 h-3.5" /> Add Participant
                 </Button>
               </div>
@@ -609,7 +609,7 @@ export default function ApplicationDetail() {
                       </td>
                     </tr>
                   ) : participants.map((p: any, i: number) => (
-                    <tr key={p.id} className="border-b last:border-0 hover:bg-[--e-orange-lt] transition-colors">
+                    <tr key={p.id} className="border-b last:border-0 hover:bg-(--e-orange-lt) transition-colors">
                       <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                       <td className="px-4 py-3">
                         <div className="font-medium">{p.fullName ?? "—"}</div>
@@ -661,7 +661,7 @@ export default function ApplicationDetail() {
           </DialogHeader>
           <DialogFooter className="gap-2 mt-4">
             <Button variant="outline" size="sm" onClick={() => setConvertQuoteDialog(false)}>Cancel</Button>
-            <Button size="sm" className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white"
+            <Button size="sm" className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white"
               onClick={() => convertToQuote.mutate()} disabled={convertToQuote.isPending}>
               {convertToQuote.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Convert to Quote"}
             </Button>
@@ -696,7 +696,7 @@ export default function ApplicationDetail() {
 
           <DialogFooter className="gap-2 mt-2">
             <Button variant="outline" size="sm" onClick={() => { setEditingSvc(null); setSvcForm({}); }}>Cancel</Button>
-            <Button size="sm" className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white"
+            <Button size="sm" className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white"
               onClick={handleSaveSvc} disabled={saveSvcEdit.isPending}>
               {saveSvcEdit.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
             </Button>
@@ -718,7 +718,7 @@ export default function ApplicationDetail() {
               <select
                 value={newSvcType}
                 onChange={e => setNewSvcType(e.target.value)}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[--e-orange]/50"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-(--e-orange)/50"
               >
                 <option value="">Please Select</option>
                 {availableToAdd.map(t => (
@@ -740,7 +740,7 @@ export default function ApplicationDetail() {
 
           <DialogFooter className="gap-2 mt-2">
             <Button variant="outline" size="sm" onClick={() => { setAddSvcDialog(false); setNewSvcType(""); setNewSvcForm({}); }}>Cancel</Button>
-            <Button size="sm" className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white"
+            <Button size="sm" className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white"
               onClick={handleAddSvc} disabled={saveAddSvc.isPending || !newSvcType}>
               {saveAddSvc.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Service"}
             </Button>

@@ -96,11 +96,11 @@ export default function Reports() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center"><BookOpen className="w-5 h-5 text-[--e-orange]" /></div>
+          <div className="w-9 h-9 rounded-lg bg-(--e-orange)/10 flex items-center justify-center"><BookOpen className="w-5 h-5 text-(--e-orange)" /></div>
           <div><h1 className="text-lg font-bold">Program Reports</h1><p className="text-xs text-muted-foreground">{isViewOnly ? "Published reports for your programs" : "Create, edit and publish student program reports"}</p></div>
         </div>
         {canCreate && (
-          <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setShowCreate(true)}>
+          <Button size="sm" className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5" onClick={() => setShowCreate(true)}>
             <Plus className="w-3.5 h-3.5" /> New Report
           </Button>
         )}
@@ -127,7 +127,7 @@ export default function Reports() {
       ) : (
         <div className="grid gap-3">
           {reports.map(r => (
-            <div key={r.id} className="bg-white rounded-lg border p-4 hover:border-[--e-orange]/40 transition-colors cursor-pointer flex items-start justify-between gap-3" onClick={() => setSelected(r)}>
+            <div key={r.id} className="bg-white rounded-lg border p-4 hover:border-(--e-orange)/40 transition-colors cursor-pointer flex items-start justify-between gap-3" onClick={() => setSelected(r)}>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${STATUS_COLORS[r.status ?? "draft"] ?? "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]"}`}>{r.status}</span>
@@ -161,7 +161,7 @@ export default function Reports() {
       {/* Detail Sheet */}
       <Sheet open={!!selected} onOpenChange={o => { if (!o) setSelected(null); }}>
         <SheetContent className="w-[560px] sm:max-w-[560px] overflow-y-auto">
-          <SheetHeader><SheetTitle className="flex items-center gap-2"><BookOpen className="w-4 h-4 text-[--e-orange]" /> {selected?.reportTitle ?? "Report"}</SheetTitle></SheetHeader>
+          <SheetHeader><SheetTitle className="flex items-center gap-2"><BookOpen className="w-4 h-4 text-(--e-orange)" /> {selected?.reportTitle ?? "Report"}</SheetTitle></SheetHeader>
           {selected && (
             <div className="mt-4 space-y-4">
               <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export default function Reports() {
                       <div key={s.id} className="bg-white border rounded-lg p-3">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">{s.sectionTitle}</span>
-                          <span className={`px-1.5 py-0.5 text-[10px] rounded ${s.isVisible ? "bg-[--e-orange-lt] text-[--e-orange]" : "bg-muted text-muted-foreground"}`}>{s.sectionType}</span>
+                          <span className={`px-1.5 py-0.5 text-[10px] rounded ${s.isVisible ? "bg-(--e-orange-lt) text-(--e-orange)" : "bg-muted text-muted-foreground"}`}>{s.sectionType}</span>
                         </div>
                         {s.content && Object.keys(s.content).length > 0 && (
                           <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
@@ -228,7 +228,7 @@ export default function Reports() {
             <div><Label className="text-xs">Report Title</Label><Input value={form.reportTitle} onChange={e => setForm(f => ({ ...f, reportTitle: e.target.value }))} className="mt-1 h-8 text-sm" placeholder="e.g. John Smith — Summer English Camp 2026" /></div>
             <div><Label className="text-xs">Summary Notes</Label><Textarea value={form.summaryNotes} onChange={e => setForm(f => ({ ...f, summaryNotes: e.target.value }))} className="mt-1 text-sm" rows={3} placeholder="Overall program summary…" /></div>
             <div className="flex gap-2 pt-1">
-              <Button size="sm" className="flex-1 bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending || !form.reportTitle}>
+              <Button size="sm" className="flex-1 bg-(--e-orange) hover:bg-[#d97706] text-white" onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending || !form.reportTitle}>
                 {createMutation.isPending ? "Creating…" : "Create Report"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>

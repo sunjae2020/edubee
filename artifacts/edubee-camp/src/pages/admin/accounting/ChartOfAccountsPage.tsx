@@ -191,7 +191,7 @@ export default function ChartOfAccountsPage() {
             onClick={() => setActiveTab(tab.type)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
               activeTab === tab.type
-                ? "border-[--e-orange] text-[--e-orange]"
+                ? "border-(--e-orange) text-(--e-orange)"
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
@@ -231,7 +231,7 @@ export default function ChartOfAccountsPage() {
               <tr><td colSpan={5} className="text-center py-12 text-stone-400 text-sm">No accounts in this category</td></tr>
             )}
             {sorted.map(row => (
-              <tr key={row.id} className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors" onClick={() => navigate(`/admin/accounting/coa/${row.code}`)}>
+              <tr key={row.id} className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors" onClick={() => navigate(`/admin/accounting/coa/${row.code}`)}>
                 <td className="px-4 py-3">
                   <span
                     className="inline-block px-2.5 py-0.5 rounded text-xs font-mono font-bold"

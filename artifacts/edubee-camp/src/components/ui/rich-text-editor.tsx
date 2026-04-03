@@ -34,8 +34,8 @@ function ToolbarBtn({
       onClick={onClick}
       className={`p-1.5 rounded transition-colors text-sm
         ${active
-          ? "bg-[--e-orange] text-white"
-          : "text-[#57534E] hover:bg-[--e-orange]/10 hover:text-[--e-orange]"}
+          ? "bg-(--e-orange) text-white"
+          : "text-[#57534E] hover:bg-(--e-orange)/10 hover:text-(--e-orange)"}
         ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
       `}
     >
@@ -89,7 +89,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 200 }
   if (!editor) return null;
 
   return (
-    <div className="rounded-lg border border-[#E8E6E2] overflow-hidden focus-within:border-[--e-orange] focus-within:shadow-[0_0_0_3px_var(--e-orange-ring)] transition-all">
+    <div className="rounded-lg border border-[#E8E6E2] overflow-hidden focus-within:border-(--e-orange) focus-within:shadow-[0_0_0_3px_var(--e-orange-ring)] transition-all">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-[#E8E6E2] bg-[#FAFAF9]">
 

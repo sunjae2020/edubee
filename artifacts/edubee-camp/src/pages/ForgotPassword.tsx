@@ -7,12 +7,12 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const INPUT_CLS = `w-full h-10 px-3 text-sm rounded-lg border border-[#E8E6E2] bg-white text-[#1C1917]
   placeholder:text-[#A8A29E] outline-none transition-all
-  focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)]`;
+  focus:border-(--e-orange) focus:shadow-[0_0_0_3px_var(--e-orange-ring)]`;
 const INPUT_ERR = `w-full h-10 px-3 text-sm rounded-lg border border-[#DC2626] bg-white text-[#1C1917]
   placeholder:text-[#A8A29E] outline-none transition-all
   focus:border-[#DC2626] focus:shadow-[0_0_0_3px_rgba(220,38,38,0.12)]`;
-const BTN_PRIMARY = `w-full flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-semibold text-white bg-[--e-orange]
-  hover:bg-[--e-orange-hover] hover:-translate-y-px hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)]
+const BTN_PRIMARY = `w-full flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-semibold text-white bg-(--e-orange)
+  hover:bg-(--e-orange-hover) hover:-translate-y-px hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)]
   disabled:opacity-65 disabled:cursor-not-allowed disabled:transform-none transition-all`;
 
 export default function ForgotPassword() {
@@ -117,13 +117,13 @@ export default function ForgotPassword() {
                 Didn't receive the email? Check your spam folder or{" "}
                 <button
                   onClick={() => { setSuccess(false); setEmail(""); }}
-                  className="text-[--e-orange] font-medium hover:underline"
+                  className="text-(--e-orange) font-medium hover:underline"
                 >
                   try again
                 </button>.
               </p>
               <Link href="/login"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[--e-orange] hover:bg-[--e-orange-hover] transition-all">
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-(--e-orange) hover:bg-(--e-orange-hover) transition-all">
                 <ArrowLeft className="w-4 h-4" />
                 Back to Login
               </Link>
@@ -164,7 +164,7 @@ export default function ForgotPassword() {
 
               <p className="text-center mt-6 text-[13px] text-[#57534E]">
                 <Link href="/login"
-                  className="inline-flex items-center gap-1 text-[--e-orange] font-medium hover:underline">
+                  className="inline-flex items-center gap-1 text-(--e-orange) font-medium hover:underline">
                   <ArrowLeft className="w-3.5 h-3.5" />
                   Back to Login
                 </Link>

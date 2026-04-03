@@ -143,7 +143,7 @@ export default function ProductTypes() {
           <h1 className="text-2xl font-bold text-[#1C1917]">Products Type</h1>
           <p className="text-sm text-[#57534E] mt-0.5">Define product types and map them to service automation modules</p>
         </div>
-        <Button onClick={openCreate} className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-2 shrink-0">
+        <Button onClick={openCreate} className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white gap-2 shrink-0">
           <Plus className="w-4 h-4" /> Add Product Type
         </Button>
       </div>
@@ -198,19 +198,19 @@ export default function ProductTypes() {
             ) : types.map(t => (
               <tr
                 key={t.id}
-                className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors"
+                className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors"
                 onClick={() => navigate(`/admin/product-types/${t.id}`)}
               >
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <div className="flex items-center gap-2">
-                    <Tag className="w-4 h-4 text-[--e-orange] shrink-0" strokeWidth={1.5} />
+                    <Tag className="w-4 h-4 text-(--e-orange) shrink-0" strokeWidth={1.5} />
                     {t.name}
                   </div>
                 </td>
                 <td className="px-4 py-3 text-[#57534E]">{t.productGroupName ?? "—"}</td>
                 <td className="px-4 py-3">
                   {t.serviceModuleType ? (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[--e-orange-lt] text-[--e-orange]">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-(--e-orange-lt) text-(--e-orange)">
                       {serviceLabel(t.serviceModuleType)}
                     </span>
                   ) : "—"}
@@ -249,7 +249,7 @@ export default function ProductTypes() {
               <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Name <span className="text-[#DC2626]">*</span></Label>
               <Input value={form.name} onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setNameError(""); }}
                 placeholder="e.g. Language School Program"
-                className={`h-10 border-[#E8E6E2] focus:border-[--e-orange] ${nameError ? "border-[#DC2626]" : ""}`} />
+                className={`h-10 border-[#E8E6E2] focus:border-(--e-orange) ${nameError ? "border-[#DC2626]" : ""}`} />
               {nameError && <p className="text-xs text-[#DC2626]">{nameError}</p>}
             </div>
             <div className="space-y-1.5">
@@ -276,7 +276,7 @@ export default function ProductTypes() {
               <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Description</Label>
               <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="Describe this product type..." rows={3}
-                className="border-[#E8E6E2] focus:border-[--e-orange] text-sm resize-none" />
+                className="border-[#E8E6E2] focus:border-(--e-orange) text-sm resize-none" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Status</Label>
@@ -291,7 +291,7 @@ export default function ProductTypes() {
             <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E6E2]">
               <Button variant="outline" onClick={closeModal} className="border-[#E8E6E2]">Cancel</Button>
               <Button onClick={() => save.mutate()} disabled={save.isPending}
-                className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-1.5">
+                className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white gap-1.5">
                 {save.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Save Product Type
               </Button>

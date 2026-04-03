@@ -96,7 +96,7 @@ export default function ProductGroups() {
           <h1 className="text-2xl font-bold text-[#1C1917]">Products Group</h1>
           <p className="text-sm text-[#57534E] mt-0.5">Manage product categories for your service offerings</p>
         </div>
-        <Button onClick={openCreate} className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-2 shrink-0">
+        <Button onClick={openCreate} className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white gap-2 shrink-0">
           <Plus className="w-4 h-4" /> Add Product Group
         </Button>
       </div>
@@ -147,13 +147,13 @@ export default function ProductGroups() {
             ) : groups.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No product groups found</td></tr>
             ) : groups.map(g => (
-              <tr key={g.id} className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors">
+              <tr key={g.id} className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors">
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <button
                     onClick={() => navigate(`/admin/product-groups/${g.id}`)}
-                    className="flex items-center gap-2 text-left hover:text-[--e-orange] transition-colors"
+                    className="flex items-center gap-2 text-left hover:text-(--e-orange) transition-colors"
                   >
-                    <Layers className="w-4 h-4 text-[--e-orange] shrink-0" strokeWidth={1.5} />
+                    <Layers className="w-4 h-4 text-(--e-orange) shrink-0" strokeWidth={1.5} />
                     <span className="hover:underline">{g.name}</span>
                   </button>
                 </td>
@@ -198,7 +198,7 @@ export default function ProductGroups() {
                 value={form.name}
                 onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setNameError(""); }}
                 placeholder="e.g. Language School"
-                className={`h-10 border-[#E8E6E2] focus:border-[--e-orange] ${nameError ? "border-[#DC2626]" : ""}`}
+                className={`h-10 border-[#E8E6E2] focus:border-(--e-orange) ${nameError ? "border-[#DC2626]" : ""}`}
               />
               {nameError && <p className="text-xs text-[#DC2626]">{nameError}</p>}
             </div>
@@ -209,7 +209,7 @@ export default function ProductGroups() {
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="Describe this product group..."
                 rows={3}
-                className="border-[#E8E6E2] focus:border-[--e-orange] text-sm resize-none"
+                className="border-[#E8E6E2] focus:border-(--e-orange) text-sm resize-none"
               />
             </div>
             <div className="space-y-1.5">
@@ -225,7 +225,7 @@ export default function ProductGroups() {
             <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E6E2]">
               <Button variant="outline" onClick={closeModal} className="border-[#E8E6E2]">Cancel</Button>
               <Button onClick={() => save.mutate()} disabled={save.isPending}
-                className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-1.5">
+                className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white gap-1.5">
                 {save.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Save Product Group
               </Button>

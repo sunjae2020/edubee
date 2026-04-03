@@ -47,13 +47,13 @@ export function CurrencySelector({ variant = "default" }: { variant?: "default" 
             key={c.code}
             onClick={() => setDisplayCurrency(c.code)}
             className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-              c.code === displayCurrency ? "bg-[--e-orange-lt] text-[--e-orange] font-semibold" : "text-foreground hover:bg-muted"
+              c.code === displayCurrency ? "bg-(--e-orange-lt) text-(--e-orange) font-semibold" : "text-foreground hover:bg-muted"
             }`}
           >
             <span>{c.flag}</span>
             <span>{c.code}</span>
             <span className="text-muted-foreground text-xs ml-auto">{c.name}</span>
-            {c.code === displayCurrency && <Check className="w-3.5 h-3.5 text-[--e-orange] shrink-0" />}
+            {c.code === displayCurrency && <Check className="w-3.5 h-3.5 text-(--e-orange) shrink-0" />}
           </button>
         ))}
       </div>
@@ -64,7 +64,7 @@ export function CurrencySelector({ variant = "default" }: { variant?: "default" 
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#57534E] bg-white border border-[#E8E6E2] rounded-lg hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#57534E] bg-white border border-[#E8E6E2] rounded-lg hover:border-(--e-orange) hover:text-(--e-orange) transition-colors"
         aria-label="Select currency"
       >
         <span className="text-base leading-none">💱</span>
@@ -84,12 +84,12 @@ export function CurrencySelector({ variant = "default" }: { variant?: "default" 
               key={c.code}
               onClick={() => { setDisplayCurrency(c.code); setOpen(false); }}
               className={`w-full text-left flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
-                c.code === displayCurrency ? "bg-[--e-orange-lt] text-[--e-orange] font-semibold" : "text-foreground hover:bg-muted"
+                c.code === displayCurrency ? "bg-(--e-orange-lt) text-(--e-orange) font-semibold" : "text-foreground hover:bg-muted"
               }`}
             >
               <span className="text-base">{c.flag}</span>
               <span className="font-medium w-10">{c.code}</span>
-              <span className={`text-xs flex-1 ${c.code === displayCurrency ? "text-[--e-orange]/70" : "text-muted-foreground"}`}>{c.name}</span>
+              <span className={`text-xs flex-1 ${c.code === displayCurrency ? "text-(--e-orange)/70" : "text-muted-foreground"}`}>{c.name}</span>
               {c.code === displayCurrency && <Check className="w-3.5 h-3.5 shrink-0" />}
             </button>
           ))}

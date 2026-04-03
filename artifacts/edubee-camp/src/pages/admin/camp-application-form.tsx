@@ -102,12 +102,12 @@ function DocumentsSection({
         onClick={() => inputRef.current?.click()}
         className={`
           flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed cursor-pointer transition-colors
-          ${dragging ? "border-[--e-orange] bg-orange-50" : "border-border hover:border-[--e-orange]/60 hover:bg-orange-50/40"}
+          ${dragging ? "border-(--e-orange) bg-orange-50" : "border-border hover:border-(--e-orange)/60 hover:bg-orange-50/40"}
         `}
       >
         <Upload className="w-7 h-7 text-muted-foreground" />
         <p className="text-sm text-muted-foreground text-center">
-          <span className="font-semibold text-[--e-orange]">Click to browse</span> or drag & drop files here
+          <span className="font-semibold text-(--e-orange)">Click to browse</span> or drag & drop files here
         </p>
         <p className="text-xs text-muted-foreground">PDF, JPG, PNG, DOCX — max 20 MB per file</p>
         <input ref={inputRef} type="file" multiple className="hidden" onChange={e => addFiles(e.target.files)} />
@@ -125,7 +125,7 @@ function DocumentsSection({
                   <Input
                     value={sf.documentName}
                     onChange={e => update(sf.id, "documentName", e.target.value)}
-                    className="h-8 text-sm border-border focus-visible:ring-[--e-orange]/40 focus-visible:border-[--e-orange]"
+                    className="h-8 text-sm border-border focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange)"
                   />
                 </div>
                 <div>
@@ -133,7 +133,7 @@ function DocumentsSection({
                   <select
                     value={sf.category}
                     onChange={e => update(sf.id, "category", e.target.value)}
-                    className="h-8 w-full rounded-md border border-border px-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-[--e-orange]/40 focus:border-[--e-orange]"
+                    className="h-8 w-full rounded-md border border-border px-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-(--e-orange)/40 focus:border-(--e-orange)"
                   >
                     {CAMP_DOC_CATEGORIES.map(c => (
                       <option key={c.value} value={c.value}>{c.label}</option>
@@ -180,7 +180,7 @@ const emptyStudent = (): StudentParticipant => ({
 // ── Design helpers ───────────────────────────────────────────────────────────
 function SectionHeader({ title }: { title: string }) {
   return (
-    <div className="bg-[--e-orange] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-t-xl">
+    <div className="bg-(--e-orange) text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-t-xl">
       {title}
     </div>
   );
@@ -208,9 +208,9 @@ function Field({
   );
 }
 
-const inputCls = "h-9 text-sm border-border focus-visible:ring-[--e-orange]/40 focus-visible:border-[--e-orange]";
-const selectCls = "h-9 w-full rounded-md border border-border px-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-[--e-orange]/40 focus:border-[--e-orange]";
-const textareaCls = "text-sm border-border focus-visible:ring-[--e-orange]/40 focus-visible:border-[--e-orange] resize-none";
+const inputCls = "h-9 text-sm border-border focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange)";
+const selectCls = "h-9 w-full rounded-md border border-border px-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-(--e-orange)/40 focus:border-(--e-orange)";
+const textareaCls = "text-sm border-border focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange) resize-none";
 
 // ── Adult Participant Card ───────────────────────────────────────────────────
 function AdultCard({
@@ -228,18 +228,18 @@ function AdultCard({
         className="w-full flex items-center justify-between px-4 py-3 bg-orange-50 hover:bg-orange-100 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-[--e-orange]" />
+          <Users className="w-4 h-4 text-(--e-orange)" />
           <span className="text-sm font-semibold text-[#92400E]">
             Adult {index + 1}
             {data.firstName && ` — ${data.firstName} ${data.lastName}`.trim()}
           </span>
           {isAutoFilled && (
-            <span className="text-[10px] font-medium bg-[--e-orange]/15 text-[--e-orange] px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-medium bg-(--e-orange)/15 text-(--e-orange) px-2 py-0.5 rounded-full">
               From Primary Contact
             </span>
           )}
         </div>
-        {open ? <ChevronUp className="w-4 h-4 text-[--e-orange]" /> : <ChevronDown className="w-4 h-4 text-[--e-orange]" />}
+        {open ? <ChevronUp className="w-4 h-4 text-(--e-orange)" /> : <ChevronDown className="w-4 h-4 text-(--e-orange)" />}
       </button>
 
       {open && (
@@ -289,7 +289,7 @@ function AdultCard({
             <Checkbox
               checked={data.isEmergencyContact}
               onCheckedChange={v => set("isEmergencyContact", !!v)}
-              className="data-[state=checked]:bg-[--e-orange] data-[state=checked]:border-[--e-orange]"
+              className="data-[state=checked]:bg-(--e-orange) data-[state=checked]:border-(--e-orange)"
             />
             <span className="text-sm text-muted-foreground">Primary Emergency Contact</span>
           </label>
@@ -317,13 +317,13 @@ function StudentCard({
         className="w-full flex items-center justify-between px-4 py-3 bg-orange-50 hover:bg-orange-100 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <GraduationCap className="w-4 h-4 text-[--e-orange]" />
+          <GraduationCap className="w-4 h-4 text-(--e-orange)" />
           <span className="text-sm font-semibold text-[#92400E]">
             Student {index + 1}
             {data.firstName && ` — ${data.firstName} ${data.lastName}`.trim()}
           </span>
         </div>
-        {open ? <ChevronUp className="w-4 h-4 text-[--e-orange]" /> : <ChevronDown className="w-4 h-4 text-[--e-orange]" />}
+        {open ? <ChevronUp className="w-4 h-4 text-(--e-orange)" /> : <ChevronDown className="w-4 h-4 text-(--e-orange)" />}
       </button>
 
       {open && (
@@ -664,7 +664,7 @@ export default function AdminCampApplicationForm() {
             type="submit"
             form="camp-app-form"
             size="sm"
-            className="bg-[--e-orange] hover:bg-[#e06f0e] text-white"
+            className="bg-(--e-orange) hover:bg-[#e06f0e] text-white"
             disabled={submit.isPending}
           >
             {submit.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
@@ -758,7 +758,7 @@ export default function AdminCampApplicationForm() {
         {/* ── Dynamic Participants ─────────────────────────────────────────── */}
         {adults.length > 0 && (
           <div className="rounded-xl border border-border overflow-hidden">
-            <div className="bg-[--e-orange] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
+            <div className="bg-(--e-orange) text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
               <Users className="w-4 h-4" />
               Adult Participants ({adults.length})
             </div>
@@ -772,7 +772,7 @@ export default function AdminCampApplicationForm() {
 
         {students.length > 0 && (
           <div className="rounded-xl border border-border overflow-hidden">
-            <div className="bg-[--e-orange] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
+            <div className="bg-(--e-orange) text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
               <GraduationCap className="w-4 h-4" />
               Student Participants ({students.length})
             </div>
@@ -811,7 +811,7 @@ export default function AdminCampApplicationForm() {
 
         {/* 첨부 문서 */}
         <div className="rounded-xl border border-border overflow-hidden">
-          <div className="bg-[--e-orange] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
+          <div className="bg-(--e-orange) text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
             <Paperclip className="w-4 h-4" />
             Documents
             {stagedFiles.length > 0 && (
@@ -847,7 +847,7 @@ export default function AdminCampApplicationForm() {
           <Button type="button" variant="outline" onClick={() => setLocation("/admin/all-applications")}>
             Cancel
           </Button>
-          <Button type="submit" className="bg-[--e-orange] hover:bg-[#e06f0e] text-white" disabled={submit.isPending}>
+          <Button type="submit" className="bg-(--e-orange) hover:bg-[#e06f0e] text-white" disabled={submit.isPending}>
             {submit.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
             Save Application
           </Button>

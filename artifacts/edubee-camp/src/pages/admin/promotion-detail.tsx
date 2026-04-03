@@ -50,7 +50,7 @@ function promoStatus(p: Promotion): { label: string; cls: string } {
     const to   = parseISO(p.toDate);
     if (isBefore(today, from)) return { label: "Upcoming",    cls: "bg-[#FEF9C3] text-[#CA8A04]" };
     if (isAfter(today, to))   return { label: "Expired",     cls: "bg-[#F4F3F1] text-[#A8A29E]" };
-    return                           { label: "In Progress",  cls: "bg-[--e-orange-lt] text-[--e-orange]" };
+    return                           { label: "In Progress",  cls: "bg-(--e-orange-lt) text-(--e-orange)" };
   }
   return { label: "Active", cls: "bg-[#DCFCE7] text-[#16A34A]" };
 }
@@ -135,7 +135,7 @@ export default function PromotionDetail() {
       <div className="flex flex-col items-center justify-center py-24 text-[#A8A29E]">
         <Percent className="w-10 h-10 mb-3" strokeWidth={1} />
         <p className="text-sm">Promotion not found.</p>
-        <Button variant="link" className="text-[--e-orange] mt-2" onClick={() => navigate("/admin/promotions")}>
+        <Button variant="link" className="text-(--e-orange) mt-2" onClick={() => navigate("/admin/promotions")}>
           Back to list
         </Button>
       </div>
@@ -155,7 +155,7 @@ export default function PromotionDetail() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-2 flex-wrap">
-            <Percent className="w-5 h-5 text-[--e-orange]" strokeWidth={1.5} />
+            <Percent className="w-5 h-5 text-(--e-orange)" strokeWidth={1.5} />
             <h1 className="text-xl font-bold text-[#1C1917] leading-none">{promo.name}</h1>
             <StatusBadge promo={promo} />
           </div>
@@ -198,7 +198,7 @@ export default function PromotionDetail() {
             value={form.name}
             onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setNameError(""); }}
             placeholder="e.g. Summer Early Bird 2025"
-            className={`h-10 border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 ${nameError ? "border-[#DC2626]" : ""}`}
+            className={`h-10 border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0 ${nameError ? "border-[#DC2626]" : ""}`}
           />
           {nameError && <p className="text-xs text-[#DC2626]">{nameError}</p>}
         </div>
@@ -229,7 +229,7 @@ export default function PromotionDetail() {
             <Input
               type="date" value={form.fromDate}
               onChange={e => setForm(f => ({ ...f, fromDate: e.target.value }))}
-              className="h-10 border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0"
+              className="h-10 border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0"
             />
           </div>
           <div className="space-y-1.5">
@@ -237,7 +237,7 @@ export default function PromotionDetail() {
             <Input
               type="date" value={form.toDate}
               onChange={e => setForm(f => ({ ...f, toDate: e.target.value }))}
-              className="h-10 border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0"
+              className="h-10 border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0"
             />
           </div>
         </div>
@@ -248,7 +248,7 @@ export default function PromotionDetail() {
             value={form.promotionPrice}
             onChange={e => setForm(f => ({ ...f, promotionPrice: e.target.value }))}
             placeholder="e.g. $320/week, 10% OFF first term, Free enrollment fee"
-            className="h-10 border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0"
+            className="h-10 border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0"
           />
         </div>
 

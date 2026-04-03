@@ -30,7 +30,7 @@ const TIMEZONES = [
 const STATUS_COLORS: Record<string, string> = {
   pending:         "bg-[#F4F3F1] text-[#57534E]",
   driver_assigned: "bg-[#FEF9C3] text-[#CA8A04]",
-  en_route:        "bg-[--e-orange-lt] text-[--e-orange]",
+  en_route:        "bg-(--e-orange-lt) text-(--e-orange)",
   completed:       "bg-[#DCFCE7] text-[#16A34A]",
   cancelled:       "bg-[#FEF2F2] text-[#DC2626]",
 };
@@ -80,15 +80,15 @@ function BillTab({ record }: { record: any }) {
         <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <DollarSign size={14} style={{ color: "var(--e-orange)" }} />
-            <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Billing Summary</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-(--e-orange)">Billing Summary</h3>
           </div>
           {!editing ? (
             <button onClick={() => { setFee(record.serviceFee ?? ""); setCost(record.apCost ?? ""); setEditing(true); }}
-              className="text-xs font-semibold text-[--e-orange] hover:underline">Edit</button>
+              className="text-xs font-semibold text-(--e-orange) hover:underline">Edit</button>
           ) : (
             <div className="flex gap-2">
               <button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}
-                className="text-xs font-semibold text-[--e-orange] hover:underline">
+                className="text-xs font-semibold text-(--e-orange) hover:underline">
                 {saveMut.isPending ? "Saving…" : "Save"}
               </button>
               <button onClick={() => setEditing(false)} className="text-xs text-stone-400 hover:underline">Cancel</button>
@@ -100,14 +100,14 @@ function BillTab({ record }: { record: any }) {
             <span className="text-stone-500">Service Fee (AR)</span>
             {editing
               ? <input type="number" step="0.01" value={fee} onChange={e => setFee(e.target.value)}
-                  className="w-32 border border-[--e-orange] rounded px-2 py-1 text-sm text-right focus:outline-none" placeholder="0.00" />
+                  className="w-32 border border-(--e-orange) rounded px-2 py-1 text-sm text-right focus:outline-none" placeholder="0.00" />
               : <span className="font-semibold text-stone-800">{fmtMoney(record.serviceFee)}</span>}
           </div>
           <div className="px-5 py-3.5 flex items-center justify-between text-sm">
             <span className="text-stone-500">Partner Cost (AP)</span>
             {editing
               ? <input type="number" step="0.01" value={cost} onChange={e => setCost(e.target.value)}
-                  className="w-32 border border-[--e-orange] rounded px-2 py-1 text-sm text-right focus:outline-none" placeholder="0.00" />
+                  className="w-32 border border-(--e-orange) rounded px-2 py-1 text-sm text-right focus:outline-none" placeholder="0.00" />
               : <span className="font-semibold text-stone-800">{fmtMoney(record.apCost)}</span>}
           </div>
           {margin !== null && !editing && (
@@ -124,7 +124,7 @@ function BillTab({ record }: { record: any }) {
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <Car size={14} style={{ color: "var(--e-orange)" }} />
-          <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Transfer Info</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wide text-(--e-orange)">Transfer Info</h3>
         </div>
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
           <div className="flex items-center justify-between">
@@ -249,7 +249,7 @@ export default function PickupMgtDetail() {
               value={(rec.status ?? "pending").replace(/_/g, " ")}
               editChildren={
                 <Select value={getValue("status") ?? "pending"} onValueChange={v => setField("status", v)}>
-                  <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm border-(--e-orange)"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}
                   </SelectContent>
@@ -262,7 +262,7 @@ export default function PickupMgtDetail() {
               value={(rec.pickupType ?? "").replace(/_/g, " ")}
               editChildren={
                 <Select value={getValue("pickupType") ?? "airport_pickup"} onValueChange={v => setField("pickupType", v)}>
-                  <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm border-(--e-orange)"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PICKUP_TYPES.map(t => <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>)}
                   </SelectContent>
@@ -278,7 +278,7 @@ export default function PickupMgtDetail() {
                   type="datetime-local"
                   value={toDatetimeLocal(getValue("pickupDatetime"))}
                   onChange={e => setField("pickupDatetime", e.target.value)}
-                  className="w-full h-8 text-sm border border-[--e-orange] rounded-md px-2 focus:outline-none focus:ring-1 focus:ring-[--e-orange]"
+                  className="w-full h-8 text-sm border border-(--e-orange) rounded-md px-2 focus:outline-none focus:ring-1 focus:ring-(--e-orange)"
                 />
               }
             />
@@ -288,7 +288,7 @@ export default function PickupMgtDetail() {
               value={rec.timezone ?? "—"}
               editChildren={
                 <Select value={getValue("timezone") || "__none__"} onValueChange={v => setField("timezone", v === "__none__" ? null : v)}>
-                  <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue placeholder="Select timezone…" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm border-(--e-orange)"><SelectValue placeholder="Select timezone…" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">— None —</SelectItem>
                     {TIMEZONES.map(tz => <SelectItem key={tz} value={tz}>{tz}</SelectItem>)}
@@ -325,7 +325,7 @@ export default function PickupMgtDetail() {
             <DetailRow label="Contract #">
               {rec.contractId ? (
                 <button onClick={() => navigate(`/admin/crm/contracts/${rec.contractId}`)}
-                  className="font-mono text-xs text-[--e-orange] hover:underline flex items-center gap-1">
+                  className="font-mono text-xs text-(--e-orange) hover:underline flex items-center gap-1">
                   {rec.contractNumber ?? "View"} <ExternalLink size={10} />
                 </button>
               ) : <span>{rec.contractNumber ?? "—"}</span>}
@@ -360,7 +360,7 @@ export default function PickupMgtDetail() {
             <EditableField label="Product" isEditing={isEditing} value={rec.productName ?? "—"}
               editChildren={
                 <Select value={getValue("productId") || "__none__"} onValueChange={v => setField("productId", v === "__none__" ? null : v)}>
-                  <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue placeholder="Select product…" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm border-(--e-orange)"><SelectValue placeholder="Select product…" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">— None —</SelectItem>
                     {productsList.map((p: any) => (
@@ -392,7 +392,7 @@ export default function PickupMgtDetail() {
               <textarea
                 value={getValue("driverNotes") ?? ""}
                 onChange={e => setField("driverNotes", e.target.value)}
-                className="w-full border border-[--e-orange] rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[--e-orange]"
+                className="w-full border border-(--e-orange) rounded-md px-3 py-2 text-sm resize-none h-24 focus:outline-none focus:ring-1 focus:ring-(--e-orange)"
                 placeholder="Notes for the driver…"
               />
             ) : (

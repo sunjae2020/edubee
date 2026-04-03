@@ -67,7 +67,7 @@ export const FinanceKpiSection: React.FC<Props> = ({ data, currency = 'AUD' }) =
           value={data.netRevenue}
           sub="collected − paid"
           bold
-          valueColor={data.netRevenue >= 0 ? 'text-[--e-orange]' : 'text-[#DC2626]'}
+          valueColor={data.netRevenue >= 0 ? 'text-(--e-orange)' : 'text-[#DC2626]'}
           currency={currency}
         />
 

@@ -47,7 +47,7 @@ const EMPTY_FORM: Omit<PlatformPlan, "id" | "isActive" | "sortOrder"> = {
 const inp = `
   w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917]
   bg-white placeholder-[#A8A29E]
-  focus:outline-none focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)]
+  focus:outline-none focus:border-(--e-orange) focus:shadow-[0_0_0_3px_var(--e-orange-ring)]
   transition-all
 `.replace(/\s+/g, " ").trim();
 
@@ -310,7 +310,7 @@ function PlanCard({
       {/* Pricing */}
       <div className="mb-2">
         {Number(plan.priceMonthly) === 0 ? (
-          <span className="font-bold text-[--e-orange]" style={{ fontSize: 22 }}>
+          <span className="font-bold text-(--e-orange)" style={{ fontSize: 22 }}>
             Contact us<span className="text-sm font-normal text-[#57534E]"> for pricing</span>
           </span>
         ) : (

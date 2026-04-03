@@ -86,8 +86,8 @@ export default function DocPermissions() {
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center">
-            <FileText className="w-5 h-5 text-[--e-orange]" />
+          <div className="w-9 h-9 rounded-lg bg-(--e-orange)/10 flex items-center justify-center">
+            <FileText className="w-5 h-5 text-(--e-orange)" />
           </div>
           <div>
             <h1 className="text-lg font-bold">Document Permissions</h1>
@@ -96,7 +96,7 @@ export default function DocPermissions() {
         </div>
         <Button
           size="sm"
-          className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5"
+          className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5"
           onClick={() => saveMut.mutate()}
           disabled={saveMut.isPending || !isDirty}
         >
@@ -134,7 +134,7 @@ export default function DocPermissions() {
               </tr>
             </thead>
             <tbody>
-              <tr className="hover:bg-[--e-orange-lt]">
+              <tr className="hover:bg-(--e-orange-lt)">
                 <td className="px-4 py-2 text-xs font-medium">{GROUP_LABELS[group]}</td>
                 {ROLES.map(r => {
                   const p = getPerm(group, r);
@@ -161,9 +161,9 @@ export default function DocPermissions() {
                           onClick={() => togglePerm(group, r, "canDownload")}
                           disabled={isLocked}
                           className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-                            isLocked ? "bg-[--e-orange] border-[--e-orange]"
-                            : (p?.canDownload) ? "bg-[--e-orange] border-[--e-orange] hover:bg-[--e-orange-hover]"
-                            : "border-[#E8E6E2] hover:border-[--e-orange]"
+                            isLocked ? "bg-(--e-orange) border-(--e-orange)"
+                            : (p?.canDownload) ? "bg-(--e-orange) border-(--e-orange) hover:bg-(--e-orange-hover)"
+                            : "border-[#E8E6E2] hover:border-(--e-orange)"
                           }`}
                         >
                           {(isLocked || p?.canDownload) && <Download className="w-2.5 h-2.5 text-white" />}
@@ -211,7 +211,7 @@ export default function DocPermissions() {
           </thead>
           <tbody>
             {cats.map(cat => (
-              <tr key={cat.id} className="border-t hover:bg-[--e-orange-lt]">
+              <tr key={cat.id} className="border-t hover:bg-(--e-orange-lt)">
                 <td className="px-4 py-2 text-xs font-mono text-muted-foreground">{cat.categoryCode}</td>
                 <td className="px-4 py-2 text-sm">{cat.categoryNameEn}</td>
                 <td className="px-4 py-2">

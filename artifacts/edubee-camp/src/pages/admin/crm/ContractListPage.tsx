@@ -54,7 +54,7 @@ function duration(from?: string, to?: string) {
 
 const CONTRACT_STATUS_STYLES: Record<string, string> = {
   active:      "bg-[#DCFCE7] text-[#16A34A]",
-  "in progress": "bg-[--e-orange-lt] text-[--e-orange]",
+  "in progress": "bg-(--e-orange-lt) text-(--e-orange)",
   overdue:     "bg-[#FEF2F2] text-[#DC2626]",
   completed:   "bg-[#F4F3F1] text-[#57534E]",
   draft:       "bg-[#F4F3F1] text-[#A8A29E]",
@@ -62,7 +62,7 @@ const CONTRACT_STATUS_STYLES: Record<string, string> = {
 
 const AR_STATUS_STYLES: Record<string, string> = {
   scheduled: "bg-[#F4F3F1] text-[#57534E]",
-  invoiced:  "bg-[--e-orange-lt] text-[--e-orange]",
+  invoiced:  "bg-(--e-orange-lt) text-(--e-orange)",
   overdue:   "bg-[#FEF2F2] text-[#DC2626]",
   partial:   "bg-[#FEF9C3] text-[#CA8A04]",
   paid:      "bg-[#DCFCE7] text-[#16A34A]",
@@ -70,7 +70,7 @@ const AR_STATUS_STYLES: Record<string, string> = {
 
 const AP_STATUS_STYLES: Record<string, string> = {
   pending: "bg-[#F4F3F1] text-[#57534E]",
-  ready:   "bg-[--e-orange-lt] text-[--e-orange]",
+  ready:   "bg-(--e-orange-lt) text-(--e-orange)",
   paid:    "bg-[#DCFCE7] text-[#16A34A]",
   overdue: "bg-[#FEF2F2] text-[#DC2626]",
 };
@@ -115,9 +115,9 @@ function calcPeriod(p: Period): [string, string] {
 // ── ActiveTag ──────────────────────────────────────────────────────────────
 function ActiveTag({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[--e-orange-lt] text-[--e-orange] border border-[--e-orange]/30">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-(--e-orange-lt) text-(--e-orange) border border-(--e-orange)/30">
       {label}
-      <button onClick={onRemove} className="hover:text-[--e-orange-hover]"><X size={10} /></button>
+      <button onClick={onRemove} className="hover:text-(--e-orange-hover)"><X size={10} /></button>
     </span>
   );
 }
@@ -295,7 +295,7 @@ export default function ContractListPage() {
           <div className="relative flex-1 min-w-[220px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
             <input
-              className="w-full pl-9 pr-3 h-9 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange] bg-white"
+              className="w-full pl-9 pr-3 h-9 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-(--e-orange) bg-white"
               placeholder="Search student, school, ref..."
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
@@ -320,14 +320,14 @@ export default function ContractListPage() {
 
           {/* Date range */}
           <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPeriod(""); setPage(1); }}
-            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange]" />
+            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-(--e-orange)" />
           <span className="text-[#A8A29E] text-xs">to</span>
           <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPeriod(""); setPage(1); }}
-            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange]" />
+            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-(--e-orange)" />
 
           {/* Status */}
           <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}
-            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange] bg-white">
+            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-(--e-orange) bg-white">
             <option value="">All Status</option>
             {["active","in progress","overdue","completed","draft"].map(s => (
               <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
@@ -357,7 +357,7 @@ export default function ContractListPage() {
               <div>
                 <label className="block text-xs font-medium text-[#57534E] mb-1">Payment Type</label>
                 <select value={draftPayFreq} onChange={e => setDraftPayFreq(e.target.value)}
-                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange] bg-white">
+                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-(--e-orange) bg-white">
                   <option value="">All</option>
                   {["once","per_term","monthly","custom"].map(v => (
                     <option key={v} value={v}>{v.replace("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}</option>
@@ -367,7 +367,7 @@ export default function ContractListPage() {
               <div>
                 <label className="block text-xs font-medium text-[#57534E] mb-1">AR Status</label>
                 <select value={draftArStatus} onChange={e => setDraftArStatus(e.target.value)}
-                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange] bg-white">
+                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-(--e-orange) bg-white">
                   <option value="">All</option>
                   {["scheduled","invoiced","overdue","partial","paid"].map(v => (
                     <option key={v} value={v}>{v.charAt(0).toUpperCase()+v.slice(1)}</option>
@@ -377,7 +377,7 @@ export default function ContractListPage() {
               <div>
                 <label className="block text-xs font-medium text-[#57534E] mb-1">AP Status</label>
                 <select value={draftApStatus} onChange={e => setDraftApStatus(e.target.value)}
-                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange] bg-white">
+                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-(--e-orange) bg-white">
                   <option value="">All</option>
                   {["pending","ready","paid","overdue"].map(v => (
                     <option key={v} value={v}>{v.charAt(0).toUpperCase()+v.slice(1)}</option>
@@ -453,7 +453,7 @@ export default function ContractListPage() {
               )}
               {!isLoading && sorted.map(row => (
                 <tr key={row.id}
-                  className="border-b border-[#E8E6E2] cursor-pointer hover:bg-[--e-orange-lt] transition-colors"
+                  className="border-b border-[#E8E6E2] cursor-pointer hover:bg-(--e-orange-lt) transition-colors"
                   onClick={() => navigate(`/admin/crm/contracts/${row.id}`)}
                 >
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}><input type="checkbox" /></td>

@@ -137,11 +137,11 @@ export default function Landing() {
             {isAuthenticated && user ? (
               <div className="flex items-center gap-1">
                 {/* User badge */}
-                <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[--e-orange-lt]">
-                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[--e-orange] text-white text-[9px] font-bold shrink-0">
+                <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-(--e-orange-lt)">
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-(--e-orange) text-white text-[9px] font-bold shrink-0">
                     {(user.fullName ?? user.email ?? "?")[0].toUpperCase()}
                   </span>
-                  <span className="text-[11px] font-medium text-[--e-orange] max-w-[80px] truncate leading-none">
+                  <span className="text-[11px] font-medium text-(--e-orange) max-w-[80px] truncate leading-none">
                     {user.fullName ?? user.email}
                   </span>
                 </div>
@@ -238,12 +238,12 @@ export default function Landing() {
               ))}
               {isAuthenticated && user ? (
                 <>
-                  <div className="flex items-center gap-2 px-3 py-2.5 my-1 rounded-lg bg-[--e-orange-lt]">
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[--e-orange] text-white text-xs font-bold shrink-0">
+                  <div className="flex items-center gap-2 px-3 py-2.5 my-1 rounded-lg bg-(--e-orange-lt)">
+                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-(--e-orange) text-white text-xs font-bold shrink-0">
                       {(user.fullName ?? user.email ?? "?")[0].toUpperCase()}
                     </span>
                     <div>
-                      <div className="text-sm font-semibold text-[--e-orange]">{user.fullName ?? user.email}</div>
+                      <div className="text-sm font-semibold text-(--e-orange)">{user.fullName ?? user.email}</div>
                       <div className="text-[10px] text-muted-foreground capitalize">{user.role?.replace("_", " ")}</div>
                     </div>
                   </div>
@@ -291,13 +291,13 @@ export default function Landing() {
               className="space-y-8"
             >
               <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-[--e-orange]/10 rounded-full text-xs font-semibold text-[--e-orange] tracking-wide uppercase">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-(--e-orange)/10 rounded-full text-xs font-semibold text-(--e-orange) tracking-wide uppercase">
                   🌏 Global Educational Platform
                 </div>
                 <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1] text-foreground">
                   Connecting Students<br />
                   to{" "}
-                  <span className="text-[--e-orange]">World-Class</span><br />
+                  <span className="text-(--e-orange)">World-Class</span><br />
                   Camps
                 </h1>
                 <p className="text-base text-muted-foreground max-w-lg leading-relaxed">
@@ -325,7 +325,7 @@ export default function Landing() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
                 {STATS.map((s, i) => (
                   <div key={i} className="space-y-0.5">
-                    <div className="text-2xl font-extrabold text-[--e-orange]">{s.value}</div>
+                    <div className="text-2xl font-extrabold text-(--e-orange)">{s.value}</div>
                     <div className="text-xs text-muted-foreground font-medium">{s.label}</div>
                   </div>
                 ))}
@@ -345,7 +345,7 @@ export default function Landing() {
                   {heroProgram ? (
                     <>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[--e-orange]/10 flex items-center justify-center text-xl">
+                        <div className="w-10 h-10 rounded-xl bg-(--e-orange)/10 flex items-center justify-center text-xl">
                           {heroProgram.countryFlag}
                         </div>
                         <div>
@@ -361,8 +361,8 @@ export default function Landing() {
                           {heroPkgs.map((pkg, i) => {
                             const isHighlight = i === midIdx;
                             return (
-                              <div key={pkg.id} className={`rounded-lg p-3 text-center border ${isHighlight ? "border-[--e-orange] bg-[--e-orange]/5" : "border-border"}`}>
-                                <div className={`font-bold text-sm ${isHighlight ? "text-[--e-orange]" : "text-foreground"}`}>
+                              <div key={pkg.id} className={`rounded-lg p-3 text-center border ${isHighlight ? "border-(--e-orange) bg-(--e-orange)/5" : "border-border"}`}>
+                                <div className={`font-bold text-sm ${isHighlight ? "text-(--e-orange)" : "text-foreground"}`}>
                                   {pkg.displayFormatted ?? "—"}
                                 </div>
                                 <div className="text-xs text-muted-foreground mt-0.5">{pkg.name}</div>
@@ -378,7 +378,7 @@ export default function Landing() {
                             <>
                               <div className="flex -space-x-1.5">
                                 {Array.from({ length: Math.min(3, enrolled) }).map((_, i) => (
-                                  <div key={i} className="w-6 h-6 rounded-full bg-[--e-orange]/20 text-[--e-orange] text-xs font-bold flex items-center justify-center ring-2 ring-white">
+                                  <div key={i} className="w-6 h-6 rounded-full bg-(--e-orange)/20 text-(--e-orange) text-xs font-bold flex items-center justify-center ring-2 ring-white">
                                     {String.fromCharCode(65 + ((heroIdx + i) % 26))}
                                   </div>
                                 ))}
@@ -388,15 +388,15 @@ export default function Landing() {
                           )}
                         </div>
                         {spotsAvail !== null && spotsAvail > 0 && (
-                          <div className="text-xs font-semibold text-[--e-orange] flex items-center gap-1">
-                            {spotsAvail} spots left <span className="w-1.5 h-1.5 rounded-full bg-[--e-orange] animate-pulse inline-block" />
+                          <div className="text-xs font-semibold text-(--e-orange) flex items-center gap-1">
+                            {spotsAvail} spots left <span className="w-1.5 h-1.5 rounded-full bg-(--e-orange) animate-pulse inline-block" />
                           </div>
                         )}
                       </div>
                     </>
                   ) : (
                     <div className="flex items-center justify-center h-full py-8">
-                      <div className="w-6 h-6 border-2 border-[--e-orange] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-6 h-6 border-2 border-(--e-orange) border-t-transparent rounded-full animate-spin" />
                     </div>
                   )}
                 </div>
@@ -405,7 +405,7 @@ export default function Landing() {
                 <div className="absolute -top-4 -right-4 bg-white border border-border rounded-xl px-3 py-2 shadow-md text-xs font-semibold text-foreground flex items-center gap-1.5">
                   🌏 <span>{programs.length > 0 ? `${programs.length}+ Programs` : "20+ Cities"}</span>
                 </div>
-                <div className="absolute -bottom-4 -left-4 bg-[--e-orange] rounded-xl px-3 py-2 shadow-md text-xs font-semibold text-white flex items-center gap-1.5">
+                <div className="absolute -bottom-4 -left-4 bg-(--e-orange) rounded-xl px-3 py-2 shadow-md text-xs font-semibold text-white flex items-center gap-1.5">
                   ✓ Verified Programs
                 </div>
               </div>
@@ -428,7 +428,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <div className="text-xs font-semibold text-[--e-orange] uppercase tracking-widest mb-2">Programs</div>
+              <div className="text-xs font-semibold text-(--e-orange) uppercase tracking-widest mb-2">Programs</div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">{t("programs.title")}</h2>
             </div>
           </div>
@@ -461,7 +461,7 @@ export default function Landing() {
       <section ref={howItWorksRef} className="py-20 px-5 bg-muted/30 border-y border-border">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <div className="text-xs font-semibold text-[--e-orange] uppercase tracking-widest mb-2">Process</div>
+            <div className="text-xs font-semibold text-(--e-orange) uppercase tracking-widest mb-2">Process</div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">{t("howItWorks.title")}</h2>
           </div>
 
@@ -483,10 +483,10 @@ export default function Landing() {
                 className="flex flex-col items-center text-center"
               >
                 <div className="relative mb-5">
-                  <div className="w-12 h-12 rounded-full border-2 border-[--e-orange] bg-white flex items-center justify-center text-2xl">
+                  <div className="w-12 h-12 rounded-full border-2 border-(--e-orange) bg-white flex items-center justify-center text-2xl">
                     {item.emoji}
                   </div>
-                  <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[--e-orange] text-white text-[10px] font-extrabold flex items-center justify-center">
+                  <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-(--e-orange) text-white text-[10px] font-extrabold flex items-center justify-center">
                     {item.step}
                   </div>
                 </div>
@@ -508,7 +508,7 @@ export default function Landing() {
       <section className="py-20 px-5">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <div className="text-xs font-semibold text-[--e-orange] uppercase tracking-widest mb-2">Reviews</div>
+            <div className="text-xs font-semibold text-(--e-orange) uppercase tracking-widest mb-2">Reviews</div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">What Parents Say</h2>
           </div>
 
@@ -525,12 +525,12 @@ export default function Landing() {
                 {/* Stars */}
                 <div className="flex gap-0.5">
                   {Array(5).fill(0).map((_, j) => (
-                    <span key={j} className="text-[--e-orange] text-sm">★</span>
+                    <span key={j} className="text-(--e-orange) text-sm">★</span>
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">"{item.quote}"</p>
                 <div className="flex items-center gap-3 pt-2 border-t border-border">
-                  <div className="w-8 h-8 rounded-full bg-[--e-orange]/10 text-[--e-orange] font-bold text-xs flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-(--e-orange)/10 text-(--e-orange) font-bold text-xs flex items-center justify-center shrink-0">
                     {item.initials}
                   </div>
                   <div>
@@ -545,14 +545,14 @@ export default function Landing() {
       </section>
 
       {/* ── CTA BAND ── */}
-      <section className="bg-[--e-orange] py-16 px-5">
+      <section className="bg-(--e-orange) py-16 px-5">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Ready to start your journey?</h2>
             <p className="text-white/80 mt-1 text-sm">Apply today and we'll reach out within 2 business days.</p>
           </div>
           <Button
-            className="bg-white text-[--e-orange] hover:bg-white/90 font-bold rounded-md h-11 px-7 shrink-0 shadow-none"
+            className="bg-white text-(--e-orange) hover:bg-white/90 font-bold rounded-md h-11 px-7 shrink-0 shadow-none"
             onClick={() => openApply()}
           >
             {t("nav.applyNow")} <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -579,13 +579,13 @@ export default function Landing() {
                 </div>
                 <h3 className="text-lg font-bold text-foreground">Message Received!</h3>
                 <p className="text-muted-foreground text-sm">Your request number is</p>
-                <span className="inline-block font-mono text-lg font-bold text-[--e-orange] bg-[--e-orange]/10 px-4 py-1.5 rounded-full">
+                <span className="inline-block font-mono text-lg font-bold text-(--e-orange) bg-(--e-orange)/10 px-4 py-1.5 rounded-full">
                   {contactResult.taskNumber}
                 </span>
                 <p className="text-xs text-muted-foreground">Keep this number for reference. We'll contact you via email soon.</p>
                 <button
                   onClick={() => { setContactResult(null); setContactForm({ name: "", email: "", phone: "", category: "inquiry", message: "" }); }}
-                  className="text-xs text-[--e-orange] underline underline-offset-2 mt-2"
+                  className="text-xs text-(--e-orange) underline underline-offset-2 mt-2"
                 >
                   Submit another request
                 </button>
@@ -622,7 +622,7 @@ export default function Landing() {
                       type="text"
                       value={contactForm.name}
                       onChange={e => setContactForm(f => ({ ...f, name: e.target.value }))}
-                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30 focus:border-[--e-orange]"
+                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-(--e-orange)/30 focus:border-(--e-orange)"
                       placeholder="Your full name"
                     />
                   </div>
@@ -633,7 +633,7 @@ export default function Landing() {
                       type="email"
                       value={contactForm.email}
                       onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))}
-                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30 focus:border-[--e-orange]"
+                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-(--e-orange)/30 focus:border-(--e-orange)"
                       placeholder="you@example.com"
                     />
                   </div>
@@ -643,7 +643,7 @@ export default function Landing() {
                       type="tel"
                       value={contactForm.phone}
                       onChange={e => setContactForm(f => ({ ...f, phone: e.target.value }))}
-                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30 focus:border-[--e-orange]"
+                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-(--e-orange)/30 focus:border-(--e-orange)"
                       placeholder="+82 10 0000 0000"
                     />
                   </div>
@@ -652,7 +652,7 @@ export default function Landing() {
                     <select
                       value={contactForm.category}
                       onChange={e => setContactForm(f => ({ ...f, category: e.target.value }))}
-                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30 focus:border-[--e-orange] bg-white"
+                      className="w-full h-10 rounded-md border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-(--e-orange)/30 focus:border-(--e-orange) bg-white"
                     >
                       {[["inquiry", "General Inquiry"], ["complaint", "Complaint"], ["request", "Service Request"], ["document", "Document"], ["payment", "Payment"], ["service", "Service Issue"], ["other", "Other"]].map(([v, l]) => (
                         <option key={v} value={v}>{l}</option>
@@ -667,7 +667,7 @@ export default function Landing() {
                     rows={4}
                     value={contactForm.message}
                     onChange={e => setContactForm(f => ({ ...f, message: e.target.value }))}
-                    className="w-full rounded-md border border-border px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30 focus:border-[--e-orange]"
+                    className="w-full rounded-md border border-border px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-(--e-orange)/30 focus:border-(--e-orange)"
                     placeholder="Tell us how we can help you…"
                   />
                 </div>
@@ -677,7 +677,7 @@ export default function Landing() {
                 <button
                   type="submit"
                   disabled={contactLoading}
-                  className="w-full h-10 bg-[--e-orange] hover:bg-[#d97706] text-white font-semibold rounded-md text-sm transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="w-full h-10 bg-(--e-orange) hover:bg-[#d97706] text-white font-semibold rounded-md text-sm transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {contactLoading ? (
                     <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -741,7 +741,7 @@ export default function Landing() {
             </div>
             <Button
               size="sm"
-              className="mt-6 w-full rounded-md font-semibold bg-[--e-orange] hover:bg-[#d97600] text-white"
+              className="mt-6 w-full rounded-md font-semibold bg-(--e-orange) hover:bg-[#d97600] text-white"
               onClick={() => openApply()}
             >
               {t("nav.applyNow")}

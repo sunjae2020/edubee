@@ -21,7 +21,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const LEAD_STATUSES = [
   { key: "new",       label: "New",       color: "bg-[#F4F3F1] border-[#E8E6E2] text-[#57534E]",   dot: "bg-[#A8A29E]"   },
   { key: "contacted", label: "Contacted", color: "bg-[#FEF9C3] border-[#CA8A04]/20 text-[#CA8A04]", dot: "bg-[#CA8A04]" },
-  { key: "qualified", label: "Qualified", color: "bg-[--e-orange-lt] border-[--e-orange]/20 text-[--e-orange]", dot: "bg-[--e-orange]" },
+  { key: "qualified", label: "Qualified", color: "bg-(--e-orange-lt) border-(--e-orange)/20 text-(--e-orange)", dot: "bg-(--e-orange)" },
   { key: "proposal",  label: "Proposal",  color: "bg-[#FEF9C3] border-[#CA8A04]/20 text-[#CA8A04]", dot: "bg-[#CA8A04]" },
   { key: "converted", label: "Converted", color: "bg-[#DCFCE7] border-[#16A34A]/20 text-[#16A34A]", dot: "bg-[#16A34A]" },
   { key: "lost",      label: "Lost",      color: "bg-[#FEF2F2] border-[#DC2626]/20 text-[#DC2626]", dot: "bg-[#DC2626]" },
@@ -176,7 +176,7 @@ export default function Leads() {
                     onDragStart={() => setDragging(`lead:${lead.id}`)}
                     onDragEnd={() => setDragging(null)}
                     onClick={() => setSelectedLead(lead)}
-                    className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm hover:border-[--e-orange]/40 transition-all select-none group"
+                    className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm hover:border-(--e-orange)/40 transition-all select-none group"
                   >
                     <div className="flex items-start justify-between gap-1">
                       <div className="font-medium text-sm leading-tight text-foreground">{lead.studentName}</div>
@@ -255,7 +255,7 @@ export default function Leads() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button type="submit" className="bg-[--e-orange] hover:bg-[#d97706] text-white" disabled={createLead.isPending}>
+              <Button type="submit" className="bg-(--e-orange) hover:bg-[#d97706] text-white" disabled={createLead.isPending}>
                 {createLead.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 {createLead.isPending ? "Creating…" : "Create Lead"}
               </Button>
@@ -412,7 +412,7 @@ export default function Leads() {
                       Ready to move forward? Convert this lead into a formal application.
                     </p>
                     <Button
-                      className="w-full bg-[--e-orange] hover:bg-[#d97706] text-white gap-2"
+                      className="w-full bg-(--e-orange) hover:bg-[#d97706] text-white gap-2"
                       onClick={handleConvertToApplication}
                       disabled={converting}
                     >

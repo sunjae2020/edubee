@@ -167,7 +167,7 @@ function OverviewTab({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Stamp size={14} style={{ color: "var(--e-orange)" }} />
-            <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Visa Details</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-(--e-orange)">Visa Details</h3>
           </div>
           {isDirty && (
             <div className="flex items-center gap-2">
@@ -272,13 +272,13 @@ function OverviewTab({
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <FileText size={14} style={{ color: "var(--e-orange)" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Related Contract</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-(--e-orange)">Related Contract</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-stone-400">Contract #</span>
                 <a href={`/admin/crm/contracts/${record.contractId}`}
-                  className="flex items-center gap-1 font-mono text-xs text-[--e-orange] hover:underline font-semibold">
+                  className="flex items-center gap-1 font-mono text-xs text-(--e-orange) hover:underline font-semibold">
                   {record.contractNumber ?? "View"} <ExternalLink size={10} />
                 </a>
               </div>
@@ -303,7 +303,7 @@ function OverviewTab({
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <DollarSign size={14} style={{ color: "var(--e-orange)" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Contract Financial</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-(--e-orange)">Contract Financial</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -348,11 +348,11 @@ function TimelineTab({ record, onEdit }: { record: VisaServiceRecord; onEdit: ()
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <Stamp size={14} style={{ color: "var(--e-orange)" }} />
-            <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Application Timeline</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-(--e-orange)">Application Timeline</h3>
           </div>
           <button
             onClick={onEdit}
-            className="flex items-center gap-1.5 text-xs font-medium text-[--e-orange] hover:underline"
+            className="flex items-center gap-1.5 text-xs font-medium text-(--e-orange) hover:underline"
           >
             <Pencil size={12} /> Edit Dates
           </button>
@@ -410,11 +410,11 @@ function BillTab({ record, onEdit }: { record: VisaServiceRecord; onEdit: () => 
         <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <DollarSign size={14} style={{ color: "var(--e-orange)" }} />
-            <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Billing Summary</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-(--e-orange)">Billing Summary</h3>
           </div>
           <button
             onClick={onEdit}
-            className="flex items-center gap-1.5 text-xs font-medium text-[--e-orange] hover:underline"
+            className="flex items-center gap-1.5 text-xs font-medium text-(--e-orange) hover:underline"
           >
             <Pencil size={12} /> Edit Fees
           </button>
@@ -442,7 +442,7 @@ function BillTab({ record, onEdit }: { record: VisaServiceRecord; onEdit: () => 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <Stamp size={14} style={{ color: "var(--e-orange)" }} />
-          <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Visa Info</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wide text-(--e-orange)">Visa Info</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
           <div className="flex items-center justify-between">
@@ -560,7 +560,7 @@ export default function VisaServiceDetailPage() {
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               tab === t.key
-                ? "border-[--e-orange] text-[--e-orange]"
+                ? "border-(--e-orange) text-(--e-orange)"
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}>
             {t.label}

@@ -82,7 +82,7 @@ function SortableSectionItem({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
       className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-r-lg select-none
-        ${isActive ? "bg-[--e-orange-lt] border-l-[3px] border-[--e-orange]" : "hover:bg-[#FAFAF9] border-l-[3px] border-transparent"}
+        ${isActive ? "bg-(--e-orange-lt) border-l-[3px] border-(--e-orange)" : "hover:bg-[#FAFAF9] border-l-[3px] border-transparent"}
         ${!section.isVisible ? "opacity-40" : ""}`}
       onClick={onSelect}
     >
@@ -95,7 +95,7 @@ function SortableSectionItem({
         <GripVertical className="w-3.5 h-3.5" />
       </span>
       <ReportSymbol name={sym} size={15} color={isActive ? "var(--e-orange)" : "#57534E"} />
-      <span className={`flex-1 text-xs truncate ${isActive ? "text-[--e-orange] font-semibold" : "text-[#1C1917]"}
+      <span className={`flex-1 text-xs truncate ${isActive ? "text-(--e-orange) font-semibold" : "text-[#1C1917]"}
         ${!section.isVisible ? "line-through" : ""}`}>
         {section.sectionTitle}
       </span>
@@ -135,7 +135,7 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (t: string[]) 
   return (
     <div className="flex flex-wrap gap-1.5 border border-[#E8E6E2] rounded-md p-2 min-h-[38px]">
       {tags.map((t, i) => (
-        <span key={i} className="inline-flex items-center gap-1 bg-[--e-orange-lt] text-[--e-orange] text-xs rounded-full px-2 py-0.5">
+        <span key={i} className="inline-flex items-center gap-1 bg-(--e-orange-lt) text-(--e-orange) text-xs rounded-full px-2 py-0.5">
           {t}
           <button onClick={() => onChange(tags.filter((_, j) => j !== i))}><X className="w-2.5 h-2.5" /></button>
         </span>
@@ -285,7 +285,7 @@ function PickupEditor({ content, onChange }: { content: Record<string, unknown>;
           </tbody>
         </table>
       </div>
-      <Button size="sm" variant="ghost" className="text-xs gap-1 text-[--e-orange]" onClick={addRow}>
+      <Button size="sm" variant="ghost" className="text-xs gap-1 text-(--e-orange)" onClick={addRow}>
         <Plus className="w-3.5 h-3.5" /> Add Row
       </Button>
     </div>
@@ -385,7 +385,7 @@ function AcademicEditor({ content, onChange }: { content: Record<string, unknown
             </tbody>
           </table>
         </div>
-        <Button size="sm" variant="ghost" className="text-xs gap-1 text-[--e-orange] mt-2" onClick={addRow}>
+        <Button size="sm" variant="ghost" className="text-xs gap-1 text-(--e-orange) mt-2" onClick={addRow}>
           <Plus className="w-3.5 h-3.5" /> Add Class
         </Button>
       </div>
@@ -424,7 +424,7 @@ function TourEditor({ content, onChange }: { content: Record<string, unknown>; o
           >
             <ReportSymbol name="tour" size={14} color="#57534E" />
             <span className="flex-1 text-sm font-medium text-[#1C1917]">{(t.tourName as string) || "Tour"}</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full ${(t.status as string) === "completed" ? "bg-green-100 text-green-700" : "bg-[--e-orange-lt] text-[--e-orange]"}`}>{(t.status as string) || "pending"}</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full ${(t.status as string) === "completed" ? "bg-green-100 text-green-700" : "bg-(--e-orange-lt) text-(--e-orange)"}`}>{(t.status as string) || "pending"}</span>
             <button onClick={e => { e.stopPropagation(); removeTour(i); }} className="text-red-400 hover:text-red-600 ml-1"><X className="w-3.5 h-3.5" /></button>
           </div>
           {expanded === i && (
@@ -451,7 +451,7 @@ function TourEditor({ content, onChange }: { content: Record<string, unknown>; o
           )}
         </div>
       ))}
-      <Button size="sm" variant="ghost" className="w-full text-xs gap-1 text-[--e-orange] border border-dashed border-[--e-orange]/40" onClick={addTour}>
+      <Button size="sm" variant="ghost" className="w-full text-xs gap-1 text-(--e-orange) border border-dashed border-(--e-orange)/40" onClick={addTour}>
         <Plus className="w-3.5 h-3.5" /> Add Tour Activity
       </Button>
     </div>
@@ -470,7 +470,7 @@ function SummaryEditor({ content, onChange }: { content: Record<string, unknown>
         <div className="mt-2 space-y-1.5">
           {achievements.map((a, i) => (
             <div key={i} className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-[--e-orange] rounded-sm shrink-0" />
+              <div className="w-2 h-2 bg-(--e-orange) rounded-sm shrink-0" />
               <Input className="h-7 text-sm flex-1" value={a} onChange={e => {
                 const next = achievements.map((v, j) => j === i ? e.target.value : v);
                 onChange({ ...content, achievements: next });
@@ -479,7 +479,7 @@ function SummaryEditor({ content, onChange }: { content: Record<string, unknown>
             </div>
           ))}
         </div>
-        <Button size="sm" variant="ghost" className="text-xs gap-1 text-[--e-orange] mt-2" onClick={() => onChange({ ...content, achievements: [...achievements, ""] })}>
+        <Button size="sm" variant="ghost" className="text-xs gap-1 text-(--e-orange) mt-2" onClick={() => onChange({ ...content, achievements: [...achievements, ""] })}>
           <Plus className="w-3.5 h-3.5" /> Add Achievement
         </Button>
       </div>
@@ -528,7 +528,7 @@ function CustomEditor({ section, onChange, onTitleChange }: {
               </div>
             ))}
           </div>
-          <Button size="sm" variant="ghost" className="text-xs gap-1 text-[--e-orange] mt-2" onClick={() => onChange({ ...content, items: [...items, ""] })}>
+          <Button size="sm" variant="ghost" className="text-xs gap-1 text-(--e-orange) mt-2" onClick={() => onChange({ ...content, items: [...items, ""] })}>
             <Plus className="w-3.5 h-3.5" /> Add Item
           </Button>
         </div>
@@ -549,7 +549,7 @@ function EditorLoadingSkeleton() {
       <div className="w-[280px] shrink-0 border-r border-[#E8E6E2] flex flex-col bg-white p-3 gap-3">
         <div className="h-4 w-24 bg-[#F4F3F1] rounded animate-pulse" />
         <div className="h-5 w-40 bg-[#F4F3F1] rounded animate-pulse" />
-        <div className="h-8 w-full bg-[--e-orange-lt] rounded animate-pulse" />
+        <div className="h-8 w-full bg-(--e-orange-lt) rounded animate-pulse" />
         <div className="space-y-2 pt-2">
           {[0,1,2,3,4,5].map(i => (
             <div key={i} className="flex items-center gap-2 px-1 py-2">
@@ -720,10 +720,10 @@ export default function ReportEditorPage() {
                 onBlur={() => updateTitleMutation.mutate(titleVal)}
                 autoFocus
               />
-              <Button size="sm" className="h-7 text-xs px-2 bg-[--e-orange] text-white" onClick={() => updateTitleMutation.mutate(titleVal)}>Save</Button>
+              <Button size="sm" className="h-7 text-xs px-2 bg-(--e-orange) text-white" onClick={() => updateTitleMutation.mutate(titleVal)}>Save</Button>
             </div>
           ) : (
-            <p className="text-sm font-semibold text-[#1C1917] cursor-pointer hover:text-[--e-orange] line-clamp-2" onClick={() => setTitleEditing(true)}>
+            <p className="text-sm font-semibold text-[#1C1917] cursor-pointer hover:text-(--e-orange) line-clamp-2" onClick={() => setTitleEditing(true)}>
               {report.reportTitle ?? "Untitled Report"}
             </p>
           )}
@@ -737,7 +737,7 @@ export default function ReportEditorPage() {
                 <span className="text-[10px] text-red-500 font-medium">Save failed ✗</span>
                 {lastFailedSectionId && activeSection && (
                   <button
-                    className="text-[10px] text-[--e-orange] underline"
+                    className="text-[10px] text-(--e-orange) underline"
                     onClick={() => {
                       handleSectionChange(lastFailedSectionId, activeSection.content);
                     }}
@@ -750,13 +750,13 @@ export default function ReportEditorPage() {
           </div>
 
           {report.status === "draft" ? (
-            <Button size="sm" className="w-full bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5 h-8" onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending}>
+            <Button size="sm" className="w-full bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5 h-8" onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending}>
               <ReportSymbol name="publish" size={13} color="white" />
               {publishMutation.isPending ? "Publishing…" : "Publish Report"}
             </Button>
           ) : (
             <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 bg-[--e-orange-lt] rounded-lg px-2 py-1.5 text-xs text-[--e-orange]">
+              <div className="flex items-center gap-1.5 bg-(--e-orange-lt) rounded-lg px-2 py-1.5 text-xs text-(--e-orange)">
                 <ReportSymbol name="publish" size={13} color="var(--e-orange)" />
                 Published — visible to agent & client
               </div>
@@ -874,7 +874,7 @@ export default function ReportEditorPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button size="sm" className="flex-1 bg-[--e-orange] hover:bg-[#d97706] text-white"
+              <Button size="sm" className="flex-1 bg-(--e-orange) hover:bg-[#d97706] text-white"
                 onClick={() => addCustomMutation.mutate(customTitle)}
                 disabled={!customTitle.trim() || addCustomMutation.isPending}>
                 Add Section

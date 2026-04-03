@@ -37,7 +37,7 @@ function promoStatus(p: Promotion): { label: string; cls: string } {
     const to   = parseISO(p.toDate);
     if (isBefore(today, from)) return { label: "Upcoming", cls: "bg-[#FEF9C3] text-[#CA8A04]" };
     if (isAfter(today, to))   return { label: "Expired",  cls: "bg-[#F4F3F1] text-[#A8A29E]" };
-    return { label: "In Progress", cls: "bg-[--e-orange-lt] text-[--e-orange]" };
+    return { label: "In Progress", cls: "bg-(--e-orange-lt) text-(--e-orange)" };
   }
   return { label: "Active", cls: "bg-[#DCFCE7] text-[#16A34A]" };
 }
@@ -153,7 +153,7 @@ export default function Promotions() {
           <h1 className="text-2xl font-bold text-[#1C1917]">Promotions</h1>
           <p className="text-sm text-[#57534E] mt-0.5">Manage promotional pricing for products</p>
         </div>
-        <Button onClick={openCreate} className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-2 shrink-0">
+        <Button onClick={openCreate} className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white gap-2 shrink-0">
           <Plus className="w-4 h-4" /> Add Promotion
         </Button>
       </div>
@@ -208,11 +208,11 @@ export default function Promotions() {
               <tr><td colSpan={7} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No promotions found</td></tr>
             ) : promos.map(p => (
               <tr key={p.id}
-                className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors"
+                className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors"
                 onClick={() => navigate(`/admin/promotions/${p.id}`)}>
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <div className="flex items-center gap-2">
-                    <Percent className="w-4 h-4 text-[--e-orange] shrink-0" strokeWidth={1.5} />
+                    <Percent className="w-4 h-4 text-(--e-orange) shrink-0" strokeWidth={1.5} />
                     {p.name}
                   </div>
                 </td>
@@ -252,7 +252,7 @@ export default function Promotions() {
               <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Name <span className="text-[#DC2626]">*</span></Label>
               <Input value={form.name} onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setNameError(""); }}
                 placeholder="e.g. Summer Early Bird 2025"
-                className={`h-10 border-[#E8E6E2] focus:border-[--e-orange] ${nameError ? "border-[#DC2626]" : ""}`} />
+                className={`h-10 border-[#E8E6E2] focus:border-(--e-orange) ${nameError ? "border-[#DC2626]" : ""}`} />
               {nameError && <p className="text-xs text-[#DC2626]">{nameError}</p>}
             </div>
             <div className="space-y-1.5">
@@ -275,19 +275,19 @@ export default function Promotions() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">From Date</Label>
                 <Input type="date" value={form.fromDate} onChange={e => setForm(f => ({ ...f, fromDate: e.target.value }))}
-                  className="h-10 border-[#E8E6E2] focus:border-[--e-orange]" />
+                  className="h-10 border-[#E8E6E2] focus:border-(--e-orange)" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">To Date</Label>
                 <Input type="date" value={form.toDate} onChange={e => setForm(f => ({ ...f, toDate: e.target.value }))}
-                  className="h-10 border-[#E8E6E2] focus:border-[--e-orange]" />
+                  className="h-10 border-[#E8E6E2] focus:border-(--e-orange)" />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Promotion Price <span className="text-[#DC2626]">*</span></Label>
               <Input value={form.promotionPrice} onChange={e => setForm(f => ({ ...f, promotionPrice: e.target.value }))}
                 placeholder="e.g. $320/week, 10% OFF first term, Free enrollment fee"
-                className="h-10 border-[#E8E6E2] focus:border-[--e-orange]" />
+                className="h-10 border-[#E8E6E2] focus:border-(--e-orange)" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Status</Label>
@@ -302,7 +302,7 @@ export default function Promotions() {
             <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E6E2]">
               <Button variant="outline" onClick={closeModal} className="border-[#E8E6E2]">Cancel</Button>
               <Button onClick={() => save.mutate()} disabled={save.isPending}
-                className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-1.5">
+                className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white gap-1.5">
                 {save.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Save Promotion
               </Button>

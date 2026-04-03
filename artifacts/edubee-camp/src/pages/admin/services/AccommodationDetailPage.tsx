@@ -99,7 +99,7 @@ function AddWelfareModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
         <div className="flex items-center gap-2">
-          <HeartPulse size={16} className="text-[--e-orange]" />
+          <HeartPulse size={16} className="text-(--e-orange)" />
           <h3 className="text-base font-bold text-stone-800">Add Welfare Check</h3>
         </div>
         <div className="space-y-3">
@@ -168,14 +168,14 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {/* Client & Contract */}
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Client</h3>
+          <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">Client</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
             <div className="flex justify-between items-center"><span className="text-stone-400">Contract #</span>
               {record.contractId ? (
                 <button onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
-                  className="font-mono text-xs text-[--e-orange] hover:underline flex items-center gap-1">
+                  className="font-mono text-xs text-(--e-orange) hover:underline flex items-center gap-1">
                   {record.contractNumber ?? "View"} <ExternalLink size={10} />
                 </button>
               ) : <span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span>}
@@ -186,7 +186,7 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
 
         {/* Host */}
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Host / Provider</h3>
+          <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">Host / Provider</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.hostName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Contact</span><span className="text-stone-600">{record.hostContact ?? "—"}</span></div>
@@ -199,7 +199,7 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
       {/* Editable fields */}
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Booking Details</h3>
+          <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">Booking Details</h3>
           {isDirty && (
             <div className="flex items-center gap-2">
               <button onClick={discard}
@@ -279,7 +279,7 @@ function WelfareTab({ record, id }: { record: AccomDetail; id: string }) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-stone-700">Welfare Check History ({checks.length})</h3>
         <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 text-xs font-medium text-[--e-orange] hover:underline">
+          className="flex items-center gap-1.5 text-xs font-medium text-(--e-orange) hover:underline">
           <Plus size={13} /> Add Welfare Check
         </button>
       </div>
@@ -490,7 +490,7 @@ function BillingTab({ record, onEditRates }: { record: AccomDetail; onEditRates:
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               {["Item", "Rate", "Qty", "Amount"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[--e-orange] uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-(--e-orange) uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
@@ -524,7 +524,7 @@ function BillingTab({ record, onEditRates }: { record: AccomDetail; onEditRates:
         </div>
         <button
           onClick={onEditRates}
-          className="flex items-center gap-1.5 text-xs font-medium text-[--e-orange] hover:underline shrink-0 ml-4"
+          className="flex items-center gap-1.5 text-xs font-medium text-(--e-orange) hover:underline shrink-0 ml-4"
         >
           <Pencil size={12} /> Edit Rates
         </button>
@@ -620,14 +620,14 @@ export default function AccommodationDetailPage() {
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <FileText size={14} style={{ color: "var(--e-orange)" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Related Contract</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-(--e-orange)">Related Contract</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-stone-400">Contract #</span>
                 <button
                   onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
-                  className="flex items-center gap-1 font-mono text-xs text-[--e-orange] hover:underline font-semibold"
+                  className="flex items-center gap-1 font-mono text-xs text-(--e-orange) hover:underline font-semibold"
                 >
                   {record.contractNumber ?? "View"} <ExternalLink size={10} />
                 </button>
@@ -648,7 +648,7 @@ export default function AccommodationDetailPage() {
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <DollarSign size={14} style={{ color: "var(--e-orange)" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Financial Summary</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-(--e-orange)">Financial Summary</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -681,7 +681,7 @@ export default function AccommodationDetailPage() {
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === t.key ? "border-[--e-orange] text-[--e-orange]" : "border-transparent text-stone-500 hover:text-stone-800"
+              tab === t.key ? "border-(--e-orange) text-(--e-orange)" : "border-transparent text-stone-500 hover:text-stone-800"
             }`}>
             {t.label}
           </button>

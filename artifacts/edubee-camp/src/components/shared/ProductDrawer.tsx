@@ -172,10 +172,10 @@ export default function ProductDrawer({
                   onClick={() => setLocation(`${BASE}/admin/users/${provider.id}`)}
                 >
                   <Avatar className="h-9 w-9 shrink-0">
-                    <AvatarFallback className="bg-[--e-orange]/10 text-[--e-orange] text-xs font-bold">{providerInitials}</AvatarFallback>
+                    <AvatarFallback className="bg-(--e-orange)/10 text-(--e-orange) text-xs font-bold">{providerInitials}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground group-hover:text-[--e-orange] transition-colors truncate">
+                    <p className="text-sm font-medium text-foreground group-hover:text-(--e-orange) transition-colors truncate">
                       {provider.fullName ?? "—"}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">{provider.email}</p>
@@ -314,7 +314,7 @@ export default function ProductDrawer({
                 <Button variant="outline" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
                 <Button
                   size="sm"
-                  className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white"
+                  className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white"
                   onClick={handleSave}
                   disabled={saveMutation.isPending || !form.productName}
                 >
@@ -326,7 +326,7 @@ export default function ProductDrawer({
                 <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
                 <Button
                   size="sm"
-                  className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white"
+                  className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white"
                   onClick={handleSave}
                   disabled={saveMutation.isPending || !form.productName}
                 >
@@ -334,7 +334,7 @@ export default function ProductDrawer({
                 </Button>
               </>
             ) : (
-              <Button size="sm" className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white" onClick={() => setEditing(true)}>
+              <Button size="sm" className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white" onClick={() => setEditing(true)}>
                 Edit
               </Button>
             )}

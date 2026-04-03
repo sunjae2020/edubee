@@ -29,7 +29,7 @@ export default function MyRevenue() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center"><BarChart3 className="w-5 h-5 text-[--e-orange]" /></div>
+        <div className="w-9 h-9 rounded-lg bg-(--e-orange)/10 flex items-center justify-center"><BarChart3 className="w-5 h-5 text-(--e-orange)" /></div>
         <div><h1 className="text-lg font-bold">My Revenue</h1><p className="text-xs text-muted-foreground">Year-to-date earnings breakdown and monthly trend</p></div>
       </div>
 
@@ -54,8 +54,8 @@ export default function MyRevenue() {
             label: "Net Revenue (YTD)",
             value: `A$${(revenue?.netRevenue ?? 0).toLocaleString("en-AU", { minimumFractionDigits: 2 })}`,
             sub: "What you actually receive",
-            icon: <DollarSign className="w-4 h-4 text-[--e-orange]" />,
-            color: "text-[--e-orange]",
+            icon: <DollarSign className="w-4 h-4 text-(--e-orange)" />,
+            color: "text-(--e-orange)",
           },
         ].map(k => (
           <div key={k.label} className="bg-white rounded-xl border p-4">
@@ -68,7 +68,7 @@ export default function MyRevenue() {
 
       {/* Monthly Revenue Chart */}
       <div className="bg-white rounded-xl border p-5">
-        <h2 className="text-sm font-semibold mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-[--e-orange]" /> Monthly Revenue (Net)</h2>
+        <h2 className="text-sm font-semibold mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-(--e-orange)" /> Monthly Revenue (Net)</h2>
         {isLoading ? <Skeleton className="h-40" /> : byMonth.length === 0 ? (
           <div className="h-40 flex items-center justify-center text-muted-foreground text-sm">No revenue data yet</div>
         ) : (
@@ -81,7 +81,7 @@ export default function MyRevenue() {
                 <div key={m.month} className="flex items-center gap-3">
                   <span className="text-xs text-muted-foreground w-12 text-right">{label}</span>
                   <div className="flex-1 bg-muted/30 rounded-full h-6 overflow-hidden">
-                    <div className="h-full bg-[--e-orange] rounded-full flex items-center justify-end pr-2 transition-all duration-500" style={{ width: `${Math.max(pct, 1)}%` }}>
+                    <div className="h-full bg-(--e-orange) rounded-full flex items-center justify-end pr-2 transition-all duration-500" style={{ width: `${Math.max(pct, 1)}%` }}>
                       <span className="text-[10px] text-white font-medium">A${m.amount.toLocaleString("en-AU", { minimumFractionDigits: 0 })}</span>
                     </div>
                   </div>

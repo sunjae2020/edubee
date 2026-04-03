@@ -81,7 +81,7 @@ export default function JournalEntryDetailPage() {
       <div className="flex flex-col items-center justify-center py-24 text-[#A8A29E]">
         <BookOpen className="w-10 h-10 mb-3" strokeWidth={1} />
         <p className="text-sm">Journal entry not found.</p>
-        <Button variant="link" className="text-[--e-orange] mt-2" onClick={() => navigate("/admin/accounting/journal")}>
+        <Button variant="link" className="text-(--e-orange) mt-2" onClick={() => navigate("/admin/accounting/journal")}>
           Back to Journal Entries
         </Button>
       </div>
@@ -100,10 +100,10 @@ export default function JournalEntryDetailPage() {
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div className="flex items-center gap-2 flex-wrap">
-          <BookOpen className="w-5 h-5 text-[--e-orange]" strokeWidth={1.5} />
+          <BookOpen className="w-5 h-5 text-(--e-orange)" strokeWidth={1.5} />
           <h1 className="text-xl font-bold text-[#1C1917] leading-none">Journal Entry</h1>
           {entry.entryType && (
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[--e-orange-lt] text-[--e-orange]">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-(--e-orange-lt) text-(--e-orange)">
               {entry.entryType}
             </span>
           )}
@@ -141,7 +141,7 @@ export default function JournalEntryDetailPage() {
         </div>
 
         <div className="border-t border-[#F4F3F1] pt-5 space-y-5">
-          <h3 className="text-xs font-semibold uppercase tracking-widest text-[--e-orange]">Journal Lines</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-widest text-(--e-orange)">Journal Lines</h3>
           <div className="grid grid-cols-2 gap-x-8 gap-y-4">
             <InfoRow
               label="Debit Account"
@@ -166,7 +166,7 @@ export default function JournalEntryDetailPage() {
             {entry.contractId && (
               <button
                 onClick={() => navigate(`/admin/crm/contracts/${entry.contractId}`)}
-                className="flex items-center gap-1.5 text-sm text-[--e-orange] hover:underline"
+                className="flex items-center gap-1.5 text-sm text-(--e-orange) hover:underline"
               >
                 <ExternalLink size={13} /> View Contract
               </button>
@@ -174,7 +174,7 @@ export default function JournalEntryDetailPage() {
             {entry.paymentHeaderId && (
               <button
                 onClick={() => navigate(`/admin/accounting/payments/${entry.paymentHeaderId}`)}
-                className="flex items-center gap-1.5 text-sm text-[--e-orange] hover:underline"
+                className="flex items-center gap-1.5 text-sm text-(--e-orange) hover:underline"
               >
                 <ExternalLink size={13} /> View Payment
               </button>

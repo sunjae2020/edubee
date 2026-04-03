@@ -51,7 +51,7 @@ export default function ImpersonationLogs() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center"><Eye className="w-5 h-5 text-[--e-orange]" /></div>
+        <div className="w-9 h-9 rounded-lg bg-(--e-orange)/10 flex items-center justify-center"><Eye className="w-5 h-5 text-(--e-orange)" /></div>
         <div><h1 className="text-lg font-bold">Impersonation Logs</h1><p className="text-xs text-muted-foreground">Audit trail of all "View As" sessions — who viewed as whom, when, from where</p></div>
       </div>
 
@@ -86,7 +86,7 @@ export default function ImpersonationLogs() {
             {sorted.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground text-sm">No impersonation sessions recorded</td></tr>
             ) : sorted.map(log => (
-              <tr key={log.id} className="border-t hover:bg-[--e-orange-lt]">
+              <tr key={log.id} className="border-t hover:bg-(--e-orange-lt)">
                 <td className="px-4 py-3">
                   <div className="font-medium text-xs">{log.actor?.fullName ?? "—"}</div>
                   <div className="text-[10px] text-muted-foreground">{log.actor?.email}</div>

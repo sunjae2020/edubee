@@ -102,7 +102,7 @@ export default function PaymentDetailPage() {
       <div className="flex flex-col items-center justify-center py-24 text-[#A8A29E]">
         <CreditCard className="w-10 h-10 mb-3" strokeWidth={1} />
         <p className="text-sm">Payment not found.</p>
-        <Button variant="link" className="text-[--e-orange] mt-2" onClick={() => navigate("/admin/accounting/payments")}>
+        <Button variant="link" className="text-(--e-orange) mt-2" onClick={() => navigate("/admin/accounting/payments")}>
           Back to Payments
         </Button>
       </div>
@@ -122,7 +122,7 @@ export default function PaymentDetailPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-2 flex-wrap">
-            <CreditCard className="w-5 h-5 text-[--e-orange]" strokeWidth={1.5} />
+            <CreditCard className="w-5 h-5 text-(--e-orange)" strokeWidth={1.5} />
             <h1 className="text-xl font-bold text-[#1C1917] leading-none font-mono">
               {payment.paymentRef ?? payment.id.slice(0, 8).toUpperCase()}
             </h1>
@@ -160,7 +160,7 @@ export default function PaymentDetailPage() {
         <div className="grid grid-cols-2 gap-x-8 gap-y-5">
           <InfoRow label="Payment Date" value={fmtDate(payment.paymentDate)} />
           <InfoRow label="Payment Type" value={
-            <span className="px-2 py-0.5 rounded text-xs font-medium bg-[--e-orange-lt] text-[--e-orange]">
+            <span className="px-2 py-0.5 rounded text-xs font-medium bg-(--e-orange-lt) text-(--e-orange)">
               {payment.paymentType}
             </span>
           } />
@@ -194,7 +194,7 @@ export default function PaymentDetailPage() {
             <tbody className="divide-y divide-[#F4F3F1]">
               {payment.lines.map(line => (
                 <tr key={line.id}
-                  className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors"
+                  className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors"
                   onClick={() => line.contractId && navigate(`/admin/crm/contracts/${line.contractId}`)}>
                   <td className="px-6 py-3 font-mono text-xs text-[#1C1917]">
                     {line.contractNumber ?? "—"}
@@ -225,10 +225,10 @@ export default function PaymentDetailPage() {
             <tbody className="divide-y divide-[#F4F3F1]">
               {payment.journalEntries.map(je => (
                 <tr key={je.id}
-                  className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors"
+                  className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors"
                   onClick={() => navigate(`/admin/accounting/journal/${je.id}`)}>
                   <td className="px-6 py-3 text-[#57534E] text-xs">
-                    <span className="font-mono font-bold text-[--e-orange] mr-1">{je.debitCoa}</span>
+                    <span className="font-mono font-bold text-(--e-orange) mr-1">{je.debitCoa}</span>
                     {je.debitCoaName && <span className="text-[#A8A29E]">{je.debitCoaName}</span>}
                   </td>
                   <td className="px-6 py-3 text-[#57534E] text-xs">

@@ -166,7 +166,7 @@ export default function Settlement() {
           placeholder="Search by student name or contract number…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full h-9 pl-9 pr-3 rounded-lg border border-[#E8E6E2] text-sm bg-white focus:outline-none focus:border-[--e-orange]"
+          className="w-full h-9 pl-9 pr-3 rounded-lg border border-[#E8E6E2] text-sm bg-white focus:outline-none focus:border-(--e-orange)"
         />
       </div>
 
@@ -207,7 +207,7 @@ export default function Settlement() {
               {sorted.map(r => (
                 <tr key={r.id}
                   onClick={() => navigate(`${BASE}/admin/services/settlement/${r.id}`)}
-                  className="border-b border-[#E8E6E2] cursor-pointer transition-colors hover:bg-[--e-orange-lt]">
+                  className="border-b border-[#E8E6E2] cursor-pointer transition-colors hover:bg-(--e-orange-lt)">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       <Initials name={r.clientName ?? r.studentName} />
@@ -258,26 +258,26 @@ export default function Settlement() {
                 <input type="text" value={form.contractId ?? ""}
                   onChange={e => setForm(f => ({ ...f, contractId: e.target.value }))}
                   placeholder="Paste contract UUID…"
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-(--e-orange)" />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Arrival Date</label>
                 <input type="date" value={form.arrivalDate ?? ""}
                   onChange={e => setForm(f => ({ ...f, arrivalDate: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-(--e-orange)" />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Service Fee (A$)</label>
                 <input type="number" value={form.grossAmount ?? ""}
                   onChange={e => setForm(f => ({ ...f, grossAmount: e.target.value }))}
                   placeholder="0.00"
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-(--e-orange)" />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Notes</label>
                 <textarea rows={2} value={form.notes ?? ""}
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange] resize-none" />
+                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-(--e-orange) resize-none" />
               </div>
             </div>
             <div className="px-6 py-4 border-t border-[#E8E6E2] flex justify-end gap-2">

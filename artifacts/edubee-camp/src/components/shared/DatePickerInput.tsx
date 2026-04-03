@@ -76,7 +76,7 @@ export default function DatePickerInput({
         <div
           className={cn(
             "flex h-9 w-full items-center rounded-md border border-border bg-background px-3 text-sm ring-offset-background",
-            "focus-within:ring-2 focus-within:ring-[--e-orange]/40 focus-within:border-[--e-orange]",
+            "focus-within:ring-2 focus-within:ring-(--e-orange)/40 focus-within:border-(--e-orange)",
             "cursor-pointer",
             disabled && "opacity-50 pointer-events-none",
             className

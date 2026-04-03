@@ -109,7 +109,7 @@ export default function AccountsPage() {
         </div>
         <Button
           size="sm"
-          className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-1.5 h-8"
+          className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white gap-1.5 h-8"
           onClick={() => navigate("/admin/crm/accounts/new")}
         >
           <Plus className="w-3.5 h-3.5" /> New Account
@@ -124,7 +124,7 @@ export default function AccountsPage() {
             placeholder="Search accounts…"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
-            className="pl-8 h-9 text-sm border-[#E8E6E2] focus-visible:border-[--e-orange] focus-visible:ring-[--e-orange]/20"
+            className="pl-8 h-9 text-sm border-[#E8E6E2] focus-visible:border-(--e-orange) focus-visible:ring-(--e-orange)/20"
           />
         </div>
         <Select value={filterType} onValueChange={v => { setFilterType(v); setPage(1); }}>
@@ -175,7 +175,7 @@ export default function AccountsPage() {
                 <td colSpan={COLS} className="px-4 py-16 text-center">
                   <Building2 className="w-8 h-8 mx-auto mb-3 text-muted-foreground/30" />
                   <p className="text-sm text-muted-foreground font-medium">No accounts found</p>
-                  <Button size="sm" className="mt-3 bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-1.5"
+                  <Button size="sm" className="mt-3 bg-(--e-orange) hover:bg-(--e-orange-hover) text-white gap-1.5"
                     onClick={() => navigate("/admin/crm/accounts/new")}>
                     <Plus className="w-3.5 h-3.5" /> New Account
                   </Button>
@@ -196,7 +196,7 @@ export default function AccountsPage() {
                 const listImgSrc = row.profileImageUrl || null;
                 return (
                   <tr key={row.id}
-                    className="border-b last:border-0 hover:bg-[--e-orange-lt] transition-colors cursor-pointer"
+                    className="border-b last:border-0 hover:bg-(--e-orange-lt) transition-colors cursor-pointer"
                     onClick={() => navigate(`/admin/crm/accounts/${row.id}`)}>
                     <td className="px-4 py-3 font-medium text-[#1C1917]">
                       <div className="flex items-center gap-2.5">

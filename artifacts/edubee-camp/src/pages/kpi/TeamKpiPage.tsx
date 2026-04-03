@@ -16,7 +16,7 @@ const fmt   = (n: number) =>
 
 const SELECT_CLS =
   'text-sm border border-[#E8E6E2] rounded-lg px-3 py-2 bg-white text-[#1C1917] ' +
-  'focus:outline-none focus:ring-2 focus:ring-[--e-orange]/40 focus:border-[--e-orange] transition-colors';
+  'focus:outline-none focus:ring-2 focus:ring-(--e-orange)/40 focus:border-(--e-orange) transition-colors';
 
 export default function TeamKpiPage() {
   const { user: currentUser } = useAuth();
@@ -56,8 +56,8 @@ export default function TeamKpiPage() {
     <div className="p-6 space-y-5 max-w-6xl mx-auto">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 bg-[--e-orange-lt]">
-            <Users className="w-5 h-5 text-[--e-orange]" strokeWidth={1.8} />
+          <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 bg-(--e-orange-lt)">
+            <Users className="w-5 h-5 text-(--e-orange)" strokeWidth={1.8} />
           </div>
           <div>
             <h1 className="text-xl font-bold text-[#1C1917]">Team KPI</h1>
@@ -88,7 +88,7 @@ export default function TeamKpiPage() {
 
       {loading && (
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-2 border-[--e-orange] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-(--e-orange) border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
@@ -96,7 +96,7 @@ export default function TeamKpiPage() {
         <>
           <div className="flex items-center gap-3 px-1">
             <span className="text-base font-semibold text-[#1C1917]">{data.teamName}</span>
-            <span className="text-xs px-2.5 py-1 bg-[--e-orange-lt] text-[--e-orange] rounded-full font-medium border border-[--e-orange]/20">
+            <span className="text-xs px-2.5 py-1 bg-(--e-orange-lt) text-(--e-orange) rounded-full font-medium border border-(--e-orange)/20">
               {data.memberCount} {data.memberCount === 1 ? 'member' : 'members'}
             </span>
             {data.members[0] && (
@@ -134,8 +134,8 @@ export default function TeamKpiPage() {
                     className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-[#FAFAF9] transition-colors text-left"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-[--e-orange-lt] flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-[--e-orange]">
+                      <div className="w-7 h-7 rounded-full bg-(--e-orange-lt) flex items-center justify-center shrink-0">
+                        <span className="text-xs font-bold text-(--e-orange)">
                           {member.staffName?.charAt(0) ?? '?'}
                         </span>
                       </div>
@@ -145,7 +145,7 @@ export default function TeamKpiPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-[--e-orange]">{fmt(member.netRevenue)}</span>
+                      <span className="text-sm font-semibold text-(--e-orange)">{fmt(member.netRevenue)}</span>
                       {expandedStaff === member.staffId
                         ? <ChevronUp className="w-4 h-4 text-[#A8A29E]" />
                         : <ChevronDown className="w-4 h-4 text-[#A8A29E]" />
@@ -170,8 +170,8 @@ export default function TeamKpiPage() {
 
       {!selectedTeamId && !loading && (
         <div className="flex flex-col items-center py-16 gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[--e-orange-lt] flex items-center justify-center">
-            <Users className="w-6 h-6 text-[--e-orange]" strokeWidth={1.5} />
+          <div className="w-12 h-12 rounded-2xl bg-(--e-orange-lt) flex items-center justify-center">
+            <Users className="w-6 h-6 text-(--e-orange)" strokeWidth={1.5} />
           </div>
           <p className="text-sm text-[#A8A29E]">Select a team and click Search.</p>
         </div>

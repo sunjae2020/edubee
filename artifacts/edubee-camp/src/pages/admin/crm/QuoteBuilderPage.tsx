@@ -316,7 +316,7 @@ function AccountLookupField({
       <div className="flex items-center gap-2 min-h-8">
         {selected ? (
           <>
-            <Building2 size={14} className="text-[--e-orange] shrink-0" />
+            <Building2 size={14} className="text-(--e-orange) shrink-0" />
             <span className="text-sm font-medium text-gray-800">{selected.name}</span>
             {(selected as any).accountType && (
               <span className="text-xs text-gray-400">({(selected as any).accountType})</span>
@@ -430,7 +430,7 @@ function AccountLookupField({
                   onClick={() => setNewType(t)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                     newType === t
-                      ? "bg-[--e-orange] text-white border-[--e-orange]"
+                      ? "bg-(--e-orange) text-white border-(--e-orange)"
                       : "bg-white text-gray-600 border-gray-200 hover:border-orange-300"
                   }`}
                 >
@@ -1674,7 +1674,7 @@ export default function QuoteBuilderPage() {
               size="sm"
               onClick={() => convertMutation.mutate()}
               disabled={convertMutation.isPending || activeLines.length === 0}
-              className="text-sm border-[--e-orange] text-[--e-orange] hover:bg-[--e-orange-lt]"
+              className="text-sm border-(--e-orange) text-(--e-orange) hover:bg-(--e-orange-lt)"
             >
               {convertMutation.isPending ? "Converting…" : "Convert to Contract"}
             </Button>

@@ -25,7 +25,7 @@ interface ApplicationForm { id: string; name: string; slug: string; visibility: 
 const TYPE_BADGE: Record<string, string> = {
   Agent: "bg-blue-50 text-blue-700",
   Provider: "bg-purple-50 text-purple-700",
-  Organisation: "bg-[--e-orange-lt] text-[--e-orange]",
+  Organisation: "bg-(--e-orange-lt) text-(--e-orange)",
 };
 
 function CopyButton({ text }: { text: string }) {
@@ -33,7 +33,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      className="shrink-0 p-1.5 rounded hover:bg-[--e-orange-lt] text-[#A8A29E] hover:text-[--e-orange] transition-colors"
+      className="shrink-0 p-1.5 rounded hover:bg-(--e-orange-lt) text-[#A8A29E] hover:text-(--e-orange) transition-colors"
       title="Copy URL"
     >
       {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -105,7 +105,7 @@ function PartnerModal({
     ? parameter.trim() && !paramDuplicate
     : selectedAccount && parameter.trim() && !paramDuplicate;
 
-  const inputCls = "h-9 text-sm border-[#E8E6E2] focus-visible:ring-[--e-orange]/40 focus-visible:border-[--e-orange] rounded-lg";
+  const inputCls = "h-9 text-sm border-[#E8E6E2] focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange) rounded-lg";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -122,7 +122,7 @@ function PartnerModal({
               Partner Account <span className="text-red-500">*</span>
             </label>
             {selectedAccount ? (
-              <div className="flex items-center gap-2 px-3 py-2 bg-[--e-orange-lt] rounded-lg border border-[--e-orange]/30">
+              <div className="flex items-center gap-2 px-3 py-2 bg-(--e-orange-lt) rounded-lg border border-(--e-orange)/30">
                 <span className="text-sm text-[#1C1917] flex-1">{selectedAccount.name}</span>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${TYPE_BADGE[selectedAccount.accountType] ?? "bg-gray-100 text-gray-700"}`}>
                   {selectedAccount.accountType}
@@ -203,7 +203,7 @@ function PartnerModal({
           ].map(opt => (
             <label key={opt.value} className="flex items-start gap-3 cursor-pointer">
               <input type="radio" name="emailNotif" value={opt.value} checked={emailNotif === opt.value}
-                onChange={() => setEmailNotif(opt.value)} className="mt-0.5 accent-[--e-orange]" />
+                onChange={() => setEmailNotif(opt.value)} className="mt-0.5 accent-(--e-orange)" />
               <div>
                 <p className="text-sm font-medium text-[#1C1917]">{opt.label}</p>
                 <p className="text-xs text-[#A8A29E]">{opt.desc}</p>
@@ -235,7 +235,7 @@ function PartnerModal({
           <button
             type="button"
             onClick={() => setIsActive(s => !s)}
-            className={`relative w-11 h-6 rounded-full transition-colors ${isActive ? "bg-[--e-orange]" : "bg-[#E8E6E2]"}`}
+            className={`relative w-11 h-6 rounded-full transition-colors ${isActive ? "bg-(--e-orange)" : "bg-[#E8E6E2]"}`}
           >
             <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isActive ? "left-6" : "left-1"}`} />
           </button>
@@ -245,7 +245,7 @@ function PartnerModal({
           <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
           <Button
             size="sm"
-            className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white"
+            className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white"
             disabled={!canSave || save.isPending}
             onClick={() => save.mutate()}
           >
@@ -312,7 +312,7 @@ export default function ApplicationFormPartners() {
 
   if (formLoading) return (
     <div className="min-h-screen bg-[#FAFAF9] flex items-center justify-center">
-      <Loader2 className="w-6 h-6 animate-spin text-[--e-orange]" />
+      <Loader2 className="w-6 h-6 animate-spin text-(--e-orange)" />
     </div>
   );
 
@@ -331,14 +331,14 @@ export default function ApplicationFormPartners() {
         <div className="flex items-center gap-2 text-sm mb-1">
           <button
             onClick={() => setLocation("/admin/application-forms")}
-            className="text-[#A8A29E] hover:text-[--e-orange] transition-colors"
+            className="text-[#A8A29E] hover:text-(--e-orange) transition-colors"
           >
             Application Forms
           </button>
           <ChevronLeft className="w-3.5 h-3.5 text-[#A8A29E] rotate-180" />
           <button
             onClick={() => setLocation(`/admin/application-forms/${form.id}/edit`)}
-            className="text-[#A8A29E] hover:text-[--e-orange] transition-colors"
+            className="text-[#A8A29E] hover:text-(--e-orange) transition-colors"
           >
             {form.name}
           </button>
@@ -375,7 +375,7 @@ export default function ApplicationFormPartners() {
             </Button>
             <Button
               size="sm"
-              className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white"
+              className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white"
               onClick={() => { setEditTarget(null); setModalOpen(true); }}
             >
               <Plus className="w-4 h-4 mr-1.5" />
@@ -388,7 +388,7 @@ export default function ApplicationFormPartners() {
         <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden">
           {partnersLoading ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-5 h-5 animate-spin text-[--e-orange]" />
+              <Loader2 className="w-5 h-5 animate-spin text-(--e-orange)" />
             </div>
           ) : partners.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 gap-3 text-[#A8A29E]">
@@ -438,7 +438,7 @@ export default function ApplicationFormPartners() {
                         <td className="px-4 py-3">
                           <button
                             onClick={() => toggleActive.mutate({ pid: p.id, isActive: !p.isActive })}
-                            className={`relative w-10 h-5 rounded-full transition-colors ${p.isActive ? "bg-[--e-orange]" : "bg-[#E8E6E2]"}`}
+                            className={`relative w-10 h-5 rounded-full transition-colors ${p.isActive ? "bg-(--e-orange)" : "bg-[#E8E6E2]"}`}
                           >
                             <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${p.isActive ? "left-5" : "left-0.5"}`} />
                           </button>
@@ -447,7 +447,7 @@ export default function ApplicationFormPartners() {
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => { setEditTarget(p); setModalOpen(true); }}
-                              className="p-1.5 rounded-lg hover:bg-[--e-orange-lt] text-[#57534E] hover:text-[--e-orange] transition-colors"
+                              className="p-1.5 rounded-lg hover:bg-(--e-orange-lt) text-[#57534E] hover:text-(--e-orange) transition-colors"
                               title="Edit"
                             >
                               <Edit2 className="w-3.5 h-3.5" />

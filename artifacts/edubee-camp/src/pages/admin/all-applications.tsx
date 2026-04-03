@@ -192,7 +192,7 @@ function NewApplicationDropdown({ navigate }: { navigate: (path: string) => void
     <div ref={ref} className="relative">
       <Button
         size="sm"
-        className="gap-1.5 border border-[--e-orange] bg-[--e-orange] text-white hover:bg-white hover:text-[--e-orange] pr-2"
+        className="gap-1.5 border border-(--e-orange) bg-(--e-orange) text-white hover:bg-white hover:text-(--e-orange) pr-2"
         onClick={() => setOpen(o => !o)}
       >
         <Plus className="w-4 h-4" />
@@ -205,7 +205,7 @@ function NewApplicationDropdown({ navigate }: { navigate: (path: string) => void
             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-[#FFF0E0] hover:text-[#C2410C] transition-colors text-left"
             onClick={() => { setOpen(false); navigate("/admin/camp-applications/new"); }}
           >
-            <Tent className="w-4 h-4 shrink-0 text-[--e-orange]" />
+            <Tent className="w-4 h-4 shrink-0 text-(--e-orange)" />
             <div>
               <div className="font-medium">Camp Application</div>
               <div className="text-xs text-muted-foreground">For camp programs</div>

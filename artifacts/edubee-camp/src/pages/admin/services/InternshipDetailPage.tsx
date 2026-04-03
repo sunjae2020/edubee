@@ -78,7 +78,7 @@ function StageStepper({ current, onSelect }: { current: string; onSelect: (s: st
             <button
               onClick={() => onSelect(stage.key)}
               className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-lg transition-all hover:bg-stone-50 shrink-0 ${
-                active ? "ring-2 ring-[--e-orange] ring-offset-1 bg-[--e-orange-lt]" : ""
+                active ? "ring-2 ring-(--e-orange) ring-offset-1 bg-(--e-orange-lt)" : ""
               }`}
             >
               <div
@@ -92,7 +92,7 @@ function StageStepper({ current, onSelect }: { current: string; onSelect: (s: st
                 {done ? <Check size={12} /> : i + 1}
               </div>
               <span className={`text-[10px] font-medium text-center leading-tight whitespace-nowrap ${
-                active ? "text-[--e-orange]" : done ? "text-[#16A34A]" : "text-stone-400"
+                active ? "text-(--e-orange)" : done ? "text-[#16A34A]" : "text-stone-400"
               }`}>
                 {stage.label}
               </span>
@@ -191,7 +191,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide flex items-center gap-1.5">
+            <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide flex items-center gap-1.5">
               <User size={13} /> Client Info
             </h3>
             {isDirty && (
@@ -219,7 +219,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
             <div className="flex justify-between items-center"><span className="text-stone-400">Contract #</span>
               {record.contractId ? (
                 <button onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
-                  className="font-mono text-xs text-[--e-orange] hover:underline flex items-center gap-1">
+                  className="font-mono text-xs text-(--e-orange) hover:underline flex items-center gap-1">
                   {record.contractNumber ?? "View"} <ExternalLink size={10} />
                 </button>
               ) : <span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span>}
@@ -246,7 +246,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
         </div>
 
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Preferred Industry</h3>
+          <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">Preferred Industry</h3>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Industries (comma-separated)</Label>
             <Input value={preferredIndustryStr} onChange={e => { setPreferredIndustryStr(e.target.value); mark(); }} className="h-9 text-sm" placeholder="e.g. IT, Finance, Marketing" />
@@ -257,12 +257,12 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
       {/* Work Experience */}
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide flex items-center gap-1.5">
+          <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide flex items-center gap-1.5">
             <Briefcase size={13} /> Work Experience
           </h3>
           <button
             onClick={() => setShowAddExp(v => !v)}
-            className="flex items-center gap-1.5 text-xs font-medium text-[--e-orange] hover:underline"
+            className="flex items-center gap-1.5 text-xs font-medium text-(--e-orange) hover:underline"
           >
             <Plus size={13} /> Add Experience
           </button>
@@ -341,7 +341,7 @@ function CompanyMatchTab({ record, onSave }: { record: InternshipDetail; onSave:
   return (
     <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Company & Placement Details</h3>
+        <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">Company & Placement Details</h3>
         {isDirty && (
           <div className="flex items-center gap-2">
             <button onClick={discard}
@@ -427,7 +427,7 @@ function ProgressTab({ record, onSave }: { record: InternshipDetail; onSave: (p:
   return (
     <div className="space-y-5">
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-        <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Document Readiness</h3>
+        <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">Document Readiness</h3>
         <div className="space-y-2">
           <ToggleRow label="Resume Prepared"        checked={resumePrepared}        onChange={v => { setResumePrepared(v); mark(); }} />
           <ToggleRow label="Cover Letter Prepared"  checked={coverLetterPrepared}   onChange={v => { setCoverLetterPrepared(v); mark(); }} />
@@ -437,7 +437,7 @@ function ProgressTab({ record, onSave }: { record: InternshipDetail; onSave: (p:
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Interview</h3>
+          <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">Interview</h3>
           {isDirty && (
             <div className="flex items-center gap-2">
               <button onClick={discard}
@@ -585,7 +585,7 @@ export default function InternshipDetailPage() {
                 <span className="text-stone-400">Contract #</span>
                 <button
                   onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
-                  className="flex items-center gap-1 font-mono text-xs text-[--e-orange] hover:underline font-semibold"
+                  className="flex items-center gap-1 font-mono text-xs text-(--e-orange) hover:underline font-semibold"
                 >
                   {record.contractNumber ?? "View"} <ExternalLink size={10} />
                 </button>
@@ -644,7 +644,7 @@ export default function InternshipDetailPage() {
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === t.key ? "border-[--e-orange] text-[--e-orange]" : "border-transparent text-stone-500 hover:text-stone-800"
+              tab === t.key ? "border-(--e-orange) text-(--e-orange)" : "border-transparent text-stone-500 hover:text-stone-800"
             }`}>
             {t.label}
           </button>

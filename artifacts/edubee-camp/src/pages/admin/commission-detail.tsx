@@ -46,7 +46,7 @@ function TypeBadge({ type }: { type: string }) {
   const map: Record<string, string> = {
     nil:   "bg-[#F4F3F1] text-[#57534E]",
     fixed: "bg-[#EFF6FF] text-[#3B82F6]",
-    rate:  "bg-[--e-orange-lt] text-[--e-orange]",
+    rate:  "bg-(--e-orange-lt) text-(--e-orange)",
   };
   const cls = map[type] ?? "bg-[#F4F3F1] text-[#57534E]";
   return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cls}`}>
@@ -128,7 +128,7 @@ export default function CommissionDetail() {
       <div className="flex flex-col items-center justify-center py-24 text-[#A8A29E]">
         <BadgeDollarSign className="w-10 h-10 mb-3" strokeWidth={1} />
         <p className="text-sm">Commission not found.</p>
-        <Button variant="link" className="text-[--e-orange] mt-2" onClick={() => navigate("/admin/commissions")}>
+        <Button variant="link" className="text-(--e-orange) mt-2" onClick={() => navigate("/admin/commissions")}>
           Back to list
         </Button>
       </div>
@@ -148,7 +148,7 @@ export default function CommissionDetail() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-2 flex-wrap">
-            <BadgeDollarSign className="w-5 h-5 text-[--e-orange]" strokeWidth={1.5} />
+            <BadgeDollarSign className="w-5 h-5 text-(--e-orange)" strokeWidth={1.5} />
             <h1 className="text-xl font-bold text-[#1C1917] leading-none">{commission.name}</h1>
             <TypeBadge type={commission.commissionType} />
             <StatusBadge status={form.status} />
@@ -192,7 +192,7 @@ export default function CommissionDetail() {
             value={form.name}
             onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setNameError(""); }}
             placeholder="e.g. Rate25"
-            className={`h-10 border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 ${nameError ? "border-[#DC2626]" : ""}`}
+            className={`h-10 border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0 ${nameError ? "border-[#DC2626]" : ""}`}
           />
           {nameError && <p className="text-xs text-[#DC2626]">{nameError}</p>}
         </div>
@@ -219,7 +219,7 @@ export default function CommissionDetail() {
               value={form.rateValue}
               onChange={e => setForm(f => ({ ...f, rateValue: e.target.value }))}
               placeholder="e.g. 25"
-              className="h-10 border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 w-48"
+              className="h-10 border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0 w-48"
             />
           </div>
         )}
@@ -231,7 +231,7 @@ export default function CommissionDetail() {
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
             placeholder="Describe this commission..."
             rows={3}
-            className="border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 text-sm resize-none"
+            className="border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0 text-sm resize-none"
           />
         </div>
 

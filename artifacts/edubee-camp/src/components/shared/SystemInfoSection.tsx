@@ -115,7 +115,7 @@ export function SystemInfoSection({
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="shrink-0 hover:text-[--e-orange] transition-colors text-muted-foreground"
+                  className="shrink-0 hover:text-(--e-orange) transition-colors text-muted-foreground"
                   title="Copy ID"
                 >
                   {copied ? (

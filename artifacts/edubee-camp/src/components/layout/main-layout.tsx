@@ -90,7 +90,7 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--e-bg-page)" }}>
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[--e-orange] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-(--e-orange) border-t-transparent rounded-full animate-spin" />
           <p className="text-sm" style={{ color: "var(--e-text-2)" }}>Loading workspace…</p>
         </div>
       </div>

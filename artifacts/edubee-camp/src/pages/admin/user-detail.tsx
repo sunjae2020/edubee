@@ -168,12 +168,12 @@ export default function UserDetail() {
         <div className="relative group cursor-pointer shrink-0" onClick={() => !uploadingAvatar && avatarInputRef.current?.click()} title="Change profile photo">
           <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
           {avatarSrc ? (
-            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[--e-orange]/30">
+            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-(--e-orange)/30">
               <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" />
             </div>
           ) : (
             <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-[--e-orange]/10 text-[--e-orange] text-xs font-bold">{initials}</AvatarFallback>
+              <AvatarFallback className="bg-(--e-orange)/10 text-(--e-orange) text-xs font-bold">{initials}</AvatarFallback>
             </Avatar>
           )}
           <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -210,7 +210,7 @@ export default function UserDetail() {
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => window.open(`${BASE}/admin/kpi/staff?staffId=${id}`, "_blank")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-[#E8E6E2] bg-white hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors text-[#57534E]"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-[#E8E6E2] bg-white hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors text-[#57534E]"
                   >
                     <BarChart2 className="w-3.5 h-3.5" />
                     Staff KPI
@@ -240,7 +240,7 @@ export default function UserDetail() {
               <EditableField label="Role" isEditing={isEditing} value={(userRec.role ?? "").replace(/_/g, " ")}
                 editChildren={
                   <Select value={getValue("role")} onValueChange={v => setField("role", v)}>
-                    <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-sm border-(--e-orange)"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {ALL_ROLES.filter(r => r !== "super_admin" || currentUser?.role === "super_admin")
                         .map(r => <SelectItem key={r} value={r}>{r.replace(/_/g, " ")}</SelectItem>)}
@@ -250,14 +250,14 @@ export default function UserDetail() {
               <EditableField label="Status" isEditing={isEditing} value={(userRec.status ?? "").replace(/_/g, " ")}
                 editChildren={
                   <Select value={getValue("status")} onValueChange={v => setField("status", v)}>
-                    <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-sm border-(--e-orange)"><SelectValue /></SelectTrigger>
                     <SelectContent>{ALL_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
                   </Select>
                 } />
               <EditableField label="Team" isEditing={isEditing && canEdit} value={userTeamName ?? "—"}
                 editChildren={
                   <Select value={getValue("teamId") ?? "none"} onValueChange={v => setField("teamId", v === "none" ? null : v)}>
-                    <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue placeholder="No team" /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-sm border-(--e-orange)"><SelectValue placeholder="No team" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No team</SelectItem>
                       {teamList.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
@@ -329,7 +329,7 @@ export default function UserDetail() {
               </div>
               <div className="bg-white border rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <Minus className="w-4 h-4 text-[--e-orange]" />
+                  <Minus className="w-4 h-4 text-(--e-orange)" />
                   <span className="text-xs text-muted-foreground font-medium">Net Balance</span>
                 </div>
                 <div className={`text-sm font-bold font-mono ${balance && balance.netBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
@@ -354,7 +354,7 @@ export default function UserDetail() {
               ) : (
                 <div className="divide-y">
                   {entries.map((entry: any) => (
-                    <div key={entry.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[--e-orange-lt] text-sm">
+                    <div key={entry.id} className="flex items-center gap-3 px-4 py-3 hover:bg-(--e-orange-lt) text-sm">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase min-w-[52px] text-center ${ENTRY_TYPE_COLORS[entry.entryType] ?? "bg-gray-50 text-gray-600"}`}>
                         {entry.entryType}
                       </span>
@@ -407,7 +407,7 @@ export default function UserDetail() {
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-muted-foreground">Products provided by this Service Provider.</p>
                     {canEditProducts && (
-                      <Button size="sm" className="gap-1.5 bg-[--e-orange] hover:bg-[#d97706] text-white"
+                      <Button size="sm" className="gap-1.5 bg-(--e-orange) hover:bg-[#d97706] text-white"
                         onClick={() => { setCreateProductMode(true); setEditProductId(null); setProductDrawerOpen(true); }}>
                         <Plus className="w-3.5 h-3.5" /> Add Product
                       </Button>
@@ -439,7 +439,7 @@ export default function UserDetail() {
                               <Package className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-30" />
                               <p className="text-sm text-muted-foreground mb-3">No products registered.</p>
                               {canEditProducts && (
-                                <Button size="sm" className="gap-1.5 bg-[--e-orange] hover:bg-[#d97706] text-white"
+                                <Button size="sm" className="gap-1.5 bg-(--e-orange) hover:bg-[#d97706] text-white"
                                   onClick={() => { setCreateProductMode(true); setEditProductId(null); setProductDrawerOpen(true); }}>
                                   <Plus className="w-3.5 h-3.5" /> Add First Product
                                 </Button>
@@ -452,7 +452,7 @@ export default function UserDetail() {
                             const linkedNames: string[] = [];
 
                             return (
-                              <tr key={p.id} className="border-b hover:bg-[--e-orange-lt] h-12">
+                              <tr key={p.id} className="border-b hover:bg-(--e-orange-lt) h-12">
                                 <td className="px-4 py-2 font-medium">{p.productName}</td>
                                 <td className="px-4 py-2">
                                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_BADGE[p.productType] ?? "bg-gray-100 text-gray-600"}`}>
@@ -464,7 +464,7 @@ export default function UserDetail() {
                                     <TooltipProvider delayDuration={200}>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[--e-orange-lt] text-[--e-orange] border border-[--e-orange-a20] cursor-default">
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-(--e-orange-lt) text-(--e-orange) border border-(--e-orange-a20) cursor-default">
                                             {row.linkCount} group{row.linkCount !== 1 ? "s" : ""}
                                           </span>
                                         </TooltipTrigger>

@@ -29,7 +29,7 @@ const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   trial:     { bg: "#FFFBEB", color: "#92400E" },
 };
 
-const inp = `w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white placeholder-[#A8A29E] focus:outline-none focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)] transition-all`;
+const inp = `w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white placeholder-[#A8A29E] focus:outline-none focus:border-(--e-orange) focus:shadow-[0_0_0_3px_var(--e-orange-ring)] transition-all`;
 
 function Badge({ label, style }: { label: string; style: { bg: string; color: string } }) {
   return (
@@ -83,7 +83,7 @@ function AddTenantPanel({ onClose, onSaved }: { onClose: () => void; onSaved: ()
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2 flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Company Name <span className="text-[--e-orange]">*</span></label>
+          <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Company Name <span className="text-(--e-orange)">*</span></label>
           <input className={inp} placeholder="e.g. Acme Education Pty Ltd" value={form.name} onChange={e => set("name", e.target.value)} />
         </div>
 
@@ -199,7 +199,7 @@ export default function TenantList() {
           <div className="relative w-60">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
             <input
-              className="w-full h-9 pl-8 pr-3 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[--e-orange] bg-white"
+              className="w-full h-9 pl-8 pr-3 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-(--e-orange) bg-white"
               placeholder="Search tenants…"
               value={search}
               onChange={e => handleSearch(e.target.value)}
@@ -227,7 +227,7 @@ export default function TenantList() {
       {/* Table */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
         {isLoading ? (
-          <div className="flex items-center justify-center h-48"><Loader2 size={24} className="animate-spin text-[--e-orange]" /></div>
+          <div className="flex items-center justify-center h-48"><Loader2 size={24} className="animate-spin text-(--e-orange)" /></div>
         ) : tenants.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-[#A8A29E]">
             <Building2 size={32} strokeWidth={1} />
@@ -281,7 +281,7 @@ export default function TenantList() {
                       <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => navigate(`/superadmin/tenants/${t.id}`)}
-                          className="h-7 w-7 flex items-center justify-center rounded-lg border border-[#E8E6E2] text-[#57534E] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
+                          className="h-7 w-7 flex items-center justify-center rounded-lg border border-[#E8E6E2] text-[#57534E] hover:border-(--e-orange) hover:text-(--e-orange) transition-colors"
                           title="Edit tenant"
                         >
                           <Pencil size={12} />

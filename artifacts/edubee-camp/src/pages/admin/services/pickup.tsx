@@ -81,7 +81,7 @@ function TodayBanner({ rows, onNavigate }: { rows: PickupRow[]; onNavigate: (id:
           return (
             <button
               key={row.id}
-              className="w-full text-left bg-white rounded-xl border border-[--e-orange]/20 p-3.5 flex items-center gap-4 shadow-sm hover:bg-[#FEF9F5] transition-colors"
+              className="w-full text-left bg-white rounded-xl border border-(--e-orange)/20 p-3.5 flex items-center gap-4 shadow-sm hover:bg-[#FEF9F5] transition-colors"
               onClick={() => onNavigate(row.id)}
             >
               <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
@@ -239,16 +239,16 @@ export default function PickupManagement() {
               return (
                 <tr
                   key={row.id}
-                  className={`hover:bg-[--e-orange-lt] transition-colors cursor-pointer ${todayFlag ? "bg-[#FEF9F5]" : ""}`}
+                  className={`hover:bg-(--e-orange-lt) transition-colors cursor-pointer ${todayFlag ? "bg-[#FEF9F5]" : ""}`}
                   onClick={() => navigate(`${BASE}/admin/services/pickup/${row.id}`)}
                 >
-                  <td className="px-4 py-3 font-mono text-xs font-semibold text-[--e-orange]">
+                  <td className="px-4 py-3 font-mono text-xs font-semibold text-(--e-orange)">
                     {row.contractNumber ?? row.contractId?.slice(0, 8) ?? "—"}
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">
                     {row.clientName ?? row.studentName ?? "—"}
                     {todayFlag && (
-                      <span className="ml-2 text-[10px] font-bold text-[--e-orange] bg-[--e-orange-lt] px-1.5 py-0.5 rounded-full">TODAY</span>
+                      <span className="ml-2 text-[10px] font-bold text-(--e-orange) bg-(--e-orange-lt) px-1.5 py-0.5 rounded-full">TODAY</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground capitalize">

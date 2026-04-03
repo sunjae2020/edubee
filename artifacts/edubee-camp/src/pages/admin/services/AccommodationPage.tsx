@@ -213,7 +213,7 @@ export default function AccommodationPage() {
               return (
                 <tr
                   key={row.id}
-                  className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer"
+                  className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/services/accommodation/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-medium text-stone-800">{row.clientName ?? row.studentName ?? "—"}</td>
@@ -257,13 +257,13 @@ export default function AccommodationPage() {
                 <input type="text" value={createForm.contractId}
                   onChange={e => setCreateForm(f => ({ ...f, contractId: e.target.value }))}
                   placeholder="Paste contract UUID…"
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-(--e-orange)" />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Notes</label>
                 <textarea rows={2} value={createForm.notes}
                   onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange] resize-none" />
+                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-(--e-orange) resize-none" />
               </div>
             </div>
             <div className="px-6 py-4 border-t border-[#E8E6E2] flex justify-end gap-2">

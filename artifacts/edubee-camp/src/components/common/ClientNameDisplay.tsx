@@ -31,7 +31,7 @@ export function ClientNameDisplay({
       {accountId ? (
         <Link
           href={`/admin/crm/accounts/${accountId}`}
-          className={`${fs.full} font-semibold text-[--e-orange] hover:text-[--e-orange-hover] hover:underline transition-colors leading-tight`}
+          className={`${fs.full} font-semibold text-(--e-orange) hover:text-(--e-orange-hover) hover:underline transition-colors leading-tight`}
         >
           {fullName}
         </Link>

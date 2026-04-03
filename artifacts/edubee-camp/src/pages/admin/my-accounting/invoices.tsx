@@ -24,7 +24,7 @@ function DualAmount({ amount, currency, audEquivalent }: { amount?: string | num
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]",
-  sent: "bg-[--e-orange-lt] text-[--e-orange] border-[--e-orange]/20",
+  sent: "bg-(--e-orange-lt) text-(--e-orange) border-(--e-orange)/20",
   paid: "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20",
   overdue: "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
 };
@@ -47,7 +47,7 @@ export default function MyInvoices() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center"><FileText className="w-5 h-5 text-[--e-orange]" /></div>
+        <div className="w-9 h-9 rounded-lg bg-(--e-orange)/10 flex items-center justify-center"><FileText className="w-5 h-5 text-(--e-orange)" /></div>
         <div><h1 className="text-lg font-bold">My Invoices</h1><p className="text-xs text-muted-foreground">Invoices issued to you — view, track and download</p></div>
       </div>
 
@@ -80,7 +80,7 @@ export default function MyInvoices() {
             </tr></thead>
             <tbody>
               {sorted.map(r => (
-                <tr key={r.id} className="border-b last:border-0 hover:bg-[--e-orange-lt]">
+                <tr key={r.id} className="border-b last:border-0 hover:bg-(--e-orange-lt)">
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3 text-right"><DualAmount amount={r.originalAmount ?? r.totalAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>
                   <td className={`px-4 py-3 text-xs ${r.status === "overdue" ? "text-[#DC2626] font-medium" : "text-muted-foreground"}`}>{r.dueDate ?? "—"}</td>

@@ -91,7 +91,7 @@ export function DetailPageLayout({
                   size="sm"
                   onClick={onSave}
                   disabled={isSaving}
-                  className="gap-1.5 bg-[--e-orange] hover:bg-[#d97706] text-white"
+                  className="gap-1.5 bg-(--e-orange) hover:bg-[#d97706] text-white"
                 >
                   {isSaving ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -125,7 +125,7 @@ export function DetailPageLayout({
                   size="sm"
                   onClick={onSave}
                   disabled={isSaving}
-                  className="gap-1.5 bg-[--e-orange] hover:bg-[#d97706] text-white"
+                  className="gap-1.5 bg-(--e-orange) hover:bg-[#d97706] text-white"
                 >
                   {isSaving ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -149,7 +149,7 @@ export function DetailPageLayout({
                 className={cn(
                   "px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 whitespace-nowrap transition-colors",
                   activeTab === tab.key
-                    ? "border-[--e-orange] text-[--e-orange] bg-orange-50/50"
+                    ? "border-(--e-orange) text-(--e-orange) bg-orange-50/50"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40"
                 )}
               >
@@ -185,7 +185,7 @@ export function DetailSection({
 }) {
   return (
     <div className={cn("bg-card rounded-xl border border-border p-5", className)}>
-      {title && <div className="text-xs font-semibold text-[--e-orange] uppercase tracking-widest mb-4 pb-2 border-b border-[--e-orange]/20">{title}</div>}
+      {title && <div className="text-xs font-semibold text-(--e-orange) uppercase tracking-widest mb-4 pb-2 border-b border-(--e-orange)/20">{title}</div>}
       {children}
     </div>
   );
@@ -254,7 +254,7 @@ export function EditableField({
       placeholder={placeholder}
       rows={3}
       className={cn(
-        "w-full border border-[--e-orange] rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[--e-orange] resize-y",
+        "w-full border border-(--e-orange) rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-(--e-orange) resize-y",
         className
       )}
     />
@@ -265,7 +265,7 @@ export function EditableField({
       onChange={e => handleChange?.(e.target.value)}
       placeholder={placeholder}
       className={cn(
-        "w-full border border-[--e-orange] rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[--e-orange]",
+        "w-full border border-(--e-orange) rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-(--e-orange)",
         className
       )}
     />

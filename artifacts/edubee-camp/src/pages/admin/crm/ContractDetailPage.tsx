@@ -29,20 +29,20 @@ const fmtNum = (n?: number | null) => (n != null ? n.toLocaleString() : "—");
 
 const AR_BADGE: Record<string, string> = {
   scheduled: "bg-[#F4F3F1] text-[#57534E]",
-  invoiced:  "bg-[--e-orange-lt] text-[--e-orange]",
+  invoiced:  "bg-(--e-orange-lt) text-(--e-orange)",
   overdue:   "bg-[#FEF2F2] text-[#DC2626]",
   partial:   "bg-[#FEF9C3] text-[#CA8A04]",
   paid:      "bg-[#DCFCE7] text-[#16A34A]",
 };
 const AP_BADGE: Record<string, string> = {
   pending: "bg-[#F4F3F1] text-[#57534E]",
-  ready:   "bg-[--e-orange-lt] text-[--e-orange]",
+  ready:   "bg-(--e-orange-lt) text-(--e-orange)",
   paid:    "bg-[#DCFCE7] text-[#16A34A]",
   overdue: "bg-[#FEF2F2] text-[#DC2626]",
 };
 const CONTRACT_STATUS_BADGE: Record<string, string> = {
   active:      "bg-[#DCFCE7] text-[#16A34A]",
-  "in progress": "bg-[--e-orange-lt] text-[--e-orange]",
+  "in progress": "bg-(--e-orange-lt) text-(--e-orange)",
   overdue:     "bg-[#FEF2F2] text-[#DC2626]",
   completed:   "bg-[#F4F3F1] text-[#57534E]",
   draft:       "bg-[#F4F3F1] text-[#A8A29E]",
@@ -109,7 +109,7 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
               ? (
                 <button
                   onClick={() => navigate(`/admin/crm/quotes/${contract.quote.id}`)}
-                  className="font-mono text-[--e-orange] hover:text-[#E5721F] hover:underline flex items-center gap-1 text-right"
+                  className="font-mono text-(--e-orange) hover:text-[#E5721F] hover:underline flex items-center gap-1 text-right"
                 >
                   {contract.quote.quoteRefNumber}
                   <ExternalLink size={11} />
@@ -161,7 +161,7 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
         </div>
 
         {readyItems.length > 0 && (
-          <div className="border border-[--e-orange]/30 rounded-xl p-4" style={{ background:"#FFFCF9" }}>
+          <div className="border border-(--e-orange)/30 rounded-xl p-4" style={{ background:"#FFFCF9" }}>
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle size={14} style={{ color:"var(--e-orange)" }} />
               <span className="text-sm font-semibold" style={{ color:"var(--e-orange)" }}>Action Required</span>
@@ -206,7 +206,7 @@ function StatementHistorySection({ contractId, onGenerate }: { contractId: strin
     <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
       <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FileText size={14} className="text-[--e-orange]" />
+          <FileText size={14} className="text-(--e-orange)" />
           <h3 className="text-sm font-semibold text-[#1C1917]">Payment Statements ({rows.length})</h3>
         </div>
         <button
@@ -409,7 +409,7 @@ function ScheduleEditRow({
   saving: boolean;
   errMsg: string;
 }) {
-  const inp = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[--e-orange] w-full";
+  const inp = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-(--e-orange) w-full";
   const sel = inp + " bg-white";
   return (
     <>
@@ -474,8 +474,8 @@ const COST_TYPES = [
   { value: "other",       label: "Other Cost"            },
 ];
 const COST_BADGE: Record<string, string> = {
-  sub_agent:   "bg-[--e-orange-lt] text-[--e-orange]",
-  super_agent: "bg-[--e-orange-lt] text-[--e-orange]",
+  sub_agent:   "bg-(--e-orange-lt) text-(--e-orange)",
+  super_agent: "bg-(--e-orange-lt) text-(--e-orange)",
   referral:    "bg-[#EFF6FF] text-[#1D4ED8]",
   incentive:   "bg-[#F4F3F1] text-[#57534E]",
   school_fee:  "bg-[#FEF9C3] text-[#CA8A04]",
@@ -580,7 +580,7 @@ function CostLinePanel({ cp, contractId }: { cp: any; contractId: string }) {
     }
   };
 
-  const inpCls = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[--e-orange] w-full bg-white";
+  const inpCls = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-(--e-orange) w-full bg-white";
   const selCls = inpCls;
 
   return (
@@ -597,7 +597,7 @@ function CostLinePanel({ cp, contractId }: { cp: any; contractId: string }) {
         </span>
         {!adding && !editId && (
           <button onClick={openAdd}
-            className="h-7 px-2.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium flex items-center gap-1 hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
+            className="h-7 px-2.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium flex items-center gap-1 hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors"
             style={{ color: "#57534E" }}>
             <Plus size={10} /> Add Cost Line
           </button>
@@ -683,7 +683,7 @@ function CostLinePanel({ cp, contractId }: { cp: any; contractId: string }) {
               {showPartnerDrop && partners.length > 0 && (
                 <div className="absolute z-20 mt-1 w-full bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-36 overflow-y-auto">
                   {partners.map((p: any) => (
-                    <button key={p.id} className="w-full text-left px-3 py-1.5 text-xs hover:bg-[--e-orange-lt] hover:text-[--e-orange]"
+                    <button key={p.id} className="w-full text-left px-3 py-1.5 text-xs hover:bg-(--e-orange-lt) hover:text-(--e-orange)"
                       onMouseDown={() => { setF("partnerId", p.id); setF("partnerName", p.name); setPartnerQ(p.name); setShowPartnerDrop(false); }}>
                       {p.name}
                     </button>
@@ -844,7 +844,7 @@ function ContractCatalogModal({
     }
   };
 
-  const inp = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[--e-orange] w-full bg-white";
+  const inp = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-(--e-orange) w-full bg-white";
   const sel = inp;
 
   return (
@@ -866,7 +866,7 @@ function ContractCatalogModal({
                 <div className="relative">
                   <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E] pointer-events-none" />
                   <input
-                    className="w-full h-9 pl-8 pr-3 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[--e-orange]"
+                    className="w-full h-9 pl-8 pr-3 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-(--e-orange)"
                     placeholder="Search products by name…"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
@@ -888,7 +888,7 @@ function ContractCatalogModal({
                   <button
                     key={p.id}
                     onClick={() => handleSelect(p)}
-                    className="w-full text-left px-4 py-3 border-b border-[#F4F3F1] hover:bg-[--e-orange-lt] transition-colors"
+                    className="w-full text-left px-4 py-3 border-b border-[#F4F3F1] hover:bg-(--e-orange-lt) transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -901,7 +901,7 @@ function ContractCatalogModal({
                         )}
                       </div>
                       {p.price && (
-                        <span className="text-sm font-bold text-[--e-orange] whitespace-nowrap shrink-0">
+                        <span className="text-sm font-bold text-(--e-orange) whitespace-nowrap shrink-0">
                           ${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 2 })}
                         </span>
                       )}
@@ -913,17 +913,17 @@ function ContractCatalogModal({
           ) : (
             /* ── Confirm / Fill form ── */
             <div className="p-5 space-y-4 overflow-y-auto flex-1">
-              <div className="rounded-xl border border-[--e-orange] bg-[--e-orange-lt] px-4 py-3 flex items-center justify-between">
+              <div className="rounded-xl border border-(--e-orange) bg-(--e-orange-lt) px-4 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-[#1C1917]">{selected.productName}</p>
                   {selected.providerName && <p className="text-xs text-[#A8A29E]">{selected.providerName}</p>}
                   {selected.serviceModuleType && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[--e-orange]/20 text-[#9A3412] mt-1 inline-block">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-(--e-orange)/20 text-[#9A3412] mt-1 inline-block">
                       {selected.serviceModuleType}
                     </span>
                   )}
                 </div>
-                <button onClick={() => setSelected(null)} className="text-xs underline text-[--e-orange] shrink-0">Change</button>
+                <button onClick={() => setSelected(null)} className="text-xs underline text-(--e-orange) shrink-0">Change</button>
               </div>
 
               {/* AR */}
@@ -1120,13 +1120,13 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => { setShowCatalog(true); setReplaceTarget(null); setAddingNew(false); setNewDraft(null); }}
-              className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
+              className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange)"
               style={{ color:"var(--e-orange)", borderColor:"var(--e-orange)", background:"var(--e-orange-lt)" }}>
               <Search size={12} /> From Catalog
             </button>
             {!addingNew && (
               <button onClick={startAdd}
-                className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
+                className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange)"
                 style={{ color:"#57534E" }}>
                 <Plus size={12} /> Add Instalment
               </button>
@@ -1189,13 +1189,13 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => toggleExpand(cp.id)}
-                            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[11px] font-medium transition-colors ${expandedCpIds.has(cp.id) ? "bg-[--e-orange-lt] border-[--e-orange] text-[--e-orange]" : "border-[#E8E6E2] text-[#57534E] hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"}`}
+                            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[11px] font-medium transition-colors ${expandedCpIds.has(cp.id) ? "bg-(--e-orange-lt) border-(--e-orange) text-(--e-orange)" : "border-[#E8E6E2] text-[#57534E] hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange)"}`}
                             title="Cost Lines">
                             {expandedCpIds.has(cp.id) ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                           </button>
                           <button
                             onClick={() => printInstalment(cp, contract, i)}
-                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors"
                             title="Invoice">
                             <Download size={11} />
                           </button>
@@ -1206,7 +1206,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                           </button>
                           <button
                             onClick={() => { setReplaceTarget({ id: cp.id, name: cp.name ?? `Instalment ${i + 1}` }); setShowCatalog(false); setAddingNew(false); setNewDraft(null); cancelEdit(); }}
-                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors"
                             title="Replace product from catalog">
                             <Search size={11} />
                           </button>
@@ -1326,7 +1326,7 @@ function InvoicesTab({ contract, onGenerateInvoice }: { contract: any; onGenerat
           )}
         </div>
         <button onClick={onGenerateInvoice}
-          className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
+          className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange)"
           style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
           <Plus size={12} /> Generate Invoice
         </button>
@@ -1364,7 +1364,7 @@ function InvoicesTab({ contract, onGenerateInvoice }: { contract: any; onGenerat
                   <td className="px-4 py-3">
                     {inv.pdfUrl ? (
                       <a href={`${BASE}/api/tax-invoices/${inv.id}/pdf`} target="_blank" rel="noreferrer"
-                        className="inline-flex items-center gap-1 h-7 px-2 rounded border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors">
+                        className="inline-flex items-center gap-1 h-7 px-2 rounded border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors">
                         <Download size={11} /> PDF
                       </a>
                     ) : (
@@ -1384,7 +1384,7 @@ function InvoicesTab({ contract, onGenerateInvoice }: { contract: any; onGenerat
 // ── Payments Tab ─────────────────────────────────────────────────────────────
 const PTYPE_BADGE: Record<string, string> = {
   trust_receipt:     "bg-[#DCFCE7] text-[#16A34A]",
-  trust_transfer:    "bg-[--e-orange-lt] text-[--e-orange]",
+  trust_transfer:    "bg-(--e-orange-lt) text-(--e-orange)",
   commission:        "bg-[#EDE9FE] text-[#7C3AED]",
   direct:            "bg-[#F0F9FF] text-[#0369A1]",
   service_fee_camp:  "bg-[#DCFCE7] text-[#16A34A]",
@@ -1524,7 +1524,7 @@ function TxnEditModal({ txn, contractId, onClose }: { txn: any; contractId: stri
   const [err,    setErr]    = useState("");
 
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
-  const inp = "w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]";
+  const inp = "w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-(--e-orange)";
   const sel = inp + " bg-white";
 
   const handleSave = async () => {
@@ -1591,7 +1591,7 @@ function TxnEditModal({ txn, contractId, onClose }: { txn: any; contractId: stri
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Description / Note</label>
-            <textarea rows={2} className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[--e-orange] resize-none"
+            <textarea rows={2} className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-(--e-orange) resize-none"
               value={form.description} onChange={e => set("description", e.target.value)} placeholder="Optional" />
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
@@ -1639,7 +1639,7 @@ function TransactionsTab({ contract, onRecordPayment }: { contract: any; onRecor
         <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[#1C1917]">Transactions ({txns.length})</h3>
           <button onClick={onRecordPayment}
-            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
+            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange)"
             style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
             <Plus size={12} /> Record Payment
           </button>
@@ -1735,7 +1735,7 @@ function TransactionsTab({ contract, onRecordPayment }: { contract: any; onRecor
 // sorted by date, newest first.
 const PTYPE_BADGE_LED: Record<string, string> = {
   trust_receipt:     "bg-[#DCFCE7] text-[#16A34A]",
-  trust_transfer:    "bg-[--e-orange-lt] text-[--e-orange]",
+  trust_transfer:    "bg-(--e-orange-lt) text-(--e-orange)",
   commission:        "bg-[#EDE9FE] text-[#7C3AED]",
   direct:            "bg-[#F0F9FF] text-[#0369A1]",
   service_fee_camp:  "bg-[#DCFCE7] text-[#16A34A]",
@@ -1841,7 +1841,7 @@ function UnifiedTransactionsTab({ contract, onRecordPayment }: { contract: any; 
         <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[#1C1917]">Ledger ({ledger.length})</h3>
           <button onClick={onRecordPayment}
-            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
+            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange)"
             style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
             <Plus size={12} /> Record Payment
           </button>
@@ -2040,7 +2040,7 @@ function RecordPaymentModal({ contract, onClose }: { contract: any; onClose: () 
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Payment Type</label>
             <select value={paymentType} onChange={e => setPaymentType(e.target.value)}
-              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[--e-orange]">
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-(--e-orange)">
               {PAYMENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
@@ -2048,12 +2048,12 @@ function RecordPaymentModal({ contract, onClose }: { contract: any; onClose: () 
             <div>
               <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Date</label>
               <input type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)}
-                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]" />
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-(--e-orange)" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Method</label>
               <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}
-                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[--e-orange]">
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-(--e-orange)">
                 {PAYMENT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </div>
@@ -2061,7 +2061,7 @@ function RecordPaymentModal({ contract, onClose }: { contract: any; onClose: () 
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">{isAR ? "AR Installment" : "AP Line"}</label>
             <select value={cpId} onChange={e => setCpId(e.target.value)}
-              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[--e-orange]">
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-(--e-orange)">
               {pool.length === 0 && <option value="">No products for this type</option>}
               {pool.map((cp: any) => (
                 <option key={cp.id} value={cp.id}>
@@ -2073,17 +2073,17 @@ function RecordPaymentModal({ contract, onClose }: { contract: any; onClose: () 
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Amount (AUD)</label>
             <input type="number" min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}
-              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]" placeholder="0.00" />
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-(--e-orange)" placeholder="0.00" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Bank Reference / Receipt No.</label>
             <input type="text" value={bankReference} onChange={e => setBankReference(e.target.value)}
-              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]" placeholder="Optional" />
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-(--e-orange)" placeholder="Optional" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Notes</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[--e-orange] resize-none" placeholder="Optional" />
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-(--e-orange) resize-none" placeholder="Optional" />
           </div>
           {mut.isError && <p className="text-xs text-red-600">Save failed. Please try again.</p>}
         </div>
@@ -2154,7 +2154,7 @@ function GenerateInvoiceModal({ contract, onClose }: { contract: any; onClose: (
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Contract Product / Installment</label>
             <select value={cpId} onChange={e => setCpId(e.target.value)}
-              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[--e-orange]">
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-(--e-orange)">
               {products.length === 0 && <option value="">No products</option>}
               {products.map((cp: any) => (
                 <option key={cp.id} value={cp.id}>{cp.name} — AP {fmtMoney(cp.apAmount)}</option>
@@ -2176,20 +2176,20 @@ function GenerateInvoiceModal({ contract, onClose }: { contract: any; onClose: (
           <div className="relative">
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">School / Agent Account</label>
             {schoolId ? (
-              <div className="flex items-center gap-2 h-9 border border-[--e-orange] rounded-lg px-3 bg-[--e-orange-lt]">
-                <span className="text-sm text-[--e-orange] font-medium flex-1">{schoolName}</span>
-                <button onClick={() => { setSchoolId(""); setSchoolName(""); setSchoolSearch(""); }} className="text-[#A8A29E] hover:text-[--e-orange]"><X size={13} /></button>
+              <div className="flex items-center gap-2 h-9 border border-(--e-orange) rounded-lg px-3 bg-(--e-orange-lt)">
+                <span className="text-sm text-(--e-orange) font-medium flex-1">{schoolName}</span>
+                <button onClick={() => { setSchoolId(""); setSchoolName(""); setSchoolSearch(""); }} className="text-[#A8A29E] hover:text-(--e-orange)"><X size={13} /></button>
               </div>
             ) : (
               <>
                 <input type="text" value={schoolSearch} onChange={e => setSchoolSearch(e.target.value)}
-                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]"
+                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-(--e-orange)"
                   placeholder="Search by account name (min 2 chars)…" />
                 {(schoolResults as any[]).length > 0 && (
                   <div className="absolute top-full left-0 right-0 bg-white border border-[#E8E6E2] rounded-xl mt-1 shadow-lg z-10 max-h-40 overflow-y-auto">
                     {(schoolResults as any[]).map((a: any) => (
                       <button key={a.id} onClick={() => { setSchoolId(a.id); setSchoolName(a.name); setSchoolSearch(""); }}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-[--e-orange-lt] text-[#1C1917]">
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-(--e-orange-lt) text-[#1C1917]">
                         <span className="font-medium">{a.name}</span>
                         <span className="text-[11px] text-[#A8A29E] ml-2">{a.accountType}</span>
                       </button>
@@ -2203,16 +2203,16 @@ function GenerateInvoiceModal({ contract, onClose }: { contract: any; onClose: (
             <div>
               <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Commission Amount (AUD)</label>
               <input type="number" min="0" step="0.01" value={commissionAmt} onChange={e => setCommissionAmt(e.target.value)}
-                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]" placeholder="0.00" />
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-(--e-orange)" placeholder="0.00" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Due Date</label>
               <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
-                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]" />
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-(--e-orange)" />
             </div>
           </div>
           <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" checked={isGstFree} onChange={e => setIsGstFree(e.target.checked)} className="w-4 h-4 accent-[--e-orange]" />
+            <input type="checkbox" checked={isGstFree} onChange={e => setIsGstFree(e.target.checked)} className="w-4 h-4 accent-(--e-orange)" />
             <span className="text-sm text-[#57534E]">GST Free</span>
           </label>
           {mut.isError && <p className="text-xs text-red-600">Failed to create. Please try again.</p>}
@@ -2361,14 +2361,14 @@ function AddServiceModal({ contract, defaultType, onClose }: {
       <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">{label}</label>
       <input type={type} value={(form as any)[field]} onChange={e => set(field, e.target.value)}
         placeholder={placeholder}
-        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[--e-orange]" />
+        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-(--e-orange)" />
     </div>
   );
   const LabelSelect = ({ label, field, options }: { label: string; field: string; options: { value: string; label: string }[] }) => (
     <div>
       <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">{label}</label>
       <select value={(form as any)[field]} onChange={e => set(field, e.target.value)}
-        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[--e-orange] bg-white">
+        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-(--e-orange) bg-white">
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
@@ -2414,7 +2414,7 @@ function AddServiceModal({ contract, defaultType, onClose }: {
               {SVC_DEFS_MODAL.map(({ key, label, icon: Icon, desc }) => (
                 <button key={key}
                   onClick={() => { setSelectedType(key); setForm(initForm()); }}
-                  className="flex items-start gap-3 p-4 rounded-xl border border-[#E8E6E2] hover:border-[--e-orange] hover:bg-[--e-orange-lt] transition-colors text-left group">
+                  className="flex items-start gap-3 p-4 rounded-xl border border-[#E8E6E2] hover:border-(--e-orange) hover:bg-(--e-orange-lt) transition-colors text-left group">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
                     style={{ background: "#F4F3F1" }}>
                     <Icon size={16} style={{ color: "var(--e-orange)" }} />
@@ -2491,7 +2491,7 @@ function AddServiceModal({ contract, defaultType, onClose }: {
               <div>
                 <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Assigned Staff</label>
                 <select value={form.assignedStaffId} onChange={e => set("assignedStaffId", e.target.value)}
-                  className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[--e-orange] bg-white">
+                  className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-(--e-orange) bg-white">
                   <option value="">— Unassigned —</option>
                   {(staffList ?? []).map((u: any) => (
                     <option key={u.id} value={u.id}>{u.fullName}</option>
@@ -2504,7 +2504,7 @@ function AddServiceModal({ contract, defaultType, onClose }: {
                 <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Notes</label>
                 <textarea value={form.notes} onChange={e => set("notes", e.target.value)}
                   rows={3} placeholder="Optional notes…"
-                  className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[--e-orange] resize-none" />
+                  className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-(--e-orange) resize-none" />
               </div>
 
               {/* Error */}
@@ -2552,9 +2552,9 @@ const SVC_STATUS_BADGE: Record<string, string> = {
   confirmed:      "bg-[#DCFCE7] text-[#16A34A]",
   active:         "bg-[#DCFCE7] text-[#16A34A]",
   checked_in:     "bg-[#DCFCE7] text-[#16A34A]",
-  scheduled:      "bg-[--e-orange-lt] text-[--e-orange]",
-  driver_assigned:"bg-[--e-orange-lt] text-[--e-orange]",
-  profile_review: "bg-[--e-orange-lt] text-[--e-orange]",
+  scheduled:      "bg-(--e-orange-lt) text-(--e-orange)",
+  driver_assigned:"bg-(--e-orange-lt) text-(--e-orange)",
+  profile_review: "bg-(--e-orange-lt) text-(--e-orange)",
   pending:        "bg-[#F4F3F1] text-[#57534E]",
 };
 
@@ -2593,7 +2593,7 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType, on
     <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
       <div className="px-4 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#1C1917]">Services
-          <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[--e-orange-lt] text-[--e-orange]">{active.length}</span>
+          <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-(--e-orange-lt) text-(--e-orange)">{active.length}</span>
         </h3>
         <button
           onClick={() => onAddService()}
@@ -2631,7 +2631,7 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType, on
                     {!isPrimary && (
                       <button
                         onClick={e => { e.stopPropagation(); setPrimaryServiceType(key); }}
-                        className="text-[10px] text-[#A8A29E] hover:text-[--e-orange] hidden group-hover:inline">
+                        className="text-[10px] text-[#A8A29E] hover:text-(--e-orange) hidden group-hover:inline">
                         Set primary
                       </button>
                     )}
@@ -2711,7 +2711,7 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-[#1C1917]">Services</h2>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[--e-orange-lt] text-[--e-orange]">{rows.length}</span>
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-(--e-orange-lt) text-(--e-orange)">{rows.length}</span>
         </div>
         <button
           onClick={() => onAddService()}
@@ -2765,7 +2765,7 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
                       {!isPrimary && (
                         <button
                           onClick={e => { e.stopPropagation(); setPrimaryServiceType(key); }}
-                          className="text-[10px] text-[#A8A29E] hover:text-[--e-orange] hidden group-hover:block leading-tight">
+                          className="text-[10px] text-[#A8A29E] hover:text-(--e-orange) hidden group-hover:block leading-tight">
                           Set as primary
                         </button>
                       )}
@@ -2782,7 +2782,7 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
                   <span className="text-xs text-[#57534E]">{fmtDateShort(to)}</span>
 
                   {/* Dur */}
-                  <span className={`text-xs font-medium ${dur ? "text-[--e-orange]" : "text-[#D6D3D1]"}`}>{dur ?? "—"}</span>
+                  <span className={`text-xs font-medium ${dur ? "text-(--e-orange)" : "text-[#D6D3D1]"}`}>{dur ?? "—"}</span>
 
                   {/* Status */}
                   <div>
@@ -2932,7 +2932,7 @@ function EditAccountModal({ contract, onClose }: { contract: any; onClose: () =>
               }}
             />
             {isFetching && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-[--e-orange] border-t-transparent animate-spin" />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-(--e-orange) border-t-transparent animate-spin" />
             )}
           </div>
 
@@ -2944,7 +2944,7 @@ function EditAccountModal({ contract, onClose }: { contract: any; onClose: () =>
             {results.map((acc: any) => (
               <button key={acc.id}
                 onClick={() => setSelected(acc)}
-                className="w-full flex items-center justify-between px-4 py-3 text-left text-sm transition-colors hover:bg-[--e-orange-lt]"
+                className="w-full flex items-center justify-between px-4 py-3 text-left text-sm transition-colors hover:bg-(--e-orange-lt)"
                 style={selected?.id === acc.id ? { background: "var(--e-orange-lt)" } : {}}>
                 <div>
                   <p className="font-medium text-[#1C1917]">{acc.name}</p>
@@ -3030,7 +3030,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
         {...opts}
         value={form[name]}
         onChange={e => setForm(p => ({ ...p, [name]: e.target.value }))}
-        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[--e-orange]"
+        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-(--e-orange)"
       />
     </div>
   );
@@ -3041,7 +3041,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
       <select
         value={form[name]}
         onChange={e => setForm(p => ({ ...p, [name]: e.target.value }))}
-        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[--e-orange] bg-white">
+        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-(--e-orange) bg-white">
         <option value="">— Select —</option>
         {options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
       </select>
@@ -3086,7 +3086,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
             <select
               value={form.ownerId}
               onChange={e => setForm(p => ({ ...p, ownerId: e.target.value }))}
-              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[--e-orange] bg-white"
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-(--e-orange) bg-white"
             >
               <option value="">— Select Owner —</option>
               {staffList.map(s => (
@@ -3094,7 +3094,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
               ))}
             </select>
             {!form.ownerId && (
-              <p className="text-xs text-[--e-orange] mt-1">
+              <p className="text-xs text-(--e-orange) mt-1">
                 Select an owner to track KPI correctly.
               </p>
             )}
@@ -3105,7 +3105,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
               value={form.notes}
               onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
               rows={3}
-              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[--e-orange] resize-none"
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-(--e-orange) resize-none"
             />
           </div>
         </div>
@@ -3188,7 +3188,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
     pdf: "bg-[#FEF2F2] text-[#DC2626]",
     doc: "bg-[#EFF6FF] text-[#1D4ED8]", docx: "bg-[#EFF6FF] text-[#1D4ED8]",
     xls: "bg-[#F0FDF4] text-[#16A34A]", xlsx: "bg-[#F0FDF4] text-[#16A34A]",
-    jpg: "bg-[--e-orange-lt] text-[--e-orange]", jpeg: "bg-[--e-orange-lt] text-[--e-orange]", png: "bg-[--e-orange-lt] text-[--e-orange]",
+    jpg: "bg-(--e-orange-lt) text-(--e-orange)", jpeg: "bg-(--e-orange-lt) text-(--e-orange)", png: "bg-(--e-orange-lt) text-(--e-orange)",
   };
 
   return (
@@ -3197,7 +3197,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
         <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[#1C1917]">Documents ({isLoading ? "…" : docs.length})</h3>
           <button onClick={() => setShowForm(v => !v)}
-            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
+            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange)"
             style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
             <UploadCloud size={13} /> Upload
           </button>
@@ -3210,21 +3210,21 @@ function DocumentsTab({ contractId }: { contractId: string }) {
               <div>
                 <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Category</label>
                 <select value={category} onChange={e => setCategory(e.target.value)}
-                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[--e-orange]">
+                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-(--e-orange)">
                   {DOC_CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Document Name (optional)</label>
                 <input type="text" value={docName} onChange={e => setDocName(e.target.value)}
-                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]"
+                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-(--e-orange)"
                   placeholder="Leave blank to use filename" />
               </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">File</label>
               <input ref={fileRef} type="file"
-                className="block w-full text-sm text-[#57534E] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[#E8E6E2] file:text-xs file:font-medium file:bg-white file:text-[#57534E] hover:file:bg-[--e-orange-lt] cursor-pointer" />
+                className="block w-full text-sm text-[#57534E] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[#E8E6E2] file:text-xs file:font-medium file:bg-white file:text-[#57534E] hover:file:bg-(--e-orange-lt) cursor-pointer" />
             </div>
             {uploadErr && <p className="text-xs text-red-600">{uploadErr}</p>}
             <div className="flex gap-2 justify-end">
@@ -3272,7 +3272,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
                     <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(doc.createdAt)}</td>
                     <td className="px-4 py-3">
                       <a href={`${BASE}/api/documents/${doc.id}/download`} target="_blank" rel="noreferrer"
-                        className="inline-flex items-center gap-1 h-7 px-2 rounded border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors">
+                        className="inline-flex items-center gap-1 h-7 px-2 rounded border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors">
                         <Download size={11} /> Download
                       </a>
                     </td>
@@ -3354,7 +3354,7 @@ function ActivityTab({ contractId }: { contractId: string }) {
           onChange={e => setNoteText(e.target.value)}
           rows={3}
           placeholder="Write a note…"
-          className="w-full border border-[#E8E6E2] rounded-lg p-3 text-sm outline-none focus:border-[--e-orange] resize-none"
+          className="w-full border border-[#E8E6E2] rounded-lg p-3 text-sm outline-none focus:border-(--e-orange) resize-none"
         />
         <div className="flex justify-end mt-2">
           <button
@@ -3544,11 +3544,11 @@ export default function ContractDetailPage() {
             </button>
           )}
           <button onClick={() => setGeneratingInvoice(true)}
-            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors">
+            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors">
             <FileText size={13} /> Generate Invoice
           </button>
           <button onClick={() => setRecordingPayment(true)}
-            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors">
+            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors">
             <CreditCard size={13} /> Record Payment
           </button>
         </div>
@@ -3600,7 +3600,7 @@ export default function ContractDetailPage() {
                 </button>
                 {(contract.studentAccount?.id ?? contract.account?.id) && (
                   <button onClick={() => navigate(`/admin/crm/accounts/${contract.studentAccount?.id ?? contract.account?.id}`)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[--e-orange]">
+                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-(--e-orange)">
                     <ExternalLink size={13} />
                   </button>
                 )}
@@ -3656,7 +3656,7 @@ export default function ContractDetailPage() {
           <div className="bg-white rounded-xl p-5" style={{ border:"2px solid var(--e-orange)" }}>
             <div className="flex items-center gap-2 mb-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Primary Service</p>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[--e-orange-lt] text-[--e-orange]">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-(--e-orange-lt) text-(--e-orange)">
                 {primaryServiceType.replace(/_/g," ").replace(/\b\w/g,(c: string)=>c.toUpperCase())}
               </span>
             </div>
@@ -3756,7 +3756,7 @@ export default function ContractDetailPage() {
                       </span>
                       <button
                         onClick={() => navigate(`/admin/camp-applications/${contract.campApplication.id}`)}
-                        className="text-sm font-medium text-[--e-orange] hover:text-[#d97706] transition-colors ml-4"
+                        className="text-sm font-medium text-(--e-orange) hover:text-[#d97706] transition-colors ml-4"
                         style={{ background: "none", border: "none", cursor: "pointer" }}
                       >
                         View →
@@ -3772,7 +3772,7 @@ export default function ContractDetailPage() {
                       </span>
                       <button
                         onClick={() => navigate(`/admin/crm/quotes/${contract.quote.id}`)}
-                        className="text-sm font-medium text-[--e-orange] hover:text-[#d97706] transition-colors ml-4"
+                        className="text-sm font-medium text-(--e-orange) hover:text-[#d97706] transition-colors ml-4"
                         style={{ background: "none", border: "none", cursor: "pointer" }}
                       >
                         View →

@@ -38,8 +38,8 @@ const EMPTY_FORM: KpiTargetForm = {
 const LABEL_CLS = 'block text-xs font-medium text-[#57534E] mb-1';
 const INPUT_CLS =
   'w-full text-sm border border-[#E8E6E2] rounded-lg px-3 py-2 bg-white text-[#1C1917] ' +
-  'placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[--e-orange]/40 ' +
-  'focus:border-[--e-orange] transition-colors';
+  'placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-(--e-orange)/40 ' +
+  'focus:border-(--e-orange) transition-colors';
 
 const fmtAUD = (n: number) =>
   new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(n);
@@ -106,8 +106,8 @@ export default function KpiTargetsPage() {
     <div className="p-6 space-y-5 max-w-5xl mx-auto">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 bg-[--e-orange-lt]">
-            <Target className="w-5 h-5 text-[--e-orange]" strokeWidth={1.8} />
+          <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 bg-(--e-orange-lt)">
+            <Target className="w-5 h-5 text-(--e-orange)" strokeWidth={1.8} />
           </div>
           <div>
             <h1 className="text-xl font-bold text-[#1C1917]">KPI Targets</h1>
@@ -119,8 +119,8 @@ export default function KpiTargetsPage() {
         <button
           onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY_FORM); }}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold
-            bg-[--e-orange] text-white hover:bg-[--e-orange-hover] hover:-translate-y-px
-            hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)] active:bg-[--e-orange-active] transition-all"
+            bg-(--e-orange) text-white hover:bg-(--e-orange-hover) hover:-translate-y-px
+            hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)] active:bg-(--e-orange-active) transition-all"
         >
           <Plus className="w-4 h-4" />
           Add Target
@@ -128,7 +128,7 @@ export default function KpiTargetsPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-xl border border-[--e-orange]/30 p-5 space-y-4"
+        <div className="bg-white rounded-xl border border-(--e-orange)/30 p-5 space-y-4"
           style={{ boxShadow: '0 4px_16px_var(--e-orange-shadow-08)' }}>
           <h3 className="text-sm font-semibold text-[#1C1917]">
             {editingId ? 'Edit Target' : 'New Target'}
@@ -277,7 +277,7 @@ export default function KpiTargetsPage() {
             <button
               onClick={handleSubmit} disabled={saving}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold
-                bg-[--e-orange] text-white hover:bg-[--e-orange-hover] hover:-translate-y-px
+                bg-(--e-orange) text-white hover:bg-(--e-orange-hover) hover:-translate-y-px
                 hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)] disabled:opacity-50
                 disabled:cursor-not-allowed transition-all"
             >
@@ -296,7 +296,7 @@ export default function KpiTargetsPage() {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-2 border-[--e-orange] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-(--e-orange) border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden"
@@ -325,8 +325,8 @@ export default function KpiTargetsPage() {
                     <div className="flex items-center gap-2">
                       {t.staffName
                         ? <>
-                            <div className="w-6 h-6 rounded-full bg-[--e-orange-lt] flex items-center justify-center shrink-0">
-                              <User className="w-3 h-3 text-[--e-orange]" />
+                            <div className="w-6 h-6 rounded-full bg-(--e-orange-lt) flex items-center justify-center shrink-0">
+                              <User className="w-3 h-3 text-(--e-orange)" />
                             </div>
                             <span className="font-medium text-[#1C1917]">{t.staffName}</span>
                           </>
@@ -342,18 +342,18 @@ export default function KpiTargetsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-[#57534E]">{PERIOD_LABELS[t.periodType]}</td>
-                  <td className="px-4 py-3 font-semibold text-[--e-orange]">
+                  <td className="px-4 py-3 font-semibold text-(--e-orange)">
                     {fmtAUD(t.targetAmount)}
                   </td>
                   <td className="px-4 py-3 text-[#57534E]">
                     {INCENTIVE_LABELS[t.incentiveType]}
                     {t.incentiveType === 'percentage' && t.incentiveRate &&
-                      <span className="ml-1 text-xs font-medium text-[--e-orange]">
+                      <span className="ml-1 text-xs font-medium text-(--e-orange)">
                         ({(t.incentiveRate * 100).toFixed(1)}%)
                       </span>
                     }
                     {t.incentiveType === 'fixed' && t.incentiveFixed &&
-                      <span className="ml-1 text-xs font-medium text-[--e-orange]">
+                      <span className="ml-1 text-xs font-medium text-(--e-orange)">
                         ({fmtAUD(t.incentiveFixed)})
                       </span>
                     }
@@ -374,7 +374,7 @@ export default function KpiTargetsPage() {
                     <button
                       onClick={() => handleEdit(t)}
                       className="inline-flex items-center gap-1 text-xs font-medium text-[#57534E]
-                        hover:text-[--e-orange] transition-colors"
+                        hover:text-(--e-orange) transition-colors"
                     >
                       <Pencil className="w-3 h-3" />
                       Edit

@@ -39,7 +39,7 @@ type PlatformPlan = {
 
 // ── Design constants ───────────────────────────────────────────────────────────
 
-const inp = `w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white placeholder-[#A8A29E] focus:outline-none focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)] transition-all`;
+const inp = `w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white placeholder-[#A8A29E] focus:outline-none focus:border-(--e-orange) focus:shadow-[0_0_0_3px_var(--e-orange-ring)] transition-all`;
 const readInp = `w-full h-10 px-3 border border-[#F4F3F1] rounded-lg text-sm text-[#57534E] bg-[#FAFAF9] cursor-not-allowed select-none`;
 
 const PLAN_STATUS = [
@@ -126,10 +126,10 @@ function ImageUploadZone({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className={`w-full ${previewHeight} rounded-xl border-2 border-dashed border-[#E8E6E2] flex flex-col items-center justify-center gap-1.5 hover:border-[--e-orange] hover:bg-[--e-orange-lt] transition-colors disabled:opacity-50 cursor-pointer`}
+          className={`w-full ${previewHeight} rounded-xl border-2 border-dashed border-[#E8E6E2] flex flex-col items-center justify-center gap-1.5 hover:border-(--e-orange) hover:bg-(--e-orange-lt) transition-colors disabled:opacity-50 cursor-pointer`}
         >
           {uploading ? (
-            <Loader2 size={18} className="animate-spin text-[--e-orange]" />
+            <Loader2 size={18} className="animate-spin text-(--e-orange)" />
           ) : (
             <>
               <Upload size={18} className="text-[#A8A29E]" />
@@ -213,7 +213,7 @@ function ColorSwatch({ label, value, onChange }: { label: string; value: string;
           value={value || ""}
           onChange={e => onChange(e.target.value)}
           maxLength={7}
-          className="flex-1 h-9 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm font-mono focus:outline-none focus:border-[--e-orange] uppercase bg-white"
+          className="flex-1 h-9 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm font-mono focus:outline-none focus:border-(--e-orange) uppercase bg-white"
           placeholder="var(--e-orange)"
         />
       </div>
@@ -379,7 +379,7 @@ export default function TenantDetail() {
   if (orgLoading || plansLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-[--e-orange]" />
+        <Loader2 size={24} className="animate-spin text-(--e-orange)" />
       </div>
     );
   }
@@ -389,7 +389,7 @@ export default function TenantDetail() {
       <div className="p-8 flex flex-col items-center gap-3 text-[#A8A29E]">
         <Building2 size={40} strokeWidth={1} />
         <p className="text-sm">Tenant not found</p>
-        <button onClick={() => navigate("/superadmin/tenants")} className="text-sm text-[--e-orange] hover:underline">
+        <button onClick={() => navigate("/superadmin/tenants")} className="text-sm text-(--e-orange) hover:underline">
           ← Back to Tenants
         </button>
       </div>
@@ -405,7 +405,7 @@ export default function TenantDetail() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/superadmin/tenants")}
-            className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#E8E6E2] text-[#57534E] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
+            className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#E8E6E2] text-[#57534E] hover:border-(--e-orange) hover:text-(--e-orange) transition-colors"
           >
             <ArrowLeft size={15} />
           </button>
@@ -433,7 +433,7 @@ export default function TenantDetail() {
               // 테마 재로드는 ImpersonationBanner 마운트 시 실행됨 (navigate 이후)
               navigate("/admin/dashboard");
             }}
-            className="h-9 px-4 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#E8E6E2] text-[#1C1917] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
+            className="h-9 px-4 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#E8E6E2] text-[#1C1917] hover:border-(--e-orange) hover:text-(--e-orange) transition-colors"
           >
             <ExternalLink size={14} />
             Open Admin Panel

@@ -90,7 +90,7 @@ function StatusBadge({ status }: { status: string }) {
   else if (['rejected', 'cancelled', 'lost'].includes(normalized))
     cls = "bg-[#FEF2F2] text-[#DC2626]";
   else if (['in progress', 'contacted', 'interview scheduled'].includes(normalized))
-    cls = "bg-[--e-orange-lt] text-[--e-orange]";
+    cls = "bg-(--e-orange-lt) text-(--e-orange)";
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize whitespace-nowrap ${cls}`}>
       {normalized}

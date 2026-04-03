@@ -15,7 +15,7 @@ type Props = {
 function SpotStatusBadge({ status }: { status: SpotGrade["status"] }) {
   const map: Record<string, string> = {
     available: "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20",
-    limited:   "bg-[--e-orange]/8 text-[--e-orange] border-[--e-orange]/20",
+    limited:   "bg-(--e-orange)/8 text-(--e-orange) border-(--e-orange)/20",
     full:      "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
   };
   const label: Record<string, string> = { available: "Open", limited: "Limited", full: "Full" };
@@ -56,7 +56,7 @@ export function ProgramDetailDrawer({ program, onClose, onApply }: Props) {
               <div className="flex items-center gap-2.5">
                 {program.countryFlag && <span className="text-2xl">{program.countryFlag}</span>}
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <MapPin className="w-3.5 h-3.5 text-[--e-orange]" />
+                  <MapPin className="w-3.5 h-3.5 text-(--e-orange)" />
                   {program.location}
                 </div>
               </div>
@@ -82,8 +82,8 @@ export function ProgramDetailDrawer({ program, onClose, onApply }: Props) {
 
               {/* Interview notice */}
               {program.interviewRequired && (
-                <div className="flex gap-2.5 p-4 bg-[--e-orange]/6 border border-[--e-orange]/20 rounded-xl">
-                  <Info className="w-4 h-4 text-[--e-orange] shrink-0 mt-0.5" />
+                <div className="flex gap-2.5 p-4 bg-(--e-orange)/6 border border-(--e-orange)/20 rounded-xl">
+                  <Info className="w-4 h-4 text-(--e-orange) shrink-0 mt-0.5" />
                   <div>
                     <div className="font-semibold text-sm text-foreground">{t("programs.interviewRequired")}</div>
                     <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
@@ -130,7 +130,7 @@ export function ProgramDetailDrawer({ program, onClose, onApply }: Props) {
                     <Info className="w-3 h-3" /> {t("programs.priceNote")}
                   </p>
                   {displayCurrency !== program.primaryCurrency && (
-                    <div className="mt-2 p-3 rounded-lg bg-[--e-orange-lt] border border-[--e-orange]/20">
+                    <div className="mt-2 p-3 rounded-lg bg-(--e-orange-lt) border border-(--e-orange)/20">
                       <p className="text-[11px] text-[#92400E] leading-relaxed">
                         💱 {t("currency.price_info_body", "Prices shown in local currency. Your selected currency ({{currency}}) is shown as an estimate only. Actual billing will be in the program's local currency.", { currency: displayCurrency })}
                       </p>
@@ -174,7 +174,7 @@ export function ProgramDetailDrawer({ program, onClose, onApply }: Props) {
             {/* Sticky footer */}
             <div className="px-5 py-4 border-t border-border shrink-0 bg-white">
               <Button
-                className="w-full h-10 rounded-md font-semibold bg-[--e-orange] hover:bg-[#d97600] text-white"
+                className="w-full h-10 rounded-md font-semibold bg-(--e-orange) hover:bg-[#d97600] text-white"
                 onClick={() => onApply(program)}
               >
                 {t("programs.applyProgram")}

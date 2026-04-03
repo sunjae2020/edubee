@@ -131,15 +131,15 @@ function AddActivityModal({ prospectId, onClose, onAdded }: {
           </div>
           <input value={form.subject} onChange={e => set("subject", e.target.value)}
             placeholder="Subject"
-            className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30" />
+            className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--e-orange)/30" />
           <textarea value={form.body} onChange={e => set("body", e.target.value)}
             placeholder="Details / notes…" rows={4}
-            className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30 resize-none" />
+            className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--e-orange)/30 resize-none" />
         </div>
         <div className="px-5 pb-5 flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border border-[#E8E6E2] text-[#57534E] hover:bg-[#F5F4F2]">Cancel</button>
           <button onClick={submit} disabled={saving}
-            className="px-4 py-2 text-sm rounded-lg bg-[--e-orange] text-white font-medium hover:bg-[#E0711A] disabled:opacity-50">
+            className="px-4 py-2 text-sm rounded-lg bg-(--e-orange) text-white font-medium hover:bg-[#E0711A] disabled:opacity-50">
             {saving ? "Saving…" : "Log Activity"}
           </button>
         </div>
@@ -191,7 +191,7 @@ function AddContactModal({ prospectId, onClose, onAdded }: {
               <label className="block text-xs font-medium text-[#57534E] mb-1">{label}</label>
               <input value={(form as any)[k]} onChange={e => set(k, e.target.value)}
                 placeholder={placeholder}
-                className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30" />
+                className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--e-orange)/30" />
             </div>
           ))}
           <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -203,7 +203,7 @@ function AddContactModal({ prospectId, onClose, onAdded }: {
         <div className="px-5 pb-5 flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border border-[#E8E6E2] text-[#57534E] hover:bg-[#F5F4F2]">Cancel</button>
           <button onClick={submit} disabled={saving}
-            className="px-4 py-2 text-sm rounded-lg bg-[--e-orange] text-white font-medium hover:bg-[#E0711A] disabled:opacity-50">
+            className="px-4 py-2 text-sm rounded-lg bg-(--e-orange) text-white font-medium hover:bg-[#E0711A] disabled:opacity-50">
             {saving ? "Saving…" : "Add Contact"}
           </button>
         </div>
@@ -303,8 +303,8 @@ export default function PlatformCrmDetail() {
             {/* Company card */}
             <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
               <div className="flex items-start justify-between mb-4">
-                <div className="w-10 h-10 rounded-xl bg-[--e-orange]/10 flex items-center justify-center">
-                  <Building2 size={18} className="text-[--e-orange]" />
+                <div className="w-10 h-10 rounded-xl bg-(--e-orange)/10 flex items-center justify-center">
+                  <Building2 size={18} className="text-(--e-orange)" />
                 </div>
                 <button onClick={deleteProspect} disabled={deleting}
                   className="text-[#A8A29E] hover:text-red-500 transition-colors">
@@ -339,7 +339,7 @@ export default function PlatformCrmDetail() {
                   <div className="flex items-center gap-2">
                     <Globe size={13} className="text-[#A8A29E]" />
                     <a href={prospect.website.startsWith("http") ? prospect.website : `https://${prospect.website}`}
-                      target="_blank" rel="noreferrer" className="truncate hover:underline text-[--e-orange]">
+                      target="_blank" rel="noreferrer" className="truncate hover:underline text-(--e-orange)">
                       {prospect.website}
                     </a>
                   </div>
@@ -349,7 +349,7 @@ export default function PlatformCrmDetail() {
                 {prospect.planInterest && (
                   <div className="flex items-center gap-2">
                     <span className="text-[#A8A29E] text-xs">Plan:</span>
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-[--e-orange-lt] text-[#C2621A]">
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-(--e-orange-lt) text-[#C2621A]">
                       {PLAN_LABELS[prospect.planInterest] ?? prospect.planInterest}
                     </span>
                   </div>
@@ -367,16 +367,16 @@ export default function PlatformCrmDetail() {
             <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Notes</p>
-                <button onClick={() => setEditingNotes(v => !v)} className="text-[#A8A29E] hover:text-[--e-orange]">
+                <button onClick={() => setEditingNotes(v => !v)} className="text-[#A8A29E] hover:text-(--e-orange)">
                   <Pencil size={13} />
                 </button>
               </div>
               {editingNotes ? (
                 <div>
                   <textarea value={notesVal} onChange={e => setNotesVal(e.target.value)} rows={5}
-                    className="w-full text-sm border border-[#E8E6E2] rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30" />
+                    className="w-full text-sm border border-[#E8E6E2] rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-(--e-orange)/30" />
                   <div className="flex gap-2 mt-2">
-                    <button onClick={saveNotes} className="px-3 py-1 text-xs rounded-lg bg-[--e-orange] text-white">Save</button>
+                    <button onClick={saveNotes} className="px-3 py-1 text-xs rounded-lg bg-(--e-orange) text-white">Save</button>
                     <button onClick={() => { setNotesVal(prospect.notes ?? ""); setEditingNotes(false); }}
                       className="px-3 py-1 text-xs rounded-lg border border-[#E8E6E2] text-[#57534E]">Cancel</button>
                   </div>
@@ -393,7 +393,7 @@ export default function PlatformCrmDetail() {
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Contacts</p>
                 <button onClick={() => setShowContact(true)}
-                  className="text-[--e-orange] hover:text-[#C2621A]"><Plus size={14} /></button>
+                  className="text-(--e-orange) hover:text-[#C2621A]"><Plus size={14} /></button>
               </div>
               {prospect.contacts.length === 0 ? (
                 <p className="text-xs text-[#A8A29E] italic">No contacts yet</p>
@@ -409,7 +409,7 @@ export default function PlatformCrmDetail() {
                           <div className="flex items-center gap-1.5">
                             <p className="text-sm font-medium text-[#1C1917] truncate">{c.fullName}</p>
                             {c.isPrimary && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[--e-orange-lt] text-[#C2621A] font-medium shrink-0">Primary</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-(--e-orange-lt) text-[#C2621A] font-medium shrink-0">Primary</span>
                             )}
                           </div>
                           {c.title && <p className="text-xs text-[#A8A29E]">{c.title}</p>}
@@ -437,7 +437,7 @@ export default function PlatformCrmDetail() {
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-semibold text-[#1C1917]">Activity Timeline</p>
                 <button onClick={() => setShowActivity(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-[--e-orange] text-white font-medium hover:bg-[#E0711A]">
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-(--e-orange) text-white font-medium hover:bg-[#E0711A]">
                   <Plus size={12} /> Log Activity
                 </button>
               </div>

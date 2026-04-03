@@ -22,15 +22,15 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const STATUS_BADGE: Record<string, string> = {
   pending:   "bg-[#FEF9C3] text-[#CA8A04]",
   invoiced:  "bg-[#EFF6FF] text-[#2563EB]",
-  partial:   "bg-[--e-orange-lt] text-[--e-orange]",
+  partial:   "bg-(--e-orange-lt) text-(--e-orange)",
   paid:      "bg-[#DCFCE7] text-[#16A34A]",
   overdue:   "bg-[#FEF2F2] text-[#DC2626]",
   cancelled: "bg-[#F4F3F1] text-[#57534E]",
 };
 
 const CC_BADGE: Record<string, string> = {
-  "RC-CAMP":       "bg-[--e-orange-lt] text-[--e-orange]",
-  "RC-DIRECT":     "bg-[--e-orange-lt] text-[--e-orange]",
+  "RC-CAMP":       "bg-(--e-orange-lt) text-(--e-orange)",
+  "RC-DIRECT":     "bg-(--e-orange-lt) text-(--e-orange)",
   "CC-AGENT":      "bg-[#FEF2F2] text-[#DC2626]",
   "CC-INSTITUTE":  "bg-[#F4F3F1] text-[#57534E]",
   "CC-HOTEL":      "bg-[#F4F3F1] text-[#57534E]",
@@ -41,7 +41,7 @@ const CC_BADGE: Record<string, string> = {
 };
 
 const CC_BAR_COLOR: Record<string, string> = {
-  "RC-CAMP": "bg-[--e-orange]", "RC-DIRECT": "bg-[--e-orange]",
+  "RC-CAMP": "bg-(--e-orange)", "RC-DIRECT": "bg-(--e-orange)",
   "CC-AGENT": "bg-[#DC2626]",
   default: "bg-[#A8A29E]",
 };
@@ -151,18 +151,18 @@ function ActionMenu({ item, onConfirm, onEdit, onDelete }: {
           <div className="absolute right-0 top-7 z-20 bg-white border border-[#E8E6E2] rounded-xl shadow-lg w-48 py-1 text-sm">
             {item.status !== "paid" && item.status !== "cancelled" && (
               <button onClick={() => { setOpen(false); onConfirm(item); }}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[--e-orange-lt] text-[#1C1917]">
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-(--e-orange-lt) text-[#1C1917]">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" /> Confirm Payment
               </button>
             )}
             {item.status === "paid" && item.receiptId && item.itemType === "receivable" && (
               <button onClick={() => { setOpen(false); downloadReceiptPdf(); }}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[--e-orange-lt] text-[#1C1917]">
-                <Download className="w-3.5 h-3.5 text-[--e-orange]" /> Download Receipt
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-(--e-orange-lt) text-[#1C1917]">
+                <Download className="w-3.5 h-3.5 text-(--e-orange)" /> Download Receipt
               </button>
             )}
             <button onClick={() => { setOpen(false); onEdit(item); }}
-              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[--e-orange-lt] text-[#1C1917]">
+              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-(--e-orange-lt) text-[#1C1917]">
               <Pencil className="w-3.5 h-3.5 text-[#57534E]" /> Edit
             </button>
             <div className="h-px bg-[#E8E6E2] my-1" />
@@ -223,7 +223,7 @@ function SectionHeader({ title, subtitle, onAdd }: { title: string; subtitle?: s
       </div>
       {onAdd && (
         <Button size="sm" variant="outline" onClick={onAdd}
-          className="h-7 gap-1 text-xs border-[--e-orange] text-[--e-orange] hover:bg-[--e-orange-lt]">
+          className="h-7 gap-1 text-xs border-(--e-orange) text-(--e-orange) hover:bg-(--e-orange-lt)">
           <Plus className="w-3 h-3" /> Add Item
         </Button>
       )}
@@ -255,7 +255,7 @@ function ConfirmPaymentModal({ item, contractCurrency, open, onClose, onConfirm,
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
-            Confirm Payment — <span className="text-[--e-orange]">{item?.label}</span>
+            Confirm Payment — <span className="text-(--e-orange)">{item?.label}</span>
           </DialogTitle>
         </DialogHeader>
 
@@ -319,7 +319,7 @@ function ConfirmPaymentModal({ item, contractCurrency, open, onClose, onConfirm,
           <div className="flex justify-end gap-2 pt-1 border-t">
             <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
             <Button size="sm"
-              className="bg-[--e-orange] hover:bg-[#d97706] text-white min-w-[150px] gap-1.5"
+              className="bg-(--e-orange) hover:bg-[#d97706] text-white min-w-[150px] gap-1.5"
               onClick={() => onConfirm(form)}
               disabled={saving || !form.actualAmount || !form.paidDate}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-3.5 h-3.5" />Confirm Payment</>}
@@ -373,8 +373,8 @@ function ItemModal({ mode, initial, open, onClose, onSave, saving }: {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             {mode === "add"
-              ? <><Plus className="w-4 h-4 text-[--e-orange]" /> Add Finance Item</>
-              : <><Pencil className="w-4 h-4 text-[--e-orange]" /> Edit Finance Item</>}
+              ? <><Plus className="w-4 h-4 text-(--e-orange)" /> Add Finance Item</>
+              : <><Pencil className="w-4 h-4 text-(--e-orange)" /> Edit Finance Item</>}
           </DialogTitle>
         </DialogHeader>
 
@@ -388,7 +388,7 @@ function ItemModal({ mode, initial, open, onClose, onSave, saving }: {
                   <button key={t} onClick={() => { f("itemType")(t); setForm(p => ({ ...p, itemType: t, itemCategory: "", costCenter: "" })); }}
                     className={cn("flex-1 py-2 text-sm font-medium rounded-lg border transition-colors capitalize",
                       form.itemType === t
-                        ? "bg-[--e-orange-lt] border-[--e-orange] text-[--e-orange]"
+                        ? "bg-(--e-orange-lt) border-(--e-orange) text-(--e-orange)"
                         : "border-[#E8E6E2] text-[#57534E] hover:bg-[#FAFAF9]")}>
                     {t}
                   </button>
@@ -450,7 +450,7 @@ function ItemModal({ mode, initial, open, onClose, onSave, saving }: {
           <div className="flex justify-end gap-2 pt-1 border-t">
             <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
             <Button size="sm"
-              className="bg-[--e-orange] hover:bg-[#d97706] text-white min-w-[100px]"
+              className="bg-(--e-orange) hover:bg-[#d97706] text-white min-w-[100px]"
               onClick={() => onSave(form)}
               disabled={saving || !form.label || !form.estimatedAmount || !form.itemCategory}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === "add" ? "Add Item" : "Save Changes"}
@@ -666,7 +666,7 @@ export function ContractFinanceTab({ contractId, currency = "AUD" }: {
           <DollarSign className="w-10 h-10 mx-auto mb-2 text-[#E8E6E2]" />
           <p className="text-sm text-[#57534E] mb-3">No finance items yet.</p>
           <Button size="sm"
-            className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5"
+            className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5"
             onClick={() => generateMutation.mutate()}
             disabled={generateMutation.isPending}>
             {generateMutation.isPending
@@ -693,8 +693,8 @@ export function ContractFinanceTab({ contractId, currency = "AUD" }: {
               icon={<TrendingDown className="w-3.5 h-3.5 text-[#DC2626]" />}
               amountClass="text-[#DC2626]" />
             <SummaryCard label="Net Camp Revenue" amount={summary.netCampRevenue ?? 0}
-              icon={<DollarSign className="w-3.5 h-3.5 text-[--e-orange]" />}
-              amountClass="text-[--e-orange]" />
+              icon={<DollarSign className="w-3.5 h-3.5 text-(--e-orange)" />}
+              amountClass="text-(--e-orange)" />
             <SummaryCard
               label="Gross Profit"
               amount={summary.grossProfit ?? 0}
@@ -706,7 +706,7 @@ export function ContractFinanceTab({ contractId, currency = "AUD" }: {
           {/* Regenerate button (small) */}
           <div className="flex justify-end">
             <button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}
-              className="flex items-center gap-1.5 text-xs text-[#57534E] hover:text-[--e-orange] transition-colors">
+              className="flex items-center gap-1.5 text-xs text-[#57534E] hover:text-(--e-orange) transition-colors">
               <RefreshCw className={cn("w-3 h-3", generateMutation.isPending && "animate-spin")} />
               Re-generate items
             </button>
@@ -756,7 +756,7 @@ export function ContractFinanceTab({ contractId, currency = "AUD" }: {
                   .map((row: any) => {
                     const pct = totalBreakdown > 0 ? (row.amount / totalBreakdown) * 100 : 0;
                     const barClass = row.center.startsWith("RC-")
-                      ? "bg-[--e-orange]"
+                      ? "bg-(--e-orange)"
                       : row.center === "CC-AGENT"
                         ? "bg-[#DC2626]"
                         : "bg-[#A8A29E]";
@@ -786,7 +786,7 @@ export function ContractFinanceTab({ contractId, currency = "AUD" }: {
               <div className="text-sm font-semibold text-[#1C1917]">Ledger</div>
               {ledgerEntries.length > 0 && (
                 <button onClick={exportCsv}
-                  className="flex items-center gap-1.5 text-xs text-[#57534E] hover:text-[--e-orange] transition-colors">
+                  className="flex items-center gap-1.5 text-xs text-[#57534E] hover:text-(--e-orange) transition-colors">
                   <Download className="w-3.5 h-3.5" /> Export CSV
                 </button>
               )}
@@ -834,7 +834,7 @@ export function ContractFinanceTab({ contractId, currency = "AUD" }: {
                     <tr className="border-t-2 border-[#E8E6E2] bg-[#FAFAF9]">
                       <td colSpan={4} className="px-4 py-2.5 text-xs font-bold text-[#1C1917]">Net Balance</td>
                       <td className={cn("px-4 py-2.5 text-right font-mono text-sm font-bold",
-                        netBalance >= 0 ? "text-[--e-orange]" : "text-[#DC2626]")}>
+                        netBalance >= 0 ? "text-(--e-orange)" : "text-[#DC2626]")}>
                         {netBalance >= 0 ? "+" : "−"}{fmtAud(Math.abs(netBalance))}
                       </td>
                     </tr>

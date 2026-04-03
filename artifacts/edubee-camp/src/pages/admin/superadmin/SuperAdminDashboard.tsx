@@ -31,7 +31,7 @@ export default function SuperAdminDashboard() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-48">
-      <Loader2 size={24} className="animate-spin text-[--e-orange]" />
+      <Loader2 size={24} className="animate-spin text-(--e-orange)" />
     </div>
   );
 
@@ -65,7 +65,7 @@ export default function SuperAdminDashboard() {
       {/* Plan Distribution */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] p-6" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
         <div className="flex items-center gap-2 mb-6">
-          <Package size={16} className="text-[--e-orange]" strokeWidth={1.5} />
+          <Package size={16} className="text-(--e-orange)" strokeWidth={1.5} />
           <h2 className="text-sm font-semibold text-[#1C1917] uppercase tracking-wide">Plan Distribution</h2>
         </div>
         <div className="grid grid-cols-3 gap-4">

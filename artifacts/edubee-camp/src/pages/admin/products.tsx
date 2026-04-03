@@ -120,16 +120,16 @@ function ProviderCombobox({
         <div className="absolute z-50 w-full mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-48 overflow-y-auto">
           {filtered.map(a => (
             <button key={a.id}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-[--e-orange-lt] transition-colors flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-(--e-orange-lt) transition-colors flex items-center gap-2"
               onMouseDown={e => e.preventDefault()}
               onClick={() => { onChange(a.id, a.name); setQuery(a.name); setOpen(false); }}>
-              <Building2 size={12} className="text-[--e-orange] shrink-0" />
+              <Building2 size={12} className="text-(--e-orange) shrink-0" />
               {a.name}
             </button>
           ))}
           {showCreate && (
             <button
-              className="w-full text-left px-3 py-2 text-sm text-[--e-orange] hover:bg-[--e-orange-lt] transition-colors flex items-center gap-2 border-t border-[#F4F3F1]"
+              className="w-full text-left px-3 py-2 text-sm text-(--e-orange) hover:bg-(--e-orange-lt) transition-colors flex items-center gap-2 border-t border-[#F4F3F1]"
               onMouseDown={e => e.preventDefault()}
               onClick={() => { onCreateNew(query.trim()); setOpen(false); }}>
               <Plus size={12} className="shrink-0" />
@@ -311,7 +311,7 @@ export default function Products() {
 
           {/* New Product */}
           {canEdit && (
-            <Button size="sm" className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-1.5 h-8"
+            <Button size="sm" className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white gap-1.5 h-8"
               onClick={() => setShowCreateDialog(true)}>
               <Plus className="w-3.5 h-3.5" /> New Product
             </Button>
@@ -372,7 +372,7 @@ export default function Products() {
             ) : (
               sorted.map(p => (
                 <tr key={p.id}
-                  className="border-b last:border-0 hover:bg-[--e-orange-lt] transition-colors cursor-pointer"
+                  className="border-b last:border-0 hover:bg-(--e-orange-lt) transition-colors cursor-pointer"
                   onClick={() => setLocation(`${BASE}/admin/products/${p.id}`)}>
                   <td className="px-4 py-3 text-sm text-[#57534E]">
                     <div className="line-clamp-2">{p.providerName ?? <span className="text-muted-foreground">—</span>}</div>
@@ -466,7 +466,7 @@ export default function Products() {
               />
               {form.providerName && (
                 <p className="text-xs text-[#57534E] mt-1 flex items-center gap-1">
-                  <Building2 size={11} className="text-[--e-orange]" /> {form.providerName}
+                  <Building2 size={11} className="text-(--e-orange)" /> {form.providerName}
                 </p>
               )}
             </div>
@@ -553,7 +553,7 @@ export default function Products() {
 
             {/* Actions */}
             <div className="flex gap-2 pt-1">
-              <Button size="sm" className="flex-1 bg-[--e-orange] hover:bg-[#d97706] text-white"
+              <Button size="sm" className="flex-1 bg-(--e-orange) hover:bg-[#d97706] text-white"
                 onClick={handleCreate}
                 disabled={createProduct.isPending || !form.productName}>
                 {createProduct.isPending ? "Creating…" : "Create Product"}

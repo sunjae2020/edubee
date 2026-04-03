@@ -49,7 +49,7 @@ function fmtAmount(amount?: string | number | null, currency?: string | null) {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-widest border-b border-[--e-orange]/20 pb-2 mb-4">
+    <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-widest border-b border-(--e-orange)/20 pb-2 mb-4">
       {children}
     </h3>
   );
@@ -69,7 +69,7 @@ function CopyButton({ value }: { value: string }) {
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      className="ml-1.5 text-stone-400 hover:text-[--e-orange] transition-colors"
+      className="ml-1.5 text-stone-400 hover:text-(--e-orange) transition-colors"
     >
       {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
     </button>
@@ -210,7 +210,7 @@ export default function TransactionDetailPage() {
                 <Field label="Invoice">
                   <button
                     onClick={() => navigate(`/admin/accounting/invoices/${tx.invoiceId}`)}
-                    className="flex items-center gap-1 text-[--e-orange] hover:underline font-mono text-xs"
+                    className="flex items-center gap-1 text-(--e-orange) hover:underline font-mono text-xs"
                   >
                     {tx.invoiceId.slice(0, 8)}…
                     <ExternalLink className="w-3 h-3" />
@@ -221,7 +221,7 @@ export default function TransactionDetailPage() {
                 <Field label="Contract">
                   <button
                     onClick={() => navigate(`/admin/crm/contracts/${tx.contractId}`)}
-                    className="flex items-center gap-1 text-[--e-orange] hover:underline font-mono text-xs"
+                    className="flex items-center gap-1 text-(--e-orange) hover:underline font-mono text-xs"
                   >
                     {tx.contractId.slice(0, 8)}…
                     <ExternalLink className="w-3 h-3" />

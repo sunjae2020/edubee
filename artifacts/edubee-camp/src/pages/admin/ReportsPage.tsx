@@ -150,7 +150,7 @@ export default function ReportsPage() {
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[--e-orange-lt] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-(--e-orange-lt) flex items-center justify-center">
             <ReportSymbol name="report" size={22} color="var(--e-orange)" />
           </div>
           <div>
@@ -160,7 +160,7 @@ export default function ReportsPage() {
         </div>
         {canCreate && (
           <Button
-            className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-2"
+            className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-2"
             onClick={() => setShowCreate(true)}
           >
             <ReportSymbol name="report" size={16} color="white" />
@@ -226,7 +226,7 @@ export default function ReportsPage() {
             <p className="text-sm text-[#57534E]">Reports are generated from contracts.</p>
             {canCreate && (
               <Button
-                className="mt-2 bg-[--e-orange] hover:bg-[#d97706] text-white gap-2"
+                className="mt-2 bg-(--e-orange) hover:bg-[#d97706] text-white gap-2"
                 onClick={() => setShowCreate(true)}
               >
                 <ReportSymbol name="report" size={15} color="white" />
@@ -240,7 +240,7 @@ export default function ReportsPage() {
         {!isLoading && filtered.map(report => (
           <div
             key={report.id}
-            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-4 py-3 items-center border-b border-[#F4F3F1] hover:bg-[--e-orange-lt] transition-colors"
+            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-4 py-3 items-center border-b border-[#F4F3F1] hover:bg-(--e-orange-lt) transition-colors"
           >
             {/* Student/Program */}
             <div className="min-w-0">
@@ -384,7 +384,7 @@ export default function ReportsPage() {
             </div>
             <div className="flex gap-2 pt-1">
               <Button
-                className="flex-1 bg-[--e-orange] hover:bg-[#d97706] text-white"
+                className="flex-1 bg-(--e-orange) hover:bg-[#d97706] text-white"
                 size="sm"
                 onClick={() => createMutation.mutate(form)}
                 disabled={createMutation.isPending || !form.reportTitle || !form.contractId}

@@ -126,7 +126,7 @@ function TextInput({
         onChange={e => onChange?.(e.target.value)}
         placeholder={placeholder}
         className={`w-full h-10 border rounded-lg text-sm transition-colors
-          focus:outline-none focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)]
+          focus:outline-none focus:border-(--e-orange) focus:shadow-[0_0_0_3px_var(--e-orange-ring)]
           disabled:opacity-60 disabled:cursor-not-allowed
           ${readOnly ? "cursor-default opacity-75" : ""}
           ${prefix ? "pl-8" : "px-3"} ${suffix ? "pr-10" : "pr-3"}`}
@@ -155,7 +155,7 @@ function SelectField({
   const handleChange = (v: string) => onChange(v === NONE ? "" : v);
   return (
     <Select value={currentVal} onValueChange={handleChange}>
-      <SelectTrigger className="h-10 border-[#E8E6E2] text-sm focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)]">
+      <SelectTrigger className="h-10 border-[#E8E6E2] text-sm focus:border-(--e-orange) focus:shadow-[0_0_0_3px_var(--e-orange-ring)]">
         <SelectValue placeholder="Select…" />
       </SelectTrigger>
       <SelectContent>
@@ -181,7 +181,7 @@ function RadioYesNo({
             type="radio"
             checked={value === v}
             onChange={() => onChange(v)}
-            className="w-4 h-4 accent-[--e-orange]"
+            className="w-4 h-4 accent-(--e-orange)"
           />
           <span className="text-sm" style={{ color: "var(--e-text-1)" }}>{l}</span>
         </label>
@@ -207,7 +207,7 @@ function ToggleSwitch({
         onClick={() => onChange(!value)}
         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent
           transition-colors duration-200 ease-in-out focus:outline-none
-          ${value ? "bg-[--e-orange]" : "bg-[#E8E6E2] dark:bg-[#3A3835]"}`}
+          ${value ? "bg-(--e-orange)" : "bg-[#E8E6E2] dark:bg-[#3A3835]"}`}
       >
         <span
           className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md
@@ -256,7 +256,7 @@ function SearchSelect({
 
   if (selected) {
     return (
-      <div className="flex items-center h-10 border border-[--e-orange] rounded-lg px-3 gap-2"
+      <div className="flex items-center h-10 border border-(--e-orange) rounded-lg px-3 gap-2"
         style={{ background: "var(--e-bg-surface)" }}>
         <span className="flex-1 text-sm truncate" style={{ color: "var(--e-text-1)" }}>{selected.name}</span>
         {selected.sub && (
@@ -286,7 +286,7 @@ function SearchSelect({
           onChange={e => { setQ(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           placeholder={loading ? "Loading…" : (placeholder ?? "Search…")}
-          className="w-full h-10 pl-9 pr-3 border rounded-lg text-sm focus:outline-none focus:border-[--e-orange]
+          className="w-full h-10 pl-9 pr-3 border rounded-lg text-sm focus:outline-none focus:border-(--e-orange)
             focus:shadow-[0_0_0_3px_var(--e-orange-ring)]"
           style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", color: "var(--e-text-1)" }}
         />
@@ -350,7 +350,7 @@ function Btn({
   const base = "inline-flex items-center gap-1.5 font-semibold rounded-lg transition-all focus:outline-none";
   const sizes = size === "sm" ? "h-8 px-3 text-xs" : "h-10 px-5 text-sm";
   const variants = {
-    primary: "bg-[--e-orange] text-white hover:bg-[--e-orange-hover] disabled:opacity-60 disabled:cursor-not-allowed",
+    primary: "bg-(--e-orange) text-white hover:bg-(--e-orange-hover) disabled:opacity-60 disabled:cursor-not-allowed",
     outline: "border disabled:opacity-60 hover:opacity-80",
   };
   return (
@@ -743,7 +743,7 @@ export default function ProductDetail() {
           <div className="flex items-center gap-2 text-sm" style={{ color: "var(--e-text-2)" }}>
             <button
               onClick={handleCancel}
-              className="flex items-center gap-1 hover:text-[--e-orange] transition-colors"
+              className="flex items-center gap-1 hover:text-(--e-orange) transition-colors"
             >
               <ChevronLeft className="w-4 h-4" /> Products
             </button>
@@ -905,7 +905,7 @@ export default function ProductDetail() {
                       <FL>Represents Package</FL>
                       {g("campPackageId") ? (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 px-3 py-2 border border-[#E7E5E4] rounded-md bg-[--e-orange-lt]">
+                          <div className="flex items-center gap-2 px-3 py-2 border border-[#E7E5E4] rounded-md bg-(--e-orange-lt)">
                             <span className="flex-1 text-sm text-[#1C1917] truncate">
                               {(linkedPkgRep as any)?.name ?? g("campPackageId")}
                               {(linkedPkgRep as any)?.groupNameEn && (
@@ -922,7 +922,7 @@ export default function ProductDetail() {
                             type="button"
                             onClick={handlePushFromPackage}
                             disabled={!linkedPkgRep}
-                            className="w-full h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 border border-[--e-orange] text-[--e-orange] hover:bg-[--e-orange-lt] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="w-full h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 border border-(--e-orange) text-(--e-orange) hover:bg-(--e-orange-lt) transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             ↓ Auto-fill Package Info
                           </button>
@@ -942,7 +942,7 @@ export default function ProductDetail() {
                               {pkgRepResults.map((pkg: any) => (
                                 <div
                                   key={pkg.id}
-                                  className="px-3 py-2 text-sm hover:bg-[--e-orange-lt] cursor-pointer transition-colors text-[#1C1917]"
+                                  className="px-3 py-2 text-sm hover:bg-(--e-orange-lt) cursor-pointer transition-colors text-[#1C1917]"
                                   onMouseDown={() => {
                                     sf("campPackageId")(pkg.id);
                                     setPkgRepSearch("");
@@ -1126,7 +1126,7 @@ export default function ProductDetail() {
                           placeholder="Search packages…"
                           value={pkgLinkSearch}
                           onChange={e => { setPkgLinkSearch(e.target.value); setSelectedPkgToLink(null); }}
-                          className="w-full pl-8 pr-3 h-8 text-xs border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[--e-orange]"
+                          className="w-full pl-8 pr-3 h-8 text-xs border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-(--e-orange)"
                         />
                       </div>
                       {/* Package list */}
@@ -1165,7 +1165,7 @@ export default function ProductDetail() {
                               min={1}
                               value={pkgLinkQty}
                               onChange={e => setPkgLinkQty(Number(e.target.value))}
-                              className="w-full h-7 px-2 text-xs border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-[--e-orange]"
+                              className="w-full h-7 px-2 text-xs border rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-(--e-orange)"
                             />
                           </div>
                           <div>
@@ -1176,7 +1176,7 @@ export default function ProductDetail() {
                               placeholder="—"
                               value={pkgLinkUnitPrice}
                               onChange={e => setPkgLinkUnitPrice(e.target.value)}
-                              className="w-full h-7 px-2 text-xs border rounded-md bg-white font-mono focus:outline-none focus:ring-1 focus:ring-[--e-orange]"
+                              className="w-full h-7 px-2 text-xs border rounded-md bg-white font-mono focus:outline-none focus:ring-1 focus:ring-(--e-orange)"
                             />
                           </div>
                           <div>
@@ -1232,7 +1232,7 @@ export default function ProductDetail() {
                         </thead>
                         <tbody>
                           {linkedPackages.map((row: any) => (
-                            <tr key={row.linkId} className="border-b last:border-0 hover:bg-[--e-orange-lt]/40 transition-colors">
+                            <tr key={row.linkId} className="border-b last:border-0 hover:bg-(--e-orange-lt)/40 transition-colors">
                               <td className="px-3 py-2 font-medium text-sm">{row.packageName}</td>
                               <td className="px-3 py-2 text-xs text-muted-foreground">
                                 <div>{row.groupNameEn ?? "—"}</div>
@@ -1256,7 +1256,7 @@ export default function ProductDetail() {
                                   <button
                                     type="button"
                                     onClick={() => navigate(`${BASE}/admin/packages/${row.packageId}`)}
-                                    className="text-muted-foreground hover:text-[--e-orange] transition-colors"
+                                    className="text-muted-foreground hover:text-(--e-orange) transition-colors"
                                     title="Open package"
                                   >
                                     <ExternalLink className="w-3.5 h-3.5" />
@@ -1298,7 +1298,7 @@ export default function ProductDetail() {
                     value={g("itemDescription")}
                     onChange={e => sf("itemDescription")(e.target.value)}
                     placeholder="Brief description shown on quote/invoice line item"
-                    className="border-[#E8E6E2] text-sm resize-none focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)]"
+                    className="border-[#E8E6E2] text-sm resize-none focus:border-(--e-orange) focus:shadow-[0_0_0_3px_var(--e-orange-ring)]"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1412,7 +1412,7 @@ export default function ProductDetail() {
                         <button
                           type="button"
                           onClick={copyId}
-                          className="shrink-0 hover:text-[--e-orange] transition-colors"
+                          className="shrink-0 hover:text-(--e-orange) transition-colors"
                           style={{ color: "var(--e-text-3)" }}
                           title="Copy ID"
                         >

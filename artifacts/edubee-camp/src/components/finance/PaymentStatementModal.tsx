@@ -95,7 +95,7 @@ export default function PaymentStatementModal({ contractId, studentName, student
                   <input type="radio" name="scope" value="contract"
                     checked={scope === "contract"}
                     onChange={() => setScope("contract")}
-                    className="accent-[--e-orange]" />
+                    className="accent-(--e-orange)" />
                   <div>
                     <p className="text-sm font-medium text-[#1C1917]">This contract only</p>
                     <p className="text-[11px] text-[#A8A29E]">Payments linked to this contract — most common for visa submission</p>
@@ -108,7 +108,7 @@ export default function PaymentStatementModal({ contractId, studentName, student
                   <input type="radio" name="scope" value="student"
                     checked={scope === "student"}
                     onChange={() => setScope("student")}
-                    className="accent-[--e-orange]" />
+                    className="accent-(--e-orange)" />
                   <div>
                     <p className="text-sm font-medium text-[#1C1917]">All contracts for this student</p>
                     <p className="text-[11px] text-[#A8A29E]">Consolidated history for multi-contract students</p>
@@ -125,7 +125,7 @@ export default function PaymentStatementModal({ contractId, studentName, student
               <select
                 value={reason}
                 onChange={e => setReason(e.target.value)}
-                className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#1C1917] bg-white focus:outline-none focus:border-[--e-orange]">
+                className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#1C1917] bg-white focus:outline-none focus:border-(--e-orange)">
                 <option value="">— Select reason —</option>
                 {ISSUE_REASONS.map(r => (
                   <option key={r} value={r}>{r}</option>
@@ -140,7 +140,7 @@ export default function PaymentStatementModal({ contractId, studentName, student
                   type="checkbox"
                   checked={sendEmail}
                   onChange={e => setSendEmail(e.target.checked)}
-                  className="accent-[--e-orange] w-4 h-4" />
+                  className="accent-(--e-orange) w-4 h-4" />
                 <div>
                   <p className="text-sm font-medium text-[#1C1917]">Send automatically to student email</p>
                   <p className="text-[11px] text-[#A8A29E]">PDF will be attached and sent immediately after generation</p>
@@ -152,7 +152,7 @@ export default function PaymentStatementModal({ contractId, studentName, student
                   value={emailTo}
                   onChange={e => setEmailTo(e.target.value)}
                   placeholder="student@email.com"
-                  className="mt-3 w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]"
+                  className="mt-3 w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-(--e-orange)"
                 />
               )}
             </div>

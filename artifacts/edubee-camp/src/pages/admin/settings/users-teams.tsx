@@ -84,7 +84,7 @@ export default function UsersTeams() {
   const currentUsers  = plan?.currentUsers  ?? 0;
   const maxUsers      = plan?.maxUsers      ?? 5;
 
-  const inp = "w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[--e-orange] bg-white";
+  const inp = "w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-(--e-orange) bg-white";
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-6 px-4">
@@ -105,7 +105,7 @@ export default function UsersTeams() {
       {/* Invite */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] p-6 space-y-4" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
         <div className="flex items-center gap-2 border-b border-[#E8E6E2] pb-3">
-          <UserPlus size={16} className="text-[--e-orange]" strokeWidth={1.5} />
+          <UserPlus size={16} className="text-(--e-orange)" strokeWidth={1.5} />
           <h2 className="text-sm font-semibold text-[#1C1917] uppercase tracking-wide">Invite Team Member</h2>
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -146,11 +146,11 @@ export default function UsersTeams() {
       {/* Current Users */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
         <div className="px-6 py-4 border-b border-[#E8E6E2] flex items-center gap-2">
-          <Users size={16} className="text-[--e-orange]" strokeWidth={1.5} />
+          <Users size={16} className="text-(--e-orange)" strokeWidth={1.5} />
           <h2 className="text-sm font-semibold text-[#1C1917] uppercase tracking-wide">Current Team ({users.length})</h2>
         </div>
         {loadingUsers ? (
-          <div className="flex items-center justify-center h-24"><Loader2 size={20} className="animate-spin text-[--e-orange]" /></div>
+          <div className="flex items-center justify-center h-24"><Loader2 size={20} className="animate-spin text-(--e-orange)" /></div>
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -182,11 +182,11 @@ export default function UsersTeams() {
       {(invitations.length > 0 || loadingInvs) && (
         <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
           <div className="px-6 py-4 border-b border-[#E8E6E2] flex items-center gap-2">
-            <Clock size={16} className="text-[--e-orange]" strokeWidth={1.5} />
+            <Clock size={16} className="text-(--e-orange)" strokeWidth={1.5} />
             <h2 className="text-sm font-semibold text-[#1C1917] uppercase tracking-wide">Pending Invitations ({invitations.length})</h2>
           </div>
           {loadingInvs ? (
-            <div className="flex items-center justify-center h-20"><Loader2 size={18} className="animate-spin text-[--e-orange]" /></div>
+            <div className="flex items-center justify-center h-20"><Loader2 size={18} className="animate-spin text-(--e-orange)" /></div>
           ) : (
             <table className="w-full text-sm">
               <thead>

@@ -23,7 +23,7 @@ export function DualPriceDisplay({ localAmount, localCurrency, countryCode, size
 
   return (
     <div>
-      <div className={`font-extrabold leading-tight flex items-center gap-1.5 ${size === "detail" ? "text-2xl" : "text-lg"} text-[--e-orange]`}>
+      <div className={`font-extrabold leading-tight flex items-center gap-1.5 ${size === "detail" ? "text-2xl" : "text-lg"} text-(--e-orange)`}>
         <span>{localFormatted}</span>
         {flag && <span className="text-base">{flag}</span>}
       </div>

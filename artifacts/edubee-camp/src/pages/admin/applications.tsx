@@ -28,7 +28,7 @@ const SERVICE_TYPES = [
 const APP_STATUSES = ["all", "submitted", "reviewing", "quoted", "converted", "cancelled"];
 
 const STATUS_STYLES: Record<string, string> = {
-  submitted:  "bg-[--e-orange-lt] text-[--e-orange]",
+  submitted:  "bg-(--e-orange-lt) text-(--e-orange)",
   reviewing:  "bg-[#FEF9C3] text-[#CA8A04]",
   quoted:     "bg-[#E0F2FE] text-[#0369A1]",
   converted:  "bg-[#DCFCE7] text-[#16A34A]",
@@ -51,7 +51,7 @@ function ServiceChip({ types }: { types?: unknown }) {
   return (
     <div className="flex flex-wrap gap-1">
       {arr.map(t => (
-        <span key={t} className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-[--e-orange]/10 text-[--e-orange]">
+        <span key={t} className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-(--e-orange)/10 text-(--e-orange)">
           {t.replace(/_/g, " ")}
         </span>
       ))}
@@ -107,7 +107,7 @@ export default function Applications() {
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <KpiCard label="Total" value={stats?.total ?? 0} color="text-[#1C1917]" />
-        <KpiCard label="Submitted" value={stats?.submitted ?? 0} color="text-[--e-orange]" />
+        <KpiCard label="Submitted" value={stats?.submitted ?? 0} color="text-(--e-orange)" />
         <KpiCard label="Reviewing" value={stats?.reviewing ?? 0} color="text-[#CA8A04]" />
         <KpiCard label="Converted" value={stats?.converted ?? 0} color="text-[#16A34A]" />
       </div>
@@ -120,7 +120,7 @@ export default function Applications() {
             onClick={() => { setServiceType(s.key); setPage(1); }}
             className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               serviceType === s.key
-                ? "bg-[--e-orange] text-white"
+                ? "bg-(--e-orange) text-white"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
@@ -189,7 +189,7 @@ export default function Applications() {
               apps.map(app => (
                 <tr
                   key={app.id}
-                  className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer"
+                  className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer"
                   onClick={() => setLocation(`${BASE}/admin/applications/${app.id}`)}
                 >
                   <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{app.applicationNumber}</td>

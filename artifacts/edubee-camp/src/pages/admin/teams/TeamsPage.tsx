@@ -126,7 +126,7 @@ export default function TeamsPage() {
           </div>
           {isAdmin && (
             <Button
-              className="bg-[--e-orange] hover:bg-[#e0721a] text-white gap-2"
+              className="bg-(--e-orange) hover:bg-[#e0721a] text-white gap-2"
               onClick={() => setShowCreate(true)}
             >
               <Plus className="w-4 h-4" /> New Team
@@ -201,7 +201,7 @@ export default function TeamsPage() {
             {isLoading && (
               <tr>
                 <td colSpan={isAdmin ? 7 : 6} className="text-center py-12 text-muted-foreground text-sm">
-                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-[--e-orange]" />
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-(--e-orange)" />
                 </td>
               </tr>
             )}
@@ -360,7 +360,7 @@ export default function TeamsPage() {
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
               <Button
-                className="bg-[--e-orange] hover:bg-[#e0721a] text-white"
+                className="bg-(--e-orange) hover:bg-[#e0721a] text-white"
                 disabled={!form.name.trim() || createTeam.isPending}
                 onClick={() => createTeam.mutate(form)}
               >

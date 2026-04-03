@@ -30,7 +30,7 @@ const KANBAN_COLS = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  new:         "bg-[--e-orange-lt] text-[--e-orange]",
+  new:         "bg-(--e-orange-lt) text-(--e-orange)",
   open:        "bg-[#EFF6FF] text-[#3B82F6]",
   in_progress: "bg-[#FEF9C3] text-[#CA8A04]",
   qualified:   "bg-[#DCFCE7] text-[#16A34A]",
@@ -128,7 +128,7 @@ function KanbanCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
         {lead.originalName && <p className="text-xs text-[#57534E]">{lead.originalName}</p>}
       </div>
       {lead.inquiryType && (
-        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-[--e-orange-lt] text-[--e-orange]">
+        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-(--e-orange-lt) text-(--e-orange)">
           {lead.inquiryType}
         </span>
       )}
@@ -329,7 +329,7 @@ export default function CrmLeadsPage() {
                   <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No leads found</td></tr>
                 )}
                 {sorted.map(l => (
-                  <tr key={l.id} className="border-b last:border-0 hover:bg-[--e-orange-lt] transition-colors cursor-pointer">
+                  <tr key={l.id} className="border-b last:border-0 hover:bg-(--e-orange-lt) transition-colors cursor-pointer">
                     <td className="px-4 py-3 font-mono text-xs text-stone-500">{l.leadRefNumber ?? "—"}</td>
                     <td className="px-4 py-3">
                       <button onClick={() => navigate(`/admin/crm/leads/${l.id}`)} className="text-left w-full">

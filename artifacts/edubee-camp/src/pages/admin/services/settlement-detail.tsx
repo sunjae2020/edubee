@@ -137,7 +137,7 @@ function ChecklistRow({
               {item.label}
             </p>
             {item.required && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[--e-orange-lt] text-[--e-orange] font-semibold">Required</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-(--e-orange-lt) text-(--e-orange) font-semibold">Required</span>
             )}
           </div>
           {item.description && (
@@ -175,7 +175,7 @@ function ChecklistRow({
               <textarea rows={2} value={noteVal}
                 onChange={e => setNoteVal(e.target.value)}
                 disabled={!isAdmin}
-                className="w-full px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-xs resize-none focus:outline-none focus:border-[--e-orange] disabled:bg-[#F9F9F8] disabled:text-[#A8A29E]"
+                className="w-full px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-xs resize-none focus:outline-none focus:border-(--e-orange) disabled:bg-[#F9F9F8] disabled:text-[#A8A29E]"
                 placeholder="Add notes…" />
               {isAdmin && noteChanged && (
                 <div className="flex gap-1.5">
@@ -311,7 +311,7 @@ function ChecklistSection({ rec, isAdmin }: { rec: SettlementRec; isAdmin: boole
                   <div>
                     <p className="text-sm font-semibold text-[#1C1917] flex items-center gap-1.5">
                       {t.name}
-                      {t.isDefault && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[--e-orange-lt] text-[--e-orange]">Default</span>}
+                      {t.isDefault && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-(--e-orange-lt) text-(--e-orange)">Default</span>}
                     </p>
                     {t.description && <p className="text-[11px] text-[#A8A29E] mt-0.5">{t.description}</p>}
                     <p className="text-[11px] text-[#57534E] mt-1">{t.items.length} items</p>
@@ -334,12 +334,12 @@ function ChecklistSection({ rec, isAdmin }: { rec: SettlementRec; isAdmin: boole
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Add Custom Item</p>
           <input type="text" placeholder="Item label *" value={addLabel}
             onChange={e => setAddLabel(e.target.value)}
-            className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
+            className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-(--e-orange)" />
           <input type="text" placeholder="Description (optional)" value={addDesc}
             onChange={e => setAddDesc(e.target.value)}
-            className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
+            className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-(--e-orange)" />
           <label className="flex items-center gap-2 text-sm text-[#57534E] cursor-pointer">
-            <input type="checkbox" checked={addRequired} onChange={e => setAddRequired(e.target.checked)} className="accent-[--e-orange]" />
+            <input type="checkbox" checked={addRequired} onChange={e => setAddRequired(e.target.checked)} className="accent-(--e-orange)" />
             Mark as required
           </label>
           <div className="flex gap-2">
@@ -488,7 +488,7 @@ export default function SettlementMgtDetail() {
             <select
               value={rec.overallStatus ?? "pending"}
               onChange={e => updateMutation.mutate({ overallStatus: e.target.value })}
-              className="h-8 px-2 rounded-lg border border-[#E8E6E2] text-xs text-[#57534E] focus:outline-none focus:border-[--e-orange]">
+              className="h-8 px-2 rounded-lg border border-[#E8E6E2] text-xs text-[#57534E] focus:outline-none focus:border-(--e-orange)">
               <option value="pending">Pending</option>
               <option value="in_progress">In Progress</option>
               <option value="completed">Completed</option>
@@ -519,7 +519,7 @@ export default function SettlementMgtDetail() {
             <InfoRow label="Contract" value={
               rec.contractId ? (
                 <button onClick={() => navigate(`/admin/crm/contracts/${rec.contractId}`)}
-                  className="text-[--e-orange] font-mono font-semibold hover:underline flex items-center gap-1">
+                  className="text-(--e-orange) font-mono font-semibold hover:underline flex items-center gap-1">
                   {rec.contractNumber} <FileText size={11} />
                 </button>
               ) : "—"
@@ -534,14 +534,14 @@ export default function SettlementMgtDetail() {
                 <div className="flex gap-1">
                   <input type="date" value={editVal}
                     onChange={e => setEditVal(e.target.value)}
-                    className="h-7 px-2 rounded border border-[--e-orange] text-xs focus:outline-none" />
+                    className="h-7 px-2 rounded border border-(--e-orange) text-xs focus:outline-none" />
                   <button onClick={() => saveEdit("arrivalDate")} className="p-1 rounded bg-[#16A34A] text-white"><Check size={11} /></button>
                   <button onClick={cancelEdit} className="p-1 rounded border border-[#E8E6E2]"><X size={11} /></button>
                 </div>
               ) : (
                 <span className="flex items-center gap-1">
                   {fmtDate(rec.arrivalDate)}
-                  {isAdmin && <button onClick={() => startEdit("arrivalDate", rec.arrivalDate ?? "")} className="p-0.5 text-[#A8A29E] hover:text-[--e-orange]"><Edit3 size={11} /></button>}
+                  {isAdmin && <button onClick={() => startEdit("arrivalDate", rec.arrivalDate ?? "")} className="p-0.5 text-[#A8A29E] hover:text-(--e-orange)"><Edit3 size={11} /></button>}
                 </span>
               )
             } />
@@ -585,7 +585,7 @@ export default function SettlementMgtDetail() {
             {editField === "notes" ? (
               <div className="space-y-2">
                 <textarea rows={3} value={editVal} onChange={e => setEditVal(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[--e-orange] text-sm resize-none focus:outline-none" />
+                  className="w-full px-3 py-2 rounded-lg border border-(--e-orange) text-sm resize-none focus:outline-none" />
                 <div className="flex gap-2">
                   <button onClick={() => saveEdit("notes")}
                     className="h-7 px-3 rounded-lg text-xs font-semibold text-white" style={{ background:"#16A34A" }}>Save</button>

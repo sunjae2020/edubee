@@ -484,7 +484,7 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
                   onClick={() => setPaymentType(t.key)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                     paymentType === t.key
-                      ? "border-[--e-orange] bg-[--e-orange-lt] text-[--e-orange]"
+                      ? "border-(--e-orange) bg-(--e-orange-lt) text-(--e-orange)"
                       : "border-stone-200 text-stone-600 hover:border-stone-400"
                   }`}
                 >
@@ -604,7 +604,7 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
               </table>
               <div className="px-3 py-2 flex items-center justify-between border-t border-stone-100">
                 <button onClick={() => setLines(prev => [...prev, newLine()])}
-                  className="flex items-center gap-1 text-xs text-[--e-orange] hover:underline font-medium">
+                  className="flex items-center gap-1 text-xs text-(--e-orange) hover:underline font-medium">
                   <Plus size={12} /> Add Line
                 </button>
                 <span className="text-xs font-bold text-stone-800">
@@ -714,7 +714,7 @@ export default function PaymentsPage() {
                   onClick={() => setTypeFilter(f => f === t.key ? "" : t.key)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
                     typeFilter === t.key
-                      ? "border-[--e-orange] text-[--e-orange] bg-[--e-orange-lt]"
+                      ? "border-(--e-orange) text-(--e-orange) bg-(--e-orange-lt)"
                       : "border-stone-200 text-stone-500 hover:border-stone-400"
                   }`}
                 >
@@ -755,7 +755,7 @@ export default function PaymentsPage() {
                   const statusStyle = STATUS_STYLE[p.status] ?? STATUS_STYLE.Active;
                   const typeBg = TYPE_STYLE[p.paymentType] ?? "#F4F3F1";
                   return (
-                    <tr key={p.id} className={`hover:bg-[--e-orange-lt] cursor-pointer transition-colors ${p.status === "Void" ? "opacity-50" : ""}`} onClick={() => navigate(`/admin/accounting/payments/${p.id}`)}>
+                    <tr key={p.id} className={`hover:bg-(--e-orange-lt) cursor-pointer transition-colors ${p.status === "Void" ? "opacity-50" : ""}`} onClick={() => navigate(`/admin/accounting/payments/${p.id}`)}>
                       <td className="px-4 py-3 font-mono text-xs text-stone-500">{p.paymentRef ?? "—"}</td>
                       <td className="px-4 py-3 text-stone-700">{fmtDate(p.paymentDate)}</td>
                       <td className="px-4 py-3">
@@ -767,7 +767,7 @@ export default function PaymentsPage() {
                         {notesObj.receivedFromName && p.receivedFrom ? (
                           <button
                             onClick={() => navigate(`/admin/crm/accounts/${p.receivedFrom}`)}
-                            className="flex items-center gap-1 text-[--e-orange] hover:underline font-medium"
+                            className="flex items-center gap-1 text-(--e-orange) hover:underline font-medium"
                           >
                             {notesObj.receivedFromName}
                             <ExternalLink size={9} className="shrink-0" />
@@ -780,7 +780,7 @@ export default function PaymentsPage() {
                         {notesObj.paidToName && p.paidTo ? (
                           <button
                             onClick={() => navigate(`/admin/crm/accounts/${p.paidTo}`)}
-                            className="flex items-center gap-1 text-[--e-orange] hover:underline font-medium"
+                            className="flex items-center gap-1 text-(--e-orange) hover:underline font-medium"
                           >
                             {notesObj.paidToName}
                             <ExternalLink size={9} className="shrink-0" />

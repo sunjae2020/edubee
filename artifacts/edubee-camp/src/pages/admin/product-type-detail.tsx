@@ -129,7 +129,7 @@ export default function ProductTypeDetail() {
       <div className="flex flex-col items-center justify-center py-24 text-[#A8A29E]">
         <Tag className="w-10 h-10 mb-3" strokeWidth={1} />
         <p className="text-sm">Product type not found.</p>
-        <Button variant="link" className="text-[--e-orange] mt-2" onClick={() => navigate("/admin/product-types")}>
+        <Button variant="link" className="text-(--e-orange) mt-2" onClick={() => navigate("/admin/product-types")}>
           Back to list
         </Button>
       </div>
@@ -149,7 +149,7 @@ export default function ProductTypeDetail() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-2 flex-wrap">
-            <Tag className="w-5 h-5 text-[--e-orange]" strokeWidth={1.5} />
+            <Tag className="w-5 h-5 text-(--e-orange)" strokeWidth={1.5} />
             <h1 className="text-xl font-bold text-[#1C1917] leading-none">{productType.name}</h1>
             <StatusBadge status={form.status} />
           </div>
@@ -191,7 +191,7 @@ export default function ProductTypeDetail() {
           <Input
             value={form.name}
             onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setNameError(""); }}
-            className={`h-10 border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 ${nameError ? "border-[#DC2626]" : ""}`}
+            className={`h-10 border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0 ${nameError ? "border-[#DC2626]" : ""}`}
           />
           {nameError && <p className="text-xs text-[#DC2626]">{nameError}</p>}
         </div>
@@ -233,7 +233,7 @@ export default function ProductTypeDetail() {
             value={form.description}
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
             rows={3}
-            className="border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 text-sm resize-none"
+            className="border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0 text-sm resize-none"
             placeholder="Describe this product type..."
           />
         </div>

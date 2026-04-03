@@ -22,7 +22,7 @@ import { useLookup } from "@/hooks/use-lookup";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_COLORS: Record<string, string> = {
-  new:         "bg-[--e-orange-lt] text-[--e-orange]",
+  new:         "bg-(--e-orange-lt) text-(--e-orange)",
   open:        "bg-[#EFF6FF] text-[#3B82F6]",
   in_progress: "bg-[#FEF9C3] text-[#CA8A04]",
   qualified:   "bg-[#DCFCE7] text-[#16A34A]",
@@ -50,7 +50,7 @@ const TABS = [
   { key: "activity", label: "Activity Timeline", icon: Activity },
 ];
 
-const INPUT_CLS = "h-9 text-sm border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 focus-visible:ring-offset-0";
+const INPUT_CLS = "h-9 text-sm border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0 focus-visible:ring-offset-0";
 
 const ACCOUNT_CREATE_TYPES = ["Student", "Provider", "Client", "Institute", "Agent", "Company", "Accommodation", "Agency", "School", "Private"];
 
@@ -109,7 +109,7 @@ interface StaffOption { id: string; name: string; }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-xs font-bold text-[--e-orange] uppercase tracking-widest mb-4 pb-2 border-b border-[--e-orange]/20">
+    <h3 className="text-xs font-bold text-(--e-orange) uppercase tracking-widest mb-4 pb-2 border-b border-(--e-orange)/20">
       {children}
     </h3>
   );
@@ -137,8 +137,8 @@ function FieldGroup({ label, children, required }: { label: string; children: Re
 function ChannelIcon({ channel }: { channel: string }) {
   const Icon = CHANNEL_ICONS[channel] ?? MessageSquare;
   return (
-    <div className="w-8 h-8 rounded-full bg-[--e-orange-lt] flex items-center justify-center shrink-0">
-      <Icon size={14} className="text-[--e-orange]" />
+    <div className="w-8 h-8 rounded-full bg-(--e-orange-lt) flex items-center justify-center shrink-0">
+      <Icon size={14} className="text-(--e-orange)" />
     </div>
   );
 }
@@ -264,19 +264,19 @@ function AccountLookupField({
       <div className="flex items-center gap-2 flex-wrap">
         {selected ? (
           <>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[--e-orange-lt] border border-[--e-orange]/30">
-              <Building2 size={12} className="text-[--e-orange] shrink-0" />
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-(--e-orange-lt) border border-(--e-orange)/30">
+              <Building2 size={12} className="text-(--e-orange) shrink-0" />
               <span className="text-sm font-medium text-[#1C1917]">{selected.name}</span>
             </div>
-            <button onClick={startEdit} className="text-xs text-[--e-orange] hover:underline font-medium">Change</button>
+            <button onClick={startEdit} className="text-xs text-(--e-orange) hover:underline font-medium">Change</button>
             <button onClick={clear} className="text-stone-400 hover:text-red-500"><X size={13} /></button>
           </>
         ) : (
           <button
             onClick={startEdit}
-            className="w-full text-left text-sm flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-stone-300 hover:border-[--e-orange] hover:bg-[--e-orange-lt]/40 transition-colors text-stone-400 hover:text-stone-700"
+            className="w-full text-left text-sm flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-stone-300 hover:border-(--e-orange) hover:bg-(--e-orange-lt)/40 transition-colors text-stone-400 hover:text-stone-700"
           >
-            <Search size={13} className="text-[--e-orange]" />
+            <Search size={13} className="text-(--e-orange)" />
             Search or create account…
           </button>
         )}
@@ -295,7 +295,7 @@ function AccountLookupField({
             value={query}
             onChange={e => { setQuery(e.target.value); setShowCreate(false); }}
             placeholder="Search account name…"
-            className="h-9 text-sm pl-8 border-[--e-orange] shadow-[0_0_0_3px_var(--e-orange-shadow-12)]"
+            className="h-9 text-sm pl-8 border-(--e-orange) shadow-[0_0_0_3px_var(--e-orange-shadow-12)]"
           />
         </div>
         <button onClick={cancel} className="text-stone-400 hover:text-stone-600" title="Cancel">
@@ -308,7 +308,7 @@ function AccountLookupField({
         <div className="absolute top-10 left-0 z-50 bg-white border border-[#E8E6E2] rounded-xl shadow-lg w-full max-h-60 overflow-y-auto">
           {results.map(acc => (
             <button key={acc.id} onClick={() => pick(acc)}
-              className="w-full text-left px-3 py-2.5 text-sm hover:bg-[--e-orange-lt] flex items-center gap-2 border-b border-stone-50 last:border-0">
+              className="w-full text-left px-3 py-2.5 text-sm hover:bg-(--e-orange-lt) flex items-center gap-2 border-b border-stone-50 last:border-0">
               <Building2 size={13} className="text-stone-400 shrink-0" />
               <span className="flex-1 truncate">{acc.name}</span>
               {acc.accountType && <span className="text-xs text-stone-400 shrink-0">({acc.accountType})</span>}
@@ -348,7 +348,7 @@ function AccountLookupField({
                 <button key={t} type="button" onClick={() => setNewType(t)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                     newType === t
-                      ? "bg-[--e-orange] text-white border-[--e-orange]"
+                      ? "bg-(--e-orange) text-white border-(--e-orange)"
                       : "bg-white text-stone-600 border-stone-200 hover:border-orange-300"
                   }`}>
                   {t}
@@ -376,7 +376,7 @@ function AccountLookupField({
               Back to search
             </button>
             <button onClick={handleCreate} disabled={creating || !newName.trim()}
-              className="flex-1 h-8 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50 bg-[--e-orange] hover:bg-[--e-orange-hover]">
+              className="flex-1 h-8 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50 bg-(--e-orange) hover:bg-(--e-orange-hover)">
               {creating ? "Creating…" : "Create & Select"}
             </button>
           </div>
@@ -619,7 +619,7 @@ export default function LeadDetailPage() {
           )}
           {lead.accountName && (
             <div className="flex items-center gap-1.5 mt-1.5">
-              <Building2 size={13} className="text-[--e-orange]" />
+              <Building2 size={13} className="text-(--e-orange)" />
               <span className="text-sm text-[#57534E]">{lead.accountName}</span>
             </div>
           )}
@@ -664,7 +664,7 @@ export default function LeadDetailPage() {
           return (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                active ? "border-[--e-orange] text-[--e-orange]" : "border-transparent text-stone-500 hover:text-stone-800"
+                active ? "border-(--e-orange) text-(--e-orange)" : "border-transparent text-stone-500 hover:text-stone-800"
               }`}>
               <Icon size={14} />
               {t.label}
@@ -678,8 +678,8 @@ export default function LeadDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
             <div className="flex items-start gap-3 mb-4">
-              <div className="p-2 rounded-full bg-[--e-orange-lt] shrink-0">
-                <FileText size={18} className="text-[--e-orange]" />
+              <div className="p-2 rounded-full bg-(--e-orange-lt) shrink-0">
+                <FileText size={18} className="text-(--e-orange)" />
               </div>
               <div>
                 <h3 className="font-semibold text-[#1C1917] text-base">Convert to Quote</h3>
@@ -714,9 +714,9 @@ export default function LeadDetailPage() {
               <div className="space-y-2 mt-2">
                 {lead.quotes.map((q: { id: string; quoteRefNumber: string; quoteStatus: string; createdOn: string }) => (
                   <div key={q.id}
-                    className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-[#F4F3F1] hover:bg-[--e-orange-lt] transition-colors">
+                    className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-[#F4F3F1] hover:bg-(--e-orange-lt) transition-colors">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <FileText size={14} className="text-[--e-orange] shrink-0" />
+                      <FileText size={14} className="text-(--e-orange) shrink-0" />
                       <span className="font-mono text-sm text-[#1C1917] font-medium">{q.quoteRefNumber}</span>
                       {q.createdOn && (
                         <span className="text-xs text-muted-foreground">{formatDateTime(q.createdOn)}</span>
@@ -727,7 +727,7 @@ export default function LeadDetailPage() {
                     </div>
                     <button
                       onClick={() => navigate(`/admin/crm/quotes/${q.id}`)}
-                      className="flex items-center gap-1 text-xs font-medium text-[--e-orange] hover:underline shrink-0">
+                      className="flex items-center gap-1 text-xs font-medium text-(--e-orange) hover:underline shrink-0">
                       <ExternalLink size={12} /> View
                     </button>
                   </div>
@@ -849,15 +849,15 @@ export default function LeadDetailPage() {
                   onChange={e => set("notes", e.target.value)}
                   placeholder="Additional notes…"
                   rows={8}
-                  className="text-sm border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 resize-y" />
+                  className="text-sm border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0 resize-y" />
               </FieldGroup>
             </div>
           </div>
 
           {/* Linked Camp Application */}
           {lead.source === "Camp Application" && lead.campApplication && (
-            <div className="border border-[--e-orange]/30 rounded-xl p-5 bg-[--e-orange-lt]/40">
-              <p className="text-xs font-semibold text-[--e-orange] uppercase tracking-widest mb-4 pb-2 border-b border-[--e-orange]/20">
+            <div className="border border-(--e-orange)/30 rounded-xl p-5 bg-(--e-orange-lt)/40">
+              <p className="text-xs font-semibold text-(--e-orange) uppercase tracking-widest mb-4 pb-2 border-b border-(--e-orange)/20">
                 Linked Camp Application
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
@@ -882,7 +882,7 @@ export default function LeadDetailPage() {
               </div>
               <button
                 onClick={() => navigate(`/admin/camp-applications/${lead.campApplication!.id}`)}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-[--e-orange] hover:underline">
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-(--e-orange) hover:underline">
                 <ExternalLink size={13} /> View Application
               </button>
             </div>
@@ -896,7 +896,7 @@ export default function LeadDetailPage() {
               onValueChange={v => saveAssignedStaff(v === "none" ? null : v)}
               disabled={staffSaving}
             >
-              <SelectTrigger className="h-9 text-sm border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 focus-visible:ring-offset-0">
+              <SelectTrigger className="h-9 text-sm border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0 focus-visible:ring-offset-0">
                 <SelectValue placeholder="— unassigned —" />
               </SelectTrigger>
               <SelectContent>
@@ -955,7 +955,7 @@ export default function LeadDetailPage() {
                   onChange={e => setActivityForm(f => ({ ...f, description: e.target.value }))}
                   placeholder="What happened?"
                   rows={3}
-                  className="text-sm border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 resize-none" />
+                  className="text-sm border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0 resize-none" />
               </div>
               <div className="flex justify-end">
                 <Button size="sm" disabled={activityMutation.isPending}
@@ -979,7 +979,7 @@ export default function LeadDetailPage() {
                   <ChannelIcon channel={act.channel} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">
+                      <span className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">
                         {act.channel}
                       </span>
                       {act.scheduledAt && (

@@ -73,8 +73,8 @@ export default function ChatbotAdminPage() {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card shrink-0 flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[--e-orange]/10 flex items-center justify-center">
-            <Bot className="w-5 h-5 text-[--e-orange]" />
+          <div className="w-9 h-9 rounded-xl bg-(--e-orange)/10 flex items-center justify-center">
+            <Bot className="w-5 h-5 text-(--e-orange)" />
           </div>
           <div>
             <h1 className="font-semibold text-base text-foreground">AI Chatbot Management</h1>
@@ -268,7 +268,7 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
             onClick={() => setAddModal("file")}>
             <Upload className="w-3.5 h-3.5" /> Upload File
           </Button>
-          <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5 text-xs"
+          <Button size="sm" className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5 text-xs"
             onClick={() => setAddModal("manual")}>
             <Plus className="w-3.5 h-3.5" /> Add Manual
           </Button>
@@ -278,12 +278,12 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
       {/* Documents table */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-[--e-orange]" />
+          <Loader2 className="w-6 h-6 animate-spin text-(--e-orange)" />
         </div>
       ) : filteredDocs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-center border border-dashed border-border rounded-xl">
-          <div className="w-14 h-14 rounded-2xl bg-[--e-orange]/8 flex items-center justify-center">
-            <FileText className="w-7 h-7 text-[--e-orange]/60" />
+          <div className="w-14 h-14 rounded-2xl bg-(--e-orange)/8 flex items-center justify-center">
+            <FileText className="w-7 h-7 text-(--e-orange)/60" />
           </div>
           <p className="font-medium text-sm">
             {scopeFilter === "all" ? "No documents added yet" : `No ${scopeFilter} documents`}
@@ -313,7 +313,7 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
                 const scopeCfg = SCOPE_CONFIG[doc.scope ?? "internal"];
                 const ScopeIcon = scopeCfg.icon;
                 return (
-                  <tr key={doc.id} className={`border-b border-border last:border-0 hover:bg-[--e-orange-lt]/30 transition-colors ${i % 2 === 0 ? "" : "bg-muted/20"}`}>
+                  <tr key={doc.id} className={`border-b border-border last:border-0 hover:bg-(--e-orange-lt)/30 transition-colors ${i % 2 === 0 ? "" : "bg-muted/20"}`}>
                     <td className="px-4 py-3">
                       <p className="font-medium text-foreground truncate max-w-[220px]">{doc.title}</p>
                       {doc.source && (
@@ -347,7 +347,7 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
                     <td className="px-4 py-3">
                       <span className="text-muted-foreground">
                         {doc.chunkCount > 0
-                          ? <span className="text-[--e-orange] font-semibold">{doc.chunkCount}</span>
+                          ? <span className="text-(--e-orange) font-semibold">{doc.chunkCount}</span>
                           : <span className="text-yellow-600 text-[10px]">Processing...</span>
                         }
                       </span>
@@ -537,13 +537,13 @@ function AddDocumentModal({ type, onClose, onAdded }: {
                 onClick={() => fileInputRef.current?.click()}
                 className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg p-5 cursor-pointer transition-colors ${
                   file
-                    ? "border-[--e-orange]/50 bg-[--e-orange]/5"
-                    : "border-border hover:border-[--e-orange]/40 hover:bg-muted/40"
+                    ? "border-(--e-orange)/50 bg-(--e-orange)/5"
+                    : "border-border hover:border-(--e-orange)/40 hover:bg-muted/40"
                 }`}
               >
-                <Upload className={`w-5 h-5 ${file ? "text-[--e-orange]" : "text-muted-foreground/40"}`} />
+                <Upload className={`w-5 h-5 ${file ? "text-(--e-orange)" : "text-muted-foreground/40"}`} />
                 {file
-                  ? <p className="text-sm font-medium text-[--e-orange]">{file.name}</p>
+                  ? <p className="text-sm font-medium text-(--e-orange)">{file.name}</p>
                   : <p className="text-sm text-muted-foreground">Click to select a file</p>
                 }
                 <p className="text-[10px] text-muted-foreground/60">.txt · .md · max 5 MB</p>
@@ -588,7 +588,7 @@ function AddDocumentModal({ type, onClose, onAdded }: {
         <div className="flex gap-3 px-6 pb-5">
           <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
           <Button
-            className="flex-1 bg-[--e-orange] hover:bg-[#d97706] text-white"
+            className="flex-1 bg-(--e-orange) hover:bg-[#d97706] text-white"
             disabled={loading || (type === "google" ? !url.trim() : type === "file" ? !file : !title.trim() || !content.trim())}
             onClick={submit}
           >
@@ -711,14 +711,14 @@ function ChatPanel() {
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             {msg.role === "assistant" && (
-              <div className="w-7 h-7 rounded-full bg-[--e-orange]/10 flex items-center justify-center shrink-0 mt-0.5">
-                <Bot className="w-4 h-4 text-[--e-orange]" />
+              <div className="w-7 h-7 rounded-full bg-(--e-orange)/10 flex items-center justify-center shrink-0 mt-0.5">
+                <Bot className="w-4 h-4 text-(--e-orange)" />
               </div>
             )}
             <div className={`max-w-[80%] ${msg.role === "user" ? "order-first" : ""}`}>
               <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                 msg.role === "user"
-                  ? "bg-[--e-orange] text-white rounded-br-sm"
+                  ? "bg-(--e-orange) text-white rounded-br-sm"
                   : "bg-muted text-foreground rounded-bl-sm"
               }`}>
                 {msg.content || (isStreaming && i === messages.length - 1
@@ -760,7 +760,7 @@ function ChatPanel() {
           <Button
             onClick={sendMessage}
             disabled={!input.trim() || isStreaming}
-            className="bg-[--e-orange] hover:bg-[#d97706] text-white shrink-0"
+            className="bg-(--e-orange) hover:bg-[#d97706] text-white shrink-0"
           >
             {isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>

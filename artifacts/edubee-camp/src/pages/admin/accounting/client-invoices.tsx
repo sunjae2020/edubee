@@ -37,7 +37,7 @@ function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "draft").toLowerCase();
   const map: Record<string, string> = {
     draft: "bg-[#F4F3F1] text-[#57534E]",
-    sent: "bg-[--e-orange-lt] text-[--e-orange]",
+    sent: "bg-(--e-orange-lt) text-(--e-orange)",
     paid: "bg-[#DCFCE7] text-[#16A34A]",
     overdue: "bg-[#FEF2F2] text-[#DC2626]",
     cancelled: "bg-[#F4F3F1] text-[#A8A29E]",
@@ -127,7 +127,7 @@ function RecordPaymentModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-[--e-orange]" />
+            <CreditCard className="w-4 h-4 text-(--e-orange)" />
             Record Payment
           </DialogTitle>
         </DialogHeader>
@@ -197,7 +197,7 @@ function RecordPaymentModal({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
+          <Button className="bg-(--e-orange) hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
             {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Recording…</> : "Record Payment"}
           </Button>
         </DialogFooter>
@@ -274,7 +274,7 @@ export default function ClientInvoices() {
                 <Receipt className="w-8 h-8 mx-auto mb-3 opacity-30" />No client invoices found
               </td></tr>
             ) : sorted.map(r => (
-              <tr key={r.id} className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
+              <tr key={r.id} className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                 <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{r.invoiceNumber ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>
                 <td className="px-4 py-3 text-right">
@@ -293,7 +293,7 @@ export default function ClientInvoices() {
                     {canRecordPayment(r.status) && (
                       <Button
                         size="sm"
-                        className="h-6 text-[10px] gap-1 px-2 bg-[--e-orange] hover:bg-[#d97706] text-white"
+                        className="h-6 text-[10px] gap-1 px-2 bg-(--e-orange) hover:bg-[#d97706] text-white"
                         onClick={e => { e.stopPropagation(); setPaymentTarget(r); }}
                       >
                         <CreditCard className="w-2.5 h-2.5" /> Pay
@@ -336,12 +336,12 @@ export default function ClientInvoices() {
               {selected.notes && <div><div className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notes</div><p className="text-sm">{selected.notes}</p></div>}
               <div className="flex gap-2 pt-2">
                 {selected.status === "draft" && (
-                  <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white flex-1 gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}>
+                  <Button size="sm" className="bg-(--e-orange) hover:bg-[#d97706] text-white flex-1 gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}>
                     <Send className="w-3.5 h-3.5" /> Send Invoice
                   </Button>
                 )}
                 {canRecordPayment(selected.status) && (
-                  <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white flex-1 gap-1.5" onClick={() => { setSelected(null); setPaymentTarget(selected); }}>
+                  <Button size="sm" className="bg-(--e-orange) hover:bg-[#d97706] text-white flex-1 gap-1.5" onClick={() => { setSelected(null); setPaymentTarget(selected); }}>
                     <CreditCard className="w-3.5 h-3.5" /> Record Payment
                   </Button>
                 )}

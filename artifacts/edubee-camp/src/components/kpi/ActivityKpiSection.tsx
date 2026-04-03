@@ -50,8 +50,8 @@ export const ActivityKpiSection: React.FC<Props> = ({ data }) => (
         label="New Leads"
         value={data.leadCount}
         sub="total"
-        iconBg="bg-[--e-orange-lt]"
-        iconColor="text-[--e-orange]"
+        iconBg="bg-(--e-orange-lt)"
+        iconColor="text-(--e-orange)"
       />
       <Item
         icon={CheckCircle2}

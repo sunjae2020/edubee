@@ -264,7 +264,7 @@ export default function ContactsPage() {
                 .filter(Boolean).join("").toUpperCase() || (displayName || "?").slice(0, 2).toUpperCase();
               const imgSrc = c.profileImageUrl || null;
               return (
-                <tr key={c.id} className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors">
+                <tr key={c.id} className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       {imgSrc ? (
@@ -278,7 +278,7 @@ export default function ContactsPage() {
                       )}
                       <button
                         onClick={() => navigate(`/admin/crm/contacts/${c.id}`)}
-                        className="font-medium text-stone-800 hover:text-[--e-orange] transition-colors text-left"
+                        className="font-medium text-stone-800 hover:text-(--e-orange) transition-colors text-left"
                       >
                         {displayName}
                       </button>

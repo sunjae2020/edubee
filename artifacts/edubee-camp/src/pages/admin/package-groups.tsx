@@ -385,13 +385,13 @@ export default function PackageGroups() {
                 onClick={() => { setTypeTab(opt.id); setPage(1); }}
                 className={`relative px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${
                   isActive
-                    ? "text-[--e-orange] border-b-2 border-[--e-orange] -mb-px"
+                    ? "text-(--e-orange) border-b-2 border-(--e-orange) -mb-px"
                     : "text-muted-foreground hover:text-foreground border-b-2 border-transparent -mb-px"
                 }`}
               >
                 {opt.name}
                 <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
-                  isActive ? "bg-[--e-orange-lt] text-[--e-orange]" : "bg-muted text-muted-foreground"
+                  isActive ? "bg-(--e-orange-lt) text-(--e-orange)" : "bg-muted text-muted-foreground"
                 }`}>
                   {count}
                 </span>
@@ -410,7 +410,7 @@ export default function PackageGroups() {
           <div className="text-4xl mb-3">📦</div>
           <h3 className="font-semibold mb-1">No Package Groups</h3>
           <p className="text-sm text-muted-foreground mb-4">Create your first package group to get started.</p>
-          <Button size="sm" onClick={openCreate} className="gap-1.5 bg-[--e-orange] hover:bg-[#d97706] text-white">
+          <Button size="sm" onClick={openCreate} className="gap-1.5 bg-(--e-orange) hover:bg-[#d97706] text-white">
             <Plus className="w-4 h-4" /> New Package Group
           </Button>
         </div>
@@ -420,7 +420,7 @@ export default function PackageGroups() {
             const country = getCountryInfo(g.countryCode);
             const isActive = g.status === "active";
             return (
-              <div key={g.id} className="bg-white rounded-xl border border-border p-5 hover:shadow-sm hover:border-[--e-orange]/30 transition-all group relative overflow-hidden cursor-pointer" onClick={() => setLocation(`${BASE}/admin/package-groups/${g.id}`)}>
+              <div key={g.id} className="bg-white rounded-xl border border-border p-5 hover:shadow-sm hover:border-(--e-orange)/30 transition-all group relative overflow-hidden cursor-pointer" onClick={() => setLocation(`${BASE}/admin/package-groups/${g.id}`)}>
                 {g.thumbnailUrl && (
                   <div className="absolute inset-0 opacity-5">
                     <img src={g.thumbnailUrl} alt="" className="w-full h-full object-cover" />
@@ -435,7 +435,7 @@ export default function PackageGroups() {
                           {g.status ?? "draft"}
                         </span>
                         {g.typeName && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[--e-orange-lt] text-[--e-orange] border border-[--e-orange-a13]">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-(--e-orange-lt) text-(--e-orange) border border-(--e-orange-a13)">
                             {g.typeName}
                           </span>
                         )}
@@ -483,7 +483,7 @@ export default function PackageGroups() {
                     </div>
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                       (g.packageCount ?? 0) > 0
-                        ? "bg-[--e-orange-lt] text-[--e-orange]"
+                        ? "bg-(--e-orange-lt) text-(--e-orange)"
                         : "bg-muted text-muted-foreground"
                     }`}>
                       <Package className="w-2.5 h-2.5" />
@@ -574,7 +574,7 @@ export default function PackageGroups() {
                 <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
                 <Button
                   type="button"
-                  className="bg-[--e-orange] hover:bg-[#d97706] text-white"
+                  className="bg-(--e-orange) hover:bg-[#d97706] text-white"
                   disabled={createGroup.isPending || updateGroup.isPending || !form.nameEn}
                   onClick={handleSubmit as any}
                 >
@@ -589,7 +589,7 @@ export default function PackageGroups() {
               {/* Coordinator selector */}
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-2 font-semibold">
-                  <span className="w-5 h-5 rounded-full bg-[--e-orange]/15 flex items-center justify-center text-[--e-orange] text-[11px] font-bold">C</span>
+                  <span className="w-5 h-5 rounded-full bg-(--e-orange)/15 flex items-center justify-center text-(--e-orange) text-[11px] font-bold">C</span>
                   Camp Coordinator
                 </Label>
                 <Select
@@ -671,7 +671,7 @@ export default function PackageGroups() {
                 <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
                 <Button
                   type="button"
-                  className="bg-[--e-orange] hover:bg-[#d97706] text-white"
+                  className="bg-(--e-orange) hover:bg-[#d97706] text-white"
                   disabled={createGroup.isPending || updateGroup.isPending || !form.nameEn}
                   onClick={handleSubmit as any}
                 >
@@ -686,7 +686,7 @@ export default function PackageGroups() {
               <TabsContent value="packages" className="m-0 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">Sub-packages define duration and pricing shown on the landing page.</p>
-                  <Button size="sm" onClick={openAddPkg} className="gap-1.5 bg-[--e-orange] hover:bg-[#d97706] text-white">
+                  <Button size="sm" onClick={openAddPkg} className="gap-1.5 bg-(--e-orange) hover:bg-[#d97706] text-white">
                     <Plus className="w-3.5 h-3.5" /> Add Package
                   </Button>
                 </div>
@@ -706,7 +706,7 @@ export default function PackageGroups() {
                       const days = pkg.durationDays;
                       const weeks = Math.round(days / 7);
                       return (
-                        <div key={pkg.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-[--e-orange-lt]/60 transition-colors">
+                        <div key={pkg.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-(--e-orange-lt)/60 transition-colors">
                           <div>
                             <p className="text-sm font-medium">{pkg.name}</p>
                             <p className="text-xs text-muted-foreground">{days} days ({weeks} weeks){displayPrice ? ` · ${symbol}${Number(displayPrice).toLocaleString()}` : ""}</p>
@@ -730,8 +730,8 @@ export default function PackageGroups() {
 
                 {/* Package add/edit inline form */}
                 {showPkgForm && (
-                  <form onSubmit={handlePkgSubmit} className="border border-[--e-orange]/40 rounded-xl p-4 bg-[--e-orange-lt]/30 space-y-4">
-                    <h4 className="text-sm font-semibold text-[--e-orange]">{editingPkg ? "Edit Package" : "New Package"}</h4>
+                  <form onSubmit={handlePkgSubmit} className="border border-(--e-orange)/40 rounded-xl p-4 bg-(--e-orange-lt)/30 space-y-4">
+                    <h4 className="text-sm font-semibold text-(--e-orange)">{editingPkg ? "Edit Package" : "New Package"}</h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="col-span-2 space-y-1.5">
@@ -765,7 +765,7 @@ export default function PackageGroups() {
 
                     <div className="flex gap-2 justify-end">
                       <Button type="button" variant="outline" size="sm" onClick={closePkgForm}>Cancel</Button>
-                      <Button type="submit" size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white" disabled={createPkg.isPending || updatePkg.isPending}>
+                      <Button type="submit" size="sm" className="bg-(--e-orange) hover:bg-[#d97706] text-white" disabled={createPkg.isPending || updatePkg.isPending}>
                         {(createPkg.isPending || updatePkg.isPending) && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
                         {editingPkg ? "Save Package" : "Add Package"}
                       </Button>
@@ -779,7 +779,7 @@ export default function PackageGroups() {
             {editing && (
               <TabsContent value="products" className="m-0 space-y-4">
                 {/* Info banner */}
-                <div className="bg-[--e-orange-lt] border border-[--e-orange-a20] text-[--e-orange-hover] rounded-lg px-4 py-2 text-sm">
+                <div className="bg-(--e-orange-lt) border border-(--e-orange-a20) text-(--e-orange-hover) rounded-lg px-4 py-2 text-sm">
                   💡 Pickup, accommodation, and tour products can be shared across multiple Package Groups.
                 </div>
 
@@ -870,7 +870,7 @@ export default function PackageGroups() {
 
                 <div className="flex justify-start">
                   <Button size="sm" onClick={() => { setAddError(null); setSelectedProductId(null); setAddQty(1); setAddUnitPrice(""); setShowAddProductModal(true); }}
-                    className="gap-1.5 bg-[--e-orange] hover:bg-[#d97706] text-white">
+                    className="gap-1.5 bg-(--e-orange) hover:bg-[#d97706] text-white">
                     <Plus className="w-3.5 h-3.5" /> Add Product
                   </Button>
                 </div>
@@ -893,7 +893,7 @@ export default function PackageGroups() {
                 <button
                   key={t}
                   onClick={() => { setAddProductTypeFilter(t); setSelectedProductId(null); }}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${addProductTypeFilter === t ? "bg-[--e-orange-lt] text-[--e-orange] border-[--e-orange-a20]" : "border-border text-muted-foreground hover:bg-muted"}`}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${addProductTypeFilter === t ? "bg-(--e-orange-lt) text-(--e-orange) border-(--e-orange-a20)" : "border-border text-muted-foreground hover:bg-muted"}`}
                 >
                   {t === "all" ? "All" : t}
                 </button>
@@ -957,7 +957,7 @@ export default function PackageGroups() {
               <Button size="sm" variant="outline" onClick={() => setShowAddProductModal(false)}>Cancel</Button>
               <Button
                 size="sm"
-                className="bg-[--e-orange] hover:bg-[#d97706] text-white"
+                className="bg-(--e-orange) hover:bg-[#d97706] text-white"
                 disabled={!selectedProductId || linkProduct.isPending}
                 onClick={() => {
                   if (!selectedProductId) return;

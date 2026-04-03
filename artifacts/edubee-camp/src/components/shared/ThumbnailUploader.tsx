@@ -88,7 +88,7 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
     <div className="space-y-2">
       <div
         className={`relative w-full rounded-xl border-2 border-dashed overflow-hidden transition-colors ${
-          disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-[--e-orange]/60"
+          disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-(--e-orange)/60"
         } ${imgSrc ? "border-border" : "border-muted-foreground/25"}`}
         style={{ aspectRatio: "16/9", maxHeight: 220 }}
         onClick={() => !disabled && !isUploading && inputRef.current?.click()}
@@ -107,7 +107,7 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
             <Loader2 className="w-7 h-7 text-white animate-spin" />
             <div className="text-white text-sm font-semibold">{progress}%</div>
             <div className="w-32 h-1.5 bg-white/30 rounded-full overflow-hidden">
-              <div className="h-full bg-[--e-orange] rounded-full transition-all" style={{ width: `${progress}%` }} />
+              <div className="h-full bg-(--e-orange) rounded-full transition-all" style={{ width: `${progress}%` }} />
             </div>
           </div>
         )}

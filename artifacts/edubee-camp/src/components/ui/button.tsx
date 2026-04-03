@@ -10,16 +10,16 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "rounded-lg bg-[--e-orange] text-white border-none hover:bg-[--e-orange-hover] hover:-translate-y-px hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)] active:bg-[--e-orange-active]",
+          "rounded-lg bg-(--e-orange) text-white border-none hover:bg-(--e-orange-hover) hover:-translate-y-px hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)] active:bg-(--e-orange-active)",
         destructive:
           "rounded-lg bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA] hover:bg-[#DC2626] hover:text-white",
         outline:
           "rounded-lg bg-white text-[#1C1917] border border-[#E8E6E2] hover:border-[#A8A29E] hover:bg-[#FAFAF9]",
         secondary:
-          "rounded-lg bg-[--e-orange-lt] text-[--e-orange] border border-[--e-orange]/20 hover:bg-[--e-orange]/15",
+          "rounded-lg bg-(--e-orange-lt) text-(--e-orange) border border-(--e-orange)/20 hover:bg-(--e-orange)/15",
         ghost:
           "rounded-lg bg-transparent text-[#57534E] border border-transparent hover:bg-[#F4F3F1] hover:text-[#1C1917]",
-        link: "text-[--e-orange] underline-offset-4 hover:underline",
+        link: "text-(--e-orange) underline-offset-4 hover:underline",
       },
       size: {
         default: "min-h-[40px] px-5 py-2.5",

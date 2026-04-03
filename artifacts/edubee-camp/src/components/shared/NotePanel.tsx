@@ -132,7 +132,7 @@ export function NotePanel({
             disabled={!content.trim() || createMutation.isPending}
             onClick={() => createMutation.mutate()}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-white transition-all
-              ${content.trim() ? "bg-[--e-orange] hover:bg-[#d97706]" : "bg-muted-foreground/30 cursor-not-allowed"}
+              ${content.trim() ? "bg-(--e-orange) hover:bg-[#d97706]" : "bg-muted-foreground/30 cursor-not-allowed"}
               ${createMutation.isPending ? "opacity-70" : ""}`}
           >
             <Send className="w-3 h-3" />
