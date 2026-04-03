@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -215,6 +215,7 @@ export default function Users() {
                   <td className="px-4 py-3" style={{ height: 48 }}>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
+                        {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.fullName} className="object-cover" />}
                         <AvatarFallback className="text-xs font-bold" style={{ background: "#FEF0E3", color: "#F5821F" }}>
                           {user.fullName.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
