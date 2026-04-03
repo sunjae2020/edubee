@@ -7,6 +7,7 @@ import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useAuth } from "@/hooks/use-auth";
+import { useLookup } from "@/hooks/use-lookup";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ProductImageGallery, type ProductImage } from "@/components/ui/product-image-gallery";
@@ -377,6 +378,7 @@ export default function ProductDetail() {
   const canEdit = ["super_admin", "admin"].includes(user?.role ?? "");
 
   const [availableCurrencies] = useState<string[]>(loadPreviewCurrencies);
+  const productUnits = useLookup("product_unit");
 
   const [form, setForm] = useState<Record<string, any>>({
     productName: "", fromDate: "", toDate: "", durationWeeks: "",
@@ -1326,8 +1328,7 @@ export default function ProductDetail() {
                     onChange={sf("unit")}
                     options={[
                       { value: NONE, label: "— No unit —" },
-                      ...["per package","per person","per night","per day","per session","per trip","per group","per week","per transfer","per meal","per semester","per annual","per course","flat fee"]
-                        .map(u => ({ value: u, label: u }))
+                      ...productUnits.map(u => ({ value: u, label: u }))
                     ]}
                   />
                 </div>

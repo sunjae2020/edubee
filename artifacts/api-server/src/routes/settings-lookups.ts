@@ -18,6 +18,7 @@ export const LOOKUP_GROUPS: Record<string, { label: string; description: string 
   nationality:      { label: "Nationality",         description: "Student nationality options" },
   language:         { label: "Language",            description: "Language options" },
   visa_type:        { label: "Visa Type",           description: "Visa type options" },
+  product_unit:     { label: "Product Unit",        description: "Pricing unit options for products (e.g. per person, per night)" },
 };
 
 // ── GET /api/settings/lookups/groups ─────────────────────────────────────────
@@ -177,6 +178,7 @@ router.post("/settings/lookups/seed", async (req, res) => {
       nationality:      ["Korean", "Chinese", "Japanese", "Thai", "Vietnamese", "Indonesian", "Filipino", "Singaporean", "Australian", "Other"],
       language:         ["Korean", "English", "Chinese", "Japanese", "Thai", "Vietnamese", "Spanish", "French", "Other"],
       visa_type:        ["Student Visa", "Working Holiday", "Tourist", "Business", "Dependent", "Other"],
+      product_unit:     ["per package", "per person", "per night", "per day", "per session", "per trip", "per group", "per week", "per transfer", "per meal", "per semester", "per annual", "per course", "flat fee"],
     };
 
     let created = 0;
