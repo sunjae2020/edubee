@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, Building2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Search, Building2, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { formatDate } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -20,6 +20,8 @@ const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   trial:     { bg: "#FFFBEB", color: "#92400E" },
 };
 
+const inp = `w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white placeholder-[#A8A29E] focus:outline-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)] transition-all`;
+
 function Badge({ label, style }: { label: string; style: { bg: string; color: string } }) {
   return (
     <span
@@ -31,12 +33,118 @@ function Badge({ label, style }: { label: string; style: { bg: string; color: st
   );
 }
 
+const EMPTY_FORM = { name: "", subdomain: "", ownerEmail: "", planType: "starter", planStatus: "trial" };
+
+function AddTenantPanel({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const { toast } = useToast();
+  const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [saving, setSaving] = useState(false);
+
+  const set = (k: keyof typeof EMPTY_FORM, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSave = async () => {
+    if (!form.name.trim()) { toast({ title: "Company name is required", variant: "destructive" }); return; }
+    setSaving(true);
+    try {
+      await axios.post(`${BASE}/api/superadmin/tenants`, {
+        name:       form.name.trim(),
+        subdomain:  form.subdomain.trim() || undefined,
+        ownerEmail: form.ownerEmail.trim() || undefined,
+        planType:   form.planType,
+        planStatus: form.planStatus,
+      });
+      toast({ title: "Tenant created" });
+      onSaved();
+    } catch (e: any) {
+      toast({ title: "Error", description: e?.response?.data?.error ?? "Failed to create tenant", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="rounded-xl mb-2"
+      style={{ background: "#FFFFFF", border: "2px solid #F5821F", padding: "24px 28px", boxShadow: "0 4px 16px rgba(245,130,31,0.10)" }}
+    >
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="font-semibold text-[#1C1917]" style={{ fontSize: 16 }}>Add New Tenant</h2>
+        <button onClick={onClose} className="text-[#A8A29E] hover:text-[#1C1917] transition-colors"><X size={18} /></button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="col-span-2 flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Company Name <span className="text-[#F5821F]">*</span></label>
+          <input className={inp} placeholder="e.g. Acme Education Pty Ltd" value={form.name} onChange={e => set("name", e.target.value)} />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Subdomain</label>
+          <div className="relative">
+            <input
+              className={inp}
+              placeholder="acme"
+              value={form.subdomain}
+              onChange={e => set("subdomain", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#A8A29E]">.edubee.com</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Owner Email</label>
+          <input className={inp} type="email" placeholder="admin@acme.com" value={form.ownerEmail} onChange={e => set("ownerEmail", e.target.value)} />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Plan</label>
+          <select className={inp} value={form.planType} onChange={e => set("planType", e.target.value)}>
+            <option value="starter">Starter</option>
+            <option value="professional">Professional</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Plan Status</label>
+          <select className={inp} value={form.planStatus} onChange={e => set("planStatus", e.target.value)}>
+            <option value="trial">Trial (30 days)</option>
+            <option value="active">Active</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-3 mt-6 pt-5" style={{ borderTop: "1px solid #F4F3F1" }}>
+        <button
+          onClick={onClose}
+          className="h-9 px-4 rounded-lg text-sm font-medium"
+          style={{ border: "1px solid #E8E6E2", color: "#57534E" }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="h-9 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-50 transition-all"
+          style={{ background: "#F5821F" }}
+          onMouseEnter={e => { if (!saving) e.currentTarget.style.background = "#D96A0A"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "#F5821F"; }}
+        >
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+          Create Tenant
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function TenantList() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch]   = useState("");
   const [page, setPage]       = useState(1);
   const [debSearch, setDeb]   = useState("");
+  const [showAdd, setShowAdd] = useState(false);
 
   const { data, isLoading } = useQuery<any>({
     queryKey: ["superadmin-tenants", debSearch, page],
@@ -63,29 +171,50 @@ export default function TenantList() {
     },
   });
 
-  const tenants   = data?.data ?? [];
+  const tenants    = data?.data ?? [];
   const totalPages = data?.pagination?.totalPages ?? 1;
 
   const handleSearch = (v: string) => { setSearch(v); setTimeout(() => { setDeb(v); setPage(1); }, 300); };
+  const handleSaved  = () => { setShowAdd(false); qc.invalidateQueries({ queryKey: ["superadmin-tenants"] }); };
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-8 space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-[#1C1917]">Tenants</h1>
           <p className="text-sm text-[#57534E]">All registered organisations ({data?.pagination?.total ?? 0})</p>
         </div>
-        <div className="relative w-64">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
-          <input
-            className="w-full h-9 pl-8 pr-3 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[#F5821F] bg-white"
-            placeholder="Search tenants…"
-            value={search}
-            onChange={e => handleSearch(e.target.value)}
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative w-60">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
+            <input
+              className="w-full h-9 pl-8 pr-3 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[#F5821F] bg-white"
+              placeholder="Search tenants…"
+              value={search}
+              onChange={e => handleSearch(e.target.value)}
+            />
+          </div>
+          {!showAdd && (
+            <button
+              onClick={() => setShowAdd(true)}
+              className="h-9 px-4 rounded-lg text-sm font-semibold text-white flex items-center gap-2 transition-all hover:-translate-y-px"
+              style={{ background: "#F5821F" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#D96A0A")}
+              onMouseLeave={e => (e.currentTarget.style.background = "#F5821F")}
+            >
+              <Plus size={14} strokeWidth={2} /> Add Tenant
+            </button>
+          )}
         </div>
       </div>
 
+      {/* Add Tenant Form */}
+      {showAdd && (
+        <AddTenantPanel onClose={() => setShowAdd(false)} onSaved={handleSaved} />
+      )}
+
+      {/* Table */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
         {isLoading ? (
           <div className="flex items-center justify-center h-48"><Loader2 size={24} className="animate-spin text-[#F5821F]" /></div>

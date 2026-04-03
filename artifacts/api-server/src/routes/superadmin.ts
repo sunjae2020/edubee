@@ -116,6 +116,44 @@ router.get("/api/superadmin/tenants/:id", ...guard, async (req, res) => {
   }
 });
 
+router.post("/api/superadmin/tenants", ...guard, async (req, res) => {
+  try {
+    const { name, subdomain, ownerEmail, planType, planStatus } = req.body;
+    if (!name?.trim()) return res.status(400).json({ error: "Company name is required" });
+
+    // Subdomain uniqueness check
+    if (subdomain?.trim()) {
+      const exists = await db
+        .select({ id: organisations.id })
+        .from(organisations)
+        .where(eq(organisations.subdomain, subdomain.trim().toLowerCase()))
+        .limit(1);
+      if (exists.length) return res.status(409).json({ error: "Subdomain already in use" });
+    }
+
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
+    const [created] = await db
+      .insert(organisations)
+      .values({
+        name:       name.trim(),
+        subdomain:  subdomain?.trim().toLowerCase() || null,
+        ownerEmail: ownerEmail?.trim() || null,
+        planType:   planType   ?? "starter",
+        planStatus: planStatus ?? "trial",
+        trialEndsAt,
+        status: "Active",
+      })
+      .returning();
+
+    return res.status(201).json(created);
+  } catch (err) {
+    console.error("POST /api/superadmin/tenants", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.put("/api/superadmin/tenants/:id", ...guard, async (req, res) => {
   try {
     const { planType, planStatus, status, maxUsers, maxStudents, trialEndsAt, features } = req.body;
