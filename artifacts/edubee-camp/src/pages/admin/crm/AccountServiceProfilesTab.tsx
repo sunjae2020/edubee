@@ -114,8 +114,8 @@ interface AccountServiceProfilesTabProps {
 const SERVICE_TYPE_CONFIG: Record<ServiceType, {
   label: string; icon: React.ReactNode; color: string; bg: string;
 }> = {
-  homestay:        { label: "Homestay",        icon: <Home size={14} />,          color: "#F5821F", bg: "#FEF0E3" },
-  dormitory:       { label: "Dormitory",        icon: <Bed size={14} />,           color: "#F5821F", bg: "#FEF0E3" },
+  homestay:        { label: "Homestay",        icon: <Home size={14} />,          color: "var(--e-orange)", bg: "var(--e-orange-lt)" },
+  dormitory:       { label: "Dormitory",        icon: <Bed size={14} />,           color: "var(--e-orange)", bg: "var(--e-orange-lt)" },
   hotel:           { label: "Hotel",            icon: <ConciergeBell size={14} />, color: "#0369A1", bg: "#E0F2FE" },
   pickup:          { label: "Airport Pickup",   icon: <Car size={14} />,           color: "#16A34A", bg: "#DCFCE7" },
   tour_provider:   { label: "Tour Provider",    icon: <Map size={14} />,           color: "#0891B2", bg: "#E0F2FE" },
@@ -187,7 +187,7 @@ const TextInput = ({ value, onChange, placeholder, type = "text", disabled = fal
       outline: "none", width: "100%", boxSizing: "border-box",
       transition: "border-color 150ms, box-shadow 150ms",
     }}
-    onFocus={e => { e.target.style.borderColor = "#F5821F"; e.target.style.boxShadow = "0 0 0 3px rgba(245,130,31,0.15)"; }}
+    onFocus={e => { e.target.style.borderColor = "var(--e-orange)"; e.target.style.boxShadow = "0 0 0 3px var(--e-orange-ring)"; }}
     onBlur={e => { e.target.style.borderColor = "#E8E6E2"; e.target.style.boxShadow = "none"; }}
   />
 );
@@ -207,7 +207,7 @@ const SelectInput = ({ value, onChange, options, placeholder }: {
       cursor: "pointer", appearance: "none",
       transition: "border-color 150ms, box-shadow 150ms",
     }}
-    onFocus={e => { e.target.style.borderColor = "#F5821F"; e.target.style.boxShadow = "0 0 0 3px rgba(245,130,31,0.15)"; }}
+    onFocus={e => { e.target.style.borderColor = "var(--e-orange)"; e.target.style.boxShadow = "0 0 0 3px var(--e-orange-ring)"; }}
     onBlur={e => { e.target.style.borderColor = "#E8E6E2"; e.target.style.boxShadow = "none"; }}
   >
     {placeholder && <option value="">{placeholder}</option>}
@@ -232,7 +232,7 @@ const TextareaInput = ({ value, onChange, placeholder, rows = 3 }: {
       boxSizing: "border-box", lineHeight: 1.6,
       transition: "border-color 150ms, box-shadow 150ms",
     }}
-    onFocus={e => { e.target.style.borderColor = "#F5821F"; e.target.style.boxShadow = "0 0 0 3px rgba(245,130,31,0.15)"; }}
+    onFocus={e => { e.target.style.borderColor = "var(--e-orange)"; e.target.style.boxShadow = "0 0 0 3px var(--e-orange-ring)"; }}
     onBlur={e => { e.target.style.borderColor = "#E8E6E2"; e.target.style.boxShadow = "none"; }}
   />
 );
@@ -243,7 +243,7 @@ const ToggleSwitch = ({ checked, onChange, label }: { checked: boolean; onChange
       onClick={() => onChange(!checked)}
       style={{
         width: 40, height: 22, borderRadius: 999, position: "relative",
-        background: checked ? "#F5821F" : "#E8E6E2",
+        background: checked ? "var(--e-orange)" : "#E8E6E2",
         transition: "background 200ms", cursor: "pointer", flexShrink: 0,
       }}
     >
@@ -284,7 +284,7 @@ const SectionCard = ({ title, icon, children, action }: {
   }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FEF0E3", display: "flex", alignItems: "center", justifyContent: "center", color: "#F5821F" }}>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--e-orange-lt)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--e-orange)" }}>
           {icon}
         </div>
         <span style={{ fontSize: 15, fontWeight: 600, color: "#1C1917" }}>{title}</span>
@@ -301,7 +301,7 @@ const Btn = ({ onClick, children, variant = "primary", size = "md", disabled = f
   size?: "sm" | "md"; disabled?: boolean;
 }) => {
   const styles: Record<string, React.CSSProperties> = {
-    primary:   { background: "#F5821F", color: "#FFFFFF", border: "none" },
+    primary:   { background: "var(--e-orange)", color: "#FFFFFF", border: "none" },
     secondary: { background: "#FFFFFF", color: "#1C1917", border: "1.5px solid #E8E6E2" },
     ghost:     { background: "transparent", color: "#57534E", border: "none" },
     danger:    { background: "#FEF2F2", color: "#DC2626", border: "1.5px solid #FECACA" },
@@ -553,7 +553,7 @@ const HomestayProfileSection = ({ accountId, readOnly }: { accountId: string; re
                     { icon: <Users size={12} />, val: p.maxStudents ? `Max ${p.maxStudents} student${p.maxStudents > 1 ? "s" : ""}` : undefined },
                   ].filter(i => i.val).map((item, idx) => (
                     <div key={idx} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13,
-                      color: (item as any).highlight ? "#F5821F" : "#57534E", fontWeight: (item as any).highlight ? 600 : 400 }}>
+                      color: (item as any).highlight ? "var(--e-orange)" : "#57534E", fontWeight: (item as any).highlight ? 600 : 400 }}>
                       {item.icon}{item.val}
                     </div>
                   ))}
@@ -561,7 +561,7 @@ const HomestayProfileSection = ({ accountId, readOnly }: { accountId: string; re
               </div>
               {!readOnly && (
                 <div style={{ display: "flex", gap: 6, marginLeft: 12 }}>
-                  <button onClick={() => startEdit(p)} style={{ background: "#FEF0E3", border: "none", borderRadius: 6, padding: "6px 8px", cursor: "pointer", color: "#F5821F" }}>
+                  <button onClick={() => startEdit(p)} style={{ background: "var(--e-orange-lt)", border: "none", borderRadius: 6, padding: "6px 8px", cursor: "pointer", color: "var(--e-orange)" }}>
                     <Pencil size={13} />
                   </button>
                   <button onClick={() => deactivate(p.id)} style={{ background: "#FEF2F2", border: "none", borderRadius: 6, padding: "6px 8px", cursor: "pointer", color: "#DC2626" }}>
@@ -688,7 +688,7 @@ const PickupProfileSection = ({ accountId, readOnly }: { accountId: string; read
                     { icon: <DollarSign size={12} />, val: p.baseRate ? `A$${p.baseRate}` : undefined, highlight: true },
                   ].filter(i => i.val).map((item, idx) => (
                     <div key={idx} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13,
-                      color: (item as any).highlight ? "#F5821F" : "#57534E", fontWeight: (item as any).highlight ? 600 : 400 }}>
+                      color: (item as any).highlight ? "var(--e-orange)" : "#57534E", fontWeight: (item as any).highlight ? 600 : 400 }}>
                       {item.icon}{item.val}
                     </div>
                   ))}
@@ -701,7 +701,7 @@ const PickupProfileSection = ({ accountId, readOnly }: { accountId: string; read
               </div>
               {!readOnly && (
                 <div style={{ display: "flex", gap: 6, marginLeft: 12 }}>
-                  <button onClick={() => { setForm(p); setEditId(p.id); setShowForm(true); }} style={{ background: "#FEF0E3", border: "none", borderRadius: 6, padding: "6px 8px", cursor: "pointer", color: "#F5821F" }}><Pencil size={13} /></button>
+                  <button onClick={() => { setForm(p); setEditId(p.id); setShowForm(true); }} style={{ background: "var(--e-orange-lt)", border: "none", borderRadius: 6, padding: "6px 8px", cursor: "pointer", color: "var(--e-orange)" }}><Pencil size={13} /></button>
                   <button onClick={() => apiFetch(`/api/accounts/${accountId}/profiles/pickup/${p.id}`, { method: "DELETE" }).then(load)} style={{ background: "#FEF2F2", border: "none", borderRadius: 6, padding: "6px 8px", cursor: "pointer", color: "#DC2626" }}><Trash2 size={13} /></button>
                 </div>
               )}
@@ -828,7 +828,7 @@ const TourProfileSection = ({ accountId, readOnly }: { accountId: string; readOn
                     { icon: <DollarSign size={12} />, val: p.partnerCost ? `Cost: A$${p.partnerCost}` : undefined },
                   ].filter(i => i.val).map((item, idx) => (
                     <div key={idx} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13,
-                      color: (item as any).highlight ? "#F5821F" : "#57534E", fontWeight: (item as any).highlight ? 600 : 400 }}>
+                      color: (item as any).highlight ? "var(--e-orange)" : "#57534E", fontWeight: (item as any).highlight ? 600 : 400 }}>
                       {item.icon}{item.val}
                     </div>
                   ))}
@@ -841,7 +841,7 @@ const TourProfileSection = ({ accountId, readOnly }: { accountId: string; readOn
               </div>
               {!readOnly && (
                 <div style={{ display: "flex", gap: 6, marginLeft: 12 }}>
-                  <button onClick={() => { setForm(p); setEditId(p.id); setShowForm(true); }} style={{ background: "#FEF0E3", border: "none", borderRadius: 6, padding: "6px 8px", cursor: "pointer", color: "#F5821F" }}><Pencil size={13} /></button>
+                  <button onClick={() => { setForm(p); setEditId(p.id); setShowForm(true); }} style={{ background: "var(--e-orange-lt)", border: "none", borderRadius: 6, padding: "6px 8px", cursor: "pointer", color: "var(--e-orange)" }}><Pencil size={13} /></button>
                   <button onClick={() => apiFetch(`/api/accounts/${accountId}/profiles/tour/${p.id}`, { method: "DELETE" }).then(load)} style={{ background: "#FEF2F2", border: "none", borderRadius: 6, padding: "6px 8px", cursor: "pointer", color: "#DC2626" }}><Trash2 size={13} /></button>
                 </div>
               )}

@@ -10,7 +10,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const PLAN_STYLE: Record<string, { bg: string; color: string }> = {
   solo:       { bg: "#F4F3F1", color: "#57534E"  },
-  starter:    { bg: "#FEF0E3", color: "#C2410C"  },
+  starter:    { bg: "var(--e-orange-lt)", color: "#C2410C"  },
   growth:     { bg: "#ECFDF5", color: "#065F46"  },
   enterprise: { bg: "#F5F3FF", color: "#6D28D9"  },
 };
@@ -29,7 +29,7 @@ const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   trial:     { bg: "#FFFBEB", color: "#92400E" },
 };
 
-const inp = `w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white placeholder-[#A8A29E] focus:outline-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)] transition-all`;
+const inp = `w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white placeholder-[#A8A29E] focus:outline-none focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)] transition-all`;
 
 function Badge({ label, style }: { label: string; style: { bg: string; color: string } }) {
   return (
@@ -74,7 +74,7 @@ function AddTenantPanel({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   return (
     <div
       className="rounded-xl mb-2"
-      style={{ background: "#FFFFFF", border: "2px solid #F5821F", padding: "24px 28px", boxShadow: "0 4px 16px rgba(245,130,31,0.10)" }}
+      style={{ background: "#FFFFFF", border: "2px solid var(--e-orange)", padding: "24px 28px", boxShadow: "0 4px 16px var(--e-orange-shadow-10)" }}
     >
       <div className="flex items-center justify-between mb-5">
         <h2 className="font-semibold text-[#1C1917]" style={{ fontSize: 16 }}>Add New Tenant</h2>
@@ -83,7 +83,7 @@ function AddTenantPanel({ onClose, onSaved }: { onClose: () => void; onSaved: ()
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2 flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Company Name <span className="text-[#F5821F]">*</span></label>
+          <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Company Name <span className="text-[--e-orange]">*</span></label>
           <input className={inp} placeholder="e.g. Acme Education Pty Ltd" value={form.name} onChange={e => set("name", e.target.value)} />
         </div>
 
@@ -135,9 +135,9 @@ function AddTenantPanel({ onClose, onSaved }: { onClose: () => void; onSaved: ()
           onClick={handleSave}
           disabled={saving}
           className="h-9 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-50 transition-all"
-          style={{ background: "#F5821F" }}
-          onMouseEnter={e => { if (!saving) e.currentTarget.style.background = "#D96A0A"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "#F5821F"; }}
+          style={{ background: "var(--e-orange)" }}
+          onMouseEnter={e => { if (!saving) e.currentTarget.style.background = "var(--e-orange-hover)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "var(--e-orange)"; }}
         >
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
           Create Tenant
@@ -199,7 +199,7 @@ export default function TenantList() {
           <div className="relative w-60">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
             <input
-              className="w-full h-9 pl-8 pr-3 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[#F5821F] bg-white"
+              className="w-full h-9 pl-8 pr-3 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[--e-orange] bg-white"
               placeholder="Search tenants…"
               value={search}
               onChange={e => handleSearch(e.target.value)}
@@ -209,9 +209,9 @@ export default function TenantList() {
             <button
               onClick={() => setShowAdd(true)}
               className="h-9 px-4 rounded-lg text-sm font-semibold text-white flex items-center gap-2 transition-all hover:-translate-y-px"
-              style={{ background: "#F5821F" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#D96A0A")}
-              onMouseLeave={e => (e.currentTarget.style.background = "#F5821F")}
+              style={{ background: "var(--e-orange)" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "var(--e-orange-hover)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "var(--e-orange)")}
             >
               <Plus size={14} strokeWidth={2} /> Add Tenant
             </button>
@@ -227,7 +227,7 @@ export default function TenantList() {
       {/* Table */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
         {isLoading ? (
-          <div className="flex items-center justify-center h-48"><Loader2 size={24} className="animate-spin text-[#F5821F]" /></div>
+          <div className="flex items-center justify-center h-48"><Loader2 size={24} className="animate-spin text-[--e-orange]" /></div>
         ) : tenants.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-[#A8A29E]">
             <Building2 size={32} strokeWidth={1} />
@@ -253,7 +253,7 @@ export default function TenantList() {
                     key={t.id}
                     className="border-b border-[#F4F3F1] group cursor-pointer transition-colors"
                     style={{ background: "transparent" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#FEF0E3")}
+                    onMouseEnter={e => (e.currentTarget.style.background = "var(--e-orange-lt)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                     onClick={() => navigate(`/superadmin/tenants/${t.id}`)}
                   >
@@ -281,7 +281,7 @@ export default function TenantList() {
                       <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => navigate(`/superadmin/tenants/${t.id}`)}
-                          className="h-7 w-7 flex items-center justify-center rounded-lg border border-[#E8E6E2] text-[#57534E] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+                          className="h-7 w-7 flex items-center justify-center rounded-lg border border-[#E8E6E2] text-[#57534E] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
                           title="Edit tenant"
                         >
                           <Pencil size={12} />

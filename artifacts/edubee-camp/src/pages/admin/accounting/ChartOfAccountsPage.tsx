@@ -28,7 +28,7 @@ interface CoaRow {
 const TABS: Array<{ label: string; type: string; prefix: string; badge: string }> = [
   { label: "Assets",        type: "asset",     prefix: "1xxx", badge: "#DCFCE7" },
   { label: "Liabilities",   type: "liability", prefix: "2xxx", badge: "#FEF9C3" },
-  { label: "Revenue",       type: "revenue",   prefix: "3xxx", badge: "#FEF0E3" },
+  { label: "Revenue",       type: "revenue",   prefix: "3xxx", badge: "var(--e-orange-lt)" },
   { label: "Cost of Sales", type: "cogs",      prefix: "4xxx", badge: "#FEF2F2" },
   { label: "Expenses",      type: "expense",   prefix: "5xxx", badge: "#F4F3F1" },
 ];
@@ -36,14 +36,14 @@ const TABS: Array<{ label: string; type: string; prefix: string; badge: string }
 function codeBadgeColor(code: string): string {
   if (code.startsWith("1")) return "#DCFCE7";
   if (code.startsWith("2")) return "#FEF9C3";
-  if (code.startsWith("3")) return "#FEF0E3";
+  if (code.startsWith("3")) return "var(--e-orange-lt)";
   if (code.startsWith("4")) return "#FEF2F2";
   return "#F4F3F1";
 }
 function codeTextColor(code: string): string {
   if (code.startsWith("1")) return "#16A34A";
   if (code.startsWith("2")) return "#CA8A04";
-  if (code.startsWith("3")) return "#F5821F";
+  if (code.startsWith("3")) return "var(--e-orange)";
   if (code.startsWith("4")) return "#DC2626";
   return "#57534E";
 }
@@ -130,7 +130,7 @@ function EditSheet({ account, onClose, isNew, isSuperAdmin }: EditSheetProps) {
               onClick={() => saveMutation.mutate()}
               disabled={saveMutation.isPending}
               className="w-full text-white"
-              style={{ background: "#F5821F" }}
+              style={{ background: "var(--e-orange)" }}
             >
               {saveMutation.isPending ? "Saving…" : "Save Changes"}
             </Button>
@@ -176,7 +176,7 @@ export default function ChartOfAccountsPage() {
           <Button
             onClick={() => setShowNew(true)}
             className="flex items-center gap-2 text-white rounded-lg"
-            style={{ background: "#F5821F" }}
+            style={{ background: "var(--e-orange)" }}
           >
             <Plus size={16} /> New Account
           </Button>
@@ -191,7 +191,7 @@ export default function ChartOfAccountsPage() {
             onClick={() => setActiveTab(tab.type)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
               activeTab === tab.type
-                ? "border-[#F5821F] text-[#F5821F]"
+                ? "border-[--e-orange] text-[--e-orange]"
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
@@ -231,7 +231,7 @@ export default function ChartOfAccountsPage() {
               <tr><td colSpan={5} className="text-center py-12 text-stone-400 text-sm">No accounts in this category</td></tr>
             )}
             {sorted.map(row => (
-              <tr key={row.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors" onClick={() => navigate(`/admin/accounting/coa/${row.code}`)}>
+              <tr key={row.id} className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors" onClick={() => navigate(`/admin/accounting/coa/${row.code}`)}>
                 <td className="px-4 py-3">
                   <span
                     className="inline-block px-2.5 py-0.5 rounded text-xs font-mono font-bold"

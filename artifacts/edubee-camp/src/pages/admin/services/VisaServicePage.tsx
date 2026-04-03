@@ -31,7 +31,7 @@ interface VisaServiceRow {
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   pending:    { bg: "#FEF9C3", text: "#854D0E" },
-  applied:    { bg: "#FEF0E3", text: "#F5821F" },
+  applied:    { bg: "var(--e-orange-lt)", text: "var(--e-orange)" },
   in_review:  { bg: "#DBEAFE", text: "#1D4ED8" },
   approved:   { bg: "#DCFCE7", text: "#16A34A" },
   rejected:   { bg: "#FEE2E2", text: "#DC2626" },
@@ -103,7 +103,7 @@ export default function VisaServicePage() {
         <button
           onClick={() => { setCreateForm({ contractId: "", visaType: "", country: "" }); setShowCreate(true); }}
           className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-white shrink-0"
-          style={{ background: "#F5821F" }}
+          style={{ background: "var(--e-orange)" }}
         >
           <Plus size={15} /> New Visa Service
         </button>
@@ -162,8 +162,8 @@ export default function VisaServicePage() {
               return (
                 <tr key={row.id}
                   onClick={() => navigate(`/admin/services/visa/${row.id}`)}
-                  className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs text-[#F5821F] font-semibold">{row.contractNumber ?? "—"}</td>
+                  className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors">
+                  <td className="px-4 py-3 font-mono text-xs text-[--e-orange] font-semibold">{row.contractNumber ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-700 font-medium">{row.clientName ?? row.studentName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{row.visaType ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{row.country ?? "—"}</td>
@@ -230,7 +230,7 @@ export default function VisaServicePage() {
             <Button
               onClick={() => createMutation.mutate(createForm)}
               disabled={!createForm.contractId || createMutation.isPending}
-              className="text-white" style={{ background: "#F5821F" }}
+              className="text-white" style={{ background: "var(--e-orange)" }}
             >
               {createMutation.isPending ? "Creating…" : "Create"}
             </Button>

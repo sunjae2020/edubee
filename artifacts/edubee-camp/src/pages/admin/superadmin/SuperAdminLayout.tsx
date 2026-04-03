@@ -41,7 +41,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             <img src={logoImg} alt="Edubee" className="w-8 h-8 object-contain" />
             <div>
               <p className="text-sm font-bold text-white leading-none">Edubee Admin</p>
-              <span className="inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#F5821F] text-white tracking-wide">
+              <span className="inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[--e-orange] text-white tracking-wide">
                 SUPER ADMIN
               </span>
             </div>
@@ -56,7 +56,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                 <div
                   className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors text-sm font-medium"
                   style={{
-                    background: active ? "#F5821F" : "transparent",
+                    background: active ? "var(--e-orange)" : "transparent",
                     color:      active ? "white"  : "rgba(255,255,255,0.65)",
                   }}
                 >

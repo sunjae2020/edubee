@@ -12,7 +12,7 @@ const fmtDate = (d: any) => formatDate(d);
 
 const PTYPE_BADGE: Record<string, { bg: string; text: string; label: string }> = {
   trust_receipt:     { bg: "#DCFCE7", text: "#16A34A", label: "Received" },
-  trust_transfer:    { bg: "#FEF0E3", text: "#F5821F", label: "Transfer" },
+  trust_transfer:    { bg: "var(--e-orange-lt)", text: "var(--e-orange)", label: "Transfer" },
   commission:        { bg: "#EDE9FE", text: "#7C3AED", label: "Commission" },
   direct:            { bg: "#F0F9FF", text: "#0369A1", label: "Direct" },
   service_fee_camp:  { bg: "#DCFCE7", text: "#16A34A", label: "Service Fee" },
@@ -76,7 +76,7 @@ export function ContractPaymentsPanel({ contractId, contractNumber, compact = fa
         <button
           onClick={() => navigate(`/admin/crm/contracts/${contractId}`)}
           className="flex items-center gap-1 text-xs font-medium hover:opacity-80"
-          style={{ color: "#F5821F" }}
+          style={{ color: "var(--e-orange)" }}
         >
           <ExternalLink size={12} /> Open Contract
         </button>
@@ -107,7 +107,7 @@ export function ContractPaymentsPanel({ contractId, contractNumber, compact = fa
             <button
               onClick={() => navigate(`/admin/crm/contracts/${contractId}`)}
               className="mt-3 flex items-center gap-1 text-xs font-medium mx-auto hover:opacity-80"
-              style={{ color: "#F5821F" }}
+              style={{ color: "var(--e-orange)" }}
             >
               Go to Contract <ArrowRight size={11} />
             </button>
@@ -170,7 +170,7 @@ export function ContractPaymentsPanel({ contractId, contractNumber, compact = fa
             <button
               onClick={() => navigate(`/admin/crm/contracts/${contractId}`)}
               className="flex items-center gap-1 text-xs font-medium hover:opacity-80"
-              style={{ color: "#F5821F" }}
+              style={{ color: "var(--e-orange)" }}
             >
               Full History in Contract <ArrowRight size={11} />
             </button>

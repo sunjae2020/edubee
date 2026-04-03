@@ -21,7 +21,7 @@ const STATUS_CFG: Record<KpiStatus, { label: string; textColor: string; bg: stri
   draft:     { label: 'Draft',     textColor: 'text-[#57534E]',  bg: 'bg-[#F4F3F1]', border: 'border-[#E8E6E2]' },
   submitted: { label: 'Submitted', textColor: 'text-[#2563EB]',  bg: 'bg-[#EFF6FF]', border: 'border-[#BFDBFE]' },
   approved:  { label: 'Approved',  textColor: 'text-[#16A34A]',  bg: 'bg-[#F0FDF4]', border: 'border-[#BBF7D0]' },
-  paid:      { label: 'Paid',      textColor: 'text-[#F5821F]',  bg: 'bg-[#FEF0E3]', border: 'border-[#F5821F]/30' },
+  paid:      { label: 'Paid',      textColor: 'text-[--e-orange]',  bg: 'bg-[--e-orange-lt]', border: 'border-[--e-orange]/30' },
   rejected:  { label: 'Rejected',  textColor: 'text-[#DC2626]',  bg: 'bg-[#FEF2F2]', border: 'border-[#FECACA]' },
 };
 
@@ -78,12 +78,12 @@ export const IncentiveSection: React.FC<Props> = ({
           </span>
         </div>
 
-        <div className="flex items-center justify-between p-3 rounded-xl bg-[#FEF0E3] border border-[#F5821F]/20">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-[--e-orange-lt] border border-[--e-orange]/20">
           <div className="flex items-center gap-1.5">
-            <Target className="w-4 h-4 text-[#F5821F]" strokeWidth={1.8} />
+            <Target className="w-4 h-4 text-[--e-orange]" strokeWidth={1.8} />
             <span className="text-sm font-semibold text-[#1C1917]">Final Incentive</span>
           </div>
-          <span className="text-lg font-bold text-[#F5821F]">{fmt(data.incentiveAmount)}</span>
+          <span className="text-lg font-bold text-[--e-orange]">{fmt(data.incentiveAmount)}</span>
         </div>
       </div>
 
@@ -92,7 +92,7 @@ export const IncentiveSection: React.FC<Props> = ({
           <button
             onClick={onCalculate}
             disabled={calculating}
-            className={`${BTN_BASE} bg-[#F5821F] text-white hover:bg-[#D96A0A] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(245,130,31,0.25)] active:bg-[#C25E08]`}
+            className={`${BTN_BASE} bg-[--e-orange] text-white hover:bg-[--e-orange-hover] hover:-translate-y-px hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)] active:bg-[--e-orange-active]`}
           >
             {calculating
               ? <><Save className="w-4 h-4 animate-pulse" /> Calculating...</>
@@ -131,7 +131,7 @@ export const IncentiveSection: React.FC<Props> = ({
           <button
             onClick={() => onPay(data.kpiPeriodId!)}
             disabled={processing}
-            className={`${BTN_BASE} bg-[#F5821F] text-white hover:bg-[#D96A0A] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(245,130,31,0.25)]`}
+            className={`${BTN_BASE} bg-[--e-orange] text-white hover:bg-[--e-orange-hover] hover:-translate-y-px hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)]`}
           >
             {processing
               ? <><Banknote className="w-4 h-4 animate-pulse" /> Processing...</>
@@ -142,7 +142,7 @@ export const IncentiveSection: React.FC<Props> = ({
 
         {status === 'paid' && (
           <div className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
-            text-sm font-semibold text-[#F5821F] bg-[#FEF0E3] border border-[#F5821F]/30">
+            text-sm font-semibold text-[--e-orange] bg-[--e-orange-lt] border border-[--e-orange]/30">
             <BadgeCheck className="w-4 h-4" />
             Payment Complete
           </div>

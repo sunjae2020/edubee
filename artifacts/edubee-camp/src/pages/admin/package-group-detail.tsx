@@ -349,7 +349,7 @@ export default function PackageGroupDetail() {
               size="sm"
               onClick={() => cloneGroup.mutate()}
               disabled={cloneGroup.isPending}
-              className="gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white"
+              className="gap-1.5 bg-[--e-orange] hover:bg-[#d97706] text-white"
             >
               {cloneGroup.isPending
                 ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -384,7 +384,7 @@ export default function PackageGroupDetail() {
                     value={getValue("typeId") ?? "none"}
                     onValueChange={v => setField("typeId", v === "none" ? null : v)}
                   >
-                    <SelectTrigger className="h-8 text-sm border-[#F5821F]">
+                    <SelectTrigger className="h-8 text-sm border-[--e-orange]">
                       <SelectValue placeholder="— Select type —" />
                     </SelectTrigger>
                     <SelectContent className="max-h-60 overflow-y-auto">
@@ -397,7 +397,7 @@ export default function PackageGroupDetail() {
                 ) : (
                   <span className="text-sm">
                     {group.typeName
-                      ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FEF0E3] text-[#F5821F] text-xs font-medium border border-[#F5821F33]">{group.typeName}</span>
+                      ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[--e-orange-lt] text-[--e-orange] text-xs font-medium border border-[--e-orange-a20]">{group.typeName}</span>
                       : <span className="text-muted-foreground/60">—</span>
                     }
                   </span>
@@ -414,7 +414,7 @@ export default function PackageGroupDetail() {
                     value={getValue("minAge") ?? ""}
                     onChange={e => setField("minAge", e.target.value === "" ? null : parseInt(e.target.value))}
                     placeholder="e.g. 7"
-                    className="h-8 px-2 text-sm border border-[#F5821F] rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F] w-full"
+                    className="h-8 px-2 text-sm border border-[--e-orange] rounded-md focus:outline-none focus:ring-1 focus:ring-[--e-orange] w-full"
                   />
                 ) : (
                   <span className="text-sm">
@@ -434,7 +434,7 @@ export default function PackageGroupDetail() {
                     value={getValue("maxAge") ?? ""}
                     onChange={e => setField("maxAge", e.target.value === "" ? null : parseInt(e.target.value))}
                     placeholder="e.g. 17"
-                    className="h-8 px-2 text-sm border border-[#F5821F] rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F] w-full"
+                    className="h-8 px-2 text-sm border border-[--e-orange] rounded-md focus:outline-none focus:ring-1 focus:ring-[--e-orange] w-full"
                   />
                 ) : (
                   <span className="text-sm">
@@ -451,7 +451,7 @@ export default function PackageGroupDetail() {
                     type="date"
                     value={getValue("startDate") ? new Date(getValue("startDate")).toISOString().slice(0, 10) : ""}
                     onChange={e => setField("startDate", e.target.value ? new Date(e.target.value).toISOString() : null)}
-                    className="h-8 px-2 text-sm border border-[#F5821F] rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F] w-full"
+                    className="h-8 px-2 text-sm border border-[--e-orange] rounded-md focus:outline-none focus:ring-1 focus:ring-[--e-orange] w-full"
                   />
                 ) : (
                   <span className="text-sm">{group.startDate ? formatDate(group.startDate) : <span className="text-muted-foreground/60">—</span>}</span>
@@ -463,7 +463,7 @@ export default function PackageGroupDetail() {
                     type="date"
                     value={getValue("endDate") ? new Date(getValue("endDate")).toISOString().slice(0, 10) : ""}
                     onChange={e => setField("endDate", e.target.value ? new Date(e.target.value).toISOString() : null)}
-                    className="h-8 px-2 text-sm border border-[#F5821F] rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F] w-full"
+                    className="h-8 px-2 text-sm border border-[--e-orange] rounded-md focus:outline-none focus:ring-1 focus:ring-[--e-orange] w-full"
                   />
                 ) : (
                   <span className="text-sm">{group.endDate ? formatDate(group.endDate) : <span className="text-muted-foreground/60">—</span>}</span>
@@ -474,7 +474,7 @@ export default function PackageGroupDetail() {
               <EditableField label="Status" isEditing={isEditing} value={group.status}
                 editChildren={
                   <Select value={getValue("status")} onValueChange={v => setField("status", v)}>
-                    <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {["active", "inactive", "archived"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
@@ -488,7 +488,7 @@ export default function PackageGroupDetail() {
                     value={getValue("landingOrder") != null ? String(getValue("landingOrder")) : "none"}
                     onValueChange={v => setField("landingOrder", v === "none" ? null : parseInt(v))}
                   >
-                    <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">— Not shown on landing page —</SelectItem>
                       {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
@@ -501,7 +501,7 @@ export default function PackageGroupDetail() {
                 <DetailRow label="Landing Page Order">
                   {group.landingOrder != null ? (
                     <span className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#F5821F] text-white text-[10px] font-bold">{group.landingOrder}</span>
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[--e-orange] text-white text-[10px] font-bold">{group.landingOrder}</span>
                       <span className="text-sm">Shown on landing (#{group.landingOrder})</span>
                     </span>
                   ) : (
@@ -561,7 +561,7 @@ export default function PackageGroupDetail() {
                     value={getValue("durationText") ?? ""}
                     onChange={e => setField("durationText", e.target.value)}
                     placeholder="e.g. 14 nights 15 days"
-                    className="h-8 text-sm border-[#F5821F] focus-visible:ring-[#F5821F]"
+                    className="h-8 text-sm border-[--e-orange] focus-visible:ring-[--e-orange]"
                   />
                 ) : (
                   <span className="text-sm">{group.durationText || <span className="text-muted-foreground/60">—</span>}</span>
@@ -573,12 +573,12 @@ export default function PackageGroupDetail() {
               {isEditing ? (
                 <textarea value={getValue("inclusionsEn") ?? ""} onChange={e => setField("inclusionsEn", e.target.value)}
                   placeholder={"One item per line\nInternational flights\nAirport transfers\nAccommodation"}
-                  className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+                  className="w-full border border-[--e-orange] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[--e-orange]" />
               ) : group.inclusionsEn ? (
                 <ul className="space-y-1">
                   {group.inclusionsEn.split("\n").filter(Boolean).map((item: string, i: number) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
-                      <span className="text-[#F5821F] mt-0.5">✓</span> {item.trim()}
+                      <span className="text-[--e-orange] mt-0.5">✓</span> {item.trim()}
                     </li>
                   ))}
                 </ul>
@@ -589,7 +589,7 @@ export default function PackageGroupDetail() {
               {isEditing ? (
                 <textarea value={getValue("exclusionsEn") ?? ""} onChange={e => setField("exclusionsEn", e.target.value)}
                   placeholder={"One item per line\nPersonal expenses\nOptional excursions\nTravel insurance"}
-                  className="w-full border border-[#F5821F] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+                  className="w-full border border-[--e-orange] rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-[--e-orange]" />
               ) : group.exclusionsEn ? (
                 <ul className="space-y-1">
                   {group.exclusionsEn.split("\n").filter(Boolean).map((item: string, i: number) => (
@@ -609,7 +609,7 @@ export default function PackageGroupDetail() {
                     value={getValue("campProviderId") || "none"}
                     onValueChange={v => setField("campProviderId", v === "none" ? null : v)}
                   >
-                    <SelectTrigger className="h-9 text-sm border-[#F5821F]">
+                    <SelectTrigger className="h-9 text-sm border-[--e-orange]">
                       <SelectValue placeholder="— Select coordinator —" />
                     </SelectTrigger>
                     <SelectContent>
@@ -626,8 +626,8 @@ export default function PackageGroupDetail() {
               ) : group.coordinator ? (
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-[#F5821F]/10 flex items-center justify-center shrink-0">
-                      <UserRound className="w-5 h-5 text-[#F5821F]" />
+                    <div className="w-10 h-10 rounded-full bg-[--e-orange]/10 flex items-center justify-center shrink-0">
+                      <UserRound className="w-5 h-5 text-[--e-orange]" />
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-sm">{group.coordinator.fullName}</p>
@@ -682,7 +682,7 @@ export default function PackageGroupDetail() {
                   <label htmlFor="auto-convert" className="text-xs text-muted-foreground cursor-pointer">Auto-convert from AUD</label>
                 </div>
                 {canEdit && (
-                  <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1" onClick={() => openPkgDialog()}>
+                  <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1" onClick={() => openPkgDialog()}>
                     <Plus className="h-3.5 w-3.5" /> Add Package
                   </Button>
                 )}
@@ -706,7 +706,7 @@ export default function PackageGroupDetail() {
                   {pkgs.length === 0 ? (
                     <tr><td colSpan={14} className="px-4 py-8 text-center text-muted-foreground text-xs">No packages yet</td></tr>
                   ) : pkgs.map(p => (
-                    <tr key={p.id} className="border-b last:border-0 hover:bg-[#FEF0E3]/50">
+                    <tr key={p.id} className="border-b last:border-0 hover:bg-[--e-orange-lt]/50">
                       <td className="px-4 py-3 font-medium">{p.name}</td>
                       <td className="px-4 py-3 text-right text-blue-600">{p.maxAdults ?? "—"}</td>
                       <td className="px-4 py-3 text-right text-green-600">{p.maxStudents ?? "—"}</td>
@@ -740,7 +740,7 @@ export default function PackageGroupDetail() {
             {/* Toolbar */}
             {canEdit && (
               <div className="flex justify-end">
-                <Button size="sm" onClick={openAddSpot} className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5">
+                <Button size="sm" onClick={openAddSpot} className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5">
                   <Plus className="w-3.5 h-3.5" /> Add Enrollment Spot
                 </Button>
               </div>
@@ -769,7 +769,7 @@ export default function PackageGroupDetail() {
                         <div className="text-muted-foreground/40 text-3xl mb-2">🎫</div>
                         <p className="text-muted-foreground text-sm">No enrollment spots yet</p>
                         {canEdit && (
-                          <button onClick={openAddSpot} className="mt-2 text-xs text-[#F5821F] underline">
+                          <button onClick={openAddSpot} className="mt-2 text-xs text-[--e-orange] underline">
                             + Add first spot
                           </button>
                         )}
@@ -784,7 +784,7 @@ export default function PackageGroupDetail() {
                     };
                     const fmtDate = (d?: string | null) => formatDate(d);
                     return (
-                      <tr key={s.id} className="border-b last:border-0 hover:bg-[#FEF0E3]/50">
+                      <tr key={s.id} className="border-b last:border-0 hover:bg-[--e-orange-lt]/50">
                         <td className="px-4 py-3">
                           <div className="font-semibold">{s.gradeLabel}</div>
                           {s.gradeOrder != null && (
@@ -817,7 +817,7 @@ export default function PackageGroupDetail() {
                             <div className="flex items-center gap-1 justify-end">
                               <button
                                 onClick={() => openEditSpot(s)}
-                                className="p-1.5 rounded hover:bg-[#F5821F]/10 text-muted-foreground hover:text-[#F5821F] transition-colors"
+                                className="p-1.5 rounded hover:bg-[--e-orange]/10 text-muted-foreground hover:text-[--e-orange] transition-colors"
                                 title="Edit"
                               >
                                 <Edit className="w-3.5 h-3.5" />
@@ -922,7 +922,7 @@ export default function PackageGroupDetail() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Add-on Products</p>
-                  <Button size="sm" variant="outline" className="h-6 text-xs gap-1 border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
+                  <Button size="sm" variant="outline" className="h-6 text-xs gap-1 border-[--e-orange] text-[--e-orange] hover:bg-[--e-orange-lt]"
                     onClick={() => { setPkgProdTypeFilter("all"); setSelectedPkgProdId(null); setPkgAddQty(1); setPkgAddUnitPrice(""); setPkgAddIsOptional(false); setPkgAddError(null); setShowPkgAddProduct(true); }}>
                     <Plus className="h-3 w-3" /> Add Product
                   </Button>
@@ -973,11 +973,11 @@ export default function PackageGroupDetail() {
 
                 {/* Add product to package inline picker */}
                 {showPkgAddProduct && (
-                  <div className="mt-2 border border-[#F5821F33] rounded-lg p-3 bg-[#FEF0E3]/30 space-y-2">
+                  <div className="mt-2 border border-[--e-orange-a20] rounded-lg p-3 bg-[--e-orange-lt]/30 space-y-2">
                     <div className="flex gap-1.5 flex-wrap">
                       {["all", "institute", "hotel", "pickup", "tour", "settlement"].map(t => (
                         <button key={t} onClick={() => { setPkgProdTypeFilter(t); setSelectedPkgProdId(null); }}
-                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${pkgProdTypeFilter === t ? "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F33]" : "border-border text-muted-foreground hover:bg-muted"}`}>
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${pkgProdTypeFilter === t ? "bg-[--e-orange-lt] text-[--e-orange] border-[--e-orange-a20]" : "border-border text-muted-foreground hover:bg-muted"}`}>
                           {t === "all" ? "All" : t}
                         </button>
                       ))}
@@ -1023,7 +1023,7 @@ export default function PackageGroupDetail() {
                     )}
                     {pkgAddError && <p className="text-xs text-red-500">{pkgAddError}</p>}
                     <div className="flex gap-2">
-                      <Button size="sm" className="h-7 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
+                      <Button size="sm" className="h-7 text-xs bg-[--e-orange] hover:bg-[#d97706] text-white"
                         disabled={!selectedPkgProdId || linkPkgProduct.isPending}
                         onClick={() => linkPkgProduct.mutate({ productId: selectedPkgProdId, isOptional: pkgAddIsOptional, quantity: pkgAddQty, unitPrice: pkgAddUnitPrice || null })}>
                         {linkPkgProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Add
@@ -1036,7 +1036,7 @@ export default function PackageGroupDetail() {
             )}
 
             <div className="flex gap-2 pt-1 border-t">
-              <Button size="sm" className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white"
+              <Button size="sm" className="flex-1 bg-[--e-orange] hover:bg-[#d97706] text-white"
                 onClick={submitPkg} disabled={createPkg.isPending || updatePkg.isPending || !pkgForm.name}>
                 {createPkg.isPending || updatePkg.isPending ? "Saving…" : editingPkg ? "Update" : "Create"}
               </Button>
@@ -1168,7 +1168,7 @@ export default function PackageGroupDetail() {
                 size="sm"
                 onClick={handleSpotSave}
                 disabled={!spotForm.gradeLabel || !spotForm.totalSpots || createSpot.isPending || updateSpot.isPending}
-                className="bg-[#F5821F] hover:bg-[#d97706] text-white min-w-[80px]"
+                className="bg-[--e-orange] hover:bg-[#d97706] text-white min-w-[80px]"
               >
                 {(createSpot.isPending || updateSpot.isPending) ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

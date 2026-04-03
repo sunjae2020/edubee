@@ -47,15 +47,15 @@ const SERVICE_MODULES: { value: string; label: string; icon: React.ElementType; 
 
 const INPUT_CLS = `w-full h-10 px-3 text-sm rounded-lg border border-[#E8E6E2] bg-white text-[#1C1917]
   placeholder:text-[#A8A29E] outline-none transition-all
-  focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]`;
+  focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)]`;
 const INPUT_ERR = `w-full h-10 px-3 text-sm rounded-lg border border-[#DC2626] bg-white text-[#1C1917]
   placeholder:text-[#A8A29E] outline-none transition-all
   focus:border-[#DC2626] focus:shadow-[0_0_0_3px_rgba(220,38,38,0.12)]`;
 const LABEL_CLS = "block text-xs font-medium text-[#57534E] mb-1";
 const ERR_CLS = "mt-1 text-xs text-[#DC2626]";
 const SEC_LABEL = "text-xs font-medium uppercase tracking-[0.05em] text-[#57534E] mb-2";
-const BTN_PRIMARY = `inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[#F5821F]
-  hover:bg-[#D96A0A] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(245,130,31,0.25)]
+const BTN_PRIMARY = `inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[--e-orange]
+  hover:bg-[--e-orange-hover] hover:-translate-y-px hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)]
   disabled:opacity-65 disabled:cursor-not-allowed disabled:transform-none transition-all`;
 const BTN_SECONDARY = `inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-[#1C1917]
   bg-white border border-[#E8E6E2] hover:border-[#A8A29E] hover:bg-[#FAFAF9] transition-all`;
@@ -91,15 +91,15 @@ function StepIndicator({ current }: { current: Step }) {
           <div key={s.n} className="flex items-center flex-1 last:flex-none">
             <div className="flex flex-col items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all
-                ${done ? "bg-[#F5821F] text-white" : active ? "border-2 border-[#F5821F] text-[#F5821F] bg-white" : "border-2 border-[#E8E6E2] text-[#A8A29E] bg-white"}`}>
+                ${done ? "bg-[--e-orange] text-white" : active ? "border-2 border-[--e-orange] text-[--e-orange] bg-white" : "border-2 border-[#E8E6E2] text-[#A8A29E] bg-white"}`}>
                 {done ? <Check className="w-4 h-4" /> : s.n}
               </div>
-              <span className={`mt-1 text-xs font-medium whitespace-nowrap ${active ? "text-[#F5821F]" : done ? "text-[#57534E]" : "text-[#A8A29E]"}`}>
+              <span className={`mt-1 text-xs font-medium whitespace-nowrap ${active ? "text-[--e-orange]" : done ? "text-[#57534E]" : "text-[#A8A29E]"}`}>
                 {s.label}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-2 mb-5 transition-all ${done ? "bg-[#F5821F]" : "bg-[#E8E6E2]"}`} />
+              <div className={`flex-1 h-0.5 mx-2 mb-5 transition-all ${done ? "bg-[--e-orange]" : "bg-[#E8E6E2]"}`} />
             )}
           </div>
         );
@@ -224,7 +224,7 @@ export default function Register() {
     <div className="min-h-screen flex" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* ── Left brand panel ── */}
       <div className="hidden md:flex flex-col justify-between w-[40%] lg:w-[38%] min-h-screen p-10 sticky top-0 h-screen"
-        style={{ background: "#F5821F" }}>
+        style={{ background: "var(--e-orange)" }}>
         <div>
           <div className="flex items-center gap-3 mb-8">
             <img src={logoImg} alt="Edubee" className="h-12 w-auto object-contain"
@@ -391,7 +391,7 @@ export default function Register() {
 
                   <p className="text-center text-[13px] text-[#57534E]">
                     Already have an account?{" "}
-                    <Link href="/login" className="text-[#F5821F] font-medium hover:underline">Log in →</Link>
+                    <Link href="/login" className="text-[--e-orange] font-medium hover:underline">Log in →</Link>
                   </p>
                 </div>
               )}
@@ -416,16 +416,16 @@ export default function Register() {
                               className={`relative cursor-pointer rounded-xl p-5 border transition-all select-none w-full
                                 ${isLast ? "max-w-[calc(50%-6px)]" : ""}
                                 ${selected
-                                  ? "bg-[#FEF0E3] border-2 border-[#F5821F]"
+                                  ? "bg-[--e-orange-lt] border-2 border-[--e-orange]"
                                   : "bg-white border-[1.5px] border-[#E8E6E2] hover:bg-[#FAFAF9] hover:border-[#A8A29E] hover:-translate-y-0.5 hover:shadow-sm"
                                 }`}
                             >
                               {selected && (
-                                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#F5821F] flex items-center justify-center">
+                                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[--e-orange] flex items-center justify-center">
                                   <Check className="w-3 h-3 text-white" />
                                 </div>
                               )}
-                              <Icon className="w-7 h-7 mb-2" style={{ color: "#F5821F" }} />
+                              <Icon className="w-7 h-7 mb-2" style={{ color: "var(--e-orange)" }} />
                               <p className="text-sm font-semibold text-[#1C1917]">{t.label}</p>
                               <p className="text-xs text-[#57534E] mt-0.5">{t.desc}</p>
                             </div>
@@ -477,8 +477,8 @@ export default function Register() {
                         <PlanCard
                           plan="PLUS" selected={form.plan === "PLUS"}
                           onSelect={() => set("plan", "PLUS")}
-                          badge={{ label: "BETA FREE", bg: "#FEF0E3", text: "#F5821F" }}
-                          price={<><s className="text-[#A8A29E] font-normal">$9.90</s> $0 / month<br /><span className="text-xs font-normal text-[#F5821F]">Free during Beta</span></>}
+                          badge={{ label: "BETA FREE", bg: "var(--e-orange-lt)", text: "var(--e-orange)" }}
+                          price={<><s className="text-[#A8A29E] font-normal">$9.90</s> $0 / month<br /><span className="text-xs font-normal text-[--e-orange]">Free during Beta</span></>}
                           features={[
                             { ok: true,  text: "Unlimited students" },
                             { ok: true,  text: "100 MB storage" },
@@ -546,15 +546,15 @@ export default function Register() {
                           <div key={m.value} onClick={() => toggleModule(m.value)}
                             className={`relative cursor-pointer rounded-xl p-4 border transition-all select-none
                               ${checked
-                                ? "bg-[#FEF0E3] border-2 border-[#F5821F]"
+                                ? "bg-[--e-orange-lt] border-2 border-[--e-orange]"
                                 : "bg-white border border-[#E8E6E2] hover:bg-[#FAFAF9]"
                               }`}
                           >
                             <div className={`absolute top-2.5 right-2.5 w-5 h-5 rounded-full border flex items-center justify-center transition-all
-                              ${checked ? "bg-[#F5821F] border-[#F5821F]" : "border-[#E8E6E2] bg-white"}`}>
+                              ${checked ? "bg-[--e-orange] border-[--e-orange]" : "border-[#E8E6E2] bg-white"}`}>
                               {checked && <Check className="w-3 h-3 text-white" />}
                             </div>
-                            <Icon className="w-5 h-5 mb-1.5" style={{ color: "#F5821F" }} />
+                            <Icon className="w-5 h-5 mb-1.5" style={{ color: "var(--e-orange)" }} />
                             <p className="text-xs font-semibold text-[#1C1917] leading-snug">{m.label}</p>
                             <p className="text-[11px] text-[#A8A29E] mt-0.5 leading-snug">{m.desc}</p>
                           </div>
@@ -571,7 +571,7 @@ export default function Register() {
                       <SummaryRow label="Admin User" value={`${form.firstName} ${form.lastName} · ${form.email}`} />
                       <div className="flex gap-2 items-start">
                         <span className="text-[#A8A29E] w-28 shrink-0">Account Type</span>
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FEF0E3] text-[#F5821F]">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[--e-orange-lt] text-[--e-orange]">
                           {form.accountType}
                         </span>
                       </div>
@@ -591,7 +591,7 @@ export default function Register() {
                               {form.serviceModules.map(m => {
                                 const mod = SERVICE_MODULES.find(s => s.value === m);
                                 return (
-                                  <span key={m} className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#F5821F]">
+                                  <span key={m} className="px-2 py-0.5 rounded-full text-xs font-medium bg-[--e-orange-lt] text-[--e-orange]">
                                     {mod?.label ?? m}
                                   </span>
                                 );
@@ -644,15 +644,15 @@ function PlanCard({
       onClick={disabled ? undefined : onSelect}
       className={`relative rounded-xl border transition-all overflow-hidden
         ${disabled ? "opacity-65 cursor-not-allowed" : "cursor-pointer"}
-        ${selected && !disabled ? "border-2 border-[#F5821F] bg-[#FEF0E3] scale-[1.02]" : "border border-[#E8E6E2] bg-white hover:shadow-sm"}`}
+        ${selected && !disabled ? "border-2 border-[--e-orange] bg-[--e-orange-lt] scale-[1.02]" : "border border-[#E8E6E2] bg-white hover:shadow-sm"}`}
     >
       {popular && (
-        <div className="w-full py-1.5 text-center text-xs font-semibold text-white" style={{ background: "#F5821F" }}>
+        <div className="w-full py-1.5 text-center text-xs font-semibold text-white" style={{ background: "var(--e-orange)" }}>
           MOST POPULAR
         </div>
       )}
       {selected && !disabled && (
-        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#F5821F] flex items-center justify-center">
+        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[--e-orange] flex items-center justify-center">
           <Check className="w-3 h-3 text-white" />
         </div>
       )}
@@ -679,8 +679,8 @@ function PlanCard({
             ${disabled
               ? "bg-[#F4F3F1] text-[#A8A29E] cursor-not-allowed"
               : selected
-                ? "bg-[#F5821F] text-white"
-                : "bg-white border border-[#E8E6E2] text-[#1C1917] hover:border-[#F5821F] hover:text-[#F5821F]"
+                ? "bg-[--e-orange] text-white"
+                : "bg-white border border-[#E8E6E2] text-[#1C1917] hover:border-[--e-orange] hover:text-[--e-orange]"
             }`}
         >
           {btnLabel}

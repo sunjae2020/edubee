@@ -67,7 +67,7 @@ interface Template {
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   pending:     { bg: "#F4F3F1", text: "#57534E"  },
-  in_progress: { bg: "#FEF0E3", text: "#F5821F"  },
+  in_progress: { bg: "var(--e-orange-lt)", text: "var(--e-orange)"  },
   completed:   { bg: "#DCFCE7", text: "#16A34A"  },
 };
 
@@ -137,7 +137,7 @@ function ChecklistRow({
               {item.label}
             </p>
             {item.required && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FEF0E3] text-[#F5821F] font-semibold">Required</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[--e-orange-lt] text-[--e-orange] font-semibold">Required</span>
             )}
           </div>
           {item.description && (
@@ -175,7 +175,7 @@ function ChecklistRow({
               <textarea rows={2} value={noteVal}
                 onChange={e => setNoteVal(e.target.value)}
                 disabled={!isAdmin}
-                className="w-full px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-xs resize-none focus:outline-none focus:border-[#F5821F] disabled:bg-[#F9F9F8] disabled:text-[#A8A29E]"
+                className="w-full px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-xs resize-none focus:outline-none focus:border-[--e-orange] disabled:bg-[#F9F9F8] disabled:text-[#A8A29E]"
                 placeholder="Add notes…" />
               {isAdmin && noteChanged && (
                 <div className="flex gap-1.5">
@@ -268,7 +268,7 @@ function ChecklistSection({ rec, isAdmin }: { rec: SettlementRec; isAdmin: boole
       <div className="px-5 py-4 border-b border-[#E8E6E2]">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={16} style={{ color:"#F5821F" }} />
+            <CheckCircle2 size={16} style={{ color:"var(--e-orange)" }} />
             <h3 className="text-sm font-bold text-[#1C1917]">Settlement Checklist</h3>
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#F4F3F1] text-[#57534E] font-semibold">
               {doneCount} / {items.length}
@@ -282,7 +282,7 @@ function ChecklistSection({ rec, isAdmin }: { rec: SettlementRec; isAdmin: boole
               </button>
               <button onClick={() => setShowAdd(v => !v)}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white"
-                style={{ background:"#F5821F" }}>
+                style={{ background:"var(--e-orange)" }}>
                 <Plus size={11} /> Add Item
               </button>
             </div>
@@ -292,7 +292,7 @@ function ChecklistSection({ rec, isAdmin }: { rec: SettlementRec; isAdmin: boole
         <div className="flex items-center gap-3">
           <div className="flex-1 h-2 rounded-full bg-[#F4F3F1] overflow-hidden">
             <div className="h-full rounded-full transition-all"
-              style={{ width: `${progress}%`, background: progress === 100 ? "#16A34A" : "#F5821F" }} />
+              style={{ width: `${progress}%`, background: progress === 100 ? "#16A34A" : "var(--e-orange)" }} />
           </div>
           <span className="text-[12px] font-bold text-[#1C1917]">{progress}%</span>
         </div>
@@ -311,14 +311,14 @@ function ChecklistSection({ rec, isAdmin }: { rec: SettlementRec; isAdmin: boole
                   <div>
                     <p className="text-sm font-semibold text-[#1C1917] flex items-center gap-1.5">
                       {t.name}
-                      {t.isDefault && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FEF0E3] text-[#F5821F]">Default</span>}
+                      {t.isDefault && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[--e-orange-lt] text-[--e-orange]">Default</span>}
                     </p>
                     {t.description && <p className="text-[11px] text-[#A8A29E] mt-0.5">{t.description}</p>}
                     <p className="text-[11px] text-[#57534E] mt-1">{t.items.length} items</p>
                   </div>
                   <button onClick={() => applyTemplate(t)}
                     className="h-8 px-3 rounded-lg text-xs font-semibold text-white"
-                    style={{ background:"#F5821F" }}>
+                    style={{ background:"var(--e-orange)" }}>
                     Apply
                   </button>
                 </div>
@@ -334,18 +334,18 @@ function ChecklistSection({ rec, isAdmin }: { rec: SettlementRec; isAdmin: boole
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Add Custom Item</p>
           <input type="text" placeholder="Item label *" value={addLabel}
             onChange={e => setAddLabel(e.target.value)}
-            className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]" />
+            className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
           <input type="text" placeholder="Description (optional)" value={addDesc}
             onChange={e => setAddDesc(e.target.value)}
-            className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]" />
+            className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
           <label className="flex items-center gap-2 text-sm text-[#57534E] cursor-pointer">
-            <input type="checkbox" checked={addRequired} onChange={e => setAddRequired(e.target.checked)} className="accent-[#F5821F]" />
+            <input type="checkbox" checked={addRequired} onChange={e => setAddRequired(e.target.checked)} className="accent-[--e-orange]" />
             Mark as required
           </label>
           <div className="flex gap-2">
             <button onClick={addItem} disabled={!addLabel.trim()}
               className="h-8 px-4 rounded-lg text-xs font-semibold text-white disabled:opacity-50"
-              style={{ background:"#F5821F" }}>
+              style={{ background:"var(--e-orange)" }}>
               Add
             </button>
             <button onClick={() => { setShowAdd(false); setAddLabel(""); setAddDesc(""); }}
@@ -442,10 +442,10 @@ export default function SettlementMgtDetail() {
         <div className="flex items-center gap-3">
           {!isForbidden && !isNotFound && (
             <button onClick={() => refetch()}
-              className="text-sm underline" style={{ color:"#F5821F" }}>Try Again</button>
+              className="text-sm underline" style={{ color:"var(--e-orange)" }}>Try Again</button>
           )}
           <button onClick={() => navigate("/admin/services/settlement")}
-            className="text-sm underline" style={{ color:"#F5821F" }}>Back to Settlement</button>
+            className="text-sm underline" style={{ color:"var(--e-orange)" }}>Back to Settlement</button>
         </div>
       </div>
     );
@@ -488,7 +488,7 @@ export default function SettlementMgtDetail() {
             <select
               value={rec.overallStatus ?? "pending"}
               onChange={e => updateMutation.mutate({ overallStatus: e.target.value })}
-              className="h-8 px-2 rounded-lg border border-[#E8E6E2] text-xs text-[#57534E] focus:outline-none focus:border-[#F5821F]">
+              className="h-8 px-2 rounded-lg border border-[#E8E6E2] text-xs text-[#57534E] focus:outline-none focus:border-[--e-orange]">
               <option value="pending">Pending</option>
               <option value="in_progress">In Progress</option>
               <option value="completed">Completed</option>
@@ -503,7 +503,7 @@ export default function SettlementMgtDetail() {
           <button key={t.key} onClick={() => setActiveTab(t.key)}
             className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
             style={activeTab === t.key
-              ? { borderColor:"#F5821F", color:"#F5821F" }
+              ? { borderColor:"var(--e-orange)", color:"var(--e-orange)" }
               : { borderColor:"transparent", color:"#57534E" }}>
             {t.label}
           </button>
@@ -519,7 +519,7 @@ export default function SettlementMgtDetail() {
             <InfoRow label="Contract" value={
               rec.contractId ? (
                 <button onClick={() => navigate(`/admin/crm/contracts/${rec.contractId}`)}
-                  className="text-[#F5821F] font-mono font-semibold hover:underline flex items-center gap-1">
+                  className="text-[--e-orange] font-mono font-semibold hover:underline flex items-center gap-1">
                   {rec.contractNumber} <FileText size={11} />
                 </button>
               ) : "—"
@@ -534,14 +534,14 @@ export default function SettlementMgtDetail() {
                 <div className="flex gap-1">
                   <input type="date" value={editVal}
                     onChange={e => setEditVal(e.target.value)}
-                    className="h-7 px-2 rounded border border-[#F5821F] text-xs focus:outline-none" />
+                    className="h-7 px-2 rounded border border-[--e-orange] text-xs focus:outline-none" />
                   <button onClick={() => saveEdit("arrivalDate")} className="p-1 rounded bg-[#16A34A] text-white"><Check size={11} /></button>
                   <button onClick={cancelEdit} className="p-1 rounded border border-[#E8E6E2]"><X size={11} /></button>
                 </div>
               ) : (
                 <span className="flex items-center gap-1">
                   {fmtDate(rec.arrivalDate)}
-                  {isAdmin && <button onClick={() => startEdit("arrivalDate", rec.arrivalDate ?? "")} className="p-0.5 text-[#A8A29E] hover:text-[#F5821F]"><Edit3 size={11} /></button>}
+                  {isAdmin && <button onClick={() => startEdit("arrivalDate", rec.arrivalDate ?? "")} className="p-0.5 text-[#A8A29E] hover:text-[--e-orange]"><Edit3 size={11} /></button>}
                 </span>
               )
             } />
@@ -562,7 +562,7 @@ export default function SettlementMgtDetail() {
                 <div className="h-full rounded-full transition-all"
                   style={{
                     width: `${items.length > 0 ? (doneCount / items.length) * 100 : 0}%`,
-                    background: doneCount === items.length && items.length > 0 ? "#16A34A" : "#F5821F",
+                    background: doneCount === items.length && items.length > 0 ? "#16A34A" : "var(--e-orange)",
                   }} />
               </div>
               <div className="flex gap-3 mt-3">
@@ -585,7 +585,7 @@ export default function SettlementMgtDetail() {
             {editField === "notes" ? (
               <div className="space-y-2">
                 <textarea rows={3} value={editVal} onChange={e => setEditVal(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[#F5821F] text-sm resize-none focus:outline-none" />
+                  className="w-full px-3 py-2 rounded-lg border border-[--e-orange] text-sm resize-none focus:outline-none" />
                 <div className="flex gap-2">
                   <button onClick={() => saveEdit("notes")}
                     className="h-7 px-3 rounded-lg text-xs font-semibold text-white" style={{ background:"#16A34A" }}>Save</button>

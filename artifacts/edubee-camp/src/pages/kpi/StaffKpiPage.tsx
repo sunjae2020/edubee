@@ -14,7 +14,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 const SELECT_CLS =
   'text-sm border border-[#E8E6E2] rounded-lg px-3 py-2 bg-white text-[#1C1917] ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#F5821F]/40 focus:border-[#F5821F] transition-colors';
+  'focus:outline-none focus:ring-2 focus:ring-[--e-orange]/40 focus:border-[--e-orange] transition-colors';
 
 export default function StaffKpiPage() {
   const { user: currentUser } = useAuth();
@@ -90,8 +90,8 @@ export default function StaffKpiPage() {
               <ArrowLeft className="w-4 h-4" />
             </button>
           )}
-          <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 bg-[#FEF0E3]">
-            <BarChart2 className="w-5 h-5 text-[#F5821F]" strokeWidth={1.8} />
+          <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 bg-[--e-orange-lt]">
+            <BarChart2 className="w-5 h-5 text-[--e-orange]" strokeWidth={1.8} />
           </div>
           <div>
             <h1 className="text-xl font-bold text-[#1C1917]">Staff KPI</h1>
@@ -122,7 +122,7 @@ export default function StaffKpiPage() {
 
         {/* admin이고 URL에서 특정 직원이 지정된 경우 → 드롭다운은 숨기지만 staffId 그대로 유지 */}
         {canApprove && isLockedToStaff && staffName && (
-          <span className="text-sm font-medium text-[#1C1917] px-3 py-2 bg-[#FEF0E3] rounded-lg">
+          <span className="text-sm font-medium text-[#1C1917] px-3 py-2 bg-[--e-orange-lt] rounded-lg">
             {staffName}
           </span>
         )}
@@ -138,7 +138,7 @@ export default function StaffKpiPage() {
 
       {loading && (
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-2 border-[#F5821F] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[--e-orange] border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
@@ -174,8 +174,8 @@ export default function StaffKpiPage() {
 
       {!data && !loading && !error && (
         <div className="flex flex-col items-center py-16 gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#FEF0E3] flex items-center justify-center">
-            <BarChart2 className="w-6 h-6 text-[#F5821F]" strokeWidth={1.5} />
+          <div className="w-12 h-12 rounded-2xl bg-[--e-orange-lt] flex items-center justify-center">
+            <BarChart2 className="w-6 h-6 text-[--e-orange]" strokeWidth={1.5} />
           </div>
           <p className="text-sm text-[#A8A29E]">Select a staff member and click Search.</p>
         </div>

@@ -22,7 +22,7 @@ const fmtAUD = (n: number) =>
     : `A$${n.toLocaleString("en-AU", { minimumFractionDigits: 0 })}`;
 
 const SERVICE_COLORS: Record<string, string> = {
-  study_abroad: "#F5821F",
+  study_abroad: "var(--e-orange)",
   camp:         "#16A34A",
   guardian:     "#CA8A04",
   other:        "#A8A29E",
@@ -37,13 +37,13 @@ const SERVICE_LABELS: Record<string, string> = {
 const FUNNEL_COLORS: Record<string, string> = {
   new:         "#A8A29E",
   open:        "#3B82F6",
-  in_progress: "#F5821F",
+  in_progress: "var(--e-orange)",
   qualified:   "#16A34A",
   unqualified: "#DC2626",
 };
 
 const TIER_STYLES: Record<string, string> = {
-  platinum: "bg-[#FEF0E3] text-[#F5821F]",
+  platinum: "bg-[--e-orange-lt] text-[--e-orange]",
   gold:     "bg-[#FEF9C3] text-[#CA8A04]",
   silver:   "bg-[#F4F3F1] text-[#57534E]",
   standard: "bg-[#F4F3F1] text-[#A8A29E]",
@@ -74,8 +74,8 @@ function KpiCard({ icon: Icon, label, value, sub }: {
     <div className="bg-white rounded-xl px-6 py-5 flex items-start gap-4"
       style={{ border: "1px solid #E8E6E2" }}>
       <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-        style={{ background: "#FEF0E3" }}>
-        <Icon className="w-5 h-5" style={{ color: "#F5821F" }} strokeWidth={1.8} />
+        style={{ background: "var(--e-orange-lt)" }}>
+        <Icon className="w-5 h-5" style={{ color: "var(--e-orange)" }} strokeWidth={1.8} />
       </div>
       <div className="min-w-0">
         <div className="text-[28px] font-bold leading-none" style={{ color: "#1C1917" }}>{value}</div>
@@ -316,7 +316,7 @@ export default function DashboardCrmPage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ background: "#F4F3F1" }}>
-                          <div className="h-full rounded-full" style={{ width: `${row.pct}%`, background: is90plus ? "#DC2626" : "#F5821F" }} />
+                          <div className="h-full rounded-full" style={{ width: `${row.pct}%`, background: is90plus ? "#DC2626" : "var(--e-orange)" }} />
                         </div>
                         <span className="text-xs" style={{ color: is90plus ? "#DC2626" : "#57534E" }}>{row.pct}%</span>
                       </div>
@@ -344,7 +344,7 @@ export default function DashboardCrmPage() {
                 onClick={() => approveMutation.mutate([...selectedIds])}
                 disabled={approveMutation.isPending}
                 className="text-white text-sm h-8 px-4"
-                style={{ background: "#F5821F" }}
+                style={{ background: "var(--e-orange)" }}
               >
                 {approveMutation.isPending ? "Approving…" : `Approve Incentives (${selectedIds.size})`}
               </Button>
@@ -398,7 +398,7 @@ export default function DashboardCrmPage() {
                         {row.conversion_rate != null ? `${(Number(row.conversion_rate) * 100).toFixed(1)}%` : "—"}
                       </td>
                       <td className="px-4 py-3 font-medium" style={{ color: "#1C1917" }}>{fmtAUD(Number(row.attributed_revenue))}</td>
-                      <td className="px-4 py-3 font-medium" style={{ color: "#F5821F" }}>{fmtAUD(Number(row.incentive_amount))}</td>
+                      <td className="px-4 py-3 font-medium" style={{ color: "var(--e-orange)" }}>{fmtAUD(Number(row.incentive_amount))}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${tierCls}`}>{tier}</span>
                       </td>

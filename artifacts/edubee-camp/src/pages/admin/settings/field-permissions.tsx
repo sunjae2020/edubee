@@ -48,7 +48,7 @@ export default function FieldPermissions() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><Eye className="w-5 h-5 text-[#F5821F]" /></div>
+        <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center"><Eye className="w-5 h-5 text-[--e-orange]" /></div>
         <div><h1 className="text-lg font-bold">Field Permissions</h1><p className="text-xs text-muted-foreground">Control view/edit access per field, per role</p></div>
       </div>
 
@@ -72,12 +72,12 @@ export default function FieldPermissions() {
           </thead>
           <tbody>
             {fields.map(field => (
-              <tr key={field} className="border-t hover:bg-[#FEF0E3]">
+              <tr key={field} className="border-t hover:bg-[--e-orange-lt]">
                 <td className="px-4 py-2 font-mono text-xs">{field}</td>
                 {ROLES.map(r => (
                   <td key={r} className="px-2 py-1.5 text-center">
                     {r === "super_admin" ? (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-[#F5821F]"><Pencil className="w-3 h-3" /> Edit</span>
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-[--e-orange]"><Pencil className="w-3 h-3" /> Edit</span>
                     ) : (
                       <Select value={tablePerm[field]?.[r] ?? "view"} onValueChange={(v: Permission) => setFieldPerm(field, r, v)}>
                         <SelectTrigger className="h-6 text-[10px] w-16 px-1.5"><SelectValue /></SelectTrigger>
@@ -97,7 +97,7 @@ export default function FieldPermissions() {
       </div>
 
       <div className="flex justify-end">
-        <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => toast({ title: "Field permissions saved" })}>
+        <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => toast({ title: "Field permissions saved" })}>
           <Save className="w-4 h-4" /> Save Permissions
         </Button>
       </div>

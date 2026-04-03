@@ -50,7 +50,7 @@ const AR_STATUSES = ["scheduled", "invoiced", "paid", "overdue"];
 const AP_STATUSES = ["pending", "ready", "paid"];
 
 const AR_BADGE: Record<string, { bg: string; text: string; bold?: boolean }> = {
-  scheduled: { bg: "#FEF0E3", text: "#F5821F" },
+  scheduled: { bg: "var(--e-orange-lt)", text: "var(--e-orange)" },
   invoiced:  { bg: "#FEF9C3", text: "#CA8A04" },
   paid:      { bg: "#DCFCE7", text: "#16A34A" },
   overdue:   { bg: "#FEF2F2", text: "#DC2626", bold: true },
@@ -58,7 +58,7 @@ const AR_BADGE: Record<string, { bg: string; text: string; bold?: boolean }> = {
 
 const AP_BADGE: Record<string, { bg: string; text: string }> = {
   pending: { bg: "#F4F3F1", text: "#57534E" },
-  ready:   { bg: "#FEF0E3", text: "#F5821F" },
+  ready:   { bg: "var(--e-orange-lt)", text: "var(--e-orange)" },
   paid:    { bg: "#DCFCE7", text: "#16A34A" },
 };
 
@@ -83,7 +83,7 @@ function fmtDate(d: string | null | undefined): string {
 
 // ─── KPI Card ────────────────────────────────────────────────────────────────
 function KpiCard({
-  label, value, icon: Icon, iconColor = "#F5821F", accent = "#FEF0E3",
+  label, value, icon: Icon, iconColor = "var(--e-orange)", accent = "var(--e-orange-lt)",
 }: {
   label: string; value: string; icon: React.ElementType; iconColor?: string; accent?: string;
 }) {
@@ -260,7 +260,7 @@ function FilterBar({
             onClick={() => toggleStatus(s)}
             className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all capitalize ${
               statusFilter.includes(s)
-                ? "border-[#F5821F] bg-[#FEF0E3] text-[#F5821F]"
+                ? "border-[--e-orange] bg-[--e-orange-lt] text-[--e-orange]"
                 : "border-stone-200 text-stone-500 hover:border-stone-400"
             }`}
           >
@@ -370,8 +370,8 @@ export default function ArApTrackerPage() {
       label: "Scheduled",
       value: fmt(String(summary.scheduled?.total ?? 0)),
       icon: Clock,
-      iconColor: "#F5821F",
-      accent: "#FEF0E3",
+      iconColor: "var(--e-orange)",
+      accent: "var(--e-orange-lt)",
     },
     {
       label: "Invoiced",
@@ -423,7 +423,7 @@ export default function ArApTrackerPage() {
             onClick={() => handleTabChange(key)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               tab === key
-                ? "border-[#F5821F] text-[#F5821F]"
+                ? "border-[--e-orange] text-[--e-orange]"
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
@@ -475,7 +475,7 @@ export default function ArApTrackerPage() {
                   <tr key={row.id}
                     className="transition-colors"
                     style={isOverdue ? { backgroundColor: "#FEF2F2" } : undefined}
-                    onMouseEnter={e => { if (!isOverdue) e.currentTarget.style.backgroundColor = "#FEF0E3"; }}
+                    onMouseEnter={e => { if (!isOverdue) e.currentTarget.style.backgroundColor = "var(--e-orange-lt)"; }}
                     onMouseLeave={e => { if (!isOverdue) e.currentTarget.style.backgroundColor = ""; }}>
                     <td className="px-4 py-3 font-mono text-xs text-stone-500">
                       {row.contractNumber ?? "—"}
@@ -536,7 +536,7 @@ export default function ArApTrackerPage() {
               {sortedAp.map(row => {
                 const badge = AP_BADGE[row.apStatus ?? "pending"] ?? AP_BADGE.pending;
                 return (
-                  <tr key={row.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
+                  <tr key={row.id} className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-stone-500">
                       {row.contractNumber ?? "—"}
                     </td>

@@ -132,7 +132,7 @@ export function ContractReportTab({ contractId }: { contractId: string }) {
         </p>
         {canCreate && (
           <Button
-            className="mt-2 bg-[#F5821F] hover:bg-[#d97706] text-white gap-2"
+            className="mt-2 bg-[--e-orange] hover:bg-[#d97706] text-white gap-2"
             onClick={() => createMutation.mutate()}
             disabled={createMutation.isPending}
           >
@@ -196,7 +196,7 @@ export function ContractReportTab({ contractId }: { contractId: string }) {
               <span className="text-sm text-[#CA8A04] font-medium">Draft — not yet visible to agent and client</span>
             </div>
             {canPublish && (
-              <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white h-7 text-xs gap-1"
+              <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white h-7 text-xs gap-1"
                 onClick={() => publishMutation.mutate(report.id)}
                 disabled={publishMutation.isPending}>
                 <ReportSymbol name="publish" size={12} color="white" />

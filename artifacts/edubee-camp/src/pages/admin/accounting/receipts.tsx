@@ -113,6 +113,7 @@ function SkeletonRows({ cols }: { cols: number }) {
 function printReceipt(rcp: Receipt) {
   const amountStr = fmtAmount(rcp.originalAmount ?? rcp.amount, rcp.originalCurrency ?? rcp.currency);
   const methodLabel = PAYMENT_METHODS.find(m => m.value === rcp.paymentMethod)?.label ?? (rcp.paymentMethod ?? "—");
+  const _bc = getComputedStyle(document.documentElement).getPropertyValue("--e-orange").trim() || "#F5821F";
 
   const html = `<!DOCTYPE html>
 <html>
@@ -123,7 +124,7 @@ function printReceipt(rcp: Receipt) {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #fff; color: #1a1917; padding: 48px; font-size: 14px; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
-    .brand { font-size: 28px; font-weight: 700; color: #F5821F; }
+    .brand { font-size: 28px; font-weight: 700; color: ${_bc}; }
     .brand-sub { font-size: 13px; color: #64748b; margin-top: 2px; }
     .rcp-title { text-align: right; }
     .rcp-title h2 { font-size: 22px; font-weight: 700; color: #1a1917; }
@@ -275,7 +276,7 @@ function NewReceiptModal({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Plus className="w-4 h-4 text-[#F5821F]" /> New Receipt
+            <Plus className="w-4 h-4 text-[--e-orange]" /> New Receipt
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-1">
@@ -294,7 +295,7 @@ function NewReceiptModal({
                     key={inv.id}
                     className={cn(
                       "w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors",
-                      form.invoiceId === inv.id && "bg-[#FEF0E3]"
+                      form.invoiceId === inv.id && "bg-[--e-orange-lt]"
                     )}
                     onClick={() => handleSelectInvoice(inv)}
                   >
@@ -381,7 +382,7 @@ function NewReceiptModal({
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
+          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
             {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Creating…</> : "Create Receipt"}
           </Button>
         </DialogFooter>
@@ -428,7 +429,7 @@ function EmailReceiptModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Mail className="w-4 h-4 text-[#F5821F]" /> Send Receipt by Email
+            <Mail className="w-4 h-4 text-[--e-orange]" /> Send Receipt by Email
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -454,7 +455,7 @@ function EmailReceiptModal({
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => { onClose(); setEmail(""); }} disabled={sending}>Cancel</Button>
-          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSend} disabled={sending}>
+          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSend} disabled={sending}>
             {sending ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Sending…</> : <><Send className="w-3.5 h-3.5" />Send Email</>}
           </Button>
         </DialogFooter>
@@ -521,7 +522,7 @@ export default function Receipts() {
                   <ClipboardList className="w-8 h-8 mx-auto mb-3 opacity-30" />No receipts found
                 </td></tr>
               ) : sorted.map(r => (
-                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/receipts/${r.id}`)}>
+                <tr key={r.id} className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/receipts/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.receiptNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{r.studentName ?? r.payerName ?? "—"}</div>

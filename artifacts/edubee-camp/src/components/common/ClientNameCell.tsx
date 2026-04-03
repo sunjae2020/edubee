@@ -21,7 +21,7 @@ export function ClientNameCell({ fields, accountId, subLabel }: ClientNameCellPr
         {accountId ? (
           <Link
             href={`/admin/crm/accounts/${accountId}`}
-            className="text-sm font-semibold text-[#F5821F] hover:text-[#D96A0A] hover:underline transition-colors truncate max-w-[180px]"
+            className="text-sm font-semibold text-[--e-orange] hover:text-[--e-orange-hover] hover:underline transition-colors truncate max-w-[180px]"
           >
             {fullName}
           </Link>

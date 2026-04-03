@@ -64,8 +64,8 @@ export default function PaymentStatementModal({ contractId, studentName, student
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:"#FEF0E3" }}>
-              <FileText size={16} style={{ color:"#F5821F" }} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:"var(--e-orange-lt)" }}>
+              <FileText size={16} style={{ color:"var(--e-orange)" }} />
             </div>
             <div>
               <h2 className="text-sm font-bold text-[#1C1917]">Generate Payment Statement</h2>
@@ -90,12 +90,12 @@ export default function PaymentStatementModal({ contractId, studentName, student
               <div className="space-y-2">
                 <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-colors"
                   style={scope === "contract"
-                    ? { borderColor:"#F5821F", background:"#FFFBF5" }
+                    ? { borderColor:"var(--e-orange)", background:"#FFFBF5" }
                     : { borderColor:"#E8E6E2", background:"white" }}>
                   <input type="radio" name="scope" value="contract"
                     checked={scope === "contract"}
                     onChange={() => setScope("contract")}
-                    className="accent-[#F5821F]" />
+                    className="accent-[--e-orange]" />
                   <div>
                     <p className="text-sm font-medium text-[#1C1917]">This contract only</p>
                     <p className="text-[11px] text-[#A8A29E]">Payments linked to this contract — most common for visa submission</p>
@@ -103,12 +103,12 @@ export default function PaymentStatementModal({ contractId, studentName, student
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-colors"
                   style={scope === "student"
-                    ? { borderColor:"#F5821F", background:"#FFFBF5" }
+                    ? { borderColor:"var(--e-orange)", background:"#FFFBF5" }
                     : { borderColor:"#E8E6E2", background:"white" }}>
                   <input type="radio" name="scope" value="student"
                     checked={scope === "student"}
                     onChange={() => setScope("student")}
-                    className="accent-[#F5821F]" />
+                    className="accent-[--e-orange]" />
                   <div>
                     <p className="text-sm font-medium text-[#1C1917]">All contracts for this student</p>
                     <p className="text-[11px] text-[#A8A29E]">Consolidated history for multi-contract students</p>
@@ -125,7 +125,7 @@ export default function PaymentStatementModal({ contractId, studentName, student
               <select
                 value={reason}
                 onChange={e => setReason(e.target.value)}
-                className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#1C1917] bg-white focus:outline-none focus:border-[#F5821F]">
+                className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#1C1917] bg-white focus:outline-none focus:border-[--e-orange]">
                 <option value="">— Select reason —</option>
                 {ISSUE_REASONS.map(r => (
                   <option key={r} value={r}>{r}</option>
@@ -140,7 +140,7 @@ export default function PaymentStatementModal({ contractId, studentName, student
                   type="checkbox"
                   checked={sendEmail}
                   onChange={e => setSendEmail(e.target.checked)}
-                  className="accent-[#F5821F] w-4 h-4" />
+                  className="accent-[--e-orange] w-4 h-4" />
                 <div>
                   <p className="text-sm font-medium text-[#1C1917]">Send automatically to student email</p>
                   <p className="text-[11px] text-[#A8A29E]">PDF will be attached and sent immediately after generation</p>
@@ -152,7 +152,7 @@ export default function PaymentStatementModal({ contractId, studentName, student
                   value={emailTo}
                   onChange={e => setEmailTo(e.target.value)}
                   placeholder="student@email.com"
-                  className="mt-3 w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]"
+                  className="mt-3 w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]"
                 />
               )}
             </div>
@@ -177,7 +177,7 @@ export default function PaymentStatementModal({ contractId, studentName, student
             <div className="flex gap-2 justify-center">
               <button onClick={handleDownload}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white"
-                style={{ background:"#F5821F" }}>
+                style={{ background:"var(--e-orange)" }}>
                 <Download size={14} /> Download PDF
               </button>
               <button onClick={onClose}
@@ -199,7 +199,7 @@ export default function PaymentStatementModal({ contractId, studentName, student
               onClick={handleGenerate}
               disabled={loading}
               className="h-9 px-4 rounded-lg text-sm font-semibold text-white flex items-center gap-1.5 transition-opacity disabled:opacity-60"
-              style={{ background:"#F5821F" }}>
+              style={{ background:"var(--e-orange)" }}>
               {loading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
               {loading ? "Generating…" : "Generate & Download PDF"}
             </button>

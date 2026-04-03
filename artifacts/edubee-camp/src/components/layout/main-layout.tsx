@@ -37,7 +37,7 @@ function ImpersonationBanner() {
 
   if (!orgId) return null;
   return (
-    <div className="flex items-center justify-between px-4 py-1.5 text-sm font-medium text-white" style={{ background: "#D96A0A" }}>
+    <div className="flex items-center justify-between px-4 py-1.5 text-sm font-medium text-white" style={{ background: "var(--e-orange-hover)" }}>
       <span>Viewing as <strong>{orgName}</strong></span>
       <button
         onClick={() => {
@@ -90,7 +90,7 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--e-bg-page)" }}>
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#F5821F] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[--e-orange] border-t-transparent rounded-full animate-spin" />
           <p className="text-sm" style={{ color: "var(--e-text-2)" }}>Loading workspace…</p>
         </div>
       </div>

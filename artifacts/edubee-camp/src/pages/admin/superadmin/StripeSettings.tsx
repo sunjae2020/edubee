@@ -42,7 +42,7 @@ const card  = "bg-white border border-[#E8E6E2] rounded-xl overflow-hidden";
 const inp   = [
   "w-full h-9 px-3 border border-[#E8E6E2] rounded-lg text-sm font-mono text-[#1C1917]",
   "bg-white placeholder-[#A8A29E]",
-  "focus:outline-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]",
+  "focus:outline-none focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)]",
   "transition",
 ].join(" ");
 
@@ -52,7 +52,7 @@ function CopyBtn({ text }: { text: string }) {
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg border border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors text-[#57534E]"
+      className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg border border-[#E8E6E2] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors text-[#57534E]"
     >
       {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3" />}
       {copied ? "Copied!" : "Copy"}
@@ -172,7 +172,7 @@ export default function StripeSettings() {
           href="https://dashboard.stripe.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-[#57534E] border border-[#E8E6E2] rounded-lg hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-[#57534E] border border-[#E8E6E2] rounded-lg hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           Stripe Dashboard
@@ -197,7 +197,7 @@ export default function StripeSettings() {
       {/* ─── Section 1: API Keys ─────────────────────────────────────────── */}
       <div className={card}>
         <div className="flex items-center gap-2.5 px-6 py-4 border-b border-[#E8E6E2]">
-          <ShieldCheck className="w-4.5 h-4.5 text-[#F5821F]" />
+          <ShieldCheck className="w-4.5 h-4.5 text-[--e-orange]" />
           <h2 className="font-semibold text-[#1C1917]">API Keys</h2>
           <span className="ml-auto text-xs text-[#A8A29E]">Managed via Replit Secrets</span>
         </div>
@@ -256,14 +256,14 @@ export default function StripeSettings() {
       {/* ─── Section 2: Webhook URL ──────────────────────────────────────── */}
       <div className={card}>
         <div className="flex items-center gap-2.5 px-6 py-4 border-b border-[#E8E6E2]">
-          <RefreshCw className="w-4 h-4 text-[#F5821F]" />
+          <RefreshCw className="w-4 h-4 text-[--e-orange]" />
           <h2 className="font-semibold text-[#1C1917]">Webhook Endpoint</h2>
         </div>
         <div className="px-6 py-5 space-y-3">
           <p className="text-sm text-[#57534E]">
             Register this URL in your{" "}
             <a href="https://dashboard.stripe.com/webhooks" target="_blank" rel="noopener noreferrer"
-               className="text-[#F5821F] hover:underline">Stripe Webhook settings</a>{" "}
+               className="text-[--e-orange] hover:underline">Stripe Webhook settings</a>{" "}
             to receive billing events.
           </p>
           <div className="flex items-center gap-2 p-3 bg-[#FAFAF9] border border-[#E8E6E2] rounded-lg">
@@ -293,7 +293,7 @@ export default function StripeSettings() {
       {/* ─── Section 3: Price IDs ────────────────────────────────────────── */}
       <div className={card}>
         <div className="flex items-center gap-2.5 px-6 py-4 border-b border-[#E8E6E2]">
-          <CreditCard className="w-4 h-4 text-[#F5821F]" />
+          <CreditCard className="w-4 h-4 text-[--e-orange]" />
           <h2 className="font-semibold text-[#1C1917]">Plan Price IDs</h2>
           <span className="ml-auto text-xs text-[#A8A29E]">
             Find these in Stripe → Products → Pricing
@@ -316,7 +316,7 @@ export default function StripeSettings() {
             return (
               <div key={plan.id} className={[
                 "grid grid-cols-[180px_1fr_1fr] gap-4 px-6 py-4 items-center",
-                changed ? "bg-[#FEF0E3]/30" : "",
+                changed ? "bg-[--e-orange-lt]/30" : "",
               ].join(" ")}>
                 {/* Plan name */}
                 <div>
@@ -375,7 +375,7 @@ export default function StripeSettings() {
           <button
             onClick={() => save.mutate()}
             disabled={!isDirty || save.isPending}
-            className="inline-flex items-center gap-2 px-5 py-2 bg-[#F5821F] text-white text-sm font-semibold rounded-lg hover:bg-[#D96A0A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2 bg-[--e-orange] text-white text-sm font-semibold rounded-lg hover:bg-[--e-orange-hover] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {save.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
             Save Price IDs
@@ -387,7 +387,7 @@ export default function StripeSettings() {
       <div className="p-5 bg-[#FAFAF9] border border-[#E8E6E2] rounded-xl">
         <p className="text-sm font-semibold text-[#1C1917] mb-3">How to get Stripe Price IDs</p>
         <ol className="space-y-1.5 text-sm text-[#57534E] list-decimal list-inside">
-          <li>Go to <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener noreferrer" className="text-[#F5821F] hover:underline">Stripe Dashboard → Products</a></li>
+          <li>Go to <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener noreferrer" className="text-[--e-orange] hover:underline">Stripe Dashboard → Products</a></li>
           <li>Create a product for each plan (Solo, Starter, Growth)</li>
           <li>Add two prices per product: one Monthly, one Annual</li>
           <li>Copy the <code className="font-mono bg-[#F4F3F1] px-1 rounded">price_xxx</code> ID for each and paste above</li>

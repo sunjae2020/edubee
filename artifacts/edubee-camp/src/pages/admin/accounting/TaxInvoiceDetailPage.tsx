@@ -139,7 +139,7 @@ export default function TaxInvoiceDetailPage() {
       <div className="flex flex-col items-center justify-center py-24 text-[#A8A29E]">
         <FileText className="w-10 h-10 mb-3" strokeWidth={1} />
         <p className="text-sm">Tax invoice not found.</p>
-        <Button variant="link" className="text-[#F5821F] mt-2" onClick={() => navigate("/admin/accounting/tax-invoices")}>
+        <Button variant="link" className="text-[--e-orange] mt-2" onClick={() => navigate("/admin/accounting/tax-invoices")}>
           Back to list
         </Button>
       </div>
@@ -159,7 +159,7 @@ export default function TaxInvoiceDetailPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-2 flex-wrap">
-            <FileText className="w-5 h-5 text-[#F5821F]" strokeWidth={1.5} />
+            <FileText className="w-5 h-5 text-[--e-orange]" strokeWidth={1.5} />
             <h1 className="text-xl font-bold text-[#1C1917] leading-none font-mono">{invoice.invoiceRef}</h1>
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[form.status] ?? "bg-[#F4F3F1] text-[#57534E]"}`}>
               {form.status}
@@ -174,7 +174,7 @@ export default function TaxInvoiceDetailPage() {
                 <RotateCcw size={13} /> Discard
               </Button>
               <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}
-                className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
+                className="h-9 gap-1.5 text-white" style={{ background: "var(--e-orange)" }}>
                 {save.isPending
                   ? <><Loader2 size={13} className="animate-spin" /> Saving…</>
                   : <><Save size={13} /> Save Changes</>}
@@ -246,7 +246,7 @@ export default function TaxInvoiceDetailPage() {
               type="date"
               value={form.dueDate}
               onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-              className="h-10 border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0"
+              className="h-10 border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0"
             />
           </div>
         </div>
@@ -284,7 +284,7 @@ export default function TaxInvoiceDetailPage() {
               {invoice.schoolAccountId && (
                 <button
                   onClick={() => navigate(`/admin/crm/accounts/${invoice.schoolAccountId}`)}
-                  className="text-[#F5821F] flex items-center gap-1 text-xs font-medium hover:underline"
+                  className="text-[--e-orange] flex items-center gap-1 text-xs font-medium hover:underline"
                 >
                   <ExternalLink size={12} /> View
                 </button>
@@ -311,7 +311,7 @@ export default function TaxInvoiceDetailPage() {
               {invoice.contractId && (
                 <button
                   onClick={() => navigate(`/admin/crm/contracts/${invoice.contractId}`)}
-                  className="text-[#F5821F] flex items-center gap-1 text-xs font-medium hover:underline"
+                  className="text-[--e-orange] flex items-center gap-1 text-xs font-medium hover:underline"
                 >
                   <ExternalLink size={12} /> Contract
                 </button>
@@ -323,7 +323,7 @@ export default function TaxInvoiceDetailPage() {
         {invoice.paymentHeaderId && (
           <button
             onClick={() => navigate(`/admin/accounting/payments/${invoice.paymentHeaderId}`)}
-            className="flex items-center gap-1.5 text-sm text-[#F5821F] hover:underline"
+            className="flex items-center gap-1.5 text-sm text-[--e-orange] hover:underline"
           >
             <ExternalLink size={13} /> View Payment
           </button>

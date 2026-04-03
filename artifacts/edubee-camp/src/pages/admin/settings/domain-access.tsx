@@ -155,7 +155,7 @@ export default function DomainAccess() {
     },
   });
 
-  const inp = "flex-1 h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[#F5821F] bg-white";
+  const inp = "flex-1 h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[--e-orange] bg-white";
   const canCustomDomain = domain?.planType !== "solo" && domain?.planType !== "starter";
 
   const cname = dnsInstructions?.customDomain?.cnameRecord;
@@ -164,7 +164,7 @@ export default function DomainAccess() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-48">
-      <Loader2 size={24} className="animate-spin text-[#F5821F]" />
+      <Loader2 size={24} className="animate-spin text-[--e-orange]" />
     </div>
   );
 
@@ -178,7 +178,7 @@ export default function DomainAccess() {
       {/* ── Subdomain ─────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] p-6 space-y-5" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
         <div className="flex items-center gap-2 border-b border-[#E8E6E2] pb-3">
-          <Globe size={16} className="text-[#F5821F]" strokeWidth={1.5} />
+          <Globe size={16} className="text-[--e-orange]" strokeWidth={1.5} />
           <h2 className="text-sm font-semibold text-[#1C1917] uppercase tracking-wide">Subdomain</h2>
           <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#166534] font-semibold flex items-center gap-1">
             <ShieldCheck size={11} /> Managed by Edubee
@@ -244,7 +244,7 @@ export default function DomainAccess() {
               onClick={saveDomain}
               disabled={saving}
               className="h-10 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
-              style={{ background: "#F5821F" }}
+              style={{ background: "var(--e-orange)" }}
             >
               {saving ? <Loader2 size={13} className="animate-spin" /> : null}
               Save Subdomain
@@ -256,10 +256,10 @@ export default function DomainAccess() {
       {/* ── Custom Domain ──────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] p-6 space-y-5" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
         <div className="flex items-center gap-2 border-b border-[#E8E6E2] pb-3">
-          <Lock size={16} className={canCustomDomain ? "text-[#F5821F]" : "text-[#A8A29E]"} strokeWidth={1.5} />
+          <Lock size={16} className={canCustomDomain ? "text-[--e-orange]" : "text-[#A8A29E]"} strokeWidth={1.5} />
           <h2 className="text-sm font-semibold text-[#1C1917] uppercase tracking-wide">Custom Domain</h2>
           {!canCustomDomain && (
-            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-[#F5821F]/10 text-[#F5821F] font-semibold">
+            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-[--e-orange]/10 text-[--e-orange] font-semibold">
               Growth Plan+
             </span>
           )}
@@ -311,7 +311,7 @@ export default function DomainAccess() {
                   onClick={() => registerCustomDomain.mutate()}
                   disabled={!customDomainInput.trim() || registerCustomDomain.isPending}
                   className="h-10 px-4 rounded-lg text-sm font-semibold text-white disabled:opacity-50 whitespace-nowrap flex items-center gap-1.5"
-                  style={{ background: "#F5821F" }}
+                  style={{ background: "var(--e-orange)" }}
                 >
                   {registerCustomDomain.isPending ? <Loader2 size={13} className="animate-spin" /> : null}
                   {domain?.customDomain ? "Update" : "Register"}
@@ -332,7 +332,7 @@ export default function DomainAccess() {
                   <button
                     onClick={() => verifyDns.mutate()}
                     disabled={verifyDns.isPending}
-                    className="h-8 px-3 rounded-lg text-xs font-semibold border border-[#E8E6E2] text-[#57534E] hover:border-[#F5821F] hover:text-[#F5821F] flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                    className="h-8 px-3 rounded-lg text-xs font-semibold border border-[#E8E6E2] text-[#57534E] hover:border-[--e-orange] hover:text-[--e-orange] flex items-center gap-1.5 transition-colors disabled:opacity-50"
                   >
                     {verifyDns.isPending
                       ? <Loader2 size={12} className="animate-spin" />
@@ -419,7 +419,7 @@ export default function DomainAccess() {
                           href={url as string}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-[#F5821F] hover:underline capitalize"
+                          className="inline-flex items-center gap-1 text-xs text-[--e-orange] hover:underline capitalize"
                         >
                           {name} <ExternalLink size={10} />
                         </a>

@@ -54,7 +54,7 @@ function duration(from?: string, to?: string) {
 
 const CONTRACT_STATUS_STYLES: Record<string, string> = {
   active:      "bg-[#DCFCE7] text-[#16A34A]",
-  "in progress": "bg-[#FEF0E3] text-[#F5821F]",
+  "in progress": "bg-[--e-orange-lt] text-[--e-orange]",
   overdue:     "bg-[#FEF2F2] text-[#DC2626]",
   completed:   "bg-[#F4F3F1] text-[#57534E]",
   draft:       "bg-[#F4F3F1] text-[#A8A29E]",
@@ -62,7 +62,7 @@ const CONTRACT_STATUS_STYLES: Record<string, string> = {
 
 const AR_STATUS_STYLES: Record<string, string> = {
   scheduled: "bg-[#F4F3F1] text-[#57534E]",
-  invoiced:  "bg-[#FEF0E3] text-[#F5821F]",
+  invoiced:  "bg-[--e-orange-lt] text-[--e-orange]",
   overdue:   "bg-[#FEF2F2] text-[#DC2626]",
   partial:   "bg-[#FEF9C3] text-[#CA8A04]",
   paid:      "bg-[#DCFCE7] text-[#16A34A]",
@@ -70,7 +70,7 @@ const AR_STATUS_STYLES: Record<string, string> = {
 
 const AP_STATUS_STYLES: Record<string, string> = {
   pending: "bg-[#F4F3F1] text-[#57534E]",
-  ready:   "bg-[#FEF0E3] text-[#F5821F]",
+  ready:   "bg-[--e-orange-lt] text-[--e-orange]",
   paid:    "bg-[#DCFCE7] text-[#16A34A]",
   overdue: "bg-[#FEF2F2] text-[#DC2626]",
 };
@@ -115,9 +115,9 @@ function calcPeriod(p: Period): [string, string] {
 // ── ActiveTag ──────────────────────────────────────────────────────────────
 function ActiveTag({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F]/30">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[--e-orange-lt] text-[--e-orange] border border-[--e-orange]/30">
       {label}
-      <button onClick={onRemove} className="hover:text-[#D96A0A]"><X size={10} /></button>
+      <button onClick={onRemove} className="hover:text-[--e-orange-hover]"><X size={10} /></button>
     </span>
   );
 }
@@ -261,7 +261,7 @@ export default function ContractListPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard label="Active Contracts" value={String(summary.activeCount)} />
-        <StatCard label="AR Outstanding"   value={fmtMoney(summary.arOutstanding)}  accent="#F5821F" />
+        <StatCard label="AR Outstanding"   value={fmtMoney(summary.arOutstanding)}  accent="var(--e-orange)" />
         <StatCard label="AP Payable"        value={fmtMoney(summary.apPayable)}       accent="#DC2626" />
         <StatCard label="Commission Est."   value={fmtMoney(summary.commissionEstimate)} accent="#16A34A" />
       </div>
@@ -279,7 +279,7 @@ export default function ContractListPage() {
             key={key}
             onClick={() => setTypeFilter(key)}
             style={typeFilter === key
-              ? { background: "#FEF0E3", borderColor: "#F5821F", color: "#F5821F", fontWeight: 600 }
+              ? { background: "var(--e-orange-lt)", borderColor: "var(--e-orange)", color: "var(--e-orange)", fontWeight: 600 }
               : { background: "white",   borderColor: "#E8E6E2", color: "#57534E" }}
             className="px-4 py-1.5 rounded-lg border-[1.5px] text-[13px] hover:bg-[#FAFAF9] transition-colors"
           >
@@ -295,7 +295,7 @@ export default function ContractListPage() {
           <div className="relative flex-1 min-w-[220px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
             <input
-              className="w-full pl-9 pr-3 h-9 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[#F5821F] bg-white"
+              className="w-full pl-9 pr-3 h-9 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange] bg-white"
               placeholder="Search student, school, ref..."
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
@@ -310,7 +310,7 @@ export default function ContractListPage() {
                 onClick={() => selectPeriod(key)}
                 className="px-3 h-9 rounded-lg text-xs font-medium border transition-all"
                 style={period === key
-                  ? { background: "#FEF0E3", color: "#F5821F", borderColor: "#F5821F" }
+                  ? { background: "var(--e-orange-lt)", color: "var(--e-orange)", borderColor: "var(--e-orange)" }
                   : { background: "white", color: "#57534E", borderColor: "#E8E6E2" }}
               >
                 {label}
@@ -320,14 +320,14 @@ export default function ContractListPage() {
 
           {/* Date range */}
           <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPeriod(""); setPage(1); }}
-            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[#F5821F]" />
+            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange]" />
           <span className="text-[#A8A29E] text-xs">to</span>
           <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPeriod(""); setPage(1); }}
-            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[#F5821F]" />
+            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange]" />
 
           {/* Status */}
           <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}
-            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[#F5821F] bg-white">
+            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange] bg-white">
             <option value="">All Status</option>
             {["active","in progress","overdue","completed","draft"].map(s => (
               <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
@@ -338,13 +338,13 @@ export default function ContractListPage() {
           <button
             onClick={() => setShowAdv(v => !v)}
             className="flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm font-medium transition-all"
-            style={showAdv ? { background:"#FEF0E3", color:"#F5821F", borderColor:"#F5821F" } : { background:"white", color:"#57534E", borderColor:"#E8E6E2" }}
+            style={showAdv ? { background:"var(--e-orange-lt)", color:"var(--e-orange)", borderColor:"var(--e-orange)" } : { background:"white", color:"#57534E", borderColor:"#E8E6E2" }}
           >
             <Settings2 size={14} />
             Advanced
             {activeAdvCount > 0 && (
               <span className="ml-0.5 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
-                style={{ background:"#F5821F", color:"white" }}>{activeAdvCount}</span>
+                style={{ background:"var(--e-orange)", color:"white" }}>{activeAdvCount}</span>
             )}
             <ChevronDown size={13} style={{ transform: showAdv ? "rotate(180deg)" : undefined, transition: "transform 150ms" }} />
           </button>
@@ -357,7 +357,7 @@ export default function ContractListPage() {
               <div>
                 <label className="block text-xs font-medium text-[#57534E] mb-1">Payment Type</label>
                 <select value={draftPayFreq} onChange={e => setDraftPayFreq(e.target.value)}
-                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[#F5821F] bg-white">
+                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange] bg-white">
                   <option value="">All</option>
                   {["once","per_term","monthly","custom"].map(v => (
                     <option key={v} value={v}>{v.replace("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}</option>
@@ -367,7 +367,7 @@ export default function ContractListPage() {
               <div>
                 <label className="block text-xs font-medium text-[#57534E] mb-1">AR Status</label>
                 <select value={draftArStatus} onChange={e => setDraftArStatus(e.target.value)}
-                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[#F5821F] bg-white">
+                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange] bg-white">
                   <option value="">All</option>
                   {["scheduled","invoiced","overdue","partial","paid"].map(v => (
                     <option key={v} value={v}>{v.charAt(0).toUpperCase()+v.slice(1)}</option>
@@ -377,7 +377,7 @@ export default function ContractListPage() {
               <div>
                 <label className="block text-xs font-medium text-[#57534E] mb-1">AP Status</label>
                 <select value={draftApStatus} onChange={e => setDraftApStatus(e.target.value)}
-                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[#F5821F] bg-white">
+                  className="w-full h-9 px-2 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-[--e-orange] bg-white">
                   <option value="">All</option>
                   {["pending","ready","paid","overdue"].map(v => (
                     <option key={v} value={v}>{v.charAt(0).toUpperCase()+v.slice(1)}</option>
@@ -392,7 +392,7 @@ export default function ContractListPage() {
               </button>
               <button onClick={applyAdv}
                 className="h-8 px-4 rounded-lg text-sm text-white font-medium"
-                style={{ background: "#F5821F" }}>
+                style={{ background: "var(--e-orange)" }}>
                 Apply Filters
               </button>
             </div>
@@ -447,18 +447,18 @@ export default function ContractListPage() {
                   <td colSpan={15} className="text-center py-16 text-[#A8A29E]">
                     <FileText size={32} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">No contracts found</p>
-                    <button onClick={clearAdv} className="mt-2 text-sm underline" style={{ color:"#F5821F" }}>Clear filters</button>
+                    <button onClick={clearAdv} className="mt-2 text-sm underline" style={{ color:"var(--e-orange)" }}>Clear filters</button>
                   </td>
                 </tr>
               )}
               {!isLoading && sorted.map(row => (
                 <tr key={row.id}
-                  className="border-b border-[#E8E6E2] cursor-pointer hover:bg-[#FEF0E3] transition-colors"
+                  className="border-b border-[#E8E6E2] cursor-pointer hover:bg-[--e-orange-lt] transition-colors"
                   onClick={() => navigate(`/admin/crm/contracts/${row.id}`)}
                 >
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}><input type="checkbox" /></td>
                   <td className="px-4 py-3">
-                    <span className="font-mono text-xs font-semibold" style={{ color:"#F5821F" }}>{row.contractRefDisplay ?? "—"}</span>
+                    <span className="font-mono text-xs font-semibold" style={{ color:"var(--e-orange)" }}>{row.contractRefDisplay ?? "—"}</span>
                   </td>
                   <td className="px-4 py-3">
                     <ClientNameCell
@@ -500,7 +500,7 @@ export default function ContractListPage() {
                   <td className="px-4 py-3 min-w-[90px]">
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-1.5 rounded-full bg-[#F4F3F1] overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${row.collectionRate}%`, background:"#F5821F" }} />
+                        <div className="h-full rounded-full" style={{ width: `${row.collectionRate}%`, background:"var(--e-orange)" }} />
                       </div>
                       <span className="text-[11px] text-[#57534E] whitespace-nowrap">{row.collectionRate}%</span>
                     </div>

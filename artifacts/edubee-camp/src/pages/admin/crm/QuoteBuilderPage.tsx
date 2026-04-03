@@ -30,7 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchLogoSrc, logoImgHtml } from "@/lib/branding";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const PRIMARY = "#F5821F";
+const PRIMARY = "var(--e-orange)";
 
 // Stable empty array — must be outside component to avoid re-creating on every render
 const EMPTY_LINES: QuoteProduct[] = [];
@@ -316,7 +316,7 @@ function AccountLookupField({
       <div className="flex items-center gap-2 min-h-8">
         {selected ? (
           <>
-            <Building2 size={14} className="text-[#F5821F] shrink-0" />
+            <Building2 size={14} className="text-[--e-orange] shrink-0" />
             <span className="text-sm font-medium text-gray-800">{selected.name}</span>
             {(selected as any).accountType && (
               <span className="text-xs text-gray-400">({(selected as any).accountType})</span>
@@ -430,7 +430,7 @@ function AccountLookupField({
                   onClick={() => setNewType(t)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                     newType === t
-                      ? "bg-[#F5821F] text-white border-[#F5821F]"
+                      ? "bg-[--e-orange] text-white border-[--e-orange]"
                       : "bg-white text-gray-600 border-gray-200 hover:border-orange-300"
                   }`}
                 >
@@ -1374,14 +1374,16 @@ export default function QuoteBuilderPage() {
           <td style="text-align:right;padding:8px 8px 4px;font-size:12px;font-weight:600;color:#555">$${sub.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td>
         </tr>${items}`;
     }).join("");
+    const _bc  = getComputedStyle(document.documentElement).getPropertyValue("--e-orange").trim()  || "#F5821F";
+    const _bcLt = getComputedStyle(document.documentElement).getPropertyValue("--e-orange-lt").trim() || "#FEF0E3";
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
       <title>Quote ${quote.quoteRefNumber ?? ""}</title>
       <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:Arial,sans-serif;color:#333;padding:32px;font-size:13px}
-        .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #F5821F}
-        .brand{font-size:22px;font-weight:700;color:#F5821F}
+        .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid ${_bc}}
+        .brand{font-size:22px;font-weight:700;color:${_bc}}
         .ref{font-size:13px;color:#888;margin-top:4px}
         .meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 20px;margin-bottom:24px;background:#fdf8f4;padding:16px;border-radius:6px;font-size:12px}
         .meta-label{color:#888;margin-bottom:2px;font-size:11px}
@@ -1391,7 +1393,7 @@ export default function QuoteBuilderPage() {
         th{background:#fdf8f4;padding:9px 10px;text-align:left;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #e5e0db}
         td{padding:8px 10px;border-bottom:1px solid #f0ece8;vertical-align:top;font-size:12px}
         .total-row td{font-weight:700;font-size:14px;border-top:2px solid #e5e0db;border-bottom:none;padding-top:12px}
-        .total-row td:last-child{color:#F5821F;font-size:16px}
+        .total-row td:last-child{color:${_bc};font-size:16px}
         .notes-box{background:#fdf8f4;padding:12px 16px;border-radius:6px;font-size:12px;color:#555;margin:16px 0;line-height:1.6}
         .notes-label{font-weight:700;color:#444;margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
         .footer{margin-top:28px;font-size:10px;color:#bbb;text-align:center;border-top:1px solid #eee;padding-top:12px}
@@ -1431,7 +1433,7 @@ export default function QuoteBuilderPage() {
           <th style="text-align:right">Subtotal</th>
         </tr></thead>
         <tbody>${paymentRows}</tbody>
-        ${initialTotal > 0 ? `<tfoot><tr><td colspan="5" style="text-align:right;font-size:11px;color:#888;padding:6px 10px;border-bottom:none">Initial Payment</td><td style="text-align:right;font-weight:600;color:#F5821F;padding:6px 10px;border-bottom:none">$${initialTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td></tr></tfoot>` : ""}
+        ${initialTotal > 0 ? `<tfoot><tr><td colspan="5" style="text-align:right;font-size:11px;color:#888;padding:6px 10px;border-bottom:none">Initial Payment</td><td style="text-align:right;font-weight:600;color:${_bc};padding:6px 10px;border-bottom:none">$${initialTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</td></tr></tfoot>` : ""}
       </table>
 
       <!-- Quote Summary -->
@@ -1672,7 +1674,7 @@ export default function QuoteBuilderPage() {
               size="sm"
               onClick={() => convertMutation.mutate()}
               disabled={convertMutation.isPending || activeLines.length === 0}
-              className="text-sm border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
+              className="text-sm border-[--e-orange] text-[--e-orange] hover:bg-[--e-orange-lt]"
             >
               {convertMutation.isPending ? "Converting…" : "Convert to Contract"}
             </Button>
@@ -1696,12 +1698,12 @@ export default function QuoteBuilderPage() {
             display: "inline-flex",
             alignItems: "center",
             gap: 8,
-            background: "#FEF0E3",
-            border: "1px solid rgba(245,130,31,0.3)",
+            background: "var(--e-orange-lt)",
+            border: "1px solid var(--e-orange-ring)",
             borderRadius: 8,
             padding: "8px 16px",
             fontSize: 13,
-            color: "#F5821F",
+            color: "var(--e-orange)",
           }}>
             <span>📋</span>
             <span>
@@ -1711,7 +1713,7 @@ export default function QuoteBuilderPage() {
             </span>
             <button
               onClick={() => navigate(`/admin/camp-applications/${quote.campApplicationId}`)}
-              style={{ fontWeight: 600, cursor: "pointer", background: "none", border: "none", color: "#F5821F", padding: 0 }}
+              style={{ fontWeight: 600, cursor: "pointer", background: "none", border: "none", color: "var(--e-orange)", padding: 0 }}
               onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
               onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
             >
@@ -1947,7 +1949,7 @@ export default function QuoteBuilderPage() {
             </span>
           </div>
           {quote.leadId && quote.lead && (
-            <div className="rounded-lg border p-3 space-y-2 mt-1" style={{ borderColor: "#F5821F", background: "#FEF0E3" }}>
+            <div className="rounded-lg border p-3 space-y-2 mt-1" style={{ borderColor: "var(--e-orange)", background: "var(--e-orange-lt)" }}>
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#A8603A" }}>Linked Lead</p>
                 <button
@@ -1973,7 +1975,7 @@ export default function QuoteBuilderPage() {
               {quote.lead.status && (
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-500">Status</span>
-                  <span className="capitalize px-1.5 py-0.5 rounded-full bg-white border text-gray-600" style={{ borderColor: "#F5821F33" }}>
+                  <span className="capitalize px-1.5 py-0.5 rounded-full bg-white border text-gray-600" style={{ borderColor: "var(--e-orange-a20)" }}>
                     {quote.lead.status.replace(/_/g, " ")}
                   </span>
                 </div>

@@ -39,7 +39,7 @@ function fmtMoney(n?: string | number | null) {
 
 const STATUS_MAP: Record<string, { label: string; bg: string; text: string; icon: typeof Clock }> = {
   pending:     { label: "Pending",     bg: "#F4F3F1", text: "#57534E", icon: Clock        },
-  in_progress: { label: "In Progress", bg: "#FEF0E3", text: "#F5821F", icon: AlertCircle  },
+  in_progress: { label: "In Progress", bg: "var(--e-orange-lt)", text: "var(--e-orange)", icon: AlertCircle  },
   completed:   { label: "Completed",   bg: "#DCFCE7", text: "#16A34A", icon: CheckCircle2 },
 };
 
@@ -58,7 +58,7 @@ function Initials({ name }: { name?: string | null }) {
   const ini = parts.length >= 2 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0]?.[0] ?? "?");
   return (
     <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-      style={{ background: "#F5821F" }}>{ini.toUpperCase()}</span>
+      style={{ background: "var(--e-orange)" }}>{ini.toUpperCase()}</span>
   );
 }
 
@@ -123,8 +123,8 @@ export default function Settlement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background:"#FEF0E3" }}>
-            <MapPin className="w-5 h-5" style={{ color:"#F5821F" }} />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background:"var(--e-orange-lt)" }}>
+            <MapPin className="w-5 h-5" style={{ color:"var(--e-orange)" }} />
           </div>
           <div>
             <h1 className="text-xl font-bold text-[#1C1917]">Settlement</h1>
@@ -135,7 +135,7 @@ export default function Settlement() {
           <button
             onClick={() => { setForm({}); setShowCreate(true); }}
             className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-white"
-            style={{ background:"#F5821F" }}>
+            style={{ background:"var(--e-orange)" }}>
             <Plus size={15} /> New Settlement
           </button>
         )}
@@ -166,7 +166,7 @@ export default function Settlement() {
           placeholder="Search by student name or contract number…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full h-9 pl-9 pr-3 rounded-lg border border-[#E8E6E2] text-sm bg-white focus:outline-none focus:border-[#F5821F]"
+          className="w-full h-9 pl-9 pr-3 rounded-lg border border-[#E8E6E2] text-sm bg-white focus:outline-none focus:border-[--e-orange]"
         />
       </div>
 
@@ -183,7 +183,7 @@ export default function Settlement() {
           <p className="text-sm text-[#A8A29E]">No settlement records found</p>
           {canCreate && (
             <button onClick={() => { setForm({}); setShowCreate(true); }}
-              className="mt-3 text-sm underline" style={{ color:"#F5821F" }}>
+              className="mt-3 text-sm underline" style={{ color:"var(--e-orange)" }}>
               Create your first settlement
             </button>
           )}
@@ -207,7 +207,7 @@ export default function Settlement() {
               {sorted.map(r => (
                 <tr key={r.id}
                   onClick={() => navigate(`${BASE}/admin/services/settlement/${r.id}`)}
-                  className="border-b border-[#E8E6E2] cursor-pointer transition-colors hover:bg-[#FEF0E3]">
+                  className="border-b border-[#E8E6E2] cursor-pointer transition-colors hover:bg-[--e-orange-lt]">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       <Initials name={r.clientName ?? r.studentName} />
@@ -258,26 +258,26 @@ export default function Settlement() {
                 <input type="text" value={form.contractId ?? ""}
                   onChange={e => setForm(f => ({ ...f, contractId: e.target.value }))}
                   placeholder="Paste contract UUID…"
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]" />
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Arrival Date</label>
                 <input type="date" value={form.arrivalDate ?? ""}
                   onChange={e => setForm(f => ({ ...f, arrivalDate: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]" />
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Service Fee (A$)</label>
                 <input type="number" value={form.grossAmount ?? ""}
                   onChange={e => setForm(f => ({ ...f, grossAmount: e.target.value }))}
                   placeholder="0.00"
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]" />
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Notes</label>
                 <textarea rows={2} value={form.notes ?? ""}
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F] resize-none" />
+                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange] resize-none" />
               </div>
             </div>
             <div className="px-6 py-4 border-t border-[#E8E6E2] flex justify-end gap-2">
@@ -289,7 +289,7 @@ export default function Settlement() {
                 onClick={() => createMutation.mutate(form)}
                 disabled={createMutation.isPending || !form.contractId}
                 className="h-9 px-4 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
-                style={{ background:"#F5821F" }}>
+                style={{ background:"var(--e-orange)" }}>
                 {createMutation.isPending ? "Creating…" : "Create & Open"}
               </button>
             </div>

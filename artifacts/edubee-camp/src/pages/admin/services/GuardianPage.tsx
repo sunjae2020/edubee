@@ -94,7 +94,7 @@ export default function GuardianPage() {
         <button
           onClick={() => { setCreateForm({ contractId: "", notes: "" }); setShowCreate(true); }}
           className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-white shrink-0"
-          style={{ background: "#F5821F" }}
+          style={{ background: "var(--e-orange)" }}
         >
           <Plus size={15} /> New Guardian
         </button>
@@ -104,10 +104,10 @@ export default function GuardianPage() {
       {billingDueCount > 0 && (
         <div
           className="flex items-center justify-between px-4 py-3 rounded-xl text-sm"
-          style={{ background: "#FEF0E3", borderLeft: "4px solid #F5821F" }}
+          style={{ background: "var(--e-orange-lt)", borderLeft: "4px solid var(--e-orange)" }}
         >
           <div className="flex items-center gap-2 font-medium" style={{ color: "#C2410C" }}>
-            <AlertCircle size={16} style={{ color: "#F5821F" }} />
+            <AlertCircle size={16} style={{ color: "var(--e-orange)" }} />
             이번 달 가디언 청구 예정: {billingDueCount}건
           </div>
           <button
@@ -178,7 +178,7 @@ export default function GuardianPage() {
               return (
                 <tr
                   key={row.id}
-                  className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
+                  className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/services/guardian/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-medium text-stone-800">{row.clientName ?? row.studentName ?? "—"}</td>
@@ -222,13 +222,13 @@ export default function GuardianPage() {
                 <input type="text" value={createForm.contractId}
                   onChange={e => setCreateForm(f => ({ ...f, contractId: e.target.value }))}
                   placeholder="Paste contract UUID…"
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]" />
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Notes</label>
                 <textarea rows={2} value={createForm.notes}
                   onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F] resize-none" />
+                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange] resize-none" />
               </div>
             </div>
             <div className="px-6 py-4 border-t border-[#E8E6E2] flex justify-end gap-2">
@@ -238,7 +238,7 @@ export default function GuardianPage() {
                 onClick={() => createMutation.mutate(createForm)}
                 disabled={createMutation.isPending || !createForm.contractId.trim()}
                 className="h-9 px-4 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
-                style={{ background: "#F5821F" }}>
+                style={{ background: "var(--e-orange)" }}>
                 {createMutation.isPending ? "Creating…" : "Create & Open"}
               </button>
             </div>

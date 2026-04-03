@@ -32,7 +32,7 @@ function fmtDate(d: string | null | undefined): string {
 }
 
 const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
-  searching:   { bg: "#FEF0E3", text: "#F5821F" },
+  searching:   { bg: "var(--e-orange-lt)", text: "var(--e-orange)" },
   confirmed:   { bg: "#FEF9C3", text: "#CA8A04" },
   checked_in:  { bg: "#DCFCE7", text: "#16A34A" },
   checked_out: { bg: "#F4F3F1", text: "#57534E" },
@@ -118,7 +118,7 @@ export default function AccommodationPage() {
         <button
           onClick={() => { setCreateForm({ contractId: "", notes: "" }); setShowCreate(true); }}
           className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-white shrink-0"
-          style={{ background: "#F5821F" }}
+          style={{ background: "var(--e-orange)" }}
         >
           <Plus size={15} /> New Accommodation
         </button>
@@ -127,7 +127,7 @@ export default function AccommodationPage() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Searching",   count: kpi.searching,  icon: <Search size={18} />,       color: "#F5821F", bg: "#FEF0E3"  },
+          { label: "Searching",   count: kpi.searching,  icon: <Search size={18} />,       color: "var(--e-orange)", bg: "var(--e-orange-lt)"  },
           { label: "Confirmed",   count: kpi.confirmed,  icon: <CheckCircle2 size={18} />,  color: "#CA8A04", bg: "#FEF9C3"  },
           { label: "Checked In",  count: kpi.checkedIn,  icon: <LogIn size={18} />,         color: "#16A34A", bg: "#DCFCE7"  },
           { label: "Welfare Due", count: kpi.welfareDue, icon: <HeartPulse size={18} />,    color: "#DC2626", bg: "#FEF2F2"  },
@@ -213,7 +213,7 @@ export default function AccommodationPage() {
               return (
                 <tr
                   key={row.id}
-                  className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
+                  className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/services/accommodation/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-medium text-stone-800">{row.clientName ?? row.studentName ?? "—"}</td>
@@ -257,13 +257,13 @@ export default function AccommodationPage() {
                 <input type="text" value={createForm.contractId}
                   onChange={e => setCreateForm(f => ({ ...f, contractId: e.target.value }))}
                   placeholder="Paste contract UUID…"
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F]" />
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange]" />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-[#57534E] block mb-1">Notes</label>
                 <textarea rows={2} value={createForm.notes}
                   onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[#F5821F] resize-none" />
+                  className="w-full px-3 py-2 rounded-lg border border-[#E8E6E2] text-sm focus:outline-none focus:border-[--e-orange] resize-none" />
               </div>
             </div>
             <div className="px-6 py-4 border-t border-[#E8E6E2] flex justify-end gap-2">
@@ -273,7 +273,7 @@ export default function AccommodationPage() {
                 onClick={() => createMutation.mutate(createForm)}
                 disabled={createMutation.isPending || !createForm.contractId.trim()}
                 className="h-9 px-4 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
-                style={{ background: "#F5821F" }}>
+                style={{ background: "var(--e-orange)" }}>
                 {createMutation.isPending ? "Creating…" : "Create & Open"}
               </button>
             </div>

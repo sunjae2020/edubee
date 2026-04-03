@@ -85,7 +85,7 @@ function InterviewDialog({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#F5821F]" />
+            <Calendar className="w-4 h-4 text-[--e-orange]" />
             {isNew ? "Schedule Interview" : "Edit Interview"}
           </DialogTitle>
         </DialogHeader>
@@ -154,7 +154,7 @@ function InterviewDialog({
 
         <div className="flex justify-end gap-2 pt-4 border-t mt-2">
           <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5"
+          <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5"
             onClick={() => onSave({ ...form, studyAbroadId })}
             disabled={saving || !form.scheduledDatetime}>
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
@@ -269,13 +269,13 @@ function StageStepper({ current, onSelect }: { current: string; onSelect: (s: st
             <button
               onClick={() => onSelect(stage.key)}
               className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-lg transition-all min-w-0 hover:bg-stone-50 ${
-                active ? "ring-2 ring-[#F5821F] ring-offset-1 bg-[#FEF0E3]" : ""
+                active ? "ring-2 ring-[--e-orange] ring-offset-1 bg-[--e-orange-lt]" : ""
               }`}
             >
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                 style={
-                  active ? { background: "#F5821F", color: "#fff" } :
+                  active ? { background: "var(--e-orange)", color: "#fff" } :
                   done   ? { background: "#DCFCE7", color: "#16A34A" } :
                            { background: "#F4F3F1", color: "#A8A29E" }
                 }
@@ -283,7 +283,7 @@ function StageStepper({ current, onSelect }: { current: string; onSelect: (s: st
                 {done ? <Check size={12} /> : i + 1}
               </div>
               <span className={`text-[10px] font-medium text-center leading-tight ${
-                active ? "text-[#F5821F]" : done ? "text-[#16A34A]" : "text-stone-400"
+                active ? "text-[--e-orange]" : done ? "text-[#16A34A]" : "text-stone-400"
               }`}>
                 {stage.label}
               </span>
@@ -347,7 +347,7 @@ function AddSchoolModal({
           </div>
         </div>
         <div className="flex gap-3 pt-2">
-          <Button onClick={handleSave} className="flex-1 text-white" style={{ background: "#F5821F" }}>Add School</Button>
+          <Button onClick={handleSave} className="flex-1 text-white" style={{ background: "var(--e-orange)" }}>Add School</Button>
           <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
         </div>
       </div>
@@ -443,7 +443,7 @@ function OverviewTab({ record, onStageChange, onSave }: {
             </button>
             <button onClick={handleSave}
               className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
-              style={{ background: "#F5821F" }}>
+              style={{ background: "var(--e-orange)" }}>
               <Check size={11} /> Save Changes
             </button>
           </div>
@@ -451,13 +451,13 @@ function OverviewTab({ record, onStageChange, onSave }: {
       )}
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 overflow-x-auto">
-        <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide mb-4">Application Progress</h3>
+        <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide mb-4">Application Progress</h3>
         <StageStepper current={record.applicationStage ?? "counseling"} onSelect={onStageChange} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Client</h3>
+          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Client</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
@@ -504,12 +504,12 @@ function OverviewTab({ record, onStageChange, onSave }: {
         </div>
 
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Contract & COE</h3>
+          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Contract & COE</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between items-center"><span className="text-stone-400">Contract #</span>
               {record.contractId ? (
                 <button onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
-                  className="font-mono text-xs text-[#F5821F] hover:underline flex items-center gap-1">
+                  className="font-mono text-xs text-[--e-orange] hover:underline flex items-center gap-1">
                   {record.contractNumber ?? "View"} <ExternalLink size={10} />
                 </button>
               ) : <span className="font-mono text-xs text-stone-600">{record.contractNumber ?? "—"}</span>}
@@ -529,7 +529,7 @@ function OverviewTab({ record, onStageChange, onSave }: {
       </div>
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
-        <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Student Participant</h3>
+        <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Student Participant</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-500">First Name</Label>
@@ -600,7 +600,7 @@ function SchoolsTab({ record, onUpdate }: { record: SARecord; onUpdate: (schools
 
   const SCHOOL_STATUS_STYLE: Record<string, { bg: string; text: string }> = {
     researching:    { bg: "#F4F3F1", text: "#57534E" },
-    applied:        { bg: "#FEF0E3", text: "#F5821F" },
+    applied:        { bg: "var(--e-orange-lt)", text: "var(--e-orange)" },
     offer_received: { bg: "#FEF9C3", text: "#CA8A04" },
     accepted:       { bg: "#DCFCE7", text: "#16A34A" },
     rejected:       { bg: "#FEF2F2", text: "#DC2626" },
@@ -613,7 +613,7 @@ function SchoolsTab({ record, onUpdate }: { record: SARecord; onUpdate: (schools
         <h3 className="text-sm font-semibold text-stone-700">Target Schools ({schools.length})</h3>
         <button
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:underline"
+          className="flex items-center gap-1.5 text-xs font-medium text-[--e-orange] hover:underline"
         >
           <Plus size={13} /> Add School
         </button>
@@ -633,7 +633,7 @@ function SchoolsTab({ record, onUpdate }: { record: SARecord; onUpdate: (schools
             )}
             {schools.map((school, idx) => {
               return (
-                <tr key={idx} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
+                <tr key={idx} className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors">
                   <td className="px-4 py-3 font-medium text-stone-800">{school.schoolName}</td>
                   <td className="px-4 py-3">
                     <Select
@@ -697,7 +697,7 @@ function VisaTab({ record, onSave }: { record: SARecord; onSave: (patch: Partial
     <div className="space-y-6">
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Visa Information</h3>
+          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Visa Information</h3>
           <div className="flex items-center gap-2">
             {visaExpiryDate && <VisaExpiryBadge expiryDate={visaExpiryDate} />}
             {isDirty && (
@@ -708,7 +708,7 @@ function VisaTab({ record, onSave }: { record: SARecord; onSave: (patch: Partial
                 </button>
                 <button onClick={() => { onSave({ visaType, visaApplicationDate, visaDecisionDate, visaExpiryDate, visaGranted }); setIsDirty(false); }}
                   className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
-                  style={{ background: "#F5821F" }}>
+                  style={{ background: "var(--e-orange)" }}>
                   <Check size={11} /> Save Changes
                 </button>
               </>
@@ -890,7 +890,7 @@ export default function StudyAbroadDetailPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <FileText size={14} style={{ color: "#F5821F" }} />
+              <FileText size={14} style={{ color: "var(--e-orange)" }} />
               <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Related Contract</h3>
             </div>
             <div className="space-y-2 text-sm">
@@ -898,7 +898,7 @@ export default function StudyAbroadDetailPage() {
                 <span className="text-stone-400">Contract #</span>
                 <button
                   onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
-                  className="flex items-center gap-1 font-mono text-xs text-[#F5821F] hover:underline font-semibold"
+                  className="flex items-center gap-1 font-mono text-xs text-[--e-orange] hover:underline font-semibold"
                 >
                   {record.contractNumber ?? "View"} <ExternalLink size={10} />
                 </button>
@@ -918,7 +918,7 @@ export default function StudyAbroadDetailPage() {
           </div>
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <DollarSign size={14} style={{ color: "#F5821F" }} />
+              <DollarSign size={14} style={{ color: "var(--e-orange)" }} />
               <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Financial Summary</h3>
             </div>
             <div className="space-y-2 text-sm">
@@ -953,7 +953,7 @@ export default function StudyAbroadDetailPage() {
             onClick={() => setTab(t.key)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               tab === t.key
-                ? "border-[#F5821F] text-[#F5821F]"
+                ? "border-[--e-orange] text-[--e-orange]"
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
@@ -1005,7 +1005,7 @@ export default function StudyAbroadDetailPage() {
         {tab === "interview" && (
           <div className="space-y-4">
             <div className="flex justify-end">
-              <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setNewInterview(true)}>
+              <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setNewInterview(true)}>
                 <Plus size={14} /> Schedule Interview
               </Button>
             </div>
@@ -1023,7 +1023,7 @@ export default function StudyAbroadDetailPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-800">
-                      <Calendar className="w-3.5 h-3.5 text-[#F5821F]" />
+                      <Calendar className="w-3.5 h-3.5 text-[--e-orange]" />
                       {iv.scheduledDatetime
                         ? formatDateTime(iv.scheduledDatetime)
                         : "Date TBD"}
@@ -1056,7 +1056,7 @@ export default function StudyAbroadDetailPage() {
                   )}
                   {iv.meetingLink && (
                     <a href={iv.meetingLink} target="_blank" rel="noopener noreferrer"
-                      className="text-[#F5821F] hover:underline text-xs truncate flex items-center gap-1">
+                      className="text-[--e-orange] hover:underline text-xs truncate flex items-center gap-1">
                       <Video className="w-3 h-3 shrink-0" />
                       {iv.meetingLink}
                     </a>

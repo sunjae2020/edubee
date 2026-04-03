@@ -117,7 +117,7 @@ export default function Login() {
                 )}
               />
               <div className="flex justify-end -mt-1">
-                <Link href="/forgot-password" className="text-xs" style={{ color: '#F5821F' }}>
+                <Link href="/forgot-password" className="text-xs" style={{ color: 'var(--e-orange)' }}>
                   Forgot password?
                 </Link>
               </div>
@@ -149,7 +149,7 @@ export default function Login() {
                   style={{
                     background: selectedEmail === acc.email ? "var(--e-orange-lt)" : "var(--e-bg-muted)",
                     color: selectedEmail === acc.email ? "var(--e-orange)" : "var(--e-text-2)",
-                    border: `1px solid ${selectedEmail === acc.email ? "rgba(245,130,31,0.4)" : "var(--e-border)"}`,
+                    border: `1px solid ${selectedEmail === acc.email ? "var(--e-orange-shadow-40)" : "var(--e-border)"}`,
                   }}
                 >
                   <span>{acc.emoji}</span>
@@ -166,7 +166,7 @@ export default function Login() {
 
         <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#57534E' }}>
           Don't have an account?{' '}
-          <Link href="/register" style={{ color: '#F5821F', fontWeight: 500 }}>
+          <Link href="/register" style={{ color: 'var(--e-orange)', fontWeight: 500 }}>
             Start for free →
           </Link>
         </p>

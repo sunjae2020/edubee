@@ -58,7 +58,7 @@ interface Interview {
 function AppStatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     submitted:  "bg-[#F4F3F1] text-[#57534E]",
-    reviewing:  "bg-[#FEF0E3] text-[#F5821F]",
+    reviewing:  "bg-[--e-orange-lt] text-[--e-orange]",
     quoted:     "bg-[#FEF9C3] text-[#CA8A04]",
     confirmed:  "bg-[#DCFCE7] text-[#16A34A]",
     cancelled:  "bg-[#FEF2F2] text-[#DC2626]",
@@ -293,7 +293,7 @@ export default function CampApplications() {
               <tr><td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">No camp applications found</td></tr>
             ) : (
               sorted.map(app => (
-                <tr key={app.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
+                <tr key={app.id} className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer"
                   onClick={() => setLocation(`${BASE}/admin/camp-applications/${app.id}`)}>
                   <td className="px-4 py-3">
                     <ClientNameCell
@@ -351,7 +351,7 @@ export default function CampApplications() {
                         <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setIsEditing(false)}>
                           <X className="w-3.5 h-3.5" /> Cancel
                         </Button>
-                        <Button size="sm" className="h-7 gap-1 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
+                        <Button size="sm" className="h-7 gap-1 text-xs bg-[--e-orange] hover:bg-[#d97706] text-white"
                           disabled={updateApp.isPending}
                           onClick={() => updateApp.mutate({ id: selectedApp.id, data: editForm })}>
                           {updateApp.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Save
@@ -360,7 +360,7 @@ export default function CampApplications() {
                     )}
                     {!isEditing && selectedApp.status === "approved" && (
                       <Button size="sm" onClick={() => setConvertDialog(true)}
-                        className="gap-1.5 text-xs h-8 bg-[#F5821F] hover:bg-[#d97706] text-white">
+                        className="gap-1.5 text-xs h-8 bg-[--e-orange] hover:bg-[#d97706] text-white">
                         <GitMerge className="w-3.5 h-3.5" /> Convert to Contract
                       </Button>
                     )}
@@ -441,14 +441,14 @@ export default function CampApplications() {
                     ) : participants.map(p => (
                       <div key={p.id} className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-[#F5821F]/20 flex items-center justify-center">
-                            <User className="w-4 h-4 text-[#F5821F]" />
+                          <div className="w-8 h-8 rounded-full bg-[--e-orange]/20 flex items-center justify-center">
+                            <User className="w-4 h-4 text-[--e-orange]" />
                           </div>
                           <div>
                             <div className="font-semibold text-sm text-foreground">{p.fullName}</div>
                             {p.fullNameNative && <div className="text-xs text-muted-foreground">{p.fullNameNative}</div>}
                           </div>
-                          <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-medium ${p.participantType === "student" ? "bg-[#FEF0E3] text-[#F5821F]" : "bg-[#F4F3F1] text-[#57534E]"}`}>
+                          <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-medium ${p.participantType === "student" ? "bg-[--e-orange-lt] text-[--e-orange]" : "bg-[#F4F3F1] text-[#57534E]"}`}>
                             {p.participantType}
                           </span>
                         </div>
@@ -476,11 +476,11 @@ export default function CampApplications() {
                       <div key={iv.id} className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <div className="flex items-center gap-2">
-                            {iv.format === "video" ? <Video className="w-4 h-4 text-[#F5821F]" /> : <MapPin className="w-4 h-4 text-[#22C55E]" />}
+                            {iv.format === "video" ? <Video className="w-4 h-4 text-[--e-orange]" /> : <MapPin className="w-4 h-4 text-[#22C55E]" />}
                             <span className="font-semibold text-sm text-foreground capitalize">{iv.format} Interview</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${iv.status === "completed" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#FEF0E3] text-[#F5821F]"}`}>{iv.status}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${iv.status === "completed" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[--e-orange-lt] text-[--e-orange]"}`}>{iv.status}</span>
                             <InterviewResultBadge result={iv.result} />
                           </div>
                         </div>
@@ -490,7 +490,7 @@ export default function CampApplications() {
                           {iv.meetingLink && (
                             <div className="col-span-2 flex flex-col gap-0.5">
                               <dt className="text-[11px] text-muted-foreground uppercase tracking-wide">Meeting Link</dt>
-                              <dd><a href={iv.meetingLink} target="_blank" rel="noopener noreferrer" className="text-sm text-[#F5821F] hover:underline break-all">{iv.meetingLink}</a></dd>
+                              <dd><a href={iv.meetingLink} target="_blank" rel="noopener noreferrer" className="text-sm text-[--e-orange] hover:underline break-all">{iv.meetingLink}</a></dd>
                             </div>
                           )}
                         </dl>
@@ -539,7 +539,7 @@ export default function CampApplications() {
             <Button variant="outline" onClick={() => setConvertDialog(false)}>Cancel</Button>
             <Button onClick={() => selectedApp && convertContract.mutate(selectedApp.id)}
               disabled={convertContract.isPending}
-              className="gap-2 bg-[#F5821F] hover:bg-[#d97706] text-white">
+              className="gap-2 bg-[--e-orange] hover:bg-[#d97706] text-white">
               {convertContract.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <GitMerge className="w-4 h-4" />}
               Confirm
             </Button>
@@ -551,7 +551,7 @@ export default function CampApplications() {
       <Dialog open={createDialog} onOpenChange={open => { if (!open) { setCreateDialog(false); resetWizard(); } }}>
         <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header */}
-          <div className="bg-[#F5821F] px-6 py-4 shrink-0">
+          <div className="bg-[--e-orange] px-6 py-4 shrink-0">
             <DialogTitle className="text-white text-base font-semibold">New Camp Application</DialogTitle>
             <p className="text-white/80 text-xs mt-0.5">Fill in the details below and submit</p>
           </div>
@@ -561,8 +561,8 @@ export default function CampApplications() {
 
             {/* ── Section 1: Application Details ─────────────────────── */}
             <div>
-              <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Application Details</span>
+              <div className="bg-[--e-orange]/10 border border-[--e-orange]/20 rounded-lg px-4 py-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-[--e-orange]">Application Details</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="col-span-2">
@@ -620,9 +620,9 @@ export default function CampApplications() {
 
             {/* ── Section 2: Participating Students ──────────────────── */}
             <div>
-              <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3 flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Participating Students</span>
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs gap-1 text-[#F5821F] hover:bg-[#F5821F]/10"
+              <div className="bg-[--e-orange]/10 border border-[--e-orange]/20 rounded-lg px-4 py-2 mb-3 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-widest text-[--e-orange]">Participating Students</span>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs gap-1 text-[--e-orange] hover:bg-[--e-orange]/10"
                   onClick={() => setWizardParticipants(p => [...p, { fullName: "", dateOfBirth: "", gender: "", nationality: "", passportNumber: "", grade: "", schoolName: "", englishLevel: "", email: "", phone: "" }])}>
                   <Plus className="w-3 h-3" /> Add Student
                 </Button>
@@ -682,28 +682,28 @@ export default function CampApplications() {
 
             {/* ── Section 3: Camp Package ─────────────────────────────── */}
             <div>
-              <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Camp Package <span className="text-[#F5821F]/60 font-normal normal-case tracking-normal">(optional)</span></span>
+              <div className="bg-[--e-orange]/10 border border-[--e-orange]/20 rounded-lg px-4 py-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-[--e-orange]">Camp Package <span className="text-[--e-orange]/60 font-normal normal-case tracking-normal">(optional)</span></span>
               </div>
               <Input className="h-9 text-sm mb-2" placeholder="Search packages…" value={wizardPackageSearch} onChange={e => setWizardPackageSearch(e.target.value)} />
               <div className="space-y-2 max-h-[200px] overflow-y-auto">
                 <div
-                  className={`rounded-lg border p-3 cursor-pointer transition-colors ${!wizardPackageId ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}
+                  className={`rounded-lg border p-3 cursor-pointer transition-colors ${!wizardPackageId ? "border-[--e-orange] bg-[--e-orange-lt]" : "border-border hover:border-[--e-orange]/50"}`}
                   onClick={() => setWizardPackageId("")}>
                   <div className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${!wizardPackageId ? "border-[#F5821F]" : "border-muted-foreground"}`}>
-                      {!wizardPackageId && <div className="w-2 h-2 rounded-full bg-[#F5821F]" />}
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${!wizardPackageId ? "border-[--e-orange]" : "border-muted-foreground"}`}>
+                      {!wizardPackageId && <div className="w-2 h-2 rounded-full bg-[--e-orange]" />}
                     </div>
                     <span className="text-sm font-medium text-muted-foreground">No package</span>
                   </div>
                 </div>
                 {wizardPackages.map((pkg: any) => (
                   <div key={pkg.id}
-                    className={`rounded-lg border p-3 cursor-pointer transition-colors ${wizardPackageId === pkg.id ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}
+                    className={`rounded-lg border p-3 cursor-pointer transition-colors ${wizardPackageId === pkg.id ? "border-[--e-orange] bg-[--e-orange-lt]" : "border-border hover:border-[--e-orange]/50"}`}
                     onClick={() => setWizardPackageId(pkg.id)}>
                     <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${wizardPackageId === pkg.id ? "border-[#F5821F]" : "border-muted-foreground"}`}>
-                        {wizardPackageId === pkg.id && <div className="w-2 h-2 rounded-full bg-[#F5821F]" />}
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${wizardPackageId === pkg.id ? "border-[--e-orange]" : "border-muted-foreground"}`}>
+                        {wizardPackageId === pkg.id && <div className="w-2 h-2 rounded-full bg-[--e-orange]" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-foreground truncate">{pkg.name}</div>
@@ -717,16 +717,16 @@ export default function CampApplications() {
 
             {/* ── Section 4: Additional Options ──────────────────────── */}
             <div>
-              <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Additional Options <span className="text-[#F5821F]/60 font-normal normal-case tracking-normal">(optional)</span></span>
+              <div className="bg-[--e-orange]/10 border border-[--e-orange]/20 rounded-lg px-4 py-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-[--e-orange]">Additional Options <span className="text-[--e-orange]/60 font-normal normal-case tracking-normal">(optional)</span></span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {WIZARD_OPTIONS.map(opt => {
                   const checked = wizardOptions.includes(opt.key);
                   return (
                     <label key={opt.key}
-                      className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${checked ? "border-[#F5821F] bg-[#FEF0E3]" : "border-border hover:border-[#F5821F]/50"}`}>
-                      <input type="checkbox" className="accent-[#F5821F] w-4 h-4 shrink-0" checked={checked}
+                      className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${checked ? "border-[--e-orange] bg-[--e-orange-lt]" : "border-border hover:border-[--e-orange]/50"}`}>
+                      <input type="checkbox" className="accent-[--e-orange] w-4 h-4 shrink-0" checked={checked}
                         onChange={() => setWizardOptions(prev => checked ? prev.filter(k => k !== opt.key) : [...prev, opt.key])} />
                       <span className="text-sm">{opt.label}</span>
                     </label>
@@ -737,8 +737,8 @@ export default function CampApplications() {
 
             {/* ── Section 5: Terms & Agreement ───────────────────────── */}
             <div>
-              <div className="bg-[#F5821F]/10 border border-[#F5821F]/20 rounded-lg px-4 py-2 mb-3">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#F5821F]">Terms &amp; Agreement</span>
+              <div className="bg-[--e-orange]/10 border border-[--e-orange]/20 rounded-lg px-4 py-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-[--e-orange]">Terms &amp; Agreement</span>
               </div>
               <div className="rounded-lg border border-border bg-muted/20 p-4 text-xs text-muted-foreground space-y-2 leading-relaxed mb-3">
                 <p>This application is the official document for enrolling in the Edubee Camp program. By agreeing below, your application will be submitted for review.</p>
@@ -749,7 +749,7 @@ export default function CampApplications() {
                 <p>5. I agree to comply with Edubee Camp's operational rules and instructions.</p>
               </div>
               <label className="flex items-start gap-2.5 cursor-pointer">
-                <input type="checkbox" className="accent-[#F5821F] w-4 h-4 mt-0.5 shrink-0" checked={wizardAgreed} onChange={e => setWizardAgreed(e.target.checked)} />
+                <input type="checkbox" className="accent-[--e-orange] w-4 h-4 mt-0.5 shrink-0" checked={wizardAgreed} onChange={e => setWizardAgreed(e.target.checked)} />
                 <span className="text-sm text-foreground">I have read and agree to the terms and conditions above.</span>
               </label>
             </div>
@@ -761,7 +761,7 @@ export default function CampApplications() {
               onClick={() => { setCreateDialog(false); resetWizard(); }}>
               <X className="w-3.5 h-3.5" /> Cancel
             </Button>
-            <Button className="gap-1.5 h-9 text-sm bg-[#F5821F] hover:bg-[#d97706] text-white"
+            <Button className="gap-1.5 h-9 text-sm bg-[--e-orange] hover:bg-[#d97706] text-white"
               disabled={!form.applicantFirstName.trim() || !form.applicantLastName.trim() || !wizardAgreed || createApp.isPending}
               onClick={() => createApp.mutate({
                 ...form,

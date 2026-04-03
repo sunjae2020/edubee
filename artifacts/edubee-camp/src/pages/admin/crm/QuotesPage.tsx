@@ -17,7 +17,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_STYLES: Record<string, string> = {
   Draft:    "bg-[#F4F3F1] text-[#57534E]",
-  Sent:     "bg-[#FEF0E3] text-[#F5821F]",
+  Sent:     "bg-[--e-orange-lt] text-[--e-orange]",
   Accepted: "bg-[#DCFCE7] text-[#16A34A]",
   Declined: "bg-[#FEF2F2] text-[#DC2626]",
   Expired:  "bg-[#F4F3F1] text-[#A8A29E]",
@@ -107,7 +107,7 @@ export default function QuotesPage() {
           onClick={() => createMutation.mutate()}
           disabled={createMutation.isPending}
           className="flex items-center gap-2 text-white rounded-lg"
-          style={{ background: "#F5821F" }}
+          style={{ background: "var(--e-orange)" }}
         >
           <Plus size={16} /> {createMutation.isPending ? "Creating…" : "New Quote"}
         </Button>
@@ -119,7 +119,7 @@ export default function QuotesPage() {
             key={key}
             onClick={() => { setTab(key); setPage(1); }}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === key ? "border-[#F5821F] text-[#F5821F]" : "border-transparent text-stone-500 hover:text-stone-800"
+              tab === key ? "border-[--e-orange] text-[--e-orange]" : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
             <FileText size={14} />
@@ -184,7 +184,7 @@ export default function QuotesPage() {
               <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No quotes found</td></tr>
             )}
             {sorted.map(q => (
-              <tr key={q.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
+              <tr key={q.id} className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors">
                 <td className="px-4 py-3 font-mono text-xs text-stone-500">{q.quoteRefNumber ?? "—"}</td>
                 <td className="px-4 py-3">
                   <button onClick={() => navigate(`/admin/crm/quotes/${q.id}`)} className="text-left w-full">

@@ -26,7 +26,7 @@ interface PaymentScheduleRow {
 // ─── Status badge configs ─────────────────────────────────────────────────────
 const AR_STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
   scheduled: { label: "Scheduled", bg: "#F4F3F1", color: "#57534E" },
-  invoiced:  { label: "Invoiced",  bg: "#FEF0E3", color: "#F5821F" },
+  invoiced:  { label: "Invoiced",  bg: "var(--e-orange-lt)", color: "var(--e-orange)" },
   partial:   { label: "Partial",   bg: "#FEF9C3", color: "#CA8A04" },
   paid:      { label: "Paid",      bg: "#DCFCE7", color: "#16A34A" },
   overdue:   { label: "Overdue",   bg: "#FEF2F2", color: "#DC2626" },
@@ -34,7 +34,7 @@ const AR_STATUS_CONFIG: Record<string, { label: string; bg: string; color: strin
 
 const AP_STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
   pending: { label: "Pending", bg: "#F4F3F1", color: "#57534E" },
-  ready:   { label: "Ready",   bg: "#FEF0E3", color: "#F5821F" },
+  ready:   { label: "Ready",   bg: "var(--e-orange-lt)", color: "var(--e-orange)" },
   paid:    { label: "Paid",    bg: "#DCFCE7", color: "#16A34A" },
   overdue: { label: "Overdue", bg: "#FEF2F2", color: "#DC2626" },
 };
@@ -111,8 +111,8 @@ function KpiCard({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#FEF0E3",
-          color: "#F5821F",
+          backgroundColor: "var(--e-orange-lt)",
+          color: "var(--e-orange)",
           flexShrink: 0,
         }}
       >
@@ -234,7 +234,7 @@ export default function PaymentScheduleTab() {
           label="AP Ready to Pay"
           value={String(readyAp)}
           sub={readyAp > 0 ? "Remittance pending" : "None pending"}
-          subColor={readyAp > 0 ? "#F5821F" : "#57534E"}
+          subColor={readyAp > 0 ? "var(--e-orange)" : "#57534E"}
         />
       </div>
 
@@ -371,7 +371,7 @@ export default function PaymentScheduleTab() {
                       borderBottom: i < rows.length - 1 ? "1px solid #F4F3F1" : "none",
                       transition: "background 200ms",
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#FEF0E3")}
+                    onMouseEnter={e => (e.currentTarget.style.background = "var(--e-orange-lt)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   >
                     {/* Student / School */}

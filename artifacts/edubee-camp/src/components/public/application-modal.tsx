@@ -446,7 +446,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                           />
                         </div>
                         {selectedProgram && displayCurrency !== selectedProgram.primaryCurrency && (
-                          <p className="text-[10px] text-[#92400E] bg-[#FEF0E3] border border-[#F5821F]/20 rounded-lg px-2 py-1.5 max-w-[140px] leading-relaxed">
+                          <p className="text-[10px] text-[#92400E] bg-[--e-orange-lt] border border-[--e-orange]/20 rounded-lg px-2 py-1.5 max-w-[140px] leading-relaxed">
                             💱 {t("currency.billing_warning", "Billing in {{currency}}", { currency: selectedProgram.primaryCurrency })}
                           </p>
                         )}

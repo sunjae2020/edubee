@@ -19,7 +19,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   } else if (['draft'].includes(normalized)) {
     variantClass = "bg-[#F4F3F1] text-[#57534E]";
   } else if (['in progress', 'interview scheduled', 'contacted'].includes(normalized)) {
-    variantClass = "bg-[#FEF0E3] text-[#F5821F]";
+    variantClass = "bg-[--e-orange-lt] text-[--e-orange]";
   }
 
   return (

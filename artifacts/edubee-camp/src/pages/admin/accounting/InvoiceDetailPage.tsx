@@ -26,7 +26,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   draft:            "bg-[#F4F3F1] text-[#57534E]",
-  sent:             "bg-[#FEF0E3] text-[#F5821F]",
+  sent:             "bg-[--e-orange-lt] text-[--e-orange]",
   paid:             "bg-[#DCFCE7] text-[#16A34A]",
   overdue:          "bg-[#FEF2F2] text-[#DC2626]",
   cancelled:        "bg-[#F4F3F1] text-[#A8A29E]",
@@ -85,7 +85,7 @@ function StatusBadge({ status }: { status?: string | null }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
-      <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-widest border-b border-[#F5821F]/20 pb-2">
+      <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-widest border-b border-[--e-orange]/20 pb-2">
         {title}
       </h3>
       {children}
@@ -109,7 +109,7 @@ function CopyId({ id }: { id: string }) {
       <span className="font-mono text-xs text-stone-500 truncate max-w-[260px]">{id}</span>
       <button
         onClick={() => { navigator.clipboard.writeText(id); setCopied(true); setTimeout(() => setCopied(false), 1800); }}
-        className="text-stone-400 hover:text-[#F5821F] transition-colors shrink-0"
+        className="text-stone-400 hover:text-[--e-orange] transition-colors shrink-0"
       >
         {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
       </button>
@@ -160,7 +160,7 @@ function RecordPaymentDialog({ invoice, open, onClose, onSuccess }: {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-[#F5821F]" /> Record Payment
+            <CreditCard className="w-4 h-4 text-[--e-orange]" /> Record Payment
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -183,7 +183,7 @@ function RecordPaymentDialog({ invoice, open, onClose, onSuccess }: {
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
+          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
             {saving ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : null} Record Payment
           </Button>
         </DialogFooter>
@@ -222,7 +222,7 @@ function EmailDialog({ invoice, open, onClose, onSuccess }: {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Mail className="w-4 h-4 text-[#F5821F]" /> Send Invoice by Email
+            <Mail className="w-4 h-4 text-[--e-orange]" /> Send Invoice by Email
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -240,7 +240,7 @@ function EmailDialog({ invoice, open, onClose, onSuccess }: {
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => { onClose(); setEmail(""); }} disabled={sending}>Cancel</Button>
-          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSend} disabled={sending}>
+          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSend} disabled={sending}>
             {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Send Email
           </Button>
         </DialogFooter>
@@ -256,9 +256,11 @@ async function printInvoice(inv: Invoice) {
   const sym = CURRENCY_SYMBOLS[inv.originalCurrency ?? inv.currency ?? "AUD"] ?? (inv.originalCurrency ?? inv.currency ?? "AUD");
   const amount = inv.originalAmount ?? inv.totalAmount;
   const amountStr = amount ? `${sym}${Number(amount).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—";
+  const _bc   = getComputedStyle(document.documentElement).getPropertyValue("--e-orange").trim()  || "${_bc}";
+  const _bcLt = getComputedStyle(document.documentElement).getPropertyValue("--e-orange-lt").trim() || "${_bcLt}";
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Invoice ${inv.invoiceNumber ?? ""}</title>
-<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#fff;color:#1a1917;padding:48px;font-size:14px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px}.brand{font-size:28px;font-weight:700;color:#F5821F}.brand-sub{font-size:13px;color:#64748b;margin-top:2px}.inv-title{text-align:right}.inv-title h2{font-size:22px;font-weight:700}.inv-title p{color:#64748b;font-size:13px;margin-top:4px}.badge{display:inline-block;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:600;background:#FEF0E3;color:#F5821F;text-transform:capitalize;margin-top:8px}.divider{border:none;border-top:1px solid #e2e8f0;margin:24px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0}.section h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:8px}.section p{font-size:14px;color:#1a1917;margin-bottom:4px}.section .label{color:#64748b;font-size:12px}table{width:100%;border-collapse:collapse;margin-top:24px}thead tr{background:#f8fafc}thead th{padding:10px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#64748b;border-bottom:1px solid #e2e8f0}tbody td{padding:12px;border-bottom:1px solid #f1f5f9}.total-row td{font-weight:700;font-size:16px;color:#F5821F;border-top:2px solid #e2e8f0;padding-top:16px}.notes{margin-top:32px;padding:16px;background:#f8fafc;border-radius:8px}.notes h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:6px}.footer{margin-top:48px;text-align:center;font-size:12px;color:#94a3b8}@media print{body{padding:24px}}</style></head>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#fff;color:#1a1917;padding:48px;font-size:14px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px}.brand{font-size:28px;font-weight:700;color:${_bc}}.brand-sub{font-size:13px;color:#64748b;margin-top:2px}.inv-title{text-align:right}.inv-title h2{font-size:22px;font-weight:700}.inv-title p{color:#64748b;font-size:13px;margin-top:4px}.badge{display:inline-block;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:600;background:${_bcLt};color:${_bc};text-transform:capitalize;margin-top:8px}.divider{border:none;border-top:1px solid #e2e8f0;margin:24px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0}.section h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:8px}.section p{font-size:14px;color:#1a1917;margin-bottom:4px}.section .label{color:#64748b;font-size:12px}table{width:100%;border-collapse:collapse;margin-top:24px}thead tr{background:#f8fafc}thead th{padding:10px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#64748b;border-bottom:1px solid #e2e8f0}tbody td{padding:12px;border-bottom:1px solid #f1f5f9}.total-row td{font-weight:700;font-size:16px;color:${_bc};border-top:2px solid #e2e8f0;padding-top:16px}.notes{margin-top:32px;padding:16px;background:#f8fafc;border-radius:8px}.notes h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:6px}.footer{margin-top:48px;text-align:center;font-size:12px;color:#94a3b8}@media print{body{padding:24px}}</style></head>
 <body>
 <div class="header"><div>${brandHtml}<div class="brand-sub">Educational Services</div></div>
 <div class="inv-title"><h2>INVOICE</h2><p>${inv.invoiceNumber ?? "—"}</p><span class="badge">${(inv.status ?? "draft").replace(/_/g, " ")}</span></div></div>
@@ -347,8 +349,8 @@ export default function InvoiceDetailPage() {
         </Button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center shrink-0">
-              <Receipt className="w-5 h-5 text-[#F5821F]" />
+            <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center shrink-0">
+              <Receipt className="w-5 h-5 text-[--e-orange]" />
             </div>
             <div>
               <h1 className="text-lg font-bold font-mono leading-none">{invoice.invoiceNumber ?? "Invoice"}</h1>
@@ -363,7 +365,7 @@ export default function InvoiceDetailPage() {
           {isDraft && (
             <Button
               size="sm"
-              className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5"
+              className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5"
               disabled={updateMutation.isPending}
               onClick={() => updateMutation.mutate({ status: "sent", issuedAt: new Date().toISOString() })}
             >
@@ -371,7 +373,7 @@ export default function InvoiceDetailPage() {
             </Button>
           )}
           {canPay(invoice.status) && (
-            <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setShowPayment(true)}>
+            <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setShowPayment(true)}>
               <CreditCard className="w-3.5 h-3.5" /> Record Payment
             </Button>
           )}
@@ -399,7 +401,7 @@ export default function InvoiceDetailPage() {
                 <>
                   <StatusBadge status={invoice.status} />
                   <button
-                    className="text-xs text-[#F5821F] hover:underline"
+                    className="text-xs text-[--e-orange] hover:underline"
                     onClick={() => setEditStatus(invoice.status ?? "draft")}
                   >
                     Change
@@ -417,7 +419,7 @@ export default function InvoiceDetailPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button size="sm" className="h-7 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white px-2"
+                  <Button size="sm" className="h-7 text-xs bg-[--e-orange] hover:bg-[#d97706] text-white px-2"
                     disabled={updateMutation.isPending}
                     onClick={() => updateMutation.mutate({ status: editStatus })}>
                     {updateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
@@ -449,7 +451,7 @@ export default function InvoiceDetailPage() {
           <Field label="Student">{invoice.studentName ?? "—"}</Field>
           {invoice.studentEmail && (
             <Field label="Student Email">
-              <a href={`mailto:${invoice.studentEmail}`} className="text-[#F5821F] hover:underline text-sm">
+              <a href={`mailto:${invoice.studentEmail}`} className="text-[--e-orange] hover:underline text-sm">
                 {invoice.studentEmail}
               </a>
             </Field>
@@ -458,7 +460,7 @@ export default function InvoiceDetailPage() {
           <Field label="Contract">
             {invoice.contractId ? (
               <button
-                className="flex items-center gap-1 text-[#F5821F] hover:underline font-mono text-xs font-medium"
+                className="flex items-center gap-1 text-[--e-orange] hover:underline font-mono text-xs font-medium"
                 onClick={() => navigate(`/admin/crm/contracts/${invoice.contractId}`)}
               >
                 {invoice.contractNumber ?? invoice.contractId.slice(0, 8)}

@@ -29,20 +29,20 @@ const fmtNum = (n?: number | null) => (n != null ? n.toLocaleString() : "—");
 
 const AR_BADGE: Record<string, string> = {
   scheduled: "bg-[#F4F3F1] text-[#57534E]",
-  invoiced:  "bg-[#FEF0E3] text-[#F5821F]",
+  invoiced:  "bg-[--e-orange-lt] text-[--e-orange]",
   overdue:   "bg-[#FEF2F2] text-[#DC2626]",
   partial:   "bg-[#FEF9C3] text-[#CA8A04]",
   paid:      "bg-[#DCFCE7] text-[#16A34A]",
 };
 const AP_BADGE: Record<string, string> = {
   pending: "bg-[#F4F3F1] text-[#57534E]",
-  ready:   "bg-[#FEF0E3] text-[#F5821F]",
+  ready:   "bg-[--e-orange-lt] text-[--e-orange]",
   paid:    "bg-[#DCFCE7] text-[#16A34A]",
   overdue: "bg-[#FEF2F2] text-[#DC2626]",
 };
 const CONTRACT_STATUS_BADGE: Record<string, string> = {
   active:      "bg-[#DCFCE7] text-[#16A34A]",
-  "in progress": "bg-[#FEF0E3] text-[#F5821F]",
+  "in progress": "bg-[--e-orange-lt] text-[--e-orange]",
   overdue:     "bg-[#FEF2F2] text-[#DC2626]",
   completed:   "bg-[#F4F3F1] text-[#57534E]",
   draft:       "bg-[#F4F3F1] text-[#A8A29E]",
@@ -109,7 +109,7 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
               ? (
                 <button
                   onClick={() => navigate(`/admin/crm/quotes/${contract.quote.id}`)}
-                  className="font-mono text-[#F5821F] hover:text-[#E5721F] hover:underline flex items-center gap-1 text-right"
+                  className="font-mono text-[--e-orange] hover:text-[#E5721F] hover:underline flex items-center gap-1 text-right"
                 >
                   {contract.quote.quoteRefNumber}
                   <ExternalLink size={11} />
@@ -127,7 +127,7 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
           {contract.fromDate && contract.toDate && (() => {
             const days = Math.round((new Date(contract.toDate).getTime() - new Date(contract.fromDate).getTime()) / 86400000) + 1;
             return <InfoRow label="Duration" value={
-              <span className="font-semibold" style={{ color:"#F5821F" }}>{days === 1 ? "1 day" : `${days} days`}</span>
+              <span className="font-semibold" style={{ color:"var(--e-orange)" }}>{days === 1 ? "1 day" : `${days} days`}</span>
             } />;
           })()}
           <InfoRow label="Notes"           value={contract.notes} />
@@ -142,10 +142,10 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
             <div>
               <div className="flex justify-between text-xs text-[#57534E] mb-1">
                 <span>AR Collected</span>
-                <span className="font-medium" style={{ color:"#F5821F" }}>{fmtMoney(contract.totalArAmount)}</span>
+                <span className="font-medium" style={{ color:"var(--e-orange)" }}>{fmtMoney(contract.totalArAmount)}</span>
               </div>
               <div className="h-2 rounded-full bg-[#F4F3F1] overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${Math.min(arPct,100)}%`, background:"#F5821F" }} />
+                <div className="h-full rounded-full" style={{ width: `${Math.min(arPct,100)}%`, background:"var(--e-orange)" }} />
               </div>
             </div>
             <div>
@@ -161,10 +161,10 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
         </div>
 
         {readyItems.length > 0 && (
-          <div className="border border-[#F5821F]/30 rounded-xl p-4" style={{ background:"#FFFCF9" }}>
+          <div className="border border-[--e-orange]/30 rounded-xl p-4" style={{ background:"#FFFCF9" }}>
             <div className="flex items-center gap-2 mb-2">
-              <AlertCircle size={14} style={{ color:"#F5821F" }} />
-              <span className="text-sm font-semibold" style={{ color:"#F5821F" }}>Action Required</span>
+              <AlertCircle size={14} style={{ color:"var(--e-orange)" }} />
+              <span className="text-sm font-semibold" style={{ color:"var(--e-orange)" }}>Action Required</span>
             </div>
             <p className="text-xs text-[#57534E]">
               {readyItems.length} AP instalment{readyItems.length > 1 ? "s" : ""} are ready to be remitted.
@@ -206,13 +206,13 @@ function StatementHistorySection({ contractId, onGenerate }: { contractId: strin
     <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
       <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FileText size={14} className="text-[#F5821F]" />
+          <FileText size={14} className="text-[--e-orange]" />
           <h3 className="text-sm font-semibold text-[#1C1917]">Payment Statements ({rows.length})</h3>
         </div>
         <button
           onClick={onGenerate}
           className="h-8 px-3 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90"
-          style={{ background:"#F5821F" }}>
+          style={{ background:"var(--e-orange)" }}>
           <FileText size={12} /> Generate Payment Statement
         </button>
       </div>
@@ -237,7 +237,7 @@ function StatementHistorySection({ contractId, onGenerate }: { contractId: strin
             <tbody>
               {rows.map((s: any) => (
                 <tr key={s.id} className="border-b border-[#E8E6E2] hover:bg-[#FAFAF9] transition-colors">
-                  <td className="px-4 py-3 font-mono text-[12px] font-semibold" style={{ color:"#F5821F" }}>{s.statementRef}</td>
+                  <td className="px-4 py-3 font-mono text-[12px] font-semibold" style={{ color:"var(--e-orange)" }}>{s.statementRef}</td>
                   <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(s.statementDate)}</td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#F4F3F1] text-[#57534E]">
@@ -280,14 +280,16 @@ async function printInstalment(cp: any, contract: any, idx: number) {
   const amount = fmtMoney(cp.arAmount);
   const dueDate = fmtDate(cp.arDueDate);
   const todayDate = formatDate(new Date());
+  const _bc  = getComputedStyle(document.documentElement).getPropertyValue("--e-orange").trim()  || "#F5821F";
+  const _bcLt = getComputedStyle(document.documentElement).getPropertyValue("--e-orange-lt").trim() || "#FEF0E3";
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>${invRef}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
       body{font-family:Arial,sans-serif;color:#333;padding:40px;font-size:13px;max-width:720px;margin:0 auto}
-      .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #F5821F;margin-bottom:28px}
-      .brand{font-size:24px;font-weight:700;color:#F5821F}
+      .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid ${_bc};margin-bottom:28px}
+      .brand{font-size:24px;font-weight:700;color:${_bc}}
       .brand-sub{font-size:12px;color:#aaa;margin-top:3px}
       .inv-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#aaa;text-align:right}
       .inv-ref{font-size:20px;font-weight:700;color:#1C1917;text-align:right;margin-top:2px}
@@ -301,8 +303,8 @@ async function printInstalment(cp: any, contract: any, idx: number) {
       td{padding:12px 14px;border-bottom:1px solid #f0ece8;vertical-align:top}
       .total-row{background:#fdf8f4;font-weight:700}
       .total-row td{border-top:2px solid #e5e0db;border-bottom:none;font-size:15px}
-      .total-row td:last-child{color:#F5821F;font-size:20px}
-      .due-box{display:inline-block;background:#FEF0E3;color:#F5821F;border:1px solid #F5821F;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;margin-bottom:24px}
+      .total-row td:last-child{color:${_bc};font-size:20px}
+      .due-box{display:inline-block;background:${_bcLt};color:${_bc};border:1px solid ${_bc};border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;margin-bottom:24px}
       .status-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;background:${cp.arStatus === "paid" ? "#DCFCE7;color:#16A34A" : cp.arStatus === "overdue" ? "#FEF2F2;color:#DC2626" : "#F4F3F1;color:#57534E"}}
       .footer{margin-top:32px;font-size:11px;color:#aaa;text-align:center;border-top:1px solid #f0ece8;padding-top:12px}
     </style>
@@ -407,7 +409,7 @@ function ScheduleEditRow({
   saving: boolean;
   errMsg: string;
 }) {
-  const inp = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[#F5821F] w-full";
+  const inp = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[--e-orange] w-full";
   const sel = inp + " bg-white";
   return (
     <>
@@ -444,7 +446,7 @@ function ScheduleEditRow({
           <div className="flex items-center gap-1">
             <button onClick={onSave} disabled={saving}
               className="h-7 px-3 rounded-lg text-[11px] font-semibold text-white disabled:opacity-50"
-              style={{ background:"#F5821F" }}>
+              style={{ background:"var(--e-orange)" }}>
               {saving ? "…" : "Save"}
             </button>
             <button onClick={onCancel} className="h-7 px-2 rounded-lg text-[11px] border border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1]">
@@ -472,8 +474,8 @@ const COST_TYPES = [
   { value: "other",       label: "Other Cost"            },
 ];
 const COST_BADGE: Record<string, string> = {
-  sub_agent:   "bg-[#FEF0E3] text-[#F5821F]",
-  super_agent: "bg-[#FEF0E3] text-[#F5821F]",
+  sub_agent:   "bg-[--e-orange-lt] text-[--e-orange]",
+  super_agent: "bg-[--e-orange-lt] text-[--e-orange]",
   referral:    "bg-[#EFF6FF] text-[#1D4ED8]",
   incentive:   "bg-[#F4F3F1] text-[#57534E]",
   school_fee:  "bg-[#FEF9C3] text-[#CA8A04]",
@@ -578,7 +580,7 @@ function CostLinePanel({ cp, contractId }: { cp: any; contractId: string }) {
     }
   };
 
-  const inpCls = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[#F5821F] w-full bg-white";
+  const inpCls = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[--e-orange] w-full bg-white";
   const selCls = inpCls;
 
   return (
@@ -595,7 +597,7 @@ function CostLinePanel({ cp, contractId }: { cp: any; contractId: string }) {
         </span>
         {!adding && !editId && (
           <button onClick={openAdd}
-            className="h-7 px-2.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium flex items-center gap-1 hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+            className="h-7 px-2.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium flex items-center gap-1 hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
             style={{ color: "#57534E" }}>
             <Plus size={10} /> Add Cost Line
           </button>
@@ -681,7 +683,7 @@ function CostLinePanel({ cp, contractId }: { cp: any; contractId: string }) {
               {showPartnerDrop && partners.length > 0 && (
                 <div className="absolute z-20 mt-1 w-full bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-36 overflow-y-auto">
                   {partners.map((p: any) => (
-                    <button key={p.id} className="w-full text-left px-3 py-1.5 text-xs hover:bg-[#FEF0E3] hover:text-[#F5821F]"
+                    <button key={p.id} className="w-full text-left px-3 py-1.5 text-xs hover:bg-[--e-orange-lt] hover:text-[--e-orange]"
                       onMouseDown={() => { setF("partnerId", p.id); setF("partnerName", p.name); setPartnerQ(p.name); setShowPartnerDrop(false); }}>
                       {p.name}
                     </button>
@@ -733,7 +735,7 @@ function CostLinePanel({ cp, contractId }: { cp: any; contractId: string }) {
           <div className="flex items-center gap-2">
             <button onClick={handleSave} disabled={saving || !form.calculatedAmount}
               className="h-7 px-3 rounded-lg text-[11px] font-semibold text-white disabled:opacity-50"
-              style={{ background: "#F5821F" }}>
+              style={{ background: "var(--e-orange)" }}>
               {saving ? "Saving…" : editId ? "Update" : "Add"}
             </button>
             <button onClick={closeForm} className="h-7 px-2.5 rounded-lg text-[11px] border border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1]">
@@ -842,7 +844,7 @@ function ContractCatalogModal({
     }
   };
 
-  const inp = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[#F5821F] w-full bg-white";
+  const inp = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[--e-orange] w-full bg-white";
   const sel = inp;
 
   return (
@@ -864,7 +866,7 @@ function ContractCatalogModal({
                 <div className="relative">
                   <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E] pointer-events-none" />
                   <input
-                    className="w-full h-9 pl-8 pr-3 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[#F5821F]"
+                    className="w-full h-9 pl-8 pr-3 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[--e-orange]"
                     placeholder="Search products by name…"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
@@ -886,7 +888,7 @@ function ContractCatalogModal({
                   <button
                     key={p.id}
                     onClick={() => handleSelect(p)}
-                    className="w-full text-left px-4 py-3 border-b border-[#F4F3F1] hover:bg-[#FEF0E3] transition-colors"
+                    className="w-full text-left px-4 py-3 border-b border-[#F4F3F1] hover:bg-[--e-orange-lt] transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -899,7 +901,7 @@ function ContractCatalogModal({
                         )}
                       </div>
                       {p.price && (
-                        <span className="text-sm font-bold text-[#F5821F] whitespace-nowrap shrink-0">
+                        <span className="text-sm font-bold text-[--e-orange] whitespace-nowrap shrink-0">
                           ${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 2 })}
                         </span>
                       )}
@@ -911,17 +913,17 @@ function ContractCatalogModal({
           ) : (
             /* ── Confirm / Fill form ── */
             <div className="p-5 space-y-4 overflow-y-auto flex-1">
-              <div className="rounded-xl border border-[#F5821F] bg-[#FEF0E3] px-4 py-3 flex items-center justify-between">
+              <div className="rounded-xl border border-[--e-orange] bg-[--e-orange-lt] px-4 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-[#1C1917]">{selected.productName}</p>
                   {selected.providerName && <p className="text-xs text-[#A8A29E]">{selected.providerName}</p>}
                   {selected.serviceModuleType && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F5821F]/20 text-[#9A3412] mt-1 inline-block">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[--e-orange]/20 text-[#9A3412] mt-1 inline-block">
                       {selected.serviceModuleType}
                     </span>
                   )}
                 </div>
-                <button onClick={() => setSelected(null)} className="text-xs underline text-[#F5821F] shrink-0">Change</button>
+                <button onClick={() => setSelected(null)} className="text-xs underline text-[--e-orange] shrink-0">Change</button>
               </div>
 
               {/* AR */}
@@ -973,7 +975,7 @@ function ContractCatalogModal({
                   onClick={handleSave}
                   disabled={saving}
                   className="h-9 px-5 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
-                  style={{ background: "#F5821F" }}
+                  style={{ background: "var(--e-orange)" }}
                 >
                   {saving ? "Saving…" : replaceId ? "Replace Product" : "Add to Contract"}
                 </button>
@@ -1118,13 +1120,13 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => { setShowCatalog(true); setReplaceTarget(null); setAddingNew(false); setNewDraft(null); }}
-              className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
-              style={{ color:"#F5821F", borderColor:"#F5821F", background:"#FEF0E3" }}>
+              className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
+              style={{ color:"var(--e-orange)", borderColor:"var(--e-orange)", background:"var(--e-orange-lt)" }}>
               <Search size={12} /> From Catalog
             </button>
             {!addingNew && (
               <button onClick={startAdd}
-                className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+                className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
                 style={{ color:"#57534E" }}>
                 <Plus size={12} /> Add Instalment
               </button>
@@ -1166,7 +1168,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           {cp.isInitialPayment && <span className="text-[#CA8A04] text-xs">★</span>}
-                          {cp.apStatus === "ready" && <AlertCircle size={12} style={{ color:"#F5821F" }} />}
+                          {cp.apStatus === "ready" && <AlertCircle size={12} style={{ color:"var(--e-orange)" }} />}
                           <span className="text-[13px] text-[#1C1917] font-medium">{cp.name ?? `Instalment ${i + 1}`}</span>
                         </div>
                         {cp.serviceModuleType && (
@@ -1187,13 +1189,13 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => toggleExpand(cp.id)}
-                            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[11px] font-medium transition-colors ${expandedCpIds.has(cp.id) ? "bg-[#FEF0E3] border-[#F5821F] text-[#F5821F]" : "border-[#E8E6E2] text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
+                            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[11px] font-medium transition-colors ${expandedCpIds.has(cp.id) ? "bg-[--e-orange-lt] border-[--e-orange] text-[--e-orange]" : "border-[#E8E6E2] text-[#57534E] hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"}`}
                             title="Cost Lines">
                             {expandedCpIds.has(cp.id) ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                           </button>
                           <button
                             onClick={() => printInstalment(cp, contract, i)}
-                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
                             title="Invoice">
                             <Download size={11} />
                           </button>
@@ -1204,7 +1206,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                           </button>
                           <button
                             onClick={() => { setReplaceTarget({ id: cp.id, name: cp.name ?? `Instalment ${i + 1}` }); setShowCatalog(false); setAddingNew(false); setNewDraft(null); cancelEdit(); }}
-                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
                             title="Replace product from catalog">
                             <Search size={11} />
                           </button>
@@ -1241,7 +1243,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
               <tr style={{ background:"#FAFAF9" }}>
                 <td colSpan={3} className="px-4 py-3 text-right text-xs font-semibold text-[#57534E]">Total AR</td>
                 <td className="px-4 py-3 text-right">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background:"#F5821F" }}>{fmtMoney(totalAr)}</span>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background:"var(--e-orange)" }}>{fmtMoney(totalAr)}</span>
                 </td>
                 <td colSpan={2} className="px-4 py-3 text-right text-xs font-semibold text-[#57534E]">Total AP</td>
                 <td className="px-4 py-3 text-right">
@@ -1324,7 +1326,7 @@ function InvoicesTab({ contract, onGenerateInvoice }: { contract: any; onGenerat
           )}
         </div>
         <button onClick={onGenerateInvoice}
-          className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+          className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
           style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
           <Plus size={12} /> Generate Invoice
         </button>
@@ -1335,7 +1337,7 @@ function InvoicesTab({ contract, onGenerateInvoice }: { contract: any; onGenerat
         <div className="text-center py-10 text-[#A8A29E]">
           <FileText size={28} className="mx-auto mb-2 opacity-40" />
           <p className="text-sm">No tax invoices yet</p>
-          <button onClick={onGenerateInvoice} className="mt-2 text-xs underline" style={{ color:"#F5821F" }}>Generate first invoice</button>
+          <button onClick={onGenerateInvoice} className="mt-2 text-xs underline" style={{ color:"var(--e-orange)" }}>Generate first invoice</button>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -1350,19 +1352,19 @@ function InvoicesTab({ contract, onGenerateInvoice }: { contract: any; onGenerat
             <tbody>
               {invoices.map((inv: any) => (
                 <tr key={inv.id} className="border-b border-[#E8E6E2] hover:bg-[#FAFAF9]">
-                  <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color:"#F5821F" }}>{inv.invoiceRef ?? "—"}</td>
+                  <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color:"var(--e-orange)" }}>{inv.invoiceRef ?? "—"}</td>
                   <td className="px-4 py-3 text-[12px] text-[#57534E] capitalize">{inv.invoiceType ?? "—"}</td>
                   <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(inv.invoiceDate ?? inv.createdOn)}</td>
                   <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(inv.dueDate)}</td>
                   <td className="px-4 py-3 text-[13px] font-semibold">{fmtMoney(parseFloat(inv.commissionAmount ?? "0"))}</td>
                   <td className="px-4 py-3 text-[13px] text-[#57534E]">{inv.isGstFree ? <span className="text-[#A8A29E]">GST Free</span> : fmtMoney(parseFloat(inv.gstAmount ?? "0"))}</td>
-                  <td className="px-4 py-3 text-[13px] font-bold" style={{ color:"#F5821F" }}>{fmtMoney(parseFloat(inv.totalAmount ?? "0"))}</td>
+                  <td className="px-4 py-3 text-[13px] font-bold" style={{ color:"var(--e-orange)" }}>{fmtMoney(parseFloat(inv.totalAmount ?? "0"))}</td>
                   <td className="px-4 py-3 text-[12px] text-[#57534E] max-w-[120px] truncate">{inv.schoolName ?? "—"}</td>
                   <td className="px-4 py-3"><Badge s={inv.status} map={INV_BADGE} /></td>
                   <td className="px-4 py-3">
                     {inv.pdfUrl ? (
                       <a href={`${BASE}/api/tax-invoices/${inv.id}/pdf`} target="_blank" rel="noreferrer"
-                        className="inline-flex items-center gap-1 h-7 px-2 rounded border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors">
+                        className="inline-flex items-center gap-1 h-7 px-2 rounded border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors">
                         <Download size={11} /> PDF
                       </a>
                     ) : (
@@ -1382,7 +1384,7 @@ function InvoicesTab({ contract, onGenerateInvoice }: { contract: any; onGenerat
 // ── Payments Tab ─────────────────────────────────────────────────────────────
 const PTYPE_BADGE: Record<string, string> = {
   trust_receipt:     "bg-[#DCFCE7] text-[#16A34A]",
-  trust_transfer:    "bg-[#FEF0E3] text-[#F5821F]",
+  trust_transfer:    "bg-[--e-orange-lt] text-[--e-orange]",
   commission:        "bg-[#EDE9FE] text-[#7C3AED]",
   direct:            "bg-[#F0F9FF] text-[#0369A1]",
   service_fee_camp:  "bg-[#DCFCE7] text-[#16A34A]",
@@ -1522,7 +1524,7 @@ function TxnEditModal({ txn, contractId, onClose }: { txn: any; contractId: stri
   const [err,    setErr]    = useState("");
 
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
-  const inp = "w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]";
+  const inp = "w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]";
   const sel = inp + " bg-white";
 
   const handleSave = async () => {
@@ -1589,7 +1591,7 @@ function TxnEditModal({ txn, contractId, onClose }: { txn: any; contractId: stri
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Description / Note</label>
-            <textarea rows={2} className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#F5821F] resize-none"
+            <textarea rows={2} className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[--e-orange] resize-none"
               value={form.description} onChange={e => set("description", e.target.value)} placeholder="Optional" />
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
@@ -1598,7 +1600,7 @@ function TxnEditModal({ txn, contractId, onClose }: { txn: any; contractId: stri
           <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
           <button onClick={handleSave} disabled={saving}
             className="h-9 px-5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
-            style={{ background:"#F5821F" }}>
+            style={{ background:"var(--e-orange)" }}>
             {saving ? "Saving…" : "Save Changes"}
           </button>
         </div>
@@ -1637,7 +1639,7 @@ function TransactionsTab({ contract, onRecordPayment }: { contract: any; onRecor
         <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[#1C1917]">Transactions ({txns.length})</h3>
           <button onClick={onRecordPayment}
-            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
             style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
             <Plus size={12} /> Record Payment
           </button>
@@ -1712,7 +1714,7 @@ function TransactionsTab({ contract, onRecordPayment }: { contract: any; onRecor
             <div className="px-5 py-3 border-t border-[#E8E6E2] flex gap-6" style={{ background:"#FAFAF9" }}>
               <div><span className="text-xs text-[#A8A29E]">Total In </span><span className="text-sm font-bold text-[#16A34A]">{fmtMoney(totalCredit)}</span></div>
               <div><span className="text-xs text-[#A8A29E]">Total Out </span><span className="text-sm font-bold text-[#DC2626]">{fmtMoney(totalDebit)}</span></div>
-              <div><span className="text-xs text-[#A8A29E]">Net </span><span className="text-sm font-bold" style={{ color:"#F5821F" }}>{fmtMoney(totalCredit - totalDebit)}</span></div>
+              <div><span className="text-xs text-[#A8A29E]">Net </span><span className="text-sm font-bold" style={{ color:"var(--e-orange)" }}>{fmtMoney(totalCredit - totalDebit)}</span></div>
             </div>
           </>
         )}
@@ -1733,7 +1735,7 @@ function TransactionsTab({ contract, onRecordPayment }: { contract: any; onRecor
 // sorted by date, newest first.
 const PTYPE_BADGE_LED: Record<string, string> = {
   trust_receipt:     "bg-[#DCFCE7] text-[#16A34A]",
-  trust_transfer:    "bg-[#FEF0E3] text-[#F5821F]",
+  trust_transfer:    "bg-[--e-orange-lt] text-[--e-orange]",
   commission:        "bg-[#EDE9FE] text-[#7C3AED]",
   direct:            "bg-[#F0F9FF] text-[#0369A1]",
   service_fee_camp:  "bg-[#DCFCE7] text-[#16A34A]",
@@ -1839,7 +1841,7 @@ function UnifiedTransactionsTab({ contract, onRecordPayment }: { contract: any; 
         <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[#1C1917]">Ledger ({ledger.length})</h3>
           <button onClick={onRecordPayment}
-            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
             style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
             <Plus size={12} /> Record Payment
           </button>
@@ -1950,7 +1952,7 @@ function UnifiedTransactionsTab({ contract, onRecordPayment }: { contract: any; 
             <div className="px-5 py-3 border-t border-[#E8E6E2] flex gap-6 bg-[#FAFAF9]">
               <div><span className="text-xs text-[#A8A29E]">Total In </span><span className="text-sm font-bold text-[#16A34A]">{fmtMoney(totalIn)}</span></div>
               <div><span className="text-xs text-[#A8A29E]">Total Out </span><span className="text-sm font-bold text-[#DC2626]">{fmtMoney(totalOut)}</span></div>
-              <div><span className="text-xs text-[#A8A29E]">Net </span><span className="text-sm font-bold" style={{ color:"#F5821F" }}>{fmtMoney(net)}</span></div>
+              <div><span className="text-xs text-[#A8A29E]">Net </span><span className="text-sm font-bold" style={{ color:"var(--e-orange)" }}>{fmtMoney(net)}</span></div>
             </div>
           </>
         )}
@@ -2038,7 +2040,7 @@ function RecordPaymentModal({ contract, onClose }: { contract: any; onClose: () 
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Payment Type</label>
             <select value={paymentType} onChange={e => setPaymentType(e.target.value)}
-              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[#F5821F]">
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[--e-orange]">
               {PAYMENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
@@ -2046,12 +2048,12 @@ function RecordPaymentModal({ contract, onClose }: { contract: any; onClose: () 
             <div>
               <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Date</label>
               <input type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)}
-                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]" />
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Method</label>
               <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}
-                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[#F5821F]">
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[--e-orange]">
                 {PAYMENT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </div>
@@ -2059,7 +2061,7 @@ function RecordPaymentModal({ contract, onClose }: { contract: any; onClose: () 
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">{isAR ? "AR Installment" : "AP Line"}</label>
             <select value={cpId} onChange={e => setCpId(e.target.value)}
-              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[#F5821F]">
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[--e-orange]">
               {pool.length === 0 && <option value="">No products for this type</option>}
               {pool.map((cp: any) => (
                 <option key={cp.id} value={cp.id}>
@@ -2071,17 +2073,17 @@ function RecordPaymentModal({ contract, onClose }: { contract: any; onClose: () 
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Amount (AUD)</label>
             <input type="number" min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}
-              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]" placeholder="0.00" />
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]" placeholder="0.00" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Bank Reference / Receipt No.</label>
             <input type="text" value={bankReference} onChange={e => setBankReference(e.target.value)}
-              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]" placeholder="Optional" />
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]" placeholder="Optional" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Notes</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#F5821F] resize-none" placeholder="Optional" />
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[--e-orange] resize-none" placeholder="Optional" />
           </div>
           {mut.isError && <p className="text-xs text-red-600">Save failed. Please try again.</p>}
         </div>
@@ -2089,7 +2091,7 @@ function RecordPaymentModal({ contract, onClose }: { contract: any; onClose: () 
           <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
           <button onClick={() => mut.mutate()} disabled={!cpId || !amount || mut.isPending}
             className="h-9 px-5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
-            style={{ background: "#F5821F" }}>
+            style={{ background: "var(--e-orange)" }}>
             {mut.isPending ? "Saving…" : "Record Payment"}
           </button>
         </div>
@@ -2152,7 +2154,7 @@ function GenerateInvoiceModal({ contract, onClose }: { contract: any; onClose: (
           <div>
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Contract Product / Installment</label>
             <select value={cpId} onChange={e => setCpId(e.target.value)}
-              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[#F5821F]">
+              className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[--e-orange]">
               {products.length === 0 && <option value="">No products</option>}
               {products.map((cp: any) => (
                 <option key={cp.id} value={cp.id}>{cp.name} — AP {fmtMoney(cp.apAmount)}</option>
@@ -2165,7 +2167,7 @@ function GenerateInvoiceModal({ contract, onClose }: { contract: any; onClose: (
               {(["net","gross"] as const).map(t => (
                 <button key={t} onClick={() => setInvoiceType(t)}
                   className="flex-1 h-9 rounded-lg border text-sm font-medium transition-colors"
-                  style={invoiceType === t ? { background:"#FEF0E3", borderColor:"#F5821F", color:"#F5821F" } : { borderColor:"#E8E6E2", color:"#57534E" }}>
+                  style={invoiceType === t ? { background:"var(--e-orange-lt)", borderColor:"var(--e-orange)", color:"var(--e-orange)" } : { borderColor:"#E8E6E2", color:"#57534E" }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
@@ -2174,20 +2176,20 @@ function GenerateInvoiceModal({ contract, onClose }: { contract: any; onClose: (
           <div className="relative">
             <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">School / Agent Account</label>
             {schoolId ? (
-              <div className="flex items-center gap-2 h-9 border border-[#F5821F] rounded-lg px-3 bg-[#FEF0E3]">
-                <span className="text-sm text-[#F5821F] font-medium flex-1">{schoolName}</span>
-                <button onClick={() => { setSchoolId(""); setSchoolName(""); setSchoolSearch(""); }} className="text-[#A8A29E] hover:text-[#F5821F]"><X size={13} /></button>
+              <div className="flex items-center gap-2 h-9 border border-[--e-orange] rounded-lg px-3 bg-[--e-orange-lt]">
+                <span className="text-sm text-[--e-orange] font-medium flex-1">{schoolName}</span>
+                <button onClick={() => { setSchoolId(""); setSchoolName(""); setSchoolSearch(""); }} className="text-[#A8A29E] hover:text-[--e-orange]"><X size={13} /></button>
               </div>
             ) : (
               <>
                 <input type="text" value={schoolSearch} onChange={e => setSchoolSearch(e.target.value)}
-                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]"
+                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]"
                   placeholder="Search by account name (min 2 chars)…" />
                 {(schoolResults as any[]).length > 0 && (
                   <div className="absolute top-full left-0 right-0 bg-white border border-[#E8E6E2] rounded-xl mt-1 shadow-lg z-10 max-h-40 overflow-y-auto">
                     {(schoolResults as any[]).map((a: any) => (
                       <button key={a.id} onClick={() => { setSchoolId(a.id); setSchoolName(a.name); setSchoolSearch(""); }}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#FEF0E3] text-[#1C1917]">
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-[--e-orange-lt] text-[#1C1917]">
                         <span className="font-medium">{a.name}</span>
                         <span className="text-[11px] text-[#A8A29E] ml-2">{a.accountType}</span>
                       </button>
@@ -2201,16 +2203,16 @@ function GenerateInvoiceModal({ contract, onClose }: { contract: any; onClose: (
             <div>
               <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Commission Amount (AUD)</label>
               <input type="number" min="0" step="0.01" value={commissionAmt} onChange={e => setCommissionAmt(e.target.value)}
-                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]" placeholder="0.00" />
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]" placeholder="0.00" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Due Date</label>
               <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
-                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]" />
+                className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]" />
             </div>
           </div>
           <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" checked={isGstFree} onChange={e => setIsGstFree(e.target.checked)} className="w-4 h-4 accent-[#F5821F]" />
+            <input type="checkbox" checked={isGstFree} onChange={e => setIsGstFree(e.target.checked)} className="w-4 h-4 accent-[--e-orange]" />
             <span className="text-sm text-[#57534E]">GST Free</span>
           </label>
           {mut.isError && <p className="text-xs text-red-600">Failed to create. Please try again.</p>}
@@ -2219,7 +2221,7 @@ function GenerateInvoiceModal({ contract, onClose }: { contract: any; onClose: (
           <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
           <button onClick={() => mut.mutate()} disabled={!cpId || !schoolId || !commissionAmt || mut.isPending}
             className="h-9 px-5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
-            style={{ background: "#F5821F" }}>
+            style={{ background: "var(--e-orange)" }}>
             {mut.isPending ? "Generating…" : "Generate Invoice"}
           </button>
         </div>
@@ -2359,14 +2361,14 @@ function AddServiceModal({ contract, defaultType, onClose }: {
       <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">{label}</label>
       <input type={type} value={(form as any)[field]} onChange={e => set(field, e.target.value)}
         placeholder={placeholder}
-        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[#F5821F]" />
+        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[--e-orange]" />
     </div>
   );
   const LabelSelect = ({ label, field, options }: { label: string; field: string; options: { value: string; label: string }[] }) => (
     <div>
       <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">{label}</label>
       <select value={(form as any)[field]} onChange={e => set(field, e.target.value)}
-        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[#F5821F] bg-white">
+        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[--e-orange] bg-white">
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
@@ -2398,8 +2400,8 @@ function AddServiceModal({ contract, defaultType, onClose }: {
 
         <div className="p-6">
           {/* Contract context pill */}
-          <div className="flex items-center gap-2 mb-5 p-3 rounded-xl" style={{ background: "#FEF0E3" }}>
-            <FileText size={14} style={{ color: "#F5821F" }} />
+          <div className="flex items-center gap-2 mb-5 p-3 rounded-xl" style={{ background: "var(--e-orange-lt)" }}>
+            <FileText size={14} style={{ color: "var(--e-orange)" }} />
             <div className="min-w-0">
               <p className="text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide">Contract</p>
               <p className="text-sm font-semibold text-[#1C1917] truncate">{contractNum} · {contractName}</p>
@@ -2412,10 +2414,10 @@ function AddServiceModal({ contract, defaultType, onClose }: {
               {SVC_DEFS_MODAL.map(({ key, label, icon: Icon, desc }) => (
                 <button key={key}
                   onClick={() => { setSelectedType(key); setForm(initForm()); }}
-                  className="flex items-start gap-3 p-4 rounded-xl border border-[#E8E6E2] hover:border-[#F5821F] hover:bg-[#FEF0E3] transition-colors text-left group">
+                  className="flex items-start gap-3 p-4 rounded-xl border border-[#E8E6E2] hover:border-[--e-orange] hover:bg-[--e-orange-lt] transition-colors text-left group">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
                     style={{ background: "#F4F3F1" }}>
-                    <Icon size={16} style={{ color: "#F5821F" }} />
+                    <Icon size={16} style={{ color: "var(--e-orange)" }} />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-[#1C1917]">{label}</p>
@@ -2489,7 +2491,7 @@ function AddServiceModal({ contract, defaultType, onClose }: {
               <div>
                 <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Assigned Staff</label>
                 <select value={form.assignedStaffId} onChange={e => set("assignedStaffId", e.target.value)}
-                  className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[#F5821F] bg-white">
+                  className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[--e-orange] bg-white">
                   <option value="">— Unassigned —</option>
                   {(staffList ?? []).map((u: any) => (
                     <option key={u.id} value={u.id}>{u.fullName}</option>
@@ -2502,7 +2504,7 @@ function AddServiceModal({ contract, defaultType, onClose }: {
                 <label className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Notes</label>
                 <textarea value={form.notes} onChange={e => set("notes", e.target.value)}
                   rows={3} placeholder="Optional notes…"
-                  className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[#F5821F] resize-none" />
+                  className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] focus:outline-none focus:border-[--e-orange] resize-none" />
               </div>
 
               {/* Error */}
@@ -2520,7 +2522,7 @@ function AddServiceModal({ contract, defaultType, onClose }: {
                   onClick={() => mut.mutate()}
                   disabled={mut.isPending}
                   className="flex-1 h-10 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1.5"
-                  style={{ background: "#F5821F" }}>
+                  style={{ background: "var(--e-orange)" }}>
                   {mut.isPending ? "Creating…" : <><SvcIcon size={14} /> Create {svcDef?.label}</>}
                 </button>
               </div>
@@ -2550,9 +2552,9 @@ const SVC_STATUS_BADGE: Record<string, string> = {
   confirmed:      "bg-[#DCFCE7] text-[#16A34A]",
   active:         "bg-[#DCFCE7] text-[#16A34A]",
   checked_in:     "bg-[#DCFCE7] text-[#16A34A]",
-  scheduled:      "bg-[#FEF0E3] text-[#F5821F]",
-  driver_assigned:"bg-[#FEF0E3] text-[#F5821F]",
-  profile_review: "bg-[#FEF0E3] text-[#F5821F]",
+  scheduled:      "bg-[--e-orange-lt] text-[--e-orange]",
+  driver_assigned:"bg-[--e-orange-lt] text-[--e-orange]",
+  profile_review: "bg-[--e-orange-lt] text-[--e-orange]",
   pending:        "bg-[#F4F3F1] text-[#57534E]",
 };
 
@@ -2591,12 +2593,12 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType, on
     <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
       <div className="px-4 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#1C1917]">Services
-          <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF0E3] text-[#F5821F]">{active.length}</span>
+          <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[--e-orange-lt] text-[--e-orange]">{active.length}</span>
         </h3>
         <button
           onClick={() => onAddService()}
           className="h-7 px-2.5 rounded-lg text-xs font-semibold text-white flex items-center gap-1 transition-opacity hover:opacity-90"
-          style={{ background: "#F5821F" }}>
+          style={{ background: "var(--e-orange)" }}>
           <Plus size={12} /> Add Service
         </button>
       </div>
@@ -2616,20 +2618,20 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType, on
                 className="px-4 py-3 flex items-center gap-3 hover:bg-[#FAFAF9] cursor-pointer group"
                 onClick={() => data?.id && navigate(`${route}/${data.id}`)}>
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: isPrimary ? "#FEF0E3" : "#F4F3F1" }}>
-                  <Icon size={14} style={{ color: isPrimary ? "#F5821F" : "#A8A29E" }} />
+                  style={{ background: isPrimary ? "var(--e-orange-lt)" : "#F4F3F1" }}>
+                  <Icon size={14} style={{ color: isPrimary ? "var(--e-orange)" : "#A8A29E" }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[13px] font-medium text-[#1C1917]">{label}</span>
-                    {isPrimary && <span className="text-[10px] font-bold" style={{ color: "#F5821F" }}>★</span>}
+                    {isPrimary && <span className="text-[10px] font-bold" style={{ color: "var(--e-orange)" }}>★</span>}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <Badge s={data?.status} map={SVC_STATUS_BADGE} />
                     {!isPrimary && (
                       <button
                         onClick={e => { e.stopPropagation(); setPrimaryServiceType(key); }}
-                        className="text-[10px] text-[#A8A29E] hover:text-[#F5821F] hidden group-hover:inline">
+                        className="text-[10px] text-[#A8A29E] hover:text-[--e-orange] hidden group-hover:inline">
                         Set primary
                       </button>
                     )}
@@ -2709,12 +2711,12 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-[#1C1917]">Services</h2>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF0E3] text-[#F5821F]">{rows.length}</span>
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[--e-orange-lt] text-[--e-orange]">{rows.length}</span>
         </div>
         <button
           onClick={() => onAddService()}
           className="h-8 px-3 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90"
-          style={{ background: "#F5821F" }}>
+          style={{ background: "var(--e-orange)" }}>
           <Plus size={13} /> Add Service
         </button>
       </div>
@@ -2752,18 +2754,18 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
                   {/* Service name */}
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ background: isPrimary ? "#FEF0E3" : "#F4F3F1" }}>
-                      <Icon size={13} style={{ color: isPrimary ? "#F5821F" : "#78716C" }} />
+                      style={{ background: isPrimary ? "var(--e-orange-lt)" : "#F4F3F1" }}>
+                      <Icon size={13} style={{ color: isPrimary ? "var(--e-orange)" : "#78716C" }} />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1">
                         <span className="text-sm font-medium text-[#1C1917] truncate">{label}</span>
-                        {isPrimary && <span className="text-[10px] font-bold flex-shrink-0" style={{ color: "#F5821F" }}>★</span>}
+                        {isPrimary && <span className="text-[10px] font-bold flex-shrink-0" style={{ color: "var(--e-orange)" }}>★</span>}
                       </div>
                       {!isPrimary && (
                         <button
                           onClick={e => { e.stopPropagation(); setPrimaryServiceType(key); }}
-                          className="text-[10px] text-[#A8A29E] hover:text-[#F5821F] hidden group-hover:block leading-tight">
+                          className="text-[10px] text-[#A8A29E] hover:text-[--e-orange] hidden group-hover:block leading-tight">
                           Set as primary
                         </button>
                       )}
@@ -2780,7 +2782,7 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
                   <span className="text-xs text-[#57534E]">{fmtDateShort(to)}</span>
 
                   {/* Dur */}
-                  <span className={`text-xs font-medium ${dur ? "text-[#F5821F]" : "text-[#D6D3D1]"}`}>{dur ?? "—"}</span>
+                  <span className={`text-xs font-medium ${dur ? "text-[--e-orange]" : "text-[#D6D3D1]"}`}>{dur ?? "—"}</span>
 
                   {/* Status */}
                   <div>
@@ -2804,7 +2806,7 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
 // ── Account Type Badge Helper ─────────────────────────────────────────────────
 function getAccountTypeBadge(accountType: string | null | undefined) {
   const map: Record<string, { label: string; bg: string; color: string }> = {
-    Student:      { label: "STUDENT",      bg: "#FEF0E3", color: "#F5821F" },
+    Student:      { label: "STUDENT",      bg: "var(--e-orange-lt)", color: "var(--e-orange)" },
     School:       { label: "SCHOOL",       bg: "#DCFCE7", color: "#16A34A" },
     Sub_Agency:   { label: "SUB AGENCY",   bg: "#EDE9FE", color: "#7C3AED" },
     Super_Agency: { label: "SUPER AGENCY", bg: "#EDE9FE", color: "#7C3AED" },
@@ -2878,7 +2880,7 @@ function EditAccountModal({ contract, onClose }: { contract: any; onClose: () =>
           {/* Current */}
           {selected && (
             <div className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm"
-              style={{ background: "#FEF0E3", border: "1.5px solid #F5821F" }}>
+              style={{ background: "var(--e-orange-lt)", border: "1.5px solid var(--e-orange)" }}>
               <div>
                 <p className="font-semibold text-[#1C1917]">{selected.name}</p>
                 {(() => { const b = getAccountTypeBadge(selected.accountType); return (
@@ -2900,7 +2902,7 @@ function EditAccountModal({ contract, onClose }: { contract: any; onClose: () =>
                 onClick={() => setTypeFilter(f.value)}
                 className="px-2.5 py-1 text-xs rounded-full border transition-colors"
                 style={typeFilter === f.value
-                  ? { background: "#F5821F", color: "#fff", borderColor: "#F5821F" }
+                  ? { background: "var(--e-orange)", color: "#fff", borderColor: "var(--e-orange)" }
                   : { background: "#fff", color: "#57534E", borderColor: "#E8E6E2" }}
               >
                 {f.label}
@@ -2921,8 +2923,8 @@ function EditAccountModal({ contract, onClose }: { contract: any; onClose: () =>
                 boxShadow: "none",
               }}
               onFocus={e => {
-                e.currentTarget.style.borderColor = "#F5821F";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(245,130,31,0.15)";
+                e.currentTarget.style.borderColor = "var(--e-orange)";
+                e.currentTarget.style.boxShadow = "0 0 0 3px var(--e-orange-ring)";
               }}
               onBlur={e => {
                 e.currentTarget.style.borderColor = "#E8E6E2";
@@ -2930,7 +2932,7 @@ function EditAccountModal({ contract, onClose }: { contract: any; onClose: () =>
               }}
             />
             {isFetching && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-[#F5821F] border-t-transparent animate-spin" />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-[--e-orange] border-t-transparent animate-spin" />
             )}
           </div>
 
@@ -2942,8 +2944,8 @@ function EditAccountModal({ contract, onClose }: { contract: any; onClose: () =>
             {results.map((acc: any) => (
               <button key={acc.id}
                 onClick={() => setSelected(acc)}
-                className="w-full flex items-center justify-between px-4 py-3 text-left text-sm transition-colors hover:bg-[#FEF0E3]"
-                style={selected?.id === acc.id ? { background: "#FEF0E3" } : {}}>
+                className="w-full flex items-center justify-between px-4 py-3 text-left text-sm transition-colors hover:bg-[--e-orange-lt]"
+                style={selected?.id === acc.id ? { background: "var(--e-orange-lt)" } : {}}>
                 <div>
                   <p className="font-medium text-[#1C1917]">{acc.name}</p>
                   {(() => { const b = getAccountTypeBadge(acc.accountType); return (
@@ -2952,7 +2954,7 @@ function EditAccountModal({ contract, onClose }: { contract: any; onClose: () =>
                   ); })()}
                 </div>
                 {selected?.id === acc.id && (
-                  <span className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "#F5821F" }}>
+                  <span className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "var(--e-orange)" }}>
                     <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
                       <path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
@@ -2972,7 +2974,7 @@ function EditAccountModal({ contract, onClose }: { contract: any; onClose: () =>
             onClick={() => selected && mut.mutate(selected.id)}
             disabled={!selected || mut.isPending}
             className="h-9 px-4 rounded-lg text-sm font-semibold text-white disabled:opacity-50 transition-opacity hover:opacity-90"
-            style={{ background: "#F5821F" }}>
+            style={{ background: "var(--e-orange)" }}>
             {mut.isPending ? "Saving…" : "Save"}
           </button>
         </div>
@@ -3028,7 +3030,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
         {...opts}
         value={form[name]}
         onChange={e => setForm(p => ({ ...p, [name]: e.target.value }))}
-        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#F5821F]"
+        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[--e-orange]"
       />
     </div>
   );
@@ -3039,7 +3041,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
       <select
         value={form[name]}
         onChange={e => setForm(p => ({ ...p, [name]: e.target.value }))}
-        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#F5821F] bg-white">
+        className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[--e-orange] bg-white">
         <option value="">— Select —</option>
         {options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
       </select>
@@ -3084,7 +3086,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
             <select
               value={form.ownerId}
               onChange={e => setForm(p => ({ ...p, ownerId: e.target.value }))}
-              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#F5821F] bg-white"
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[--e-orange] bg-white"
             >
               <option value="">— Select Owner —</option>
               {staffList.map(s => (
@@ -3092,7 +3094,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
               ))}
             </select>
             {!form.ownerId && (
-              <p className="text-xs text-[#F5821F] mt-1">
+              <p className="text-xs text-[--e-orange] mt-1">
                 Select an owner to track KPI correctly.
               </p>
             )}
@@ -3103,7 +3105,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
               value={form.notes}
               onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
               rows={3}
-              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#F5821F] resize-none"
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[--e-orange] resize-none"
             />
           </div>
         </div>
@@ -3116,7 +3118,7 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
             onClick={() => mut.mutate(form)}
             disabled={mut.isPending}
             className="h-9 px-5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ background: "#F5821F" }}>
+            style={{ background: "var(--e-orange)" }}>
             {mut.isPending ? "Saving…" : "Save Changes"}
           </button>
         </div>
@@ -3186,7 +3188,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
     pdf: "bg-[#FEF2F2] text-[#DC2626]",
     doc: "bg-[#EFF6FF] text-[#1D4ED8]", docx: "bg-[#EFF6FF] text-[#1D4ED8]",
     xls: "bg-[#F0FDF4] text-[#16A34A]", xlsx: "bg-[#F0FDF4] text-[#16A34A]",
-    jpg: "bg-[#FEF0E3] text-[#F5821F]", jpeg: "bg-[#FEF0E3] text-[#F5821F]", png: "bg-[#FEF0E3] text-[#F5821F]",
+    jpg: "bg-[--e-orange-lt] text-[--e-orange]", jpeg: "bg-[--e-orange-lt] text-[--e-orange]", png: "bg-[--e-orange-lt] text-[--e-orange]",
   };
 
   return (
@@ -3195,7 +3197,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
         <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[#1C1917]">Documents ({isLoading ? "…" : docs.length})</h3>
           <button onClick={() => setShowForm(v => !v)}
-            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+            className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange]"
             style={{ borderColor:"#E8E6E2", color:"#57534E" }}>
             <UploadCloud size={13} /> Upload
           </button>
@@ -3208,28 +3210,28 @@ function DocumentsTab({ contractId }: { contractId: string }) {
               <div>
                 <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Category</label>
                 <select value={category} onChange={e => setCategory(e.target.value)}
-                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[#F5821F]">
+                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm bg-white focus:outline-none focus:border-[--e-orange]">
                   {DOC_CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Document Name (optional)</label>
                 <input type="text" value={docName} onChange={e => setDocName(e.target.value)}
-                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[#F5821F]"
+                  className="w-full h-9 border border-[#E8E6E2] rounded-lg px-3 text-sm focus:outline-none focus:border-[--e-orange]"
                   placeholder="Leave blank to use filename" />
               </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">File</label>
               <input ref={fileRef} type="file"
-                className="block w-full text-sm text-[#57534E] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[#E8E6E2] file:text-xs file:font-medium file:bg-white file:text-[#57534E] hover:file:bg-[#FEF0E3] cursor-pointer" />
+                className="block w-full text-sm text-[#57534E] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[#E8E6E2] file:text-xs file:font-medium file:bg-white file:text-[#57534E] hover:file:bg-[--e-orange-lt] cursor-pointer" />
             </div>
             {uploadErr && <p className="text-xs text-red-600">{uploadErr}</p>}
             <div className="flex gap-2 justify-end">
               <button onClick={() => setShowForm(false)} className="h-8 px-4 rounded-lg border border-[#E8E6E2] text-xs text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
               <button onClick={handleUpload} disabled={uploading}
                 className="h-8 px-4 rounded-lg text-xs font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
-                style={{ background:"#F5821F" }}>
+                style={{ background:"var(--e-orange)" }}>
                 {uploading ? "Uploading…" : "Upload"}
               </button>
             </div>
@@ -3270,7 +3272,7 @@ function DocumentsTab({ contractId }: { contractId: string }) {
                     <td className="px-4 py-3 text-[12px] text-[#57534E]">{fmtDate(doc.createdAt)}</td>
                     <td className="px-4 py-3">
                       <a href={`${BASE}/api/documents/${doc.id}/download`} target="_blank" rel="noreferrer"
-                        className="inline-flex items-center gap-1 h-7 px-2 rounded border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors">
+                        className="inline-flex items-center gap-1 h-7 px-2 rounded border border-[#E8E6E2] text-[11px] font-medium text-[#57534E] hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors">
                         <Download size={11} /> Download
                       </a>
                     </td>
@@ -3299,7 +3301,7 @@ function ActivityTab({ contractId }: { contractId: string }) {
   const filtered = typeFilter === "all" ? items : items.filter(i => i.type === typeFilter);
 
   const ICON_BG: Record<string, string> = {
-    finance: "#FEF0E3", task: "#EFF6FF", service: "#DCFCE7", system: "#F4F3F1", note: "white",
+    finance: "var(--e-orange-lt)", task: "#EFF6FF", service: "#DCFCE7", system: "#F4F3F1", note: "white",
   };
   const TYPE_FILTERS = ["all","finance","task","service","system","note"];
 
@@ -3312,7 +3314,7 @@ function ActivityTab({ contractId }: { contractId: string }) {
             onClick={() => setTypeFilter(t)}
             className="px-3 h-7 rounded-lg text-xs font-medium border transition-all capitalize"
             style={typeFilter === t
-              ? { background:"#FEF0E3", color:"#F5821F", borderColor:"#F5821F" }
+              ? { background:"var(--e-orange-lt)", color:"var(--e-orange)", borderColor:"var(--e-orange)" }
               : { background:"white", color:"#57534E", borderColor:"#E8E6E2" }}>
             {t}
           </button>
@@ -3352,13 +3354,13 @@ function ActivityTab({ contractId }: { contractId: string }) {
           onChange={e => setNoteText(e.target.value)}
           rows={3}
           placeholder="Write a note…"
-          className="w-full border border-[#E8E6E2] rounded-lg p-3 text-sm outline-none focus:border-[#F5821F] resize-none"
+          className="w-full border border-[#E8E6E2] rounded-lg p-3 text-sm outline-none focus:border-[--e-orange] resize-none"
         />
         <div className="flex justify-end mt-2">
           <button
             onClick={() => { console.log("post note:", noteText); setNoteText(""); }}
             className="h-8 px-4 rounded-lg text-sm font-medium text-white flex items-center gap-1.5"
-            style={{ background:"#F5821F" }}>
+            style={{ background:"var(--e-orange)" }}>
             <Send size={13} /> Post Note
           </button>
         </div>
@@ -3449,7 +3451,7 @@ export default function ContractDetailPage() {
         <div className="text-center">
           <p className="text-lg font-semibold text-[#1C1917]">Contract not found</p>
           <button onClick={() => navigate("/admin/crm/contracts")}
-            className="mt-3 text-sm underline" style={{ color:"#F5821F" }}>Back to Contracts</button>
+            className="mt-3 text-sm underline" style={{ color:"var(--e-orange)" }}>Back to Contracts</button>
         </div>
       </div>
     );
@@ -3525,7 +3527,7 @@ export default function ContractDetailPage() {
             <ArrowLeft size={16} /> Back
           </button>
           <span className="text-[#E8E6E2]">|</span>
-          <span className="font-mono text-lg font-bold" style={{ color:"#F5821F" }}>
+          <span className="font-mono text-lg font-bold" style={{ color:"var(--e-orange)" }}>
             {contract.contractRefDisplay}
           </span>
           <Badge s={contract.contractStatus} map={CONTRACT_STATUS_BADGE} />
@@ -3542,11 +3544,11 @@ export default function ContractDetailPage() {
             </button>
           )}
           <button onClick={() => setGeneratingInvoice(true)}
-            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors">
+            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors">
             <FileText size={13} /> Generate Invoice
           </button>
           <button onClick={() => setRecordingPayment(true)}
-            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors">
+            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors">
             <CreditCard size={13} /> Record Payment
           </button>
         </div>
@@ -3559,18 +3561,18 @@ export default function ContractDetailPage() {
             display: "inline-flex",
             alignItems: "center",
             gap: 8,
-            background: "#FEF0E3",
-            border: "1px solid rgba(245,130,31,0.3)",
+            background: "var(--e-orange-lt)",
+            border: "1px solid var(--e-orange-ring)",
             borderRadius: 8,
             padding: "8px 16px",
             fontSize: 13,
-            color: "#F5821F",
+            color: "var(--e-orange)",
           }}>
             <span>📋</span>
             <span>Camp Application: <strong>{linkedCampApp.applicationRef ?? linkedCampApp.id}</strong></span>
             <button
               onClick={() => navigate(`/admin/camp-applications/${linkedCampApp.id}`)}
-              style={{ fontWeight: 600, cursor: "pointer", background: "none", border: "none", color: "#F5821F", padding: 0 }}
+              style={{ fontWeight: 600, cursor: "pointer", background: "none", border: "none", color: "var(--e-orange)", padding: 0 }}
               onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
               onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
             >
@@ -3598,7 +3600,7 @@ export default function ContractDetailPage() {
                 </button>
                 {(contract.studentAccount?.id ?? contract.account?.id) && (
                   <button onClick={() => navigate(`/admin/crm/accounts/${contract.studentAccount?.id ?? contract.account?.id}`)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#F5821F]">
+                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[--e-orange]">
                     <ExternalLink size={13} />
                   </button>
                 )}
@@ -3651,10 +3653,10 @@ export default function ContractDetailPage() {
           </div>
 
           {/* Primary Service */}
-          <div className="bg-white rounded-xl p-5" style={{ border:"2px solid #F5821F" }}>
+          <div className="bg-white rounded-xl p-5" style={{ border:"2px solid var(--e-orange)" }}>
             <div className="flex items-center gap-2 mb-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Primary Service</p>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#FEF0E3] text-[#F5821F]">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[--e-orange-lt] text-[--e-orange]">
                 {primaryServiceType.replace(/_/g," ").replace(/\b\w/g,(c: string)=>c.toUpperCase())}
               </span>
             </div>
@@ -3664,7 +3666,7 @@ export default function ContractDetailPage() {
                 {primDates.to   && <InfoRow label="To"   value={<span className="font-medium">{fmtDate(primDates.to)}</span>} />}
                 {primDates.dur  && (
                   <InfoRow label="Duration" value={
-                    <span className="font-semibold" style={{ color:"#F5821F" }}>{primDates.dur}</span>
+                    <span className="font-semibold" style={{ color:"var(--e-orange)" }}>{primDates.dur}</span>
                   } />
                 )}
                 {"programName"   in primData && primData.programName   && <InfoRow label="Program" value={primData.programName} />}
@@ -3692,10 +3694,10 @@ export default function ContractDetailPage() {
               </button>
             </div>
             <InfoRow label="Contract Value" value={fmtMoney(contract.contractAmount)} />
-            <InfoRow label="Total AR"       value={<span className="font-semibold" style={{ color:"#F5821F" }}>{fmtMoney(contract.totalArAmount)}</span>} />
+            <InfoRow label="Total AR"       value={<span className="font-semibold" style={{ color:"var(--e-orange)" }}>{fmtMoney(contract.totalArAmount)}</span>} />
             <InfoRow label="Total AP"       value={<span className="font-semibold" style={{ color:"#DC2626" }}>{fmtMoney(contract.totalApAmount)}</span>} />
             <InfoRow label="Est. Net Rev."  value={
-              <span className="font-bold" style={{ color:"#F5821F" }}>
+              <span className="font-bold" style={{ color:"var(--e-orange)" }}>
                 {fmtMoney((contract.totalArAmount ?? 0) - (contract.totalApAmount ?? 0))}
               </span>
             } />
@@ -3713,12 +3715,12 @@ export default function ContractDetailPage() {
                 onClick={() => setActiveTab(tab.key)}
                 className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0"
                 style={activeTab === tab.key
-                  ? { borderColor:"#F5821F", color:"#F5821F" }
+                  ? { borderColor:"var(--e-orange)", color:"var(--e-orange)" }
                   : { borderColor:"transparent", color:"#57534E" }}>
                 {tab.label}
                 {count != null && count > 0 && (
                   <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
-                    style={activeTab === tab.key ? { background:"#FEF0E3", color:"#F5821F" } : { background:"#F4F3F1", color:"#A8A29E" }}>
+                    style={activeTab === tab.key ? { background:"var(--e-orange-lt)", color:"var(--e-orange)" } : { background:"#F4F3F1", color:"#A8A29E" }}>
                     {count}
                   </span>
                 )}
@@ -3754,7 +3756,7 @@ export default function ContractDetailPage() {
                       </span>
                       <button
                         onClick={() => navigate(`/admin/camp-applications/${contract.campApplication.id}`)}
-                        className="text-sm font-medium text-[#F5821F] hover:text-[#d97706] transition-colors ml-4"
+                        className="text-sm font-medium text-[--e-orange] hover:text-[#d97706] transition-colors ml-4"
                         style={{ background: "none", border: "none", cursor: "pointer" }}
                       >
                         View →
@@ -3770,7 +3772,7 @@ export default function ContractDetailPage() {
                       </span>
                       <button
                         onClick={() => navigate(`/admin/crm/quotes/${contract.quote.id}`)}
-                        className="text-sm font-medium text-[#F5821F] hover:text-[#d97706] transition-colors ml-4"
+                        className="text-sm font-medium text-[--e-orange] hover:text-[#d97706] transition-colors ml-4"
                         style={{ background: "none", border: "none", cursor: "pointer" }}
                       >
                         View →

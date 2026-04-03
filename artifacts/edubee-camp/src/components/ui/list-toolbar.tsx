@@ -83,8 +83,8 @@ export function ListToolbar({
               onClick={() => onStatusChange?.(s)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border capitalize ${
                 activeStatus === s
-                  ? "bg-[#F5821F] text-white border-[#F5821F]"
-                  : "border-border text-muted-foreground hover:border-[#F5821F]/50 hover:text-foreground"
+                  ? "bg-[--e-orange] text-white border-[--e-orange]"
+                  : "border-border text-muted-foreground hover:border-[--e-orange]/50 hover:text-foreground"
               }`}
             >
               {statusLabels?.[s] ?? s.replace(/_/g, " ")}
@@ -102,7 +102,7 @@ export function ListToolbar({
           </Button>
         )}
         {addLabel && onAdd && (
-          <Button size="sm" onClick={onAdd} className="h-9 gap-1.5 text-sm bg-[#F5821F] hover:bg-[#d97706] text-white shrink-0">
+          <Button size="sm" onClick={onAdd} className="h-9 gap-1.5 text-sm bg-[--e-orange] hover:bg-[#d97706] text-white shrink-0">
             <Plus className="w-4 h-4" /> {addLabel}
           </Button>
         )}

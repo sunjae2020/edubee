@@ -16,7 +16,7 @@ const STATUSES = ["pending", "driver_assigned", "en_route", "completed", "cancel
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   pending:         { bg: "#F4F3F1", text: "#57534E" },
   driver_assigned: { bg: "#FEF9C3", text: "#CA8A04" },
-  en_route:        { bg: "#FEF0E3", text: "#F5821F" },
+  en_route:        { bg: "var(--e-orange-lt)", text: "var(--e-orange)" },
   completed:       { bg: "#DCFCE7", text: "#16A34A" },
   cancelled:       { bg: "#FEF2F2", text: "#DC2626" },
 };
@@ -67,9 +67,9 @@ function fmtDatetime(d?: string | null): { date: string; time: string } {
 function TodayBanner({ rows, onNavigate }: { rows: PickupRow[]; onNavigate: (id: string) => void }) {
   if (rows.length === 0) return null;
   return (
-    <div className="rounded-xl p-4 space-y-2" style={{ background: "#FEF0E3", border: "1.5px solid rgba(245,130,31,0.25)" }}>
+    <div className="rounded-xl p-4 space-y-2" style={{ background: "var(--e-orange-lt)", border: "1.5px solid var(--e-orange-shadow-25)" }}>
       <div className="flex items-center gap-2 mb-2">
-        <Car className="w-4 h-4" style={{ color: "#F5821F" }} />
+        <Car className="w-4 h-4" style={{ color: "var(--e-orange)" }} />
         <h2 className="text-sm font-bold" style={{ color: "#C2410C" }}>
           Today's Pickups — {rows.length}
         </h2>
@@ -81,10 +81,10 @@ function TodayBanner({ rows, onNavigate }: { rows: PickupRow[]; onNavigate: (id:
           return (
             <button
               key={row.id}
-              className="w-full text-left bg-white rounded-xl border border-[#F5821F]/20 p-3.5 flex items-center gap-4 shadow-sm hover:bg-[#FEF9F5] transition-colors"
+              className="w-full text-left bg-white rounded-xl border border-[--e-orange]/20 p-3.5 flex items-center gap-4 shadow-sm hover:bg-[#FEF9F5] transition-colors"
               onClick={() => onNavigate(row.id)}
             >
-              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "#FEF0E3", color: "#F5821F" }}>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
                 <Car className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
@@ -122,7 +122,7 @@ function SourceTabs({ active, onChange }: { active: Source; onChange: (s: Source
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
             style={{
               background: isActive ? "#fff" : "transparent",
-              color: isActive ? "#F5821F" : "#57534E",
+              color: isActive ? "var(--e-orange)" : "#57534E",
               boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
               border: isActive ? "1px solid #E8E6E2" : "1px solid transparent",
             }}
@@ -239,16 +239,16 @@ export default function PickupManagement() {
               return (
                 <tr
                   key={row.id}
-                  className={`hover:bg-[#FEF0E3] transition-colors cursor-pointer ${todayFlag ? "bg-[#FEF9F5]" : ""}`}
+                  className={`hover:bg-[--e-orange-lt] transition-colors cursor-pointer ${todayFlag ? "bg-[#FEF9F5]" : ""}`}
                   onClick={() => navigate(`${BASE}/admin/services/pickup/${row.id}`)}
                 >
-                  <td className="px-4 py-3 font-mono text-xs font-semibold text-[#F5821F]">
+                  <td className="px-4 py-3 font-mono text-xs font-semibold text-[--e-orange]">
                     {row.contractNumber ?? row.contractId?.slice(0, 8) ?? "—"}
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">
                     {row.clientName ?? row.studentName ?? "—"}
                     {todayFlag && (
-                      <span className="ml-2 text-[10px] font-bold text-[#F5821F] bg-[#FEF0E3] px-1.5 py-0.5 rounded-full">TODAY</span>
+                      <span className="ml-2 text-[10px] font-bold text-[--e-orange] bg-[--e-orange-lt] px-1.5 py-0.5 rounded-full">TODAY</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground capitalize">

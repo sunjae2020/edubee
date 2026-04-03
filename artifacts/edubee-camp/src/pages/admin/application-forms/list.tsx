@@ -72,7 +72,7 @@ function CloneModal({ form, onClose }: { form: ApplicationForm; onClose: () => v
           <Input
             value={newName}
             onChange={e => { setNewName(e.target.value); setNewSlug(toSlug(e.target.value)); }}
-            className="h-9 text-sm border-[#E8E6E2] focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F]"
+            className="h-9 text-sm border-[#E8E6E2] focus-visible:ring-[--e-orange]/40 focus-visible:border-[--e-orange]"
           />
         </div>
 
@@ -81,13 +81,13 @@ function CloneModal({ form, onClose }: { form: ApplicationForm; onClose: () => v
           <Input
             value={newSlug}
             onChange={e => setNewSlug(toSlug(e.target.value))}
-            className="h-9 text-sm border-[#E8E6E2] focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F]"
+            className="h-9 text-sm border-[#E8E6E2] focus-visible:ring-[--e-orange]/40 focus-visible:border-[--e-orange]"
           />
         </div>
 
         <label className="flex items-center gap-2.5 cursor-pointer">
           <input type="checkbox" checked={includePartners} onChange={e => setIncludePartners(e.target.checked)}
-            className="w-4 h-4 accent-[#F5821F]" />
+            className="w-4 h-4 accent-[--e-orange]" />
           <span className="text-sm text-[#57534E]">Include partner links</span>
         </label>
 
@@ -95,7 +95,7 @@ function CloneModal({ form, onClose }: { form: ApplicationForm; onClose: () => v
           <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
           <Button
             size="sm"
-            className="bg-[#F5821F] hover:bg-[#D96A0A] text-white"
+            className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white"
             disabled={!newName || !newSlug || clone.isPending}
             onClick={() => clone.mutate()}
           >
@@ -148,7 +148,7 @@ export default function ApplicationFormList() {
     deleteMutation.mutate(form.id);
   };
 
-  const selCls = "h-8 rounded-lg border border-[#E8E6E2] px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F5821F]/40 focus:border-[#F5821F]";
+  const selCls = "h-8 rounded-lg border border-[#E8E6E2] px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[--e-orange]/40 focus:border-[--e-orange]";
 
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
@@ -159,7 +159,7 @@ export default function ApplicationFormList() {
           <p className="text-xs text-[#A8A29E] mt-0.5">Manage custom application form links for partners</p>
         </div>
         <Button
-          className="bg-[#F5821F] hover:bg-[#D96A0A] text-white h-9 px-4 text-sm font-medium"
+          className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white h-9 px-4 text-sm font-medium"
           onClick={() => setLocation("/admin/application-forms/new")}
         >
           <Plus className="w-4 h-4 mr-1.5" />
@@ -175,7 +175,7 @@ export default function ApplicationFormList() {
             placeholder="Search forms..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="pl-9 h-8 text-sm border-[#E8E6E2] focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F]"
+            className="pl-9 h-8 text-sm border-[#E8E6E2] focus-visible:ring-[--e-orange]/40 focus-visible:border-[--e-orange]"
           />
         </div>
         <select value={formTypeFilter} onChange={e => setFormTypeFilter(e.target.value)} className={selCls}>
@@ -200,7 +200,7 @@ export default function ApplicationFormList() {
         <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center h-40">
-              <Loader2 className="w-6 h-6 animate-spin text-[#F5821F]" />
+              <Loader2 className="w-6 h-6 animate-spin text-[--e-orange]" />
             </div>
           ) : forms.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 gap-3 text-[#A8A29E]">
@@ -226,7 +226,7 @@ export default function ApplicationFormList() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => setLocation(`/admin/application-forms/${form.id}/partners`)}
-                        className="font-medium text-[#1C1917] hover:text-[#F5821F] transition-colors flex items-center gap-1"
+                        className="font-medium text-[#1C1917] hover:text-[--e-orange] transition-colors flex items-center gap-1"
                       >
                         {form.name}
                         <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100" />
@@ -239,7 +239,7 @@ export default function ApplicationFormList() {
                       {form.formType === "lead_inquiry" ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">Lead Inquiry</span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#FEF0E3] text-[#F5821F]">Camp App</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[--e-orange-lt] text-[--e-orange]">Camp App</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -250,7 +250,7 @@ export default function ApplicationFormList() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#FEF0E3] text-[#F5821F]">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[--e-orange-lt] text-[--e-orange]">
                         <Users className="w-3 h-3" />
                         {form.partnerCount}
                       </span>
@@ -269,21 +269,21 @@ export default function ApplicationFormList() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setLocation(`/admin/application-forms/${form.id}/edit`)}
-                          className="p-1.5 rounded-lg hover:bg-[#FEF0E3] text-[#57534E] hover:text-[#F5821F] transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-[--e-orange-lt] text-[#57534E] hover:text-[--e-orange] transition-colors"
                           title="Edit"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setLocation(`/admin/application-forms/${form.id}/partners`)}
-                          className="p-1.5 rounded-lg hover:bg-[#FEF0E3] text-[#57534E] hover:text-[#F5821F] transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-[--e-orange-lt] text-[#57534E] hover:text-[--e-orange] transition-colors"
                           title="Partner Links"
                         >
                           <Users className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setCloneTarget(form)}
-                          className="p-1.5 rounded-lg hover:bg-[#FEF0E3] text-[#57534E] hover:text-[#F5821F] transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-[--e-orange-lt] text-[#57534E] hover:text-[--e-orange] transition-colors"
                           title="Clone"
                         >
                           <Copy className="w-3.5 h-3.5" />

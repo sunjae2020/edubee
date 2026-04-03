@@ -157,8 +157,8 @@ export default function DocumentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center">
-            <FolderOpen className="w-5 h-5 text-[#F5821F]" />
+          <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center">
+            <FolderOpen className="w-5 h-5 text-[--e-orange]" />
           </div>
           <div>
             <h1 className="text-lg font-bold">Documents</h1>
@@ -244,7 +244,7 @@ export default function DocumentsPage() {
               </thead>
               <tbody>
                 {sorted.map((doc: any) => (
-                  <tr key={doc.id} className="border-t hover:bg-[#FEF0E3] transition-colors cursor-pointer">
+                  <tr key={doc.id} className="border-t hover:bg-[--e-orange-lt] transition-colors cursor-pointer">
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
                         <DocFileIcon ext={doc.fileExtension} />

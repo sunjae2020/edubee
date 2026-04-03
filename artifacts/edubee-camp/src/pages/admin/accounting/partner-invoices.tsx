@@ -29,7 +29,7 @@ function DualAmount({ amount, currency, audEquivalent }: { amount?: string | num
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-[#F4F3F1] text-[#57534E] border-[#E8E6E2]",
-  sent: "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F]/20",
+  sent: "bg-[--e-orange-lt] text-[--e-orange] border-[--e-orange]/20",
   paid: "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20",
   overdue: "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
   cancelled: "bg-[#F4F3F1] text-[#A8A29E] border-[#E8E6E2]",
@@ -114,7 +114,7 @@ export default function PartnerInvoices() {
                 <Handshake className="w-8 h-8 mx-auto mb-3 opacity-30" />No partner invoices found
               </td></tr>
             ) : sorted.map(r => (
-              <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
+              <tr key={r.id} className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer" onClick={() => setSelected(r)}>
                 <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{r.invoiceNumber ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.studentName ?? "—"}</td>
                 <td className="px-4 py-3">
@@ -151,7 +151,7 @@ export default function PartnerInvoices() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Due</span><span>{selected.dueDate ?? "—"}</span></div>
               </div>
               <div className="flex gap-2 pt-2">
-                {selected.status === "draft" && <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}><Send className="w-3.5 h-3.5" /> Send</Button>}
+                {selected.status === "draft" && <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "sent", issuedAt: new Date().toISOString() } })}><Send className="w-3.5 h-3.5" /> Send</Button>}
                 {selected.status === "sent" && <Button size="sm" className="bg-[#16A34A] hover:bg-[#15803D] text-white" onClick={() => updateMutation.mutate({ id: selected.id, payload: { status: "paid", paidAt: new Date().toISOString() } })}>Mark Paid</Button>}
                 <Button size="sm" variant="outline" onClick={() => setSelected(null)}>Close</Button>
               </div>

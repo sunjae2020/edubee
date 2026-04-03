@@ -292,8 +292,8 @@ export default function ExchangeRates() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center">
-            <RefreshCw className="w-5 h-5 text-[#F5821F]" />
+          <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center">
+            <RefreshCw className="w-5 h-5 text-[--e-orange]" />
           </div>
           <div>
             <h1 className="text-lg font-bold">Exchange Rates</h1>
@@ -313,14 +313,14 @@ export default function ExchangeRates() {
           <Button
             size="sm"
             variant="outline"
-            className="gap-1.5 border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
+            className="gap-1.5 border-[--e-orange] text-[--e-orange] hover:bg-[--e-orange-lt]"
             onClick={() => syncMutation.mutate()}
             disabled={syncMutation.isPending}
           >
             <Zap className="w-3.5 h-3.5" />
             {syncMutation.isPending ? "Syncing…" : "Sync Now"}
           </Button>
-          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setShowCreate(true)}>
+          <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setShowCreate(true)}>
             <Plus className="w-3.5 h-3.5" /> Add Rate
           </Button>
         </div>
@@ -368,12 +368,12 @@ export default function ExchangeRates() {
       )}
 
       {/* AUD Preview Strip */}
-      <div className="bg-gradient-to-r from-[#F5821F]/5 to-[#F08301]/10 rounded-xl border border-[#F5821F]/20 p-4">
+      <div className="bg-gradient-to-r from-[--e-orange]/5 to-[#F08301]/10 rounded-xl border border-[--e-orange]/20 p-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Live Preview — 1 AUD equals</p>
+          <p className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Live Preview — 1 AUD equals</p>
           <button
             onClick={() => setShowAddPreview(v => !v)}
-            className="flex items-center gap-1 text-[11px] font-medium text-[#F5821F] hover:text-[#d97706] border border-[#F5821F]/40 hover:border-[#F5821F] rounded-md px-2 py-0.5 bg-white transition-colors"
+            className="flex items-center gap-1 text-[11px] font-medium text-[--e-orange] hover:text-[#d97706] border border-[--e-orange]/40 hover:border-[--e-orange] rounded-md px-2 py-0.5 bg-white transition-colors"
             title="Add currency"
           >
             <Plus className="w-3 h-3" /> Add
@@ -427,7 +427,7 @@ export default function ExchangeRates() {
             : latestRates.length === 0
             ? <p className="text-sm text-muted-foreground col-span-3">No rates configured. Click "Add Rate" to get started.</p>
             : latestRates.map(r => (
-                <div key={r.id} className="bg-white rounded-lg border p-4 hover:border-[#F5821F]/50 hover:shadow-sm transition-all group">
+                <div key={r.id} className="bg-white rounded-lg border p-4 hover:border-[--e-orange]/50 hover:shadow-sm transition-all group">
                   <div className="flex items-center gap-3">
                     <div className="text-2xl leading-none">{FLAG[r.fromCurrency] ?? "🏳️"}</div>
                     <div className="flex-1 min-w-0">
@@ -497,7 +497,7 @@ export default function ExchangeRates() {
                     </td>
                   </tr>
                 ) : sorted.map(r => (
-                  <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3] group">
+                  <tr key={r.id} className="border-b last:border-0 hover:bg-[--e-orange-lt] group">
                     <td className="px-4 py-2 font-medium">{FLAG[r.fromCurrency]} {r.fromCurrency}</td>
                     <td className="px-4 py-2">{FLAG[r.toCurrency]} {r.toCurrency}</td>
                     <td className="px-4 py-2 text-right font-mono text-sm">
@@ -603,10 +603,10 @@ export default function ExchangeRates() {
 
             {/* Live preview inside dialog */}
             {previewRate !== null && previewRate > 0 && (
-              <div className="rounded-lg bg-[#F5821F]/5 border border-[#F5821F]/20 px-3 py-2 text-sm text-center">
+              <div className="rounded-lg bg-[--e-orange]/5 border border-[--e-orange]/20 px-3 py-2 text-sm text-center">
                 <span className="font-medium">1 {form.fromCurrency}</span>
                 <span className="text-muted-foreground mx-2">=</span>
-                <span className="font-bold text-[#F5821F]">
+                <span className="font-bold text-[--e-orange]">
                   {previewRate >= 100
                     ? previewRate.toLocaleString("en-AU", { maximumFractionDigits: 0 })
                     : previewRate.toFixed(4)}
@@ -623,7 +623,7 @@ export default function ExchangeRates() {
             <div className="flex gap-2 pt-1">
               <Button
                 size="sm"
-                className="flex-1 bg-[#F5821F] hover:bg-[#d97706] text-white"
+                className="flex-1 bg-[--e-orange] hover:bg-[#d97706] text-white"
                 onClick={() => createMutation.mutate(form)}
                 disabled={createMutation.isPending || !form.rate || form.fromCurrency === form.toCurrency}
               >
@@ -662,7 +662,7 @@ export default function ExchangeRates() {
                       <button
                         key={ccy}
                         onClick={() => removeFromPreview(ccy)}
-                        className="relative flex flex-col items-center bg-[#F5821F]/10 border border-[#F5821F]/40 rounded-lg px-2 py-2.5 hover:bg-red-50 hover:border-red-300 transition-colors group"
+                        className="relative flex flex-col items-center bg-[--e-orange]/10 border border-[--e-orange]/40 rounded-lg px-2 py-2.5 hover:bg-red-50 hover:border-red-300 transition-colors group"
                         title={`Remove ${ccy}`}
                       >
                         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -671,7 +671,7 @@ export default function ExchangeRates() {
                         <span className="text-xl leading-none">{FLAG[ccy] ?? "🏳️"}</span>
                         <span className="text-[11px] font-semibold mt-1">{ccy}</span>
                         {hasRate ? (
-                          <span className="text-[10px] text-[#F5821F] font-mono mt-0.5">{display}</span>
+                          <span className="text-[10px] text-[--e-orange] font-mono mt-0.5">{display}</span>
                         ) : (
                           <span className="text-[10px] text-muted-foreground mt-0.5">—</span>
                         )}
@@ -716,7 +716,7 @@ export default function ExchangeRates() {
                         <button
                           key={c.code}
                           onClick={() => { addToPreview(c.code); setPreviewCurrencySearch(""); }}
-                          className="flex flex-col items-center bg-white border border-border rounded-lg px-2 py-2.5 hover:border-[#F5821F] hover:bg-[#FEF0E3] transition-colors"
+                          className="flex flex-col items-center bg-white border border-border rounded-lg px-2 py-2.5 hover:border-[--e-orange] hover:bg-[--e-orange-lt] transition-colors"
                           title={`Add ${c.code} — ${c.name}`}
                         >
                           <span className="text-xl leading-none">{c.flag}</span>
@@ -826,7 +826,7 @@ export default function ExchangeRates() {
                     <span className="text-base">{c.flag}</span>
                     <span className="font-medium">{c.code}</span>
                     <span className="text-muted-foreground truncate">{c.name}</span>
-                    <Plus className="w-3.5 h-3.5 ml-auto shrink-0 text-[#F5821F]" />
+                    <Plus className="w-3.5 h-3.5 ml-auto shrink-0 text-[--e-orange]" />
                   </button>
                 ))}
             </div>

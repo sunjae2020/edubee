@@ -171,7 +171,7 @@ export default function TeamDetailPage() {
             <Button variant="outline" size="sm" onClick={cancelEdit}>
               <X className="w-3.5 h-3.5 mr-1" /> Cancel
             </Button>
-            <Button size="sm" className="bg-[#F5821F] hover:bg-[#e0721a] text-white gap-1"
+            <Button size="sm" className="bg-[--e-orange] hover:bg-[#e0721a] text-white gap-1"
               onClick={saveEdit} disabled={updateTeam.isPending}>
               {updateTeam.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               Save
@@ -198,7 +198,7 @@ export default function TeamDetailPage() {
                   <div className="space-y-1.5">
                     <Label className="text-xs">Colour</Label>
                     <div className="flex items-center gap-2">
-                      <input type="color" value={editForm.color ?? "#F5821F"}
+                      <input type="color" value={editForm.color ?? "var(--e-orange)"}
                         onChange={e => setEditForm(f => ({ ...f, color: e.target.value }))}
                         className="w-9 h-9 rounded border border-border cursor-pointer p-0.5" />
                       <Input value={editForm.color ?? ""} onChange={e => setEditForm(f => ({ ...f, color: e.target.value }))}
@@ -268,7 +268,7 @@ export default function TeamDetailPage() {
           <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wide">Applications</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4 shadow-sm text-center">
-          <p className="text-3xl font-bold text-[#F5821F]">{perf?.approvedApplications ?? "—"}</p>
+          <p className="text-3xl font-bold text-[--e-orange]">{perf?.approvedApplications ?? "—"}</p>
           <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wide">Approved</p>
         </div>
       </div>
@@ -317,7 +317,7 @@ export default function TeamDetailPage() {
                       onClick={() => setLocation(`${BASE}/admin/users/${m.id}`)}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#F5821F]/10 flex items-center justify-center text-[#F5821F] text-xs font-bold shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-[--e-orange]/10 flex items-center justify-center text-[--e-orange] text-xs font-bold shrink-0">
                             {m.fullName.slice(0, 2).toUpperCase()}
                           </div>
                           <div>

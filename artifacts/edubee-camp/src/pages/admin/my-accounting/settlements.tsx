@@ -27,7 +27,7 @@ function DualAmount({ amount, currency, audEquivalent }: { amount?: string | num
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-[#FEF9C3] text-[#CA8A04] border-[#CA8A04]/20",
-  processing: "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F]/20",
+  processing: "bg-[--e-orange-lt] text-[--e-orange] border-[--e-orange]/20",
   settled: "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20",
   disputed: "bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20",
 };
@@ -63,7 +63,7 @@ export default function MySettlements() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-[#F5821F]" /></div>
+        <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-[--e-orange]" /></div>
         <div><h1 className="text-lg font-bold">My Settlements</h1><p className="text-xs text-muted-foreground">Your earnings and payout history</p></div>
       </div>
 
@@ -92,7 +92,7 @@ export default function MySettlements() {
       <div className="flex items-center gap-2">
         {["all","pending","processing","settled","disputed"].map(s => (
           <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${statusFilter === s ? "bg-[#F5821F] text-white border-[#F5821F]" : "border-muted-foreground/30 text-muted-foreground hover:border-[#F5821F]/50"}`}>
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${statusFilter === s ? "bg-[--e-orange] text-white border-[--e-orange]" : "border-muted-foreground/30 text-muted-foreground hover:border-[--e-orange]/50"}`}>
             {s}
           </button>
         ))}
@@ -116,7 +116,7 @@ export default function MySettlements() {
             </tr></thead>
             <tbody>
               {sorted.map(r => (
-                <tr key={r.id} className="border-b last:border-0 hover:bg-[#FEF0E3]">
+                <tr key={r.id} className="border-b last:border-0 hover:bg-[--e-orange-lt]">
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.contractId?.slice(0, 8) ?? "—"}</td>
                   <td className="px-4 py-3 text-xs max-w-[180px] truncate">{r.serviceDescription ?? "—"}</td>
                   <td className="px-4 py-3 text-right text-sm"><DualAmount amount={r.grossAmount} currency={r.originalCurrency ?? r.currency} audEquivalent={r.audEquivalent} /></td>

@@ -185,7 +185,7 @@ export default function EnrollmentSpots() {
                   {group.rows.map((row) => (
                     <tr
                       key={row.id}
-                      className="border-b border-border last:border-b-0 hover:bg-[#FEF0E3] transition-colors"
+                      className="border-b border-border last:border-b-0 hover:bg-[--e-orange-lt] transition-colors"
                     >
                       <td className="px-4 py-2.5 text-foreground pl-8">
                         {row.packageGroupName} — {row.gradeLabel}

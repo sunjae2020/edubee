@@ -121,7 +121,7 @@ export default function ProductGroupDetail() {
       <div className="flex flex-col items-center justify-center py-24 text-[#A8A29E]">
         <Layers className="w-10 h-10 mb-3" strokeWidth={1} />
         <p className="text-sm">Product group not found.</p>
-        <Button variant="link" className="text-[#F5821F] mt-2" onClick={() => navigate("/admin/product-groups")}>
+        <Button variant="link" className="text-[--e-orange] mt-2" onClick={() => navigate("/admin/product-groups")}>
           Back to list
         </Button>
       </div>
@@ -141,7 +141,7 @@ export default function ProductGroupDetail() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-[#F5821F]" strokeWidth={1.5} />
+            <Layers className="w-5 h-5 text-[--e-orange]" strokeWidth={1.5} />
             <h1 className="text-xl font-bold text-[#1C1917] leading-none">{group.name}</h1>
             <StatusBadge status={form.status} />
           </div>
@@ -153,7 +153,7 @@ export default function ProductGroupDetail() {
               <RotateCcw size={13} /> Discard
             </Button>
             <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}
-              className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
+              className="h-9 gap-1.5 text-white" style={{ background: "var(--e-orange)" }}>
               {save.isPending
                 ? <><Loader2 size={13} className="animate-spin" /> Saving…</>
                 : <><Save size={13} /> Save Changes</>}
@@ -183,7 +183,7 @@ export default function ProductGroupDetail() {
           <Input
             value={form.name}
             onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setNameError(""); }}
-            className={`h-10 border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 ${nameError ? "border-[#DC2626]" : ""}`}
+            className={`h-10 border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 ${nameError ? "border-[#DC2626]" : ""}`}
           />
           {nameError && <p className="text-xs text-[#DC2626]">{nameError}</p>}
         </div>
@@ -194,7 +194,7 @@ export default function ProductGroupDetail() {
             value={form.description}
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
             rows={4}
-            className="border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 text-sm resize-none"
+            className="border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 text-sm resize-none"
             placeholder="Describe this product group..."
           />
         </div>
@@ -219,7 +219,7 @@ export default function ProductGroupDetail() {
       <div className="bg-white rounded-xl border border-[#E8E6E2] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#F4F3F1]">
           <div className="flex items-center gap-2">
-            <Tag className="w-4 h-4 text-[#F5821F]" strokeWidth={1.5} />
+            <Tag className="w-4 h-4 text-[--e-orange]" strokeWidth={1.5} />
             <h2 className="text-sm font-semibold text-[#1C1917]">Product Types</h2>
             <span className="text-xs text-[#A8A29E] bg-[#F4F3F1] px-1.5 py-0.5 rounded-full">{types.length}</span>
           </div>
@@ -254,12 +254,12 @@ export default function ProductGroupDetail() {
             <tbody className="divide-y divide-[#F4F3F1]">
               {types.map(t => (
                 <tr key={t.id}
-                  className="hover:bg-[#FEF0E3] transition-colors cursor-pointer"
+                  className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/product-types/${t.id}`)}>
                   <td className="px-6 py-3 font-medium text-[#1C1917]">{t.name}</td>
                   <td className="px-6 py-3">
                     {t.serviceModuleType ? (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#FEF0E3] text-[#F5821F]">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[--e-orange-lt] text-[--e-orange]">
                         {SERVICE_MODULE_LABELS[t.serviceModuleType] ?? t.serviceModuleType}
                       </span>
                     ) : <span className="text-[#A8A29E]">—</span>}

@@ -31,7 +31,7 @@ function SpotBadge({ status, count }: { status: string; count: number }) {
   }
   if (status === "limited") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-[#F5821F]/8 text-[#F5821F] border border-[#F5821F]/20">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-[--e-orange]/8 text-[--e-orange] border border-[--e-orange]/20">
         {t("programs.spotsLeft", { count })}
       </span>
     );
@@ -61,7 +61,7 @@ export function ProgramCard({ program, onViewDetails }: Props) {
   const totalAvailable = program.spotSummary?.grades.reduce((s, g) => s + g.available, 0) ?? 0;
 
   return (
-    <div className="group bg-white rounded-xl border border-border hover:border-[#F5821F]/40 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col">
+    <div className="group bg-white rounded-xl border border-border hover:border-[--e-orange]/40 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col">
       {/* Image */}
       <div className="relative aspect-[16/9] overflow-hidden bg-muted">
         <img
@@ -72,7 +72,7 @@ export function ProgramCard({ program, onViewDetails }: Props) {
         />
         {/* Location badge */}
         <div className="absolute top-3 left-3 flex items-center gap-1 bg-white/90 text-foreground text-xs font-medium px-2 py-1 rounded-md">
-          <MapPin className="w-3 h-3 text-[#F5821F]" />
+          <MapPin className="w-3 h-3 text-[--e-orange]" />
           {program.location}
         </div>
         {program.countryFlag && (
@@ -119,7 +119,7 @@ export function ProgramCard({ program, onViewDetails }: Props) {
           <Button
             size="sm"
             variant="ghost"
-            className="rounded-md gap-1 h-8 px-3 text-xs font-semibold text-[#F5821F] hover:bg-[#F5821F]/8 hover:text-[#F5821F]"
+            className="rounded-md gap-1 h-8 px-3 text-xs font-semibold text-[--e-orange] hover:bg-[--e-orange]/8 hover:text-[--e-orange]"
             onClick={() => onViewDetails(program)}
           >
             {t("programs.viewDetails")} <ChevronRight className="w-3.5 h-3.5" />

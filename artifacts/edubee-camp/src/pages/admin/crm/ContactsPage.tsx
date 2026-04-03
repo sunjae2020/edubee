@@ -55,7 +55,7 @@ function Avatar({ name }: { name: string }) {
   return (
     <div
       className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold shrink-0"
-      style={{ background: "#FEF0E3", color: "#F5821F" }}
+      style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}
     >
       {name.charAt(0).toUpperCase()}
     </div>
@@ -198,7 +198,7 @@ export default function ContactsPage() {
         <Button
           onClick={openCreate}
           className="flex items-center gap-2 text-white rounded-lg px-4 py-2"
-          style={{ background: "#F5821F" }}
+          style={{ background: "var(--e-orange)" }}
         >
           <Plus size={16} /> New Contact
         </Button>
@@ -264,7 +264,7 @@ export default function ContactsPage() {
                 .filter(Boolean).join("").toUpperCase() || (displayName || "?").slice(0, 2).toUpperCase();
               const imgSrc = c.profileImageUrl || null;
               return (
-                <tr key={c.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
+                <tr key={c.id} className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       {imgSrc ? (
@@ -278,7 +278,7 @@ export default function ContactsPage() {
                       )}
                       <button
                         onClick={() => navigate(`/admin/crm/contacts/${c.id}`)}
-                        className="font-medium text-stone-800 hover:text-[#F5821F] transition-colors text-left"
+                        className="font-medium text-stone-800 hover:text-[--e-orange] transition-colors text-left"
                       >
                         {displayName}
                       </button>
@@ -436,7 +436,7 @@ export default function ContactsPage() {
                 onClick={handleSave}
                 disabled={saveMutation.isPending}
                 className="flex-1 text-white"
-                style={{ background: "#F5821F" }}
+                style={{ background: "var(--e-orange)" }}
               >
                 {saveMutation.isPending ? "Saving…" : editContact ? "Save Changes" : "Create Contact"}
               </Button>

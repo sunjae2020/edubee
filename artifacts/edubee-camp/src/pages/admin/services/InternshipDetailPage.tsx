@@ -78,13 +78,13 @@ function StageStepper({ current, onSelect }: { current: string; onSelect: (s: st
             <button
               onClick={() => onSelect(stage.key)}
               className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-lg transition-all hover:bg-stone-50 shrink-0 ${
-                active ? "ring-2 ring-[#F5821F] ring-offset-1 bg-[#FEF0E3]" : ""
+                active ? "ring-2 ring-[--e-orange] ring-offset-1 bg-[--e-orange-lt]" : ""
               }`}
             >
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
                 style={
-                  active ? { background: "#F5821F", color: "#fff" } :
+                  active ? { background: "var(--e-orange)", color: "#fff" } :
                   done   ? { background: "#DCFCE7", color: "#16A34A" } :
                            { background: "#F4F3F1", color: "#A8A29E" }
                 }
@@ -92,7 +92,7 @@ function StageStepper({ current, onSelect }: { current: string; onSelect: (s: st
                 {done ? <Check size={12} /> : i + 1}
               </div>
               <span className={`text-[10px] font-medium text-center leading-tight whitespace-nowrap ${
-                active ? "text-[#F5821F]" : done ? "text-[#16A34A]" : "text-stone-400"
+                active ? "text-[--e-orange]" : done ? "text-[#16A34A]" : "text-stone-400"
               }`}>
                 {stage.label}
               </span>
@@ -122,7 +122,7 @@ function ToggleRow({
       <div className="flex items-center gap-2">
         <div
           className="w-5 h-5 rounded flex items-center justify-center cursor-pointer transition-colors"
-          style={{ background: checked ? "#F5821F" : "#F4F3F1", border: `2px solid ${checked ? "#F5821F" : "#E7E5E4"}` }}
+          style={{ background: checked ? "var(--e-orange)" : "#F4F3F1", border: `2px solid ${checked ? "var(--e-orange)" : "#E7E5E4"}` }}
           onClick={() => onChange(!checked)}
         >
           {checked && <Check size={11} className="text-white" />}
@@ -191,7 +191,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide flex items-center gap-1.5">
+            <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide flex items-center gap-1.5">
               <User size={13} /> Client Info
             </h3>
             {isDirty && (
@@ -202,7 +202,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
                 </button>
                 <button onClick={handleSaveProfile}
                   className="flex items-center gap-1 text-xs text-white rounded-md px-2 py-0.5 font-semibold"
-                  style={{ background: "#F5821F" }}>
+                  style={{ background: "var(--e-orange)" }}>
                   <Save size={10} /> Save
                 </button>
               </div>
@@ -219,7 +219,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
             <div className="flex justify-between items-center"><span className="text-stone-400">Contract #</span>
               {record.contractId ? (
                 <button onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
-                  className="font-mono text-xs text-[#F5821F] hover:underline flex items-center gap-1">
+                  className="font-mono text-xs text-[--e-orange] hover:underline flex items-center gap-1">
                   {record.contractNumber ?? "View"} <ExternalLink size={10} />
                 </button>
               ) : <span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span>}
@@ -246,7 +246,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
         </div>
 
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Preferred Industry</h3>
+          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Preferred Industry</h3>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Industries (comma-separated)</Label>
             <Input value={preferredIndustryStr} onChange={e => { setPreferredIndustryStr(e.target.value); mark(); }} className="h-9 text-sm" placeholder="e.g. IT, Finance, Marketing" />
@@ -257,12 +257,12 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
       {/* Work Experience */}
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide flex items-center gap-1.5">
+          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide flex items-center gap-1.5">
             <Briefcase size={13} /> Work Experience
           </h3>
           <button
             onClick={() => setShowAddExp(v => !v)}
-            className="flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:underline"
+            className="flex items-center gap-1.5 text-xs font-medium text-[--e-orange] hover:underline"
           >
             <Plus size={13} /> Add Experience
           </button>
@@ -289,7 +289,7 @@ function StudentProfileTab({ record, onSave }: { record: InternshipDetail; onSav
               </div>
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleAddExp} disabled={!newExpRole.trim()} className="text-white text-xs h-8" style={{ background: "#F5821F" }}>Add</Button>
+              <Button onClick={handleAddExp} disabled={!newExpRole.trim()} className="text-white text-xs h-8" style={{ background: "var(--e-orange)" }}>Add</Button>
               <Button variant="outline" onClick={() => setShowAddExp(false)} className="text-xs h-8">Cancel</Button>
             </div>
           </div>
@@ -341,7 +341,7 @@ function CompanyMatchTab({ record, onSave }: { record: InternshipDetail; onSave:
   return (
     <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Company & Placement Details</h3>
+        <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Company & Placement Details</h3>
         {isDirty && (
           <div className="flex items-center gap-2">
             <button onClick={discard}
@@ -350,7 +350,7 @@ function CompanyMatchTab({ record, onSave }: { record: InternshipDetail; onSave:
             </button>
             <button onClick={() => { onSave({ positionTitle, employmentType, hourlyRate: hourlyRate || null, placementFeeType, startDate: startDate || null, endDate: endDate || null, notes }); setIsDirty(false); }}
               className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
-              style={{ background: "#F5821F" }}>
+              style={{ background: "var(--e-orange)" }}>
               <Save size={11} /> Save Changes
             </button>
           </div>
@@ -427,7 +427,7 @@ function ProgressTab({ record, onSave }: { record: InternshipDetail; onSave: (p:
   return (
     <div className="space-y-5">
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-        <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Document Readiness</h3>
+        <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Document Readiness</h3>
         <div className="space-y-2">
           <ToggleRow label="Resume Prepared"        checked={resumePrepared}        onChange={v => { setResumePrepared(v); mark(); }} />
           <ToggleRow label="Cover Letter Prepared"  checked={coverLetterPrepared}   onChange={v => { setCoverLetterPrepared(v); mark(); }} />
@@ -437,7 +437,7 @@ function ProgressTab({ record, onSave }: { record: InternshipDetail; onSave: (p:
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Interview</h3>
+          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Interview</h3>
           {isDirty && (
             <div className="flex items-center gap-2">
               <button onClick={discard}
@@ -446,7 +446,7 @@ function ProgressTab({ record, onSave }: { record: InternshipDetail; onSave: (p:
               </button>
               <button onClick={() => { onSave({ resumePrepared, coverLetterPrepared, referenceLetterIssued, interviewDate: interviewDate || null, interviewResult: interviewResult || null }); setIsDirty(false); }}
                 className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
-                style={{ background: "#F5821F" }}>
+                style={{ background: "var(--e-orange)" }}>
                 <Save size={11} /> Save Changes
               </button>
             </div>
@@ -534,7 +534,7 @@ export default function InternshipDetailPage() {
   const currentStage = record.status ?? "profile_review";
   const badgeMap: Record<string, { bg: string; text: string }> = {
     profile_review:   { bg: "#F4F3F1", text: "#57534E" },
-    company_matching: { bg: "#FEF0E3", text: "#F5821F" },
+    company_matching: { bg: "var(--e-orange-lt)", text: "var(--e-orange)" },
     interview:        { bg: "#FEF9C3", text: "#CA8A04" },
     confirmed:        { bg: "#DCFCE7", text: "#16A34A" },
     working:          { bg: "#F0FDF4", text: "#15803D" },
@@ -577,7 +577,7 @@ export default function InternshipDetailPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <FileText size={14} style={{ color: "#F5821F" }} />
+              <FileText size={14} style={{ color: "var(--e-orange)" }} />
               <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Related Contract</h3>
             </div>
             <div className="space-y-2 text-sm">
@@ -585,7 +585,7 @@ export default function InternshipDetailPage() {
                 <span className="text-stone-400">Contract #</span>
                 <button
                   onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
-                  className="flex items-center gap-1 font-mono text-xs text-[#F5821F] hover:underline font-semibold"
+                  className="flex items-center gap-1 font-mono text-xs text-[--e-orange] hover:underline font-semibold"
                 >
                   {record.contractNumber ?? "View"} <ExternalLink size={10} />
                 </button>
@@ -605,7 +605,7 @@ export default function InternshipDetailPage() {
           </div>
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <DollarSign size={14} style={{ color: "#F5821F" }} />
+              <DollarSign size={14} style={{ color: "var(--e-orange)" }} />
               <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Financial Summary</h3>
             </div>
             <div className="space-y-2 text-sm">
@@ -644,7 +644,7 @@ export default function InternshipDetailPage() {
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === t.key ? "border-[#F5821F] text-[#F5821F]" : "border-transparent text-stone-500 hover:text-stone-800"
+              tab === t.key ? "border-[--e-orange] text-[--e-orange]" : "border-transparent text-stone-500 hover:text-stone-800"
             }`}>
             {t.label}
           </button>

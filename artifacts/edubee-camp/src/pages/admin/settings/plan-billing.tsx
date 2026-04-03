@@ -36,14 +36,14 @@ function PlanCard({
     <div
       className="relative rounded-xl border-2 p-6 flex flex-col gap-4 transition-all"
       style={{
-        borderColor: isCurrent ? "#F5821F" : "#E8E6E2",
-        background:  isCurrent ? "#FEF0E3" : "white",
+        borderColor: isCurrent ? "var(--e-orange)" : "#E8E6E2",
+        background:  isCurrent ? "var(--e-orange-lt)" : "white",
         boxShadow:   "0 1px 3px rgba(0,0,0,0.06)",
       }}
     >
       {isPopular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-bold bg-[#F5821F] text-white">
+          <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-bold bg-[--e-orange] text-white">
             <Star size={10} fill="white" /> Most Popular
           </span>
         </div>
@@ -69,20 +69,20 @@ function PlanCard({
         </div>
         {Object.entries(feats).map(([key, enabled]) => (
           <div key={key} className={`flex items-center gap-1.5 text-sm ${enabled ? "text-[#57534E]" : "text-[#D4D0CB]"}`}>
-            <CheckCircle2 size={13} className={enabled ? "text-[#F5821F]" : "text-[#D4D0CB]"} />
+            <CheckCircle2 size={13} className={enabled ? "text-[--e-orange]" : "text-[#D4D0CB]"} />
             {FEATURES_LABEL[key] ?? key}
           </div>
         ))}
       </div>
 
       {isCurrent ? (
-        <div className="h-10 rounded-lg border-2 border-[#F5821F] text-sm font-semibold text-[#F5821F] flex items-center justify-center">
+        <div className="h-10 rounded-lg border-2 border-[--e-orange] text-sm font-semibold text-[--e-orange] flex items-center justify-center">
           Current Plan
         </div>
       ) : (
         <button
           onClick={onSelect}
-          className="h-10 rounded-lg border-2 border-[#E8E6E2] text-sm font-semibold text-[#57534E] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+          className="h-10 rounded-lg border-2 border-[#E8E6E2] text-sm font-semibold text-[#57534E] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
         >
           Upgrade
         </button>
@@ -108,7 +108,7 @@ export default function PlanBilling() {
 
   if (loadingPlan) return (
     <div className="flex items-center justify-center h-48">
-      <Loader2 size={24} className="animate-spin text-[#F5821F]" />
+      <Loader2 size={24} className="animate-spin text-[--e-orange]" />
     </div>
   );
 
@@ -155,7 +155,7 @@ export default function PlanBilling() {
                 className="h-full rounded-full"
                 style={{
                   width: `${Math.min(100, ((plan?.currentUsers ?? 0) / (plan?.maxUsers ?? 5)) * 100)}%`,
-                  background: "#F5821F",
+                  background: "var(--e-orange)",
                 }}
               />
             </div>
@@ -174,7 +174,7 @@ export default function PlanBilling() {
       <div>
         <h2 className="text-sm font-semibold text-[#1C1917] mb-4">Compare Plans</h2>
         {loadingPlans ? (
-          <div className="flex items-center justify-center h-24"><Loader2 size={20} className="animate-spin text-[#F5821F]" /></div>
+          <div className="flex items-center justify-center h-24"><Loader2 size={20} className="animate-spin text-[--e-orange]" /></div>
         ) : (
           <div className="grid grid-cols-3 gap-4">
             {plans.map((p: any) => (

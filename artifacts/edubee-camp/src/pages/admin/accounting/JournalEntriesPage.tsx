@@ -63,7 +63,7 @@ const ENTRY_TYPES = [
 ];
 
 const ENTRY_TYPE_STYLE: Record<string, { bg: string; text: string }> = {
-  trust_receipt:       { bg: "#FEF0E3", text: "#C2570A" },
+  trust_receipt:       { bg: "var(--e-orange-lt)", text: "#C2570A" },
   service_fee:         { bg: "#DCFCE7", text: "#16A34A" },
   school_transfer:     { bg: "#FEF9C3", text: "#CA8A04" },
   commission_received: { bg: "#EDE9FE", text: "#7C3AED" },
@@ -112,8 +112,8 @@ function KpiCard({
     <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-1.5">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-stone-500 uppercase tracking-wide">{label}</span>
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#FEF0E3" }}>
-          <Icon size={14} style={{ color: "#F5821F" }} />
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "var(--e-orange-lt)" }}>
+          <Icon size={14} style={{ color: "var(--e-orange)" }} />
         </div>
       </div>
       <p className="text-xl font-bold" style={{ color }}>
@@ -131,7 +131,7 @@ function CoaCell({ code, name, side }: { code: string; name?: string; side: "DR"
       <span
         className="text-[10px] font-bold px-1 py-0.5 rounded"
         style={side === "DR"
-          ? { background: "#FEF0E3", color: "#C2570A" }
+          ? { background: "var(--e-orange-lt)", color: "#C2570A" }
           : { background: "#DCFCE7", color: "#16A34A" }}
       >
         {side}
@@ -272,7 +272,7 @@ export default function JournalEntriesPage() {
             onClick={() => setEntryType("")}
             className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
               entryType === ""
-                ? "border-[#F5821F] bg-[#FEF0E3] text-[#F5821F]"
+                ? "border-[--e-orange] bg-[--e-orange-lt] text-[--e-orange]"
                 : "border-stone-200 text-stone-500 hover:border-stone-300"
             }`}
           >
@@ -284,7 +284,7 @@ export default function JournalEntriesPage() {
               onClick={() => setEntryType(e => e === t.key ? "" : t.key)}
               className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
                 entryType === t.key
-                  ? "border-[#F5821F] bg-[#FEF0E3] text-[#F5821F]"
+                  ? "border-[--e-orange] bg-[--e-orange-lt] text-[--e-orange]"
                   : "border-stone-200 text-stone-500 hover:border-stone-300"
               }`}
             >
@@ -324,24 +324,24 @@ export default function JournalEntriesPage() {
         <div className="flex flex-wrap gap-2">
           {entryType && (
             <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium"
-              style={{ background: "#FEF0E3", borderColor: "#FDBA74", color: "#C2570A" }}>
+              style={{ background: "var(--e-orange-lt)", borderColor: "#FDBA74", color: "#C2570A" }}>
               <Filter size={10} />
               {entryTypeLabel(entryType)}
-              <button onClick={() => setEntryType("")} className="ml-0.5 hover:text-[#F5821F]"><X size={10} /></button>
+              <button onClick={() => setEntryType("")} className="ml-0.5 hover:text-[--e-orange]"><X size={10} /></button>
             </span>
           )}
           {fromDate && (
             <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium"
-              style={{ background: "#FEF0E3", borderColor: "#FDBA74", color: "#C2570A" }}>
+              style={{ background: "var(--e-orange-lt)", borderColor: "#FDBA74", color: "#C2570A" }}>
               From {fmtDate(fromDate)}
-              <button onClick={() => setFromDate("")} className="ml-0.5 hover:text-[#F5821F]"><X size={10} /></button>
+              <button onClick={() => setFromDate("")} className="ml-0.5 hover:text-[--e-orange]"><X size={10} /></button>
             </span>
           )}
           {toDate && (
             <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium"
-              style={{ background: "#FEF0E3", borderColor: "#FDBA74", color: "#C2570A" }}>
+              style={{ background: "var(--e-orange-lt)", borderColor: "#FDBA74", color: "#C2570A" }}>
               To {fmtDate(toDate)}
-              <button onClick={() => setToDate("")} className="ml-0.5 hover:text-[#F5821F]"><X size={10} /></button>
+              <button onClick={() => setToDate("")} className="ml-0.5 hover:text-[--e-orange]"><X size={10} /></button>
             </span>
           )}
         </div>
@@ -376,7 +376,7 @@ export default function JournalEntriesPage() {
                     <p className="text-sm font-medium">No journal entries found</p>
                     {hasFilters && (
                       <button onClick={clearFilters}
-                        className="text-xs text-[#F5821F] hover:underline">
+                        className="text-xs text-[--e-orange] hover:underline">
                         Clear filters
                       </button>
                     )}
@@ -387,7 +387,7 @@ export default function JournalEntriesPage() {
               sorted.map(je => {
                 const typeStyle = ENTRY_TYPE_STYLE[je.entryType ?? ""] ?? { bg: "#F4F3F1", text: "#57534E" };
                 return (
-                  <tr key={je.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors" onClick={() => navigate(`/admin/accounting/journal/${je.id}`)}>
+                  <tr key={je.id} className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors" onClick={() => navigate(`/admin/accounting/journal/${je.id}`)}>
                     {/* Date */}
                     <td className="px-4 py-3 text-stone-700 tabular-nums text-xs whitespace-nowrap">
                       {fmtDate(je.entryDate)}

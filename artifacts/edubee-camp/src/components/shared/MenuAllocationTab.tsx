@@ -113,7 +113,7 @@ function RenameModal({ open, title, initialValue, onConfirm, onClose }: RenameMo
             width: "100%", height: 40, border: "1.5px solid #E8E6E2", borderRadius: 8,
             padding: "0 12px", fontSize: 14, marginBottom: 16, outline: "none", boxSizing: "border-box",
           }}
-          onFocus={(e) => (e.target.style.borderColor = "#F5821F")}
+          onFocus={(e) => (e.target.style.borderColor = "var(--e-orange)")}
           onBlur={(e) => (e.target.style.borderColor = "#E8E6E2")}
         />
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -125,7 +125,7 @@ function RenameModal({ open, title, initialValue, onConfirm, onClose }: RenameMo
             disabled={!value.trim()}
             style={{
               padding: "8px 16px", border: "none", borderRadius: 8,
-              background: value.trim() ? "#F5821F" : "#E8E6E2",
+              background: value.trim() ? "var(--e-orange)" : "#E8E6E2",
               color: value.trim() ? "#fff" : "#A8A29E",
               fontSize: 13, fontWeight: 600, cursor: value.trim() ? "pointer" : "not-allowed",
             }}
@@ -445,7 +445,7 @@ export default function MenuAllocationTab() {
                   >
                     <Trash2 size={12} />
                   </button>
-                  <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", background: "#FEF0E3", color: "#F5821F", padding: "3px 8px", borderRadius: 999 }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", background: "var(--e-orange-lt)", color: "var(--e-orange)", padding: "3px 8px", borderRadius: 999 }}>
                     Category
                   </span>
                 </div>
@@ -511,7 +511,7 @@ export default function MenuAllocationTab() {
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               transition: "all .15s",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#F5821F"; e.currentTarget.style.color = "#F5821F"; e.currentTarget.style.background = "#FEF0E3"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--e-orange)"; e.currentTarget.style.color = "var(--e-orange)"; e.currentTarget.style.background = "var(--e-orange-lt)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#E8E6E2"; e.currentTarget.style.color = "#57534E"; e.currentTarget.style.background = "transparent"; }}
           >
             <Plus size={14} /> Add Category
@@ -531,7 +531,7 @@ export default function MenuAllocationTab() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  style={{ padding: "6px 14px", border: "none", borderRadius: 7, background: saving ? "#E8E6E2" : "#F5821F", color: saving ? "#A8A29E" : "#fff", fontSize: 12, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                  style={{ padding: "6px 14px", border: "none", borderRadius: 7, background: saving ? "#E8E6E2" : "var(--e-orange)", color: saving ? "#A8A29E" : "#fff", fontSize: 12, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4 }}
                 >
                   <Save size={11} /> {saving ? "Saving…" : "Save Order"}
                 </button>
@@ -544,8 +544,8 @@ export default function MenuAllocationTab() {
         <div>
           <div style={{ background: "#fff", border: "1px solid #E8E6E2", borderRadius: 12, padding: 16 }}>
             <h3 style={{ fontSize: 13, fontWeight: 600, color: "#1C1917", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 18, height: 18, borderRadius: 4, background: "#FEF0E3", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 9, color: "#F5821F" }}>▶</span>
+              <span style={{ width: 18, height: 18, borderRadius: 4, background: "var(--e-orange-lt)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 9, color: "var(--e-orange)" }}>▶</span>
               </span>
               Sidebar Preview
             </h3>
@@ -578,7 +578,7 @@ export default function MenuAllocationTab() {
               ["🗑", "Click the trash icon to delete a category"],
             ].map(([icon, desc]) => (
               <div key={icon} style={{ display: "flex", gap: 8, marginBottom: 8, fontSize: 12, color: "#57534E", lineHeight: 1.5 }}>
-                <span style={{ width: 20, height: 20, borderRadius: 4, background: "#FEF0E3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#F5821F", flexShrink: 0 }}>
+                <span style={{ width: 20, height: 20, borderRadius: 4, background: "var(--e-orange-lt)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "var(--e-orange)", flexShrink: 0 }}>
                   {icon}
                 </span>
                 <span>{desc}</span>

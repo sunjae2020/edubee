@@ -124,7 +124,7 @@ function AddReportModal({
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FileText size={16} className="text-[#F5821F]" />
+            <FileText size={16} className="text-[--e-orange]" />
             <h3 className="text-base font-bold text-stone-800">Add Monthly Report</h3>
           </div>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-700"><X size={16} /></button>
@@ -153,7 +153,7 @@ function AddReportModal({
           >
             <div
               className="w-5 h-5 rounded flex items-center justify-center"
-              style={{ background: parentAcked ? "#F5821F" : "#F4F3F1", border: `2px solid ${parentAcked ? "#F5821F" : "#E7E5E4"}` }}
+              style={{ background: parentAcked ? "var(--e-orange)" : "#F4F3F1", border: `2px solid ${parentAcked ? "var(--e-orange)" : "#E7E5E4"}` }}
             >
               {parentAcked && <Check size={11} className="text-white" />}
             </div>
@@ -164,7 +164,7 @@ function AddReportModal({
           <Button
             onClick={() => mutation.mutate()}
             disabled={!month || mutation.isPending}
-            className="flex-1 text-white" style={{ background: "#F5821F" }}
+            className="flex-1 text-white" style={{ background: "var(--e-orange)" }}
           >
             {mutation.isPending ? "Saving…" : "Add Report"}
           </Button>
@@ -206,14 +206,14 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Client</h3>
+          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Client</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.clientName ?? record.studentName ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-stone-400">Agent</span><span className="text-stone-600">{record.agentName ?? "—"}</span></div>
             <div className="flex justify-between items-center"><span className="text-stone-400">Contract #</span>
               {record.contractId ? (
                 <button onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
-                  className="font-mono text-xs text-[#F5821F] hover:underline flex items-center gap-1">
+                  className="font-mono text-xs text-[--e-orange] hover:underline flex items-center gap-1">
                   {record.contractNumber ?? "View"} <ExternalLink size={10} />
                 </button>
               ) : <span className="font-mono text-xs text-stone-500">{record.contractNumber ?? "—"}</span>}
@@ -225,14 +225,14 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
         </div>
 
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">School Registration</h3>
+          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">School Registration</h3>
           <div
             className="flex items-center gap-2 p-2.5 rounded-lg border border-stone-200 cursor-pointer"
             onClick={() => { setRegistered(!registered); mark(); }}
           >
             <div
               className="w-5 h-5 rounded flex items-center justify-center"
-              style={{ background: registered ? "#F5821F" : "#F4F3F1", border: `2px solid ${registered ? "#F5821F" : "#E7E5E4"}` }}
+              style={{ background: registered ? "var(--e-orange)" : "#F4F3F1", border: `2px solid ${registered ? "var(--e-orange)" : "#E7E5E4"}` }}
             >
               {registered && <Check size={11} className="text-white" />}
             </div>
@@ -247,7 +247,7 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
 
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-wide">Service Details</h3>
+          <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-wide">Service Details</h3>
           {isDirty && (
             <div className="flex items-center gap-2">
               <button onClick={discard}
@@ -256,7 +256,7 @@ function DetailsTab({ record, onSave }: { record: GuardianDetail; onSave: (p: ob
               </button>
               <button onClick={() => { onSave({ status, billingCycle: billingCycle || null, serviceStartDate: serviceStart || null, serviceEndDate: serviceEnd || null, emergencyContact: emergencyContact || null, notes, officialGuardianRegistered: registered, schoolGuardianRegistrationDate: regDate || null }); setIsDirty(false); }}
                 className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
-                style={{ background: "#F5821F" }}>
+                style={{ background: "var(--e-orange)" }}>
                 <Save size={11} /> Save Changes
               </button>
             </div>
@@ -324,7 +324,7 @@ function MonthlyReportsTab({ record }: { record: GuardianDetail }) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-stone-700">Monthly Reports ({reports.length})</h3>
         <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:underline">
+          className="flex items-center gap-1.5 text-xs font-medium text-[--e-orange] hover:underline">
           <Plus size={13} /> Add Report
         </button>
       </div>
@@ -378,7 +378,7 @@ function SchoolEventsTab({ record }: { record: GuardianDetail }) {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               {["Date", "Event", "Notes"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#F5821F] uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[--e-orange] uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
@@ -416,7 +416,7 @@ function MedicalTab({ record }: { record: GuardianDetail }) {
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
                 {["Date", "Description", "Action Taken"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#F5821F] uppercase tracking-wide">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[--e-orange] uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -434,14 +434,14 @@ function MedicalTab({ record }: { record: GuardianDetail }) {
 
       <div>
         <h3 className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-1.5">
-          <HeartPulse size={14} className="text-[#F5821F]" /> Welfare Interventions ({welfare.length})
+          <HeartPulse size={14} className="text-[--e-orange]" /> Welfare Interventions ({welfare.length})
         </h3>
         <div className="rounded-xl border border-stone-200 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
                 {["Date", "Description", "Outcome"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#F5821F] uppercase tracking-wide">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[--e-orange] uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -482,7 +482,7 @@ function BillingTab({ record, id }: { record: GuardianDetail; id: string }) {
 
   const INV_STATUS_STYLE: Record<string, { bg: string; text: string }> = {
     draft:   { bg: "#F4F3F1", text: "#57534E" },
-    issued:  { bg: "#FEF0E3", text: "#F5821F" },
+    issued:  { bg: "var(--e-orange-lt)", text: "var(--e-orange)" },
     paid:    { bg: "#DCFCE7", text: "#16A34A" },
     overdue: { bg: "#FEF2F2", text: "#DC2626" },
   };
@@ -497,7 +497,7 @@ function BillingTab({ record, id }: { record: GuardianDetail; id: string }) {
         <Button
           onClick={() => generateMutation.mutate()}
           disabled={generateMutation.isPending || !record.contractId}
-          className="flex items-center gap-1.5 text-white text-xs h-9" style={{ background: "#F5821F" }}
+          className="flex items-center gap-1.5 text-white text-xs h-9" style={{ background: "var(--e-orange)" }}
         >
           <DollarSign size={13} />
           {generateMutation.isPending ? "Generating…" : "Generate This Month Invoice"}
@@ -509,7 +509,7 @@ function BillingTab({ record, id }: { record: GuardianDetail; id: string }) {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               {["Invoice #", "Seq #", "Amount", "Status", "Created"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#F5821F] uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[--e-orange] uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
@@ -619,15 +619,15 @@ export default function GuardianDetailPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <FileText size={14} style={{ color: "#F5821F" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Related Contract</h3>
+              <FileText size={14} style={{ color: "var(--e-orange)" }} />
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Related Contract</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-stone-400">Contract #</span>
                 <button
                   onClick={() => navigate(`/admin/crm/contracts/${record.contractId}`)}
-                  className="flex items-center gap-1 font-mono text-xs text-[#F5821F] hover:underline font-semibold"
+                  className="flex items-center gap-1 font-mono text-xs text-[--e-orange] hover:underline font-semibold"
                 >
                   {record.contractNumber ?? "View"} <ExternalLink size={10} />
                 </button>
@@ -647,8 +647,8 @@ export default function GuardianDetailPage() {
           </div>
           <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <DollarSign size={14} style={{ color: "#F5821F" }} />
-              <h3 className="text-xs font-bold uppercase tracking-wide text-[#F5821F]">Financial Summary</h3>
+              <DollarSign size={14} style={{ color: "var(--e-orange)" }} />
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[--e-orange]">Financial Summary</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -681,7 +681,7 @@ export default function GuardianDetailPage() {
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === t.key ? "border-[#F5821F] text-[#F5821F]" : "border-transparent text-stone-500 hover:text-stone-800"
+              tab === t.key ? "border-[--e-orange] text-[--e-orange]" : "border-transparent text-stone-500 hover:text-stone-800"
             }`}>
             {t.label}
           </button>

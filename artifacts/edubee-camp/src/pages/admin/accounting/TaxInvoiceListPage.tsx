@@ -181,7 +181,7 @@ function NewTaxInvoiceModal({
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
               <input
-                className="w-full pl-8 pr-3 py-2 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30"
+                className="w-full pl-8 pr-3 py-2 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30"
                 placeholder="Search by student name, contract #, or program…"
                 value={cpQuery}
                 onChange={e => { setCpQuery(e.target.value); setCpOpen(true); }}
@@ -199,7 +199,7 @@ function NewTaxInvoiceModal({
                     <div className="text-sm font-medium text-[#1C1917]">{cp.studentName}</div>
                     <div className="text-xs text-[#78716C]">{cp.contractNumber} · {cp.name}</div>
                     {cp.commissionAmount && (
-                      <div className="text-xs text-[#F5821F] font-medium mt-0.5">{fmtAud(cp.commissionAmount)} commission</div>
+                      <div className="text-xs text-[--e-orange] font-medium mt-0.5">{fmtAud(cp.commissionAmount)} commission</div>
                     )}
                   </button>
                 ))}
@@ -222,7 +222,7 @@ function NewTaxInvoiceModal({
             <div className="relative">
               <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
               <input
-                className="w-full pl-8 pr-3 py-2 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30"
+                className="w-full pl-8 pr-3 py-2 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30"
                 placeholder="Search school / institution name…"
                 value={acctQuery}
                 onChange={e => { setAcctQuery(e.target.value); setAcctOpen(true); }}
@@ -295,7 +295,7 @@ function NewTaxInvoiceModal({
               type="checkbox"
               checked={isGstFree}
               onChange={e => setIsGstFree(e.target.checked)}
-              className="w-4 h-4 accent-[#F5821F]"
+              className="w-4 h-4 accent-[--e-orange]"
             />
             <span className="text-sm text-[#57534E]">GST-Free (overseas / exempt school)</span>
           </label>
@@ -311,7 +311,7 @@ function NewTaxInvoiceModal({
                 <span>{isGstFree ? <span className="text-xs text-[#A8A29E]">GST-free</span> : fmtAud(gst)}</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-[#1C1917] pt-1 border-t border-[#E8E6E2]">
-                <span>Total</span><span className="text-[#F5821F]">{fmtAud(total)}</span>
+                <span>Total</span><span className="text-[--e-orange]">{fmtAud(total)}</span>
               </div>
             </div>
           )}
@@ -319,7 +319,7 @@ function NewTaxInvoiceModal({
         <div className="flex gap-3 px-6 pb-5">
           <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
           <Button
-            className="flex-1 bg-[#F5821F] hover:bg-[#E5721F] text-white"
+            className="flex-1 bg-[--e-orange] hover:bg-[#E5721F] text-white"
             onClick={handleCreate}
             disabled={creating}
           >
@@ -396,7 +396,7 @@ function EmailTaxInvoiceModal({
         </div>
         <div className="flex gap-3 px-6 pb-5">
           <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1 bg-[#F5821F] hover:bg-[#E5721F] text-white" onClick={handleSend} disabled={sending}>
+          <Button className="flex-1 bg-[--e-orange] hover:bg-[#E5721F] text-white" onClick={handleSend} disabled={sending}>
             <Send size={14} className="mr-2" />{sending ? "Sending…" : "Send Email"}
           </Button>
         </div>
@@ -409,6 +409,7 @@ function EmailTaxInvoiceModal({
 function printTaxInvoice(row: any) {
   const w = window.open("", "_blank", "width=900,height=700");
   if (!w) return;
+  const _bc = getComputedStyle(document.documentElement).getPropertyValue("--e-orange").trim() || "#F5821F";
   const typeLabel = row.invoiceType === "gross" ? "GROSS" : "NET";
   const typeColor = row.invoiceType === "gross" ? "#0284c7" : "#7c3aed";
   w.document.write(`<!DOCTYPE html><html><head>
@@ -418,13 +419,13 @@ function printTaxInvoice(row: any) {
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family: Arial, sans-serif; font-size: 13px; color: #1C1917; background:#fff; padding: 40px; }
   .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; }
-  .logo-area h1 { font-size:22px; font-weight:800; color:#F5821F; }
+  .logo-area h1 { font-size:22px; font-weight:800; color:${_bc}; }
   .logo-area p { color:#78716C; font-size:12px; margin-top:2px; }
   .ref-area { text-align:right; }
   .ref-area .ref { font-size:18px; font-weight:700; color:#1C1917; font-family:monospace; }
   .ref-area .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;
     background:${typeColor}22; color:${typeColor}; border:1px solid ${typeColor}44; margin-top:6px; }
-  .divider { border:none; border-top:2px solid #F5821F; margin:0 0 24px 0; }
+  .divider { border:none; border-top:2px solid ${_bc}; margin:0 0 24px 0; }
   .meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px; }
   .meta-section h3 { font-size:10px; font-weight:700; text-transform:uppercase; color:#78716C; letter-spacing:0.05em; margin-bottom:6px; }
   .meta-section p { font-size:13px; color:#1C1917; line-height:1.6; }
@@ -502,7 +503,7 @@ function TaxInvoiceDetailSheet({
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader className="mb-6">
           <SheetTitle className="flex items-center gap-2 text-base">
-            <FileText size={16} className="text-[#F5821F]" />
+            <FileText size={16} className="text-[--e-orange]" />
             {row.invoiceRef}
             <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium ${STATUS_STYLES[row.status] ?? ""}`}>
               {row.status}
@@ -594,7 +595,7 @@ function TaxInvoiceDetailSheet({
               {row.schoolAccountId && (
                 <button
                   onClick={() => navigate(`/admin/crm/accounts/${row.schoolAccountId}`)}
-                  className="text-[#F5821F] hover:text-[#E5721F] flex items-center gap-1 text-xs font-medium"
+                  className="text-[--e-orange] hover:text-[#E5721F] flex items-center gap-1 text-xs font-medium"
                 >
                   <ExternalLink size={12} />View
                 </button>
@@ -620,7 +621,7 @@ function TaxInvoiceDetailSheet({
               {row.contractId && (
                 <button
                   onClick={() => navigate(`/admin/crm/contracts/${row.contractId}`)}
-                  className="text-[#F5821F] hover:text-[#E5721F] flex items-center gap-1 text-xs font-medium"
+                  className="text-[--e-orange] hover:text-[#E5721F] flex items-center gap-1 text-xs font-medium"
                 >
                   <ExternalLink size={12} />Contract
                 </button>
@@ -758,13 +759,13 @@ export default function TaxInvoiceListPage() {
       <div className="mb-6 flex items-start justify-between flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <FileText size={20} className="text-[#F5821F]" />
+            <FileText size={20} className="text-[--e-orange]" />
             <h1 className="text-xl font-bold text-[#1C1917]">Tax Invoices</h1>
           </div>
           <p className="text-sm text-[#78716C]">Commission tax invoices issued to schools for NET and GROSS remittances</p>
         </div>
         <Button
-          className="bg-[#F5821F] hover:bg-[#E5721F] text-white gap-2"
+          className="bg-[--e-orange] hover:bg-[#E5721F] text-white gap-2"
           onClick={() => setNewOpen(true)}
         >
           <Plus size={16} />New Tax Invoice
@@ -774,7 +775,7 @@ export default function TaxInvoiceListPage() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total Invoiced", value: fmtAud(totals.total), icon: DollarSign, color: "text-[#F5821F]" },
+          { label: "Total Invoiced", value: fmtAud(totals.total), icon: DollarSign, color: "text-[--e-orange]" },
           { label: "Commission", value: fmtAud(totals.commission), icon: FileText, color: "text-blue-600" },
           { label: "GST Collected", value: fmtAud(totals.gst), icon: CheckCircle2, color: "text-green-600" },
           { label: "Pending (Draft)", value: `${totals.draft} invoices`, icon: Clock, color: "text-amber-600" },
@@ -798,7 +799,7 @@ export default function TaxInvoiceListPage() {
                 key={t.key}
                 onClick={() => setTypeTab(t.key)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  typeTab === t.key ? "bg-[#F5821F] text-white" : "text-[#57534E] hover:bg-[#F5F4F2]"
+                  typeTab === t.key ? "bg-[--e-orange] text-white" : "text-[#57534E] hover:bg-[#F5F4F2]"
                 }`}
               >{t.label}</button>
             ))}
@@ -842,7 +843,7 @@ export default function TaxInvoiceListPage() {
               {sorted.map(row => (
                 <tr
                   key={row.id}
-                  className="border-b border-[#F5F4F2] hover:bg-[#FEF0E3] transition-colors cursor-pointer"
+                  className="border-b border-[#F5F4F2] hover:bg-[--e-orange-lt] transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/accounting/tax-invoices/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-mono text-xs text-[#1C1917] font-semibold whitespace-nowrap">{row.invoiceRef}</td>
@@ -862,7 +863,7 @@ export default function TaxInvoiceListPage() {
                   >
                     {row.schoolAccountId ? (
                       <button
-                        className="hover:text-[#F5821F] hover:underline text-left truncate max-w-[130px] block"
+                        className="hover:text-[--e-orange] hover:underline text-left truncate max-w-[130px] block"
                         onClick={e => { e.stopPropagation(); navigate(`/admin/crm/accounts/${row.schoolAccountId}`); }}
                         title="View school account"
                       >

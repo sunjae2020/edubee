@@ -51,8 +51,8 @@ export default function Notifications() {
     <div className="p-6 max-w-2xl">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center">
-            <Bell className="w-5 h-5 text-[#F5821F]" />
+          <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center">
+            <Bell className="w-5 h-5 text-[--e-orange]" />
           </div>
           <div>
             <h1 className="text-lg font-bold">Notifications</h1>
@@ -81,7 +81,7 @@ export default function Notifications() {
           {notifications.map(n => (
             <div
               key={n.id}
-              className={`rounded-lg border p-4 flex items-start gap-3 transition-all cursor-pointer hover:border-[#F5821F]/30 ${!n.isRead ? "bg-[#F5821F]/5 border-[#F5821F]/20" : "bg-white"}`}
+              className={`rounded-lg border p-4 flex items-start gap-3 transition-all cursor-pointer hover:border-[--e-orange]/30 ${!n.isRead ? "bg-[--e-orange]/5 border-[--e-orange]/20" : "bg-white"}`}
               onClick={() => !n.isRead && markOneMutation.mutate(n.id)}
             >
               <span className="text-xl shrink-0 mt-0.5">{NOTIF_ICONS[n.type ?? ""] ?? NOTIF_ICONS.default}</span>
@@ -90,7 +90,7 @@ export default function Notifications() {
                   <p className="text-sm font-medium">{n.title}</p>
                   {!n.isRead && (
                     <button
-                      className="shrink-0 p-1 rounded text-muted-foreground hover:text-[#F5821F] hover:bg-[#F5821F]/10 transition-colors"
+                      className="shrink-0 p-1 rounded text-muted-foreground hover:text-[--e-orange] hover:bg-[--e-orange]/10 transition-colors"
                       onClick={e => { e.stopPropagation(); markOneMutation.mutate(n.id); }}
                       title="Mark as read"
                     >
@@ -103,7 +103,7 @@ export default function Notifications() {
                   {n.createdAt ? new Date(n.createdAt).toLocaleString("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
                 </p>
               </div>
-              {!n.isRead && <div className="w-2 h-2 rounded-full bg-[#F5821F] mt-1.5 shrink-0" />}
+              {!n.isRead && <div className="w-2 h-2 rounded-full bg-[--e-orange] mt-1.5 shrink-0" />}
             </div>
           ))}
         </div>

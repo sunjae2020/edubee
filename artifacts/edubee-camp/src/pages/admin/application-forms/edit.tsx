@@ -87,12 +87,12 @@ export default function ApplicationFormEdit() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const inputCls = "h-9 text-sm border-[#E8E6E2] focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F] rounded-lg";
+  const inputCls = "h-9 text-sm border-[#E8E6E2] focus-visible:ring-[--e-orange]/40 focus-visible:border-[--e-orange] rounded-lg";
 
   if (!isNew && isLoading) {
     return (
       <div className="min-h-screen bg-[#FAFAF9] flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-[#F5821F]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[--e-orange]" />
       </div>
     );
   }
@@ -116,7 +116,7 @@ export default function ApplicationFormEdit() {
           <Button variant="outline" size="sm" onClick={() => setLocation("/admin/application-forms")}>Cancel</Button>
           <Button
             size="sm"
-            className="bg-[#F5821F] hover:bg-[#D96A0A] text-white"
+            className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white"
             disabled={!name || !slug || save.isPending}
             onClick={() => save.mutate()}
           >
@@ -129,7 +129,7 @@ export default function ApplicationFormEdit() {
       {/* Form */}
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
         <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden">
-          <div className="bg-[#F5821F] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5">
+          <div className="bg-[--e-orange] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5">
             Form Details
           </div>
           <div className="p-5 space-y-5">
@@ -165,7 +165,7 @@ export default function ApplicationFormEdit() {
                   <button
                     type="button"
                     onClick={copySlug}
-                    className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#E8E6E2] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+                    className="shrink-0 flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[#E8E6E2] hover:bg-[--e-orange-lt] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
                   >
                     {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                   </button>
@@ -190,7 +190,7 @@ export default function ApplicationFormEdit() {
                       value={opt.value}
                       checked={formType === opt.value}
                       onChange={() => setFormType(opt.value)}
-                      className="mt-0.5 accent-[#F5821F]"
+                      className="mt-0.5 accent-[--e-orange]"
                     />
                     <div>
                       <p className="text-sm font-medium text-[#1C1917]">{opt.label}</p>
@@ -215,7 +215,7 @@ export default function ApplicationFormEdit() {
                       value={v}
                       checked={visibility === v}
                       onChange={() => setVisibility(v)}
-                      className="mt-0.5 accent-[#F5821F]"
+                      className="mt-0.5 accent-[--e-orange]"
                     />
                     <div>
                       <p className="text-sm font-medium text-[#1C1917] capitalize">{v}</p>
@@ -238,7 +238,7 @@ export default function ApplicationFormEdit() {
                 onChange={e => setDescription(e.target.value)}
                 placeholder="Optional description for this form..."
                 rows={3}
-                className="text-sm border-[#E8E6E2] focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F] resize-none rounded-lg"
+                className="text-sm border-[#E8E6E2] focus-visible:ring-[--e-orange]/40 focus-visible:border-[--e-orange] resize-none rounded-lg"
               />
             </div>
 
@@ -263,7 +263,7 @@ export default function ApplicationFormEdit() {
               <button
                 type="button"
                 onClick={() => setStatus(s => !s)}
-                className={`relative w-11 h-6 rounded-full transition-colors ${status ? "bg-[#F5821F]" : "bg-[#E8E6E2]"}`}
+                className={`relative w-11 h-6 rounded-full transition-colors ${status ? "bg-[--e-orange]" : "bg-[#E8E6E2]"}`}
               >
                 <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${status ? "left-6" : "left-1"}`} />
               </button>
@@ -274,7 +274,7 @@ export default function ApplicationFormEdit() {
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setLocation("/admin/application-forms")}>Cancel</Button>
           <Button
-            className="bg-[#F5821F] hover:bg-[#D96A0A] text-white"
+            className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white"
             disabled={!name || !slug || save.isPending}
             onClick={() => save.mutate()}
           >

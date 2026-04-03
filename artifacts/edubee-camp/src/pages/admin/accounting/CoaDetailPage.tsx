@@ -44,14 +44,14 @@ const EMPTY_FORM: FormState = { name: "", accountType: "asset", description: "",
 function codeBadgeColor(code: string): string {
   if (code.startsWith("1")) return "#DCFCE7";
   if (code.startsWith("2")) return "#FEF9C3";
-  if (code.startsWith("3")) return "#FEF0E3";
+  if (code.startsWith("3")) return "var(--e-orange-lt)";
   if (code.startsWith("4")) return "#FEF2F2";
   return "#F4F3F1";
 }
 function codeTextColor(code: string): string {
   if (code.startsWith("1")) return "#16A34A";
   if (code.startsWith("2")) return "#CA8A04";
-  if (code.startsWith("3")) return "#F5821F";
+  if (code.startsWith("3")) return "var(--e-orange)";
   if (code.startsWith("4")) return "#DC2626";
   return "#57534E";
 }
@@ -121,7 +121,7 @@ export default function CoaDetailPage() {
       <div className="flex flex-col items-center justify-center py-24 text-[#A8A29E]">
         <BookOpen className="w-10 h-10 mb-3" strokeWidth={1} />
         <p className="text-sm">Account not found.</p>
-        <Button variant="link" className="text-[#F5821F] mt-2" onClick={() => navigate("/admin/accounting/coa")}>
+        <Button variant="link" className="text-[--e-orange] mt-2" onClick={() => navigate("/admin/accounting/coa")}>
           Back to Chart of Accounts
         </Button>
       </div>
@@ -160,7 +160,7 @@ export default function CoaDetailPage() {
               <RotateCcw size={13} /> Discard
             </Button>
             <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}
-              className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
+              className="h-9 gap-1.5 text-white" style={{ background: "var(--e-orange)" }}>
               {save.isPending
                 ? <><Loader2 size={13} className="animate-spin" /> Saving…</>
                 : <><Save size={13} /> Save Changes</>}
@@ -200,7 +200,7 @@ export default function CoaDetailPage() {
           <Input
             value={form.name}
             onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setNameError(""); }}
-            className={`h-10 border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 ${nameError ? "border-[#DC2626]" : ""}`}
+            className={`h-10 border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 ${nameError ? "border-[#DC2626]" : ""}`}
           />
           {nameError && <p className="text-xs text-[#DC2626]">{nameError}</p>}
         </div>
@@ -223,7 +223,7 @@ export default function CoaDetailPage() {
             value={form.description}
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
             rows={3}
-            className="border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 text-sm resize-none"
+            className="border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 text-sm resize-none"
             placeholder="Describe this account..."
           />
         </div>
@@ -234,7 +234,7 @@ export default function CoaDetailPage() {
             id="is-active"
             checked={form.isActive}
             onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
-            className="h-4 w-4 rounded border-[#E8E6E2] accent-[#F5821F]"
+            className="h-4 w-4 rounded border-[#E8E6E2] accent-[--e-orange]"
           />
           <Label htmlFor="is-active" className="text-sm text-[#57534E] cursor-pointer">
             Active

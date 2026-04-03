@@ -339,7 +339,7 @@ export default function PackageDetail() {
         canEdit && !isEditing ? (
           <Button
             size="sm"
-            className="gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white border-0"
+            className="gap-1.5 bg-[--e-orange] hover:bg-[#d97706] text-white border-0"
             disabled={cloneMutation.isPending}
             onClick={() => cloneMutation.mutate()}
           >
@@ -354,12 +354,12 @@ export default function PackageDetail() {
     >
 
       {/* ── Package Group Info (read-only lookup card) ───────────────── */}
-      <div className="rounded-xl border bg-gradient-to-br from-[#F5821F]/5 to-orange-50/50 p-4 mb-2">
+      <div className="rounded-xl border bg-gradient-to-br from-[--e-orange]/5 to-orange-50/50 p-4 mb-2">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-bold text-[#F5821F] uppercase tracking-wide">Package Group Info</p>
+          <p className="text-xs font-bold text-[--e-orange] uppercase tracking-wide">Package Group Info</p>
           <button
             onClick={() => setLocation(`${BASE}/admin/package-groups/${rec.packageGroupId}`)}
-            className="inline-flex items-center gap-1 text-xs text-[#F5821F] hover:underline font-medium"
+            className="inline-flex items-center gap-1 text-xs text-[--e-orange] hover:underline font-medium"
           >
             <ExternalLink className="w-3 h-3" /> View Package Group →
           </button>
@@ -496,7 +496,7 @@ export default function PackageDetail() {
                 {pendingStatus && pendingStatus !== (rec.status ?? "active") && (
                   <Button
                     size="sm"
-                    className="h-7 px-3 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
+                    className="h-7 px-3 text-xs bg-[--e-orange] hover:bg-[#d97706] text-white"
                     disabled={changeStatusMutation.isPending}
                     onClick={() => changeStatusMutation.mutate(pendingStatus)}
                   >
@@ -517,7 +517,7 @@ export default function PackageDetail() {
         {sortedCurrencies.length === 0 ? (
           <div className="px-4 py-3 text-sm text-muted-foreground">
             No exchange rates configured. Add rates in{" "}
-            <a href={`${BASE}/admin/accounting/exchange-rates`} className="text-[#F5821F] underline">Exchange Rates</a>.
+            <a href={`${BASE}/admin/accounting/exchange-rates`} className="text-[--e-orange] underline">Exchange Rates</a>.
           </div>
         ) : (
           sortedCurrencies.map(({ ccy, flag, sym, dec, field }) => {
@@ -529,7 +529,7 @@ export default function PackageDetail() {
                   <span className={`flex items-center gap-1.5 ${isPrimary ? "font-bold text-foreground" : ""}`}>
                     {flag} {ccy}
                     {isPrimary && (
-                      <span className="px-1.5 py-0.5 bg-[#F5821F] text-white rounded text-[10px] font-bold uppercase">
+                      <span className="px-1.5 py-0.5 bg-[--e-orange] text-white rounded text-[10px] font-bold uppercase">
                         PRIMARY
                       </span>
                     )}
@@ -541,9 +541,9 @@ export default function PackageDetail() {
                   value={String(getValue(field, rec[field as keyof typeof rec]) ?? "")}
                   onChange={v => setField(field, v)}
                   inputType="number"
-                  className={isPrimary && isEditing ? "border-[#F5821F] ring-1 ring-[#F5821F]/30" : ""}
+                  className={isPrimary && isEditing ? "border-[--e-orange] ring-1 ring-[--e-orange]/30" : ""}
                   display={
-                    <span className={`font-mono ${isPrimary ? "font-bold text-[#F5821F]" : ""}`}>
+                    <span className={`font-mono ${isPrimary ? "font-bold text-[--e-orange]" : ""}`}>
                       {fmtPrice(rec[field as keyof typeof rec] as string, sym, dec) ?? (
                         <span className="text-muted-foreground/50">—</span>
                       )}
@@ -581,7 +581,7 @@ export default function PackageDetail() {
                   featuresArr.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5">
                       {featuresArr.map((f: string, i: number) => (
-                        <span key={i} className="bg-[#FEF0E3] text-[#F5821F] text-xs px-2 py-0.5 rounded-full font-medium">
+                        <span key={i} className="bg-[--e-orange-lt] text-[--e-orange] text-xs px-2 py-0.5 rounded-full font-medium">
                           {f}
                         </span>
                       ))}
@@ -601,9 +601,9 @@ export default function PackageDetail() {
       <DetailSection
         title={
           <span className="flex items-center gap-2">
-            <Package className="w-4 h-4 text-[#F5821F]" />
+            <Package className="w-4 h-4 text-[--e-orange]" />
             Products
-            <span className="ml-1 px-2 py-0.5 rounded-full bg-[#F5821F] text-white text-xs font-bold">
+            <span className="ml-1 px-2 py-0.5 rounded-full bg-[--e-orange] text-white text-xs font-bold">
               {linkedProds.length}
             </span>
           </span>
@@ -622,7 +622,7 @@ export default function PackageDetail() {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 text-xs gap-1 border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
+                className="h-7 text-xs gap-1 border-[--e-orange] text-[--e-orange] hover:bg-[--e-orange-lt]"
                 onClick={() => {
                   setProdTypeFilter("all");
                   setProdSearch("");
@@ -645,7 +645,7 @@ export default function PackageDetail() {
 
           {/* Add Product Picker */}
           {showAddProd && (
-            <div className="border border-[#F5821F33] rounded-lg p-3 bg-[#FEF0E3]/30 space-y-2">
+            <div className="border border-[--e-orange-a20] rounded-lg p-3 bg-[--e-orange-lt]/30 space-y-2">
               {/* Type filter tabs */}
               <div className="flex gap-1.5 flex-wrap">
                 {PROD_TYPES.map(t => (
@@ -654,7 +654,7 @@ export default function PackageDetail() {
                     onClick={() => { setProdTypeFilter(t); setSelectedProdId(null); }}
                     className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${
                       prodTypeFilter === t
-                        ? "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F33]"
+                        ? "bg-[--e-orange-lt] text-[--e-orange] border-[--e-orange-a20]"
                         : "border-border text-muted-foreground hover:bg-muted"
                     }`}
                   >
@@ -678,14 +678,14 @@ export default function PackageDetail() {
                   onClick={() => setShowAdvanced(v => !v)}
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors shrink-0 ${
                     showAdvanced || hasAdvancedFilters
-                      ? "bg-[#FEF0E3] text-[#F5821F] border-[#F5821F66]"
+                      ? "bg-[--e-orange-lt] text-[--e-orange] border-[--e-orange-a40]"
                       : "border-border text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   <SlidersHorizontal className="w-3 h-3" />
                   Advanced
                   {hasAdvancedFilters && (
-                    <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-[#F5821F] inline-block" />
+                    <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-[--e-orange] inline-block" />
                   )}
                   {showAdvanced ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 </button>
@@ -693,7 +693,7 @@ export default function PackageDetail() {
 
               {/* Advanced search panel */}
               {showAdvanced && (
-                <div className="border border-[#F5821F22] rounded-md p-3 bg-white/60 space-y-2.5">
+                <div className="border border-[--e-orange-a13] rounded-md p-3 bg-white/60 space-y-2.5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {/* Country */}
                     <div>
@@ -831,7 +831,7 @@ export default function PackageDetail() {
                 </Button>
                 <Button
                   size="sm"
-                  className="h-7 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
+                  className="h-7 text-xs bg-[--e-orange] hover:bg-[#d97706] text-white"
                   disabled={!selectedProdId || addProd.isPending}
                   onClick={() => {
                     if (!selectedProdId) return;
@@ -871,7 +871,7 @@ export default function PackageDetail() {
                     const total = unitP * qty;
                     const currency = row.currency ?? "AUD";
                     return (
-                      <tr key={row.linkId} className="border-b last:border-0 hover:bg-[#FEF0E3]/40 transition-colors">
+                      <tr key={row.linkId} className="border-b last:border-0 hover:bg-[--e-orange-lt]/40 transition-colors">
                         <td className="px-3 py-2 font-medium text-sm">{row.productName}</td>
                         <td className="px-3 py-2 text-xs text-muted-foreground capitalize">{row.productType}</td>
                         <td className="px-3 py-2 text-center">
@@ -935,7 +935,7 @@ export default function PackageDetail() {
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="h-6 px-2 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white"
+                                  className="h-6 px-2 text-xs bg-[--e-orange] hover:bg-[#d97706] text-white"
                                   disabled={updateProd.isPending}
                                   onClick={() => updateProd.mutate({
                                     productId: row.productId,
@@ -948,7 +948,7 @@ export default function PackageDetail() {
                             ) : (
                               <div className="flex gap-1 justify-end">
                                 <button
-                                  className="text-muted-foreground hover:text-[#F5821F] transition-colors p-1"
+                                  className="text-muted-foreground hover:text-[--e-orange] transition-colors p-1"
                                   title="Edit"
                                   onClick={() => {
                                     setEditingProdId(row.productId);
@@ -999,7 +999,7 @@ export default function PackageDetail() {
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-sm font-bold text-[#F5821F]">
+                      <td className="px-3 py-2 text-right font-mono text-sm font-bold text-[--e-orange]">
                         {primaryCcy} {includedTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}
                       </td>
                       {canEdit && <td />}
@@ -1020,9 +1020,9 @@ export default function PackageDetail() {
           <DetailSection
             title={
               <span className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[#F5821F]" />
+                <FileText className="w-4 h-4 text-[--e-orange]" />
                 Contracts
-                <span className="ml-1 px-2 py-0.5 rounded-full bg-[#F5821F] text-white text-xs font-bold">
+                <span className="ml-1 px-2 py-0.5 rounded-full bg-[--e-orange] text-white text-xs font-bold">
                   {total}
                 </span>
               </span>
@@ -1050,10 +1050,10 @@ export default function PackageDetail() {
                     {contractList.map((c: Record<string, unknown>, i: number) => (
                       <tr
                         key={c.id as string}
-                        className={`border-b last:border-0 hover:bg-[#FEF0E3] cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}
+                        className={`border-b last:border-0 hover:bg-[--e-orange-lt] cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}
                         onClick={() => setLocation(`${BASE}/admin/crm/contracts/${c.id}`)}
                       >
-                        <td className="px-3 py-2 font-mono text-xs font-medium text-[#F5821F]">
+                        <td className="px-3 py-2 font-mono text-xs font-medium text-[--e-orange]">
                           {c.contractNumber as string ?? "—"}
                         </td>
                         <td className="px-3 py-2 text-sm">

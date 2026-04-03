@@ -53,13 +53,13 @@ function ProgressBar({ received, invoiced }: { received: number; invoiced: numbe
       </div>
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${full ? "bg-green-500" : "bg-[#F5821F]"}`}
+          className={`h-full rounded-full transition-all ${full ? "bg-green-500" : "bg-[--e-orange]"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
       {!full && invoiced > 0 && (
         <div className="flex justify-between text-[11px] mt-1">
-          <span className="text-[#F5821F] font-medium">{pct}% paid</span>
+          <span className="text-[--e-orange] font-medium">{pct}% paid</span>
           <span className="text-muted-foreground">Outstanding: {fmt(invoiced - received)}</span>
         </div>
       )}
@@ -168,7 +168,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
           <div className="mt-3">
             <button
               onClick={() => navigate(`/admin/crm/contracts/${contractId}`)}
-              className="text-[#F5821F] text-xs font-medium hover:underline flex items-center gap-1 mx-auto"
+              className="text-[--e-orange] text-xs font-medium hover:underline flex items-center gap-1 mx-auto"
             >
               View Contract <ArrowUpRight className="w-3 h-3" />
             </button>
@@ -202,7 +202,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
       {showContractLink && (
         <button
           onClick={() => navigate(`/admin/crm/contracts/${contractId}`)}
-          className="flex items-center gap-1.5 text-xs text-[#F5821F] font-medium hover:underline"
+          className="flex items-center gap-1.5 text-xs text-[--e-orange] font-medium hover:underline"
         >
           <ExternalLink className="w-3 h-3" />
           View full contract &amp; manage payments
@@ -218,7 +218,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
           <div key={inv.invoiceId} className="bg-white border rounded-xl overflow-x-auto shadow-sm">
             {/* Clickable invoice header */}
             <div
-              className="flex items-center justify-between px-4 py-3 bg-muted/20 border-b cursor-pointer hover:bg-[#FEF0E3] transition-colors group"
+              className="flex items-center justify-between px-4 py-3 bg-muted/20 border-b cursor-pointer hover:bg-[--e-orange-lt] transition-colors group"
               onClick={() => toggleInvoice(inv.invoiceId)}
               title="Click to expand / collapse details"
             >
@@ -227,7 +227,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
                   ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   : <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 }
-                <FileText className="w-4 h-4 text-[#F5821F]" />
+                <FileText className="w-4 h-4 text-[--e-orange]" />
                 <span className="font-mono text-sm font-semibold">{inv.invoiceNumber ?? "—"}</span>
                 <span className="text-xs text-muted-foreground capitalize">({inv.invoiceType?.replace(/_/g, " ")})</span>
               </div>
@@ -238,9 +238,9 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
                 <button
                   onClick={e => { e.stopPropagation(); navigate(listPath); }}
                   title="View in invoice list"
-                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-[#F5821F]/10"
+                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-[--e-orange]/10"
                 >
-                  <ArrowUpRight className="w-3.5 h-3.5 text-[#F5821F]" />
+                  <ArrowUpRight className="w-3.5 h-3.5 text-[--e-orange]" />
                 </button>
               </div>
             </div>
@@ -285,7 +285,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
                       title="View transactions"
                       className="p-0.5 rounded hover:bg-muted"
                     >
-                      <ArrowUpRight className="w-3 h-3 text-muted-foreground hover:text-[#F5821F]" />
+                      <ArrowUpRight className="w-3 h-3 text-muted-foreground hover:text-[--e-orange]" />
                     </button>
                   </div>
                 ))}
@@ -299,7 +299,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
                     <span className="text-muted-foreground text-xs w-16 shrink-0">Receipt</span>
                     <button
                       onClick={() => navigate("/admin/accounting/receipts")}
-                      className="font-mono text-xs font-medium text-[#F5821F] hover:underline flex items-center gap-1"
+                      className="font-mono text-xs font-medium text-[--e-orange] hover:underline flex items-center gap-1"
                       title="View receipt"
                     >
                       {r.receiptNumber}
@@ -342,7 +342,7 @@ export function ArTimeline({ contractId, showContractLink = false }: ArTimelineP
                 <div className="pt-1 border-t">
                   <button
                     onClick={() => navigate(listPath)}
-                    className="text-xs text-[#F5821F] font-medium hover:underline flex items-center gap-1"
+                    className="text-xs text-[--e-orange] font-medium hover:underline flex items-center gap-1"
                   >
                     View in {inv.invoiceType?.includes("agent") ? "Agent" : inv.invoiceType?.includes("partner") ? "Partner" : "Client"} Invoices
                     <ArrowUpRight className="w-3 h-3" />

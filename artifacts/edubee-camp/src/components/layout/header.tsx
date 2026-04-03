@@ -85,7 +85,7 @@ const NOTIF_ICONS: Record<string, LucideIcon> = {
 };
 
 const ACCOUNT_TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  Student:      { bg: "#FEF0E3", text: "#F5821F" },
+  Student:      { bg: "var(--e-orange-lt)", text: "var(--e-orange)" },
   Agent:        { bg: "#F4F3F1", text: "#57534E" },
   School:       { bg: "#DCFCE7", text: "#15803D" },
   Company:      { bg: "#E0F2FE", text: "#0369A1" },
@@ -246,9 +246,9 @@ export function Header({ collapsed, onToggle, title }: Props) {
                   <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide px-1 mb-1">My View</p>
                   <button
                     onClick={() => { clearViewAs(); handleClose(); }}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors ${!isImpersonating ? "bg-[#FEF0E3]" : "hover:bg-[#F4F3F1]"}`}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors ${!isImpersonating ? "bg-[--e-orange-lt]" : "hover:bg-[#F4F3F1]"}`}
                   >
-                    <div className="w-6 h-6 rounded-full bg-[#FEF0E3] flex items-center justify-center text-[10px] font-bold text-[#F5821F] shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-[--e-orange-lt] flex items-center justify-center text-[10px] font-bold text-[--e-orange] shrink-0">
                       {user.fullName.substring(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -257,7 +257,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                         <Layers className="w-2.5 h-2.5" />{ROLE_LABELS[myRole]} · My Account
                       </div>
                     </div>
-                    {!isImpersonating && <div className="w-1.5 h-1.5 rounded-full bg-[#F5821F] shrink-0" />}
+                    {!isImpersonating && <div className="w-1.5 h-1.5 rounded-full bg-[--e-orange] shrink-0" />}
                   </button>
                 </div>
 
@@ -267,7 +267,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                   <div className="flex gap-1 mb-2">
                     <button
                       onClick={() => { setViewTab("users"); setSelectedRole(null); setSearchQuery(""); }}
-                      className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-medium transition-colors border ${viewTab === "users" ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
+                      className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-medium transition-colors border ${viewTab === "users" ? "bg-[--e-orange] text-white border-[--e-orange]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[--e-orange] hover:text-[--e-orange]"}`}
                     >
                       <UserIcon className="w-3 h-3" /> Users
                       {switchableUsers.length > 0 && (
@@ -278,7 +278,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                     </button>
                     <button
                       onClick={() => { setViewTab("accounts"); setSelectedRole(null); setSearchQuery(""); }}
-                      className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-medium transition-colors border ${viewTab === "accounts" ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
+                      className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-medium transition-colors border ${viewTab === "accounts" ? "bg-[--e-orange] text-white border-[--e-orange]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[--e-orange] hover:text-[--e-orange]"}`}
                     >
                       <Building2 className="w-3 h-3" /> Accounts
                       {switchableAccounts.length > 0 && (
@@ -294,7 +294,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                     <div className="flex flex-wrap gap-1 mb-2">
                       <button
                         onClick={() => { setSelectedRole(null); setSearchQuery(""); setTimeout(() => searchRef.current?.focus(), 50); }}
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${!selectedRole ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${!selectedRole ? "bg-[--e-orange] text-white border-[--e-orange]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[--e-orange] hover:text-[--e-orange]"}`}
                       >
                         All
                       </button>
@@ -302,7 +302,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                         <button
                           key={role}
                           onClick={() => { setSelectedRole(role); setSearchQuery(""); setTimeout(() => searchRef.current?.focus(), 50); }}
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${selectedRole === role ? "bg-[#F5821F] text-white border-[#F5821F]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"}`}
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${selectedRole === role ? "bg-[--e-orange] text-white border-[--e-orange]" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-[--e-orange] hover:text-[--e-orange]"}`}
                         >
                           {ROLE_EMOJIS[role]} {ROLE_LABELS[role]}
                         </button>
@@ -325,7 +325,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                           ? (selectedRole ? `Search ${ROLE_LABELS[selectedRole]}…` : "Search by name or email…")
                           : "Search account name or email…"
                       }
-                      className="w-full pl-7 pr-7 py-1.5 text-xs border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] focus:outline-none focus:ring-1 focus:ring-[#F5821F] focus:border-[#F5821F]"
+                      className="w-full pl-7 pr-7 py-1.5 text-xs border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] focus:outline-none focus:ring-1 focus:ring-[--e-orange] focus:border-[--e-orange]"
                     />
                     {searchQuery && (
                       <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-[#78716C]">
@@ -345,7 +345,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                         <button
                           key={u.id}
                           onClick={() => { setViewAs({ ...u, _sourceType: "user" }); handleClose(); }}
-                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors mb-0.5 ${viewAsUser?.id === u.id && viewAsUser?._sourceType === "user" ? "bg-[#FEF0E3]" : "hover:bg-[#F4F3F1]"}`}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors mb-0.5 ${viewAsUser?.id === u.id && viewAsUser?._sourceType === "user" ? "bg-[--e-orange-lt]" : "hover:bg-[#F4F3F1]"}`}
                         >
                           <div className="w-6 h-6 rounded-full bg-[#F4F3F1] flex items-center justify-center text-[10px] font-bold shrink-0">
                             {u.fullName.substring(0, 2).toUpperCase()}
@@ -358,7 +358,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                             </div>
                           </div>
                           {viewAsUser?.id === u.id && viewAsUser?._sourceType === "user" && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-[#F5821F] shrink-0" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-[--e-orange] shrink-0" />
                           )}
                         </button>
                       ))
@@ -376,7 +376,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                           <button
                             key={a.id}
                             onClick={() => switchToAccount(a)}
-                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors mb-0.5 ${isActive ? "bg-[#FEF0E3]" : "hover:bg-[#F4F3F1]"}`}
+                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors mb-0.5 ${isActive ? "bg-[--e-orange-lt]" : "hover:bg-[#F4F3F1]"}`}
                           >
                             <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: bg }}>
                               <Building2 className="w-3.5 h-3.5" style={{ color: text }} />
@@ -392,7 +392,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                                 {a.portalEmail && <span className="truncate">{a.portalEmail}</span>}
                               </div>
                             </div>
-                            {isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#F5821F] shrink-0" />}
+                            {isActive && <div className="w-1.5 h-1.5 rounded-full bg-[--e-orange] shrink-0" />}
                           </button>
                         );
                       })
@@ -421,7 +421,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-[#F5821F] text-white text-[9px] font-bold flex items-center justify-center px-0.5">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-[--e-orange] text-white text-[9px] font-bold flex items-center justify-center px-0.5">
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
@@ -432,7 +432,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                 <span className="text-sm font-semibold" style={{ color: "var(--e-text-1)" }}>Notifications</span>
                 <div className="flex items-center gap-2">
                   {unreadCount > 0 && (
-                    <button className="text-[10px] text-[#F5821F] hover:text-[#D96A0A] font-medium" onClick={() => markAllMutation.mutate()}>
+                    <button className="text-[10px] text-[--e-orange] hover:text-[--e-orange-hover] font-medium" onClick={() => markAllMutation.mutate()}>
                       Mark all read
                     </button>
                   )}
@@ -467,7 +467,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                         }
                       }}
                       className={`px-3 py-2.5 flex items-start gap-2.5 transition-colors last:border-0
-                        ${!n.isRead ? "bg-[#FEF0E3]/40 dark:bg-[rgba(245,130,31,0.08)]" : "hover:bg-[#FAFAF9] dark:hover:bg-[#242220]"}
+                        ${!n.isRead ? "bg-[--e-orange-lt]/40 dark:bg-[var(--e-orange-shadow-08)]" : "hover:bg-[#FAFAF9] dark:hover:bg-[#242220]"}
                         ${notifTarget ? "cursor-pointer" : ""}
                       `}
                       style={{ borderBottom: "1px solid var(--e-border-sub)" }}
@@ -481,7 +481,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
                           {formatDateTime(n.createdAt)}
                         </div>
                       </div>
-                      {!n.isRead && <div className="w-2 h-2 rounded-full bg-[#F5821F] mt-1 shrink-0" />}
+                      {!n.isRead && <div className="w-2 h-2 rounded-full bg-[--e-orange] mt-1 shrink-0" />}
                     </div>
                   );
                 })}
@@ -492,7 +492,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
           {/* Avatar dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30">
+              <button className="w-8 h-8 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="text-xs font-bold" style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
                     {user.fullName.substring(0, 2).toUpperCase()}
@@ -504,7 +504,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
               <DropdownMenuLabel className="font-normal p-3">
                 <div className="font-semibold text-sm leading-none" style={{ color: "var(--e-text-1)" }}>{user.fullName}</div>
                 <div className="text-xs mt-1 truncate" style={{ color: "var(--e-text-2)" }}>{user.email}</div>
-                <div className="text-[10px] mt-1 font-medium text-[#F5821F]">{ROLE_EMOJIS[user.role]} {ROLE_LABELS[user.role]}</div>
+                <div className="text-[10px] mt-1 font-medium text-[--e-orange]">{ROLE_EMOJIS[user.role]} {ROLE_LABELS[user.role]}</div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>

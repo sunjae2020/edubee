@@ -55,7 +55,7 @@ const S = {
     background: "#FFFFFF", outline: "none", flex: 1,
   } as React.CSSProperties,
   btnPrimary: {
-    height: "38px", padding: "0 18px", background: "#F5821F", color: "#FFFFFF",
+    height: "38px", padding: "0 18px", background: "var(--e-orange)", color: "#FFFFFF",
     border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px",
     cursor: "pointer", display: "flex", alignItems: "center", gap: "6px",
     whiteSpace: "nowrap" as const, flexShrink: 0,
@@ -84,7 +84,7 @@ function FocusSelect({ style, ...props }: React.SelectHTMLAttributes<HTMLSelectE
     <select
       style={style}
       {...props}
-      onFocus={e => { e.currentTarget.style.borderColor = "#F5821F"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(245,130,31,0.15)"; }}
+      onFocus={e => { e.currentTarget.style.borderColor = "var(--e-orange)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--e-orange-ring)"; }}
       onBlur={e =>  { e.currentTarget.style.borderColor = "#E8E6E2"; e.currentTarget.style.boxShadow = "none"; }}
     />
   );
@@ -95,7 +95,7 @@ function FocusInput({ style, ...props }: React.InputHTMLAttributes<HTMLInputElem
     <input
       style={style}
       {...props}
-      onFocus={e => { e.currentTarget.style.borderColor = "#F5821F"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(245,130,31,0.15)"; }}
+      onFocus={e => { e.currentTarget.style.borderColor = "var(--e-orange)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--e-orange-ring)"; }}
       onBlur={e =>  { e.currentTarget.style.borderColor = "#E8E6E2"; e.currentTarget.style.boxShadow = "none"; }}
     />
   );
@@ -169,19 +169,19 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
         {/* Search */}
         <button style={S.btnPrimary}
           onClick={() => onSearch(filters)}
-          onMouseEnter={e => { e.currentTarget.style.background = "#D96A0A"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "#F5821F"; }}>
+          onMouseEnter={e => { e.currentTarget.style.background = "var(--e-orange-hover)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "var(--e-orange)"; }}>
           <Search size={14} strokeWidth={2} /> Search
         </button>
 
         {/* Advanced Toggle */}
         <button
-          style={{ ...S.btnToggle, ...(open ? { background: "#FEF0E3", color: "#F5821F", borderColor: "#F5821F" } : {}) }}
+          style={{ ...S.btnToggle, ...(open ? { background: "var(--e-orange-lt)", color: "var(--e-orange)", borderColor: "var(--e-orange)" } : {}) }}
           onClick={() => setOpen(v => !v)}>
           <SlidersHorizontal size={13} strokeWidth={1.5} />
           Advanced
           {activeCount > 0 && (
-            <span style={{ background: "#F5821F", color: "#fff", borderRadius: 999, fontSize: 11, fontWeight: 600, padding: "1px 6px" }}>
+            <span style={{ background: "var(--e-orange)", color: "#fff", borderRadius: 999, fontSize: 11, fontWeight: 600, padding: "1px 6px" }}>
               {activeCount}
             </span>
           )}
@@ -213,7 +213,7 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
               <label style={S.label}>
                 Product Type
                 {filters.productGroup && filteredProductTypes.length > 0 && (
-                  <span style={{ marginLeft: 6, color: "#F5821F", fontWeight: 700 }}>
+                  <span style={{ marginLeft: 6, color: "var(--e-orange)", fontWeight: 700 }}>
                     ({filteredProductTypes.length})
                   </span>
                 )}
@@ -302,10 +302,10 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
                 <RotateCcw size={12} strokeWidth={1.5} /> Reset Filters
               </button>
             )}
-            <button style={{ ...S.btnPrimary, background: "#FEF0E3", color: "#F5821F", border: "1.5px solid #F5821F" }}
+            <button style={{ ...S.btnPrimary, background: "var(--e-orange-lt)", color: "var(--e-orange)", border: "1.5px solid var(--e-orange)" }}
               onClick={() => onSearch(filters)}
-              onMouseEnter={e => { e.currentTarget.style.background = "#F5821F"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#FEF0E3"; e.currentTarget.style.color = "#F5821F"; }}>
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--e-orange)"; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "var(--e-orange-lt)"; e.currentTarget.style.color = "var(--e-orange)"; }}>
               <Search size={14} strokeWidth={2} /> Product Search
             </button>
           </div>

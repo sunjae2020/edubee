@@ -60,6 +60,16 @@
   --color-sidebar-accent-border: hsl(var(--sidebar-accent-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
+  /* ── 테넌트 브랜딩 오렌지 팔레트 → Tailwind text-orange-* / bg-orange-* 자동 매핑 ── */
+  --color-orange-50:  var(--e-orange-50);
+  --color-orange-100: var(--e-orange-100);
+  --color-orange-200: var(--e-orange-200);
+  --color-orange-300: var(--e-orange-300);
+  --color-orange-400: var(--e-orange-400);
+  --color-orange-500: var(--e-orange-500);
+  --color-orange-600: var(--e-orange-600);
+  --color-orange-700: var(--e-orange-700);
+
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -76,6 +86,31 @@
   --neutral-400: 25 6% 64%;    /* #A8A29E */
   --neutral-600: 25 7% 33%;    /* #57534E */
   --neutral-900: 20 9% 10%;    /* #1C1917 */
+
+  /* ── 브랜딩 오렌지 팔레트 기본값 (applyThemeToDom이 JS로 덮어씀) ── */
+  --e-orange:     #F5821F;
+  --e-orange-dk:  #d26a10;
+  --e-orange-lt:  #fef0e3;
+  --e-orange-ring:rgba(245,130,31,0.15);
+  --e-bg-hover:   #fef0e3;
+  --e-orange-50:  #fef0e3;
+  --e-orange-100: #fde2c6;
+  --e-orange-200: #fcc89d;
+  --e-orange-300: #f9a664;
+  --e-orange-400: #f78d3a;
+  --e-orange-500: #F5821F;
+  --e-orange-600: #d26a10;
+  --e-orange-700: #a85008;
+  --e-orange-hover:  #d26a10;
+  --e-orange-active: #a85008;
+  --e-orange-shadow-08: rgba(245,130,31,0.08);
+  --e-orange-shadow-10: rgba(245,130,31,0.10);
+  --e-orange-shadow-12: rgba(245,130,31,0.12);
+  --e-orange-shadow-25: rgba(245,130,31,0.25);
+  --e-orange-shadow-40: rgba(245,130,31,0.40);
+  --e-orange-a13: rgba(245,130,31,0.13);
+  --e-orange-a20: rgba(245,130,31,0.20);
+  --e-orange-a40: rgba(245,130,31,0.40);
 
   /* Edubee Orange: #F5821F ≈ hsl(28 91% 54%) */
   --primary: 28 91% 54%;

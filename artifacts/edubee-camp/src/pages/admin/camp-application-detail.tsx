@@ -39,7 +39,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_BADGE: Record<string, string> = {
   submitted: "bg-[#F4F3F1] text-[#57534E]",
-  reviewing: "bg-[#FEF0E3] text-[#F5821F]",
+  reviewing: "bg-[--e-orange-lt] text-[--e-orange]",
   quoted:    "bg-[#FEF9C3] text-[#CA8A04]",
   confirmed: "bg-[#DCFCE7] text-[#16A34A]",
   cancelled: "bg-[#FEF2F2] text-[#DC2626]",
@@ -77,8 +77,8 @@ function WorkflowBar({ status }: { status: string }) {
             circleStyle = "bg-[#DCFCE7] text-[#16A34A]";
             textStyle   = "text-[#16A34A] font-medium";
           } else if (isCurrent) {
-            circleStyle = "bg-[#FEF0E3] text-[#F5821F] border border-[#F5821F]";
-            textStyle   = "text-[#F5821F] font-semibold";
+            circleStyle = "bg-[--e-orange-lt] text-[--e-orange] border border-[--e-orange]";
+            textStyle   = "text-[--e-orange] font-semibold";
           }
 
           return (
@@ -117,7 +117,7 @@ function ConvertButton({
       disabled={loading}
       onClick={onClick}
       style={{
-        background: loading ? "#D96A0A" : "#F5821F",
+        background: loading ? "var(--e-orange-hover)" : "var(--e-orange)",
         color: "white",
         border: "none",
         borderRadius: 8,
@@ -298,7 +298,7 @@ function LinkedRecordsCard({ app }: { app: any }) {
             <span className="text-sm font-medium text-foreground">{app.quoteRefNumber ?? app.quoteId}</span>
             <button
               onClick={() => navigate(`/admin/crm/quotes/${app.quoteId}`)}
-              className="text-sm font-medium text-[#F5821F] hover:text-[#d97706] transition-colors"
+              className="text-sm font-medium text-[--e-orange] hover:text-[#d97706] transition-colors"
               style={{ background: "none", border: "none", cursor: "pointer" }}
             >
               View →
@@ -314,7 +314,7 @@ function LinkedRecordsCard({ app }: { app: any }) {
             <span className="text-sm font-medium text-foreground">{app.contractNumber ?? app.contractId}</span>
             <button
               onClick={() => navigate(`/admin/crm/contracts/${app.contractId}`)}
-              className="text-sm font-medium text-[#F5821F] hover:text-[#d97706] transition-colors"
+              className="text-sm font-medium text-[--e-orange] hover:text-[#d97706] transition-colors"
               style={{ background: "none", border: "none", cursor: "pointer" }}
             >
               View →
@@ -469,7 +469,7 @@ export default function CampApplicationDetail() {
           <p className="text-xs text-[#78716C]">This record may have been deleted or the link is incorrect.</p>
           <button
             onClick={() => navigate("/admin/all-applications")}
-            className="inline-flex items-center gap-1.5 rounded-md bg-[#F5821F] px-4 py-2 text-xs font-semibold text-white hover:opacity-90"
+            className="inline-flex items-center gap-1.5 rounded-md bg-[--e-orange] px-4 py-2 text-xs font-semibold text-white hover:opacity-90"
           >
             ← Back to All Applications
           </button>
@@ -554,7 +554,7 @@ export default function CampApplicationDetail() {
                   value={STATUS_LABELS[appStatus] ?? appStatus}
                   editChildren={
                     <Select value={getValue("applicationStatus")} onValueChange={v => setField("applicationStatus", v)}>
-                      <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {APP_STATUSES.map(s => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}
                       </SelectContent>
@@ -648,7 +648,7 @@ export default function CampApplicationDetail() {
                         setField("packageId", null as any);
                       }}
                     >
-                      <SelectTrigger className="h-8 text-sm border-[#F5821F]">
+                      <SelectTrigger className="h-8 text-sm border-[--e-orange]">
                         <SelectValue placeholder="Select package group..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -668,7 +668,7 @@ export default function CampApplicationDetail() {
                       onValueChange={v => setField("packageId", v as any)}
                       disabled={!effectivePkgGroupId}
                     >
-                      <SelectTrigger className="h-8 text-sm border-[#F5821F]">
+                      <SelectTrigger className="h-8 text-sm border-[--e-orange]">
                         <SelectValue placeholder={effectivePkgGroupId ? "Select package..." : "Select group first"} />
                       </SelectTrigger>
                       <SelectContent>
@@ -749,7 +749,7 @@ export default function CampApplicationDetail() {
                     {/* Total */}
                     <div className="flex items-center justify-between pt-3 mt-1">
                       <span className="text-sm font-semibold text-foreground">Total</span>
-                      <span className="text-base font-bold text-[#F5821F]">
+                      <span className="text-base font-bold text-[--e-orange]">
                         {(displayProducts[0]?.currency ?? "AUD")}{" "}
                         {displayProducts
                           .reduce((sum: number, p: any) => {
@@ -791,7 +791,7 @@ export default function CampApplicationDetail() {
                       value={getValue("assignedStaffId") ?? ""}
                       onValueChange={v => setField("assignedStaffId", v === "__none__" ? null : v)}
                     >
-                      <SelectTrigger className="h-8 text-sm border-[#F5821F]"><SelectValue placeholder="Select staff..." /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-sm border-[--e-orange]"><SelectValue placeholder="Select staff..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none__">— Unassigned —</SelectItem>
                         {staffList.map((s: any) => (
@@ -825,7 +825,7 @@ export default function CampApplicationDetail() {
           <div className="space-y-3">
             {canEdit ? (
               <div className="flex justify-end">
-                <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setAddParticipant(true)}>
+                <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setAddParticipant(true)}>
                   <Plus className="w-3.5 h-3.5" /> Add Participant
                 </Button>
               </div>
@@ -857,7 +857,7 @@ export default function CampApplicationDetail() {
                       </td>
                     </tr>
                   ) : participants.map((p: any, i: number) => (
-                    <tr key={p.id} className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors">
+                    <tr key={p.id} className="border-b last:border-0 hover:bg-[--e-orange-lt] transition-colors">
                       <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                       <td className="px-4 py-3">
                         <div className="font-medium">{p.fullName ?? "—"}</div>

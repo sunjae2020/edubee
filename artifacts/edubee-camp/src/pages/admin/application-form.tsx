@@ -16,7 +16,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 // ── Design helpers ──────────────────────────────────────────────────────────
 function SectionHeader({ title }: { title: string }) {
   return (
-    <div className="bg-[#F5821F] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-t-xl">
+    <div className="bg-[--e-orange] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-t-xl">
       {title}
     </div>
   );
@@ -55,8 +55,8 @@ function RadioGroup({ name, options, value, onChange }: {
           onClick={() => onChange(o.value)}
           className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-colors ${
             value === o.value
-              ? "bg-[#F5821F] text-white border-[#F5821F]"
-              : "border-border text-muted-foreground hover:border-[#F5821F]/50"
+              ? "bg-[--e-orange] text-white border-[--e-orange]"
+              : "border-border text-muted-foreground hover:border-[--e-orange]/50"
           }`}
         >
           {o.label}
@@ -66,7 +66,7 @@ function RadioGroup({ name, options, value, onChange }: {
   );
 }
 
-const inputCls = "h-9 text-sm border-border focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F]";
+const inputCls = "h-9 text-sm border-border focus-visible:ring-[--e-orange]/40 focus-visible:border-[--e-orange]";
 
 // ── Available services ──────────────────────────────────────────────────────
 const SERVICES = [
@@ -297,16 +297,16 @@ export default function ApplicationForm() {
               key={s.key}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
                 has(s.key)
-                  ? "border-[#F5821F] bg-[#FEF0E3]"
-                  : "border-border hover:border-[#F5821F]/40 hover:bg-muted/30"
+                  ? "border-[--e-orange] bg-[--e-orange-lt]"
+                  : "border-border hover:border-[--e-orange]/40 hover:bg-muted/30"
               }`}
             >
               <Checkbox
                 checked={has(s.key)}
                 onCheckedChange={() => toggle(s.key)}
-                className="data-[state=checked]:bg-[#F5821F] data-[state=checked]:border-[#F5821F] shrink-0"
+                className="data-[state=checked]:bg-[--e-orange] data-[state=checked]:border-[--e-orange] shrink-0"
               />
-              <span className={`text-sm font-medium ${has(s.key) ? "text-[#F5821F]" : "text-[#1C1917]"}`}>
+              <span className={`text-sm font-medium ${has(s.key) ? "text-[--e-orange]" : "text-[#1C1917]"}`}>
                 {s.label}
               </span>
             </label>
@@ -410,7 +410,7 @@ export default function ApplicationForm() {
           </Field>
         </div>
         <Field label="Note">
-          <Textarea className="text-sm min-h-[70px] border-border focus-visible:ring-[#F5821F]/40 focus-visible:border-[#F5821F]"
+          <Textarea className="text-sm min-h-[70px] border-border focus-visible:ring-[--e-orange]/40 focus-visible:border-[--e-orange]"
             value={schoolNote} onChange={e => setSchoolNote(e.target.value)} placeholder="Any additional school information..." />
         </Field>
       </Section>
@@ -464,7 +464,7 @@ export default function ApplicationForm() {
                 <select
                   value={roomType}
                   onChange={e => setRoomType(e.target.value)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#F5821F]/50"
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[--e-orange]/50"
                 >
                   <option value="">Please Select</option>
                   {["Single", "Twin", "Double", "Family"].map(r => (
@@ -476,7 +476,7 @@ export default function ApplicationForm() {
                 <select
                   value={accommodationOption}
                   onChange={e => setAccommodationOption(e.target.value)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#F5821F]/50"
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[--e-orange]/50"
                 >
                   <option value="">Please Select</option>
                   <option value="student">Student Accommodation</option>
@@ -506,7 +506,7 @@ export default function ApplicationForm() {
                     value={opt}
                     checked={homestayType === opt}
                     onChange={() => setHomestayType(opt)}
-                    className="accent-[#F5821F] w-4 h-4"
+                    className="accent-[--e-orange] w-4 h-4"
                   />
                   <span className="text-sm text-stone-700">{opt}</span>
                 </label>
@@ -564,7 +564,7 @@ export default function ApplicationForm() {
                 value={selfIntro}
                 onChange={e => setSelfIntro(e.target.value)}
                 rows={4}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-stone-700 resize-y focus:outline-none focus:ring-2 focus:ring-[#F5821F]/50"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-stone-700 resize-y focus:outline-none focus:ring-2 focus:ring-[--e-orange]/50"
               />
             </Field>
           </div>
@@ -575,7 +575,7 @@ export default function ApplicationForm() {
               id="declHomestay"
               checked={declHomestay}
               onCheckedChange={v => setDeclHomestay(!!v)}
-              className="mt-0.5 data-[state=checked]:bg-[#F5821F] data-[state=checked]:border-[#F5821F]"
+              className="mt-0.5 data-[state=checked]:bg-[--e-orange] data-[state=checked]:border-[--e-orange]"
             />
             <label htmlFor="declHomestay" className="text-sm text-stone-700 leading-snug cursor-pointer">
               I agree to{" "}
@@ -598,8 +598,8 @@ export default function ApplicationForm() {
                     onClick={() => setIntEnglishLevel(opt)}
                     className={`px-4 py-1.5 rounded-full border text-sm font-medium transition-colors ${
                       intEnglishLevel === opt
-                        ? "bg-[#F5821F] border-[#F5821F] text-white"
-                        : "border-border text-stone-600 hover:border-[#F5821F]/60"
+                        ? "bg-[--e-orange] border-[--e-orange] text-white"
+                        : "border-border text-stone-600 hover:border-[--e-orange]/60"
                     }`}
                   >{opt}</button>
                 ))}
@@ -624,7 +624,7 @@ export default function ApplicationForm() {
               <select
                 value={intProgram}
                 onChange={e => setIntProgram(e.target.value)}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#F5821F]/50"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[--e-orange]/50"
               >
                 <option value="">Please Select</option>
                 {["Hospitality & Tourism", "Business Administration", "IT & Technology",
@@ -672,7 +672,7 @@ export default function ApplicationForm() {
             <div className="sm:col-span-2 flex items-start gap-3 pt-1">
               <Checkbox id="declInternship" checked={declInternship}
                 onCheckedChange={v => setDeclInternship(!!v)}
-                className="mt-0.5 data-[state=checked]:bg-[#F5821F] data-[state=checked]:border-[#F5821F]"
+                className="mt-0.5 data-[state=checked]:bg-[--e-orange] data-[state=checked]:border-[--e-orange]"
               />
               <label htmlFor="declInternship" className="text-sm text-stone-700 leading-snug cursor-pointer">
                 I agree to{" "}
@@ -692,7 +692,7 @@ export default function ApplicationForm() {
             <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-2">Passport Copy</p>
             <div
               onClick={() => passportRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-[#F5821F]/60 cursor-pointer py-6 transition-colors bg-muted/20"
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-[--e-orange]/60 cursor-pointer py-6 transition-colors bg-muted/20"
             >
               <Upload className="w-5 h-5 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">
@@ -708,7 +708,7 @@ export default function ApplicationForm() {
             <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-2">Enrolment / Application</p>
             <div
               onClick={() => enrolmentRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-[#F5821F]/60 cursor-pointer py-6 transition-colors bg-muted/20"
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-[--e-orange]/60 cursor-pointer py-6 transition-colors bg-muted/20"
             >
               <Upload className="w-5 h-5 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">
@@ -745,11 +745,11 @@ export default function ApplicationForm() {
             id="decl"
             checked={declAgree}
             onCheckedChange={v => setDeclAgree(!!v)}
-            className="mt-0.5 data-[state=checked]:bg-[#F5821F] data-[state=checked]:border-[#F5821F]"
+            className="mt-0.5 data-[state=checked]:bg-[--e-orange] data-[state=checked]:border-[--e-orange]"
           />
           <label htmlFor="decl" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
             I confirm that all information provided in this application is true and correct. I agree to the{" "}
-            <span className="text-[#F5821F] underline cursor-pointer">terms and conditions</span>{" "}
+            <span className="text-[--e-orange] underline cursor-pointer">terms and conditions</span>{" "}
             of service.
           </label>
         </div>
@@ -778,7 +778,7 @@ export default function ApplicationForm() {
         </Button>
         <Button
           type="button"
-          className="bg-[#F5821F] hover:bg-[#D96A0A] text-white px-8 gap-2"
+          className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white px-8 gap-2"
           onClick={() => submit.mutate()}
           disabled={submit.isPending || !canSubmit}
         >

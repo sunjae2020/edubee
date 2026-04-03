@@ -347,7 +347,7 @@ export default function NewPackageGroup() {
       <div className="bg-card border-b sticky top-0 z-10">
         <div className="px-6 pt-3 pb-0">
           <div
-            className="text-xs text-muted-foreground mb-1 cursor-pointer hover:text-[#F5821F] flex items-center gap-1 w-fit"
+            className="text-xs text-muted-foreground mb-1 cursor-pointer hover:text-[--e-orange] flex items-center gap-1 w-fit"
             onClick={() => setLocation(`${BASE}/admin/package-groups`)}
           >
             ← Package Groups
@@ -379,7 +379,7 @@ export default function NewPackageGroup() {
               <Button
                 onClick={doSave}
                 disabled={isSaving}
-                className="h-8 bg-[#F5821F] hover:bg-[#d97706] text-white text-sm"
+                className="h-8 bg-[--e-orange] hover:bg-[#d97706] text-white text-sm"
               >
                 {isSaving ? <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Saving…</> : "Save & Create"}
               </Button>
@@ -396,7 +396,7 @@ export default function NewPackageGroup() {
               className={cn(
                 "px-4 py-2.5 text-[13px] border-b-2 transition-colors whitespace-nowrap",
                 tab === t.key
-                  ? "border-[#F5821F] text-[#F5821F] font-semibold"
+                  ? "border-[--e-orange] text-[--e-orange] font-semibold"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               )}
             >
@@ -427,12 +427,12 @@ export default function NewPackageGroup() {
               onChange={e => setAiUrl(e.target.value)}
               onKeyDown={e => e.key === "Enter" && doExtract()}
               placeholder="https://campsite.com/program-page"
-              className="flex-1 h-9 px-3 bg-white/10 border border-white/15 rounded-lg text-white text-sm placeholder:text-stone-500 outline-none focus:border-[#F5821F]/50"
+              className="flex-1 h-9 px-3 bg-white/10 border border-white/15 rounded-lg text-white text-sm placeholder:text-stone-500 outline-none focus:border-[--e-orange]/50"
             />
             <Button
               onClick={doExtract}
               disabled={!aiUrl.trim() || aiStatus === "loading"}
-              className={cn("h-9 px-5 text-sm font-semibold text-white border-none", aiStatus === "loading" ? "bg-red-900" : "bg-[#F5821F] hover:bg-[#d97706]")}
+              className={cn("h-9 px-5 text-sm font-semibold text-white border-none", aiStatus === "loading" ? "bg-red-900" : "bg-[--e-orange] hover:bg-[#d97706]")}
             >
               {aiStatus === "loading" ? <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" />Analyzing…</> : "Auto-fill from URL"}
             </Button>
@@ -525,11 +525,11 @@ export default function NewPackageGroup() {
                 </Row>
                 <Row label="Start Date">
                   <input type="date" value={form.startDate} onChange={e => upd("startDate", e.target.value)}
-                    className="h-8 px-2 text-sm border rounded-md w-full focus:outline-none focus:ring-1 focus:ring-[#F5821F] border-input" />
+                    className="h-8 px-2 text-sm border rounded-md w-full focus:outline-none focus:ring-1 focus:ring-[--e-orange] border-input" />
                 </Row>
                 <Row label="End Date">
                   <input type="date" value={form.endDate} onChange={e => upd("endDate", e.target.value)}
-                    className="h-8 px-2 text-sm border rounded-md w-full focus:outline-none focus:ring-1 focus:ring-[#F5821F] border-input" />
+                    className="h-8 px-2 text-sm border rounded-md w-full focus:outline-none focus:ring-1 focus:ring-[--e-orange] border-input" />
                 </Row>
               </Sec>
 
@@ -580,7 +580,7 @@ export default function NewPackageGroup() {
                 onChange={e => upd("descriptionEn", e.target.value)}
                 placeholder="An immersive English language program in Sydney. Students live with host families, attend local schools, and explore iconic Australian landmarks."
                 rows={4}
-                className="w-full text-sm border border-input rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-[#F5821F] leading-relaxed"
+                className="w-full text-sm border border-input rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-[--e-orange] leading-relaxed"
               />
             </Sec>
 
@@ -634,7 +634,7 @@ export default function NewPackageGroup() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-full bg-[#FEF0E3] text-[#F5821F] flex items-center justify-center text-sm font-bold shrink-0">
+                    <span className="w-8 h-8 rounded-full bg-[--e-orange-lt] text-[--e-orange] flex items-center justify-center text-sm font-bold shrink-0">
                       {String.fromCharCode(65 + idx)}
                     </span>
                     <input
@@ -677,10 +677,10 @@ export default function NewPackageGroup() {
                       return (
                         <div key={cur.key} className={cn(
                           "rounded-lg p-2.5 relative",
-                          isPrimary ? "border-2 border-[#F5821F] bg-[#FEF0E3]" : "border border-border bg-card"
+                          isPrimary ? "border-2 border-[--e-orange] bg-[--e-orange-lt]" : "border border-border bg-card"
                         )}>
                           {isPrimary && (
-                            <span className="absolute -top-2 left-2 text-[9px] bg-[#F5821F] text-white px-1.5 py-0.5 rounded-full font-bold">Default</span>
+                            <span className="absolute -top-2 left-2 text-[9px] bg-[--e-orange] text-white px-1.5 py-0.5 rounded-full font-bold">Default</span>
                           )}
                           <div className={cn("text-[10px] mb-1", isPrimary ? "text-orange-600" : "text-muted-foreground")}>
                             {cur.flag} {cur.label}
@@ -711,7 +711,7 @@ export default function NewPackageGroup() {
                 ...p,
                 packages: [...p.packages, { ...EMPTY_PKG, name: `Package ${String.fromCharCode(65 + p.packages.length)}` }]
               }))}
-              className="w-full py-3 border-2 border-dashed border-border rounded-xl bg-card text-muted-foreground text-sm hover:border-[#F5821F] hover:text-[#F5821F] transition-colors font-medium"
+              className="w-full py-3 border-2 border-dashed border-border rounded-xl bg-card text-muted-foreground text-sm hover:border-[--e-orange] hover:text-[--e-orange] transition-colors font-medium"
             >
               + Add Package
             </button>
@@ -731,7 +731,7 @@ export default function NewPackageGroup() {
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  className="h-8 bg-[#F5821F] hover:bg-[#d97706] text-white text-xs"
+                  className="h-8 bg-[--e-orange] hover:bg-[#d97706] text-white text-xs"
                   onClick={() => upd("enrollmentSpots", [...form.enrollmentSpots, { gradeLabel: "", totalSpots: "15" }])}
                 >
                   <Plus className="w-3 h-3 mr-1" /> Add Group
@@ -759,7 +759,7 @@ export default function NewPackageGroup() {
                 <p className="font-semibold text-foreground mb-1">No enrollment spots configured</p>
                 <p className="text-xs text-muted-foreground mb-5">Set capacity limits per grade or age group</p>
                 <div className="flex gap-3 justify-center">
-                  <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white text-xs h-8"
+                  <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white text-xs h-8"
                     onClick={() => upd("enrollmentSpots", [{ gradeLabel: "Grade 7", totalSpots: "15" }])}>
                     + Add Group
                   </Button>
@@ -794,7 +794,7 @@ export default function NewPackageGroup() {
                           className="h-8 text-sm mb-1"
                         />
                         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-[#F5821F] rounded-full" style={{ width: `${pct}%` }} />
+                          <div className="h-full bg-[--e-orange] rounded-full" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                       <Input
@@ -834,9 +834,9 @@ export default function NewPackageGroup() {
               <Switch
                 checked={form.interviewRequired}
                 onCheckedChange={v => upd("interviewRequired", v)}
-                className="data-[state=checked]:bg-[#F5821F]"
+                className="data-[state=checked]:bg-[--e-orange]"
               />
-              <span className={cn("text-sm font-medium", form.interviewRequired ? "text-[#F5821F]" : "text-muted-foreground")}>
+              <span className={cn("text-sm font-medium", form.interviewRequired ? "text-[--e-orange]" : "text-muted-foreground")}>
                 {form.interviewRequired ? "Yes" : "No"}
               </span>
             </div>
@@ -866,7 +866,7 @@ export default function NewPackageGroup() {
                     onChange={e => upd("interviewNotes", e.target.value)}
                     rows={4}
                     placeholder="Interview preparation notes..."
-                    className="w-full text-sm border border-input rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-[#F5821F]"
+                    className="w-full text-sm border border-input rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-[--e-orange]"
                   />
                 </div>
               </div>
@@ -897,7 +897,7 @@ export default function NewPackageGroup() {
           <Button
             onClick={doSave}
             disabled={isSaving}
-            className="bg-[#F5821F] hover:bg-[#d97706] text-white text-sm"
+            className="bg-[--e-orange] hover:bg-[#d97706] text-white text-sm"
           >
             {isSaving ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</> : "Save & Create Package Group"}
           </Button>

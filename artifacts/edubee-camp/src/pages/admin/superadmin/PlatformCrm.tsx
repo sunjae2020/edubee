@@ -83,19 +83,19 @@ function NewProspectModal({ onClose, onCreated }: { onClose: () => void; onCreat
           <div>
             <label className="block text-xs font-medium text-[#57534E] mb-1">Company Name *</label>
             <input value={form.companyName} onChange={e => set("companyName", e.target.value)}
-              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30" />
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-[#57534E] mb-1">Website</label>
               <input value={form.website} onChange={e => set("website", e.target.value)}
-                className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30" />
+                className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30" />
             </div>
             <div>
               <label className="block text-xs font-medium text-[#57534E] mb-1">Country</label>
               <input value={form.country} onChange={e => set("country", e.target.value)}
-                className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30" />
+                className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30" />
             </div>
           </div>
 
@@ -103,12 +103,12 @@ function NewProspectModal({ onClose, onCreated }: { onClose: () => void; onCreat
             <div>
               <label className="block text-xs font-medium text-[#57534E] mb-1">Industry</label>
               <input value={form.industry} onChange={e => set("industry", e.target.value)}
-                className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30" />
+                className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30" />
             </div>
             <div>
               <label className="block text-xs font-medium text-[#57534E] mb-1">Plan Interest</label>
               <select value={form.planInterest} onChange={e => set("planInterest", e.target.value)}
-                className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30 bg-white">
+                className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30 bg-white">
                 <option value="">— Select —</option>
                 {Object.entries(PLAN_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
@@ -118,7 +118,7 @@ function NewProspectModal({ onClose, onCreated }: { onClose: () => void; onCreat
           <div>
             <label className="block text-xs font-medium text-[#57534E] mb-1">Source</label>
             <select value={form.source} onChange={e => set("source", e.target.value)}
-              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30 bg-white">
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30 bg-white">
               <option value="">— Select —</option>
               {["Website","Referral","Event","Cold Outreach","Social Media","Other"].map(s => (
                 <option key={s} value={s.toLowerCase().replace(/ /g, "_")}>{s}</option>
@@ -129,13 +129,13 @@ function NewProspectModal({ onClose, onCreated }: { onClose: () => void; onCreat
           <div>
             <label className="block text-xs font-medium text-[#57534E] mb-1">Notes</label>
             <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={2}
-              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30 resize-none" />
+              className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30 resize-none" />
           </div>
         </div>
         <div className="px-6 pb-5 flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border border-[#E8E6E2] text-[#57534E] hover:bg-[#F5F4F2]">Cancel</button>
           <button onClick={submit} disabled={saving}
-            className="px-4 py-2 text-sm rounded-lg bg-[#F5821F] text-white font-medium hover:bg-[#E0711A] disabled:opacity-50">
+            className="px-4 py-2 text-sm rounded-lg bg-[--e-orange] text-white font-medium hover:bg-[#E0711A] disabled:opacity-50">
             {saving ? "Saving…" : "Add Prospect"}
           </button>
         </div>
@@ -186,7 +186,7 @@ export default function PlatformCrm() {
             <p className="text-sm text-[#57534E] mt-0.5">Prospect companies for Edubee platform subscriptions</p>
           </div>
           <button onClick={() => setShowNew(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#F5821F] text-white text-sm font-medium rounded-lg hover:bg-[#E0711A] transition-colors">
+            className="flex items-center gap-2 px-4 py-2 bg-[--e-orange] text-white text-sm font-medium rounded-lg hover:bg-[#E0711A] transition-colors">
             <Plus size={15} />
             Add Prospect
           </button>
@@ -213,7 +213,7 @@ export default function PlatformCrm() {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search company, country, industry…"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-[#E8E6E2] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F5821F]/30" />
+              className="w-full pl-9 pr-3 py-2 text-sm border border-[#E8E6E2] rounded-lg focus:outline-none focus:ring-2 focus:ring-[--e-orange]/30" />
           </div>
           {statusFilter !== "all" && (
             <button onClick={() => setStatusFilter("all")}
@@ -257,8 +257,8 @@ export default function PlatformCrm() {
                       onClick={() => setLocation(`/superadmin/crm/${p.id}`)}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-[#F5821F]/10 flex items-center justify-center shrink-0">
-                            <Building2 size={13} className="text-[#F5821F]" />
+                          <div className="w-7 h-7 rounded-lg bg-[--e-orange]/10 flex items-center justify-center shrink-0">
+                            <Building2 size={13} className="text-[--e-orange]" />
                           </div>
                           <span className="font-medium text-[#1C1917]">{p.companyName}</span>
                         </div>
@@ -267,7 +267,7 @@ export default function PlatformCrm() {
                       <td className="px-4 py-3 text-[#57534E]">{p.industry ?? "—"}</td>
                       <td className="px-4 py-3">
                         {p.planInterest ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#FEF0E3] text-[#C2621A]">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[--e-orange-lt] text-[#C2621A]">
                             {PLAN_LABELS[p.planInterest] ?? p.planInterest}
                           </span>
                         ) : <span className="text-[#A8A29E]">—</span>}

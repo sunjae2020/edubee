@@ -43,7 +43,7 @@ function InfoRow({ label, value, highlight = false }: { label: string; value: st
   return (
     <div className="flex border-b border-[#F4F3F1] py-2">
       <span className="w-[38%] text-xs text-[#57534E] shrink-0">{label}</span>
-      <span className={`text-xs ${highlight ? "text-[#F5821F] font-semibold" : "text-[#1C1917]"}`}>{value || "—"}</span>
+      <span className={`text-xs ${highlight ? "text-[--e-orange] font-semibold" : "text-[#1C1917]"}`}>{value || "—"}</span>
     </div>
   );
 }
@@ -51,7 +51,7 @@ function InfoRow({ label, value, highlight = false }: { label: string; value: st
 function StatusChip({ status }: { status: string }) {
   const map: Record<string, { bg: string; color: string }> = {
     completed: { bg: "#DCFCE7", color: "#16A34A" },
-    confirmed: { bg: "#FEF0E3", color: "#F5821F" },
+    confirmed: { bg: "var(--e-orange-lt)", color: "var(--e-orange)" },
     pending:   { bg: "#FEF9C3", color: "#CA8A04" },
     cancelled: { bg: "#F4F3F1", color: "#57534E" },
     checked_in:  { bg: "#DBEAFE", color: "#2563EB" },
@@ -97,8 +97,8 @@ function StudentProfileViewer({ section, role }: { section: Section; role: strin
         </div>
       </div>
       {/* Program Summary */}
-      <div className="mt-4 bg-[#FEF0E3] border border-[#F5821F]/30 rounded-xl p-4">
-        <p className="text-xs font-semibold text-[#F5821F] mb-3">Program Details</p>
+      <div className="mt-4 bg-[--e-orange-lt] border border-[--e-orange]/30 rounded-xl p-4">
+        <p className="text-xs font-semibold text-[--e-orange] mb-3">Program Details</p>
         <div className="grid grid-cols-2 gap-1">
           <InfoRow label="Program" value={(c.programName as string) ?? ""} />
           <InfoRow label="Package" value={(c.packageName as string) ?? ""} />
@@ -226,11 +226,11 @@ function AcademicViewer({ section }: { section: Section }) {
             <span className="text-xs text-[#57534E] w-24">{startLvl || "—"}</span>
             <div className="flex-1 bg-[#E8E6E2] h-2 rounded-full overflow-hidden">
               <div
-                className="h-2 bg-[#F5821F] rounded-full transition-all duration-700"
+                className="h-2 bg-[--e-orange] rounded-full transition-all duration-700"
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <span className="text-xs text-[#F5821F] font-bold w-24 text-right">{endLvl || startLvl || "—"}</span>
+            <span className="text-xs text-[--e-orange] font-bold w-24 text-right">{endLvl || startLvl || "—"}</span>
           </div>
         </div>
       )}
@@ -267,8 +267,8 @@ function AcademicViewer({ section }: { section: Section }) {
       )}
 
       {c.teacherComments && (
-        <div className="bg-[#FEF0E3] border-l-[3px] border-[#F5821F] pl-3 py-2 rounded-r-lg mb-3">
-          <p className="text-xs font-semibold text-[#F5821F] mb-1">Teacher's Comments</p>
+        <div className="bg-[--e-orange-lt] border-l-[3px] border-[--e-orange] pl-3 py-2 rounded-r-lg mb-3">
+          <p className="text-xs font-semibold text-[--e-orange] mb-1">Teacher's Comments</p>
           <p className="text-xs text-[#1C1917]">{c.teacherComments as string}</p>
         </div>
       )}
@@ -312,7 +312,7 @@ function TourViewer({ section }: { section: Section }) {
                   <p className="text-xs text-[#57534E] mb-1.5">Highlights</p>
                   <div className="flex flex-wrap gap-1.5">
                     {(t.highlights as string[]).map((h, j) => (
-                      <span key={j} className="bg-[#FEF0E3] text-[#F5821F] text-xs px-2.5 py-0.5 rounded-full">{h}</span>
+                      <span key={j} className="bg-[--e-orange-lt] text-[--e-orange] text-xs px-2.5 py-0.5 rounded-full">{h}</span>
                     ))}
                   </div>
                 </div>
@@ -335,8 +335,8 @@ function SummaryViewer({ section }: { section: Section }) {
       <SectionHeader symbol="summary" number="06" title="Program Summary" variant="viewer" className="mb-4" />
 
       {/* Overall Assessment */}
-      <div className="bg-[#FEF0E3] border border-[#F5821F]/30 rounded-xl p-5 mb-4">
-        <p className="text-sm font-bold text-[#F5821F] mb-3">Overall Assessment</p>
+      <div className="bg-[--e-orange-lt] border border-[--e-orange]/30 rounded-xl p-5 mb-4">
+        <p className="text-sm font-bold text-[--e-orange] mb-3">Overall Assessment</p>
         <p className="text-sm text-[#1C1917] leading-relaxed">{(c.overallNotes as string) || "—"}</p>
       </div>
 
@@ -347,7 +347,7 @@ function SummaryViewer({ section }: { section: Section }) {
           <div className="space-y-1.5">
             {achievements.map((a, i) => (
               <div key={i} className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-[#F5821F] rounded-sm shrink-0" />
+                <div className="w-2 h-2 bg-[--e-orange] rounded-sm shrink-0" />
                 <span className="text-sm text-[#1C1917]">{a}</span>
               </div>
             ))}
@@ -441,12 +441,12 @@ function ViewerLoadingSkeleton() {
       </div>
       <div className="max-w-[860px] mx-auto mt-8 px-4">
         <div className="bg-white border border-[#E8E6E2] rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-hidden">
-          <div className="bg-[#FEF0E3] px-14 py-12 flex flex-col items-center gap-4" style={{ minHeight: 300 }}>
-            <Skeleton className="h-12 w-32 bg-[#F5821F]/20" />
-            <Skeleton className="h-8 w-64 bg-[#F5821F]/15" />
-            <Skeleton className="h-5 w-48 bg-[#F5821F]/10" />
+          <div className="bg-[--e-orange-lt] px-14 py-12 flex flex-col items-center gap-4" style={{ minHeight: 300 }}>
+            <Skeleton className="h-12 w-32 bg-[--e-orange]/20" />
+            <Skeleton className="h-8 w-64 bg-[--e-orange]/15" />
+            <Skeleton className="h-5 w-48 bg-[--e-orange]/10" />
             <div className="flex gap-8 mt-4">
-              {[0,1,2,3].map(i => <Skeleton key={i} className="h-10 w-20 bg-[#F5821F]/10" />)}
+              {[0,1,2,3].map(i => <Skeleton key={i} className="h-10 w-20 bg-[--e-orange]/10" />)}
             </div>
           </div>
           <div className="px-14 py-10 space-y-10">
@@ -473,7 +473,7 @@ function ForbiddenCard({ navigate }: { navigate: (path: string) => void }) {
         <ReportSymbol name="report" size={48} color="#E8E6E2" />
         <h2 className="text-lg font-bold text-[#1C1917]">Report Not Available</h2>
         <p className="text-sm text-[#57534E]">This report has not been published yet or you do not have access.</p>
-        <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => navigate("/admin/dashboard")}>
+        <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={() => navigate("/admin/dashboard")}>
           Back to Dashboard
         </Button>
       </div>
@@ -489,7 +489,7 @@ function NotFoundCard({ navigate, role }: { navigate: (path: string) => void; ro
         <ReportSymbol name="report" size={48} color="#E8E6E2" />
         <h2 className="text-lg font-bold text-[#1C1917]">Report Not Found</h2>
         <p className="text-sm text-[#57534E]">The requested report could not be found.</p>
-        <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={() => navigate(isParent ? "/admin/my-programs" : "/admin/reports")}>
+        <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={() => navigate(isParent ? "/admin/my-programs" : "/admin/reports")}>
           {isParent ? "Back to My Programs" : "Back to Reports"}
         </Button>
       </div>
@@ -589,7 +589,7 @@ export default function ReportViewerPage() {
         <div className="bg-white border border-[#E8E6E2] rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-hidden">
 
           {/* Cover Area */}
-          <div className="bg-[#FEF0E3] border-b-[3px] border-[#F5821F] px-14 py-12 text-center">
+          <div className="bg-[--e-orange-lt] border-b-[3px] border-[--e-orange] px-14 py-12 text-center">
             <div className="flex justify-center mb-6">
               <img src={logoImg} alt="Edubee Camp" className="h-12 w-auto object-contain" />
             </div>
@@ -631,11 +631,11 @@ export default function ReportViewerPage() {
       {pdfLoading && pdfProgress > 0 && pdfProgress < 100 && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl p-8 max-w-xs w-full mx-4 text-center space-y-4">
-            <ReportSymbol name="pdf" size={36} color="#F5821F" />
+            <ReportSymbol name="pdf" size={36} color="var(--e-orange)" />
             <p className="text-sm font-semibold text-[#1C1917]">Generating your PDF report…</p>
             <div className="w-full bg-[#F4F3F1] rounded-full h-2 overflow-hidden">
               <div
-                className="h-2 bg-[#F5821F] rounded-full transition-all duration-300"
+                className="h-2 bg-[--e-orange] rounded-full transition-all duration-300"
                 style={{ width: `${pdfProgress}%` }}
               />
             </div>
@@ -661,7 +661,7 @@ export default function ReportViewerPage() {
             </Button>
           )}
         </div>
-        <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5"
+        <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5"
           onClick={downloadPdf} disabled={pdfLoading}>
           <ReportSymbol name="pdf" size={15} color="white" />
           {pdfLoading ? "Generating PDF…" : "Download PDF"}

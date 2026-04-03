@@ -37,7 +37,7 @@ function CopyButton({ text }: { text: string }) {
           setTimeout(() => setCopied(false), 1800);
         });
       }}
-      className="ml-1.5 shrink-0 text-stone-400 hover:text-[#F5821F] transition-colors"
+      className="ml-1.5 shrink-0 text-stone-400 hover:text-[--e-orange] transition-colors"
       title="Copy"
     >
       {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
@@ -48,7 +48,7 @@ function CopyButton({ text }: { text: string }) {
 function RuleCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-xl border border-[#E8E6E2] p-5 space-y-4">
-      <h2 className="text-xs font-semibold text-[#F5821F] uppercase tracking-widest border-b border-[#F5821F]/20 pb-2">
+      <h2 className="text-xs font-semibold text-[--e-orange] uppercase tracking-widest border-b border-[--e-orange]/20 pb-2">
         {title}
       </h2>
       {children}
@@ -133,7 +133,7 @@ function AssetUploader({
           {preview && (
             <Button
               size="sm"
-              className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5 h-8 text-xs"
+              className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5 h-8 text-xs"
               onClick={() => {
                 const f = fileRef.current?.files?.[0];
                 if (f) { onSave(f); setPreview(""); if (fileRef.current) fileRef.current.value = ""; }
@@ -258,13 +258,13 @@ function DesignSystemTab() {
       <RuleCard title="Brand Colors">
         <RuleRow label="Primary (Orange)">
           <div className="flex items-center gap-3">
-            <span className="w-8 h-8 rounded-lg border border-stone-200 shrink-0" style={{ background: "#F5821F" }} />
+            <span className="w-8 h-8 rounded-lg border border-stone-200 shrink-0" style={{ background: "var(--e-orange)" }} />
             <div>
               <div className="text-sm font-medium text-stone-800">#F5821F</div>
               <div className="text-xs text-stone-500 mt-0.5">Buttons, section titles, active tabs, accents</div>
             </div>
-            <CodeChip code="text-[#F5821F]" />
-            <CodeChip code="bg-[#F5821F]" />
+            <CodeChip code="text-[--e-orange]" />
+            <CodeChip code="bg-[--e-orange]" />
           </div>
         </RuleRow>
         <RuleRow label="Primary Hover">
@@ -284,7 +284,7 @@ function DesignSystemTab() {
               <div className="text-sm font-medium text-stone-800">#F5821F / 20% opacity</div>
               <div className="text-xs text-stone-500 mt-0.5">Subtle underline below section titles</div>
             </div>
-            <CodeChip code="border-[#F5821F]/20" />
+            <CodeChip code="border-[--e-orange]/20" />
           </div>
         </RuleRow>
         <RuleRow label="Background / Surface">
@@ -329,10 +329,10 @@ function DesignSystemTab() {
       <RuleCard title="Typography">
         <RuleRow label="Section Title">
           <div className="space-y-1.5">
-            <div className="text-xs font-semibold text-[#F5821F] uppercase tracking-widest border-b border-[#F5821F]/20 pb-1.5 w-fit pr-4">
+            <div className="text-xs font-semibold text-[--e-orange] uppercase tracking-widest border-b border-[--e-orange]/20 pb-1.5 w-fit pr-4">
               Section Example
             </div>
-            <CodeChip code="text-xs font-semibold text-[#F5821F] uppercase tracking-widest border-b border-[#F5821F]/20 pb-2" />
+            <CodeChip code="text-xs font-semibold text-[--e-orange] uppercase tracking-widest border-b border-[--e-orange]/20 pb-2" />
           </div>
         </RuleRow>
         <RuleRow label="Field Label">
@@ -393,10 +393,10 @@ function DesignSystemTab() {
       <RuleCard title="Buttons">
         <RuleRow label="Primary (Save)">
           <div className="flex items-center gap-3 flex-wrap">
-            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-[#F5821F] hover:bg-[#d97706] text-white transition-colors">
+            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-[--e-orange] hover:bg-[#d97706] text-white transition-colors">
               Save Changes
             </button>
-            <CodeChip code="bg-[#F5821F] hover:bg-[#d97706] text-white" />
+            <CodeChip code="bg-[--e-orange] hover:bg-[#d97706] text-white" />
           </div>
         </RuleRow>
         <RuleRow label="Outline (Discard)">
@@ -415,7 +415,7 @@ function DesignSystemTab() {
       {/* Form Inputs */}
       <RuleCard title="Form Inputs">
         <RuleRow label="Standard Input Class">
-          <CodeChip code="w-full rounded-lg border border-[#E8E6E2] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#F5821F]" />
+          <CodeChip code="w-full rounded-lg border border-[#E8E6E2] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[--e-orange]" />
         </RuleRow>
         <RuleRow label="Input Height">
           <CodeChip code="h-9 text-sm" />
@@ -445,7 +445,7 @@ function DesignSystemTab() {
           </div>
         </RuleRow>
         <RuleRow label="Tab Nav Active">
-          <CodeChip code="border-[#F5821F] text-[#F5821F] bg-orange-50/50" />
+          <CodeChip code="border-[--e-orange] text-[--e-orange] bg-orange-50/50" />
         </RuleRow>
         <RuleRow label="Tab Nav Inactive">
           <CodeChip code="border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40" />
@@ -598,8 +598,8 @@ export default function GeneralSettings() {
     <div className="p-6 max-w-3xl">
       {/* Page header */}
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center">
-          <Settings className="w-5 h-5 text-[#F5821F]" />
+        <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center">
+          <Settings className="w-5 h-5 text-[--e-orange]" />
         </div>
         <div>
           <h1 className="text-lg font-bold">General Settings</h1>
@@ -615,7 +615,7 @@ export default function GeneralSettings() {
             onClick={() => setActiveTab(t.key)}
             className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
               activeTab === t.key
-                ? "border-[#F5821F] text-[#F5821F]"
+                ? "border-[--e-orange] text-[--e-orange]"
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
@@ -631,7 +631,7 @@ export default function GeneralSettings() {
           {/* Platform */}
           <section className="bg-white rounded-xl border p-5 space-y-4">
             <h2 className="text-sm font-semibold flex items-center gap-2">
-              <Globe className="w-4 h-4 text-[#F5821F]" /> Platform
+              <Globe className="w-4 h-4 text-[--e-orange]" /> Platform
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -646,7 +646,7 @@ export default function GeneralSettings() {
                 </Select>
               </div>
               <div className="sm:col-span-2">
-                <Label className="text-xs flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5 text-[#F5821F]" /> Date Format</Label>
+                <Label className="text-xs flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5 text-[--e-orange]" /> Date Format</Label>
                 <p className="text-[11px] text-stone-400 mt-0.5 mb-1.5">Applied across all pages — tables, detail views, reports (Admin Info timestamps are excluded).</p>
                 <Select value={general.dateFormat} onValueChange={v => setGeneral(s => ({ ...s, dateFormat: v as DateFormatKey }))}>
                   <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
@@ -658,7 +658,7 @@ export default function GeneralSettings() {
                 </Select>
               </div>
             </div>
-            <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => saveGeneral.mutate()} disabled={saveGeneral.isPending || loading}>
+            <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => saveGeneral.mutate()} disabled={saveGeneral.isPending || loading}>
               {saveGeneral.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saveGeneral.isSuccess ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
               Save Platform Settings
             </Button>
@@ -667,7 +667,7 @@ export default function GeneralSettings() {
           {/* Support Contacts */}
           <section className="bg-white rounded-xl border p-5 space-y-4">
             <h2 className="text-sm font-semibold flex items-center gap-2">
-              <Phone className="w-4 h-4 text-[#F5821F]" /> Support Contacts
+              <Phone className="w-4 h-4 text-[--e-orange]" /> Support Contacts
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -679,7 +679,7 @@ export default function GeneralSettings() {
                 <Input value={general.supportPhone} onChange={e => setGeneral(s => ({ ...s, supportPhone: e.target.value }))} className="mt-1 h-8 text-sm" />
               </div>
             </div>
-            <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => saveGeneral.mutate()} disabled={saveGeneral.isPending || loading}>
+            <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => saveGeneral.mutate()} disabled={saveGeneral.isPending || loading}>
               {saveGeneral.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
               Save Contact Settings
             </Button>
@@ -689,20 +689,20 @@ export default function GeneralSettings() {
           <section className="bg-white rounded-xl border p-5 space-y-4">
             <div className="flex items-start justify-between">
               <h2 className="text-sm font-semibold flex items-center gap-2">
-                <Mail className="w-4 h-4 text-[#F5821F]" /> Email (Resend)
+                <Mail className="w-4 h-4 text-[--e-orange]" /> Email (Resend)
               </h2>
               <a
                 href="https://resend.com/api-keys"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-[#F5821F] hover:underline"
+                className="flex items-center gap-1 text-xs text-[--e-orange] hover:underline"
               >
                 <Key className="w-3 h-3" /> Get API Key
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
 
-            <div className="rounded-lg bg-[#FEF0E3] border border-[#F5821F]/20 px-4 py-3 text-xs text-[#92400E] space-y-1">
+            <div className="rounded-lg bg-[--e-orange-lt] border border-[--e-orange]/20 px-4 py-3 text-xs text-[#92400E] space-y-1">
               <p className="font-medium">Resend 설정 방법</p>
               <ol className="list-decimal list-inside space-y-0.5 text-[#A16207]">
                 <li><a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="underline">resend.com</a>에서 계정 생성</li>
@@ -759,7 +759,7 @@ export default function GeneralSettings() {
             </div>
 
             <div className="flex items-center gap-2 pt-1 flex-wrap">
-              <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => saveResend.mutate()} disabled={saveResend.isPending || loading}>
+              <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => saveResend.mutate()} disabled={saveResend.isPending || loading}>
                 {saveResend.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saveResend.isSuccess ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
                 저장
               </Button>
@@ -783,18 +783,18 @@ export default function GeneralSettings() {
           {/* Languages */}
           <section className="bg-white rounded-xl border p-5 space-y-4">
             <h2 className="text-sm font-semibold flex items-center gap-2">
-              <Globe className="w-4 h-4 text-[#F5821F]" /> Active Languages
+              <Globe className="w-4 h-4 text-[--e-orange]" /> Active Languages
             </h2>
             <div className="flex flex-wrap gap-2">
               {LANGUAGES.map(lang => (
                 <button key={lang.code} onClick={() => toggleLang(lang.code)}
-                  className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${general.activeLanguages.includes(lang.code) ? "bg-[#F5821F] text-white border-[#F5821F]" : "border-muted-foreground/30 text-muted-foreground hover:border-[#F5821F]/50"}`}>
+                  className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${general.activeLanguages.includes(lang.code) ? "bg-[--e-orange] text-white border-[--e-orange]" : "border-muted-foreground/30 text-muted-foreground hover:border-[--e-orange]/50"}`}>
                   {lang.label}
                 </button>
               ))}
             </div>
             <p className="text-xs text-muted-foreground">🇦🇺 English is always shown with the Australian flag on Edubee Camp.</p>
-            <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => saveGeneral.mutate()} disabled={saveGeneral.isPending || loading}>
+            <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={() => saveGeneral.mutate()} disabled={saveGeneral.isPending || loading}>
               {saveGeneral.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
               Save Language Settings
             </Button>

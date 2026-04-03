@@ -47,7 +47,7 @@ const EMPTY_FORM: Omit<PlatformPlan, "id" | "isActive" | "sortOrder"> = {
 const inp = `
   w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917]
   bg-white placeholder-[#A8A29E]
-  focus:outline-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]
+  focus:outline-none focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)]
   transition-all
 `.replace(/\s+/g, " ").trim();
 
@@ -72,7 +72,7 @@ function Toggle({
         />
         <div
           className="absolute inset-0 rounded-full transition-colors duration-200"
-          style={{ background: checked ? "#F5821F" : "#E8E6E2" }}
+          style={{ background: checked ? "var(--e-orange)" : "#E8E6E2" }}
         />
         <div
           className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200"
@@ -150,8 +150,8 @@ function FormPanel({
       className="rounded-xl p-6 space-y-6 mb-6"
       style={{
         background: "#FFFFFF",
-        border: "1.5px solid #F5821F",
-        boxShadow: "0 2px 12px rgba(245,130,31,0.12)",
+        border: "1.5px solid var(--e-orange)",
+        boxShadow: "0 2px 12px var(--e-orange-shadow-12)",
       }}
     >
       <h3 className="text-base font-semibold text-[#1C1917]">{editingId ? "Edit Plan" : "New Plan"}</h3>
@@ -238,7 +238,7 @@ function FormPanel({
         <button
           onClick={handleSubmit}
           className="h-10 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 transition-all hover:-translate-y-px"
-          style={{ background: "#F5821F" }}
+          style={{ background: "var(--e-orange)" }}
         >
           <Check size={14} strokeWidth={2} />
           {editingId ? "Save Changes" : "Create Plan"}
@@ -301,7 +301,7 @@ function PlanCard({
           </span>
         </div>
         {plan.isPopular && (
-          <span className="text-xs px-2.5 py-0.5 rounded-full font-medium shrink-0" style={{ background: "#FEF0E3", color: "#F5821F" }}>
+          <span className="text-xs px-2.5 py-0.5 rounded-full font-medium shrink-0" style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
             Most Popular
           </span>
         )}
@@ -310,7 +310,7 @@ function PlanCard({
       {/* Pricing */}
       <div className="mb-2">
         {Number(plan.priceMonthly) === 0 ? (
-          <span className="font-bold text-[#F5821F]" style={{ fontSize: 22 }}>
+          <span className="font-bold text-[--e-orange]" style={{ fontSize: 22 }}>
             Contact us<span className="text-sm font-normal text-[#57534E]"> for pricing</span>
           </span>
         ) : (
@@ -499,9 +499,9 @@ export default function PlatformPlans() {
           <button
             onClick={openNew}
             className="h-10 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 transition-all hover:-translate-y-px"
-            style={{ background: "#F5821F" }}
-            onMouseEnter={e => (e.currentTarget.style.background = "#D96A0A")}
-            onMouseLeave={e => (e.currentTarget.style.background = "#F5821F")}
+            style={{ background: "var(--e-orange)" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "var(--e-orange-hover)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "var(--e-orange)")}
           >
             <Plus size={15} strokeWidth={2} /> Add New Plan
           </button>
@@ -538,7 +538,7 @@ export default function PlatformPlans() {
           <button
             onClick={openNew}
             className="mt-4 h-10 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2"
-            style={{ background: "#F5821F" }}
+            style={{ background: "var(--e-orange)" }}
           >
             <Plus size={14} /> Add New Plan
           </button>

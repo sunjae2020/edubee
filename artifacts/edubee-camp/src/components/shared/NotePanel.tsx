@@ -30,7 +30,7 @@ interface NotePanelProps {
 }
 
 const VISIBILITY_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  internal: { label: "Internal", color: "#F5821F", bg: "#FEF0E3" },
+  internal: { label: "Internal", color: "var(--e-orange)", bg: "var(--e-orange-lt)" },
   partner:  { label: "Partner",  color: "#0EA5E9", bg: "#E0F2FE" },
   client:   { label: "Client",   color: "#16A34A", bg: "#DCFCE7" },
 };
@@ -132,7 +132,7 @@ export function NotePanel({
             disabled={!content.trim() || createMutation.isPending}
             onClick={() => createMutation.mutate()}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-white transition-all
-              ${content.trim() ? "bg-[#F5821F] hover:bg-[#d97706]" : "bg-muted-foreground/30 cursor-not-allowed"}
+              ${content.trim() ? "bg-[--e-orange] hover:bg-[#d97706]" : "bg-muted-foreground/30 cursor-not-allowed"}
               ${createMutation.isPending ? "opacity-70" : ""}`}
           >
             <Send className="w-3 h-3" />
@@ -163,9 +163,9 @@ export function NotePanel({
             key={note.id}
             className="rounded-xl flex flex-col gap-1.5"
             style={{
-              border: note.isPinned ? `1.5px solid #F5821F` : "1px solid var(--border)",
+              border: note.isPinned ? `1.5px solid var(--e-orange)` : "1px solid var(--border)",
               padding: compact ? "10px 14px" : "12px 16px",
-              background: note.isPinned ? "#FEF0E3" : "var(--card)",
+              background: note.isPinned ? "var(--e-orange-lt)" : "var(--card)",
             }}
           >
             {/* Header */}
@@ -193,7 +193,7 @@ export function NotePanel({
                     onClick={() => pinMutation.mutate({ id: note.id, isPinned: note.isPinned })}
                     title={note.isPinned ? "Unpin" : "Pin"}
                     className="p-1 rounded hover:bg-muted transition-colors"
-                    style={{ color: note.isPinned ? "#F5821F" : undefined }}
+                    style={{ color: note.isPinned ? "var(--e-orange)" : undefined }}
                   >
                     <Pin className="w-3 h-3" />
                   </button>

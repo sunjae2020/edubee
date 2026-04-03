@@ -31,7 +31,7 @@ function genMonthOptions() {
 
 const SELECT_CLS =
   'text-sm border border-[#E8E6E2] rounded-lg px-3 py-2 bg-white text-[#1C1917] ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#F5821F]/40 focus:border-[#F5821F] transition-colors';
+  'focus:outline-none focus:ring-2 focus:ring-[--e-orange]/40 focus:border-[--e-orange] transition-colors';
 
 export const KpiFilterBar: React.FC<Props> = ({ filter, onChange, onRefresh, loading }) => (
   <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-white rounded-xl border border-[#E8E6E2]"
@@ -63,8 +63,8 @@ export const KpiFilterBar: React.FC<Props> = ({ filter, onChange, onRefresh, loa
       onClick={onRefresh}
       disabled={loading}
       className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
-        bg-[#F5821F] text-white hover:bg-[#D96A0A] hover:-translate-y-px
-        hover:shadow-[0_4px_12px_rgba(245,130,31,0.25)] active:bg-[#C25E08]
+        bg-[--e-orange] text-white hover:bg-[--e-orange-hover] hover:-translate-y-px
+        hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)] active:bg-[--e-orange-active]
         disabled:opacity-50 disabled:cursor-not-allowed transition-all"
     >
       {loading

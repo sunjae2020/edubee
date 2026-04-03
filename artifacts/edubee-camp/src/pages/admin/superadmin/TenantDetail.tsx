@@ -39,7 +39,7 @@ type PlatformPlan = {
 
 // ── Design constants ───────────────────────────────────────────────────────────
 
-const inp = `w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white placeholder-[#A8A29E] focus:outline-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)] transition-all`;
+const inp = `w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] bg-white placeholder-[#A8A29E] focus:outline-none focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)] transition-all`;
 const readInp = `w-full h-10 px-3 border border-[#F4F3F1] rounded-lg text-sm text-[#57534E] bg-[#FAFAF9] cursor-not-allowed select-none`;
 
 const PLAN_STATUS = [
@@ -126,10 +126,10 @@ function ImageUploadZone({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className={`w-full ${previewHeight} rounded-xl border-2 border-dashed border-[#E8E6E2] flex flex-col items-center justify-center gap-1.5 hover:border-[#F5821F] hover:bg-[#FEF0E3] transition-colors disabled:opacity-50 cursor-pointer`}
+          className={`w-full ${previewHeight} rounded-xl border-2 border-dashed border-[#E8E6E2] flex flex-col items-center justify-center gap-1.5 hover:border-[--e-orange] hover:bg-[--e-orange-lt] transition-colors disabled:opacity-50 cursor-pointer`}
         >
           {uploading ? (
-            <Loader2 size={18} className="animate-spin text-[#F5821F]" />
+            <Loader2 size={18} className="animate-spin text-[--e-orange]" />
           ) : (
             <>
               <Upload size={18} className="text-[#A8A29E]" />
@@ -175,7 +175,7 @@ const STATUS_COLOR: Record<string, { bg: string; color: string }> = {
 
 const PLAN_COLOR: Record<string, { bg: string; color: string; border: string }> = {
   solo:       { bg: "#FAFAF9", color: "#57534E",  border: "#E8E6E2" },
-  starter:    { bg: "#FEF0E3", color: "#C2410C",  border: "#FDE0C0" },
+  starter:    { bg: "var(--e-orange-lt)", color: "#C2410C",  border: "#FDE0C0" },
   growth:     { bg: "#ECFDF5", color: "#065F46",  border: "#A7F3D0" },
   enterprise: { bg: "#F5F3FF", color: "#6D28D9",  border: "#DDD6FE" },
 };
@@ -213,8 +213,8 @@ function ColorSwatch({ label, value, onChange }: { label: string; value: string;
           value={value || ""}
           onChange={e => onChange(e.target.value)}
           maxLength={7}
-          className="flex-1 h-9 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm font-mono focus:outline-none focus:border-[#F5821F] uppercase bg-white"
-          placeholder="#F5821F"
+          className="flex-1 h-9 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm font-mono focus:outline-none focus:border-[--e-orange] uppercase bg-white"
+          placeholder="var(--e-orange)"
         />
       </div>
     </div>
@@ -259,7 +259,7 @@ function PlanInfoCard({ plan }: { plan: PlatformPlan }) {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           {plan.isPopular && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: "#FEF0E3", color: "#F5821F" }}>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
               Most Popular
             </span>
           )}
@@ -379,7 +379,7 @@ export default function TenantDetail() {
   if (orgLoading || plansLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-[#F5821F]" />
+        <Loader2 size={24} className="animate-spin text-[--e-orange]" />
       </div>
     );
   }
@@ -389,7 +389,7 @@ export default function TenantDetail() {
       <div className="p-8 flex flex-col items-center gap-3 text-[#A8A29E]">
         <Building2 size={40} strokeWidth={1} />
         <p className="text-sm">Tenant not found</p>
-        <button onClick={() => navigate("/superadmin/tenants")} className="text-sm text-[#F5821F] hover:underline">
+        <button onClick={() => navigate("/superadmin/tenants")} className="text-sm text-[--e-orange] hover:underline">
           ← Back to Tenants
         </button>
       </div>
@@ -405,7 +405,7 @@ export default function TenantDetail() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/superadmin/tenants")}
-            className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#E8E6E2] text-[#57534E] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+            className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#E8E6E2] text-[#57534E] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
           >
             <ArrowLeft size={15} />
           </button>
@@ -433,7 +433,7 @@ export default function TenantDetail() {
               // 테마 재로드는 ImpersonationBanner 마운트 시 실행됨 (navigate 이후)
               navigate("/admin/dashboard");
             }}
-            className="h-9 px-4 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#E8E6E2] text-[#1C1917] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+            className="h-9 px-4 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#E8E6E2] text-[#1C1917] hover:border-[--e-orange] hover:text-[--e-orange] transition-colors"
           >
             <ExternalLink size={14} />
             Open Admin Panel
@@ -442,9 +442,9 @@ export default function TenantDetail() {
             onClick={() => save.mutate()}
             disabled={!dirty || save.isPending}
             className="h-9 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-40 transition-all"
-            style={{ background: "#F5821F" }}
-            onMouseEnter={e => { if (dirty && !save.isPending) e.currentTarget.style.background = "#D96A0A"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#F5821F"; }}
+            style={{ background: "var(--e-orange)" }}
+            onMouseEnter={e => { if (dirty && !save.isPending) e.currentTarget.style.background = "var(--e-orange-hover)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "var(--e-orange)"; }}
           >
             {save.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             Save Changes
@@ -543,7 +543,7 @@ export default function TenantDetail() {
           <div className="grid grid-cols-3 gap-4">
             <ColorSwatch
               label="Primary Colour"
-              value={val("primaryColor", "#F5821F")}
+              value={val("primaryColor", "var(--e-orange)")}
               onChange={v => set("primaryColor", v)}
             />
             <ColorSwatch
@@ -553,7 +553,7 @@ export default function TenantDetail() {
             />
             <ColorSwatch
               label="Accent Colour"
-              value={val("accentColor", "#FEF0E3")}
+              value={val("accentColor", "var(--e-orange-lt)")}
               onChange={v => set("accentColor", v)}
             />
           </div>
@@ -561,7 +561,7 @@ export default function TenantDetail() {
           {/* Live colour preview */}
           <div
             className="rounded-xl border border-[#E8E6E2] p-4"
-            style={{ background: val("accentColor", "#FEF0E3") }}
+            style={{ background: val("accentColor", "var(--e-orange-lt)") }}
           >
             <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: val("secondaryColor", "#1C1917") }}>
               Colour Preview
@@ -569,19 +569,19 @@ export default function TenantDetail() {
             <div className="flex items-center gap-3 flex-wrap">
               <button
                 className="h-8 px-4 rounded-lg text-xs font-semibold text-white"
-                style={{ background: val("primaryColor", "#F5821F") }}
+                style={{ background: val("primaryColor", "var(--e-orange)") }}
               >
                 Primary Button
               </button>
               <button
                 className="h-8 px-4 rounded-lg text-xs font-semibold border-2"
-                style={{ color: val("primaryColor", "#F5821F"), borderColor: val("primaryColor", "#F5821F"), background: "transparent" }}
+                style={{ color: val("primaryColor", "var(--e-orange)"), borderColor: val("primaryColor", "var(--e-orange)"), background: "transparent" }}
               >
                 Outline
               </button>
               <span
                 className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                style={{ background: val("primaryColor", "#F5821F"), color: "#fff" }}
+                style={{ background: val("primaryColor", "var(--e-orange)"), color: "#fff" }}
               >
                 Badge
               </span>

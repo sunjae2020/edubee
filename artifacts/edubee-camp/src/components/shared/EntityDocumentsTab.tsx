@@ -159,7 +159,7 @@ function DocRow({ doc, onDelete, showExpiry = false }: { doc: DocRecord; onDelet
   }
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 border-b last:border-0 hover:bg-[#FEF0E3]/40 transition-colors group">
+    <div className="flex items-center gap-3 px-4 py-2.5 border-b last:border-0 hover:bg-[--e-orange-lt]/40 transition-colors group">
       <FileIcon ext={doc.fileExtension} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -181,7 +181,7 @@ function DocRow({ doc, onDelete, showExpiry = false }: { doc: DocRecord; onDelet
         </div>
         <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
           {doc.documentCategory && (
-            <span className="font-medium text-[#F5821F]">
+            <span className="font-medium text-[--e-orange]">
               {[...STUDENT_DOC_CATEGORIES, ...CONSULTATION_DOC_CATEGORIES].find(c => c.code === doc.documentCategory)?.label ?? doc.documentCategory}
             </span>
           )}
@@ -293,10 +293,10 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {activeTab === "student"
-              ? <GraduationCap className="w-4 h-4 text-[#F5821F]" />
+              ? <GraduationCap className="w-4 h-4 text-[--e-orange]" />
               : activeTab === "staff"
-              ? <UserCog className="w-4 h-4 text-[#F5821F]" />
-              : <Briefcase className="w-4 h-4 text-[#F5821F]" />}
+              ? <UserCog className="w-4 h-4 text-[--e-orange]" />
+              : <Briefcase className="w-4 h-4 text-[--e-orange]" />}
             {activeTab === "student"
               ? "Upload Student Document"
               : activeTab === "staff"
@@ -311,12 +311,12 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
             <Label className="text-xs font-semibold mb-1.5 block">Select File *</Label>
             <input ref={fileRef} type="file" className="hidden" onChange={e => setFile(e.target.files?.[0] ?? null)} />
             <div
-              className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-[#F5821F] transition-colors"
+              className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-[--e-orange] transition-colors"
               onClick={() => fileRef.current?.click()}
             >
               {file ? (
                 <div className="flex items-center justify-center gap-2 text-sm">
-                  <FileText className="w-4 h-4 text-[#F5821F]" />
+                  <FileText className="w-4 h-4 text-[--e-orange]" />
                   <span className="truncate max-w-[200px]">{file.name}</span>
                   <button onClick={e => { e.stopPropagation(); setFile(null); }}>
                     <X className="w-3.5 h-3.5 text-muted-foreground hover:text-red-500" />
@@ -342,11 +342,11 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsExtra(false)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!isExtra ? "bg-[#F5821F] text-white" : "bg-muted text-muted-foreground"}`}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!isExtra ? "bg-[--e-orange] text-white" : "bg-muted text-muted-foreground"}`}
               >Standard Category</button>
               <button
                 onClick={() => setIsExtra(true)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isExtra ? "bg-[#F5821F] text-white" : "bg-muted text-muted-foreground"}`}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isExtra ? "bg-[--e-orange] text-white" : "bg-muted text-muted-foreground"}`}
               >Other (Custom)</button>
             </div>
           )}
@@ -424,7 +424,7 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
           <Button variant="outline" size="sm" onClick={() => { onClose(); reset(); }} disabled={uploading}>Cancel</Button>
           <Button
             size="sm"
-            className="bg-[#F5821F] hover:bg-[#d97706] text-white"
+            className="bg-[--e-orange] hover:bg-[#d97706] text-white"
             onClick={handleUpload}
             disabled={uploading}
           >
@@ -447,7 +447,7 @@ function TabBtn({ active, onClick, icon: Icon, label, count }: {
       className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
       style={{
         background: active ? "#fff" : "transparent",
-        color: active ? "#F5821F" : "#57534E",
+        color: active ? "var(--e-orange)" : "#57534E",
         boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
         border: active ? "1px solid #E8E6E2" : "1px solid transparent",
       }}
@@ -456,7 +456,7 @@ function TabBtn({ active, onClick, icon: Icon, label, count }: {
       {label}
       {count > 0 && (
         <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-          style={{ background: active ? "#FEF0E3" : "#F4F3F1", color: active ? "#F5821F" : "#57534E" }}>
+          style={{ background: active ? "var(--e-orange-lt)" : "#F4F3F1", color: active ? "var(--e-orange)" : "#57534E" }}>
           {count}
         </span>
       )}
@@ -504,7 +504,7 @@ function GroupedDocList({ groups, activeTab, onDelete, permCheck, isAdmin, onUpl
                       tabIndex={0}
                       onClick={e => { e.stopPropagation(); onUpload(grp.group); }}
                       onKeyDown={e => { if (e.key === "Enter") { e.stopPropagation(); onUpload(grp.group); } }}
-                      className="text-[10px] text-[#F5821F] hover:underline font-medium cursor-pointer"
+                      className="text-[10px] text-[--e-orange] hover:underline font-medium cursor-pointer"
                     >+ Add</span>
                   )}
                 </div>
@@ -536,7 +536,7 @@ function StaffDocList({ docs, onDelete, isAdmin, permCheck, onUpload }: {
         <FileText className="w-8 h-8 mx-auto mb-3 opacity-20" />
         <p className="text-sm mb-3">No staff documents uploaded yet.</p>
         {(permCheck?.canUpload || isAdmin) && (
-          <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={onUpload}>
+          <Button size="sm" className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={onUpload}>
             <Upload className="w-3.5 h-3.5" /> Upload Document
           </Button>
         )}
@@ -631,10 +631,10 @@ export default function EntityDocumentsTab({ entityType, entityId, mode = "full"
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <UserCog className="w-4 h-4 text-[#F5821F]" />
+            <UserCog className="w-4 h-4 text-[--e-orange]" />
             <span className="text-sm font-semibold text-neutral-700">Staff Documents</span>
             {staffDocs.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-[#FEF0E3] text-[#F5821F]">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-[--e-orange-lt] text-[--e-orange]">
                 {staffDocs.length}
               </span>
             )}
@@ -642,7 +642,7 @@ export default function EntityDocumentsTab({ entityType, entityId, mode = "full"
           {mode === "full" && (permCheck?.canUpload || isAdmin) && (
             <Button
               size="sm"
-              className="bg-[#F5821F] hover:bg-[#d97706] text-white h-7 text-xs px-2.5 shrink-0"
+              className="bg-[--e-orange] hover:bg-[#d97706] text-white h-7 text-xs px-2.5 shrink-0"
               onClick={() => setUploadOpen(true)}
             >
               <Upload className="w-3 h-3 mr-1" /> Upload
@@ -712,7 +712,7 @@ export default function EntityDocumentsTab({ entityType, entityId, mode = "full"
         {mode === "full" && (permCheck?.canUpload || isAdmin) && (
           <Button
             size="sm"
-            className="bg-[#F5821F] hover:bg-[#d97706] text-white h-7 text-xs px-2.5 shrink-0"
+            className="bg-[--e-orange] hover:bg-[#d97706] text-white h-7 text-xs px-2.5 shrink-0"
             onClick={() => setUploadOpen(true)}
           >
             <Upload className="w-3 h-3 mr-1" /> Upload

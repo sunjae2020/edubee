@@ -30,7 +30,7 @@ const KANBAN_COLS = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  new:         "bg-[#FEF0E3] text-[#F5821F]",
+  new:         "bg-[--e-orange-lt] text-[--e-orange]",
   open:        "bg-[#EFF6FF] text-[#3B82F6]",
   in_progress: "bg-[#FEF9C3] text-[#CA8A04]",
   qualified:   "bg-[#DCFCE7] text-[#16A34A]",
@@ -128,7 +128,7 @@ function KanbanCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
         {lead.originalName && <p className="text-xs text-[#57534E]">{lead.originalName}</p>}
       </div>
       {lead.inquiryType && (
-        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#FEF0E3] text-[#F5821F]">
+        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-[--e-orange-lt] text-[--e-orange]">
           {lead.inquiryType}
         </span>
       )}
@@ -277,7 +277,7 @@ export default function CrmLeadsPage() {
           <Button
             onClick={openCreate}
             className="flex items-center gap-2 text-white rounded-lg"
-            style={{ background: "#F5821F" }}
+            style={{ background: "var(--e-orange)" }}
           >
             <Plus size={16} /> New Lead
           </Button>
@@ -329,7 +329,7 @@ export default function CrmLeadsPage() {
                   <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No leads found</td></tr>
                 )}
                 {sorted.map(l => (
-                  <tr key={l.id} className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer">
+                  <tr key={l.id} className="border-b last:border-0 hover:bg-[--e-orange-lt] transition-colors cursor-pointer">
                     <td className="px-4 py-3 font-mono text-xs text-stone-500">{l.leadRefNumber ?? "—"}</td>
                     <td className="px-4 py-3">
                       <button onClick={() => navigate(`/admin/crm/leads/${l.id}`)} className="text-left w-full">
@@ -467,7 +467,7 @@ export default function CrmLeadsPage() {
               <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="text-sm min-h-[70px] resize-none" placeholder="Additional notes…" />
             </div>
             <div className="flex gap-2 pt-2">
-              <Button onClick={handleSave} disabled={saveMutation.isPending} className="flex-1 text-white" style={{ background: "#F5821F" }}>
+              <Button onClick={handleSave} disabled={saveMutation.isPending} className="flex-1 text-white" style={{ background: "var(--e-orange)" }}>
                 {saveMutation.isPending ? "Saving…" : editLead ? "Save Changes" : "Create Lead"}
               </Button>
               <Button variant="outline" onClick={() => setSheetOpen(false)} className="flex-1">Cancel</Button>

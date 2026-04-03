@@ -100,11 +100,11 @@ function ImageSlot({
         className={`relative rounded-xl border-2 overflow-hidden bg-[#FAFAF9] transition-all cursor-pointer
           ${isEmpty
             ? dragOver
-              ? "border-[#F5821F] bg-[#FEF0E3]"
-              : "border-dashed border-[#E8E6E2] hover:border-[#F5821F]/50"
+              ? "border-[--e-orange] bg-[--e-orange-lt]"
+              : "border-dashed border-[#E8E6E2] hover:border-[--e-orange]/50"
             : isPrimary
-              ? "border-[#F5821F]"
-              : "border-[#E8E6E2] hover:border-[#F5821F]/50"}
+              ? "border-[--e-orange]"
+              : "border-[#E8E6E2] hover:border-[--e-orange]/50"}
           ${disabled ? "opacity-60 cursor-not-allowed" : ""}
         `}
         style={{ aspectRatio: "4/3" }}
@@ -130,7 +130,7 @@ function ImageSlot({
             <Loader2 className="w-6 h-6 text-white animate-spin" />
             <div className="text-white text-xs font-semibold">{progress}%</div>
             <div className="w-20 h-1.5 bg-white/30 rounded-full overflow-hidden">
-              <div className="h-full bg-[#F5821F] rounded-full transition-all" style={{ width: `${progress}%` }} />
+              <div className="h-full bg-[--e-orange] rounded-full transition-all" style={{ width: `${progress}%` }} />
             </div>
           </div>
         )}
@@ -148,7 +148,7 @@ function ImageSlot({
         )}
 
         {isPrimary && (
-          <div className="absolute top-1.5 left-1.5 bg-[#F5821F] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+          <div className="absolute top-1.5 left-1.5 bg-[--e-orange] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
             <Star className="w-2.5 h-2.5 fill-white" /> Primary
           </div>
         )}
@@ -170,7 +170,7 @@ function ImageSlot({
             <button
               type="button"
               onClick={() => onSetPrimary(index)}
-              className="flex-1 text-[10px] font-medium text-[#57534E] border border-[#E8E6E2] rounded-lg py-1 hover:border-[#F5821F] hover:text-[#F5821F] transition-colors flex items-center justify-center gap-1"
+              className="flex-1 text-[10px] font-medium text-[#57534E] border border-[#E8E6E2] rounded-lg py-1 hover:border-[--e-orange] hover:text-[--e-orange] transition-colors flex items-center justify-center gap-1"
             >
               <Star className="w-2.5 h-2.5" /> Set Primary
             </button>
@@ -249,10 +249,10 @@ export function ProductImageGallery({ images, onChange, disabled }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-start gap-2 rounded-lg bg-[#FEF0E3]/60 border border-[#F5821F]/20 px-3.5 py-2.5">
-        <AlertCircle className="w-3.5 h-3.5 text-[#F5821F] shrink-0 mt-0.5" />
+      <div className="flex items-start gap-2 rounded-lg bg-[--e-orange-lt]/60 border border-[--e-orange]/20 px-3.5 py-2.5">
+        <AlertCircle className="w-3.5 h-3.5 text-[--e-orange] shrink-0 mt-0.5" />
         <p className="text-[11px] text-[#57534E] leading-relaxed">
-          <span className="font-semibold text-[#F5821F]">Recommended:</span>{" "}
+          <span className="font-semibold text-[--e-orange]">Recommended:</span>{" "}
           900 × 675 px (4:3 ratio) · JPG / PNG / WebP · Max {MAX_FILE_MB} MB per file.
           Images are automatically resized and compressed before saving.
           Select one image as the <span className="font-semibold">Primary</span> (shown as the main product image).

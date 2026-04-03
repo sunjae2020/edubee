@@ -23,7 +23,7 @@ function Card({ title, icon: Icon, children }: { title: string; icon: any; child
   return (
     <div className="bg-white rounded-xl border border-[#E8E6E2] p-6 space-y-4" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
       <div className="flex items-center gap-2 border-b border-[#E8E6E2] pb-3">
-        <Icon size={16} className="text-[#F5821F]" strokeWidth={1.5} />
+        <Icon size={16} className="text-[--e-orange]" strokeWidth={1.5} />
         <h2 className="text-sm font-semibold text-[#1C1917] uppercase tracking-wide">{title}</h2>
       </div>
       {children}
@@ -42,7 +42,7 @@ function Field({ label, children, required }: { label: string; children: React.R
   );
 }
 
-const inp = "w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] focus:outline-none focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)] bg-white transition-all";
+const inp = "w-full h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm text-[#1C1917] focus:outline-none focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)] bg-white transition-all";
 const sel = inp + " cursor-pointer";
 
 export default function CompanyProfile() {
@@ -86,7 +86,7 @@ export default function CompanyProfile() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-48">
-      <Loader2 size={24} className="animate-spin text-[#F5821F]" />
+      <Loader2 size={24} className="animate-spin text-[--e-orange]" />
     </div>
   );
 
@@ -101,7 +101,7 @@ export default function CompanyProfile() {
           onClick={handleSave}
           disabled={mutation.isPending}
           className="h-10 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
-          style={{ background: "#F5821F" }}
+          style={{ background: "var(--e-orange)" }}
         >
           {mutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           Save Changes
@@ -216,7 +216,7 @@ export default function CompanyProfile() {
           onClick={handleSave}
           disabled={mutation.isPending}
           className="h-10 px-6 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
-          style={{ background: "#F5821F" }}
+          style={{ background: "var(--e-orange)" }}
         >
           {mutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           Save Changes

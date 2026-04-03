@@ -156,7 +156,7 @@ export function ImageCropDialog({ file, onConfirm, onCancel }: Props) {
                 ref={canvasRef}
                 width={PREVIEW}
                 height={PREVIEW}
-                className="border-2 border-[#F5821F]/40 cursor-grab active:cursor-grabbing select-none"
+                className="border-2 border-[--e-orange]/40 cursor-grab active:cursor-grabbing select-none"
                 style={{ borderRadius: "50%", display: "block", touchAction: "none" }}
                 onMouseDown={onMouseDown}
                 onMouseMove={onMouseMove}
@@ -192,7 +192,7 @@ export function ImageCropDialog({ file, onConfirm, onCancel }: Props) {
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
           <Button size="sm" onClick={handleConfirm}
-            className="bg-[#F5821F] hover:bg-[#E06A10] text-white">
+            className="bg-[--e-orange] hover:bg-[#E06A10] text-white">
             Apply
           </Button>
         </DialogFooter>

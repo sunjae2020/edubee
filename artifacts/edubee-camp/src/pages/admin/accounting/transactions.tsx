@@ -80,7 +80,7 @@ function SearchSelect({
             placeholder={placeholder}
             value={q}
             onChange={e => setQ(e.target.value)}
-            className="pl-9 h-10 border-[#E8E6E2] focus:border-[#F5821F]"
+            className="pl-9 h-10 border-[#E8E6E2] focus:border-[--e-orange]"
           />
           {q && filtered.length > 0 && (
             <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -88,7 +88,7 @@ function SearchSelect({
                 <button
                   key={o.id}
                   type="button"
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-[#FEF0E3] text-[#1C1917]"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-[--e-orange-lt] text-[#1C1917]"
                   onClick={() => { onChange(o.id); setQ(""); }}
                 >
                   {o.name}
@@ -179,7 +179,7 @@ export default function Transactions() {
         </div>
         <Button
           onClick={() => { setForm(EMPTY); setCreateOpen(true); }}
-          className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-2 shrink-0"
+          className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-2 shrink-0"
         >
           <Plus className="w-4 h-4" /> Create Transaction
         </Button>
@@ -214,7 +214,7 @@ export default function Transactions() {
                 </td>
               </tr>
             ) : sorted.map(r => (
-              <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/transactions/${r.id}`)}>
+              <tr key={r.id} className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/transactions/${r.id}`)}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">
                     {r.transactionType === "credit"
@@ -265,7 +265,7 @@ export default function Transactions() {
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Transaction Type</Label>
               <Select value={form.transactionType} onValueChange={sf("transactionType")}>
-                <SelectTrigger className="h-10 border-[#E8E6E2] focus:border-[#F5821F]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 border-[#E8E6E2] focus:border-[--e-orange]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="credit">Credit</SelectItem>
                   <SelectItem value="debit">Debit</SelectItem>
@@ -280,7 +280,7 @@ export default function Transactions() {
                 placeholder="0.00"
                 value={form.creditAmount}
                 onChange={e => setForm(f => ({ ...f, creditAmount: e.target.value }))}
-                className="h-10 border-[#E8E6E2] focus:border-[#F5821F]"
+                className="h-10 border-[#E8E6E2] focus:border-[--e-orange]"
               />
             </div>
 
@@ -291,7 +291,7 @@ export default function Transactions() {
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 rows={3}
-                className="border-[#E8E6E2] focus:border-[#F5821F] resize-none text-sm"
+                className="border-[#E8E6E2] focus:border-[--e-orange] resize-none text-sm"
               />
             </div>
 
@@ -302,7 +302,7 @@ export default function Transactions() {
               <Button
                 onClick={() => createTx.mutate()}
                 disabled={createTx.isPending}
-                className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5"
+                className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-1.5"
               >
                 {createTx.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Save Transaction

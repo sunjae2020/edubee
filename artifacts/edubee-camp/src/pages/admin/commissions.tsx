@@ -37,7 +37,7 @@ function TypeBadge({ type }: { type: string }) {
   const map: Record<string, string> = {
     nil:   "bg-[#F4F3F1] text-[#57534E]",
     fixed: "bg-[#EFF6FF] text-[#3B82F6]",
-    rate:  "bg-[#FEF0E3] text-[#F5821F]",
+    rate:  "bg-[--e-orange-lt] text-[--e-orange]",
   };
   const cls = map[type] ?? "bg-[#F4F3F1] text-[#57534E]";
   return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cls}`}>{type.charAt(0).toUpperCase() + type.slice(1)}</span>;
@@ -126,7 +126,7 @@ export default function Commissions() {
           <h1 className="text-2xl font-bold text-[#1C1917]">Commission</h1>
           <p className="text-sm text-[#57534E] mt-0.5">Define commission types and rates for products and agents</p>
         </div>
-        <Button onClick={openCreate} className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-2 shrink-0">
+        <Button onClick={openCreate} className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-2 shrink-0">
           <Plus className="w-4 h-4" /> Add Commission
         </Button>
       </div>
@@ -182,12 +182,12 @@ export default function Commissions() {
             ) : commissions.map(c => (
               <tr
                 key={c.id}
-                className="hover:bg-[#FEF0E3] cursor-pointer transition-colors"
+                className="hover:bg-[--e-orange-lt] cursor-pointer transition-colors"
                 onClick={() => navigate(`/admin/commissions/${c.id}`)}
               >
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <div className="flex items-center gap-2">
-                    <BadgeDollarSign className="w-4 h-4 text-[#F5821F] shrink-0" strokeWidth={1.5} />
+                    <BadgeDollarSign className="w-4 h-4 text-[--e-orange] shrink-0" strokeWidth={1.5} />
                     {c.name}
                   </div>
                 </td>
@@ -220,7 +220,7 @@ export default function Commissions() {
               <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Name <span className="text-[#DC2626]">*</span></Label>
               <Input value={form.name} onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setNameError(""); }}
                 placeholder="e.g. Rate25"
-                className={`h-10 border-[#E8E6E2] focus:border-[#F5821F] ${nameError ? "border-[#DC2626]" : ""}`} />
+                className={`h-10 border-[#E8E6E2] focus:border-[--e-orange] ${nameError ? "border-[#DC2626]" : ""}`} />
               {nameError && <p className="text-xs text-[#DC2626]">{nameError}</p>}
             </div>
             <div className="space-y-1.5">
@@ -240,7 +240,7 @@ export default function Commissions() {
                   value={form.rateValue}
                   onChange={e => setForm(f => ({ ...f, rateValue: e.target.value }))}
                   placeholder="e.g. 25"
-                  className="h-10 border-[#E8E6E2] focus:border-[#F5821F]"
+                  className="h-10 border-[#E8E6E2] focus:border-[--e-orange]"
                 />
               </div>
             )}
@@ -248,7 +248,7 @@ export default function Commissions() {
               <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Description</Label>
               <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="Describe this commission..." rows={2}
-                className="border-[#E8E6E2] focus:border-[#F5821F] text-sm resize-none" />
+                className="border-[#E8E6E2] focus:border-[--e-orange] text-sm resize-none" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Status</Label>
@@ -263,7 +263,7 @@ export default function Commissions() {
             <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E6E2]">
               <Button variant="outline" onClick={closeModal} className="border-[#E8E6E2]">Cancel</Button>
               <Button onClick={() => save.mutate()} disabled={save.isPending}
-                className="bg-[#F5821F] hover:bg-[#D96A0A] text-white gap-1.5">
+                className="bg-[--e-orange] hover:bg-[--e-orange-hover] text-white gap-1.5">
                 {save.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Save Commission
               </Button>

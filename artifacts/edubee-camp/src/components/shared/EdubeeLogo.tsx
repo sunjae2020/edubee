@@ -61,7 +61,7 @@ export function EdubeeLogo({ variant = "full", size = "md", className }: EdubeLo
             fontFamily: "Inter, sans-serif",
             fontSize: s.sub,
             fontWeight: 500,
-            color: isWhite ? "rgba(255,255,255,0.8)" : "#F5821F",
+            color: isWhite ? "rgba(255,255,255,0.8)" : "var(--e-orange)",
             letterSpacing: "0.15em",
             lineHeight: 1.3,
             marginTop: 2,

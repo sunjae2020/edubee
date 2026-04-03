@@ -142,10 +142,10 @@ export default function Users() {
             onClick={() => setRoleFilter(f => f === role ? "all" : role)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
             style={{
-              background: roleFilter === role ? "#FEF0E3" : "#F4F3F1",
-              color: roleFilter === role ? "#F5821F" : "#57534E",
-              border: `1px solid ${roleFilter === role ? "rgba(245,130,31,0.4)" : "#E8E6E2"}`,
-              outline: roleFilter === role ? "2px solid rgba(245,130,31,0.3)" : "none",
+              background: roleFilter === role ? "var(--e-orange-lt)" : "#F4F3F1",
+              color: roleFilter === role ? "var(--e-orange)" : "#57534E",
+              border: `1px solid ${roleFilter === role ? "var(--e-orange-shadow-40)" : "#E8E6E2"}`,
+              outline: roleFilter === role ? "2px solid var(--e-orange-ring)" : "none",
               outlineOffset: "1px",
             }}
           >
@@ -208,7 +208,7 @@ export default function Users() {
                   key={user.id}
                   className="group transition-colors cursor-pointer"
                   style={{ borderBottom: "1px solid #F4F3F1" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#FEF0E3")}
+                  onMouseEnter={e => (e.currentTarget.style.background = "var(--e-orange-lt)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "")}
                   onClick={() => setLocation(`${BASE}/admin/users/${user.id}`)}
                 >
@@ -216,7 +216,7 @@ export default function Users() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
                         {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.fullName} className="object-cover" />}
-                        <AvatarFallback className="text-xs font-bold" style={{ background: "#FEF0E3", color: "#F5821F" }}>
+                        <AvatarFallback className="text-xs font-bold" style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
                           {user.fullName.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -226,7 +226,7 @@ export default function Users() {
                           {viewAsUser?.id === user.id && (
                             <span
                               className="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[10px]"
-                              style={{ background: "#FEF0E3", color: "#F5821F" }}
+                              style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}
                             >
                               <Eye className="w-2.5 h-2.5" /> viewing
                             </span>
@@ -264,8 +264,8 @@ export default function Users() {
                           className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded flex items-center justify-center"
                           style={{ color: "#A8A29E" }}
                           onMouseEnter={e => {
-                            (e.currentTarget as HTMLButtonElement).style.color = "#F5821F";
-                            (e.currentTarget as HTMLButtonElement).style.background = "#FEF0E3";
+                            (e.currentTarget as HTMLButtonElement).style.color = "var(--e-orange)";
+                            (e.currentTarget as HTMLButtonElement).style.background = "var(--e-orange-lt)";
                           }}
                           onMouseLeave={e => {
                             (e.currentTarget as HTMLButtonElement).style.color = "#A8A29E";
@@ -290,7 +290,7 @@ export default function Users() {
                           {canImpersonate(user) && (
                             <>
                               <DropdownMenuItem className="gap-2 text-xs" onClick={() => handleImpersonate(user)}>
-                                <Eye className="w-3.5 h-3.5" style={{ color: "#F5821F" }} /> View As This User
+                                <Eye className="w-3.5 h-3.5" style={{ color: "var(--e-orange)" }} /> View As This User
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                             </>

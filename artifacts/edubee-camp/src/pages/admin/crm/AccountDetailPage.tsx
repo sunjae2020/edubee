@@ -26,7 +26,7 @@ const INDIVIDUAL_TYPES = ["Student", "Client"];
 
 function getAccountTypeBadge(accountType?: string | null): { bg: string; text: string; label: string } {
   switch (accountType) {
-    case "Student":      return { bg: "#FEF0E3", text: "#F5821F", label: "Student" };
+    case "Student":      return { bg: "var(--e-orange-lt)", text: "var(--e-orange)", label: "Student" };
     case "Client":       return { bg: "#FCE7F3", text: "#BE185D", label: "Client" };
     case "Company":      return { bg: "#E0F2FE", text: "#0369A1", label: "Company" };
     case "Agent":        return { bg: "#F4F3F1", text: "#57534E", label: "Agent" };
@@ -135,7 +135,7 @@ function QI({ label, children }: { label: string; children: React.ReactNode }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-[#F5821F] border-b border-[#F5821F]/20 pb-1.5">
+      <h3 className="text-xs font-semibold uppercase tracking-widest text-[--e-orange] border-b border-[--e-orange]/20 pb-1.5">
         {title}
       </h3>
       <div className="grid grid-cols-2 gap-x-4 gap-y-3">{children}</div>
@@ -165,7 +165,7 @@ function Toggle({ label, checked, onChange, description }: {
         type="button"
         onClick={() => onChange(!checked)}
         className="w-10 h-6 rounded-full transition-colors relative shrink-0"
-        style={{ background: checked ? "#F5821F" : "#E8E6E2" }}
+        style={{ background: checked ? "var(--e-orange)" : "#E8E6E2" }}
       >
         <span
           className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all"
@@ -274,7 +274,7 @@ function ContactLookup({ value, onChange, placeholder }: {
         placeholder={placeholder ?? "Search contacts…"}
         onFocus={() => { setOpen(true); setMode("search"); setSearch(""); }}
         onChange={e => setSearch(e.target.value)}
-        className="h-10 text-sm border-[#E8E6E2] focus:border-[#F5821F] pr-8"
+        className="h-10 text-sm border-[#E8E6E2] focus:border-[--e-orange] pr-8"
       />
       {value && !open && (
         <button
@@ -296,7 +296,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                 <button
                   key={c.id}
                   type="button"
-                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-[#FEF0E3] transition-colors first:rounded-t-xl"
+                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-[--e-orange-lt] transition-colors first:rounded-t-xl"
                   onMouseDown={() => { onChange(c.id, c); setOpen(false); }}
                 >
                   <span className="font-medium text-stone-800">
@@ -347,7 +347,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                     value={cform.firstName}
                     onChange={e => { const v = e.target.value; setCform(f => ({ ...f, firstName: v.length > 0 ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : v })); }}
                     placeholder="e.g. Minjun"
-                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[--e-orange]"
                   />
                 </div>
                 <div>
@@ -358,7 +358,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                     value={cform.lastName}
                     onChange={e => setCform(f => ({ ...f, lastName: e.target.value.toUpperCase() }))}
                     placeholder="KIM"
-                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F] uppercase"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[--e-orange] uppercase"
                   />
                 </div>
               </div>
@@ -373,7 +373,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                     value={cform.englishName}
                     onChange={e => { const v = e.target.value; setCform(f => ({ ...f, englishName: v.length > 0 ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : v })); }}
                     placeholder="e.g. Alex"
-                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[--e-orange]"
                   />
                 </div>
                 <div>
@@ -384,7 +384,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                     value={cform.originalName}
                     onChange={e => setCform(f => ({ ...f, originalName: e.target.value }))}
                     placeholder="e.g. 김민준"
-                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[--e-orange]"
                   />
                 </div>
               </div>
@@ -398,7 +398,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                     value={cform.email}
                     onChange={e => setCform(f => ({ ...f, email: e.target.value }))}
                     placeholder="email@example.com"
-                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[--e-orange]"
                   />
                 </div>
                 <div>
@@ -407,7 +407,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                     value={cform.mobile}
                     onChange={e => setCform(f => ({ ...f, mobile: e.target.value }))}
                     placeholder="+61 4xx xxx xxx"
-                    className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                    className="h-8 text-sm border-[#E8E6E2] focus:border-[--e-orange]"
                   />
                 </div>
               </div>
@@ -419,7 +419,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                   value={cform.nationality}
                   onChange={e => setCform(f => ({ ...f, nationality: e.target.value }))}
                   placeholder="e.g. Korean"
-                  className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                  className="h-8 text-sm border-[#E8E6E2] focus:border-[--e-orange]"
                 />
               </div>
 
@@ -436,7 +436,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                   type="button"
                   disabled={!cform.lastName.trim() || creating}
                   className="flex-1 h-9 rounded-lg text-sm text-white font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
-                  style={{ background: "#F5821F" }}
+                  style={{ background: "var(--e-orange)" }}
                   onClick={handleCreate}
                 >
                   {creating
@@ -480,7 +480,7 @@ function AccountLookup({ value, onChange, excludeId, placeholder }: {
         onFocus={() => { setOpen(true); setSearch(""); }}
         onBlur={() => setTimeout(() => setOpen(false), 200)}
         onChange={e => setSearch(e.target.value)}
-        className="h-10 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+        className="h-10 text-sm border-[#E8E6E2] focus:border-[--e-orange]"
       />
       {open && Array.isArray(data) && data.length > 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#E8E6E2] rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -488,7 +488,7 @@ function AccountLookup({ value, onChange, excludeId, placeholder }: {
             <button
               key={a.id}
               type="button"
-              className="w-full px-3 py-2 text-left text-sm hover:bg-[#FEF0E3] transition-colors"
+              className="w-full px-3 py-2 text-left text-sm hover:bg-[--e-orange-lt] transition-colors"
               onMouseDown={() => { onChange(a.id); setOpen(false); }}
             >
               {a.name}
@@ -506,7 +506,7 @@ const fmtD   = (d: any) => d ? formatDate(d) : "—";
 
 const LDGR_SRC: Record<string, { bg: string; text: string }> = {
   payment:     { bg: "#DCFCE7", text: "#16A34A" },
-  transaction: { bg: "#FEF0E3", text: "#F5821F" },
+  transaction: { bg: "var(--e-orange-lt)", text: "var(--e-orange)" },
 };
 const LDGR_DIR: Record<string, { bg: string; text: string }> = {
   received:    { bg: "#DCFCE7", text: "#16A34A" },
@@ -547,7 +547,7 @@ function LedgerTab({ accountId }: { accountId: string }) {
         </div>
         <div className="bg-white border border-[#E8E6E2] rounded-xl p-4">
           <p className="text-xs text-stone-400 mb-1">Transaction Volume</p>
-          <p className="text-xl font-bold text-[#F5821F]">{fmtAmt(txnTotal)}</p>
+          <p className="text-xl font-bold text-[--e-orange]">{fmtAmt(txnTotal)}</p>
         </div>
       </div>
 
@@ -592,7 +592,7 @@ function LedgerTab({ accountId }: { accountId: string }) {
                           {row.direction === "received" ? "Received" : row.direction === "paid" ? "Paid Out" : "Txn"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-[13px] font-bold" style={{ color: row.direction === "received" ? "#16A34A" : row.direction === "paid" ? "#DC2626" : "#F5821F" }}>
+                      <td className="px-4 py-3 text-[13px] font-bold" style={{ color: row.direction === "received" ? "#16A34A" : row.direction === "paid" ? "#DC2626" : "var(--e-orange)" }}>
                         {fmtAmt(row.amount)}
                       </td>
                       <td className="px-4 py-3 text-[12px] text-stone-400 font-mono">{row.bank_reference ?? "—"}</td>
@@ -616,7 +616,7 @@ function LedgerTab({ accountId }: { accountId: string }) {
   );
 }
 
-const INPUT_CLS = "h-10 text-sm border-[#E8E6E2] focus:border-[#F5821F] focus:ring-0";
+const INPUT_CLS = "h-10 text-sm border-[#E8E6E2] focus:border-[--e-orange] focus:ring-0";
 
 export default function AccountDetailPage() {
   const [matchNew] = useRoute("/admin/crm/accounts/new");
@@ -909,7 +909,7 @@ export default function AccountDetailPage() {
               onClick={handleSave}
               disabled={saveMut.isPending}
               className="flex items-center gap-1.5 text-sm"
-              style={{ background: "#F5821F", color: "#fff" }}
+              style={{ background: "var(--e-orange)", color: "#fff" }}
             >
               {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
               {isNew ? "Create Account" : "Save Changes"}
@@ -928,7 +928,7 @@ export default function AccountDetailPage() {
               onClick={() => setTab(t.key)}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
                 tab === t.key
-                  ? "border-[#F5821F] text-[#F5821F]"
+                  ? "border-[--e-orange] text-[--e-orange]"
                   : "border-transparent text-stone-500 hover:text-stone-700"
               }`}
             >
@@ -957,7 +957,7 @@ export default function AccountDetailPage() {
                         aria-checked={form.manualInput}
                         onClick={() => set("manualInput", !form.manualInput)}
                         className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                          form.manualInput ? "bg-[#F5821F]" : "bg-stone-300"
+                          form.manualInput ? "bg-[--e-orange]" : "bg-stone-300"
                         }`}
                       >
                         <span
@@ -1022,7 +1022,7 @@ export default function AccountDetailPage() {
                       onChange={e => set("description", e.target.value)}
                       placeholder="Account description…"
                       rows={2}
-                      className="text-sm border-[#E8E6E2] focus:border-[#F5821F] resize-none"
+                      className="text-sm border-[#E8E6E2] focus:border-[--e-orange] resize-none"
                     />
                   </Field>
                 </Section>
@@ -1217,7 +1217,7 @@ export default function AccountDetailPage() {
                                 setTimeout(() => setCopiedId(false), 2000);
                               });
                             }}
-                            className="shrink-0 text-stone-400 hover:text-[#F5821F] transition-colors"
+                            className="shrink-0 text-stone-400 hover:text-[--e-orange] transition-colors"
                             title="Copy ID"
                           >
                             {copiedId ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -1252,17 +1252,17 @@ export default function AccountDetailPage() {
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-[#FEF0E3] flex items-center justify-center text-[#F5821F] font-semibold text-sm flex-shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-[--e-orange-lt] flex items-center justify-center text-[--e-orange] font-semibold text-sm flex-shrink-0">
                               {account.primaryContact.firstName?.[0]}{account.primaryContact.lastName?.[0]}
                             </div>
                             <div>
-                              <p className="font-semibold text-stone-800 text-sm group-hover:text-[#F5821F] transition-colors">
+                              <p className="font-semibold text-stone-800 text-sm group-hover:text-[--e-orange] transition-colors">
                                 {account.primaryContact.firstName} {account.primaryContact.lastName?.toUpperCase()}
                               </p>
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 mt-0.5">Primary</span>
                             </div>
                           </div>
-                          <ExternalLink size={14} className="text-stone-300 group-hover:text-[#F5821F] transition-colors mt-1" />
+                          <ExternalLink size={14} className="text-stone-300 group-hover:text-[--e-orange] transition-colors mt-1" />
                         </div>
                         <div className="space-y-1.5 text-xs">
                           {account.primaryContact.originalName && (
@@ -1323,7 +1323,7 @@ export default function AccountDetailPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 text-xs gap-1 border-[#E8E6E2] hover:border-[#F5821F] hover:text-[#F5821F]"
+                    className="h-7 text-xs gap-1 border-[#E8E6E2] hover:border-[--e-orange] hover:text-[--e-orange]"
                     onClick={() => { setShowAddContact(v => !v); setContactSearch(""); }}
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -1340,7 +1340,7 @@ export default function AccountDetailPage() {
                         value={contactSearch}
                         onChange={e => setContactSearch(e.target.value)}
                         placeholder="Search contacts by name…"
-                        className="h-8 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                        className="h-8 text-sm border-[#E8E6E2] focus:border-[--e-orange]"
                       />
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-stone-400 hover:text-stone-600"
                         onClick={() => { setShowAddContact(false); setContactSearch(""); }}>
@@ -1360,10 +1360,10 @@ export default function AccountDetailPage() {
                               key={c.id}
                               disabled={alreadyLinked || addContactMut.isPending}
                               onClick={() => addContactMut.mutate(c.id)}
-                              className="w-full text-left px-3 py-2 rounded-lg hover:bg-[#FEF0E3] transition-colors flex items-center justify-between group disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="w-full text-left px-3 py-2 rounded-lg hover:bg-[--e-orange-lt] transition-colors flex items-center justify-between group disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <div>
-                                <span className="text-sm font-medium text-stone-800 group-hover:text-[#F5821F]">
+                                <span className="text-sm font-medium text-stone-800 group-hover:text-[--e-orange]">
                                   {c.firstName} {c.lastName?.toUpperCase()}
                                 </span>
                                 {c.originalName && <span className="text-xs text-stone-400 ml-1.5">({c.originalName})</span>}
@@ -1371,7 +1371,7 @@ export default function AccountDetailPage() {
                               </div>
                               {alreadyLinked
                                 ? <span className="text-xs text-stone-400">Already linked</span>
-                                : <Plus className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#F5821F]" />
+                                : <Plus className="w-3.5 h-3.5 text-stone-300 group-hover:text-[--e-orange]" />
                               }
                             </button>
                           );
@@ -1405,7 +1405,7 @@ export default function AccountDetailPage() {
                             {c.firstName?.[0]}{c.lastName?.[0]}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-stone-800 group-hover:text-[#F5821F] truncate">
+                            <p className="text-sm font-medium text-stone-800 group-hover:text-[--e-orange] truncate">
                               {c.firstName} {c.lastName?.toUpperCase()}
                               {c.originalName && <span className="text-stone-400 font-normal ml-1.5">({c.originalName})</span>}
                             </p>
@@ -1590,7 +1590,7 @@ export default function AccountDetailPage() {
                 </p>
                 <button
                   onClick={() => { setTab("leads"); }}
-                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:opacity-80"
+                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[--e-orange] hover:opacity-80"
                 >
                   <ChevronRight size={12} /> View Leads
                 </button>
@@ -1604,7 +1604,7 @@ export default function AccountDetailPage() {
                 </p>
                 <button
                   onClick={() => { setTab("contracts"); }}
-                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#F5821F] hover:opacity-80"
+                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[--e-orange] hover:opacity-80"
                 >
                   <ChevronRight size={12} /> View Contracts
                 </button>
@@ -1645,7 +1645,7 @@ export default function AccountDetailPage() {
                     <QI label="Contact">
                       <button
                         onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)}
-                        className="text-[#F5821F] hover:underline font-medium text-right"
+                        className="text-[--e-orange] hover:underline font-medium text-right"
                       >
                         {account.primaryContact.firstName} {account.primaryContact.lastName?.toUpperCase()}
                       </button>
@@ -1677,7 +1677,7 @@ export default function AccountDetailPage() {
                         <span className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider">Primary Contact</span>
                       </div>
                       <QI label="Name">
-                        <button onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)} className="text-[#F5821F] hover:underline font-medium">
+                        <button onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)} className="text-[--e-orange] hover:underline font-medium">
                           {account.primaryContact.firstName} {account.primaryContact.lastName?.toUpperCase()}
                         </button>
                       </QI>
@@ -1695,7 +1695,7 @@ export default function AccountDetailPage() {
                   <QI label="Country">{account?.country || <span className="text-[#A8A29E]">—</span>}</QI>
                   <QI label="Website">
                     {account?.website
-                      ? <a href={account.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[#F5821F] hover:underline" style={{fontSize:13}}><ExternalLink size={11}/>{account.website.replace(/^https?:\/\//, "")}</a>
+                      ? <a href={account.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[--e-orange] hover:underline" style={{fontSize:13}}><ExternalLink size={11}/>{account.website.replace(/^https?:\/\//, "")}</a>
                       : <span className="text-[#A8A29E]">—</span>}
                   </QI>
                   <QI label="ABN">{account?.abn || <span className="text-[#A8A29E]">—</span>}</QI>
@@ -1707,7 +1707,7 @@ export default function AccountDetailPage() {
                         <span className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider">Primary Contact</span>
                       </div>
                       <QI label="Name">
-                        <button onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)} className="text-[#F5821F] hover:underline font-medium">
+                        <button onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)} className="text-[--e-orange] hover:underline font-medium">
                           {account.primaryContact.firstName} {account.primaryContact.lastName?.toUpperCase()}
                         </button>
                       </QI>
@@ -1731,7 +1731,7 @@ export default function AccountDetailPage() {
                         <span className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider">Primary Contact</span>
                       </div>
                       <QI label="Name">
-                        <button onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)} className="text-[#F5821F] hover:underline font-medium">
+                        <button onClick={() => navigate(`/admin/crm/contacts/${account.primaryContact!.id}`)} className="text-[--e-orange] hover:underline font-medium">
                           {account.primaryContact.firstName} {account.primaryContact.lastName?.toUpperCase()}
                         </button>
                       </QI>

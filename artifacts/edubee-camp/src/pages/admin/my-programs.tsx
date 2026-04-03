@@ -46,7 +46,7 @@ export default function MyPrograms() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center"><GraduationCap className="w-5 h-5 text-[#F5821F]" /></div>
+        <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center"><GraduationCap className="w-5 h-5 text-[--e-orange]" /></div>
         <div>
           <h1 className="text-lg font-bold">{isAgent ? "My Client Programs" : "My Programs"}</h1>
           <p className="text-xs text-muted-foreground">
@@ -56,8 +56,8 @@ export default function MyPrograms() {
       </div>
 
       {/* Welcome Banner */}
-      <div className="bg-[#FEF0E3] rounded-xl border border-[#F5821F]/20 p-4 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-[#F5821F] flex items-center justify-center text-white font-bold text-lg shrink-0">
+      <div className="bg-[--e-orange-lt] rounded-xl border border-[--e-orange]/20 p-4 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-[--e-orange] flex items-center justify-center text-white font-bold text-lg shrink-0">
           {user?.fullName?.substring(0, 2).toUpperCase() ?? "?"}
         </div>
         <div>
@@ -91,7 +91,7 @@ export default function MyPrograms() {
               : 0;
 
             return (
-              <div key={c.id} className="bg-white rounded-xl border hover:border-[#F5821F]/30 transition-colors">
+              <div key={c.id} className="bg-white rounded-xl border hover:border-[--e-orange]/30 transition-colors">
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
@@ -120,7 +120,7 @@ export default function MyPrograms() {
                     <div className="mb-3">
                       <div className="flex justify-between text-[10px] text-muted-foreground mb-1"><span>Program Progress</span><span>{progressPct}%</span></div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-[#F5821F] rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
+                        <div className="h-full bg-[--e-orange] rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
                       </div>
                     </div>
                   )}
@@ -132,7 +132,7 @@ export default function MyPrograms() {
                   )}
 
                   {!hasStarted && c.startDate && (
-                    <div className="flex items-center gap-1.5 text-xs text-[#F5821F] mb-3">
+                    <div className="flex items-center gap-1.5 text-xs text-[--e-orange] mb-3">
                       <Clock className="w-3.5 h-3.5" /> Starts {formatDate(c.startDate)}
                     </div>
                   )}

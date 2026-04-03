@@ -7,12 +7,12 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const INPUT_CLS = `w-full h-10 px-3 text-sm rounded-lg border border-[#E8E6E2] bg-white text-[#1C1917]
   placeholder:text-[#A8A29E] outline-none transition-all
-  focus:border-[#F5821F] focus:shadow-[0_0_0_3px_rgba(245,130,31,0.15)]`;
+  focus:border-[--e-orange] focus:shadow-[0_0_0_3px_var(--e-orange-ring)]`;
 const INPUT_ERR = `w-full h-10 px-3 text-sm rounded-lg border border-[#DC2626] bg-white text-[#1C1917]
   placeholder:text-[#A8A29E] outline-none transition-all
   focus:border-[#DC2626] focus:shadow-[0_0_0_3px_rgba(220,38,38,0.12)]`;
-const BTN_PRIMARY = `w-full flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-semibold text-white bg-[#F5821F]
-  hover:bg-[#D96A0A] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(245,130,31,0.25)]
+const BTN_PRIMARY = `w-full flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-semibold text-white bg-[--e-orange]
+  hover:bg-[--e-orange-hover] hover:-translate-y-px hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)]
   disabled:opacity-65 disabled:cursor-not-allowed disabled:transform-none transition-all`;
 const LABEL_CLS = "block text-xs font-medium text-[#57534E] mb-1";
 const ERR_CLS = "mt-1 text-xs text-[#DC2626]";
@@ -102,7 +102,7 @@ export default function ResetPassword() {
     <div className="min-h-screen flex" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* ── Left brand panel ── */}
       <div className="hidden md:flex flex-col justify-between w-[40%] lg:w-[38%] min-h-screen p-10 sticky top-0 h-screen"
-        style={{ background: "#F5821F" }}>
+        style={{ background: "var(--e-orange)" }}>
         <div>
           <div className="flex items-center gap-3 mb-10">
             <img src={logoImg} alt="Edubee" className="h-12 w-auto object-contain"
@@ -161,11 +161,11 @@ export default function ResetPassword() {
                 Please request a new one.
               </p>
               <Link href="/forgot-password"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[#F5821F] hover:bg-[#D96A0A] transition-all">
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[--e-orange] hover:bg-[--e-orange-hover] transition-all">
                 Request New Link
               </Link>
               <p className="mt-4 text-[13px] text-[#57534E]">
-                <Link href="/login" className="inline-flex items-center gap-1 text-[#F5821F] font-medium hover:underline">
+                <Link href="/login" className="inline-flex items-center gap-1 text-[--e-orange] font-medium hover:underline">
                   <ArrowLeft className="w-3.5 h-3.5" />
                   Back to Login
                 </Link>
@@ -182,7 +182,7 @@ export default function ResetPassword() {
                 Your password has been reset successfully. You can now sign in with your new password.
               </p>
               <Link href="/login"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[#F5821F] hover:bg-[#D96A0A] transition-all">
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[--e-orange] hover:bg-[--e-orange-hover] transition-all">
                 <ArrowLeft className="w-4 h-4" />
                 Go to Login
               </Link>
@@ -252,7 +252,7 @@ export default function ResetPassword() {
 
               <p className="text-center mt-6 text-[13px] text-[#57534E]">
                 <Link href="/login"
-                  className="inline-flex items-center gap-1 text-[#F5821F] font-medium hover:underline">
+                  className="inline-flex items-center gap-1 text-[--e-orange] font-medium hover:underline">
                   <ArrowLeft className="w-3.5 h-3.5" />
                   Back to Login
                 </Link>

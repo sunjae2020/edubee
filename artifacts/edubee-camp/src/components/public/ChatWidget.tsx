@@ -144,7 +144,7 @@ export function ChatWidget() {
             style={{ maxHeight: "calc(100vh - 120px)", height: 520 }}
           >
             {/* Header */}
-            <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-[#F5821F]">
+            <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-[--e-orange]">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
                   <Bot className="w-4 h-4 text-white" />
@@ -176,21 +176,21 @@ export function ChatWidget() {
               {messages.map((msg, i) => (
                 <div key={i} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
                   {msg.role === "assistant" && (
-                    <div className="w-7 h-7 rounded-full bg-[#F5821F]/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <Bot className="w-3.5 h-3.5 text-[#F5821F]" />
+                    <div className="w-7 h-7 rounded-full bg-[--e-orange]/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <Bot className="w-3.5 h-3.5 text-[--e-orange]" />
                     </div>
                   )}
                   <div className={`max-w-[82%] flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}>
                     <div className={`rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${
                       msg.role === "user"
-                        ? "bg-[#F5821F] text-white rounded-tr-sm"
+                        ? "bg-[--e-orange] text-white rounded-tr-sm"
                         : "bg-white border border-gray-100 text-gray-800 rounded-tl-sm shadow-sm"
                     }`}>
                       {msg.content || (
                         streaming && i === messages.length - 1 ? (
                           <span className="inline-flex gap-1 items-center h-4">
                             {[0, 150, 300].map(d => (
-                              <span key={d} className="w-1.5 h-1.5 rounded-full bg-[#F5821F] animate-bounce" style={{ animationDelay: `${d}ms` }} />
+                              <span key={d} className="w-1.5 h-1.5 rounded-full bg-[--e-orange] animate-bounce" style={{ animationDelay: `${d}ms` }} />
                             ))}
                           </span>
                         ) : null
@@ -200,7 +200,7 @@ export function ChatWidget() {
                     {msg.role === "assistant" && (msg.chunksUsed || msg.sources?.length) ? (
                       <div className="flex flex-wrap items-center gap-1 px-0.5">
                         {msg.chunksUsed ? (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] bg-[#F5821F]/8 text-[#F5821F] px-1.5 py-0.5 rounded-full">
+                          <span className="inline-flex items-center gap-0.5 text-[10px] bg-[--e-orange]/8 text-[--e-orange] px-1.5 py-0.5 rounded-full">
                             <Zap className="w-2 h-2" />
                             {msg.chunksUsed}개 문서 참조
                           </span>
@@ -225,7 +225,7 @@ export function ChatWidget() {
                       key={q}
                       onClick={() => send(q)}
                       disabled={streaming}
-                      className="w-full text-left text-xs px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-700 hover:border-[#F5821F]/40 hover:text-[#F5821F] transition-colors disabled:opacity-50"
+                      className="w-full text-left text-xs px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-700 hover:border-[--e-orange]/40 hover:text-[--e-orange] transition-colors disabled:opacity-50"
                     >
                       {q}
                     </button>
@@ -238,7 +238,7 @@ export function ChatWidget() {
 
             {/* Input */}
             <div className="shrink-0 px-3 py-3 border-t border-gray-100 bg-white">
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-[#F5821F]/50 focus-within:ring-2 focus-within:ring-[#F5821F]/10 transition-all">
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-[--e-orange]/50 focus-within:ring-2 focus-within:ring-[--e-orange]/10 transition-all">
                 <input
                   ref={inputRef}
                   value={input}
@@ -251,7 +251,7 @@ export function ChatWidget() {
                 <button
                   onClick={() => send(input)}
                   disabled={!input.trim() || streaming}
-                  className="w-7 h-7 rounded-lg bg-[#F5821F] flex items-center justify-center disabled:opacity-40 hover:bg-[#d97706] transition-colors shrink-0"
+                  className="w-7 h-7 rounded-lg bg-[--e-orange] flex items-center justify-center disabled:opacity-40 hover:bg-[#d97706] transition-colors shrink-0"
                 >
                   {streaming
                     ? <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
@@ -272,7 +272,7 @@ export function ChatWidget() {
         onClick={() => setOpen(v => !v)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed bottom-4 right-4 z-40 flex items-center gap-2 bg-[#F5821F] text-white shadow-lg hover:bg-[#d97706] transition-colors rounded-full"
+        className="fixed bottom-4 right-4 z-40 flex items-center gap-2 bg-[--e-orange] text-white shadow-lg hover:bg-[#d97706] transition-colors rounded-full"
         style={{ padding: open ? "10px 16px 10px 12px" : "12px 18px 12px 14px" }}
         title={open ? "채팅 닫기" : "AI 상담하기"}
       >

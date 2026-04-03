@@ -29,7 +29,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 };
 const STATUS_COLORS: Record<string, string> = {
   draft:            "bg-[#F4F3F1] text-[#57534E]",
-  sent:             "bg-[#FEF0E3] text-[#F5821F]",
+  sent:             "bg-[--e-orange-lt] text-[--e-orange]",
   paid:             "bg-[#DCFCE7] text-[#16A34A]",
   overdue:          "bg-[#FEF2F2] text-[#DC2626]",
   cancelled:        "bg-[#F4F3F1] text-[#A8A29E]",
@@ -114,6 +114,8 @@ function printInvoice(inv: Invoice) {
   const sym = CURRENCY_SYMBOLS[inv.originalCurrency ?? inv.currency ?? "AUD"] ?? (inv.originalCurrency ?? inv.currency ?? "AUD");
   const amount = inv.originalAmount ?? inv.totalAmount;
   const amountStr = amount ? `${sym}${Number(amount).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—";
+  const _bc   = getComputedStyle(document.documentElement).getPropertyValue("--e-orange").trim()  || "#F5821F";
+  const _bcLt = getComputedStyle(document.documentElement).getPropertyValue("--e-orange-lt").trim() || "#FEF0E3";
 
   const html = `<!DOCTYPE html>
 <html>
@@ -124,12 +126,12 @@ function printInvoice(inv: Invoice) {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #fff; color: #1a1917; padding: 48px; font-size: 14px; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
-    .brand { font-size: 28px; font-weight: 700; color: #F5821F; }
+    .brand { font-size: 28px; font-weight: 700; color: ${_bc}; }
     .brand-sub { font-size: 13px; color: #64748b; margin-top: 2px; }
     .inv-title { text-align: right; }
     .inv-title h2 { font-size: 22px; font-weight: 700; color: #1a1917; }
     .inv-title p { color: #64748b; font-size: 13px; margin-top: 4px; }
-    .badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #FEF0E3; color: #F5821F; text-transform: capitalize; margin-top: 8px; }
+    .badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; background: ${_bcLt}; color: ${_bc}; text-transform: capitalize; margin-top: 8px; }
     .divider { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0; }
     .section h3 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 8px; }
@@ -139,7 +141,7 @@ function printInvoice(inv: Invoice) {
     thead tr { background: #f8fafc; }
     thead th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; border-bottom: 1px solid #e2e8f0; }
     tbody td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
-    .total-row td { font-weight: 700; font-size: 16px; color: #F5821F; border-top: 2px solid #e2e8f0; padding-top: 16px; }
+    .total-row td { font-weight: 700; font-size: 16px; color: ${_bc}; border-top: 2px solid #e2e8f0; padding-top: 16px; }
     .notes { margin-top: 32px; padding: 16px; background: #f8fafc; border-radius: 8px; }
     .notes h3 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 6px; }
     .footer { margin-top: 48px; text-align: center; font-size: 12px; color: #94a3b8; }
@@ -287,7 +289,7 @@ function NewInvoiceModal({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Plus className="w-4 h-4 text-[#F5821F]" /> New Invoice
+            <Plus className="w-4 h-4 text-[--e-orange]" /> New Invoice
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-1">
@@ -307,7 +309,7 @@ function NewInvoiceModal({
                     key={c.id}
                     className={cn(
                       "w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors",
-                      form.contractId === c.id && "bg-[#FEF0E3]"
+                      form.contractId === c.id && "bg-[--e-orange-lt]"
                     )}
                     onClick={() => { f("contractId", c.id); setContractSearch(""); }}
                   >
@@ -370,7 +372,7 @@ function NewInvoiceModal({
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
+          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
             {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Creating…</> : "Create Invoice"}
           </Button>
         </DialogFooter>
@@ -417,7 +419,7 @@ function EmailInvoiceModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Mail className="w-4 h-4 text-[#F5821F]" /> Send Invoice by Email
+            <Mail className="w-4 h-4 text-[--e-orange]" /> Send Invoice by Email
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -443,7 +445,7 @@ function EmailInvoiceModal({
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => { onClose(); setEmail(""); }} disabled={sending}>Cancel</Button>
-          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSend} disabled={sending}>
+          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSend} disabled={sending}>
             {sending ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Sending…</> : <><Send className="w-3.5 h-3.5" />Send Email</>}
           </Button>
         </DialogFooter>
@@ -488,7 +490,7 @@ function RecordPaymentModal({ invoice, open, onClose, onSuccess }: {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-[#F5821F]" /> Record Payment
+            <CreditCard className="w-4 h-4 text-[--e-orange]" /> Record Payment
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -514,7 +516,7 @@ function RecordPaymentModal({ invoice, open, onClose, onSuccess }: {
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
+          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={handleSubmit} disabled={saving}>
             {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Recording…</> : "Record Payment"}
           </Button>
         </DialogFooter>
@@ -572,7 +574,7 @@ function InvoiceDetailSheet({
               <span className="text-muted-foreground">Contract</span>
               {invoice.contractId ? (
                 <button
-                  className="flex items-center gap-1 text-[#F5821F] hover:underline font-mono text-xs font-medium"
+                  className="flex items-center gap-1 text-[--e-orange] hover:underline font-mono text-xs font-medium"
                   onClick={() => { onClose(); navigate(`/admin/crm/contracts/${invoice.contractId}`); }}
                 >
                   {invoice.contractNumber ?? invoice.contractId.slice(0, 8)}
@@ -612,7 +614,7 @@ function InvoiceDetailSheet({
             {invoice.status === "draft" && (
               <Button
                 size="sm"
-                className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5 col-span-2"
+                className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5 col-span-2"
                 onClick={() => onUpdate(invoice.id, { status: "sent", issuedAt: new Date().toISOString() })}
               >
                 <Send className="w-3.5 h-3.5" /> Mark as Sent
@@ -621,7 +623,7 @@ function InvoiceDetailSheet({
             {canPay(invoice.status) && (
               <Button
                 size="sm"
-                className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5"
+                className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5"
                 onClick={() => { onClose(); onPayment(invoice); }}
               >
                 <CreditCard className="w-3.5 h-3.5" /> Record Payment
@@ -710,7 +712,7 @@ function ClientTab() {
                   <Receipt className="w-8 h-8 mx-auto mb-3 opacity-30" />No client invoices found
                 </td></tr>
               ) : sorted.map(r => (
-                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
+                <tr key={r.id} className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{r.studentName ?? "—"}</div>
@@ -728,7 +730,7 @@ function ClientTab() {
                         </Button>
                       )}
                       {canPay(r.status) && (
-                        <Button size="sm" className="h-6 text-[10px] gap-1 px-2 bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={e => { e.stopPropagation(); setPaymentTarget(r); }}>
+                        <Button size="sm" className="h-6 text-[10px] gap-1 px-2 bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={e => { e.stopPropagation(); setPaymentTarget(r); }}>
                           <CreditCard className="w-2.5 h-2.5" /> Pay
                         </Button>
                       )}
@@ -813,7 +815,7 @@ function AgentTab() {
                   <FileText className="w-8 h-8 mx-auto mb-3 opacity-30" />No agent invoices found
                 </td></tr>
               ) : sorted.map(r => (
-                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
+                <tr key={r.id} className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{r.studentName ?? "—"}</div>
@@ -908,7 +910,7 @@ function PartnerTab() {
                   <Handshake className="w-8 h-8 mx-auto mb-3 opacity-30" />No partner invoices found
                 </td></tr>
               ) : sorted.map(r => (
-                <tr key={r.id} className="hover:bg-[#FEF0E3] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
+                <tr key={r.id} className="hover:bg-[--e-orange-lt] transition-colors cursor-pointer" onClick={() => navigate(`/admin/accounting/invoices/${r.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs font-medium">{r.invoiceNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{r.studentName ?? "—"}</div>
@@ -966,7 +968,7 @@ export default function Invoices() {
               className={cn(
                 "flex items-center gap-2 px-5 py-2.5 text-sm border-b-2 transition-colors font-medium whitespace-nowrap",
                 isActive
-                  ? "border-[#F5821F] text-[#F5821F]"
+                  ? "border-[--e-orange] text-[--e-orange]"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
               )}
             >

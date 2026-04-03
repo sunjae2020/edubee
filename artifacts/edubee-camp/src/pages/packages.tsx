@@ -109,7 +109,7 @@ function fmtPrice(val: string | null | undefined, sym: string, dec: number) {
 function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <div className="flex items-center gap-2 pt-1">
-      <span className="text-[#F5821F]">{icon}</span>
+      <span className="text-[--e-orange]">{icon}</span>
       <span className="text-sm font-semibold text-foreground">{title}</span>
       <div className="flex-1 h-px bg-border ml-1" />
     </div>
@@ -272,7 +272,7 @@ export default function Packages() {
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2.5 text-left text-sm transition-colors border-b border-border/50",
                 selectedGroupId === "all"
-                  ? "bg-[#FEF0E3] text-[#F5821F] font-semibold"
+                  ? "bg-[--e-orange-lt] text-[--e-orange] font-semibold"
                   : "hover:bg-muted/40 text-foreground"
               )}
             >
@@ -282,7 +282,7 @@ export default function Packages() {
               </div>
               <span className={cn(
                 "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
-                selectedGroupId === "all" ? "bg-[#F5821F]/20 text-[#F5821F]" : "bg-muted text-muted-foreground"
+                selectedGroupId === "all" ? "bg-[--e-orange]/20 text-[--e-orange]" : "bg-muted text-muted-foreground"
               )}>
                 {groupsData ? groups.reduce((a, g) => a + (g.packageCount ?? 0), 0) : "…"}
               </span>
@@ -301,7 +301,7 @@ export default function Packages() {
                     className={cn(
                       "w-full flex items-center justify-between px-3 py-2.5 text-left text-sm transition-colors border-b border-border/50 last:border-0",
                       selectedGroupId === g.id
-                        ? "bg-[#FEF0E3] text-[#F5821F] font-semibold"
+                        ? "bg-[--e-orange-lt] text-[--e-orange] font-semibold"
                         : "hover:bg-muted/40 text-foreground"
                     )}
                   >
@@ -316,7 +316,7 @@ export default function Packages() {
                     </div>
                     <span className={cn(
                       "shrink-0 ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
-                      selectedGroupId === g.id ? "bg-[#F5821F]/20 text-[#F5821F]" : "bg-muted text-muted-foreground"
+                      selectedGroupId === g.id ? "bg-[--e-orange]/20 text-[--e-orange]" : "bg-muted text-muted-foreground"
                     )}>
                       {g.packageCount ?? 0}
                     </span>
@@ -359,14 +359,14 @@ export default function Packages() {
           <span className="text-xs text-muted-foreground">
             {total} package{total !== 1 ? "s" : ""}
             {selectedGroupId !== "all" && listGroup && (
-              <span className="text-[#F5821F]"> · {listGroup.nameEn}</span>
+              <span className="text-[--e-orange]"> · {listGroup.nameEn}</span>
             )}
           </span>
 
           {canEdit && (
             <Button
               size="sm"
-              className="ml-auto gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white h-8"
+              className="ml-auto gap-1.5 bg-[--e-orange] hover:bg-[#d97706] text-white h-8"
               onClick={openDialog}
             >
               <Plus className="w-3.5 h-3.5" /> Add Package
@@ -425,7 +425,7 @@ export default function Packages() {
                   return (
                     <tr
                       key={pkg.id}
-                      className="border-b last:border-0 hover:bg-[#FEF0E3]/40 cursor-pointer transition-colors"
+                      className="border-b last:border-0 hover:bg-[--e-orange-lt]/40 cursor-pointer transition-colors"
                       onClick={() => setLocation(`${BASE}/admin/packages/${pkg.id}`)}
                     >
                       <td className="px-4 py-3 font-medium text-foreground">{pkg.name}</td>
@@ -436,7 +436,7 @@ export default function Packages() {
                               {pkg.groupCountryCode && (
                                 <span className="text-base leading-none">{COUNTRY_FLAG[pkg.groupCountryCode] ?? <Globe className="w-3.5 h-3.5" />}</span>
                               )}
-                              <span className="text-sm font-medium text-[#F5821F]">{pkg.groupNameEn}</span>
+                              <span className="text-sm font-medium text-[--e-orange]">{pkg.groupNameEn}</span>
                             </div>
                             {pkg.groupNameKo && <div className="text-[11px] text-muted-foreground mt-0.5 pl-5">{pkg.groupNameKo}</div>}
                           </div>
@@ -490,7 +490,7 @@ export default function Packages() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
-              <PackageIcon className="w-4 h-4 text-[#F5821F]" />
+              <PackageIcon className="w-4 h-4 text-[--e-orange]" />
               Add New Package
             </DialogTitle>
           </DialogHeader>
@@ -525,11 +525,11 @@ export default function Packages() {
                 </SelectContent>
               </Select>
               {form.packageGroupId && selectedGroup && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#FEF0E3]/50 rounded-lg border border-[#F5821F]/20 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-[--e-orange-lt]/50 rounded-lg border border-[--e-orange]/20 text-xs text-muted-foreground">
                   <span className="text-base">{selectedGroup.countryCode ? (COUNTRY_FLAG[selectedGroup.countryCode] ?? "🌐") : "🌐"}</span>
                   <span className="font-medium text-foreground">{selectedGroup.nameEn}</span>
                   {selectedGroup.countryCode && (
-                    <span className="ml-auto text-[#F5821F] font-semibold">
+                    <span className="ml-auto text-[--e-orange] font-semibold">
                       Primary: {COUNTRY_TO_CURRENCY[selectedGroup.countryCode] ?? "AUD"}
                     </span>
                   )}
@@ -624,7 +624,7 @@ export default function Packages() {
             {sortedCurrencies.length === 0 ? (
               <p className="text-sm text-muted-foreground px-1">
                 No exchange rates configured.{" "}
-                <a href={`${BASE}/admin/accounting/exchange-rates`} className="text-[#F5821F] underline" target="_blank" rel="noreferrer">
+                <a href={`${BASE}/admin/accounting/exchange-rates`} className="text-[--e-orange] underline" target="_blank" rel="noreferrer">
                   Set up rates →
                 </a>
               </p>
@@ -634,11 +634,11 @@ export default function Packages() {
                   const isPrimary = ccy === primaryCcy;
                   return (
                     <div key={field} className={cn("space-y-1.5", isPrimary && "col-span-2 sm:col-span-1")}>
-                      <Label className={cn("text-sm font-medium flex items-center gap-1.5", isPrimary && "text-[#F5821F]")}>
+                      <Label className={cn("text-sm font-medium flex items-center gap-1.5", isPrimary && "text-[--e-orange]")}>
                         <span>{flag}</span>
                         <span>{ccy}</span>
                         {isPrimary && (
-                          <span className="ml-1 px-1.5 py-0.5 bg-[#F5821F] text-white rounded text-[10px] font-bold uppercase">
+                          <span className="ml-1 px-1.5 py-0.5 bg-[--e-orange] text-white rounded text-[10px] font-bold uppercase">
                             Primary
                           </span>
                         )}
@@ -654,7 +654,7 @@ export default function Packages() {
                           onChange={e => setPrices(p => ({ ...p, [field]: e.target.value }))}
                           className={cn(
                             "h-9 pl-9 font-mono text-sm",
-                            isPrimary && "border-[#F5821F]/40 ring-1 ring-[#F5821F]/20 focus-visible:ring-[#F5821F]/40"
+                            isPrimary && "border-[--e-orange]/40 ring-1 ring-[--e-orange]/20 focus-visible:ring-[--e-orange]/40"
                           )}
                         />
                       </div>
@@ -681,7 +681,7 @@ export default function Packages() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="h-9 px-3 border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
+                  className="h-9 px-3 border-[--e-orange] text-[--e-orange] hover:bg-[--e-orange-lt]"
                   onClick={addTag}
                 >
                   Add
@@ -694,7 +694,7 @@ export default function Packages() {
                   {featureTags.map((tag, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1 bg-[#FEF0E3] text-[#F5821F] text-xs px-2.5 py-1 rounded-full font-medium border border-[#F5821F]/20"
+                      className="inline-flex items-center gap-1 bg-[--e-orange-lt] text-[--e-orange] text-xs px-2.5 py-1 rounded-full font-medium border border-[--e-orange]/20"
                     >
                       {tag}
                       <button
@@ -724,7 +724,7 @@ export default function Packages() {
                     className={cn(
                       "flex-1 py-2 text-sm font-medium rounded-lg border transition-colors",
                       commission.type === t
-                        ? "bg-[#FEF0E3] border-[#F5821F] text-[#F5821F]"
+                        ? "bg-[--e-orange-lt] border-[--e-orange] text-[--e-orange]"
                         : "border-[#E8E6E2] text-[#57534E] hover:bg-[#FAFAF9]"
                     )}
                   >
@@ -812,7 +812,7 @@ export default function Packages() {
               </Button>
               <Button
                 size="sm"
-                className="bg-[#F5821F] hover:bg-[#d97706] text-white min-w-[130px]"
+                className="bg-[--e-orange] hover:bg-[#d97706] text-white min-w-[130px]"
                 onClick={handleCreate}
                 disabled={createPkg.isPending}
               >

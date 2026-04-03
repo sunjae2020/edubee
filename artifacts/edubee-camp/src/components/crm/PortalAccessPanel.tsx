@@ -202,8 +202,8 @@ export function PortalAccessPanel({ accountId, accountType }: Props) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-[#F5821F]/10 flex items-center justify-center">
-          <Shield className="w-5 h-5 text-[#F5821F]" />
+        <div className="w-9 h-9 rounded-lg bg-[--e-orange]/10 flex items-center justify-center">
+          <Shield className="w-5 h-5 text-[--e-orange]" />
         </div>
         <div className="flex-1">
           <h2 className="text-sm font-semibold text-stone-800">Portal Access</h2>
@@ -228,7 +228,7 @@ export function PortalAccessPanel({ accountId, accountType }: Props) {
             : (
               <div className="flex gap-2">
                 <Button
-                  size="sm" className="h-7 text-xs bg-[#F5821F] hover:bg-[#d97706] text-white gap-1"
+                  size="sm" className="h-7 text-xs bg-[--e-orange] hover:bg-[#d97706] text-white gap-1"
                   onClick={saveBasicInfo} disabled={saving}
                 >
                   <Save size={11} /> {saving ? "Saving…" : "Save"}
@@ -252,7 +252,7 @@ export function PortalAccessPanel({ accountId, accountType }: Props) {
               disabled={!editing}
               onClick={() => editing && setForm(f => ({ ...f, portalAccess: !f.portalAccess }))}
               className="w-10 h-6 rounded-full transition-colors relative shrink-0"
-              style={{ background: form.portalAccess ? "#F5821F" : "#E8E6E2", opacity: editing ? 1 : 0.8 }}
+              style={{ background: form.portalAccess ? "var(--e-orange)" : "#E8E6E2", opacity: editing ? 1 : 0.8 }}
             >
               <span
                 className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all"
@@ -292,7 +292,7 @@ export function PortalAccessPanel({ accountId, accountType }: Props) {
                 value={form.portalEmail}
                 onChange={e => setForm(f => ({ ...f, portalEmail: e.target.value }))}
                 placeholder="portal-login@example.com"
-                className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                className="h-9 text-sm border-[#E8E6E2] focus:border-[--e-orange]"
                 type="email"
               />
             ) : (
@@ -370,18 +370,18 @@ export function PortalAccessPanel({ accountId, accountType }: Props) {
                 placeholder="New Password (min 8 characters)"
                 value={newPw}
                 onChange={e => setNewPw(e.target.value)}
-                className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                className="h-9 text-sm border-[#E8E6E2] focus:border-[--e-orange]"
               />
               <Input
                 type="password"
                 placeholder="Confirm Password"
                 value={confirmPw}
                 onChange={e => setConfirmPw(e.target.value)}
-                className="h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F]"
+                className="h-9 text-sm border-[#E8E6E2] focus:border-[--e-orange]"
               />
               <Button
                 size="sm"
-                className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5 text-xs"
+                className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5 text-xs"
                 onClick={setDirectPassword}
                 disabled={!newPw || newPw !== confirmPw || settingPw}
               >

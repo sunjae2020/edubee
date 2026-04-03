@@ -144,7 +144,7 @@ export default function DataManagerPage() {
             className={cn(
               "px-4 py-2 rounded-t-lg font-medium text-sm transition-colors",
               tab === t
-                ? "bg-[#F5821F] text-white"
+                ? "bg-[--e-orange] text-white"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
             )}
           >
@@ -384,7 +384,7 @@ function ImportTab() {
       {selectedTable && (
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-2">
-            <button onClick={() => { setSelectedTable(null); clearFile(); }} className="text-[#F5821F] hover:text-[#d97706] font-medium text-sm">
+            <button onClick={() => { setSelectedTable(null); clearFile(); }} className="text-[--e-orange] hover:text-[#d97706] font-medium text-sm">
               ← Back to Tables
             </button>
             <h3 className="font-semibold text-sm">{getCurrentTableLabel()}</h3>
@@ -392,7 +392,7 @@ function ImportTab() {
 
           <Button
             variant="outline"
-            className="border-[#F5821F] text-[#F5821F] hover:bg-orange-50 w-full"
+            className="border-[--e-orange] text-[--e-orange] hover:bg-orange-50 w-full"
             onClick={doDownloadTemplate}
           >
             <Download className="h-4 w-4 mr-2" />
@@ -407,7 +407,7 @@ function ImportTab() {
               onClick={() => inputRef.current?.click()}
               className={cn(
                 "border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors",
-                dragging ? "border-[#F5821F] bg-orange-50" : "border-border hover:border-[#F5821F] hover:bg-muted/40"
+                dragging ? "border-[--e-orange] bg-orange-50" : "border-border hover:border-[--e-orange] hover:bg-muted/40"
               )}
             >
               <Upload className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
@@ -457,7 +457,7 @@ function ImportTab() {
               )}
 
               <Button
-                className="w-full bg-[#F5821F] hover:bg-[#d97706] text-white"
+                className="w-full bg-[--e-orange] hover:bg-[#d97706] text-white"
                 disabled={importing}
                 onClick={doImport}
               >
@@ -613,7 +613,7 @@ function HistoryTab() {
             <tbody>
               {history.map((row: any) => (
                 <>
-                  <tr key={row.id} className="border-t hover:bg-[#FEF0E3]">
+                  <tr key={row.id} className="border-t hover:bg-[--e-orange-lt]">
                     <td className="px-3 py-2.5 text-xs whitespace-nowrap">
                       {row.createdAt ? new Date(row.createdAt).toLocaleString() : "—"}
                     </td>

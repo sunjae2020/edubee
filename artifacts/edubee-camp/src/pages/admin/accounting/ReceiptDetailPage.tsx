@@ -86,7 +86,7 @@ function StatusBadge({ status }: { status?: string | null }) {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-xs font-semibold text-[#F5821F] uppercase tracking-widest border-b border-[#F5821F]/20 pb-2 mb-4">
+    <h3 className="text-xs font-semibold text-[--e-orange] uppercase tracking-widest border-b border-[--e-orange]/20 pb-2 mb-4">
       {children}
     </h3>
   );
@@ -106,7 +106,7 @@ function CopyButton({ value }: { value: string }) {
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      className="ml-1.5 text-stone-400 hover:text-[#F5821F] transition-colors"
+      className="ml-1.5 text-stone-400 hover:text-[--e-orange] transition-colors"
     >
       {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
     </button>
@@ -118,7 +118,8 @@ async function printReceipt(rcp: Receipt) {
   const brandHtml = logoSrc ? logoImgHtml(logoSrc) : `<div class="brand">Edubee Camp</div>`;
   const amountStr = fmtAmount(rcp.originalAmount ?? rcp.amount, rcp.originalCurrency ?? rcp.currency);
   const methodLabel = PAYMENT_METHODS.find(m => m.value === rcp.paymentMethod)?.label ?? (rcp.paymentMethod ?? "—");
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Receipt ${rcp.receiptNumber ?? ""}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#fff;color:#1a1917;padding:48px;font-size:14px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px}.brand{font-size:28px;font-weight:700;color:#F5821F}.brand-sub{font-size:13px;color:#64748b;margin-top:2px}.rcp-title{text-align:right}.rcp-title h2{font-size:22px;font-weight:700;color:#1a1917}.rcp-title p{color:#64748b;font-size:13px;margin-top:4px}.badge{display:inline-block;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:600;background:#DCFCE7;color:#16A34A;text-transform:capitalize;margin-top:8px}.divider{border:none;border-top:1px solid #e2e8f0;margin:24px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0}.section h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:8px}.section p{font-size:14px;color:#1a1917;margin-bottom:4px}.section .label{color:#64748b;font-size:12px}.amount-box{background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:24px;text-align:center;margin:24px 0}.amount-box .label{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}.amount-box .value{font-size:32px;font-weight:700;color:#16A34A}table{width:100%;border-collapse:collapse;margin-top:24px}tbody td{padding:10px 12px;border-bottom:1px solid #f1f5f9}tbody td:first-child{color:#64748b;width:160px}.notes{margin-top:24px;padding:16px;background:#f8fafc;border-radius:8px}.notes h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:6px}.footer{margin-top:48px;text-align:center;font-size:12px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:24px}@media print{body{padding:24px}}</style></head><body><div class="header"><div>${brandHtml}<div class="brand-sub">Educational Services</div></div><div class="rcp-title"><h2>RECEIPT</h2><p>${rcp.receiptNumber ?? "—"}</p><span class="badge">${rcp.status ?? "pending"}</span></div></div><hr class="divider"/><div class="grid"><div class="section"><h3>Received From</h3><p>${rcp.studentName ?? rcp.payerName ?? "—"}</p>${rcp.studentEmail ? `<p class="label">${rcp.studentEmail}</p>` : ""}</div><div class="section"><h3>Receipt Details</h3><p><span class="label">Date: </span>${rcp.receiptDate ?? "—"}</p>${rcp.invoiceNumber ? `<p><span class="label">Invoice: </span>${rcp.invoiceNumber}</p>` : ""}${rcp.contractNumber ? `<p><span class="label">Contract: </span>${rcp.contractNumber}</p>` : ""}${rcp.agentName ? `<p><span class="label">Agent: </span>${rcp.agentName}</p>` : ""}</div></div><div class="amount-box"><div class="label">Amount Received</div><div class="value">${amountStr}</div></div><table><tbody><tr><td>Payment Method</td><td>${methodLabel}</td></tr><tr><td>Receipt Date</td><td>${rcp.receiptDate ?? "—"}</td></tr>${rcp.confirmedAt ? `<tr><td>Confirmed At</td><td>${fmtDateTime(rcp.confirmedAt)}</td></tr>` : ""}</tbody></table>${rcp.notes ? `<div class="notes"><h3>Notes</h3><p>${rcp.notes}</p></div>` : ""}<div class="footer"><p>This receipt confirms that payment has been received.</p><p style="margin-top:4px">Edubee Camp Administration — admin@edubee.co</p></div><script>window.onload=()=>{window.print()}<\/script></body></html>`;
+  const _bc = getComputedStyle(document.documentElement).getPropertyValue("--e-orange").trim() || "${_bc}";
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Receipt ${rcp.receiptNumber ?? ""}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#fff;color:#1a1917;padding:48px;font-size:14px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px}.brand{font-size:28px;font-weight:700;color:${_bc}}.brand-sub{font-size:13px;color:#64748b;margin-top:2px}.rcp-title{text-align:right}.rcp-title h2{font-size:22px;font-weight:700;color:#1a1917}.rcp-title p{color:#64748b;font-size:13px;margin-top:4px}.badge{display:inline-block;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:600;background:#DCFCE7;color:#16A34A;text-transform:capitalize;margin-top:8px}.divider{border:none;border-top:1px solid #e2e8f0;margin:24px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0}.section h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:8px}.section p{font-size:14px;color:#1a1917;margin-bottom:4px}.section .label{color:#64748b;font-size:12px}.amount-box{background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:24px;text-align:center;margin:24px 0}.amount-box .label{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}.amount-box .value{font-size:32px;font-weight:700;color:#16A34A}table{width:100%;border-collapse:collapse;margin-top:24px}tbody td{padding:10px 12px;border-bottom:1px solid #f1f5f9}tbody td:first-child{color:#64748b;width:160px}.notes{margin-top:24px;padding:16px;background:#f8fafc;border-radius:8px}.notes h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:6px}.footer{margin-top:48px;text-align:center;font-size:12px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:24px}@media print{body{padding:24px}}</style></head><body><div class="header"><div>${brandHtml}<div class="brand-sub">Educational Services</div></div><div class="rcp-title"><h2>RECEIPT</h2><p>${rcp.receiptNumber ?? "—"}</p><span class="badge">${rcp.status ?? "pending"}</span></div></div><hr class="divider"/><div class="grid"><div class="section"><h3>Received From</h3><p>${rcp.studentName ?? rcp.payerName ?? "—"}</p>${rcp.studentEmail ? `<p class="label">${rcp.studentEmail}</p>` : ""}</div><div class="section"><h3>Receipt Details</h3><p><span class="label">Date: </span>${rcp.receiptDate ?? "—"}</p>${rcp.invoiceNumber ? `<p><span class="label">Invoice: </span>${rcp.invoiceNumber}</p>` : ""}${rcp.contractNumber ? `<p><span class="label">Contract: </span>${rcp.contractNumber}</p>` : ""}${rcp.agentName ? `<p><span class="label">Agent: </span>${rcp.agentName}</p>` : ""}</div></div><div class="amount-box"><div class="label">Amount Received</div><div class="value">${amountStr}</div></div><table><tbody><tr><td>Payment Method</td><td>${methodLabel}</td></tr><tr><td>Receipt Date</td><td>${rcp.receiptDate ?? "—"}</td></tr>${rcp.confirmedAt ? `<tr><td>Confirmed At</td><td>${fmtDateTime(rcp.confirmedAt)}</td></tr>` : ""}</tbody></table>${rcp.notes ? `<div class="notes"><h3>Notes</h3><p>${rcp.notes}</p></div>` : ""}<div class="footer"><p>This receipt confirms that payment has been received.</p><p style="margin-top:4px">Edubee Camp Administration — admin@edubee.co</p></div><script>window.onload=()=>{window.print()}<\/script></body></html>`;
   const w = window.open("", "_blank");
   if (w) { w.document.write(html); w.document.close(); }
 }
@@ -157,7 +158,7 @@ function EmailModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Mail className="w-4 h-4 text-[#F5821F]" /> Send Receipt by Email
+            <Mail className="w-4 h-4 text-[--e-orange]" /> Send Receipt by Email
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -178,7 +179,7 @@ function EmailModal({
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => { onClose(); setEmail(""); }} disabled={sending}>Cancel</Button>
-          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSend} disabled={sending}>
+          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white gap-1.5" onClick={handleSend} disabled={sending}>
             {sending ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Sending…</> : <><Send className="w-3.5 h-3.5" />Send Email</>}
           </Button>
         </DialogFooter>
@@ -230,7 +231,7 @@ function VerifyModal({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white" onClick={handleSave} disabled={saving}>
+          <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white" onClick={handleSave} disabled={saving}>
             {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />Saving…</> : "Save"}
           </Button>
         </DialogFooter>
@@ -289,7 +290,7 @@ export default function ReceiptDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           {receipt.status === "pending" && (
-            <Button size="sm" variant="outline" className="gap-1.5 border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]" onClick={() => setShowVerify(true)}>
+            <Button size="sm" variant="outline" className="gap-1.5 border-[--e-orange] text-[--e-orange] hover:bg-[--e-orange-lt]" onClick={() => setShowVerify(true)}>
               Verify / Update Status
             </Button>
           )}
@@ -333,7 +334,7 @@ export default function ReceiptDetailPage() {
               <div className="flex items-center gap-2">
                 <StatusBadge status={receipt.status} />
                 {receipt.status !== "pending" && (
-                  <button className="text-xs text-[#F5821F] hover:underline" onClick={() => setShowVerify(true)}>
+                  <button className="text-xs text-[--e-orange] hover:underline" onClick={() => setShowVerify(true)}>
                     Change
                   </button>
                 )}
@@ -351,7 +352,7 @@ export default function ReceiptDetailPage() {
             </Field>
             {receipt.studentEmail && (
               <Field label="Email">
-                <a href={`mailto:${receipt.studentEmail}`} className="text-[#F5821F] hover:underline text-sm">
+                <a href={`mailto:${receipt.studentEmail}`} className="text-[--e-orange] hover:underline text-sm">
                   {receipt.studentEmail}
                 </a>
               </Field>
@@ -365,7 +366,7 @@ export default function ReceiptDetailPage() {
               <Field label="Invoice">
                 <button
                   onClick={() => navigate(`/admin/accounting/invoices/${receipt.invoiceId}`)}
-                  className="flex items-center gap-1 text-[#F5821F] hover:underline font-mono text-xs"
+                  className="flex items-center gap-1 text-[--e-orange] hover:underline font-mono text-xs"
                 >
                   {receipt.invoiceNumber ?? receipt.invoiceId.slice(0, 8)}
                   <ExternalLink className="w-3 h-3" />
@@ -376,7 +377,7 @@ export default function ReceiptDetailPage() {
               <Field label="Contract">
                 <button
                   onClick={() => navigate(`/admin/crm/contracts/${receipt.contractId}`)}
-                  className="flex items-center gap-1 text-[#F5821F] hover:underline font-mono text-xs"
+                  className="flex items-center gap-1 text-[--e-orange] hover:underline font-mono text-xs"
                 >
                   {receipt.contractNumber ?? receipt.contractId.slice(0, 8)}
                   <ExternalLink className="w-3 h-3" />

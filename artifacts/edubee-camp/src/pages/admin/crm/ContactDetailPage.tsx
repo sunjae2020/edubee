@@ -29,12 +29,12 @@ const TITLES = ["Mr", "Mrs", "Ms", "Miss", "Dr", "Prof"];
 
 const ROLE_LABELS: Record<string, string> = { primary: "Primary", secondary: "Secondary", both: "Both" };
 const ROLE_COLORS: Record<string, string> = {
-  primary:   "bg-[#FEF0E3] text-[#F5821F]",
+  primary:   "bg-[--e-orange-lt] text-[--e-orange]",
   secondary: "bg-[#EFF6FF] text-[#1D4ED8]",
   both:      "bg-[#DCFCE7] text-[#16A34A]",
 };
 
-const INPUT_CLS = "h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 focus-visible:ring-offset-0";
+const INPUT_CLS = "h-9 text-sm border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 focus-visible:ring-offset-0";
 
 function Avatar({
   firstName, lastName, imageUrl,
@@ -46,14 +46,14 @@ function Avatar({
 
   if (imageUrl) {
     return (
-      <div className="w-14 h-14 rounded-full shrink-0 overflow-hidden border-2 border-[#F5821F]/30">
+      <div className="w-14 h-14 rounded-full shrink-0 overflow-hidden border-2 border-[--e-orange]/30">
         <img src={imageUrl} alt="Profile" className="w-full h-full object-cover" />
       </div>
     );
   }
   return (
     <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
-         style={{ background: "#FEF0E3", color: "#F5821F" }}>
+         style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
       {initials}
     </div>
   );
@@ -72,7 +72,7 @@ function StatusBadge({ status }: { status?: string | null }) {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-xs font-bold text-[#F5821F] uppercase tracking-widest mb-4 pb-2 border-b border-[#F5821F]/20">
+    <h3 className="text-xs font-bold text-[--e-orange] uppercase tracking-widest mb-4 pb-2 border-b border-[--e-orange]/20">
       {children}
     </h3>
   );
@@ -137,7 +137,7 @@ function AccountSearchBox({ onSelect, excludeIds = [] }: {
         <div className="absolute z-50 top-full mt-1 w-full bg-white border border-stone-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
           {results.map(r => (
             <button key={r.id} type="button"
-              className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#FEF0E3] transition-colors flex items-center gap-2"
+              className="w-full text-left px-4 py-2.5 text-sm hover:bg-[--e-orange-lt] transition-colors flex items-center gap-2"
               onMouseDown={() => { onSelect(r.id, r.name); setQ(""); setOpen(false); }}>
               <Building2 className="w-3.5 h-3.5 text-stone-400 shrink-0" />
               <span className="font-medium text-stone-800">{r.name}</span>
@@ -194,7 +194,7 @@ function AddAccountModal({ contactId, contactName, existingIds, onClose, onSucce
         {(["create", "link"] as const).map(m => (
           <button key={m} onClick={() => setMode(m)}
             className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-              mode === m ? "bg-[#F5821F] text-white border-[#F5821F]" : "border-stone-200 text-stone-600 hover:bg-stone-50"
+              mode === m ? "bg-[--e-orange] text-white border-[--e-orange]" : "border-stone-200 text-stone-600 hover:bg-stone-50"
             }`}>
             {m === "create" ? "Create New" : "Link Existing"}
           </button>
@@ -223,9 +223,9 @@ function AddAccountModal({ contactId, contactName, existingIds, onClose, onSucce
             <AccountSearchBox excludeIds={existingIds}
               onSelect={(aid, name) => { setLinkAccountId(aid); setLinkAccountName(name); }} />
             {linkAccountName && (
-              <div className="flex items-center gap-2 mt-1 px-3 py-2 rounded-lg bg-[#FEF0E3] text-sm">
-                <Building2 className="w-3.5 h-3.5 text-[#F5821F]" />
-                <span className="font-medium text-[#F5821F]">{linkAccountName}</span>
+              <div className="flex items-center gap-2 mt-1 px-3 py-2 rounded-lg bg-[--e-orange-lt] text-sm">
+                <Building2 className="w-3.5 h-3.5 text-[--e-orange]" />
+                <span className="font-medium text-[--e-orange]">{linkAccountName}</span>
                 <button onClick={() => { setLinkAccountId(""); setLinkAccountName(""); }}
                   className="ml-auto text-stone-400 hover:text-stone-600">
                   <X className="w-3.5 h-3.5" />
@@ -247,7 +247,7 @@ function AddAccountModal({ contactId, contactName, existingIds, onClose, onSucce
       </div>
       <div className="flex justify-end gap-2 mt-4">
         <Button variant="outline" onClick={onClose} disabled={isPending}>Cancel</Button>
-        <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white"
+        <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white"
           disabled={isPending || (mode === "link" && !linkAccountId) || (mode === "create" && !accountName.trim())}
           onClick={() => mode === "create" ? createMut.mutate() : linkMut.mutate()}>
           {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
@@ -306,7 +306,7 @@ function EditAccountModal({ contactId, account, onClose, onSuccess }: {
       </div>
       <div className="flex justify-end gap-2 mt-4">
         <Button variant="outline" onClick={onClose} disabled={updateMut.isPending}>Cancel</Button>
-        <Button className="bg-[#F5821F] hover:bg-[#d97706] text-white"
+        <Button className="bg-[--e-orange] hover:bg-[#d97706] text-white"
           onClick={() => updateMut.mutate()}
           disabled={updateMut.isPending || !name.trim()}>
           {updateMut.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
@@ -339,15 +339,15 @@ function LinkedAccountsSection({ contactId, contactName, accounts, onRefresh }: 
     <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 bg-stone-50">
         <div className="flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-[#F5821F]" />
+          <Building2 className="w-4 h-4 text-[--e-orange]" />
           <span className="text-sm font-semibold text-stone-800">Linked Accounts</span>
           {accounts.length > 0 && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#FEF0E3] text-[#F5821F]">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[--e-orange-lt] text-[--e-orange]">
               {accounts.length}
             </span>
           )}
         </div>
-        <Button size="sm" className="h-7 px-2.5 text-xs gap-1 bg-[#F5821F] hover:bg-[#d97706] text-white"
+        <Button size="sm" className="h-7 px-2.5 text-xs gap-1 bg-[--e-orange] hover:bg-[#d97706] text-white"
           onClick={() => setShowAdd(true)}>
           <Plus className="w-3.5 h-3.5" /> Add Account
         </Button>
@@ -358,7 +358,7 @@ function LinkedAccountsSection({ contactId, contactName, accounts, onRefresh }: 
           <Building2 className="w-8 h-8 mx-auto mb-2 text-stone-200" />
           No accounts linked yet
           <button onClick={() => setShowAdd(true)}
-            className="block mx-auto mt-2 text-[#F5821F] hover:underline text-xs font-medium">
+            className="block mx-auto mt-2 text-[--e-orange] hover:underline text-xs font-medium">
             + Add first account
           </button>
         </div>
@@ -366,13 +366,13 @@ function LinkedAccountsSection({ contactId, contactName, accounts, onRefresh }: 
         <div className="divide-y divide-stone-100">
           {accounts.map(acc => (
             <div key={acc.id} className="flex items-center gap-3 px-4 py-3 hover:bg-stone-50 transition-colors">
-              <div className="w-8 h-8 rounded-full bg-[#FEF0E3] flex items-center justify-center shrink-0">
-                <Building2 className="w-4 h-4 text-[#F5821F]" />
+              <div className="w-8 h-8 rounded-full bg-[--e-orange-lt] flex items-center justify-center shrink-0">
+                <Building2 className="w-4 h-4 text-[--e-orange]" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <button onClick={() => navigate(`/admin/crm/accounts/${acc.id}`)}
-                    className="text-sm font-semibold text-stone-800 hover:text-[#F5821F] transition-colors truncate">
+                    className="text-sm font-semibold text-stone-800 hover:text-[--e-orange] transition-colors truncate">
                     {acc.name}
                   </button>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${ROLE_COLORS[acc.role] ?? "bg-stone-100 text-stone-500"}`}>
@@ -389,7 +389,7 @@ function LinkedAccountsSection({ contactId, contactName, accounts, onRefresh }: 
               <div className="flex items-center gap-1 shrink-0">
                 <button onClick={() => navigate(`/admin/crm/accounts/${acc.id}`)}
                   title="View account"
-                  className="p-1.5 rounded-lg text-stone-400 hover:text-[#F5821F] hover:bg-[#FEF0E3] transition-colors">
+                  className="p-1.5 rounded-lg text-stone-400 hover:text-[--e-orange] hover:bg-[--e-orange-lt] transition-colors">
                   <ExternalLink className="w-3.5 h-3.5" />
                 </button>
                 <button onClick={() => setEditAccount(acc)} title="Edit account"
@@ -630,7 +630,7 @@ export default function ContactDetailPage() {
             </Button>
             <Button size="sm" disabled={saveMutation.isPending}
               onClick={() => saveMutation.mutate()}
-              className="h-9 gap-1.5 text-white" style={{ background: "#F5821F" }}>
+              className="h-9 gap-1.5 text-white" style={{ background: "var(--e-orange)" }}>
               {saveMutation.isPending
                 ? <><Loader2 size={13} className="animate-spin" /> Saving…</>
                 : <><Save size={13} /> Save Changes</>}
@@ -788,7 +788,7 @@ export default function ContactDetailPage() {
           onChange={e => set("description", e.target.value)}
           placeholder="Additional notes about this contact…"
           rows={6}
-          className="text-sm border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 resize-y" />
+          className="text-sm border-[#E8E6E2] focus:border-[--e-orange] focus-visible:ring-0 resize-y" />
       </div>
 
       {/* ── Linked Accounts ── */}

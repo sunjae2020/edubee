@@ -100,7 +100,7 @@ export function NameFieldGroup({
       )}
 
       {(preview || originalPreview) && (
-        <div className="px-3 py-2 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/20">
+        <div className="px-3 py-2 rounded-lg bg-[--e-orange-lt] border border-[--e-orange]/20">
           <p className="text-[10px] text-[#A8A29E] mb-0.5">Preview</p>
           {preview && (
             <p className="text-sm font-semibold text-[#1C1917] leading-tight">

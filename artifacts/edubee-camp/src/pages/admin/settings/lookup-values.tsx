@@ -46,7 +46,7 @@ function InlineEdit({ value, onSave, onCancel }: { value: string; onSave: (v: st
         value={text}
         onChange={e => setText(e.target.value)}
         onKeyDown={e => { if (e.key === "Enter") onSave(text); if (e.key === "Escape") onCancel(); }}
-        className="flex-1 px-2 py-0.5 text-sm border border-[#F5821F] rounded focus:outline-none"
+        className="flex-1 px-2 py-0.5 text-sm border border-[--e-orange] rounded focus:outline-none"
       />
       <button onClick={() => onSave(text)} className="text-green-600 hover:text-green-700"><Check className="w-4 h-4" /></button>
       <button onClick={onCancel} className="text-[#A8A29E] hover:text-[#78716C]"><X className="w-4 h-4" /></button>
@@ -84,10 +84,10 @@ function SortableItem({
       style={style}
       className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors group ${
         isDragging
-          ? "bg-[#FEF0E3] border-[#F5821F]/40 shadow-md"
+          ? "bg-[--e-orange-lt] border-[--e-orange]/40 shadow-md"
           : item.status === "Inactive"
           ? "bg-[#FAFAF9] border-[#E8E6E2] opacity-60"
-          : "bg-white border-[#E8E6E2] hover:border-[#F5821F]/30"
+          : "bg-white border-[#E8E6E2] hover:border-[--e-orange]/30"
       }`}
     >
       {/* Drag handle */}
@@ -231,7 +231,7 @@ function LookupItemsPanel({ group, groupLabel, onBack }: { group: string; groupL
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <button onClick={onBack} className="text-[#A8A29E] hover:text-[#F5821F] transition-colors">
+          <button onClick={onBack} className="text-[#A8A29E] hover:text-[--e-orange] transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
@@ -247,7 +247,7 @@ function LookupItemsPanel({ group, groupLabel, onBack }: { group: string; groupL
             {showInactive ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
             Show inactive
           </button>
-          <Button size="sm" className="h-8 bg-[#F5821F] hover:bg-[#e07010] text-white text-xs gap-1.5"
+          <Button size="sm" className="h-8 bg-[--e-orange] hover:bg-[#e07010] text-white text-xs gap-1.5"
             onClick={() => setAddingNew(true)}>
             <Plus className="w-3.5 h-3.5" /> Add Value
           </Button>
@@ -266,9 +266,9 @@ function LookupItemsPanel({ group, groupLabel, onBack }: { group: string; groupL
               if (e.key === "Escape") { setAddingNew(false); setNewLabel(""); }
             }}
             placeholder="Enter value name…"
-            className="flex-1 px-2 py-1 text-sm border border-[#E8E6E2] rounded focus:outline-none focus:ring-1 focus:ring-[#F5821F]"
+            className="flex-1 px-2 py-1 text-sm border border-[#E8E6E2] rounded focus:outline-none focus:ring-1 focus:ring-[--e-orange]"
           />
-          <Button size="sm" className="h-7 text-xs bg-[#F5821F] hover:bg-[#e07010] text-white"
+          <Button size="sm" className="h-7 text-xs bg-[--e-orange] hover:bg-[#e07010] text-white"
             disabled={!newLabel.trim() || createMutation.isPending}
             onClick={() => createMutation.mutate(newLabel.trim())}>
             Save
@@ -366,7 +366,7 @@ export default function LookupValuesPage() {
           <Button
             size="sm"
             variant="outline"
-            className="text-xs gap-1.5 border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3]"
+            className="text-xs gap-1.5 border-[--e-orange] text-[--e-orange] hover:bg-[--e-orange-lt]"
             onClick={() => seedMutation.mutate()}
             disabled={seedMutation.isPending}
           >
@@ -383,7 +383,7 @@ export default function LookupValuesPage() {
           {groups.map(group => (
             <Card
               key={group.key}
-              className="cursor-pointer hover:border-[#F5821F]/50 hover:shadow-sm transition-all border-[#E8E6E2]"
+              className="cursor-pointer hover:border-[--e-orange]/50 hover:shadow-sm transition-all border-[#E8E6E2]"
               onClick={() => setSelectedGroup(group)}
             >
               <CardHeader className="pb-2 pt-4 px-4">
@@ -414,7 +414,7 @@ export default function LookupValuesPage() {
       {hasAny && (
         <div className="mt-4 text-right">
           <button
-            className="text-xs text-[#A8A29E] hover:text-[#F5821F] transition-colors"
+            className="text-xs text-[#A8A29E] hover:text-[--e-orange] transition-colors"
             onClick={() => { if (confirm("Re-seed default values? Existing entries will be preserved.")) seedMutation.mutate(); }}
           >
             Re-seed default values

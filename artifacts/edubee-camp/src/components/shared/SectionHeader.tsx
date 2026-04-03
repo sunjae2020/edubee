@@ -21,18 +21,18 @@ export function SectionHeader({
     <div
       className={`flex items-center gap-2 ${className ?? ""}`}
       style={{
-        background: isEditor ? "transparent" : "#FEF0E3",
-        borderLeft: "4px solid #F5821F",
+        background: isEditor ? "transparent" : "var(--e-orange-lt)",
+        borderLeft: "4px solid var(--e-orange)",
         padding: isEditor ? "8px 12px" : "12px 16px",
         borderRadius: "0 8px 8px 0",
       }}
     >
-      <ReportSymbol name={symbol} size={isEditor ? 16 : 20} color="#F5821F" />
+      <ReportSymbol name={symbol} size={isEditor ? 16 : 20} color="var(--e-orange)" />
       <span
         style={{
           fontSize: isEditor ? 10 : 11,
           fontWeight: 500,
-          color: "#F5821F",
+          color: "var(--e-orange)",
           letterSpacing: "0.1em",
           flexShrink: 0,
         }}
