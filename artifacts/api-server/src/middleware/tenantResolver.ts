@@ -12,8 +12,8 @@ declare global {
   }
 }
 
-// BASE_DOMAIN — .env의 APP_DOMAIN 없으면 'edubee.com' 기본값
-const BASE_DOMAIN = process.env.APP_DOMAIN ?? "edubee.com";
+// BASE_DOMAIN — .env의 APP_DOMAIN 없으면 'edubee.co' 기본값
+const BASE_DOMAIN = process.env.APP_DOMAIN ?? "edubee.co";
 
 // 테넌트로 처리하지 않을 시스템 서브도메인
 const SYSTEM_SUBDOMAINS = new Set([
@@ -115,9 +115,9 @@ export async function tenantResolver(
 
 /**
  * 호스트명에서 서브도메인 추출
- * 예: 'abc.edubee.com' → 'abc'
+ * 예: 'abc.edubee.co' → 'abc'
  *     'localhost'       → null
- *     'edubee.com'      → null (루트 도메인)
+ *     'edubee.co'      → null (루트 도메인)
  */
 function extractSubdomain(host: string, baseDomain: string): string | null {
   // localhost, IP 주소 제외
@@ -125,7 +125,7 @@ function extractSubdomain(host: string, baseDomain: string): string | null {
     return null;
   }
 
-  // 포트 제거 (예: 'abc.edubee.com:3000' → 'abc.edubee.com')
+  // 포트 제거 (예: 'abc.edubee.co:3000' → 'abc.edubee.co')
   const cleanHost = host.split(":")[0];
 
   // baseDomain 이 포함된 경우만 처리
@@ -136,7 +136,7 @@ function extractSubdomain(host: string, baseDomain: string): string | null {
   // 서브도메인 추출
   const sub = cleanHost.slice(0, cleanHost.length - baseDomain.length - 1);
 
-  // 중첩 서브도메인 제외 (예: 'a.b.edubee.com' → null)
+  // 중첩 서브도메인 제외 (예: 'a.b.edubee.co' → null)
   if (sub.includes(".")) {
     return null;
   }

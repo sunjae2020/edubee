@@ -18,9 +18,9 @@ const ROLE_LABELS: Record<string, string> = {
 
 // Demo log entries since we may not have impersonation logging populated
 const DEMO_LOGS: LogEntry[] = [
-  { id: "1", startedAt: new Date(Date.now() - 3600000).toISOString(), endedAt: new Date(Date.now() - 3400000).toISOString(), ipAddress: "203.0.113.1", pagesVisited: ["/admin/dashboard", "/admin/applications"], actor: { fullName: "Super Admin", email: "superadmin@edubee.com" }, target: { fullName: "Camp Coord 1", email: "coordinator@edubee.com", role: "camp_coordinator" } },
-  { id: "2", startedAt: new Date(Date.now() - 86400000).toISOString(), endedAt: new Date(Date.now() - 86200000).toISOString(), ipAddress: "203.0.113.5", pagesVisited: ["/admin/dashboard", "/admin/my-accounting/settlements", "/admin/services/hotel"], actor: { fullName: "Admin User", email: "admin@edubee.com" }, target: { fullName: "Hotel Partner", email: "hotel@example.com", role: "consultant" } },
-  { id: "3", startedAt: new Date(Date.now() - 172800000).toISOString(), endedAt: new Date(Date.now() - 172600000).toISOString(), ipAddress: "203.0.113.8", pagesVisited: ["/admin/my-programs"], actor: { fullName: "Super Admin", email: "superadmin@edubee.com" }, target: { fullName: "Parent Client", email: "parent@example.com", role: "consultant" } },
+  { id: "1", startedAt: new Date(Date.now() - 3600000).toISOString(), endedAt: new Date(Date.now() - 3400000).toISOString(), ipAddress: "203.0.113.1", pagesVisited: ["/admin/dashboard", "/admin/applications"], actor: { fullName: "Super Admin", email: "superadmin@edubee.co" }, target: { fullName: "Camp Coord 1", email: "coordinator@edubee.co", role: "camp_coordinator" } },
+  { id: "2", startedAt: new Date(Date.now() - 86400000).toISOString(), endedAt: new Date(Date.now() - 86200000).toISOString(), ipAddress: "203.0.113.5", pagesVisited: ["/admin/dashboard", "/admin/my-accounting/settlements", "/admin/services/hotel"], actor: { fullName: "Admin User", email: "admin@edubee.co" }, target: { fullName: "Hotel Partner", email: "hotel@example.com", role: "consultant" } },
+  { id: "3", startedAt: new Date(Date.now() - 172800000).toISOString(), endedAt: new Date(Date.now() - 172600000).toISOString(), ipAddress: "203.0.113.8", pagesVisited: ["/admin/my-programs"], actor: { fullName: "Super Admin", email: "superadmin@edubee.co" }, target: { fullName: "Parent Client", email: "parent@example.com", role: "consultant" } },
 ];
 
 export default function ImpersonationLogs() {

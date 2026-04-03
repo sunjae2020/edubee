@@ -772,7 +772,7 @@ function SummarySection({
       {/* Bottom Logo */}
       <View style={{ alignItems: "center", marginTop: 32 }}>
         <PdfLogo size="md" />
-        <Text style={{ fontSize: 8, color: C.textFaint, textAlign: "center", marginTop: 4 }}>www.edubee.com</Text>
+        <Text style={{ fontSize: 8, color: C.textFaint, textAlign: "center", marginTop: 4 }}>www.edubee.co</Text>
       </View>
 
       <PdfFooter />

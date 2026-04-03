@@ -10,19 +10,19 @@ async function seed() {
 
   // Create users
   await db.insert(users).values([
-    { email: "superadmin@edubee.com", passwordHash, role: "super_admin", fullName: "Super Admin", status: "active" },
-    { email: "admin@edubee.com", passwordHash, role: "admin", fullName: "Admin User", status: "active" },
-    { email: "coordinator@edubee.com", passwordHash, role: "camp_coordinator", fullName: "Camp Coordinator", companyName: "Dream Camp Co.", countryOfOps: "AU", platformCommRate: "10.00", status: "active" },
-    { email: "agent@edubee.com", passwordHash, role: "education_agent", fullName: "Education Agent Kim", phone: "+82-10-1234-5678", preferredLang: "ko", status: "active" },
+    { email: "superadmin@edubee.co", passwordHash, role: "super_admin", fullName: "Super Admin", status: "active" },
+    { email: "admin@edubee.co", passwordHash, role: "admin", fullName: "Admin User", status: "active" },
+    { email: "coordinator@edubee.co", passwordHash, role: "camp_coordinator", fullName: "Camp Coordinator", companyName: "Dream Camp Co.", countryOfOps: "AU", platformCommRate: "10.00", status: "active" },
+    { email: "agent@edubee.co", passwordHash, role: "education_agent", fullName: "Education Agent Kim", phone: "+82-10-1234-5678", preferredLang: "ko", status: "active" },
     { email: "parent@example.com", passwordHash, role: "parent_client", fullName: "Parent Client", preferredLang: "ko", status: "active" },
     { email: "institute@example.com", passwordHash, role: "partner_institute", fullName: "Sydney Language School", companyName: "SLS Academy", countryOfOps: "AU", status: "active" },
     { email: "hotel@example.com", passwordHash, role: "partner_hotel", fullName: "Homestay Network AU", companyName: "AusHome Network", countryOfOps: "AU", status: "active" },
   ]).onConflictDoNothing();
 
   const allUsers = await db.select().from(users);
-  const adminUser = allUsers.find(u => u.email === "admin@edubee.com")!;
-  const coordinatorUser = allUsers.find(u => u.email === "coordinator@edubee.com")!;
-  const agentUser = allUsers.find(u => u.email === "agent@edubee.com")!;
+  const adminUser = allUsers.find(u => u.email === "admin@edubee.co")!;
+  const coordinatorUser = allUsers.find(u => u.email === "coordinator@edubee.co")!;
+  const agentUser = allUsers.find(u => u.email === "agent@edubee.co")!;
   const parentUser = allUsers.find(u => u.email === "parent@example.com")!;
 
   // Create package groups
@@ -407,7 +407,7 @@ async function seed() {
 
   // 유저 UUID 조회 (실제 DB의 이메일 기준)
   const allSeedUsers = await db.select().from(users);
-  const adminUser2     = allSeedUsers.find(u => u.email === 'admin@edubee.com');
+  const adminUser2     = allSeedUsers.find(u => u.email === 'admin@edubee.co');
   const instituteUser  = allSeedUsers.find(u => u.email === 'institute@example.com');
   const hotelUser      = allSeedUsers.find(u => u.email === 'hotel@example.com');
   const driverUser     = allSeedUsers.find(u => u.email === 'driver@pickup.com');
@@ -417,7 +417,7 @@ async function seed() {
     // ── 3개 신규 Package Group 생성 (없으면) ─────────────────────────────
     await db.insert(packageGroups).values([
       {
-        campProviderId: allSeedUsers.find(u => u.email === 'coordinator@edubee.com')?.id,
+        campProviderId: allSeedUsers.find(u => u.email === 'coordinator@edubee.co')?.id,
         nameEn: 'Summer English Camp',
         nameKo: '여름 영어 캠프',
         nameJa: '夏の英語キャンプ',
@@ -429,7 +429,7 @@ async function seed() {
         sortOrder: 10,
       },
       {
-        campProviderId: allSeedUsers.find(u => u.email === 'coordinator@edubee.com')?.id,
+        campProviderId: allSeedUsers.find(u => u.email === 'coordinator@edubee.co')?.id,
         nameEn: 'Science & Tech Camp',
         nameKo: '과학 & 기술 캠프',
         nameJa: 'サイエンス＆テックキャンプ',
@@ -441,7 +441,7 @@ async function seed() {
         sortOrder: 11,
       },
       {
-        campProviderId: allSeedUsers.find(u => u.email === 'coordinator@edubee.com')?.id,
+        campProviderId: allSeedUsers.find(u => u.email === 'coordinator@edubee.co')?.id,
         nameEn: 'Leadership Camp',
         nameKo: '리더십 캠프',
         nameJa: 'リーダーシップキャンプ',
@@ -572,10 +572,10 @@ async function seed() {
 
   console.log("✅ Seed completed successfully!");
   console.log("\n📧 Login credentials:");
-  console.log("  Super Admin:        superadmin@edubee.com / password123");
-  console.log("  Admin:              admin@edubee.com / password123");
-  console.log("  Camp Coordinator:   coordinator@edubee.com / password123");
-  console.log("  Education Agent:    agent@edubee.com / password123");
+  console.log("  Super Admin:        superadmin@edubee.co / password123");
+  console.log("  Admin:              admin@edubee.co / password123");
+  console.log("  Camp Coordinator:   coordinator@edubee.co / password123");
+  console.log("  Education Agent:    agent@edubee.co / password123");
   console.log("  Parent Client:      parent@example.com / password123");
   console.log("  Partner Institute:  institute@example.com / password123");
   process.exit(0);

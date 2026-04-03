@@ -491,7 +491,7 @@ router.put("/domain/subdomain", ...settingsAccess, async (req, res) => {
       .set({ subdomain, modifiedOn: new Date() })
       .where(eq(organisations.id, org.id));
 
-    return res.json({ success: true, subdomain, fullDomain: `${subdomain}.edubee.com` });
+    return res.json({ success: true, subdomain, fullDomain: `${subdomain}.edubee.co` });
   } catch (err) {
     console.error("[PUT /domain/subdomain]", err);
     return res.status(500).json({ message: "서버 오류가 발생했습니다." });
@@ -523,7 +523,7 @@ router.put("/domain/custom", ...settingsAccess, async (req, res) => {
     }
 
     const txtToken  = `edubee-verify-${Math.random().toString(36).slice(2, 12)}`;
-    const dnsTarget = org.subdomain ? `${org.subdomain}.edubee.com` : "app.edubee.com";
+    const dnsTarget = org.subdomain ? `${org.subdomain}.edubee.co` : "app.edubee.co";
 
     await db
       .insert(domainConfigs)
@@ -601,7 +601,7 @@ router.get("/domain/dns-instructions", ...settingsAccess, async (_req, res) => {
     return res.json({
       subdomain: {
         description: "서브도메인은 Edubee가 자동으로 관리합니다. 별도 DNS 설정이 필요하지 않습니다.",
-        currentUrl:  org.subdomain ? `${org.subdomain}.edubee.com` : null,
+        currentUrl:  org.subdomain ? `${org.subdomain}.edubee.co` : null,
       },
       customDomain: {
         domain: cfg.customDomain,
@@ -852,7 +852,7 @@ router.post("/billing/checkout", ...settingsAccess, async (req, res) => {
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     const baseUrl = org.subdomain
-      ? `https://${org.subdomain}.edubee.com`
+      ? `https://${org.subdomain}.edubee.co`
       : process.env.APP_URL ?? '';
 
     const { url, sessionId } = await createCheckoutSession({
@@ -885,7 +885,7 @@ router.post("/billing/portal", ...settingsAccess, async (req, res) => {
     }
 
     const baseUrl = org.subdomain
-      ? `https://${org.subdomain}.edubee.com`
+      ? `https://${org.subdomain}.edubee.co`
       : process.env.APP_URL ?? '';
 
     const portalUrl = await createPortalSession({

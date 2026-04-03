@@ -274,7 +274,7 @@ export default function TenantDetail() {
               </span>
             </div>
             {org.subdomain && (
-              <p className="text-sm text-[#A8A29E] mt-0.5 font-mono">{org.subdomain}.edubee.com</p>
+              <p className="text-sm text-[#A8A29E] mt-0.5 font-mono">{org.subdomain}.edubee.co</p>
             )}
           </div>
         </div>
@@ -309,7 +309,7 @@ export default function TenantDetail() {
                 value={val("subdomain")}
                 onChange={e => set("subdomain", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#A8A29E]">.edubee.com</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#A8A29E]">.edubee.co</span>
             </div>
           </Field>
           <Field label={<><ExternalLink size={11} /> Custom Domain</>}>

@@ -1,5 +1,5 @@
 const BASE_URL = "http://localhost:8080/api";
-const ADMIN_EMAIL = "admin@edubee.com";
+const ADMIN_EMAIL = "admin@edubee.co";
 const ADMIN_PASSWORD = "Admin123!";
 
 interface InvoiceConfig {
@@ -55,9 +55,9 @@ class InvoiceGenerator {
 
     // Use hardcoded users from known system
     this.users = [
-      { id: "639154e0-0f35-4e3b-a7c5-ee458b205fa1", email: "admin@edubee.com" },
+      { id: "639154e0-0f35-4e3b-a7c5-ee458b205fa1", email: "admin@edubee.co" },
       { id: "f58594ec-d245-4cdb-88c0-28ccaefef287", email: "driver@pickup.com" },
-      { id: "43d1c3f8-ca37-4f4d-9602-04704b8c1651", email: "coord1@edubee.com" },
+      { id: "43d1c3f8-ca37-4f4d-9602-04704b8c1651", email: "coord1@edubee.co" },
     ];
     console.log(`   ✅ Found ${this.users.length} users`);
 

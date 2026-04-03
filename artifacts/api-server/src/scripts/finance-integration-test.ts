@@ -1,5 +1,5 @@
 const BASE_URL = "http://localhost:8080/api";
-const ADMIN_EMAIL = "admin@edubee.com";
+const ADMIN_EMAIL = "admin@edubee.co";
 const ADMIN_PASSWORD = "Admin123!";
 
 interface TestResult {

@@ -196,7 +196,7 @@ function printInvoice(inv: Invoice) {
   ${inv.notes ? `<div class="notes"><h3>Notes</h3><p>${inv.notes}</p></div>` : ""}
   <div class="footer">
     <p>Thank you for your business. Please remit payment by the due date.</p>
-    <p style="margin-top:4px">Edubee Camp Administration — admin@edubee.com</p>
+    <p style="margin-top:4px">Edubee Camp Administration — admin@edubee.co</p>
   </div>
   <script>window.onload = () => { window.print(); }<\/script>
 </body>

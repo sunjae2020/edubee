@@ -96,7 +96,7 @@ function AddTenantPanel({ onClose, onSaved }: { onClose: () => void; onSaved: ()
               value={form.subdomain}
               onChange={e => set("subdomain", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#A8A29E]">.edubee.com</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#A8A29E]">.edubee.co</span>
           </div>
         </div>
 
@@ -262,7 +262,7 @@ export default function TenantList() {
                       {t.owner_email && <p className="text-xs text-[#A8A29E]">{t.owner_email}</p>}
                     </td>
                     <td className="px-4 py-3 text-[#57534E] font-mono text-xs">
-                      {t.subdomain ? `${t.subdomain}.edubee.com` : "—"}
+                      {t.subdomain ? `${t.subdomain}.edubee.co` : "—"}
                     </td>
                     <td className="px-4 py-3">
                       <span

@@ -187,7 +187,7 @@ function printReceipt(rcp: Receipt) {
   ${rcp.notes ? `<div class="notes"><h3>Notes</h3><p>${rcp.notes}</p></div>` : ""}
   <div class="footer">
     <p>This receipt confirms that payment has been received in full.</p>
-    <p style="margin-top:4px">Edubee Camp Administration — admin@edubee.com</p>
+    <p style="margin-top:4px">Edubee Camp Administration — admin@edubee.co</p>
   </div>
   <script>window.onload = () => { window.print(); }<\/script>
 </body>

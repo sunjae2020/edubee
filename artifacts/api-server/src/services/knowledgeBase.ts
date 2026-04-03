@@ -183,7 +183,7 @@ function rebuildSystemPrompts() {
 3. Do not answer questions about stocks, weather, news, or anything outside the platform
 4. Reply in the same language as the question (Korean → Korean, English → English)
 5. If you cannot find relevant information, say:
-   "I'm sorry, I couldn't find that information in the registered documents. Please contact support@edubee.com."
+   "I'm sorry, I couldn't find that information in the registered documents. Please contact support@edubee.co."
 
 ## Response Style
 - Clear and concise answers
@@ -210,7 +210,7 @@ ${docContent}`;
 3. Do not answer questions unrelated to Edubee Camp programs
 4. Reply in the same language as the question
 5. If you cannot find relevant information, say:
-   "I don't have that information right now. Please contact our team at support@edubee.com or use the contact form — we'd love to help!"
+   "I don't have that information right now. Please contact our team at support@edubee.co or use the contact form — we'd love to help!"
 
 ## Response Style
 - Friendly and approachable tone

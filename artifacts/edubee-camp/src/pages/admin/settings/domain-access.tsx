@@ -78,7 +78,7 @@ export default function DomainAccess() {
           <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F4F3F1] text-sm">
             <Globe size={14} className="text-[#A8A29E]" />
             <span className="text-[#57534E]">Current subdomain:</span>
-            <span className="font-semibold text-[#1C1917]">{domain.subdomain}.edubee.com</span>
+            <span className="font-semibold text-[#1C1917]">{domain.subdomain}.edubee.co</span>
           </div>
         )}
 
@@ -91,7 +91,7 @@ export default function DomainAccess() {
               onChange={e => { setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")); setAvailability(null); }}
               placeholder="your-agency"
             />
-            <span className="text-sm text-[#57534E] whitespace-nowrap">.edubee.com</span>
+            <span className="text-sm text-[#57534E] whitespace-nowrap">.edubee.co</span>
             <button
               onClick={checkAvailability}
               disabled={!subdomain.trim() || checking}
@@ -161,7 +161,7 @@ export default function DomainAccess() {
           />
           <div className="text-xs text-[#A8A29E] space-y-1">
             <p className="font-medium">DNS Setup:</p>
-            <p>Add a CNAME record pointing to <span className="font-mono">app.edubee.com</span></p>
+            <p>Add a CNAME record pointing to <span className="font-mono">app.edubee.co</span></p>
           </div>
         </div>
       </div>

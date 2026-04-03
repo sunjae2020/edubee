@@ -183,7 +183,7 @@ router.post("/superadmin/tenants", ...guard, async (req, res) => {
       });
     }
 
-    console.log(`[Invite] ${ownerEmail ?? "—"} → ${subdomain ?? "—"}.edubee.com`);
+    console.log(`[Invite] ${ownerEmail ?? "—"} → ${subdomain ?? "—"}.edubee.co`);
     return res.status(201).json(created);
   } catch (err) {
     console.error("POST /api/superadmin/tenants", err);

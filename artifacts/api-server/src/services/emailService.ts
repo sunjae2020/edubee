@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
 const EMAIL_ENABLED = process.env.EMAIL_ENABLED !== 'false';
-const FROM_EMAIL    = process.env.FROM_EMAIL ?? 'noreply@edubee.com';
+const FROM_EMAIL    = process.env.FROM_EMAIL ?? 'noreply@edubee.co';
 
 function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
@@ -39,8 +39,8 @@ export async function sendInvitationEmail(
   const { toEmail, inviterName, companyName, role, inviteToken, subdomain, expiresAt } = params;
 
   const baseUrl   = subdomain
-    ? `https://${subdomain}.edubee.com`
-    : process.env.APP_URL ?? 'https://app.edubee.com';
+    ? `https://${subdomain}.edubee.co`
+    : process.env.APP_URL ?? 'https://app.edubee.co';
   const inviteUrl = `${baseUrl}/accept-invite?token=${inviteToken}`;
 
   const expiryDate = expiresAt.toLocaleDateString('en-AU', {
@@ -118,7 +118,7 @@ export async function sendTenantCreatedEmail(params: {
   if (!resend) return;
 
   const { toEmail, orgName, subdomain, planType } = params;
-  const loginUrl = `https://${subdomain}.edubee.com/login`;
+  const loginUrl = `https://${subdomain}.edubee.co/login`;
 
   try {
     await resend.emails.send({
@@ -290,7 +290,7 @@ function buildTenantCreatedHtml(p: {
                       </tr>
                       <tr>
                         <td style="font-size:13px;color:#57534E;padding-bottom:12px;">CRM URL</td>
-                        <td style="font-size:13px;color:#F5821F;text-align:right;padding-bottom:12px;">${p.subdomain}.edubee.com</td>
+                        <td style="font-size:13px;color:#F5821F;text-align:right;padding-bottom:12px;">${p.subdomain}.edubee.co</td>
                       </tr>
                       <tr>
                         <td style="font-size:13px;color:#57534E;">Plan</td>

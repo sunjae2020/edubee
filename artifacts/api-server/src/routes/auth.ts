@@ -509,7 +509,7 @@ router.post("/accept-invite", async (req, res) => {
       toEmail:     invite.email,
       userName:    `${firstName} ${lastName}`,
       companyName: org?.name ?? 'Edubee CRM',
-      loginUrl:    `https://${org?.subdomain ?? 'app'}.edubee.com/login`,
+      loginUrl:    `https://${org?.subdomain ?? 'app'}.edubee.co/login`,
     }).catch(err => console.error('[EMAIL] Welcome email failed:', err));
 
     return res.json({

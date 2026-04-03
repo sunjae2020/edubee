@@ -282,7 +282,7 @@ const EXPORT_CONFIGS: Record<string, ExportConfig> = {
 const TEMPLATES: Record<string, { columns: string[]; example: string[] }> = {
   users: {
     columns: ["email", "role", "staff_role", "full_name", "first_name", "last_name", "english_name", "original_name", "phone", "whatsapp", "line_id", "timezone", "preferred_lang", "company_name", "business_reg_no", "country_of_ops", "status"],
-    example: ["#EXAMPLE", "staff@edubee.com", "consultant", "", "Jane", "Smith", "Jane Smith", "제인 스미스", "+61412345678", "+61412345678", "jane_line", "Australia/Sydney", "en", "Edubee", "", "AU", "active"],
+    example: ["#EXAMPLE", "staff@edubee.co", "consultant", "", "Jane", "Smith", "Jane Smith", "제인 스미스", "+61412345678", "+61412345678", "jane_line", "Australia/Sydney", "en", "Edubee", "", "AU", "active"],
   },
   accounts: {
     columns: ["name", "account_type", "account_category", "phone_number", "email", "website", "address", "country", "state", "city", "postal_code", "abn", "description", "status", "first_name", "last_name", "english_name", "original_name"],

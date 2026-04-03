@@ -43,12 +43,12 @@ export async function seedUsersIfEmpty(): Promise<void> {
       const hash = await bcrypt.hash("Admin123!", 12);
 
       await db.insert(users).values([
-        { email: "superadmin@edubee.com",  passwordHash: hash, role: "super_admin",       fullName: "Super Admin",           status: "active" },
-        { email: "admin@edubee.com",       passwordHash: hash, role: "admin",             fullName: "Admin User",            status: "active" },
-        { email: "ops@edubee.com",         passwordHash: hash, role: "admin",             fullName: "Operations Admin",      status: "active" },
-        { email: "coordinator@edubee.com", passwordHash: hash, role: "camp_coordinator",  fullName: "Camp Coordinator",      status: "active", companyName: "Dream Camp Co.", countryOfOps: "AU", platformCommRate: "10.00" },
-        { email: "coord1@edubee.com",      passwordHash: hash, role: "camp_coordinator",  fullName: "Camp Coordinator 2",    status: "active" },
-        { email: "agent@edubee.com",       passwordHash: hash, role: "consultant",   fullName: "Education Agent Kim",   status: "active", phone: "+82-10-1234-5678", preferredLang: "ko" },
+        { email: "superadmin@edubee.co",  passwordHash: hash, role: "super_admin",       fullName: "Super Admin",           status: "active" },
+        { email: "admin@edubee.co",       passwordHash: hash, role: "admin",             fullName: "Admin User",            status: "active" },
+        { email: "ops@edubee.co",         passwordHash: hash, role: "admin",             fullName: "Operations Admin",      status: "active" },
+        { email: "coordinator@edubee.co", passwordHash: hash, role: "camp_coordinator",  fullName: "Camp Coordinator",      status: "active", companyName: "Dream Camp Co.", countryOfOps: "AU", platformCommRate: "10.00" },
+        { email: "coord1@edubee.co",      passwordHash: hash, role: "camp_coordinator",  fullName: "Camp Coordinator 2",    status: "active" },
+        { email: "agent@edubee.co",       passwordHash: hash, role: "consultant",   fullName: "Education Agent Kim",   status: "active", phone: "+82-10-1234-5678", preferredLang: "ko" },
         { email: "parent@example.com",     passwordHash: hash, role: "consultant",     fullName: "Parent Client",         status: "active", preferredLang: "ko" },
         { email: "parent1@gmail.com",      passwordHash: hash, role: "consultant",     fullName: "Parent Client 2",       status: "active" },
         { email: "institute@example.com",  passwordHash: hash, role: "consultant", fullName: "Sydney Language School", status: "active", companyName: "SLS Academy", countryOfOps: "AU" },
@@ -66,7 +66,7 @@ export async function seedUsersIfEmpty(): Promise<void> {
     const pgResult = await db.execute(sql`SELECT COUNT(*)::int AS cnt FROM package_groups`);
     const pgCount = (pgResult.rows as { cnt: number }[])[0]?.cnt ?? 0;
 
-    const [coordinator] = await db.select({ id: users.id }).from(users).where(eq(users.email, "coordinator@edubee.com")).limit(1);
+    const [coordinator] = await db.select({ id: users.id }).from(users).where(eq(users.email, "coordinator@edubee.co")).limit(1);
     const coordId = coordinator?.id ?? null;
 
     if (pgCount === 0) {
