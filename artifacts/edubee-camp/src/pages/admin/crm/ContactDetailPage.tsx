@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
 import { ImageCropDialog } from "@/components/shared/ImageCropDialog";
+import { fileToDataUrl } from "@/lib/imageResize";
 import { useLookup } from "@/hooks/use-lookup";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -564,12 +565,8 @@ export default function ContactDetailPage() {
     setPendingFile(null);
     setUploadingPhoto(true);
     try {
-      const fd = new FormData();
-      fd.append("file", cropped);
-      const { data: uploadResult } = await axios.post(`${BASE}/api/storage/uploads/direct`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      await axios.patch(`${BASE}/api/crm/contacts/${id}/profile-image`, { objectPath: uploadResult.objectPath });
+      const dataUrl = await fileToDataUrl(cropped);
+      await axios.patch(`${BASE}/api/crm/contacts/${id}/profile-image`, { dataUrl });
       qc.invalidateQueries({ queryKey: ["crm-contact", id] });
       toast({ title: "Profile photo updated" });
     } catch {
@@ -585,9 +582,7 @@ export default function ContactDetailPage() {
   const displayName = `${form.firstName} ${form.lastName}`.trim() || contact.fullName || "—";
   const linkedAccounts: any[] = contact.linkedAccounts ?? [];
 
-  const profileImageSrc = contact.profileImageUrl
-    ? `${BASE}/api/storage/objects/${contact.profileImageUrl.replace(/^\/objects\//, "")}`
-    : null;
+  const profileImageSrc = contact.profileImageUrl || null;
 
   return (
     <div className="p-6 space-y-6">

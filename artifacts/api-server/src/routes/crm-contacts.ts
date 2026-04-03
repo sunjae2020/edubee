@@ -286,15 +286,15 @@ router.patch("/crm/contacts/:id/status", authenticate, requireRole(...ADMIN_ROLE
   }
 });
 
-// PATCH /crm/contacts/:id/profile-image  { objectPath: string }
+// PATCH /crm/contacts/:id/profile-image  { dataUrl: string }
 router.patch("/crm/contacts/:id/profile-image", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { objectPath } = req.body;
-    if (typeof objectPath !== "string") {
-      return res.status(400).json({ error: "objectPath is required" });
+    const { dataUrl } = req.body;
+    if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) {
+      return res.status(400).json({ error: "dataUrl is required and must be a valid image data URL" });
     }
     const [updated] = await db.update(contacts)
-      .set({ profileImageUrl: objectPath, modifiedOn: new Date() })
+      .set({ profileImageUrl: dataUrl, modifiedOn: new Date() })
       .where(eq(contacts.id, req.params.id))
       .returning();
 

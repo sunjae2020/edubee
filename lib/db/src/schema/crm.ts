@@ -32,7 +32,7 @@ export const contacts = pgTable("contacts", {
   originalName:   varchar("original_name", { length: 200 }),
   fullName:       varchar("full_name",     { length: 200 }),
   description:     text("description"),
-  profileImageUrl: varchar("profile_image_url", { length: 500 }),
+  profileImageUrl: text("profile_image_url"),
   status:          varchar("status",       { length: 20 }).notNull().default("Active"),
   accountType:     varchar("account_type", { length: 50 }).notNull().default("Student"),
   createdOn:       timestamp("created_on").notNull().defaultNow(),
@@ -91,7 +91,7 @@ export const accounts = pgTable("accounts", {
   lastName:                   varchar("last_name",     { length: 100 }),
   englishName:                varchar("english_name",  { length: 100 }),
   originalName:               varchar("original_name", { length: 200 }),
-  profileImageUrl:            varchar("profile_image_url", { length: 500 }),
+  profileImageUrl:            text("profile_image_url"),
 });
 
 export const lead_activities = pgTable("lead_activities", {

@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useLookup } from "@/hooks/use-lookup";
 import { ImageCropDialog } from "@/components/shared/ImageCropDialog";
+import { fileToDataUrl } from "@/lib/imageResize";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -649,12 +650,8 @@ export default function AccountDetailPage() {
     setPendingFile(null);
     setUploadingPhoto(true);
     try {
-      const fd = new FormData();
-      fd.append("file", cropped);
-      const { data: uploadResult } = await axios.post(`${BASE}/api/storage/uploads/direct`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      await axios.patch(`${BASE}/api/crm/accounts/${id}/profile-image`, { objectPath: uploadResult.objectPath });
+      const dataUrl = await fileToDataUrl(cropped);
+      await axios.patch(`${BASE}/api/crm/accounts/${id}/profile-image`, { dataUrl });
       qc.invalidateQueries({ queryKey: ["crm-account", id] });
       toast({ title: "Profile photo updated" });
     } catch {
@@ -840,7 +837,7 @@ export default function AccountDetailPage() {
               : (account.name || "?").slice(0, 2).toUpperCase();
             const badge = getAccountTypeBadge(account.accountType);
             const profileSrc = account.profileImageUrl
-              ? `${BASE}/api/storage/objects/${account.profileImageUrl.replace(/^\/objects\//, "")}`
+              ? account.profileImageUrl
               : null;
             return (
               <div className="relative group cursor-pointer shrink-0" onClick={() => !uploadingPhoto && photoInputRef.current?.click()} title="Change profile photo">

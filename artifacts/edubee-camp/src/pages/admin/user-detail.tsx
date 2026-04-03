@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ImageCropDialog } from "@/components/shared/ImageCropDialog";
+import { fileToDataUrl } from "@/lib/imageResize";
 import { TrendingUp, TrendingDown, Minus, Pencil, Plus, Package, BarChart2, ExternalLink, Camera, Loader2 } from "lucide-react";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import ProductDrawer from "@/components/shared/ProductDrawer";
@@ -138,12 +139,8 @@ export default function UserDetail() {
     setPendingAvatar(null);
     setUploadingAvatar(true);
     try {
-      const fd = new FormData();
-      fd.append("file", cropped);
-      const { data: uploadResult } = await axios.post(`${BASE}/api/storage/uploads/direct`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      await axios.patch(`${BASE}/api/users/${id}/avatar`, { objectPath: uploadResult.objectPath });
+      const dataUrl = await fileToDataUrl(cropped);
+      await axios.patch(`${BASE}/api/users/${id}/avatar`, { dataUrl });
       qc.invalidateQueries({ queryKey: ["user-detail", id] });
       toast({ title: "Profile photo updated" });
     } catch {
@@ -158,9 +155,7 @@ export default function UserDetail() {
 
   const initials = (userRec.fullName ?? userRec.email ?? "?").split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
   const roleColor = ROLE_COLORS[userRec.role ?? ""] ?? "bg-gray-100 text-gray-600";
-  const avatarSrc = userRec.avatarUrl
-    ? `${BASE}/api/storage/objects/${userRec.avatarUrl.replace(/^\/objects\//, "")}`
-    : null;
+  const avatarSrc = userRec.avatarUrl || null;
 
   return (
     <DetailPageLayout

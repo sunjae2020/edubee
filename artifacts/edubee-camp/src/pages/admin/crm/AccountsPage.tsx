@@ -193,9 +193,7 @@ export default function AccountsPage() {
                 const listInitials = isIndividual2
                   ? [(row.primaryContactFirstName ?? "").charAt(0), (row.primaryContactLastName ?? "").charAt(0)].filter(Boolean).join("").toUpperCase() || (displayName || "?").slice(0, 2).toUpperCase()
                   : (displayName || "?").slice(0, 2).toUpperCase();
-                const listImgSrc = row.profileImageUrl
-                  ? `${BASE}/api/storage/objects/${row.profileImageUrl.replace(/^\/objects\//, "")}`
-                  : null;
+                const listImgSrc = row.profileImageUrl || null;
                 return (
                   <tr key={row.id}
                     className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"

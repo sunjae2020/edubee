@@ -262,9 +262,7 @@ export default function ContactsPage() {
               const displayName = c.fullName || `${c.firstName} ${c.lastName}`.trim();
               const initials = [`${c.firstName ?? ""}`.charAt(0), `${c.lastName ?? ""}`.charAt(0)]
                 .filter(Boolean).join("").toUpperCase() || (displayName || "?").slice(0, 2).toUpperCase();
-              const imgSrc = c.profileImageUrl
-                ? `${BASE}/api/storage/objects/${c.profileImageUrl.replace(/^\/objects\//, "")}`
-                : null;
+              const imgSrc = c.profileImageUrl || null;
               return (
                 <tr key={c.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
                   <td className="px-4 py-3">
