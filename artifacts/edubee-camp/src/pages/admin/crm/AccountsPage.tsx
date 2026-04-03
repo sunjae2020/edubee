@@ -39,6 +39,7 @@ interface Account {
   primaryContactFirstName?: string | null;
   primaryContactLastName?: string | null;
   primaryContactOriginalName?: string | null;
+  profileImageUrl?: string | null;
   createdOn?: string | null;
   modifiedOn?: string | null;
 }
@@ -187,11 +188,32 @@ export default function AccountsPage() {
                   ? buildFullName({ firstName: row.primaryContactFirstName, lastName: row.primaryContactLastName }, row.name)
                   : row.name;
                 const originalName = row.primaryContactOriginalName || "—";
+                const typeColors = TYPE_COLORS[row.accountType ?? ""] ?? { bg: "#F4F3F1", text: "#57534E" };
+                const isIndividual2 = INDIVIDUAL_TYPES.includes(row.accountType ?? "");
+                const listInitials = isIndividual2
+                  ? [(row.primaryContactFirstName ?? "").charAt(0), (row.primaryContactLastName ?? "").charAt(0)].filter(Boolean).join("").toUpperCase() || (displayName || "?").slice(0, 2).toUpperCase()
+                  : (displayName || "?").slice(0, 2).toUpperCase();
+                const listImgSrc = row.profileImageUrl
+                  ? `${BASE}/api/storage/objects/${row.profileImageUrl.replace(/^\/objects\//, "")}`
+                  : null;
                 return (
                   <tr key={row.id}
                     className="border-b last:border-0 hover:bg-[#FEF0E3] transition-colors cursor-pointer"
                     onClick={() => navigate(`/admin/crm/accounts/${row.id}`)}>
-                    <td className="px-4 py-3 font-medium text-[#1C1917]">{displayName}</td>
+                    <td className="px-4 py-3 font-medium text-[#1C1917]">
+                      <div className="flex items-center gap-2.5">
+                        {listImgSrc ? (
+                          <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border" style={{ borderColor: typeColors.bg }}>
+                            <img src={listImgSrc} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: typeColors.bg, color: typeColors.text }}>
+                            {listInitials}
+                          </div>
+                        )}
+                        {displayName}
+                      </div>
+                    </td>
                     <td className="px-4 py-3"><TypeBadge type={row.accountType} /></td>
                     <td className="px-4 py-3 text-sm text-[#57534E]">{originalName}</td>
                     <td className="px-4 py-3"><StatusBadge status={row.status} /></td>

@@ -6,7 +6,7 @@ import axios from "axios";
 import {
   ArrowLeft, Save, Building2, Users, FileText, Briefcase,
   Plus, Loader2, ChevronRight, ExternalLink, Package, DollarSign, Shield,
-  UserPlus, X, Layers, Copy, Check,
+  UserPlus, X, Layers, Copy, Check, Camera,
 } from "lucide-react";
 import { AccountServiceProfilesTab } from "./AccountServiceProfilesTab";
 import { PortalAccessPanel } from "@/components/crm/PortalAccessPanel";
@@ -63,6 +63,7 @@ interface Account {
   totalCapacity?: number | null;
   avetmissDeliveryLocationId?: string | null;
   description?: string | null;
+  profileImageUrl?: string | null;
   ownerId: string;
   status: string;
   createdOn?: string | null;
@@ -628,6 +629,33 @@ export default function AccountDetailPage() {
 
   const [tab, setTab] = useState("overview");
   const [copiedId, setCopiedId] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Image files only (JPG, PNG, etc.)", variant: "destructive" });
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data: uploadResult } = await axios.post(`${BASE}/api/storage/uploads/direct`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      await axios.patch(`${BASE}/api/crm/accounts/${id}/profile-image`, { objectPath: uploadResult.objectPath });
+      qc.invalidateQueries({ queryKey: ["crm-account", id] });
+      toast({ title: "Profile photo updated" });
+    } catch {
+      toast({ title: "Failed to upload photo", variant: "destructive" });
+    } finally {
+      setUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
 
   const { data: account, isLoading } = useQuery({
     queryKey: ["crm-account", id],
@@ -797,6 +825,34 @@ export default function AccountDetailPage() {
             <ArrowLeft size={15} /> Back
           </button>
           <span className="text-stone-300">/</span>
+          {/* Profile avatar — only for existing accounts */}
+          {!isNew && account && (() => {
+            const isIndividual = INDIVIDUAL_TYPES.includes(account.accountType ?? "");
+            const initials = isIndividual
+              ? [(account.firstName ?? account.primaryContact?.firstName)?.charAt(0), (account.lastName ?? account.primaryContact?.lastName)?.charAt(0)].filter(Boolean).join("").toUpperCase() || (account.name || "?").slice(0, 2).toUpperCase()
+              : (account.name || "?").slice(0, 2).toUpperCase();
+            const badge = getAccountTypeBadge(account.accountType);
+            const profileSrc = account.profileImageUrl
+              ? `${BASE}/api/storage/objects/${account.profileImageUrl.replace(/^\/objects\//, "")}`
+              : null;
+            return (
+              <div className="relative group cursor-pointer shrink-0" onClick={() => !uploadingPhoto && photoInputRef.current?.click()} title="Change profile photo">
+                <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                {profileSrc ? (
+                  <div className="w-8 h-8 rounded-full overflow-hidden border-2 shrink-0" style={{ borderColor: badge.bg }}>
+                    <img src={profileSrc} alt="Profile" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: badge.bg, color: badge.text }}>
+                    {initials}
+                  </div>
+                )}
+                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  {uploadingPhoto ? <Loader2 size={12} className="text-white animate-spin" /> : <Camera size={12} className="text-white" />}
+                </div>
+              </div>
+            );
+          })()}
           <h1 className="text-lg font-semibold text-stone-900">
             {isNew ? "New Account" : (account?.name ?? "Account")}
           </h1>

@@ -91,6 +91,7 @@ export const accounts = pgTable("accounts", {
   lastName:                   varchar("last_name",     { length: 100 }),
   englishName:                varchar("english_name",  { length: 100 }),
   originalName:               varchar("original_name", { length: 200 }),
+  profileImageUrl:            varchar("profile_image_url", { length: 500 }),
 });
 
 export const lead_activities = pgTable("lead_activities", {

@@ -110,6 +110,7 @@ router.get("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (re
         primaryContactFirstName:    contacts.firstName,
         primaryContactLastName:     contacts.lastName,
         primaryContactOriginalName: contacts.originalName,
+        profileImageUrl:            accounts.profileImageUrl,
       })
       .from(accounts)
       .leftJoin(contacts, eq(accounts.primaryContactId, contacts.id))
@@ -562,6 +563,26 @@ router.delete("/crm/accounts/:id/contacts/:linkId", authenticate, requireRole(..
     return res.json({ ok: true });
   } catch (err) {
     console.error("[DELETE /crm/accounts/:id/contacts/:linkId]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PATCH /crm/accounts/:id/profile-image  { objectPath: string }
+router.patch("/crm/accounts/:id/profile-image", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { objectPath } = req.body;
+    if (typeof objectPath !== "string") {
+      return res.status(400).json({ error: "objectPath is required" });
+    }
+    const [updated] = await db.update(accounts)
+      .set({ profileImageUrl: objectPath, modifiedOn: new Date() })
+      .where(eq(accounts.id, req.params.id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: "Account not found" });
+    return res.json(updated);
+  } catch (err) {
+    console.error("[PATCH /crm/accounts/:id/profile-image]", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
