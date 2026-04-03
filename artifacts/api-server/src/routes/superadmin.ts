@@ -156,18 +156,38 @@ router.post("/superadmin/tenants", ...guard, async (req, res) => {
 
 router.put("/superadmin/tenants/:id", ...guard, async (req, res) => {
   try {
-    const { planType, planStatus, status, maxUsers, maxStudents, trialEndsAt, features } = req.body;
+    const {
+      name, tradingName, subdomain, customDomain, ownerEmail,
+      planType, planStatus, status, maxUsers, maxStudents, trialEndsAt, features,
+    } = req.body;
+
+    // Subdomain uniqueness check (skip if unchanged)
+    if (subdomain !== undefined && subdomain !== null && subdomain !== "") {
+      const exists = await db
+        .select({ id: organisations.id })
+        .from(organisations)
+        .where(eq(organisations.subdomain, subdomain.trim().toLowerCase()))
+        .limit(1);
+      if (exists.length && exists[0].id !== req.params.id) {
+        return res.status(409).json({ error: "Subdomain already in use" });
+      }
+    }
 
     const [updated] = await db
       .update(organisations)
       .set({
-        ...(planType    !== undefined && { planType }),
-        ...(planStatus  !== undefined && { planStatus }),
-        ...(status      !== undefined && { status }),
-        ...(maxUsers    !== undefined && { maxUsers }),
-        ...(maxStudents !== undefined && { maxStudents }),
-        ...(trialEndsAt !== undefined && { trialEndsAt: trialEndsAt ? new Date(trialEndsAt) : null }),
-        ...(features    !== undefined && { features }),
+        ...(name         !== undefined && { name }),
+        ...(tradingName  !== undefined && { tradingName }),
+        ...(subdomain    !== undefined && { subdomain: subdomain?.trim().toLowerCase() || null }),
+        ...(customDomain !== undefined && { customDomain: customDomain?.trim() || null }),
+        ...(ownerEmail   !== undefined && { ownerEmail: ownerEmail?.trim() || null }),
+        ...(planType     !== undefined && { planType }),
+        ...(planStatus   !== undefined && { planStatus }),
+        ...(status       !== undefined && { status }),
+        ...(maxUsers     !== undefined && { maxUsers }),
+        ...(maxStudents  !== undefined && { maxStudents }),
+        ...(trialEndsAt  !== undefined && { trialEndsAt: trialEndsAt ? new Date(trialEndsAt) : null }),
+        ...(features     !== undefined && { features }),
         modifiedOn: new Date(),
       })
       .where(eq(organisations.id, req.params.id))

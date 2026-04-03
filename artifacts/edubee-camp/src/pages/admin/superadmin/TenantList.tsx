@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, Building2, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { Loader2, Search, Building2, ChevronLeft, ChevronRight, Plus, X, Pencil } from "lucide-react";
 import { formatDate } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -149,6 +150,7 @@ function AddTenantPanel({ onClose, onSaved }: { onClose: () => void; onSaved: ()
 export default function TenantList() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [search, setSearch]   = useState("");
   const [page, setPage]       = useState(1);
   const [debSearch, setDeb]   = useState("");
@@ -242,30 +244,33 @@ export default function TenantList() {
             </thead>
             <tbody>
               {tenants.map((t: any) => {
-                const planStyle   = PLAN_STYLE[t.plan_type ?? "starter"] ?? PLAN_STYLE.starter;
+                const planStyle   = PLAN_STYLE[t.plan_type ?? "starter"] ?? PLAN_STYLE.solo;
                 const statusStyle = STATUS_STYLE[t.status ?? "Active"] ?? STATUS_STYLE.Active;
                 const isActive    = t.status === "Active";
 
                 return (
-                  <tr key={t.id} className="border-b border-[#F4F3F1] hover:bg-[#FAFAF9]">
+                  <tr
+                    key={t.id}
+                    className="border-b border-[#F4F3F1] group cursor-pointer transition-colors"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#FEF0E3")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                    onClick={() => navigate(`/superadmin/tenants/${t.id}`)}
+                  >
                     <td className="px-4 py-3">
-                      <p className="font-medium text-[#1C1917]">{t.name}</p>
+                      <p className="font-medium text-[#1C1917] group-hover:text-[#C2410C] transition-colors">{t.name}</p>
                       {t.owner_email && <p className="text-xs text-[#A8A29E]">{t.owner_email}</p>}
                     </td>
                     <td className="px-4 py-3 text-[#57534E] font-mono text-xs">
                       {t.subdomain ? `${t.subdomain}.edubee.com` : "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <select
-                        className="text-[11px] font-semibold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none"
+                      <span
+                        className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
                         style={planStyle}
-                        value={t.plan_type ?? "starter"}
-                        onChange={e => changePlan.mutate({ id: t.id, planType: e.target.value })}
                       >
-                        {PLANS.map(p => (
-                          <option key={p.value} value={p.value} className="bg-white text-[#1C1917]">{p.label}</option>
-                        ))}
-                      </select>
+                        {PLANS.find(p => p.value === (t.plan_type ?? "solo"))?.label ?? t.plan_type}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <Badge label={t.plan_status === "trial" ? "Trial" : (t.status ?? "Active")} style={t.plan_status === "trial" ? STATUS_STYLE.trial : statusStyle} />
@@ -273,16 +278,25 @@ export default function TenantList() {
                     <td className="px-4 py-3 text-[#57534E]">{t.user_count ?? 0}</td>
                     <td className="px-4 py-3 text-[#57534E] text-xs">{formatDate(t.created_on)}</td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => toggleStatus.mutate({ id: t.id, status: isActive ? "Suspended" : "Active" })}
-                        disabled={toggleStatus.isPending}
-                        className="text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors disabled:opacity-40"
-                        style={isActive
-                          ? { borderColor: "#FECACA", color: "#DC2626", background: "#FFF1F2" }
-                          : { borderColor: "#BBF7D0", color: "#15803D", background: "#F0FDF4" }}
-                      >
-                        {isActive ? "Suspend" : "Activate"}
-                      </button>
+                      <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={() => navigate(`/superadmin/tenants/${t.id}`)}
+                          className="h-7 w-7 flex items-center justify-center rounded-lg border border-[#E8E6E2] text-[#57534E] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+                          title="Edit tenant"
+                        >
+                          <Pencil size={12} />
+                        </button>
+                        <button
+                          onClick={() => toggleStatus.mutate({ id: t.id, status: isActive ? "Suspended" : "Active" })}
+                          disabled={toggleStatus.isPending}
+                          className="text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors disabled:opacity-40"
+                          style={isActive
+                            ? { borderColor: "#FECACA", color: "#DC2626", background: "#FFF1F2" }
+                            : { borderColor: "#BBF7D0", color: "#15803D", background: "#F0FDF4" }}
+                        >
+                          {isActive ? "Suspend" : "Activate"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
