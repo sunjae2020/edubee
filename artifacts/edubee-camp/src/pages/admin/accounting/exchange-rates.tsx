@@ -15,8 +15,23 @@ import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const CURRENCIES = ["USD", "SGD", "PHP", "THB", "KRW", "JPY", "GBP", "EUR", "NZD", "CNY"];
-const ALL_CURRENCIES = ["AUD", ...CURRENCIES];
+const CURRENCIES_STORAGE_KEY = "exchange-rate-managed-currencies";
+const DEFAULT_CURRENCIES = ["USD", "SGD", "PHP", "THB", "KRW", "JPY", "GBP", "EUR", "NZD", "CNY"];
+
+function loadManagedCurrencies(): string[] {
+  try {
+    const stored = localStorage.getItem(CURRENCIES_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return [...DEFAULT_CURRENCIES];
+}
+
+function saveManagedCurrencies(list: string[]) {
+  try { localStorage.setItem(CURRENCIES_STORAGE_KEY, JSON.stringify(list)); } catch {}
+}
 
 const PREVIEW_STORAGE_KEY = "exchange-rate-preview-currencies";
 const DEFAULT_PREVIEW = ["KRW", "JPY", "THB", "PHP", "USD", "SGD", "GBP"];
@@ -47,17 +62,65 @@ interface ExchangeRate {
   updatedAt?: string;
 }
 
-const FLAG: Record<string, string> = {
-  USD: "🇺🇸", SGD: "🇸🇬", PHP: "🇵🇭", THB: "🇹🇭",
-  KRW: "🇰🇷", JPY: "🇯🇵", GBP: "🇬🇧", EUR: "🇪🇺",
-  NZD: "🇳🇿", CNY: "🇨🇳", AUD: "🇦🇺",
-};
-const NAMES: Record<string, string> = {
-  USD: "US Dollar", SGD: "Singapore Dollar", PHP: "Philippine Peso",
-  THB: "Thai Baht", KRW: "South Korean Won", JPY: "Japanese Yen",
-  GBP: "British Pound", EUR: "Euro", NZD: "New Zealand Dollar",
-  CNY: "Chinese Yuan", AUD: "Australian Dollar",
-};
+const WORLD_CURRENCIES: { code: string; name: string; flag: string }[] = [
+  { code: "USD", name: "US Dollar",            flag: "🇺🇸" },
+  { code: "EUR", name: "Euro",                  flag: "🇪🇺" },
+  { code: "GBP", name: "British Pound",         flag: "🇬🇧" },
+  { code: "JPY", name: "Japanese Yen",          flag: "🇯🇵" },
+  { code: "KRW", name: "South Korean Won",      flag: "🇰🇷" },
+  { code: "CNY", name: "Chinese Yuan",          flag: "🇨🇳" },
+  { code: "SGD", name: "Singapore Dollar",      flag: "🇸🇬" },
+  { code: "PHP", name: "Philippine Peso",       flag: "🇵🇭" },
+  { code: "THB", name: "Thai Baht",             flag: "🇹🇭" },
+  { code: "NZD", name: "New Zealand Dollar",    flag: "🇳🇿" },
+  { code: "CAD", name: "Canadian Dollar",       flag: "🇨🇦" },
+  { code: "HKD", name: "Hong Kong Dollar",      flag: "🇭🇰" },
+  { code: "INR", name: "Indian Rupee",          flag: "🇮🇳" },
+  { code: "MYR", name: "Malaysian Ringgit",     flag: "🇲🇾" },
+  { code: "IDR", name: "Indonesian Rupiah",     flag: "🇮🇩" },
+  { code: "VND", name: "Vietnamese Dong",       flag: "🇻🇳" },
+  { code: "TWD", name: "Taiwan Dollar",         flag: "🇹🇼" },
+  { code: "CHF", name: "Swiss Franc",           flag: "🇨🇭" },
+  { code: "SEK", name: "Swedish Krona",         flag: "🇸🇪" },
+  { code: "NOK", name: "Norwegian Krone",       flag: "🇳🇴" },
+  { code: "DKK", name: "Danish Krone",          flag: "🇩🇰" },
+  { code: "ZAR", name: "South African Rand",    flag: "🇿🇦" },
+  { code: "BRL", name: "Brazilian Real",        flag: "🇧🇷" },
+  { code: "MXN", name: "Mexican Peso",          flag: "🇲🇽" },
+  { code: "AED", name: "UAE Dirham",            flag: "🇦🇪" },
+  { code: "SAR", name: "Saudi Riyal",           flag: "🇸🇦" },
+  { code: "QAR", name: "Qatari Riyal",          flag: "🇶🇦" },
+  { code: "KWD", name: "Kuwaiti Dinar",         flag: "🇰🇼" },
+  { code: "PKR", name: "Pakistani Rupee",       flag: "🇵🇰" },
+  { code: "BDT", name: "Bangladeshi Taka",      flag: "🇧🇩" },
+  { code: "LKR", name: "Sri Lankan Rupee",      flag: "🇱🇰" },
+  { code: "MMK", name: "Myanmar Kyat",          flag: "🇲🇲" },
+  { code: "KHR", name: "Cambodian Riel",        flag: "🇰🇭" },
+  { code: "LAK", name: "Lao Kip",              flag: "🇱🇦" },
+  { code: "BND", name: "Brunei Dollar",         flag: "🇧🇳" },
+  { code: "NPR", name: "Nepalese Rupee",        flag: "🇳🇵" },
+  { code: "PLN", name: "Polish Zloty",          flag: "🇵🇱" },
+  { code: "CZK", name: "Czech Koruna",          flag: "🇨🇿" },
+  { code: "HUF", name: "Hungarian Forint",      flag: "🇭🇺" },
+  { code: "RON", name: "Romanian Leu",          flag: "🇷🇴" },
+  { code: "TRY", name: "Turkish Lira",          flag: "🇹🇷" },
+  { code: "RUB", name: "Russian Ruble",         flag: "🇷🇺" },
+  { code: "UAH", name: "Ukrainian Hryvnia",     flag: "🇺🇦" },
+  { code: "EGP", name: "Egyptian Pound",        flag: "🇪🇬" },
+  { code: "NGN", name: "Nigerian Naira",        flag: "🇳🇬" },
+  { code: "KES", name: "Kenyan Shilling",       flag: "🇰🇪" },
+  { code: "CLP", name: "Chilean Peso",          flag: "🇨🇱" },
+  { code: "COP", name: "Colombian Peso",        flag: "🇨🇴" },
+  { code: "PEN", name: "Peruvian Sol",          flag: "🇵🇪" },
+  { code: "ARS", name: "Argentine Peso",        flag: "🇦🇷" },
+];
+
+const FLAG: Record<string, string> = Object.fromEntries(
+  [{ code: "AUD", flag: "🇦🇺" }, ...WORLD_CURRENCIES].map(c => [c.code, c.flag])
+);
+const NAMES: Record<string, string> = Object.fromEntries(
+  [{ code: "AUD", name: "Australian Dollar" }, ...WORLD_CURRENCIES].map(c => [c.code, c.name])
+);
 
 const PREVIEW_CURRENCIES = ["KRW", "JPY", "THB", "PHP", "USD", "SGD", "GBP"];
 
@@ -87,6 +150,24 @@ export default function ExchangeRates() {
   const [syncResult, setSyncResult] = useState<{ updated: string[]; skipped: string[]; date: string } | null>(null);
   const [previewCurrencies, setPreviewCurrencies] = useState<string[]>(loadPreviewCurrencies);
   const [showAddPreview, setShowAddPreview] = useState(false);
+  const [managedCurrencies, setManagedCurrencies] = useState<string[]>(loadManagedCurrencies);
+  const [showManageCurrencies, setShowManageCurrencies] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState("");
+
+  const allCurrencies = useMemo(() => ["AUD", ...managedCurrencies], [managedCurrencies]);
+
+  function addManagedCurrency(code: string) {
+    if (!code || managedCurrencies.includes(code)) return;
+    const next = [...managedCurrencies, code];
+    setManagedCurrencies(next);
+    saveManagedCurrencies(next);
+  }
+
+  function removeManagedCurrency(code: string) {
+    const next = managedCurrencies.filter(c => c !== code);
+    setManagedCurrencies(next);
+    saveManagedCurrencies(next);
+  }
 
   function addToPreview(ccy: string) {
     if (!ccy || previewCurrencies.includes(ccy)) return;
@@ -198,6 +279,15 @@ export default function ExchangeRates() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            onClick={() => setShowManageCurrencies(true)}
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Manage Currencies
+          </Button>
           <Button
             size="sm"
             variant="outline"
@@ -432,7 +522,7 @@ export default function ExchangeRates() {
                   <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="AUD">🇦🇺 AUD</SelectItem>
-                    {CURRENCIES.map(c => <SelectItem key={c} value={c}>{FLAG[c]} {c}</SelectItem>)}
+                    {managedCurrencies.map(c => <SelectItem key={c} value={c}>{FLAG[c] ?? ""} {c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -442,7 +532,7 @@ export default function ExchangeRates() {
                   <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="AUD">🇦🇺 AUD</SelectItem>
-                    {CURRENCIES.map(c => <SelectItem key={c} value={c}>{FLAG[c]} {c}</SelectItem>)}
+                    {managedCurrencies.map(c => <SelectItem key={c} value={c}>{FLAG[c] ?? ""} {c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -541,11 +631,11 @@ export default function ExchangeRates() {
             )}
 
             {/* Available to add */}
-            {ALL_CURRENCIES.filter(c => !previewCurrencies.includes(c)).length > 0 && (
+            {allCurrencies.filter(c => !previewCurrencies.includes(c)).length > 0 && (
               <div>
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Available currencies (click to add)</p>
                 <div className="grid grid-cols-4 gap-2">
-                  {ALL_CURRENCIES.filter(c => !previewCurrencies.includes(c)).map(ccy => {
+                  {allCurrencies.filter(c => !previewCurrencies.includes(c)).map(ccy => {
                     const rate = audToX[ccy];
                     const hasRate = rate != null;
                     const display = hasRate
@@ -599,6 +689,81 @@ export default function ExchangeRates() {
               {deleteMutation.isPending ? "Deleting…" : "Delete"}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Currencies Dialog */}
+      <Dialog open={showManageCurrencies} onOpenChange={setShowManageCurrencies}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Manage Currencies</DialogTitle>
+          </DialogHeader>
+
+          {/* Current currencies */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              Active Currencies ({managedCurrencies.length})
+            </p>
+            <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+              {managedCurrencies.map(code => (
+                <span
+                  key={code}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-sm font-medium"
+                >
+                  <span>{FLAG[code] ?? ""}</span>
+                  <span>{code}</span>
+                  <button
+                    className="ml-0.5 hover:text-destructive transition-colors"
+                    onClick={() => removeManagedCurrency(code)}
+                    title={`Remove ${code}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              {managedCurrencies.length === 0 && (
+                <p className="text-xs text-muted-foreground">No currencies configured.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Add new currency */}
+          <div className="border-t pt-3 mt-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              Add Currency
+            </p>
+            <Input
+              placeholder="Search by code or name (e.g. CAD, Canadian)…"
+              value={currencySearch}
+              onChange={e => setCurrencySearch(e.target.value)}
+              className="h-8 text-sm mb-2"
+            />
+            <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-1">
+              {WORLD_CURRENCIES
+                .filter(c => {
+                  if (managedCurrencies.includes(c.code) || c.code === "AUD") return false;
+                  if (!currencySearch.trim()) return true;
+                  const q = currencySearch.trim().toLowerCase();
+                  return c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q);
+                })
+                .map(c => (
+                  <button
+                    key={c.code}
+                    onClick={() => { addManagedCurrency(c.code); setCurrencySearch(""); }}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm hover:bg-muted text-left transition-colors"
+                  >
+                    <span className="text-base">{c.flag}</span>
+                    <span className="font-medium">{c.code}</span>
+                    <span className="text-muted-foreground truncate">{c.name}</span>
+                    <Plus className="w-3.5 h-3.5 ml-auto shrink-0 text-[#F5821F]" />
+                  </button>
+                ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <Button size="sm" onClick={() => setShowManageCurrencies(false)}>Done</Button>
           </div>
         </DialogContent>
       </Dialog>
