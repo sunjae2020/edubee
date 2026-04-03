@@ -43,8 +43,8 @@ export const organisations = pgTable("organisations", {
   // Allowed: 'pending' | 'active' | 'failed'
 
   // ── New: Branding ─────────────────────────────────────────────────────────
-  logoUrl:        varchar("logo_url",        { length: 1000 }),
-  faviconUrl:     varchar("favicon_url",     { length: 1000 }),
+  logoUrl:        text("logo_url"),
+  faviconUrl:     text("favicon_url"),
   primaryColor:   varchar("primary_color",   { length: 20  }).default("#F5821F"),
   secondaryColor: varchar("secondary_color", { length: 20  }).default("#1C1917"),
   accentColor:    varchar("accent_color",    { length: 20  }).default("#FEF0E3"),
