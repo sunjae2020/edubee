@@ -12,7 +12,7 @@ const guard  = [authenticate, superAdminOnly];
 // Stats
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/api/superadmin/stats", ...guard, async (_req, res) => {
+router.get("/superadmin/stats", ...guard, async (_req, res) => {
   try {
     const [tenantsRes, usersRes, studentsRes] = await Promise.all([
       db.execute(sql`
@@ -56,7 +56,7 @@ router.get("/api/superadmin/stats", ...guard, async (_req, res) => {
 // Tenants
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/api/superadmin/tenants", ...guard, async (req, res) => {
+router.get("/superadmin/tenants", ...guard, async (req, res) => {
   try {
     const { search = "", page = "1", pageSize = "20" } = req.query as Record<string, string>;
     const pageNum     = Math.max(1, parseInt(page));
@@ -75,7 +75,7 @@ router.get("/api/superadmin/tenants", ...guard, async (req, res) => {
           o.plan_type, o.plan_status, o.status, o.trial_ends_at,
           o.max_users, o.max_students, o.owner_email,
           o.created_on, o.onboarded_at, o.last_login_at,
-          (SELECT COUNT(*)::int FROM users u WHERE u.organisation_id = o.id) AS user_count
+          (SELECT COUNT(*)::int FROM users) AS user_count
         FROM organisations o
         ${conds}
         ORDER BY o.created_on DESC
@@ -101,7 +101,7 @@ router.get("/api/superadmin/tenants", ...guard, async (req, res) => {
   }
 });
 
-router.get("/api/superadmin/tenants/:id", ...guard, async (req, res) => {
+router.get("/superadmin/tenants/:id", ...guard, async (req, res) => {
   try {
     const rows = await db
       .select()
@@ -116,7 +116,7 @@ router.get("/api/superadmin/tenants/:id", ...guard, async (req, res) => {
   }
 });
 
-router.post("/api/superadmin/tenants", ...guard, async (req, res) => {
+router.post("/superadmin/tenants", ...guard, async (req, res) => {
   try {
     const { name, subdomain, ownerEmail, planType, planStatus } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: "Company name is required" });
@@ -154,7 +154,7 @@ router.post("/api/superadmin/tenants", ...guard, async (req, res) => {
   }
 });
 
-router.put("/api/superadmin/tenants/:id", ...guard, async (req, res) => {
+router.put("/superadmin/tenants/:id", ...guard, async (req, res) => {
   try {
     const { planType, planStatus, status, maxUsers, maxStudents, trialEndsAt, features } = req.body;
 
@@ -185,7 +185,7 @@ router.put("/api/superadmin/tenants/:id", ...guard, async (req, res) => {
 // Plans
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/api/superadmin/plans", ...guard, async (_req, res) => {
+router.get("/superadmin/plans", ...guard, async (_req, res) => {
   try {
     const plans = await db
       .select()
@@ -197,7 +197,7 @@ router.get("/api/superadmin/plans", ...guard, async (_req, res) => {
   }
 });
 
-router.post("/api/superadmin/plans", ...guard, async (req, res) => {
+router.post("/superadmin/plans", ...guard, async (req, res) => {
   try {
     const {
       name, code, priceMonthly, priceAnnually,
@@ -216,7 +216,7 @@ router.post("/api/superadmin/plans", ...guard, async (req, res) => {
   }
 });
 
-router.put("/api/superadmin/plans/:id", ...guard, async (req, res) => {
+router.put("/superadmin/plans/:id", ...guard, async (req, res) => {
   try {
     const {
       name, priceMonthly, priceAnnually,

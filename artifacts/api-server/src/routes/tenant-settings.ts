@@ -23,7 +23,7 @@ async function getOrg() {
 // Company Profile
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/api/settings/company", ...settingsAccess, async (_req, res) => {
+router.get("/company", ...settingsAccess, async (_req, res) => {
   try {
     const org = await getOrg();
     if (!org) return res.status(404).json({ error: "Organisation not found" });
@@ -34,7 +34,7 @@ router.get("/api/settings/company", ...settingsAccess, async (_req, res) => {
   }
 });
 
-router.put("/api/settings/company", ...settingsAccess, async (req, res) => {
+router.put("/company", ...settingsAccess, async (req, res) => {
   try {
     const org = await getOrg();
     if (!org) return res.status(404).json({ error: "Organisation not found" });
@@ -86,7 +86,7 @@ router.put("/api/settings/company", ...settingsAccess, async (req, res) => {
 // Branding
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/api/settings/branding", ...anyUser, async (_req, res) => {
+router.get("/branding", ...anyUser, async (_req, res) => {
   try {
     const org = await getOrg();
     if (!org) return res.status(404).json({ error: "Organisation not found" });
@@ -104,7 +104,7 @@ router.get("/api/settings/branding", ...anyUser, async (_req, res) => {
   }
 });
 
-router.put("/api/settings/branding", ...settingsAccess, async (req, res) => {
+router.put("/branding", ...settingsAccess, async (req, res) => {
   try {
     const org = await getOrg();
     if (!org) return res.status(404).json({ error: "Organisation not found" });
@@ -136,7 +136,7 @@ router.put("/api/settings/branding", ...settingsAccess, async (req, res) => {
 // Domain & Access
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/api/settings/domain", ...settingsAccess, async (_req, res) => {
+router.get("/domain", ...settingsAccess, async (_req, res) => {
   try {
     const org = await getOrg();
     if (!org) return res.status(404).json({ error: "Organisation not found" });
@@ -146,7 +146,7 @@ router.get("/api/settings/domain", ...settingsAccess, async (_req, res) => {
   }
 });
 
-router.put("/api/settings/domain", ...settingsAccess, async (req, res) => {
+router.put("/domain", ...settingsAccess, async (req, res) => {
   try {
     const org = await getOrg();
     if (!org) return res.status(404).json({ error: "Organisation not found" });
@@ -168,7 +168,7 @@ router.put("/api/settings/domain", ...settingsAccess, async (req, res) => {
   }
 });
 
-router.post("/api/settings/domain/check", ...settingsAccess, async (req, res) => {
+router.post("/domain/check", ...settingsAccess, async (req, res) => {
   try {
     const { subdomain } = req.body as { subdomain: string };
     if (!subdomain) return res.status(400).json({ error: "subdomain required" });
@@ -194,13 +194,13 @@ router.post("/api/settings/domain/check", ...settingsAccess, async (req, res) =>
 // Plan & Billing
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/api/settings/plan", ...anyUser, async (_req, res) => {
+router.get("/plan", ...anyUser, async (_req, res) => {
   try {
     const org = await getOrg();
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     const userCount = await db.execute(
-      sql`SELECT COUNT(*)::int AS cnt FROM users WHERE is_active = true OR is_active IS NULL`
+      sql`SELECT COUNT(*)::int AS cnt FROM users WHERE status = 'active' OR status IS NULL`
     );
     const r = (x: any) => x.rows ?? (x as any[]);
     const cnt = parseInt(r(userCount)[0]?.cnt ?? "0");
@@ -221,12 +221,12 @@ router.get("/api/settings/plan", ...anyUser, async (_req, res) => {
   }
 });
 
-router.get("/api/settings/plans/available", ...anyUser, async (_req, res) => {
+router.get("/plans/available", ...anyUser, async (_req, res) => {
   try {
     const plans = await db
       .select()
       .from(platformPlans)
-      .where(eq(platformPlans.status, "Active"))
+      .where(eq(platformPlans.isActive, true))
       .orderBy(platformPlans.priceMonthly);
     return res.json(plans);
   } catch (err) {
@@ -238,7 +238,7 @@ router.get("/api/settings/plans/available", ...anyUser, async (_req, res) => {
 // Users & Invitations
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get("/api/settings/users", ...settingsAccess, async (_req, res) => {
+router.get("/users", ...settingsAccess, async (_req, res) => {
   try {
     const rows = await db.execute(
       sql`SELECT id, full_name, email, role, is_active, created_at, last_login_at
@@ -251,7 +251,7 @@ router.get("/api/settings/users", ...settingsAccess, async (_req, res) => {
   }
 });
 
-router.get("/api/settings/invitations", ...settingsAccess, async (_req, res) => {
+router.get("/invitations", ...settingsAccess, async (_req, res) => {
   try {
     const org = await getOrg();
     if (!org) return res.status(404).json({ error: "Organisation not found" });
@@ -268,7 +268,7 @@ router.get("/api/settings/invitations", ...settingsAccess, async (_req, res) => 
   }
 });
 
-router.post("/api/settings/invitations", ...settingsAccess, async (req, res) => {
+router.post("/invitations", ...settingsAccess, async (req, res) => {
   try {
     const org = await getOrg();
     if (!org) return res.status(404).json({ error: "Organisation not found" });
@@ -302,7 +302,7 @@ router.post("/api/settings/invitations", ...settingsAccess, async (req, res) => 
   }
 });
 
-router.delete("/api/settings/invitations/:id", ...settingsAccess, async (req, res) => {
+router.delete("/invitations/:id", ...settingsAccess, async (req, res) => {
   try {
     const org = await getOrg();
     if (!org) return res.status(404).json({ error: "Organisation not found" });

@@ -83,6 +83,7 @@ router.use(notesRouter);
 router.use("/data-manager", dataManagerRouter);
 router.use(ledgerRouter);
 router.use(documentsRouter);
+router.use("/settings", tenantSettingsRouter);
 router.use("/settings", settingsRouter);
 router.use(settingsLookupsRouter);
 router.use(chatbotRouter);
@@ -123,7 +124,6 @@ router.use(allApplicationsRouter);
 router.use(teamsRouter);
 router.use("/kpi", kpiRouter);
 router.use(applicationFormsRouter);
-router.use(tenantSettingsRouter);
 router.use(superAdminRouter);
 router.use(platformPlansRouter);
 

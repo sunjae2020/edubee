@@ -11,7 +11,7 @@ const authOnly = [authenticate];
 
 // ─── List all active plans ────────────────────────────────────────────────────
 
-router.get("/api/platform-plans", ...authOnly, async (_req, res) => {
+router.get("/platform-plans", ...authOnly, async (_req, res) => {
   try {
     const plans = await db
       .select()
@@ -27,7 +27,7 @@ router.get("/api/platform-plans", ...authOnly, async (_req, res) => {
 
 // ─── Get single plan ──────────────────────────────────────────────────────────
 
-router.get("/api/platform-plans/:id", ...authOnly, async (req, res) => {
+router.get("/platform-plans/:id", ...authOnly, async (req, res) => {
   try {
     const [plan] = await db
       .select()
@@ -43,7 +43,7 @@ router.get("/api/platform-plans/:id", ...authOnly, async (req, res) => {
 
 // ─── Create plan ──────────────────────────────────────────────────────────────
 
-router.post("/api/platform-plans", ...guard, async (req, res) => {
+router.post("/platform-plans", ...guard, async (req, res) => {
   try {
     const {
       code, name, priceMonthly, priceAnnually,
@@ -99,7 +99,7 @@ router.post("/api/platform-plans", ...guard, async (req, res) => {
 
 // ─── Update plan ──────────────────────────────────────────────────────────────
 
-router.put("/api/platform-plans/:id", ...guard, async (req, res) => {
+router.put("/platform-plans/:id", ...guard, async (req, res) => {
   try {
     const {
       name, priceMonthly, priceAnnually,
@@ -146,7 +146,7 @@ router.put("/api/platform-plans/:id", ...guard, async (req, res) => {
 
 // ─── Deactivate plan (soft delete) ───────────────────────────────────────────
 
-router.delete("/api/platform-plans/:id", ...guard, async (req, res) => {
+router.delete("/platform-plans/:id", ...guard, async (req, res) => {
   try {
     const [updated] = await db
       .update(platformPlans)
