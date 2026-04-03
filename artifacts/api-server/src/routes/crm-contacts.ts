@@ -286,4 +286,24 @@ router.patch("/crm/contacts/:id/status", authenticate, requireRole(...ADMIN_ROLE
   }
 });
 
+// PATCH /crm/contacts/:id/profile-image  { objectPath: string }
+router.patch("/crm/contacts/:id/profile-image", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { objectPath } = req.body;
+    if (typeof objectPath !== "string") {
+      return res.status(400).json({ error: "objectPath is required" });
+    }
+    const [updated] = await db.update(contacts)
+      .set({ profileImageUrl: objectPath, modifiedOn: new Date() })
+      .where(eq(contacts.id, req.params.id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: "Contact not found" });
+    return res.json(updated);
+  } catch (err) {
+    console.error("[PATCH /api/crm/contacts/:id/profile-image]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

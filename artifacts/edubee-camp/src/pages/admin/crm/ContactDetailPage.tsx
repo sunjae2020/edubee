@@ -5,7 +5,7 @@ import { SystemInfoSection } from "@/components/shared/SystemInfoSection";
 import axios from "axios";
 import {
   ArrowLeft, Plus, Pencil, Trash2, ExternalLink, Search, X, Check, Building2,
-  Loader2, Save, RotateCcw,
+  Loader2, Save, RotateCcw, Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,11 +33,25 @@ const ROLE_COLORS: Record<string, string> = {
 
 const INPUT_CLS = "h-9 text-sm border-[#E8E6E2] focus:border-[#F5821F] focus-visible:ring-0 focus-visible:ring-offset-0";
 
-function Avatar({ name }: { name: string }) {
+function Avatar({
+  firstName, lastName, imageUrl,
+}: {
+  firstName?: string; lastName?: string; imageUrl?: string | null;
+}) {
+  const initials = [firstName?.charAt(0), lastName?.charAt(0)]
+    .filter(Boolean).join("").toUpperCase() || "?";
+
+  if (imageUrl) {
+    return (
+      <div className="w-14 h-14 rounded-full shrink-0 overflow-hidden border-2 border-[#F5821F]/30">
+        <img src={imageUrl} alt="Profile" className="w-full h-full object-cover" />
+      </div>
+    );
+  }
   return (
     <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
          style={{ background: "#FEF0E3", color: "#F5821F" }}>
-      {(name || "?").charAt(0).toUpperCase()}
+      {initials}
     </div>
   );
 }
@@ -428,8 +442,10 @@ export default function ContactDetailPage() {
   const qc           = useQueryClient();
   const id           = params?.id ?? "";
 
-  const [form, setForm]     = useState(EMPTY_FORM);
+  const [form, setForm]       = useState(EMPTY_FORM);
   const [isDirty, setIsDirty] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const set = (key: keyof typeof EMPTY_FORM, value: string) => {
     setForm(f => ({ ...f, [key]: value }));
@@ -531,11 +547,40 @@ export default function ContactDetailPage() {
     onError: () => toast({ title: "Failed to save contact", variant: "destructive" }),
   });
 
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Image files only (JPG, PNG, etc.)", variant: "destructive" });
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data: uploadResult } = await axios.post(`${BASE}/api/storage/uploads/direct`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      await axios.patch(`${BASE}/api/crm/contacts/${id}/profile-image`, { objectPath: uploadResult.objectPath });
+      qc.invalidateQueries({ queryKey: ["crm-contact", id] });
+      toast({ title: "Profile photo updated" });
+    } catch {
+      toast({ title: "Failed to upload photo", variant: "destructive" });
+    } finally {
+      setUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
+
   if (isLoading) return <div className="flex items-center justify-center h-64 text-stone-400 text-sm">Loading contact…</div>;
   if (!contact)  return <div className="flex items-center justify-center h-64 text-stone-400 text-sm">Contact not found.</div>;
 
   const displayName = `${form.firstName} ${form.lastName}`.trim() || contact.fullName || "—";
   const linkedAccounts: any[] = contact.linkedAccounts ?? [];
+
+  const profileImageSrc = contact.profileImageUrl
+    ? `${BASE}/api/storage/objects/${contact.profileImageUrl.replace(/^\/objects\//, "")}`
+    : null;
 
   return (
     <div className="p-6 space-y-6">
@@ -547,7 +592,17 @@ export default function ContactDetailPage() {
       {/* ── Header ── */}
       <div className="flex items-start gap-4 justify-between flex-wrap">
         <div className="flex items-start gap-4">
-          <Avatar name={displayName} />
+          {/* Clickable avatar with camera overlay */}
+          <div className="relative shrink-0 group cursor-pointer" onClick={() => !uploadingPhoto && photoInputRef.current?.click()} title="Change profile photo">
+            <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+            <Avatar firstName={form.firstName || contact.firstName} lastName={form.lastName || contact.lastName} imageUrl={profileImageSrc} />
+            <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              {uploadingPhoto
+                ? <Loader2 size={18} className="text-white animate-spin" />
+                : <Camera size={18} className="text-white" />
+              }
+            </div>
+          </div>
           <div>
             <h1 className="text-2xl font-bold text-stone-800">{displayName}</h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
