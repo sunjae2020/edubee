@@ -86,6 +86,17 @@ export function applyThemeToDom(theme: TenantTheme): void {
   root.style.setProperty("--color-secondary",     theme.secondaryColor);
   root.style.setProperty("--color-accent",        theme.accentColor);
 
+  // ── e-orange 계열: 사이드바/UI에서 실제로 사용하는 변수 ──
+  const p  = theme.primaryColor;
+  const dk = darken(p, 15);
+  const lt = lighten(p, 90);
+  const rgb = hexToRgb(p);
+  root.style.setProperty("--e-orange",      p);
+  root.style.setProperty("--e-orange-dk",   dk);
+  root.style.setProperty("--e-orange-lt",   lt);
+  root.style.setProperty("--e-orange-ring", rgb ? `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.15)` : lt);
+  root.style.setProperty("--e-bg-hover",    lt);
+
   // ── 파비콘 동적 교체 ──────────────────────────────
   if (theme.faviconUrl) {
     const link =

@@ -15,15 +15,22 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
     const isEA = false; // education_agent role removed
     const isPartner = role.startsWith("partner_");
 
+    // 임프로소네이션 시 테넌트 필터 적용
+    const tenantId = req.tenant?.id ?? null;
+
     // --- SA / AD: full platform stats ---
     if (isSAorAD) {
       const [totalApps] = await db.select({ count: count() }).from(applications);
       const [pendingApps] = await db.select({ count: count() }).from(applications).where(eq(applications.status, "submitted"));
       const [contractedApps] = await db.select({ count: count() }).from(applications).where(eq(applications.status, "contracted"));
-      const [totalContracts] = await db.select({ count: count() }).from(contracts);
-      const [activeContracts] = await db.select({ count: count() }).from(contracts).where(eq(contracts.status, "active"));
-      const [totalLeads] = await db.select({ count: count() }).from(leads);
-      const [activeLeads] = await db.select({ count: count() }).from(leads).where(ne(leads.status, "converted"));
+      const [totalContracts] = await db.select({ count: count() }).from(contracts)
+        .where(tenantId ? eq(contracts.organisationId, tenantId) : undefined);
+      const [activeContracts] = await db.select({ count: count() }).from(contracts)
+        .where(tenantId ? and(eq(contracts.organisationId, tenantId), eq(contracts.status, "active")) : eq(contracts.status, "active"));
+      const [totalLeads] = await db.select({ count: count() }).from(leads)
+        .where(tenantId ? eq(leads.organisationId, tenantId) : undefined);
+      const [activeLeads] = await db.select({ count: count() }).from(leads)
+        .where(tenantId ? and(eq(leads.organisationId, tenantId), ne(leads.status, "converted")) : ne(leads.status, "converted"));
       const [totalUsers] = await db.select({ count: count() }).from(users);
       const [activeUsers] = await db.select({ count: count() }).from(users).where(eq(users.status, "active"));
 
@@ -40,7 +47,9 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
         studentName: leads.fullName,
         status: leads.status,
         createdAt: leads.createdAt,
-      }).from(leads).orderBy(sql`${leads.createdAt} DESC`).limit(5);
+      }).from(leads)
+        .where(tenantId ? eq(leads.organisationId, tenantId) : undefined)
+        .orderBy(sql`${leads.createdAt} DESC`).limit(5);
 
       const appsByStatus = await db.execute(sql`
         SELECT status, COUNT(*)::int as count FROM applications GROUP BY status ORDER BY count DESC
