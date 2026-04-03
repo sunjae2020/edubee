@@ -33,7 +33,7 @@ function ParticipantFormFields({
         <Input value={form.lastName} onChange={e => f("lastName")(e.target.value)} className="h-8 text-sm" placeholder="e.g. Kim" />
       </div>
       <div className="space-y-1">
-        <Label className="text-xs">Original Name (한글이름 등)</Label>
+        <Label className="text-xs">Original Name (native script)</Label>
         <Input value={form.fullNameNative} onChange={e => f("fullNameNative")(e.target.value)} className="h-8 text-sm" placeholder="e.g. 김철수" />
       </div>
       <div className="space-y-1">

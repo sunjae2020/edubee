@@ -57,7 +57,7 @@ export function NameFieldGroup({
         <div className="space-y-1">
           <Label className="text-xs font-medium text-[#57534E]">
             Last Name {required && <span className="text-red-500">*</span>}
-            <span className="text-[10px] text-[#A8A29E] ml-1">(표시 시 대문자 자동 변환)</span>
+            <span className="text-[10px] text-[#A8A29E] ml-1">(auto-capitalized when displayed)</span>
           </Label>
           <Input
             className="h-9 text-sm"
@@ -72,7 +72,7 @@ export function NameFieldGroup({
       {showOriginalName && (
         <div className="space-y-1">
           <Label className="text-xs font-medium text-[#57534E]">
-            Original Name <span className="text-[10px] text-[#A8A29E]">(한국어·일본어·중국어 등, 선택)</span>
+            Original Name <span className="text-[10px] text-[#A8A29E]">(native script – optional)</span>
           </Label>
           <Input
             className="h-9 text-sm"
@@ -87,7 +87,7 @@ export function NameFieldGroup({
       {showEnglishName && (
         <div className="space-y-1">
           <Label className="text-xs font-medium text-[#57534E]">
-            English Nickname <span className="text-[10px] text-[#A8A29E]">(선택)</span>
+            English Nickname <span className="text-[10px] text-[#A8A29E]">(optional)</span>
           </Label>
           <Input
             className="h-9 text-sm"
@@ -101,7 +101,7 @@ export function NameFieldGroup({
 
       {(preview || originalPreview) && (
         <div className="px-3 py-2 rounded-lg bg-[#FEF0E3] border border-[#F5821F]/20">
-          <p className="text-[10px] text-[#A8A29E] mb-0.5">미리보기</p>
+          <p className="text-[10px] text-[#A8A29E] mb-0.5">Preview</p>
           {preview && (
             <p className="text-sm font-semibold text-[#1C1917] leading-tight">
               {values.firstName} {values.lastName?.toUpperCase()}

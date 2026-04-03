@@ -487,7 +487,7 @@ export default function ProductDetail() {
       unit:               "per package",
     }));
     if (pkg.groupProductGroupId) setSelectedGroupId(pkg.groupProductGroupId);
-    toast({ title: "패키지 정보 적용 완료", description: "패키지 데이터로 상품 정보가 업데이트됐습니다." });
+    toast({ title: "Package Info Applied", description: "Product info updated with package data." });
   };
 
   const { data: productGroups = [], isLoading: groupsLoading } = useQuery({
@@ -924,7 +924,7 @@ export default function ProductDetail() {
                             disabled={!linkedPkgRep}
                             className="w-full h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 border border-[#F5821F] text-[#F5821F] hover:bg-[#FEF0E3] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
-                            ↓ 패키지 정보 자동 입력 (Push)
+                            ↓ Auto-fill Package Info
                           </button>
                         </div>
                       ) : (

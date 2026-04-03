@@ -76,7 +76,7 @@ export function CurrencySelector({ variant = "default" }: { variant?: "default" 
         <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-border rounded-xl shadow-lg z-50 overflow-hidden">
           <div className="px-3 py-2 border-b">
             <p className="text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide">
-              💱 {t("currency.selector_label", "My Currency")} (참고용)
+              💱 {t("currency.selector_label", "My Currency")} (reference)
             </p>
           </div>
           {availableCurrencies.map(c => (

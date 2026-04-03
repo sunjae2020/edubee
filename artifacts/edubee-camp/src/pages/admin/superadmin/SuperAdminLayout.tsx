@@ -29,7 +29,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
         letterSpacing: "0.06em",
         flexShrink: 0,
       }}>
-        ⚠️ &nbsp;SUPER ADMIN MODE — 전체 테넌트 데이터에 접근 중입니다
+        ⚠️ &nbsp;SUPER ADMIN MODE — Accessing all tenant data
       </div>
     <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}

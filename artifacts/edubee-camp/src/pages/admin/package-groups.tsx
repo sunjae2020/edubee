@@ -179,7 +179,7 @@ export default function PackageGroups() {
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.error ?? "Failed to link product";
-      if (err?.response?.status === 409) setAddError("이미 연결된 상품입니다.");
+      if (err?.response?.status === 409) setAddError("This product is already linked.");
       else setAddError(msg);
     },
   });
@@ -780,7 +780,7 @@ export default function PackageGroups() {
               <TabsContent value="products" className="m-0 space-y-4">
                 {/* Info banner */}
                 <div className="bg-[#FEF0E3] border border-[#F5821F33] text-[#D96A0A] rounded-lg px-4 py-2 text-sm">
-                  💡 픽업, 숙소, 투어 상품은 여러 Package Group에서 공유 사용할 수 있습니다.
+                  💡 Pickup, accommodation, and tour products can be shared across multiple Package Groups.
                 </div>
 
                 {/* Linked products table */}
@@ -806,7 +806,7 @@ export default function PackageGroups() {
                         ))
                       ) : linkedProducts.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground text-sm">연결된 상품이 없습니다.</td>
+                          <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground text-sm">No products linked.</td>
                         </tr>
                       ) : (
                         linkedProducts.map((row: any) => {
@@ -863,7 +863,7 @@ export default function PackageGroups() {
                         <span>Estimated Cost Base</span>
                         <span className="font-mono">{grandTotal.toLocaleString("en-AU", { minimumFractionDigits: 2 })}</span>
                       </div>
-                      <p className="text-[10px] text-neutral-400">* 참고용 수치입니다. 실제 패키지 가격과 별개입니다.</p>
+                      <p className="text-[10px] text-neutral-400">* Reference figures only. Separate from actual package pricing.</p>
                     </div>
                   );
                 })()}
@@ -925,7 +925,7 @@ export default function PackageGroups() {
                         <span className="text-xs text-muted-foreground">{p.currency} {p.cost ? Number(p.cost).toLocaleString() : "—"}</span>
                       </div>
                       {isLinked && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">연결됨</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Linked</span>
                       )}
                     </label>
                   );

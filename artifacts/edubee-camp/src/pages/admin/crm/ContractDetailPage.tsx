@@ -1796,7 +1796,7 @@ function UnifiedTransactionsTab({ contract, onRecordPayment }: { contract: any; 
   };
 
   const handleVoidTxn = async (txnId: string) => {
-    if (!window.confirm("이 Transaction을 Void하시겠습니까?")) return;
+    if (!window.confirm("Are you sure you want to void this transaction?")) return;
     setDeletingTxnId(txnId);
     try {
       await axios.delete(`${BASE}/api/transactions/${txnId}`);
@@ -2083,7 +2083,7 @@ function RecordPaymentModal({ contract, onClose }: { contract: any; onClose: () 
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#F5821F] resize-none" placeholder="Optional" />
           </div>
-          {mut.isError && <p className="text-xs text-red-600">저장 실패. 다시 시도해 주세요.</p>}
+          {mut.isError && <p className="text-xs text-red-600">Save failed. Please try again.</p>}
         </div>
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E8E6E2]">
           <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
@@ -2213,7 +2213,7 @@ function GenerateInvoiceModal({ contract, onClose }: { contract: any; onClose: (
             <input type="checkbox" checked={isGstFree} onChange={e => setIsGstFree(e.target.checked)} className="w-4 h-4 accent-[#F5821F]" />
             <span className="text-sm text-[#57534E]">GST Free</span>
           </label>
-          {mut.isError && <p className="text-xs text-red-600">생성 실패. 다시 시도해 주세요.</p>}
+          {mut.isError && <p className="text-xs text-red-600">Failed to create. Please try again.</p>}
         </div>
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E8E6E2]">
           <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
@@ -3079,21 +3079,21 @@ function EditContractModal({ contract, onClose }: { contract: any; onClose: () =
           {field("Contract Amount (AUD)", "contractAmount", "number", { step: "0.01" })}
           <div>
             <label className="block text-xs font-semibold text-[#57534E] mb-1">
-              담당자 (Owner)
+              Owner
             </label>
             <select
               value={form.ownerId}
               onChange={e => setForm(p => ({ ...p, ownerId: e.target.value }))}
               className="w-full border border-[#E8E6E2] rounded-lg px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#F5821F] bg-white"
             >
-              <option value="">— 담당자 선택 —</option>
+              <option value="">— Select Owner —</option>
               {staffList.map(s => (
                 <option key={s.id} value={s.id}>{s.full_name}</option>
               ))}
             </select>
             {!form.ownerId && (
               <p className="text-xs text-[#F5821F] mt-1">
-                담당자를 선택해야 KPI가 정상 집계됩니다.
+                Select an owner to track KPI correctly.
               </p>
             )}
           </div>

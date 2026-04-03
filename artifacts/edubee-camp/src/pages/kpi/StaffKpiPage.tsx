@@ -97,7 +97,7 @@ export default function StaffKpiPage() {
             <h1 className="text-xl font-bold text-[#1C1917]">Staff KPI</h1>
             <p className="text-sm text-[#A8A29E] mt-0.5">
               {isLockedToStaff && staffName
-                ? `${staffName}님의 KPI`
+                ? `${staffName}'s KPI`
                 : 'Activity and finance performance by staff member'}
             </p>
           </div>

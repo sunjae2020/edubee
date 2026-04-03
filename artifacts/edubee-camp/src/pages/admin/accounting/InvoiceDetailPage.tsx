@@ -132,7 +132,7 @@ function RecordPaymentDialog({ invoice, open, onClose, onSuccess }: {
 
   const handleSubmit = async () => {
     if (!form.amount || Number(form.amount) <= 0) {
-      toast({ title: "유효한 금액을 입력하세요.", variant: "destructive" }); return;
+      toast({ title: "Please enter a valid amount.", variant: "destructive" }); return;
     }
     setSaving(true);
     try {
@@ -146,12 +146,12 @@ function RecordPaymentDialog({ invoice, open, onClose, onSuccess }: {
         transactionDate: form.transactionDate,
         notes: form.notes || undefined,
       });
-      toast({ title: "결제 기록 완료", description: `${fmtAmount(form.amount, invoice.currency ?? "AUD")} recorded for ${invoice.invoiceNumber}` });
+      toast({ title: "Payment Recorded", description: `${fmtAmount(form.amount, invoice.currency ?? "AUD")} recorded for ${invoice.invoiceNumber}` });
       onSuccess();
       onClose();
       setForm({ amount: "", bankReference: "", transactionDate: new Date().toISOString().split("T")[0], notes: "" });
     } catch (e: any) {
-      toast({ title: "기록 실패", description: e?.response?.data?.error ?? e.message, variant: "destructive" });
+      toast({ title: "Failed to Record", description: e?.response?.data?.error ?? e.message, variant: "destructive" });
     } finally { setSaving(false); }
   };
 
@@ -202,7 +202,7 @@ function EmailDialog({ invoice, open, onClose, onSuccess }: {
 
   const handleSend = async () => {
     const to = email || invoice.studentEmail || "";
-    if (!to) { toast({ title: "이메일 주소를 입력하세요.", variant: "destructive" }); return; }
+    if (!to) { toast({ title: "Please enter an email address.", variant: "destructive" }); return; }
     setSending(true);
     try {
       const resp = await axios.post(`${BASE}/api/invoices/${invoice.id}/send-email`, { email: to });
@@ -402,7 +402,7 @@ export default function InvoiceDetailPage() {
                     className="text-xs text-[#F5821F] hover:underline"
                     onClick={() => setEditStatus(invoice.status ?? "draft")}
                   >
-                    변경
+                    Change
                   </button>
                 </>
               ) : (

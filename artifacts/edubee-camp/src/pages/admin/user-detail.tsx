@@ -405,7 +405,7 @@ export default function UserDetail() {
               return (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">이 Service Provider가 제공하는 상품 목록입니다.</p>
+                    <p className="text-sm text-muted-foreground">Products provided by this Service Provider.</p>
                     {canEditProducts && (
                       <Button size="sm" className="gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white"
                         onClick={() => { setCreateProductMode(true); setEditProductId(null); setProductDrawerOpen(true); }}>
@@ -437,11 +437,11 @@ export default function UserDetail() {
                           <tr>
                             <td colSpan={canEditProducts ? 6 : 5} className="px-4 py-16 text-center">
                               <Package className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-30" />
-                              <p className="text-sm text-muted-foreground mb-3">등록된 상품이 없습니다.</p>
+                              <p className="text-sm text-muted-foreground mb-3">No products registered.</p>
                               {canEditProducts && (
                                 <Button size="sm" className="gap-1.5 bg-[#F5821F] hover:bg-[#d97706] text-white"
                                   onClick={() => { setCreateProductMode(true); setEditProductId(null); setProductDrawerOpen(true); }}>
-                                  <Plus className="w-3.5 h-3.5" /> 첫 번째 상품 등록하기
+                                  <Plus className="w-3.5 h-3.5" /> Add First Product
                                 </Button>
                               )}
                             </td>

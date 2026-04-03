@@ -23,11 +23,11 @@ async function compressImage(file: File): Promise<string> {
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
-      if (!ctx) { reject(new Error("Canvas context 오류")); return; }
+      if (!ctx) { reject(new Error("Canvas context error")); return; }
       ctx.drawImage(img, 0, 0, width, height);
       resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("이미지 로드 실패")); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Failed to load image")); };
     img.src = url;
   });
 }
@@ -56,11 +56,11 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setError("이미지 파일만 업로드 가능합니다.");
+      setError("Only image files can be uploaded.");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setError("파일 크기는 10MB 이하여야 합니다.");
+      setError("File size must be 10MB or less.");
       return;
     }
 
@@ -75,7 +75,7 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
       onUploaded(dataUrl);
       setProgress(100);
     } catch (e: any) {
-      setError(e.message ?? "업로드 실패");
+      setError(e.message ?? "Upload failed");
       setPreview(null);
     } finally {
       setIsUploading(false);
@@ -98,7 +98,7 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground/60">
             <ImageIcon className="w-10 h-10" />
-            <span className="text-sm font-medium">클릭하여 이미지 업로드</span>
+            <span className="text-sm font-medium">Click to upload image</span>
           </div>
         )}
 
@@ -119,14 +119,14 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
             className="absolute bottom-2 right-2 bg-white/90 hover:bg-white text-foreground border border-border rounded-lg px-2.5 py-1.5 text-xs font-medium flex items-center gap-1.5 shadow-sm transition-colors"
           >
             <Upload className="w-3.5 h-3.5" />
-            {imgSrc ? "변경" : "업로드"}
+            {imgSrc ? "Change" : "Upload"}
           </button>
         )}
       </div>
 
       <div className="flex items-center justify-between">
         <p className="text-[11px] text-muted-foreground/70">
-          권장 사이즈: <span className="font-semibold">1280 × 720px</span> (16:9) · JPG/PNG/WebP · 최대 10MB
+          Recommended: <span className="font-semibold">1280 × 720px</span> (16:9) · JPG/PNG/WebP · Max 10MB
         </p>
         {imgSrc && !disabled && !isUploading && (
           <button
@@ -134,7 +134,7 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
             onClick={() => { setPreview(null); onUploaded(""); }}
             className="text-[11px] text-red-500 hover:text-red-600 flex items-center gap-0.5"
           >
-            <X className="w-3 h-3" /> 제거
+            <X className="w-3 h-3" /> Remove
           </button>
         )}
       </div>

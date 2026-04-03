@@ -208,7 +208,7 @@ export default function ProductDrawer({
             ) : (
               rec?.description
                 ? <p className="text-sm" style={{ whiteSpace: "pre-wrap" }}>{rec.description}</p>
-                : <p className="text-sm text-neutral-400">설명 없음</p>
+                : <p className="text-sm text-neutral-400">No description</p>
             )}
           </div>
 
@@ -259,7 +259,7 @@ export default function ProductDrawer({
                 <div>
                   <Label className="text-xs">Unit</Label>
                   <Select value={form.unit || "none"} onValueChange={v => setForm(f => ({ ...f, unit: v === "none" ? "" : v }))}>
-                    <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue placeholder="선택…" /></SelectTrigger>
+                    <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">— No unit —</SelectItem>
                       {["per person","per night","per day","per session","per trip","per group","per week","per transfer","per meal","flat fee"].map(u => (

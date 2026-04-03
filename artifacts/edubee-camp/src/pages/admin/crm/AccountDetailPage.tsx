@@ -378,7 +378,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                 </div>
                 <div>
                   <Label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wide mb-1 block">
-                    Original Name <span className="text-stone-400 normal-case font-normal">(한국어/中文)</span>
+                    Original Name <span className="text-stone-400 normal-case font-normal">(native script)</span>
                   </Label>
                   <Input
                     value={cform.originalName}
@@ -1267,7 +1267,7 @@ export default function AccountDetailPage() {
                         <div className="space-y-1.5 text-xs">
                           {account.primaryContact.originalName && (
                             <div className="flex items-center gap-2">
-                              <span className="w-16 text-stone-400 flex-shrink-0">원래 이름</span>
+                              <span className="w-16 text-stone-400 flex-shrink-0">Original Name</span>
                               <span className="text-stone-700 font-medium">{account.primaryContact.originalName}</span>
                             </div>
                           )}

@@ -715,7 +715,7 @@ export function ContractFinanceTab({ contractId, currency = "AUD" }: {
           {/* ── [2] Receivable ───────────────────────────────────────── */}
           <div className="border border-[#E8E6E2] rounded-xl overflow-hidden">
             <SectionHeader
-              title="Receivable (수입)"
+              title="Receivable"
               subtitle={`${receivable.length} items · Pending: ${fmtAud(summary.receivablePending)} · Paid: ${fmtAud(summary.receivablePaid)}`}
               onAdd={() => handleAddItem("receivable")}
             />
@@ -732,7 +732,7 @@ export function ContractFinanceTab({ contractId, currency = "AUD" }: {
           {/* ── [3] Payable ──────────────────────────────────────────── */}
           <div className="border border-[#E8E6E2] rounded-xl overflow-hidden">
             <SectionHeader
-              title="Payable (지출)"
+              title="Payable"
               subtitle={`${payable.length} items · Pending: ${fmtAud(summary.payablePending)} · Paid: ${fmtAud(summary.payablePaid)}`}
               onAdd={() => handleAddItem("payable")}
             />

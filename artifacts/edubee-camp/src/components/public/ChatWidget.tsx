@@ -16,9 +16,9 @@ type Msg = {
 };
 
 const QUICK_QUESTIONS = [
-  "캠프 신청 자격이 어떻게 되나요?",
-  "프로그램 종류를 알려주세요",
-  "비용과 장학금 정보가 있나요?",
+  "What are the camp eligibility requirements?",
+  "What programs do you offer?",
+  "What are the costs and scholarship options?",
 ];
 
 export function ChatWidget() {
@@ -27,7 +27,7 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
-      content: "안녕하세요! 🐝 Edubee Camp 전용 AI 어시스턴트입니다.\n캠프 프로그램, 신청 방법, 비용 등 무엇이든 물어보세요!",
+      content: "Hello! 🐝 I'm the Edubee Camp AI assistant.\nFeel free to ask about programs, applications, costs, and more!",
     },
   ]);
   const [input, setInput] = useState("");
@@ -64,7 +64,7 @@ export function ChatWidget() {
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
-        throw new Error(err.error ?? "서버 오류가 발생했습니다.");
+        throw new Error(err.error ?? "A server error occurred.");
       }
 
       const reader = resp.body!.getReader();
