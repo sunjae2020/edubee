@@ -82,6 +82,16 @@ import DocPermissions from "@/pages/admin/settings/doc-permissions";
 import ImpersonationLogs from "@/pages/admin/settings/impersonation-logs";
 import DataManager from "@/pages/admin/settings/data-manager";
 import LookupValues from "@/pages/admin/settings/lookup-values";
+// Multi-tenant Settings
+import CompanyProfile from "@/pages/admin/settings/company-profile";
+import Branding from "@/pages/admin/settings/branding";
+import DomainAccess from "@/pages/admin/settings/domain-access";
+import UsersTeams from "@/pages/admin/settings/users-teams";
+import PlanBilling from "@/pages/admin/settings/plan-billing";
+// Super Admin
+import SuperAdminLayout from "@/pages/admin/superadmin/SuperAdminLayout";
+import SuperAdminDashboard from "@/pages/admin/superadmin/SuperAdminDashboard";
+import TenantList from "@/pages/admin/superadmin/TenantList";
 import Products from "@/pages/admin/products";
 import ProductDetail from "@/pages/admin/product-detail";
 import ProductGroups from "@/pages/admin/product-groups";
@@ -488,6 +498,30 @@ function Router() {
       </Route>
       <Route path="/admin/settings/lookup-values">
         <AdminRoute title="Lookup Values"><LookupValues /></AdminRoute>
+      </Route>
+      {/* Multi-tenant Settings */}
+      <Route path="/admin/settings/company">
+        <AdminRoute title="Company Profile"><CompanyProfile /></AdminRoute>
+      </Route>
+      <Route path="/admin/settings/branding">
+        <AdminRoute title="Branding"><Branding /></AdminRoute>
+      </Route>
+      <Route path="/admin/settings/domain">
+        <AdminRoute title="Domain & Access"><DomainAccess /></AdminRoute>
+      </Route>
+      <Route path="/admin/settings/users-teams">
+        <AdminRoute title="Users & Teams"><UsersTeams /></AdminRoute>
+      </Route>
+      <Route path="/admin/settings/plan">
+        <AdminRoute title="Plan & Billing"><PlanBilling /></AdminRoute>
+      </Route>
+
+      {/* Super Admin */}
+      <Route path="/superadmin/tenants">
+        <SuperAdminLayout><TenantList /></SuperAdminLayout>
+      </Route>
+      <Route path="/superadmin">
+        <SuperAdminLayout><SuperAdminDashboard /></SuperAdminLayout>
       </Route>
 
       {/* My Programs */}

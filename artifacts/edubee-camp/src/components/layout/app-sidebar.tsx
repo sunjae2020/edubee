@@ -15,6 +15,7 @@ import {
   Ticket, FolderOpen, Bot, Tags,
   BookOpen, CreditCard, BookMarked, Briefcase, Shield, Wrench, Stamp,
   Tag, Percent, BadgeDollarSign,
+  Palette, Globe,
   LucideIcon,
 } from "lucide-react";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
@@ -167,6 +168,11 @@ function buildNav(effectiveRole: string): NavGroup[] {
     nav.push({
       key: "settings", label: "Settings", catIcon: Settings,
       items: [
+        { icon: Building2,  label: "Company Profile",    href: "/admin/settings/company"            },
+        { icon: Palette,    label: "Branding",           href: "/admin/settings/branding"           },
+        { icon: Globe,      label: "Domain & Access",    href: "/admin/settings/domain"             },
+        { icon: Users2,     label: "Users & Teams",      href: "/admin/settings/users-teams"        },
+        { icon: CreditCard, label: "Plan & Billing",     href: "/admin/settings/plan"               },
         { icon: Settings,   label: "General",            href: "/admin/settings/general"            },
         { icon: Lock,       label: "Page Access",        href: "/admin/settings/page-access"        },
         { icon: Grid2x2,    label: "Field Permissions",  href: "/admin/settings/field-permissions"  },
@@ -174,6 +180,16 @@ function buildNav(effectiveRole: string): NavGroup[] {
         { icon: UserSearch, label: "Impersonation Logs", href: "/admin/settings/impersonation-logs" },
         { icon: FolderOpen, label: "Data Manager",       href: "/admin/settings/data-manager"       },
         { icon: Tags,       label: "Lookup Values",      href: "/admin/settings/lookup-values"      },
+      ],
+    });
+  }
+
+  if (isSA) {
+    nav.push({
+      key: "superadmin", label: "Super Admin", catIcon: Shield,
+      items: [
+        { icon: LayoutDashboard, label: "Platform Overview", href: "/superadmin"         },
+        { icon: Building2,       label: "Tenants",           href: "/superadmin/tenants" },
       ],
     });
   }

@@ -254,3 +254,33 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `user-detail.tsx`: Team assignment select in Account section (admin only, links to team API)
 - `app-sidebar.tsx`: "Teams" link added to Admin section (Users2 icon)
 - `App.tsx`: Team routes registered under AdminRoute guard
+
+## Phase 1 Multi-Tenant Implementation (Implemented)
+
+### DB Schema Extensions (`lib/db/src/schema/settings.ts`)
+- `organisations` table: extended with 36 columns (status, subdomain, branding, address, bank details, locale, SaaS plan/subscription, feature flags)
+- `tenant_invitations` table: email, role, token, status, expiresAt, createdBy
+- `tenant_audit_logs` table: orgId, actorId, action, entityType, entityId, before/after JSONB, ip, userAgent
+- `platform_plans` table: code, name, pricing, limits, features (3 plans seeded: starter $49, professional $99, enterprise $199)
+
+### Backend Middleware & Routes (`artifacts/api-server/src/routes/`)
+- `tenantResolver.ts` middleware: resolves org from JWT claim, attaches `req.org`
+- `superAdminOnly.ts` middleware: guards super admin endpoints
+- `tenant-settings.ts`: `/api/settings/company`, `/api/settings/branding`, `/api/settings/domain`, `/api/settings/domain/check`, `/api/settings/plan`, `/api/settings/plans/available`, `/api/settings/users`, `/api/settings/invitations`
+- `superadmin.ts`: `/api/superadmin/stats`, `/api/superadmin/tenants`, `/api/superadmin/plans`
+
+### Frontend Settings Pages (`artifacts/edubee-camp/src/pages/admin/settings/`)
+- `company-profile.tsx`: Company name, trading name, ABN, phone, email, website, address, bank info, localisation
+- `branding.tsx`: Logo, favicon URL, primary/secondary/accent colour pickers with live preview, custom CSS (collapsible)
+- `domain-access.tsx`: Subdomain availability checker + save; Custom domain (locked, Professional plan+)
+- `users-teams.tsx`: Invite by email + role, current user list, pending invitations with cancel
+- `plan-billing.tsx`: Current plan summary with usage bars, plan comparison cards with features, payment info
+
+### Super Admin Panel (`artifacts/edubee-camp/src/pages/admin/superadmin/`)
+- `SuperAdminLayout.tsx`: Dark sidebar layout (separate from main admin layout)
+- `SuperAdminDashboard.tsx`: Platform stats (total/active/trial tenants, users, students), plan distribution chart
+- `TenantList.tsx`: Paginated tenant table with search, inline plan change, suspend/activate
+
+### Updated Navigation
+- `app-sidebar.tsx`: 5 new Settings items (Company Profile, Branding, Domain, Users & Teams, Plan & Billing) + Super Admin group (super_admin role only)
+- `App.tsx`: Routes registered for `/admin/settings/{company,branding,domain,users-teams,plan}` and `/superadmin`, `/superadmin/tenants`
