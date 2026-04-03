@@ -225,27 +225,27 @@ export default function TenantDetail() {
   const val = (k: string, fallback?: any) =>
     form?.[k] !== undefined ? form[k] : (org?.[k] ?? fallback ?? "");
 
-  const selectedPlan = plans.find(p => p.code === val("plan_type"));
+  const selectedPlan = plans.find(p => p.code === val("planType"));
 
   const save = useMutation({
     mutationFn: () =>
       axios.put(`${BASE}/api/superadmin/tenants/${id}`, {
         name:           val("name"),
-        tradingName:    val("trading_name")  || undefined,
-        subdomain:      val("subdomain")     || undefined,
-        customDomain:   val("custom_domain") || undefined,
-        ownerEmail:     val("owner_email")   || undefined,
-        planType:       val("plan_type"),
-        planStatus:     val("plan_status"),
+        tradingName:    val("tradingName")  || undefined,
+        subdomain:      val("subdomain")    || undefined,
+        customDomain:   val("customDomain") || undefined,
+        ownerEmail:     val("ownerEmail")   || undefined,
+        planType:       val("planType"),
+        planStatus:     val("planStatus"),
         status:         val("status"),
-        maxUsers:       val("max_users")    ? Number(val("max_users"))    : undefined,
-        maxStudents:    val("max_students") ? Number(val("max_students")) : undefined,
-        trialEndsAt:    val("trial_ends_at") || undefined,
-        logoUrl:        val("logo_url")        || undefined,
-        faviconUrl:     val("favicon_url")     || undefined,
-        primaryColor:   val("primary_color")   || undefined,
-        secondaryColor: val("secondary_color") || undefined,
-        accentColor:    val("accent_color")    || undefined,
+        maxUsers:       val("maxUsers")    ? Number(val("maxUsers"))    : undefined,
+        maxStudents:    val("maxStudents") ? Number(val("maxStudents")) : undefined,
+        trialEndsAt:    val("trialEndsAt") || undefined,
+        logoUrl:        val("logoUrl")        || undefined,
+        faviconUrl:     val("faviconUrl")     || undefined,
+        primaryColor:   val("primaryColor")   || undefined,
+        secondaryColor: val("secondaryColor") || undefined,
+        accentColor:    val("accentColor")    || undefined,
       }).then(r => r.data),
     onSuccess: () => {
       toast({ title: "Tenant updated" });
@@ -329,7 +329,7 @@ export default function TenantDetail() {
             <input className={inp} value={val("name")} onChange={e => set("name", e.target.value)} />
           </Field>
           <Field label="Trading Name">
-            <input className={inp} placeholder="Optional" value={val("trading_name")} onChange={e => set("trading_name", e.target.value)} />
+            <input className={inp} placeholder="Optional" value={val("tradingName")} onChange={e => set("tradingName", e.target.value)} />
           </Field>
           <Field label={<><Globe size={11} /> Subdomain</>}>
             <div className="relative">
@@ -343,10 +343,10 @@ export default function TenantDetail() {
             </div>
           </Field>
           <Field label={<><ExternalLink size={11} /> Custom Domain</>}>
-            <input className={inp} placeholder="app.acmeedu.com" value={val("custom_domain")} onChange={e => set("custom_domain", e.target.value)} />
+            <input className={inp} placeholder="app.acmeedu.com" value={val("customDomain")} onChange={e => set("customDomain", e.target.value)} />
           </Field>
           <Field label={<><Mail size={11} /> Owner Email</>}>
-            <input className={inp} type="email" value={val("owner_email")} onChange={e => set("owner_email", e.target.value)} />
+            <input className={inp} type="email" value={val("ownerEmail")} onChange={e => set("ownerEmail", e.target.value)} />
           </Field>
         </div>
       </Section>
@@ -355,7 +355,7 @@ export default function TenantDetail() {
       <Section title="Plan & Billing">
         <div className="grid grid-cols-2 gap-4">
           <Field label={<><CreditCard size={11} /> Plan</>}>
-            <select className={inp} value={val("plan_type")} onChange={e => set("plan_type", e.target.value)}>
+            <select className={inp} value={val("planType")} onChange={e => set("planType", e.target.value)}>
               {plans.filter(p => p.isActive).map(p => (
                 <option key={p.code} value={p.code}>
                   {p.name}{p.isPopular ? " ★" : ""}
@@ -364,7 +364,7 @@ export default function TenantDetail() {
             </select>
           </Field>
           <Field label="Plan Status">
-            <select className={inp} value={val("plan_status")} onChange={e => set("plan_status", e.target.value)}>
+            <select className={inp} value={val("planStatus")} onChange={e => set("planStatus", e.target.value)}>
               {PLAN_STATUS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
             </select>
           </Field>
@@ -372,8 +372,8 @@ export default function TenantDetail() {
             <input
               className={inp}
               type="date"
-              value={val("trial_ends_at") ? val("trial_ends_at").slice(0, 10) : ""}
-              onChange={e => set("trial_ends_at", e.target.value)}
+              value={val("trialEndsAt") ? val("trialEndsAt").slice(0, 10) : ""}
+              onChange={e => set("trialEndsAt", e.target.value)}
             />
           </Field>
           <Field label="Account Status">
@@ -399,10 +399,10 @@ export default function TenantDetail() {
             Override per-tenant limits (leave as plan default if not customised)
           </p>
           <Field label={<><Users size={11} /> Max Users Override</>}>
-            <input className={inp} type="number" min={1} value={val("max_users", selectedPlan?.maxUsers ?? 10)} onChange={e => set("max_users", e.target.value)} />
+            <input className={inp} type="number" min={1} value={val("maxUsers", selectedPlan?.maxUsers ?? 10)} onChange={e => set("maxUsers", e.target.value)} />
           </Field>
           <Field label={<><GraduationCap size={11} /> Max Students Override</>}>
-            <input className={inp} type="number" min={1} value={val("max_students", selectedPlan?.maxStudents ?? 500)} onChange={e => set("max_students", e.target.value)} />
+            <input className={inp} type="number" min={1} value={val("maxStudents", selectedPlan?.maxStudents ?? 500)} onChange={e => set("maxStudents", e.target.value)} />
           </Field>
         </div>
       </Section>
@@ -413,45 +413,45 @@ export default function TenantDetail() {
           <div className="grid grid-cols-3 gap-4">
             <ColorSwatch
               label="Primary Colour"
-              value={val("primary_color", "#F5821F")}
-              onChange={v => set("primary_color", v)}
+              value={val("primaryColor", "#F5821F")}
+              onChange={v => set("primaryColor", v)}
             />
             <ColorSwatch
               label="Secondary Colour"
-              value={val("secondary_color", "#1C1917")}
-              onChange={v => set("secondary_color", v)}
+              value={val("secondaryColor", "#1C1917")}
+              onChange={v => set("secondaryColor", v)}
             />
             <ColorSwatch
               label="Accent Colour"
-              value={val("accent_color", "#FEF0E3")}
-              onChange={v => set("accent_color", v)}
+              value={val("accentColor", "#FEF0E3")}
+              onChange={v => set("accentColor", v)}
             />
           </div>
 
           {/* Live colour preview */}
           <div
             className="rounded-xl border border-[#E8E6E2] p-4"
-            style={{ background: val("accent_color", "#FEF0E3") }}
+            style={{ background: val("accentColor", "#FEF0E3") }}
           >
-            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: val("secondary_color", "#1C1917") }}>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: val("secondaryColor", "#1C1917") }}>
               Colour Preview
             </p>
             <div className="flex items-center gap-3 flex-wrap">
               <button
                 className="h-8 px-4 rounded-lg text-xs font-semibold text-white"
-                style={{ background: val("primary_color", "#F5821F") }}
+                style={{ background: val("primaryColor", "#F5821F") }}
               >
                 Primary Button
               </button>
               <button
                 className="h-8 px-4 rounded-lg text-xs font-semibold border-2"
-                style={{ color: val("primary_color", "#F5821F"), borderColor: val("primary_color", "#F5821F"), background: "transparent" }}
+                style={{ color: val("primaryColor", "#F5821F"), borderColor: val("primaryColor", "#F5821F"), background: "transparent" }}
               >
                 Outline
               </button>
               <span
                 className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                style={{ background: val("primary_color", "#F5821F"), color: "#fff" }}
+                style={{ background: val("primaryColor", "#F5821F"), color: "#fff" }}
               >
                 Badge
               </span>
@@ -464,13 +464,13 @@ export default function TenantDetail() {
                 <input
                   className={inp}
                   placeholder="https://cdn.example.com/logo.png"
-                  value={val("logo_url")}
-                  onChange={e => set("logo_url", e.target.value)}
+                  value={val("logoUrl")}
+                  onChange={e => set("logoUrl", e.target.value)}
                 />
-                {val("logo_url") && (
+                {val("logoUrl") && (
                   <div className="h-16 border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] flex items-center justify-center overflow-hidden">
                     <img
-                      src={val("logo_url")}
+                      src={val("logoUrl")}
                       alt="Logo preview"
                       className="max-h-full max-w-full object-contain p-2"
                       onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
@@ -484,13 +484,13 @@ export default function TenantDetail() {
                 <input
                   className={inp}
                   placeholder="https://cdn.example.com/favicon.ico"
-                  value={val("favicon_url")}
-                  onChange={e => set("favicon_url", e.target.value)}
+                  value={val("faviconUrl")}
+                  onChange={e => set("faviconUrl", e.target.value)}
                 />
-                {val("favicon_url") && (
+                {val("faviconUrl") && (
                   <div className="h-16 border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] flex items-center justify-center overflow-hidden">
                     <img
-                      src={val("favicon_url")}
+                      src={val("faviconUrl")}
                       alt="Favicon preview"
                       className="h-8 w-8 object-contain"
                       onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
@@ -515,13 +515,13 @@ export default function TenantDetail() {
             <input className={readInp} readOnly value={org.id} />
           </Field>
           <Field label={<><Clock size={11} /> Created On</>}>
-            <input className={readInp} readOnly value={formatDate(org.created_on)} />
+            <input className={readInp} readOnly value={formatDate(org.createdOn)} />
           </Field>
           <Field label="Onboarded At">
-            <input className={readInp} readOnly value={org.onboarded_at ? formatDate(org.onboarded_at) : "—"} />
+            <input className={readInp} readOnly value={org.onboardedAt ? formatDate(org.onboardedAt) : "—"} />
           </Field>
           <Field label="Last Login">
-            <input className={readInp} readOnly value={org.last_login_at ? formatDate(org.last_login_at) : "—"} />
+            <input className={readInp} readOnly value={org.lastLoginAt ? formatDate(org.lastLoginAt) : "—"} />
           </Field>
         </div>
       </Section>
