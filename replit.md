@@ -261,7 +261,7 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 
 **`settings.ts`:**
 - `organisations` table: 40+ columns — status, subdomain (UNIQUE), custom domain + 4 DNS columns (`dns_status`, `dns_token`, `dns_verified_at`, `ssl_status`), branding, address, bank details, locale, SaaS plan/subscription, feature flags, `onboarded_at`
-- `domain_configs` table: per-tenant custom domain DNS/SSL tracking (organisation_id UNIQUE FK, dns_record_type/name/value, dns_status, ssl_status, ssl_issued/expires_at, last_checked_at)
+- `domain_configs` table: per-tenant custom domain DNS/SSL tracking (organisation_id UNIQUE FK, dns_record_type/name/value, dns_verification_token, dns_status, ssl_status, ssl_issued/expires_at, last_checked_at, check_attempts, error_message, status for soft-delete)
 - `tenant_invitations` table: email, role, token, status, expiresAt, createdBy
 - `tenant_audit_logs` table: orgId, actorId, action, entityType, entityId, before/after JSONB, ip
 - `platform_plans` table: 4 plan codes (solo, starter, growth, enterprise); feature flags as individual boolean columns
@@ -278,6 +278,7 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `tenantResolver.ts` middleware: globally registered in `routes/index.ts` before auth routes; resolves org from JWT claim, attaches `req.org`
 - `superAdminOnly.ts` middleware: guards super admin endpoints
 - `tenant-settings.ts`: `/api/settings/company`, `/api/settings/branding`, `/api/settings/domain`, `/api/settings/domain/check`, `/api/settings/plan`, `/api/settings/plans/available`, `/api/settings/users`, `/api/settings/invitations`
+- **Domain API (Fix 8~13):** `PUT /domain/subdomain` (예약어·중복·형식 검사 후 저장), `PUT /domain/custom` (Growth+ 플랜 확인 후 TXT 토큰 생성 + upsert), `GET /domain/dns-instructions` (CNAME+TXT 레코드 안내), `POST /domain/custom/verify` (Node `dns/promises`로 TXT+CNAME 조회 → status 업데이트), `GET /domain/custom/status` (폴링용 상태 반환), `DELETE /domain/custom` (Soft Delete + 조직 도메인 필드 초기화)
 - `superadmin.ts`: `/api/superadmin/stats`, `/api/superadmin/tenants` (CRUD), `/api/superadmin/plans` (CRUD), `/api/superadmin/tenants/:id/seed-status`, `/api/superadmin/tenants/:id/re-seed`
 
 ### Onboarding Service (`artifacts/api-server/src/services/onboardingService.ts`)

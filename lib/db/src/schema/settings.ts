@@ -115,6 +115,10 @@ export const domainConfigs = pgTable("domain_configs", {
   sslIssuedAt:          timestamp("ssl_issued_at"),
   sslExpiresAt:         timestamp("ssl_expires_at"),
   lastCheckedAt:        timestamp("last_checked_at"),
+  checkAttempts:        integer("check_attempts").notNull().default(0),
+  errorMessage:         text("error_message"),
+  // 'Active' | 'Inactive' (soft delete)
+  status:               varchar("status", { length: 20 }).notNull().default("Active"),
   createdOn:            timestamp("created_on").notNull().defaultNow(),
   modifiedOn:           timestamp("modified_on").notNull().defaultNow(),
 });
