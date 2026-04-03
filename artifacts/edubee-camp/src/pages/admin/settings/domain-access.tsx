@@ -5,9 +5,16 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Globe, Loader2, CheckCircle2, XCircle, Lock, AlertTriangle,
   Copy, ExternalLink, RefreshCw, ShieldCheck, Clock, Info,
+  Server, Network,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// ── Edubee 네임서버 (NS) ────────────────────────────────────────────────────
+const EDUBEE_NAMESERVERS = [
+  "ns1.edubee.co",
+  "ns2.edubee.co",
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -35,34 +42,300 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function DnsRecordRow({ type, hostname, value, ttl }: {
-  type: string; hostname: string; value: string; ttl?: number;
+// ── DNS 방법 탭 ────────────────────────────────────────────────────────────────
+type DnsMethod = "cname" | "nameserver";
+
+function MethodTab({
+  active, onClick, icon, label, description,
+}: {
+  active: boolean; onClick: () => void;
+  icon: React.ReactNode; label: string; description: string;
 }) {
-  const { toast } = useToast();
   return (
-    <tr className="border-b border-[#F4F3F1] last:border-0">
-      <td className="py-3 pr-4">
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold font-mono bg-[#F4F3F1] text-[#1C1917]">
-          {type}
-        </span>
-      </td>
-      <td className="py-3 pr-4">
-        <span className="font-mono text-sm text-[#1C1917]">{hostname}</span>
-      </td>
-      <td className="py-3 pr-4 max-w-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm text-[#57534E] truncate">{value}</span>
-          <button
-            onClick={() => copyToClipboard(value, type + " value", toast)}
-            className="shrink-0 p-1 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E] transition-colors"
-            title="Copy to clipboard"
-          >
-            <Copy size={13} />
-          </button>
+    <button
+      onClick={onClick}
+      className="flex-1 flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all"
+      style={{
+        borderColor: active ? "var(--e-orange)" : "#E8E6E2",
+        background: active ? "var(--e-orange-lt)" : "#FAFAF9",
+      }}
+    >
+      <div
+        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+        style={{ background: active ? "var(--e-orange)" : "#E8E6E2" }}
+      >
+        <span style={{ color: active ? "white" : "#57534E" }}>{icon}</span>
+      </div>
+      <div>
+        <p className="text-sm font-semibold" style={{ color: active ? "var(--e-orange)" : "#1C1917" }}>{label}</p>
+        <p className="text-xs text-[#78716C] mt-0.5 leading-snug">{description}</p>
+      </div>
+      {active && (
+        <CheckCircle2 size={16} className="ml-auto shrink-0 mt-1" style={{ color: "var(--e-orange)" }} />
+      )}
+    </button>
+  );
+}
+
+// ── CNAME/TXT 설정 섹션 ────────────────────────────────────────────────────────
+function CnameTxtSection({
+  cname, txt, guides, verifyDns, toast,
+}: {
+  cname: any; txt: any; guides: any;
+  verifyDns: any; toast: any;
+}) {
+  return (
+    <div className="space-y-4">
+      {/* 단계 안내 */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+        <p className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+          <Info size={14} /> CNAME/TXT 레코드 설정 방법
+        </p>
+        <ol className="space-y-2 text-xs text-blue-700 list-none">
+          {[
+            "도메인 등록 기관(GoDaddy, Namecheap, Cloudflare 등)에 로그인하세요.",
+            "DNS 관리 메뉴(또는 Zone Editor)를 여세요.",
+            "아래 CNAME 및 TXT 레코드를 각각 추가하세요.",
+            "저장 후 DNS 전파를 기다린 뒤 'Verify DNS' 버튼을 클릭하세요.",
+          ].map((step, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="w-4 h-4 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center shrink-0 font-bold text-[10px]">{i + 1}</span>
+              {step}
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* DNS 레코드 테이블 */}
+      {(cname || txt) ? (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">
+              추가할 DNS 레코드
+            </p>
+            <button
+              onClick={() => verifyDns.mutate()}
+              disabled={verifyDns.isPending}
+              className="h-8 px-3 rounded-lg text-xs font-semibold border border-[#E8E6E2] text-[#57534E] hover:border-(--e-orange) hover:text-(--e-orange) flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            >
+              {verifyDns.isPending
+                ? <Loader2 size={12} className="animate-spin" />
+                : <RefreshCw size={12} />}
+              Verify DNS
+            </button>
+          </div>
+
+          <div className="rounded-xl border border-[#E8E6E2] overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[#FAFAF9]">
+                  {["Type", "Hostname / Name", "Record / Value", "TTL"].map(h => (
+                    <th key={h} className="text-left py-2.5 px-4 text-xs font-semibold text-[#57534E] uppercase tracking-wide border-b border-[#E8E6E2]">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-[#F4F3F1]">
+                {cname && (
+                  <tr>
+                    <td className="py-3 px-4">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold font-mono bg-blue-50 text-blue-700">CNAME</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-sm text-[#1C1917]">{cname.host}</span>
+                        <button onClick={() => copyToClipboard(cname.host, "Hostname", toast)} className="p-0.5 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]"><Copy size={12} /></button>
+                      </div>
+                      <p className="text-[11px] text-[#A8A29E] mt-0.5">도메인 루트를 Edubee로 연결</p>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-sm text-[#1C1917] break-all">{cname.value}</span>
+                        <button onClick={() => copyToClipboard(cname.value, "CNAME value", toast)} className="shrink-0 p-0.5 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]"><Copy size={12} /></button>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-[#A8A29E]">{cname.ttl}s</td>
+                  </tr>
+                )}
+                {txt && (
+                  <tr>
+                    <td className="py-3 px-4">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold font-mono bg-amber-50 text-amber-700">TXT</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-sm text-[#1C1917]">{txt.host}</span>
+                        <button onClick={() => copyToClipboard(txt.host, "TXT hostname", toast)} className="p-0.5 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]"><Copy size={12} /></button>
+                      </div>
+                      <p className="text-[11px] text-[#A8A29E] mt-0.5">도메인 소유권 인증</p>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-sm text-[#1C1917] break-all">{txt.value}</span>
+                        <button onClick={() => copyToClipboard(txt.value, "TXT value", toast)} className="shrink-0 p-0.5 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]"><Copy size={12} /></button>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-[#A8A29E]">{txt.ttl}s</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+            <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" strokeWidth={1.5} />
+            <p className="text-xs text-amber-700">
+              DNS 전파는 최대 <strong>48시간</strong>이 소요될 수 있습니다.
+              CNAME 및 TXT 레코드를 모두 추가한 후 <strong>Verify DNS</strong>를 클릭하세요.
+            </p>
+          </div>
+
+          {/* 제공업체별 가이드 링크 */}
+          {guides && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-[#57534E]">주요 DNS 제공업체 설정 가이드:</p>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(guides).map(([name, url]) => (
+                  <a
+                    key={name}
+                    href={url as string}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-(--e-orange) hover:underline capitalize"
+                  >
+                    {name} <ExternalLink size={10} />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      </td>
-      <td className="py-3 text-sm text-[#A8A29E]">{ttl ? `${ttl}s` : "Auto"}</td>
-    </tr>
+      ) : (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-[#F4F3F1] text-sm text-[#57534E]">
+          <Info size={14} className="mt-0.5 shrink-0" />
+          <p>커스텀 도메인을 먼저 등록하면 DNS 레코드가 표시됩니다.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 네임서버(NS) 설정 섹션 ──────────────────────────────────────────────────────
+function NameserverSection({ customDomain, toast }: { customDomain?: string; toast: any }) {
+  const registrarSteps = [
+    { label: "도메인 등록 기관에 로그인", desc: "GoDaddy, Namecheap, Porkbun 등 도메인을 구매한 사이트에 로그인하세요." },
+    { label: "도메인 관리 → 네임서버 변경", desc: "도메인 관리 페이지에서 'Nameservers' 또는 'DNS Servers' 항목을 찾으세요." },
+    { label: "기존 네임서버 모두 삭제 후 아래 값 입력", desc: "Custom/다른 네임서버 옵션을 선택하고 아래 두 개를 차례로 입력하세요." },
+    { label: "저장 후 전파 대기", desc: "네임서버 변경은 최대 48시간이 소요됩니다. 완료 후 Edubee에 자동 연결됩니다." },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* 안내 배너 */}
+      <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
+        <p className="text-sm font-semibold text-purple-800 flex items-center gap-2">
+          <Server size={14} /> 네임서버(NS) 설정 방법
+        </p>
+        <p className="text-xs text-purple-700 leading-relaxed">
+          도메인의 네임서버를 Edubee로 변경하면 DNS 레코드를 직접 추가할 필요 없이
+          자동으로 연결됩니다. CNAME/TXT 방식보다 간단하지만,
+          <strong> 기존 DNS 레코드(이메일 MX 등)는 초기화</strong>됩니다.
+        </p>
+      </div>
+
+      {/* 네임서버 레코드 카드 */}
+      <div className="rounded-xl border border-[#E8E6E2] overflow-hidden">
+        <div className="bg-[#FAFAF9] px-4 py-2.5 border-b border-[#E8E6E2] flex items-center gap-2">
+          <Network size={13} className="text-[#57534E]" />
+          <span className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Edubee 네임서버</span>
+        </div>
+        <div className="bg-white divide-y divide-[#F4F3F1]">
+          {EDUBEE_NAMESERVERS.map((ns, i) => (
+            <div key={ns} className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span className="w-5 h-5 rounded-full bg-[#F4F3F1] text-[#57534E] flex items-center justify-center text-[10px] font-bold shrink-0">
+                  {i + 1}
+                </span>
+                <span className="font-mono text-sm font-semibold text-[#1C1917]">{ns}</span>
+              </div>
+              <button
+                onClick={() => copyToClipboard(ns, `NS ${i + 1}`, toast)}
+                className="p-1.5 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-(--e-orange) transition-colors"
+                title="Copy"
+              >
+                <Copy size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 단계별 가이드 */}
+      <div className="rounded-xl border border-[#E8E6E2] overflow-hidden">
+        <div className="bg-[#FAFAF9] px-4 py-2.5 border-b border-[#E8E6E2]">
+          <span className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">단계별 설정 가이드</span>
+        </div>
+        <ol className="bg-white divide-y divide-[#F4F3F1]">
+          {registrarSteps.map((step, i) => (
+            <li key={i} className="px-4 py-3 flex gap-3">
+              <span
+                className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold"
+                style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}
+              >
+                {i + 1}
+              </span>
+              <div>
+                <p className="text-sm font-medium text-[#1C1917]">{step.label}</p>
+                <p className="text-xs text-[#78716C] mt-0.5 leading-snug">{step.desc}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* 주요 등록 기관 링크 */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-[#57534E]">등록 기관별 네임서버 변경 가이드:</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {[
+            { name: "GoDaddy",   url: "https://au.godaddy.com/help/change-nameservers-for-my-domains-664" },
+            { name: "Namecheap", url: "https://www.namecheap.com/support/knowledgebase/article.aspx/767/10/how-to-change-dns-for-a-domain/" },
+            { name: "Cloudflare",url: "https://developers.cloudflare.com/dns/nameservers/update-nameservers/" },
+            { name: "Porkbun",   url: "https://kb.porkbun.com/article/22-how-to-change-your-nameservers" },
+            { name: "Google Domains", url: "https://support.google.com/domains/answer/3290309" },
+            { name: "Squarespace", url: "https://support.squarespace.com/hc/en-us/articles/213469928" },
+          ].map(({ name, url }) => (
+            <a
+              key={name}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-[#E8E6E2] text-[#57534E] hover:border-(--e-orange) hover:text-(--e-orange) transition-colors"
+            >
+              <ExternalLink size={11} />
+              {name}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* 경고 */}
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+        <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" strokeWidth={1.5} />
+        <div className="text-xs text-amber-700 space-y-1">
+          <p><strong>주의:</strong> 네임서버를 변경하면 기존 DNS 레코드(이메일 MX, SPF, 기타 CNAME 등)가 모두 초기화됩니다.</p>
+          <p>이메일 서비스를 사용 중이라면 <strong>CNAME/TXT 방식</strong>을 권장합니다.</p>
+        </div>
+      </div>
+
+      {/* 현재 도메인 표시 */}
+      {customDomain && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F4F3F1] text-sm">
+          <Globe size={14} className="text-[#A8A29E]" />
+          <span className="text-[#57534E]">설정 대상 도메인:</span>
+          <span className="font-mono font-semibold text-[#1C1917]">{customDomain}</span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -89,6 +362,7 @@ export default function DomainAccess() {
   const [checking, setChecking]         = useState(false);
   const [saving, setSaving]             = useState(false);
   const [customDomainInput, setCustomDomainInput] = useState("");
+  const [dnsMethod, setDnsMethod]       = useState<DnsMethod>("cname");
 
   const checkAvailability = async () => {
     if (!subdomain.trim()) return;
@@ -158,8 +432,8 @@ export default function DomainAccess() {
   const inp = "flex-1 h-10 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-(--e-orange) bg-white";
   const canCustomDomain = domain?.planType !== "solo" && domain?.planType !== "starter";
 
-  const cname = dnsInstructions?.customDomain?.cnameRecord;
-  const txt   = dnsInstructions?.customDomain?.txtRecord;
+  const cname  = dnsInstructions?.customDomain?.cnameRecord;
+  const txt    = dnsInstructions?.customDomain?.txtRecord;
   const guides = dnsInstructions?.customDomain?.providerGuides;
 
   if (isLoading) return (
@@ -172,7 +446,7 @@ export default function DomainAccess() {
     <div className="max-w-3xl mx-auto space-y-6 py-6 px-4">
       <div>
         <h1 className="text-lg font-semibold text-[#1C1917]">Domain & Access</h1>
-        <p className="text-sm text-[#57534E] mt-0.5">Configure your subdomain and custom domain settings</p>
+        <p className="text-sm text-[#57534E] mt-0.5">서브도메인 및 커스텀 도메인 설정을 관리합니다</p>
       </div>
 
       {/* ── Subdomain ─────────────────────────────────────────────────────── */}
@@ -187,13 +461,13 @@ export default function DomainAccess() {
 
         <div className="flex items-start gap-2 p-3 rounded-lg bg-[#F0FDF4] border border-[#A7F3D0] text-sm text-[#166534]">
           <Info size={14} className="mt-0.5 shrink-0" />
-          <p>Subdomain (e.g. <span className="font-mono font-semibold">abc.edubee.co</span>) is automatically managed by Edubee. No DNS setup required on your end.</p>
+          <p>서브도메인(예: <span className="font-mono font-semibold">abc.edubee.co</span>)은 Edubee가 자동으로 관리합니다. 별도의 DNS 설정이 필요 없습니다.</p>
         </div>
 
         {domain?.subdomain && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F4F3F1] text-sm">
             <Globe size={14} className="text-[#A8A29E]" />
-            <span className="text-[#57534E]">Current:</span>
+            <span className="text-[#57534E]">현재:</span>
             <span className="font-mono font-semibold text-[#1C1917]">{domain.subdomain}.edubee.co</span>
             <button
               onClick={() => copyToClipboard(`${domain.subdomain}.edubee.co`, "URL", toast)}
@@ -205,7 +479,7 @@ export default function DomainAccess() {
         )}
 
         <div className="space-y-2">
-          <label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Change Subdomain</label>
+          <label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">서브도메인 변경</label>
           <div className="flex items-center gap-2">
             <input
               className={inp}
@@ -224,12 +498,12 @@ export default function DomainAccess() {
           </div>
           {availability === true && (
             <div className="flex items-center gap-1.5 text-green-600 text-sm">
-              <CheckCircle2 size={14} /> Available!
+              <CheckCircle2 size={14} /> 사용 가능!
             </div>
           )}
           {availability === false && (
             <div className="flex items-center gap-1.5 text-red-500 text-sm">
-              <XCircle size={14} /> Already taken. Try another.
+              <XCircle size={14} /> 이미 사용 중입니다. 다른 이름을 시도하세요.
             </div>
           )}
         </div>
@@ -238,7 +512,7 @@ export default function DomainAccess() {
           <div className="space-y-3">
             <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
               <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" strokeWidth={1.5} />
-              <p className="text-xs text-amber-700">Changing your subdomain will break any existing links using the old URL.</p>
+              <p className="text-xs text-amber-700">서브도메인을 변경하면 기존 URL로 접속하던 링크가 모두 깨집니다.</p>
             </div>
             <button
               onClick={saveDomain}
@@ -274,17 +548,17 @@ export default function DomainAccess() {
           <div className="flex items-center gap-3 p-4 rounded-lg bg-[#F4F3F1]">
             <Lock size={16} className="text-[#A8A29E] shrink-0" />
             <div>
-              <p className="text-sm font-medium text-[#1C1917]">Custom domain is available on Growth plan and above</p>
-              <p className="text-xs text-[#A8A29E] mt-0.5">Use a custom domain like <span className="font-mono">crm.myagency.com.au</span></p>
+              <p className="text-sm font-medium text-[#1C1917]">커스텀 도메인은 Growth 플랜 이상에서 사용 가능합니다</p>
+              <p className="text-xs text-[#A8A29E] mt-0.5"><span className="font-mono">crm.myagency.com.au</span> 형식의 도메인을 사용하세요</p>
             </div>
           </div>
         ) : (
           <>
-            {/* Current custom domain */}
+            {/* 현재 커스텀 도메인 */}
             {domain?.customDomain && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F4F3F1] text-sm">
                 <Globe size={14} className="text-[#A8A29E]" />
-                <span className="text-[#57534E]">Current:</span>
+                <span className="text-[#57534E]">현재:</span>
                 <span className="font-mono font-semibold text-[#1C1917]">{domain.customDomain}</span>
                 <button
                   onClick={() => copyToClipboard(domain.customDomain, "Domain", toast)}
@@ -295,10 +569,10 @@ export default function DomainAccess() {
               </div>
             )}
 
-            {/* Register / change domain */}
+            {/* 도메인 등록 / 변경 */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">
-                {domain?.customDomain ? "Change Custom Domain" : "Register Custom Domain"}
+                {domain?.customDomain ? "커스텀 도메인 변경" : "커스텀 도메인 등록"}
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -318,123 +592,54 @@ export default function DomainAccess() {
                 </button>
               </div>
               <p className="text-xs text-[#A8A29E]">
-                Enter the domain you own (e.g. <span className="font-mono">crm.myagency.com.au</span>). After registering, set the DNS records below.
+                소유한 도메인을 입력하세요 (예: <span className="font-mono">crm.myagency.com.au</span>). 등록 후 아래에서 DNS를 설정하세요.
               </p>
             </div>
 
-            {/* DNS Records Table */}
-            {(cname || txt) && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">
-                    DNS Records to Configure
-                  </p>
-                  <button
-                    onClick={() => verifyDns.mutate()}
-                    disabled={verifyDns.isPending}
-                    className="h-8 px-3 rounded-lg text-xs font-semibold border border-[#E8E6E2] text-[#57534E] hover:border-(--e-orange) hover:text-(--e-orange) flex items-center gap-1.5 transition-colors disabled:opacity-50"
-                  >
-                    {verifyDns.isPending
-                      ? <Loader2 size={12} className="animate-spin" />
-                      : <RefreshCw size={12} />}
-                    Verify DNS
-                  </button>
+            {/* ── DNS 설정 방법 선택 ─────────────────────────────────────────── */}
+            <div className="space-y-4 pt-2 border-t border-[#F4F3F1]">
+              <div>
+                <p className="text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-3">DNS 설정 방법 선택</p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <MethodTab
+                    active={dnsMethod === "cname"}
+                    onClick={() => setDnsMethod("cname")}
+                    icon={<Network size={16} />}
+                    label="CNAME / TXT 방식"
+                    description="기존 DNS 제공업체에 레코드를 추가합니다. 이메일 등 다른 서비스에 영향 없음"
+                  />
+                  <MethodTab
+                    active={dnsMethod === "nameserver"}
+                    onClick={() => setDnsMethod("nameserver")}
+                    icon={<Server size={16} />}
+                    label="네임서버(NS) 방식"
+                    description="도메인의 네임서버 전체를 Edubee로 변경합니다. 설정이 간단하지만 기존 DNS 초기화"
+                  />
                 </div>
-
-                <div className="rounded-xl border border-[#E8E6E2] overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-[#FAFAF9]">
-                        <th className="text-left py-2.5 px-4 text-xs font-semibold text-[#57534E] uppercase tracking-wide border-b border-[#E8E6E2]">Type</th>
-                        <th className="text-left py-2.5 px-4 text-xs font-semibold text-[#57534E] uppercase tracking-wide border-b border-[#E8E6E2]">Hostname</th>
-                        <th className="text-left py-2.5 px-4 text-xs font-semibold text-[#57534E] uppercase tracking-wide border-b border-[#E8E6E2]">Record / Value</th>
-                        <th className="text-left py-2.5 px-4 text-xs font-semibold text-[#57534E] uppercase tracking-wide border-b border-[#E8E6E2]">TTL</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-[#F4F3F1] px-4">
-                      {cname && (
-                        <tr>
-                          <td className="py-3 px-4">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold font-mono bg-blue-50 text-blue-700">CNAME</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-mono text-sm text-[#1C1917]">{cname.host}</span>
-                              <button onClick={() => copyToClipboard(cname.host, "Hostname", toast)} className="p-0.5 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]"><Copy size={12} /></button>
-                            </div>
-                            <p className="text-[11px] text-[#A8A29E] mt-0.5">
-                              Points your domain root to Edubee
-                            </p>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-mono text-sm text-[#1C1917] break-all">{cname.value}</span>
-                              <button onClick={() => copyToClipboard(cname.value, "CNAME value", toast)} className="shrink-0 p-0.5 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]"><Copy size={12} /></button>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-[#A8A29E]">{cname.ttl}s</td>
-                        </tr>
-                      )}
-                      {txt && (
-                        <tr>
-                          <td className="py-3 px-4">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold font-mono bg-amber-50 text-amber-700">TXT</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-mono text-sm text-[#1C1917]">{txt.host}</span>
-                              <button onClick={() => copyToClipboard(txt.host, "TXT hostname", toast)} className="p-0.5 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]"><Copy size={12} /></button>
-                            </div>
-                            <p className="text-[11px] text-[#A8A29E] mt-0.5">Domain ownership verification</p>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-mono text-sm text-[#1C1917] break-all">{txt.value}</span>
-                              <button onClick={() => copyToClipboard(txt.value, "TXT value", toast)} className="shrink-0 p-0.5 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]"><Copy size={12} /></button>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-[#A8A29E]">{txt.ttl}s</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                  <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" strokeWidth={1.5} />
-                  <p className="text-xs text-amber-700">
-                    DNS propagation can take up to <strong>48 hours</strong>.
-                    Add both CNAME and TXT records to your DNS provider, then click <strong>Verify DNS</strong>.
-                  </p>
-                </div>
-
-                {/* Provider Links */}
-                {guides && (
-                  <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-[#57534E]">Setup guides for common DNS providers:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(guides).map(([name, url]) => (
-                        <a
-                          key={name}
-                          href={url as string}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-(--e-orange) hover:underline capitalize"
-                        >
-                          {name} <ExternalLink size={10} />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
-            )}
 
-            {/* If domain is registered but no dns instructions yet (just registered) */}
-            {domain?.customDomain && !cname && !txt && (
+              {/* 선택된 방법에 따른 내용 */}
+              {dnsMethod === "cname" ? (
+                <CnameTxtSection
+                  cname={cname}
+                  txt={txt}
+                  guides={guides}
+                  verifyDns={verifyDns}
+                  toast={toast}
+                />
+              ) : (
+                <NameserverSection
+                  customDomain={domain?.customDomain}
+                  toast={toast}
+                />
+              )}
+            </div>
+
+            {/* 도메인 등록됐지만 DNS 없는 경우 */}
+            {domain?.customDomain && !cname && !txt && dnsMethod === "cname" && (
               <div className="flex items-start gap-2 p-3 rounded-lg bg-[#F4F3F1] text-sm text-[#57534E]">
                 <Info size={14} className="mt-0.5 shrink-0" />
-                <p>DNS records are being prepared. Refresh the page in a moment to see the configuration instructions.</p>
+                <p>DNS 레코드가 준비 중입니다. 잠시 후 페이지를 새로고침하세요.</p>
               </div>
             )}
           </>
