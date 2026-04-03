@@ -3,7 +3,7 @@ import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
-import { Plus, Search, Pencil, Eye, MoreHorizontal } from "lucide-react";
+import { Plus, Search, Pencil, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -240,9 +240,6 @@ export default function ContactsPage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-8">
-                <input type="checkbox" className="rounded" />
-              </th>
               <SortableTh col="fullName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Full Name</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Original Name</th>
               <SortableTh col="nationality" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Nationality</SortableTh>
@@ -255,18 +252,15 @@ export default function ContactsPage() {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
             )}
             {sorted.map(c => {
               const displayName = c.fullName || `${c.firstName} ${c.lastName}`.trim();
               return (
                 <tr key={c.id} className="hover:bg-[#FEF0E3] cursor-pointer transition-colors">
-                  <td className="px-4 py-3">
-                    <input type="checkbox" className="rounded" />
-                  </td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => navigate(`/admin/crm/contacts/${c.id}`)}
@@ -296,12 +290,6 @@ export default function ContactsPage() {
                         title="Edit"
                       >
                         <Pencil size={14} />
-                      </button>
-                      <button
-                        className="p-1.5 rounded hover:bg-stone-100 text-stone-500 hover:text-stone-800 transition-colors"
-                        title="More"
-                      >
-                        <MoreHorizontal size={14} />
                       </button>
                     </div>
                   </td>
