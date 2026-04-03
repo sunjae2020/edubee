@@ -6,28 +6,32 @@ function getStripe(): Stripe {
   return new Stripe(key, { apiVersion: '2026-03-25.dahlia' });
 }
 
-// Plan → Stripe Price ID mapping
-// Replace with actual Price IDs from your Stripe dashboard
-const PLAN_PRICE_IDS: Record<string, { monthly: string; annually: string }> = {
+// ─── Plan → Stripe Price ID mapping (Solo / Starter / Growth / Enterprise) ────
+// Enterprise is custom-priced — no Stripe Price ID required.
+const PLAN_PRICE_IDS: Record<string, { monthly: string; annually: string } | null> = {
+  solo: {
+    monthly:  process.env.STRIPE_SOLO_MONTHLY  ?? '',
+    annually: process.env.STRIPE_SOLO_ANNUALLY ?? '',
+  },
   starter: {
     monthly:  process.env.STRIPE_STARTER_MONTHLY  ?? '',
     annually: process.env.STRIPE_STARTER_ANNUALLY ?? '',
   },
-  professional: {
-    monthly:  process.env.STRIPE_PRO_MONTHLY  ?? '',
-    annually: process.env.STRIPE_PRO_ANNUALLY ?? '',
+  growth: {
+    monthly:  process.env.STRIPE_GROWTH_MONTHLY  ?? '',
+    annually: process.env.STRIPE_GROWTH_ANNUALLY ?? '',
   },
-  enterprise: {
-    monthly:  process.env.STRIPE_ENT_MONTHLY  ?? '',
-    annually: process.env.STRIPE_ENT_ANNUALLY ?? '',
-  },
+  // Enterprise is handled offline — no self-serve checkout
+  enterprise: null,
 };
+
+export type BillingCycle = 'monthly' | 'annually';
 
 // Create Checkout Session (new subscription / plan upgrade)
 export async function createCheckoutSession(params: {
   organisationId: string;
   planType:       string;
-  billingCycle:   'monthly' | 'annually';
+  billingCycle:   BillingCycle;
   successUrl:     string;
   cancelUrl:      string;
   customerEmail?: string;
@@ -36,8 +40,21 @@ export async function createCheckoutSession(params: {
   const { organisationId, planType, billingCycle,
           successUrl, cancelUrl, customerEmail } = params;
 
-  const priceId = PLAN_PRICE_IDS[planType]?.[billingCycle];
-  if (!priceId) throw new Error(`Price ID not found: ${planType}/${billingCycle}`);
+  const planEntry = PLAN_PRICE_IDS[planType];
+
+  // Enterprise: no self-serve checkout — direct to sales
+  if (planEntry === null) {
+    throw new Error('Enterprise plans require a custom quote. Please contact sales.');
+  }
+
+  if (!planEntry) {
+    throw new Error(`Unknown plan type: ${planType}`);
+  }
+
+  const priceId = planEntry[billingCycle];
+  if (!priceId) {
+    throw new Error(`Stripe Price ID not configured for ${planType}/${billingCycle}. Add the env var.`);
+  }
 
   const session = await stripe.checkout.sessions.create({
     mode:                 'subscription',
