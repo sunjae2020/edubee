@@ -15,6 +15,7 @@ import { contracts } from "./contracts";
 import { contractProducts } from "./contracts";
 import { invoices } from "./finance";
 import { accounts } from "./crm";
+import { organisations } from "./settings";
 
 // ── Chart of Accounts ──────────────────────────────────────────────────────
 export const chartOfAccounts = pgTable("chart_of_accounts", {
@@ -52,25 +53,26 @@ export const productCostLines = pgTable("product_cost_lines", {
 // ── Payment Headers ────────────────────────────────────────────────────────
 // Note: paymentInfoId references 'payment_infos' (future table) — stored as plain uuid
 export const paymentHeaders = pgTable("payment_headers", {
-  id:            uuid("id").primaryKey().defaultRandom(),
-  paymentRef:    varchar("payment_ref", { length: 50 }).unique(),
-  contractId:    uuid("contract_id").references(() => contracts.id, { onDelete: "set null" }),
-  invoiceId:     uuid("invoice_id").references(() => invoices.id, { onDelete: "set null" }),
-  paymentDate:   date("payment_date").notNull(),
-  totalAmount:   decimal("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
-  currency:      varchar("currency", { length: 10 }).notNull().default("AUD"),
-  paymentMethod: varchar("payment_method", { length: 50 }),
-  paymentType:   varchar("payment_type", { length: 30 }).notNull(),
-  receivedFrom:  uuid("received_from").references(() => accounts.id, { onDelete: "set null" }),
-  paidTo:        uuid("paid_to").references(() => accounts.id, { onDelete: "set null" }),
-  bankReference: varchar("bank_reference", { length: 100 }),
-  paymentInfoId: uuid("payment_info_id"),
-  notes:         text("notes"),
-  createdBy:     uuid("created_by").notNull().references(() => users.id),
-  approvedBy:    uuid("approved_by").references(() => users.id),
-  status:        varchar("status", { length: 20 }).notNull().default("Active"),
-  createdOn:     timestamp("created_on").notNull().defaultNow(),
-  modifiedOn:    timestamp("modified_on").notNull().defaultNow(),
+  id:             uuid("id").primaryKey().defaultRandom(),
+  paymentRef:     varchar("payment_ref", { length: 50 }).unique(),
+  contractId:     uuid("contract_id").references(() => contracts.id, { onDelete: "set null" }),
+  invoiceId:      uuid("invoice_id").references(() => invoices.id, { onDelete: "set null" }),
+  paymentDate:    date("payment_date").notNull(),
+  totalAmount:    decimal("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  currency:       varchar("currency", { length: 10 }).notNull().default("AUD"),
+  paymentMethod:  varchar("payment_method", { length: 50 }),
+  paymentType:    varchar("payment_type", { length: 30 }).notNull(),
+  receivedFrom:   uuid("received_from").references(() => accounts.id, { onDelete: "set null" }),
+  paidTo:         uuid("paid_to").references(() => accounts.id, { onDelete: "set null" }),
+  bankReference:  varchar("bank_reference", { length: 100 }),
+  paymentInfoId:  uuid("payment_info_id"),
+  notes:          text("notes"),
+  createdBy:      uuid("created_by").notNull().references(() => users.id),
+  approvedBy:     uuid("approved_by").references(() => users.id),
+  status:         varchar("status", { length: 20 }).notNull().default("Active"),
+  organisationId: uuid("organisation_id").references(() => organisations.id),
+  createdOn:      timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:     timestamp("modified_on").notNull().defaultNow(),
 });
 
 // ── Payment Lines ──────────────────────────────────────────────────────────
@@ -84,6 +86,7 @@ export const paymentLines = pgTable("payment_lines", {
   amount:            decimal("amount", { precision: 12, scale: 2 }).notNull().default("0"),
   staffId:           uuid("staff_id").references(() => users.id),
   description:       text("description"),
+  organisationId:    uuid("organisation_id").references(() => organisations.id),
   createdOn:         timestamp("created_on").notNull().defaultNow(),
 });
 

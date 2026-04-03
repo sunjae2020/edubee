@@ -380,6 +380,45 @@ function CollapsedGroupFlyout({
   );
 }
 
+// ── LockedGroupRow — muted header + PRO badge for disabled features ───────────
+function LockedGroupRow({
+  label, catIcon: CatIcon, collapsed,
+}: { label: string; catIcon: LucideIcon; collapsed: boolean }) {
+  return (
+    <Link href="/admin/settings/plan">
+      <div
+        title={`${label} — upgrade your plan to unlock`}
+        className="flex items-center gap-1.5 px-2 pt-3 pb-1.5 rounded-md cursor-pointer select-none"
+        style={{ opacity: 0.5 }}
+      >
+        <Lock
+          size={13}
+          strokeWidth={1.8}
+          style={{ color: "var(--e-text-3)", flexShrink: 0 }}
+        />
+        {!collapsed && (
+          <>
+            <span
+              className="flex-1 text-left text-[11px] font-semibold uppercase tracking-[0.08em] truncate"
+              style={{ color: "var(--e-text-3)" }}
+            >
+              {label}
+            </span>
+            <span style={{
+              fontSize: "9px", fontWeight: 600, letterSpacing: "0.04em",
+              background: "#F4F3F1", color: "#A8A29E",
+              border: "1px solid #E8E6E2", borderRadius: "4px",
+              padding: "1px 5px", flexShrink: 0,
+            }}>
+              PRO
+            </span>
+          </>
+        )}
+      </div>
+    </Link>
+  );
+}
+
 // ── AppSidebar ────────────────────────────────────────────────────────────
 
 type Props = { collapsed: boolean; onToggle: () => void; onNavClick?: () => void };
@@ -394,10 +433,16 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
   const campFeature     = useFeature("camp_module");
   const accountingFeat  = useFeature("accounting");
 
-  const nav = buildNav(effectiveRole).filter(group => {
-    if (group.key === "camp"    && !campFeature.enabled)    return false;
-    if (group.key === "finance" && !accountingFeat.enabled) return false;
+  const allGroups  = buildNav(effectiveRole);
+  const nav        = allGroups.filter(g => {
+    if (g.key === "camp"    && !campFeature.enabled)    return false;
+    if (g.key === "finance" && !accountingFeat.enabled) return false;
     return true;
+  });
+  const lockedGroups = allGroups.filter(g => {
+    if (g.key === "camp"    && !campFeature.enabled)    return true;
+    if (g.key === "finance" && !accountingFeat.enabled) return true;
+    return false;
   });
 
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(readCollapsed);
@@ -462,50 +507,74 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
         style={{ overflow: collapsed ? "visible" : undefined }}
       >
         {collapsed ? (
-          /* ── Collapsed: flyout per group ── */
-          nav.map(group => (
-            <CollapsedGroupFlyout
-              key={group.key}
-              group={group}
-              location={location}
-              onNavClick={onNavClick}
-            />
-          ))
+          /* ── Collapsed: flyout per group + locked icons ── */
+          <>
+            {nav.map(group => (
+              <CollapsedGroupFlyout
+                key={group.key}
+                group={group}
+                location={location}
+                onNavClick={onNavClick}
+              />
+            ))}
+            {lockedGroups.map(group => (
+              <Link key={group.key} href="/admin/settings/plan">
+                <div
+                  className="w-10 h-9 flex items-center justify-center rounded-lg mb-0.5"
+                  title={`${group.label} — upgrade to unlock`}
+                  style={{ opacity: 0.45 }}
+                >
+                  <Lock size={15} strokeWidth={1.8} style={{ color: "var(--e-text-3)" }} />
+                </div>
+              </Link>
+            ))}
+          </>
         ) : (
-          /* ── Expanded: normal accordion ── */
-          nav.map(group => {
-            const open      = isGroupOpen(group);
-            const CatIcon   = group.catIcon;
-            const hasActive = group.items.some(
-              item => location === item.href || location.startsWith(item.href + "/")
-            );
+          /* ── Expanded: normal accordion + locked group rows ── */
+          <>
+            {nav.map(group => {
+              const open      = isGroupOpen(group);
+              const CatIcon   = group.catIcon;
+              const hasActive = group.items.some(
+                item => location === item.href || location.startsWith(item.href + "/")
+              );
 
-            return (
+              return (
+                <div key={group.key} className="mb-0.5">
+                  <CategoryHeader
+                    group={group}
+                    hasActive={hasActive}
+                    open={open}
+                    onToggle={() => toggleGroup(group.key)}
+                  />
+
+                  {open && group.items.map(item => {
+                    const isActive = location === item.href || location.startsWith(item.href + "/");
+                    const Icon     = item.icon;
+                    return (
+                      <Link key={item.href} href={item.href} onClick={onNavClick}>
+                        <SidebarNavItem
+                          icon={Icon}
+                          label={item.label}
+                          isActive={isActive}
+                          collapsed={false}
+                        />
+                      </Link>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            {lockedGroups.map(group => (
               <div key={group.key} className="mb-0.5">
-                <CategoryHeader
-                  group={group}
-                  hasActive={hasActive}
-                  open={open}
-                  onToggle={() => toggleGroup(group.key)}
+                <LockedGroupRow
+                  label={group.label}
+                  catIcon={group.catIcon}
+                  collapsed={false}
                 />
-
-                {open && group.items.map(item => {
-                  const isActive = location === item.href || location.startsWith(item.href + "/");
-                  const Icon     = item.icon;
-                  return (
-                    <Link key={item.href} href={item.href} onClick={onNavClick}>
-                      <SidebarNavItem
-                        icon={Icon}
-                        label={item.label}
-                        isActive={isActive}
-                        collapsed={false}
-                      />
-                    </Link>
-                  );
-                })}
               </div>
-            );
-          })
+            ))}
+          </>
         )}
       </nav>
 
