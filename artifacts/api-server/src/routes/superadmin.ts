@@ -346,4 +346,92 @@ router.put("/superadmin/plans/:id", ...guard, async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Stripe Settings (Price IDs per plan + key status)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/superadmin/stripe-settings
+router.get("/superadmin/stripe-settings", ...guard, async (_req, res) => {
+  try {
+    const plans = await db
+      .select({
+        id:                 platformPlans.id,
+        code:               platformPlans.code,
+        name:               platformPlans.name,
+        priceMonthly:       platformPlans.priceMonthly,
+        priceAnnually:      platformPlans.priceAnnually,
+        stripePriceMonthly: platformPlans.stripePriceMonthly,
+        stripePriceAnnually:platformPlans.stripePriceAnnually,
+        isActive:           platformPlans.isActive,
+      })
+      .from(platformPlans)
+      .orderBy(platformPlans.sortOrder);
+
+    const appUrl     = process.env.APP_URL ?? '';
+    const webhookUrl = `${appUrl}/api/webhook/stripe`;
+
+    return res.json({
+      plans,
+      keyStatus: {
+        secretKey:     !!process.env.STRIPE_SECRET_KEY,
+        webhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
+      },
+      webhookUrl,
+    });
+  } catch (err) {
+    console.error("[GET /superadmin/stripe-settings]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PUT /api/superadmin/stripe-settings  — update Price IDs in DB
+router.put("/superadmin/stripe-settings", ...guard, async (req, res) => {
+  try {
+    const { plans } = req.body as {
+      plans: Array<{ id: string; stripePriceMonthly: string; stripePriceAnnually: string }>;
+    };
+
+    if (!Array.isArray(plans)) return res.status(400).json({ error: "plans array required" });
+
+    for (const p of plans) {
+      await db.update(platformPlans)
+        .set({
+          stripePriceMonthly:  p.stripePriceMonthly  || null,
+          stripePriceAnnually: p.stripePriceAnnually || null,
+        })
+        .where(eq(platformPlans.id, p.id));
+    }
+
+    return res.json({ success: true, updated: plans.length });
+  } catch (err) {
+    console.error("[PUT /superadmin/stripe-settings]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// POST /api/superadmin/stripe-settings/test — verify STRIPE_SECRET_KEY
+router.post("/superadmin/stripe-settings/test", ...guard, async (_req, res) => {
+  try {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) return res.status(400).json({ success: false, error: "STRIPE_SECRET_KEY is not set" });
+
+    // Dynamically import Stripe to avoid crashing if key is missing at startup
+    const { default: Stripe } = await import("stripe");
+    const stripe = new Stripe(key, { apiVersion: "2026-03-25.dahlia" });
+
+    const account = await stripe.accounts.retrieve();
+    return res.json({
+      success: true,
+      accountId:    account.id,
+      displayName:  (account as any).settings?.dashboard?.display_name ?? null,
+      country:      account.country ?? null,
+      email:        (account as any).email ?? null,
+    });
+  } catch (err: any) {
+    console.error("[POST /superadmin/stripe-settings/test]", err);
+    const message = err?.raw?.message ?? err?.message ?? "Stripe connection failed";
+    return res.status(400).json({ success: false, error: message });
+  }
+});
+
 export default router;

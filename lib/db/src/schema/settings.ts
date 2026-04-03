@@ -187,6 +187,9 @@ export const platformPlans = pgTable("platform_plans", {
   featureAvetmiss:       boolean("feature_avetmiss").notNull().default(false),
   featureApiAccess:      boolean("feature_api_access").notNull().default(false),
   featureWhiteLabel:     boolean("feature_white_label").notNull().default(false),
+  // Stripe Price IDs (stored in DB for superadmin management)
+  stripePriceMonthly:    varchar("stripe_price_monthly",  { length: 255 }),
+  stripePriceAnnually:   varchar("stripe_price_annually", { length: 255 }),
   // Legacy JSONB features (kept for backwards compat)
   features:              jsonb("features"),
   isPopular:             boolean("is_popular").default(false),
