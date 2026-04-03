@@ -5,6 +5,7 @@ import { useViewAs } from "@/hooks/use-view-as";
 import { useFeature } from "@/hooks/useFeature";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
 import { EdubeeLogo } from "@/components/shared/EdubeeLogo";
+import { useTenantThemeCtx } from "@/hooks/use-tenant-theme";
 import {
   ChevronLeft, ChevronRight, ChevronDown,
   LayoutDashboard, Layers, Package, ShoppingBag, ListChecks,
@@ -427,6 +428,7 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
   const [location]                   = useLocation();
   const { user }                     = useAuth();
   const { viewAsUser, isImpersonating } = useViewAs();
+  const tenantTheme                  = useTenantThemeCtx();
 
   const effectiveRole   = viewAsUser?.role ?? user?.role ?? "consultant";
   const isSA            = effectiveRole === "super_admin";
@@ -483,11 +485,21 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
       >
         {collapsed ? (
           <div className="flex-1 flex items-center justify-center">
-            <Link href="/"><EdubeeLogo variant="icon" size="sm" /></Link>
+            <Link href="/">
+              {tenantTheme.faviconUrl ? (
+                <img src={tenantTheme.faviconUrl} alt={tenantTheme.companyName} className="h-8 w-8 object-contain rounded" />
+              ) : (
+                <EdubeeLogo variant="icon" size="sm" />
+              )}
+            </Link>
           </div>
         ) : (
           <Link href="/" className="flex-1 min-w-0 flex items-center">
-            <img src={logoImg} alt="Edubee Camp" className="h-[39px] w-auto object-contain" />
+            {tenantTheme.logoUrl ? (
+              <img src={tenantTheme.logoUrl} alt={tenantTheme.companyName} className="h-[39px] w-auto object-contain max-w-[180px]" />
+            ) : (
+              <img src={logoImg} alt="Edubee Camp" className="h-[39px] w-auto object-contain" />
+            )}
           </Link>
         )}
         <button

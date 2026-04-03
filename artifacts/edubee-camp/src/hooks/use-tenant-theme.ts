@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, createContext, useContext } from "react";
 import axios from "axios";
 
 export interface TenantTheme {
@@ -61,6 +61,14 @@ export function useTenantTheme() {
   }, [loadTheme]);
 
   return { theme, isLoading };
+}
+
+// ── 테넌트 테마 Context (사이드바/헤더 등에서 logoUrl 접근용) ──────────────
+
+export const TenantThemeContext = createContext<TenantTheme>(DEFAULT_THEME);
+
+export function useTenantThemeCtx(): TenantTheme {
+  return useContext(TenantThemeContext);
 }
 
 /**

@@ -99,7 +99,7 @@ import StripeSettings from "@/pages/admin/superadmin/StripeSettings";
 import PlatformCrm from "@/pages/admin/superadmin/PlatformCrm";
 import PlatformCrmDetail from "@/pages/admin/superadmin/PlatformCrmDetail";
 import SuperAdminGuard from "@/components/guards/SuperAdminGuard";
-import { useTenantTheme } from "@/hooks/use-tenant-theme";
+import { useTenantTheme, TenantThemeContext } from "@/hooks/use-tenant-theme";
 import Products from "@/pages/admin/products";
 import ProductDetail from "@/pages/admin/product-detail";
 import ProductGroups from "@/pages/admin/product-groups";
@@ -174,10 +174,11 @@ function AdminRoute({ children, title }: { children: React.ReactNode; title?: st
 }
 
 function Router() {
-  // 앱 초기화 시 테넌트 테마 로드 + CSS 변수 주입 (백그라운드)
-  useTenantTheme();
+  // 앱 초기화 시 테넌트 테마 로드 + CSS 변수 주입 → Context로 공유
+  const { theme } = useTenantTheme();
 
   return (
+    <TenantThemeContext.Provider value={theme}>
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/apply" component={ApplyPage} />
@@ -605,6 +606,7 @@ function Router() {
 
       <Route component={NotFound} />
     </Switch>
+    </TenantThemeContext.Provider>
   );
 }
 

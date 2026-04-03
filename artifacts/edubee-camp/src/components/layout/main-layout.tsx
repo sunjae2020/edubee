@@ -23,9 +23,18 @@ function useMediaQuery(query: string) {
 function ImpersonationBanner() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
-  const orgId   = sessionStorage.getItem("edubee_impersonate_org_id");
-  const orgName = sessionStorage.getItem("edubee_impersonate_org_name") ?? "Unknown Tenant";
+  const orgId     = sessionStorage.getItem("edubee_impersonate_org_id");
+  const orgName   = sessionStorage.getItem("edubee_impersonate_org_name") ?? "Unknown Tenant";
   const returnPath = sessionStorage.getItem("edubee_impersonate_return") ?? "/superadmin/tenants";
+
+  // 마운트 시 테마 재로드 트리거
+  // navigate() 이후에 이 컴포넌트가 마운트되므로, 이 시점에 sessionStorage 값이 확정됨
+  useEffect(() => {
+    if (orgId) {
+      window.dispatchEvent(new Event("edubee:impersonation-changed"));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!orgId) return null;
   return (
     <div className="flex items-center justify-between px-4 py-1.5 text-sm font-medium text-white" style={{ background: "#D96A0A" }}>
@@ -35,9 +44,8 @@ function ImpersonationBanner() {
           sessionStorage.removeItem("edubee_impersonate_org_id");
           sessionStorage.removeItem("edubee_impersonate_org_name");
           sessionStorage.removeItem("edubee_impersonate_return");
-          // 캐시 초기화 → 원래 테넌트 데이터로 재fetch
           qc.clear();
-          // 테마 훅에 임프로소네이션 종료 알림 → 브랜딩 복원
+          // 임프로소네이션 종료 후 기본 테넌트 테마로 복원
           window.dispatchEvent(new Event("edubee:impersonation-changed"));
           navigate(returnPath);
         }}
