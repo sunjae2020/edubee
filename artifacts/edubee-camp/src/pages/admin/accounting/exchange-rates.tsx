@@ -150,6 +150,7 @@ export default function ExchangeRates() {
   const [syncResult, setSyncResult] = useState<{ updated: string[]; skipped: string[]; date: string } | null>(null);
   const [previewCurrencies, setPreviewCurrencies] = useState<string[]>(loadPreviewCurrencies);
   const [showAddPreview, setShowAddPreview] = useState(false);
+  const [previewCurrencySearch, setPreviewCurrencySearch] = useState("");
   const [managedCurrencies, setManagedCurrencies] = useState<string[]>(loadManagedCurrencies);
   const [showManageCurrencies, setShowManageCurrencies] = useState(false);
   const [currencySearch, setCurrencySearch] = useState("");
@@ -630,39 +631,57 @@ export default function ExchangeRates() {
               </div>
             )}
 
-            {/* Available to add */}
-            {allCurrencies.filter(c => !previewCurrencies.includes(c)).length > 0 && (
-              <div>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Available currencies (click to add)</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {allCurrencies.filter(c => !previewCurrencies.includes(c)).map(ccy => {
-                    const rate = audToX[ccy];
-                    const hasRate = rate != null;
-                    const display = hasRate
-                      ? rate >= 100
-                        ? rate.toLocaleString("en-AU", { maximumFractionDigits: 0 })
-                        : rate.toFixed(4)
-                      : null;
-                    return (
-                      <button
-                        key={ccy}
-                        onClick={() => addToPreview(ccy)}
-                        className="flex flex-col items-center bg-white border border-border rounded-lg px-2 py-2.5 hover:border-[#F5821F] hover:bg-[#FEF0E3] transition-colors"
-                        title={`Add ${ccy}`}
-                      >
-                        <span className="text-xl leading-none">{FLAG[ccy] ?? "🏳️"}</span>
-                        <span className="text-[11px] font-semibold mt-1">{ccy}</span>
-                        {hasRate ? (
-                          <span className="text-[10px] text-muted-foreground font-mono mt-0.5">{display}</span>
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground mt-0.5">—</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            {/* Available to add — all world currencies */}
+            <div>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Add Currency</p>
+              <Input
+                placeholder="Search by code or name (e.g. CAD, Canadian)…"
+                value={previewCurrencySearch}
+                onChange={e => setPreviewCurrencySearch(e.target.value)}
+                className="h-8 text-sm mb-2"
+              />
+              {(() => {
+                const allWorld = [{ code: "AUD", name: "Australian Dollar", flag: "🇦🇺" }, ...WORLD_CURRENCIES];
+                const q = previewCurrencySearch.trim().toLowerCase();
+                const filtered = allWorld.filter(c => {
+                  if (previewCurrencies.includes(c.code)) return false;
+                  if (!q) return true;
+                  return c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q);
+                });
+                if (filtered.length === 0) return (
+                  <p className="text-xs text-muted-foreground py-2 text-center">No currencies found.</p>
+                );
+                return (
+                  <div className="grid grid-cols-4 gap-2 max-h-52 overflow-y-auto pr-1">
+                    {filtered.map(c => {
+                      const rate = audToX[c.code];
+                      const hasRate = rate != null;
+                      const display = hasRate
+                        ? rate >= 100
+                          ? rate.toLocaleString("en-AU", { maximumFractionDigits: 0 })
+                          : rate.toFixed(4)
+                        : null;
+                      return (
+                        <button
+                          key={c.code}
+                          onClick={() => { addToPreview(c.code); setPreviewCurrencySearch(""); }}
+                          className="flex flex-col items-center bg-white border border-border rounded-lg px-2 py-2.5 hover:border-[#F5821F] hover:bg-[#FEF0E3] transition-colors"
+                          title={`Add ${c.code} — ${c.name}`}
+                        >
+                          <span className="text-xl leading-none">{c.flag}</span>
+                          <span className="text-[11px] font-semibold mt-1">{c.code}</span>
+                          {hasRate ? (
+                            <span className="text-[10px] text-muted-foreground font-mono mt-0.5">{display}</span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground mt-0.5">—</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
 
             <div className="flex justify-end pt-1">
               <Button size="sm" variant="outline" onClick={() => setShowAddPreview(false)}>Close</Button>
