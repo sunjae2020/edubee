@@ -229,4 +229,24 @@ router.delete("/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res
   }
 });
 
+// PATCH /users/:id/avatar  { objectPath: string }
+router.patch("/:id/avatar", authenticate, async (req, res) => {
+  try {
+    const { objectPath } = req.body;
+    if (typeof objectPath !== "string") {
+      return res.status(400).json({ error: "objectPath is required" });
+    }
+    const [updated] = await db.update(users)
+      .set({ avatarUrl: objectPath, updatedAt: new Date() })
+      .where(eq(users.id, req.params.id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: "User not found" });
+    return res.json(updated);
+  } catch (err) {
+    console.error("[PATCH /users/:id/avatar]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 export default router;

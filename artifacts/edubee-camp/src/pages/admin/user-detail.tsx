@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { TrendingUp, TrendingDown, Minus, Pencil, Plus, Package, BarChart2, ExternalLink } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Pencil, Plus, Package, BarChart2, ExternalLink, Camera, Loader2 } from "lucide-react";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import ProductDrawer from "@/components/shared/ProductDrawer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -58,6 +58,8 @@ export default function UserDetail() {
   const [productDrawerOpen, setProductDrawerOpen] = useState(false);
   const [editProductId, setEditProductId] = useState<string | null>(null);
   const [createProductMode, setCreateProductMode] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["user-detail", id],
@@ -119,11 +121,39 @@ export default function UserDetail() {
     onSave: async (data) => { await updateUser.mutateAsync(data); },
   });
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Image files only (JPG, PNG, etc.)", variant: "destructive" });
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data: uploadResult } = await axios.post(`${BASE}/api/storage/uploads/direct`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      await axios.patch(`${BASE}/api/users/${id}/avatar`, { objectPath: uploadResult.objectPath });
+      qc.invalidateQueries({ queryKey: ["user-detail", id] });
+      toast({ title: "Profile photo updated" });
+    } catch {
+      toast({ title: "Failed to upload photo", variant: "destructive" });
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
+
   if (isLoading) return <div className="p-6 space-y-4">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12" />)}</div>;
   if (!userRec) return <div className="p-6 text-muted-foreground">User not found.</div>;
 
   const initials = (userRec.fullName ?? userRec.email ?? "?").split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
   const roleColor = ROLE_COLORS[userRec.role ?? ""] ?? "bg-gray-100 text-gray-600";
+  const avatarSrc = userRec.avatarUrl
+    ? `${BASE}/api/storage/objects/${userRec.avatarUrl.replace(/^\/objects\//, "")}`
+    : null;
 
   return (
     <DetailPageLayout
@@ -133,9 +163,24 @@ export default function UserDetail() {
       backPath="/admin/users"
       backLabel="Users"
       headerExtra={
-        <Avatar className="h-9 w-9">
-          <AvatarFallback className="bg-[#F5821F]/10 text-[#F5821F] text-xs font-bold">{initials}</AvatarFallback>
-        </Avatar>
+        <div className="relative group cursor-pointer shrink-0" onClick={() => !uploadingAvatar && avatarInputRef.current?.click()} title="Change profile photo">
+          <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+          {avatarSrc ? (
+            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[#F5821F]/30">
+              <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="bg-[#F5821F]/10 text-[#F5821F] text-xs font-bold">{initials}</AvatarFallback>
+            </Avatar>
+          )}
+          <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {uploadingAvatar
+              ? <Loader2 size={14} className="text-white animate-spin" />
+              : <Camera size={14} className="text-white" />
+            }
+          </div>
+        </div>
       }
       canEdit={canEdit && tab === "account"}
       isEditing={isEditing}
