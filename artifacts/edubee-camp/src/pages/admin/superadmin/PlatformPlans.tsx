@@ -401,7 +401,7 @@ export default function PlatformPlans() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formInitial, setFormInitial] = useState<typeof EMPTY_FORM>({ ...EMPTY_FORM });
 
-  const { data, isLoading } = useQuery<{ success: boolean; data: PlatformPlan[] }>({
+  const { data, isLoading, isError, error } = useQuery<{ success: boolean; data: PlatformPlan[] }>({
     queryKey: ["platform-plans"],
     queryFn: () => axios.get(`${BASE}/api/platform-plans`).then(r => r.data),
   });
@@ -506,12 +506,19 @@ export default function PlatformPlans() {
         />
       )}
 
+      {/* Error state */}
+      {isError && (
+        <div className="rounded-xl p-4 text-sm text-red-700" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
+          Failed to load plans: {(error as any)?.response?.data?.message ?? (error as any)?.message ?? "Unknown error"}
+        </div>
+      )}
+
       {/* Plans grid */}
       {isLoading ? (
         <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
           {[1, 2, 3].map(i => <Skeleton key={i} />)}
         </div>
-      ) : plans.length === 0 ? (
+      ) : isError ? null : plans.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <LayoutGrid size={40} style={{ color: "#A8A29E" }} strokeWidth={1} />
           <p className="mt-4 font-semibold text-[#1C1917]" style={{ fontSize: 16 }}>No plans configured yet</p>

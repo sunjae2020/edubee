@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { LayoutDashboard, Building2, CreditCard } from "lucide-react";
@@ -10,11 +11,24 @@ const NAV = [
 ];
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
-  const { user }   = useAuth();
+  const [location, navigate] = useLocation();
+  const { user, isLoading }  = useAuth();
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? location === href : location.startsWith(href);
+
+  useEffect(() => {
+    if (!isLoading && user && user.role !== "super_admin") {
+      navigate("/admin/dashboard");
+    }
+    if (!isLoading && !user) {
+      navigate("/login");
+    }
+  }, [user, isLoading, navigate]);
+
+  if (isLoading || !user || user.role !== "super_admin") {
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-[#FAFAF9]">
