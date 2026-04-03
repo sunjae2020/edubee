@@ -389,6 +389,7 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
   const { viewAsUser, isImpersonating } = useViewAs();
 
   const effectiveRole = viewAsUser?.role ?? user?.role ?? "consultant";
+  const isSA          = effectiveRole === "super_admin";
   const nav           = buildNav(effectiveRole);
 
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(readCollapsed);
