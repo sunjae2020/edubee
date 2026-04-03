@@ -75,7 +75,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("edubee_token", res.accessToken);
     setToken(res.accessToken);
     await refetch();
-    setLocation("/admin/dashboard");
+    if ((res as any).user?.role === "super_admin" || (res as any).role === "super_admin") {
+      setLocation("/superadmin");
+    } else {
+      setLocation("/admin/dashboard");
+    }
   };
 
   const handleLogout = async () => {

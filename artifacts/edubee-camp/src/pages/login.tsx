@@ -26,7 +26,7 @@ const DEMO_ACCOUNTS = [
 ];
 
 export default function Login() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -38,7 +38,9 @@ export default function Login() {
     defaultValues: { email: "", password: "" },
   });
 
-  if (isAuthenticated) return <Redirect to="/admin/dashboard" />;
+  if (isAuthenticated) {
+    return <Redirect to={(user as any)?.role === "super_admin" ? "/superadmin" : "/admin/dashboard"} />;
+  }
 
   function fillDemo(acc: typeof DEMO_ACCOUNTS[0]) {
     form.setValue("email", acc.email);
