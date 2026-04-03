@@ -31,8 +31,16 @@ export const organisations = pgTable("organisations", {
   // Allowed: 'Active' | 'Suspended' | 'Cancelled'
 
   // ── New: Subdomain & Access ────────────────────────────────────────────────
-  subdomain:    varchar("subdomain",     { length: 100 }),
+  subdomain:    varchar("subdomain",     { length: 100 }).unique(),
   customDomain: varchar("custom_domain", { length: 255 }),
+
+  // ── New: Custom Domain DNS/SSL Status ─────────────────────────────────────
+  dnsStatus:    varchar("dns_status",    { length: 30  }).default("pending"),
+  // Allowed: 'pending' | 'verified' | 'failed'
+  dnsToken:     varchar("dns_token",     { length: 255 }),
+  dnsVerifiedAt: timestamp("dns_verified_at"),
+  sslStatus:    varchar("ssl_status",    { length: 30  }).default("pending"),
+  // Allowed: 'pending' | 'active' | 'failed'
 
   // ── New: Branding ─────────────────────────────────────────────────────────
   logoUrl:        varchar("logo_url",        { length: 1000 }),
@@ -87,6 +95,32 @@ export const organisations = pgTable("organisations", {
 
 export type Organisation    = typeof organisations.$inferSelect;
 export type NewOrganisation = typeof organisations.$inferInsert;
+
+// ── Domain Configs (Custom Domain DNS/SSL Tracking) ───────────────────────────
+export const domainConfigs = pgTable("domain_configs", {
+  id:                   uuid("id").primaryKey().defaultRandom(),
+  organisationId:       uuid("organisation_id").notNull().unique()
+                          .references(() => organisations.id, { onDelete: "cascade" }),
+  customDomain:         varchar("custom_domain",          { length: 255 }),
+  dnsVerificationToken: varchar("dns_verification_token", { length: 255 }),
+  // DNS CNAME/TXT record value that the tenant must set
+  dnsRecordType:        varchar("dns_record_type",        { length: 10  }).default("CNAME"),
+  dnsRecordName:        varchar("dns_record_name",        { length: 255 }),
+  dnsRecordValue:       varchar("dns_record_value",       { length: 500 }),
+  dnsStatus:            varchar("dns_status",             { length: 30  }).default("pending"),
+  // Allowed: 'pending' | 'verified' | 'failed'
+  dnsVerifiedAt:        timestamp("dns_verified_at"),
+  sslStatus:            varchar("ssl_status",             { length: 30  }).default("pending"),
+  // Allowed: 'pending' | 'active' | 'failed'
+  sslIssuedAt:          timestamp("ssl_issued_at"),
+  sslExpiresAt:         timestamp("ssl_expires_at"),
+  lastCheckedAt:        timestamp("last_checked_at"),
+  createdOn:            timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:           timestamp("modified_on").notNull().defaultNow(),
+});
+
+export type DomainConfig    = typeof domainConfigs.$inferSelect;
+export type NewDomainConfig = typeof domainConfigs.$inferInsert;
 
 // ── Tenant Invitations ────────────────────────────────────────────────────────
 export const tenantInvitations = pgTable("tenant_invitations", {

@@ -12,7 +12,7 @@ import { accounts } from "./crm";
 
 export const productGroups = pgTable("product_groups", {
   id:          uuid("id").primaryKey().defaultRandom(),
-  name:        varchar("name", { length: 255 }).notNull(),
+  name:        varchar("name", { length: 255 }).notNull().unique(),
   description: text("description"),
   status:      varchar("status", { length: 20 }).default("Active"),
   createdOn:   timestamp("created_on").defaultNow(),
@@ -56,7 +56,7 @@ export const commissions = pgTable("commissions", {
 
 export const taxRates = pgTable("tax_rates", {
   id:          uuid("id").primaryKey().defaultRandom(),
-  name:        varchar("name", { length: 100 }).notNull(),
+  name:        varchar("name", { length: 100 }).notNull().unique(),
   rate:        numeric("rate", { precision: 6, scale: 4 }).notNull().default("0"),
   description: text("description"),
   status:      varchar("status", { length: 20 }).default("Active"),

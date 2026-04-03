@@ -255,19 +255,36 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `app-sidebar.tsx`: "Teams" link added to Admin section (Users2 icon)
 - `App.tsx`: Team routes registered under AdminRoute guard
 
-## Phase 1 Multi-Tenant Implementation (Implemented)
+## Phase 1 Multi-Tenant Implementation (Completed)
 
-### DB Schema Extensions (`lib/db/src/schema/settings.ts`)
-- `organisations` table: extended with 36 columns (status, subdomain, branding, address, bank details, locale, SaaS plan/subscription, feature flags)
+### DB Schema Extensions (`lib/db/src/schema/`)
+
+**`settings.ts`:**
+- `organisations` table: 40+ columns — status, subdomain (UNIQUE), custom domain + 4 DNS columns (`dns_status`, `dns_token`, `dns_verified_at`, `ssl_status`), branding, address, bank details, locale, SaaS plan/subscription, feature flags, `onboarded_at`
+- `domain_configs` table: per-tenant custom domain DNS/SSL tracking (organisation_id UNIQUE FK, dns_record_type/name/value, dns_status, ssl_status, ssl_issued/expires_at, last_checked_at)
 - `tenant_invitations` table: email, role, token, status, expiresAt, createdBy
-- `tenant_audit_logs` table: orgId, actorId, action, entityType, entityId, before/after JSONB, ip, userAgent
-- `platform_plans` table: code, name, pricing, limits, features (3 plans seeded: starter $49, professional $99, enterprise $199)
+- `tenant_audit_logs` table: orgId, actorId, action, entityType, entityId, before/after JSONB, ip
+- `platform_plans` table: 4 plan codes (solo, starter, growth, enterprise); feature flags as individual boolean columns
+
+**`product-catalog.ts`:**
+- `product_groups.name` → UNIQUE constraint added
+- `tax_rates.name` → UNIQUE constraint added
+
+**`accounting.ts`:**
+- `cost_centers` table: code (UNIQUE), name (UNIQUE), description, status — seeded with 4 global entries (GEN, OPS, MKT, FIN)
+- `payment_infos` table: name (UNIQUE), paymentMethod, currency, isDefault, status — seeded with 3 entries (Bank Transfer, Credit Card, Cash)
 
 ### Backend Middleware & Routes (`artifacts/api-server/src/routes/`)
-- `tenantResolver.ts` middleware: resolves org from JWT claim, attaches `req.org`
+- `tenantResolver.ts` middleware: globally registered in `routes/index.ts` before auth routes; resolves org from JWT claim, attaches `req.org`
 - `superAdminOnly.ts` middleware: guards super admin endpoints
 - `tenant-settings.ts`: `/api/settings/company`, `/api/settings/branding`, `/api/settings/domain`, `/api/settings/domain/check`, `/api/settings/plan`, `/api/settings/plans/available`, `/api/settings/users`, `/api/settings/invitations`
-- `superadmin.ts`: `/api/superadmin/stats`, `/api/superadmin/tenants`, `/api/superadmin/plans`
+- `superadmin.ts`: `/api/superadmin/stats`, `/api/superadmin/tenants` (CRUD), `/api/superadmin/plans` (CRUD), `/api/superadmin/tenants/:id/seed-status`, `/api/superadmin/tenants/:id/re-seed`
+
+### Onboarding Service (`artifacts/api-server/src/services/onboardingService.ts`)
+- `onboardTenant(orgId)`: seeds 7 global master tables: taxRates, productGroups, productTypes, chartOfAccounts, teams, costCenters, paymentInfos; marks `onboarded_at`
+- `getSeedStatus(orgId)`: returns count/required/ok for all 7 seed tables + `allComplete` flag
+- All seed functions use `onConflictDoNothing` where UNIQUE constraints exist; select-guard for others
+- Called non-fatally from `POST /superadmin/tenants` (new tenant creation) and `POST /superadmin/tenants/:id/re-seed` (idempotent re-run)
 
 ### Frontend Settings Pages (`artifacts/edubee-camp/src/pages/admin/settings/`)
 - `company-profile.tsx`: Company name, trading name, ABN, phone, email, website, address, bank info, localisation
@@ -277,10 +294,19 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `plan-billing.tsx`: Current plan summary with usage bars, plan comparison cards with features, payment info
 
 ### Super Admin Panel (`artifacts/edubee-camp/src/pages/admin/superadmin/`)
-- `SuperAdminLayout.tsx`: Dark sidebar layout (separate from main admin layout)
+- `SuperAdminLayout.tsx`: Dark sidebar layout with red ⚠️ SUPER ADMIN MODE banner; auth logic delegated to guard
 - `SuperAdminDashboard.tsx`: Platform stats (total/active/trial tenants, users, students), plan distribution chart
 - `TenantList.tsx`: Paginated tenant table with search, inline plan change, suspend/activate
+- `TenantDetail.tsx`: Full tenant detail + seed-status panel
+- `PlatformPlans.tsx`: CRUD for platform plan catalogue
+
+### CRM / SuperAdmin Separation (Audited & Fixed)
+- `app-sidebar.tsx`: SuperAdmin links removed from CRM sidebar (role-conditional nav block deleted)
+- `SuperAdminGuard.tsx` (`src/components/guards/`): standalone route guard — unauthenticated → `/login`, non-super_admin → `/admin/dashboard`
+- `App.tsx`: All `/superadmin/*` routes wrapped with `<SuperAdminGuard>`
+- `SuperAdminLayout.tsx`: Auth logic stripped (guard handles it); red warning banner retained
+- `routes/index.ts`: `tenantResolver` globally registered between storage and auth routers
 
 ### Updated Navigation
-- `app-sidebar.tsx`: 5 new Settings items (Company Profile, Branding, Domain, Users & Teams, Plan & Billing) + Super Admin group (super_admin role only)
-- `App.tsx`: Routes registered for `/admin/settings/{company,branding,domain,users-teams,plan}` and `/superadmin`, `/superadmin/tenants`
+- `app-sidebar.tsx`: 5 Settings items (Company Profile, Branding, Domain, Users & Teams, Plan & Billing)
+- `App.tsx`: Routes for `/admin/settings/{company,branding,domain,users-teams,plan}` and guarded `/superadmin`, `/superadmin/tenants`, `/superadmin/tenants/:id`, `/superadmin/plans`

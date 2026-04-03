@@ -189,3 +189,37 @@ export const paymentStatements = pgTable("payment_statements", {
 
 export type PaymentStatement    = typeof paymentStatements.$inferSelect;
 export type NewPaymentStatement = typeof paymentStatements.$inferInsert;
+
+// ── Cost Centers ─────────────────────────────────────────────────────────────
+// Phase 1: Global (no org_id). Phase 2 will add organisation_id FK.
+export const costCenters = pgTable("cost_centers", {
+  id:          uuid("id").primaryKey().defaultRandom(),
+  code:        varchar("code", { length: 20  }).notNull().unique(),
+  name:        varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  status:      varchar("status", { length: 20 }).notNull().default("active"),
+  createdOn:   timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:  timestamp("modified_on").notNull().defaultNow(),
+});
+
+export type CostCenter    = typeof costCenters.$inferSelect;
+export type NewCostCenter = typeof costCenters.$inferInsert;
+
+// ── Payment Infos ─────────────────────────────────────────────────────────────
+// Master list of payment method configurations used in payment headers.
+// Phase 1: Global. Phase 2 will add organisation_id FK.
+export const paymentInfos = pgTable("payment_infos", {
+  id:            uuid("id").primaryKey().defaultRandom(),
+  name:          varchar("name",           { length: 100 }).notNull().unique(),
+  paymentMethod: varchar("payment_method", { length: 50  }).notNull(),
+  // Allowed: 'bank_transfer' | 'credit_card' | 'cash' | 'paypal' | 'stripe' | 'other'
+  currency:      varchar("currency",       { length: 10  }).notNull().default("AUD"),
+  description:   text("description"),
+  isDefault:     boolean("is_default").notNull().default(false),
+  status:        varchar("status",         { length: 20  }).notNull().default("active"),
+  createdOn:     timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:    timestamp("modified_on").notNull().defaultNow(),
+});
+
+export type PaymentInfo    = typeof paymentInfos.$inferSelect;
+export type NewPaymentInfo = typeof paymentInfos.$inferInsert;
