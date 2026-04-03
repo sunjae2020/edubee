@@ -20,9 +20,10 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
 
     // --- SA / AD: full platform stats ---
     if (isSAorAD) {
-      const [totalApps] = await db.select({ count: count() }).from(applications);
-      const [pendingApps] = await db.select({ count: count() }).from(applications).where(eq(applications.status, "submitted"));
-      const [contractedApps] = await db.select({ count: count() }).from(applications).where(eq(applications.status, "contracted"));
+      // applications/users 테이블에 organisation_id 없음 → 임프로소네이션 시 0 처리
+      const [totalApps] = tenantId ? [{ count: 0 }] : await db.select({ count: count() }).from(applications);
+      const [pendingApps] = tenantId ? [{ count: 0 }] : await db.select({ count: count() }).from(applications).where(eq(applications.status, "submitted"));
+      const [contractedApps] = tenantId ? [{ count: 0 }] : await db.select({ count: count() }).from(applications).where(eq(applications.status, "contracted"));
       const [totalContracts] = await db.select({ count: count() }).from(contracts)
         .where(tenantId ? eq(contracts.organisationId, tenantId) : undefined);
       const [activeContracts] = await db.select({ count: count() }).from(contracts)
@@ -31,10 +32,11 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
         .where(tenantId ? eq(leads.organisationId, tenantId) : undefined);
       const [activeLeads] = await db.select({ count: count() }).from(leads)
         .where(tenantId ? and(eq(leads.organisationId, tenantId), ne(leads.status, "converted")) : ne(leads.status, "converted"));
-      const [totalUsers] = await db.select({ count: count() }).from(users);
-      const [activeUsers] = await db.select({ count: count() }).from(users).where(eq(users.status, "active"));
+      // users 테이블에 organisation_id 없음 → 임프로소네이션 시 0
+      const [totalUsers] = tenantId ? [{ count: 0 }] : await db.select({ count: count() }).from(users);
+      const [activeUsers] = tenantId ? [{ count: 0 }] : await db.select({ count: count() }).from(users).where(eq(users.status, "active"));
 
-      const recentApplications = await db.select({
+      const recentApplications = tenantId ? [] : await db.select({
         id: applications.id,
         applicationNumber: applications.applicationNumber,
         status: applications.status,
@@ -51,16 +53,20 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
         .where(tenantId ? eq(leads.organisationId, tenantId) : undefined)
         .orderBy(sql`${leads.createdAt} DESC`).limit(5);
 
-      const appsByStatus = await db.execute(sql`
+      const appsByStatus = tenantId ? [] : (await db.execute(sql`
         SELECT status, COUNT(*)::int as count FROM applications GROUP BY status ORDER BY count DESC
-      `);
+      `)).rows;
 
-      // KPI 요약 집계 — 이번 달 기준
+      // KPI 요약 집계 — 이번 달 기준 (contracts 기준으로 테넌트 필터 적용)
       const now = new Date();
       const periodStart = new Date(now.getFullYear(), now.getMonth(), 1)
         .toISOString().split("T")[0];
       const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
         .toISOString().split("T")[0];
+
+      const kpiOrgFilter = tenantId
+        ? sql`AND c.organisation_id = ${tenantId}::uuid`
+        : sql``;
 
       const kpiRes = await db.execute(sql`
         SELECT
@@ -82,6 +88,7 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
         WHERE cp.status IN ('pending', 'active')
           AND cp.ar_due_date >= ${periodStart}
           AND cp.ar_due_date <= ${periodEnd}
+          ${kpiOrgFilter}
       `);
       const kpi = kpiRes.rows[0] as any;
 
@@ -108,7 +115,7 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
         activeUsers: Number(activeUsers.count),
         recentApplications,
         recentLeads,
-        applicationsByStatus: (appsByStatus.rows as any[]).map(r => ({ status: r.status, count: r.count })),
+        applicationsByStatus: Array.isArray(appsByStatus) ? appsByStatus.map((r: any) => ({ status: r.status, count: r.count })) : [],
         kpiSummary: {
           periodStart,
           periodEnd,

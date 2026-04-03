@@ -39,7 +39,7 @@ interface DashboardStats {
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "#A8A29E",
-  submitted: "#F5821F",
+  submitted: "var(--e-orange)",
   under_review: "#CA8A04",
   approved: "#16A34A",
   contracted: "#16A34A",
@@ -47,7 +47,7 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "#DC2626",
 };
 
-const PIE_COLORS = ["#F5821F", "#16A34A", "#CA8A04", "#A8A29E", "#57534E", "#DC2626"];
+const PIE_COLORS = ["var(--e-orange)", "#16A34A", "#CA8A04", "#A8A29E", "#57534E", "#DC2626"];
 
 const fmtAUD = (n: number) =>
   new Intl.NumberFormat("en-AU", {
@@ -67,7 +67,7 @@ function StatCard({ icon: Icon, label, value, sub }: {
     >
       <div
         className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-        style={{ background: "#FEF0E3", color: "#F5821F" }}
+        style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}
       >
         <Icon className="w-5 h-5" strokeWidth={1.8} />
       </div>
@@ -90,7 +90,7 @@ function StatusBadge({ status }: { status: string }) {
   else if (['rejected', 'cancelled', 'lost'].includes(normalized))
     cls = "bg-[#FEF2F2] text-[#DC2626]";
   else if (['in progress', 'contacted', 'interview scheduled'].includes(normalized))
-    cls = "bg-[#FEF0E3] text-[#F5821F]";
+    cls = "bg-[--e-orange-lt] text-[--e-orange]";
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize whitespace-nowrap ${cls}`}>
       {normalized}
@@ -224,7 +224,7 @@ export default function Dashboard() {
                   {stats.kpiSummary.periodStart} ~ {stats.kpiSummary.periodEnd}
                 </span>
                 <div className="flex-1 border-t" style={{ borderColor: "#E8E6E2" }} />
-                <Link href="/admin/kpi/staff" className="text-xs font-medium hover:underline" style={{ color: "#F5821F" }}>
+                <Link href="/admin/kpi/staff" className="text-xs font-medium hover:underline" style={{ color: "var(--e-orange)" }}>
                   View Details →
                 </Link>
               </div>
@@ -256,7 +256,7 @@ export default function Dashboard() {
       {(isPartner || isParent) && (
         <div
           className="rounded-xl border p-6"
-          style={{ background: "#FEF0E3", borderColor: "rgba(245,130,31,0.3)" }}
+          style={{ background: "var(--e-orange-lt)", borderColor: "var(--e-orange-ring)" }}
         >
           <p className="text-sm mb-1" style={{ color: "#57534E" }}>Role</p>
           <p className="font-semibold capitalize" style={{ color: "#1C1917" }}>
@@ -276,7 +276,7 @@ export default function Dashboard() {
           >
             <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #E8E6E2" }}>
               <h3 className="font-semibold text-sm" style={{ color: "#1C1917" }}>Applications by Status</h3>
-              <Link href="/admin/applications" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: "#F5821F" }}>
+              <Link href="/admin/applications" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: "var(--e-orange)" }}>
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -345,7 +345,7 @@ export default function Dashboard() {
           >
             <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #E8E6E2" }}>
               <h3 className="font-semibold text-sm" style={{ color: "#1C1917" }}>Recent Applications</h3>
-              <Link href="/admin/applications" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: "#F5821F" }}>
+              <Link href="/admin/applications" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: "var(--e-orange)" }}>
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -374,7 +374,7 @@ export default function Dashboard() {
           >
             <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #E8E6E2" }}>
               <h3 className="font-semibold text-sm" style={{ color: "#1C1917" }}>Recent Leads</h3>
-              <Link href="/admin/leads" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: "#F5821F" }}>
+              <Link href="/admin/leads" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: "var(--e-orange)" }}>
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -407,9 +407,9 @@ export default function Dashboard() {
                   className="flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm font-medium cursor-pointer transition-all"
                   style={{ border: "1px solid #E8E6E2", color: "#57534E" }}
                   onMouseEnter={e => {
-                    (e.currentTarget as HTMLDivElement).style.background = "#FEF0E3";
-                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(245,130,31,0.3)";
-                    (e.currentTarget as HTMLDivElement).style.color = "#F5821F";
+                    (e.currentTarget as HTMLDivElement).style.background = "var(--e-orange-lt)";
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "var(--e-orange-ring)";
+                    (e.currentTarget as HTMLDivElement).style.color = "var(--e-orange)";
                   }}
                   onMouseLeave={e => {
                     (e.currentTarget as HTMLDivElement).style.background = "";
@@ -417,7 +417,7 @@ export default function Dashboard() {
                     (e.currentTarget as HTMLDivElement).style.color = "#57534E";
                   }}
                 >
-                  <a.icon className="w-4 h-4" strokeWidth={1.8} style={{ color: "#F5821F" }} />
+                  <a.icon className="w-4 h-4" strokeWidth={1.8} style={{ color: "var(--e-orange)" }} />
                   {a.label}
                 </div>
               </Link>
