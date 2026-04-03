@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Copy, Check, ToggleLeft, ToggleRight, Loader2 } from "lucide-react";
 import { DetailSection } from "./DetailPageLayout";
-import { formatDateTime } from "@/lib/date-format";
+import { formatDateTime, formatDate } from "@/lib/date-format";
 
 interface SystemInfoSectionProps {
   id?: string | null;
@@ -16,9 +16,8 @@ interface SystemInfoSectionProps {
   isToggling?: boolean;
   title?: string;
   statusLabel?: string;
+  dateOnly?: boolean;
 }
-
-const fmt = (val?: string | null) => formatDateTime(val);
 
 export function SystemInfoSection({
   id,
@@ -33,7 +32,9 @@ export function SystemInfoSection({
   isToggling = false,
   title = "Admin Info",
   statusLabel,
+  dateOnly = false,
 }: SystemInfoSectionProps) {
+  const fmt = (val?: string | null) => dateOnly ? formatDate(val) : formatDateTime(val);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {

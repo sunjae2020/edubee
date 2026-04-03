@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRef } from "react";
 import { ImageCropDialog } from "@/components/shared/ImageCropDialog";
 import { fileToDataUrl } from "@/lib/imageResize";
+import { formatDate } from "@/lib/date-format";
 import { useLookup } from "@/hooks/use-lookup";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -766,10 +767,16 @@ export default function ContactDetailPage() {
           <FieldGroup label="Important Date 1">
             <Input type="date" value={form.importantDate1}
               onChange={e => set("importantDate1", e.target.value)} className={INPUT_CLS} />
+            {form.importantDate1 && (
+              <p className="text-xs text-muted-foreground mt-1">{formatDate(form.importantDate1)}</p>
+            )}
           </FieldGroup>
           <FieldGroup label="Important Date 2">
             <Input type="date" value={form.importantDate2}
               onChange={e => set("importantDate2", e.target.value)} className={INPUT_CLS} />
+            {form.importantDate2 && (
+              <p className="text-xs text-muted-foreground mt-1">{formatDate(form.importantDate2)}</p>
+            )}
           </FieldGroup>
         </FormRow>
       </div>
@@ -797,6 +804,7 @@ export default function ContactDetailPage() {
         recordIdLabel="Contact ID"
         createdAt={contact.createdAt}
         updatedAt={contact.updatedAt}
+        dateOnly
       />
 
       <ImageCropDialog
