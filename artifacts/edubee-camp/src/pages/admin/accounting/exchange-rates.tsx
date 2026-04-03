@@ -173,7 +173,7 @@ export default function ExchangeRates() {
       if (res.success) {
         toast({
           title: "Sync complete",
-          description: `${res.updated.length}개 통화 업데이트됨 (${res.updated.join(", ") || "없음"})`,
+          description: `${res.updated.length} currencies updated (${res.updated.join(", ") || "none"})`,
         });
       } else {
         toast({ title: "Sync failed", description: res.error, variant: "destructive" });
@@ -206,7 +206,7 @@ export default function ExchangeRates() {
             disabled={syncMutation.isPending}
           >
             <Zap className="w-3.5 h-3.5" />
-            {syncMutation.isPending ? "Syncing…" : "지금 동기화"}
+            {syncMutation.isPending ? "Syncing…" : "Sync Now"}
           </Button>
           <Button size="sm" className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5" onClick={() => setShowCreate(true)}>
             <Plus className="w-3.5 h-3.5" /> Add Rate
@@ -220,21 +220,21 @@ export default function ExchangeRates() {
           <RefreshCw className="w-4 h-4 text-blue-500" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm">자동 환율 업데이트</p>
+          <p className="font-medium text-sm">Auto Exchange Rate Sync</p>
           <p className="text-xs text-muted-foreground">
-            매일 자정 (호주 Sydney 시간 기준, AEST/AEDT) — open.er-api.com 에서 자동 수집
+            Automatically synced daily at midnight (Australia/Sydney, AEST/AEDT) from open.er-api.com
           </p>
         </div>
         <div className="text-right shrink-0">
           {syncInfo?.lastSyncedAt ? (
             <div className="flex items-center gap-1 text-xs text-green-600">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              마지막 동기화: {fmtDateTime(syncInfo.lastSyncedAt)}
+              Last synced: {fmtDateTime(syncInfo.lastSyncedAt)}
             </div>
           ) : (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <AlertCircle className="w-3.5 h-3.5" />
-              아직 자동 동기화 없음
+              No auto-sync yet
             </div>
           )}
         </div>
@@ -245,10 +245,10 @@ export default function ExchangeRates() {
         <div className={`rounded-lg border p-3 text-sm flex items-start gap-3 ${syncResult.updated.length > 0 ? "bg-green-50 border-green-200" : "bg-gray-50"}`}>
           <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
           <div>
-            <p className="font-medium">동기화 결과 ({syncResult.date})</p>
+            <p className="font-medium">Sync Result ({syncResult.date})</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              업데이트: <span className="text-green-700 font-medium">{syncResult.updated.join(", ") || "없음"}</span>
-              {syncResult.skipped.length > 0 && <> &nbsp;|&nbsp; 건너뜀: {syncResult.skipped.join(", ")}</>}
+              Updated: <span className="text-green-700 font-medium">{syncResult.updated.join(", ") || "none"}</span>
+              {syncResult.skipped.length > 0 && <> &nbsp;|&nbsp; Skipped: {syncResult.skipped.join(", ")}</>}
             </p>
           </div>
           <button className="ml-auto text-muted-foreground hover:text-foreground text-xs" onClick={() => setSyncResult(null)}>✕</button>
@@ -262,9 +262,9 @@ export default function ExchangeRates() {
           <button
             onClick={() => setShowAddPreview(v => !v)}
             className="flex items-center gap-1 text-[11px] font-medium text-[#F5821F] hover:text-[#d97706] border border-[#F5821F]/40 hover:border-[#F5821F] rounded-md px-2 py-0.5 bg-white transition-colors"
-            title="통화 추가"
+            title="Add currency"
           >
-            <Plus className="w-3 h-3" /> 추가
+            <Plus className="w-3 h-3" /> Add
           </button>
         </div>
 
@@ -282,7 +282,7 @@ export default function ExchangeRates() {
                 <button
                   onClick={() => removeFromPreview(ccy)}
                   className="absolute top-1 right-1 p-0.5 rounded text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                  title={`${ccy} 제거`}
+                  title={`Remove ${ccy}`}
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -300,7 +300,7 @@ export default function ExchangeRates() {
           })}
           {previewCurrencies.length === 0 && (
             <div className="col-span-full text-xs text-muted-foreground text-center py-4">
-              표시할 통화가 없습니다. 위 "추가" 버튼으로 통화를 추가하세요.
+              No currencies to display. Use the "Add" button above to add currencies.
             </div>
           )}
         </div>
@@ -324,7 +324,7 @@ export default function ExchangeRates() {
                         <ArrowRight className="w-3 h-3 text-muted-foreground" />
                         {r.toCurrency}
                         {r.source === "auto" && (
-                          <span className="px-1 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-medium">자동</span>
+                          <span className="px-1 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-medium">Auto</span>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">{NAMES[r.fromCurrency] ?? r.fromCurrency}</div>
@@ -396,7 +396,7 @@ export default function ExchangeRates() {
                     <td className="px-4 py-2 text-muted-foreground">{fmtDate(r.effectiveDate)}</td>
                     <td className="px-4 py-2">
                       <span className={`px-1.5 py-0.5 rounded text-[11px] capitalize ${r.source === "auto" ? "bg-blue-50 text-blue-600" : "bg-muted text-muted-foreground"}`}>
-                        {r.source === "auto" ? "자동" : r.source ?? "manual"}
+                        {r.source === "auto" ? "Auto" : r.source ?? "manual"}
                       </span>
                     </td>
                     <td className="px-4 py-2 text-muted-foreground text-xs">{fmtDateTime(r.createdAt)}</td>
@@ -423,7 +423,7 @@ export default function ExchangeRates() {
           <DialogHeader><DialogTitle>Add Exchange Rate</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700">
-              💡 환율을 추가하면 매일 자정(호주 시간)에 자동으로 업데이트됩니다.
+              💡 Once added, exchange rates are automatically updated daily at midnight (Australia/Sydney time).
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -498,15 +498,15 @@ export default function ExchangeRates() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <span>Live Preview 통화 선택</span>
-              <span className="text-xs font-normal text-muted-foreground">— 1 AUD 기준 실시간 환율</span>
+              <span>Select Live Preview Currencies</span>
+              <span className="text-xs font-normal text-muted-foreground">— Live rates per 1 AUD</span>
             </DialogTitle>
           </DialogHeader>
           <div className="mt-2 space-y-4">
             {/* Currently shown */}
             {previewCurrencies.length > 0 && (
               <div>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">표시 중 (클릭하여 제거)</p>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Currently shown (click to remove)</p>
                 <div className="grid grid-cols-4 gap-2">
                   {previewCurrencies.map(ccy => {
                     const rate = audToX[ccy];
@@ -521,7 +521,7 @@ export default function ExchangeRates() {
                         key={ccy}
                         onClick={() => removeFromPreview(ccy)}
                         className="relative flex flex-col items-center bg-[#F5821F]/10 border border-[#F5821F]/40 rounded-lg px-2 py-2.5 hover:bg-red-50 hover:border-red-300 transition-colors group"
-                        title={`${ccy} 제거`}
+                        title={`Remove ${ccy}`}
                       >
                         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <X className="w-3 h-3 text-red-400" />
@@ -543,7 +543,7 @@ export default function ExchangeRates() {
             {/* Available to add */}
             {ALL_CURRENCIES.filter(c => !previewCurrencies.includes(c)).length > 0 && (
               <div>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">추가 가능한 통화 (클릭하여 추가)</p>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Available currencies (click to add)</p>
                 <div className="grid grid-cols-4 gap-2">
                   {ALL_CURRENCIES.filter(c => !previewCurrencies.includes(c)).map(ccy => {
                     const rate = audToX[ccy];
@@ -558,7 +558,7 @@ export default function ExchangeRates() {
                         key={ccy}
                         onClick={() => addToPreview(ccy)}
                         className="flex flex-col items-center bg-white border border-border rounded-lg px-2 py-2.5 hover:border-[#F5821F] hover:bg-[#FEF0E3] transition-colors"
-                        title={`${ccy} 추가`}
+                        title={`Add ${ccy}`}
                       >
                         <span className="text-xl leading-none">{FLAG[ccy] ?? "🏳️"}</span>
                         <span className="text-[11px] font-semibold mt-1">{ccy}</span>
@@ -575,7 +575,7 @@ export default function ExchangeRates() {
             )}
 
             <div className="flex justify-end pt-1">
-              <Button size="sm" variant="outline" onClick={() => setShowAddPreview(false)}>닫기</Button>
+              <Button size="sm" variant="outline" onClick={() => setShowAddPreview(false)}>Close</Button>
             </div>
           </div>
         </DialogContent>
@@ -586,7 +586,7 @@ export default function ExchangeRates() {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Delete Exchange Rate?</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground mt-1">
-            이 환율 데이터를 삭제하면 랜딩페이지 및 패키지 가격에 해당 통화가 더 이상 표시되지 않을 수 있습니다.
+            Deleting this rate may remove the currency from landing page and package pricing displays.
           </p>
           <div className="flex gap-2 mt-4">
             <Button
