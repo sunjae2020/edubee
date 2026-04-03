@@ -746,6 +746,251 @@ function CostLinePanel({ cp, contractId }: { cp: any; contractId: string }) {
   );
 }
 
+// ── Contract Catalog Modal ────────────────────────────────────────────────────
+interface CatalogProduct {
+  id: string;
+  productName: string;
+  price?: string;
+  serviceModuleType?: string;
+  providerName?: string;
+}
+
+function ContractCatalogModal({
+  contractId,
+  sortIndex,
+  onSuccess,
+  onClose,
+  replaceId,
+  replaceCurrentName,
+}: {
+  contractId: string;
+  sortIndex: number;
+  onSuccess: () => void;
+  onClose: () => void;
+  replaceId?: string | null;
+  replaceCurrentName?: string;
+}) {
+  const [search, setSearch]       = useState("");
+  const [debSearch, setDebSearch] = useState("");
+  const [selected, setSelected]   = useState<CatalogProduct | null>(null);
+  const [arAmount, setArAmount]   = useState("");
+  const [apAmount, setApAmount]   = useState("");
+  const [arDueDate, setArDueDate] = useState("");
+  const [apDueDate, setApDueDate] = useState("");
+  const [arStatus, setArStatus]   = useState("scheduled");
+  const [apStatus, setApStatus]   = useState("pending");
+  const [saving, setSaving]       = useState(false);
+  const [err, setErr]             = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const { data, isFetching } = useQuery<{ data: CatalogProduct[] }>({
+    queryKey: ["contract-catalog-search", debSearch],
+    queryFn: () => {
+      const p = new URLSearchParams({ limit: "30" });
+      if (debSearch) p.set("search", debSearch);
+      return axios.get(`${BASE}/api/products?${p}`).then(r => r.data);
+    },
+    enabled: debSearch.length >= 1,
+  });
+
+  const catalogProducts = data?.data ?? [];
+
+  const handleSelect = (p: CatalogProduct) => {
+    setSelected(p);
+    setArAmount(p.price ? String(Number(p.price)) : "");
+    setApAmount("");
+  };
+
+  const handleSave = async () => {
+    if (!selected) return;
+    setSaving(true); setErr("");
+    try {
+      if (replaceId) {
+        await axios.patch(`${BASE}/api/crm/contract-products/${replaceId}`, {
+          name: selected.productName,
+          arAmount: arAmount !== "" ? arAmount : null,
+          arDueDate: arDueDate || null,
+          arStatus,
+          apAmount: apAmount !== "" ? apAmount : null,
+          apDueDate: apDueDate || null,
+          apStatus,
+        });
+      } else {
+        await axios.post(`${BASE}/api/crm/contract-products`, {
+          contractId,
+          name: selected.productName,
+          sortIndex,
+          arAmount: arAmount !== "" ? arAmount : null,
+          arDueDate: arDueDate || null,
+          arStatus,
+          apAmount: apAmount !== "" ? apAmount : null,
+          apDueDate: apDueDate || null,
+          apStatus,
+          serviceModuleType: selected.serviceModuleType || null,
+        });
+      }
+      onSuccess();
+      onClose();
+    } catch (e: any) {
+      setErr(e?.response?.data?.error ?? "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inp = "h-8 border border-[#E8E6E2] rounded-lg px-2 text-xs focus:outline-none focus:border-[#F5821F] w-full bg-white";
+  const sel = inp;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden" style={{ maxHeight: "88vh" }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E6E2]">
+          <h2 className="text-sm font-semibold text-[#1C1917]">
+            {replaceId ? `Replace: ${replaceCurrentName ?? "Product"}` : "Add from Product Catalog"}
+          </h2>
+          <button onClick={onClose} className="text-[#A8A29E] hover:text-[#1C1917]"><X size={16} /></button>
+        </div>
+
+        <div className="flex flex-col overflow-hidden flex-1">
+          {!selected ? (
+            /* ── Search panel ── */
+            <div className="flex flex-col overflow-hidden flex-1">
+              <div className="p-4 border-b border-[#E8E6E2]">
+                <div className="relative">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E] pointer-events-none" />
+                  <input
+                    className="w-full h-9 pl-8 pr-3 border border-[#E8E6E2] rounded-lg text-sm focus:outline-none focus:border-[#F5821F]"
+                    placeholder="Search products by name…"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <div className="overflow-y-auto flex-1">
+                {!debSearch && (
+                  <div className="text-center py-12 text-xs text-[#A8A29E]">Start typing to search the product catalog</div>
+                )}
+                {debSearch && isFetching && (
+                  <div className="text-center py-12 text-xs text-[#A8A29E]">Searching…</div>
+                )}
+                {debSearch && !isFetching && catalogProducts.length === 0 && (
+                  <div className="text-center py-12 text-xs text-[#A8A29E]">No products found for "{debSearch}"</div>
+                )}
+                {catalogProducts.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleSelect(p)}
+                    className="w-full text-left px-4 py-3 border-b border-[#F4F3F1] hover:bg-[#FEF0E3] transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-[#1C1917]">{p.productName}</p>
+                        {p.providerName && <p className="text-xs text-[#A8A29E] mt-0.5">{p.providerName}</p>}
+                        {p.serviceModuleType && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F4F3F1] text-[#57534E] mt-1 inline-block">
+                            {p.serviceModuleType}
+                          </span>
+                        )}
+                      </div>
+                      {p.price && (
+                        <span className="text-sm font-bold text-[#F5821F] whitespace-nowrap shrink-0">
+                          ${Number(p.price).toLocaleString("en-AU", { minimumFractionDigits: 2 })}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* ── Confirm / Fill form ── */
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              <div className="rounded-xl border border-[#F5821F] bg-[#FEF0E3] px-4 py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[#1C1917]">{selected.productName}</p>
+                  {selected.providerName && <p className="text-xs text-[#A8A29E]">{selected.providerName}</p>}
+                  {selected.serviceModuleType && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F5821F]/20 text-[#9A3412] mt-1 inline-block">
+                      {selected.serviceModuleType}
+                    </span>
+                  )}
+                </div>
+                <button onClick={() => setSelected(null)} className="text-xs underline text-[#F5821F] shrink-0">Change</button>
+              </div>
+
+              {/* AR */}
+              <div className="bg-[#EFF6FF] rounded-xl p-4 space-y-3 border border-[#BFDBFE]">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[#0369A1]">AR — Accounts Receivable</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] text-[#57534E] block mb-1">AR Amount</label>
+                    <input type="number" min="0" step="0.01" className={inp} value={arAmount} onChange={e => setArAmount(e.target.value)} placeholder="0.00" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-[#57534E] block mb-1">AR Due Date</label>
+                    <input type="date" className={inp} value={arDueDate} onChange={e => setArDueDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-[#57534E] block mb-1">AR Status</label>
+                    <select className={sel} value={arStatus} onChange={e => setArStatus(e.target.value)}>
+                      {AR_STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* AP */}
+              <div className="rounded-xl p-4 space-y-3 border border-[#FDE8CC]" style={{ background: "#FFFAF5" }}>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[#9A3412]">AP — Accounts Payable (optional)</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] text-[#57534E] block mb-1">AP Amount</label>
+                    <input type="number" min="0" step="0.01" className={inp} value={apAmount} onChange={e => setApAmount(e.target.value)} placeholder="0.00" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-[#57534E] block mb-1">AP Due Date</label>
+                    <input type="date" className={inp} value={apDueDate} onChange={e => setApDueDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-[#57534E] block mb-1">AP Status</label>
+                    <select className={sel} value={apStatus} onChange={e => setApStatus(e.target.value)}>
+                      {AP_STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {err && <p className="text-xs text-red-600">{err}</p>}
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="h-9 px-5 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+                  style={{ background: "#F5821F" }}
+                >
+                  {saving ? "Saving…" : replaceId ? "Replace Product" : "Add to Contract"}
+                </button>
+                <button onClick={onClose} className="h-9 px-4 rounded-lg text-sm border border-[#E8E6E2] text-[#57534E] hover:bg-[#F4F3F1]">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function PaymentScheduleTab({ contract }: { contract: any }) {
   const products: any[] = contract.contractProducts ?? [];
   const totalAr = products.reduce((s: number, p: any) => s + (p.arAmount ?? 0), 0);
@@ -760,6 +1005,10 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
   const [addingNew, setAddingNew]   = useState(false);
   const [newDraft,  setNewDraft]    = useState<CpDraft | null>(null);
   const [deleting,  setDeleting]    = useState<string | null>(null);
+
+  // Catalog modal state
+  const [showCatalog, setShowCatalog]   = useState(false);
+  const [replaceTarget, setReplaceTarget] = useState<{ id: string; name: string } | null>(null);
 
   const makeDraft = (cp: any): CpDraft => ({
     id: cp.id,
@@ -866,13 +1115,21 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
       <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-x-auto">
         <div className="px-5 py-3 border-b border-[#E8E6E2] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[#1C1917]">Payment Schedule ({products.length})</h3>
-          {!addingNew && (
-            <button onClick={startAdd}
-              className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
-              style={{ color:"#57534E" }}>
-              <Plus size={12} /> Add Instalment
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setShowCatalog(true); setReplaceTarget(null); setAddingNew(false); setNewDraft(null); }}
+              className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+              style={{ color:"#F5821F", borderColor:"#F5821F", background:"#FEF0E3" }}>
+              <Search size={12} /> From Catalog
             </button>
-          )}
+            {!addingNew && (
+              <button onClick={startAdd}
+                className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F]"
+                style={{ color:"#57534E" }}>
+                <Plus size={12} /> Add Instalment
+              </button>
+            )}
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -942,8 +1199,14 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                           </button>
                           <button onClick={() => startEdit(cp)}
                             className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-[#EFF6FF] hover:border-[#3B82F6] hover:text-[#2563EB] transition-colors"
-                            title="Edit">
+                            title="Edit amounts & dates">
                             <Pencil size={11} />
+                          </button>
+                          <button
+                            onClick={() => { setReplaceTarget({ id: cp.id, name: cp.name ?? `Instalment ${i + 1}` }); setShowCatalog(false); setAddingNew(false); setNewDraft(null); cancelEdit(); }}
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-[#FEF0E3] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
+                            title="Replace product from catalog">
+                            <Search size={11} />
                           </button>
                           <button onClick={() => handleDelete(cp.id)} disabled={deleting === cp.id}
                             className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E6E2] text-[11px] text-[#57534E] hover:bg-red-50 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-40"
@@ -1006,6 +1269,28 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
           onGenerated={() => {
             qc.invalidateQueries({ queryKey: ["payment-statements", contract.id] });
           }}
+        />
+      )}
+
+      {/* Catalog Modal — Add from Catalog */}
+      {showCatalog && (
+        <ContractCatalogModal
+          contractId={contract.id}
+          sortIndex={products.length}
+          onSuccess={() => qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] })}
+          onClose={() => setShowCatalog(false)}
+        />
+      )}
+
+      {/* Catalog Modal — Replace existing product */}
+      {replaceTarget && (
+        <ContractCatalogModal
+          contractId={contract.id}
+          sortIndex={products.length}
+          replaceId={replaceTarget.id}
+          replaceCurrentName={replaceTarget.name}
+          onSuccess={() => qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] })}
+          onClose={() => setReplaceTarget(null)}
         />
       )}
     </div>
