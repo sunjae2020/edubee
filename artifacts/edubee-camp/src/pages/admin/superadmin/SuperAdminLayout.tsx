@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { LayoutDashboard, Building2, CreditCard } from "lucide-react";
+import logoImg from "@assets/edubee_logo_200x200_1775194540791.png";
 
 const NAV = [
   { href: "/superadmin",         label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -21,7 +22,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       <aside className="w-56 flex flex-col border-r border-[#E8E6E2] bg-[#1C1917] shrink-0">
         <div className="px-4 py-5 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-white">🐝</span>
+            <img src={logoImg} alt="Edubee" className="w-8 h-8 object-contain" />
             <div>
               <p className="text-sm font-bold text-white leading-none">Edubee Admin</p>
               <span className="inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#F5821F] text-white tracking-wide">
