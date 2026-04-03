@@ -48,7 +48,7 @@ function ColorPicker({ label, value, onChange }: { label: string; value: string;
 
 function UploadZone({
   label, hint, accept, previewHeight,
-  value, isPending, onFile, onClear,
+  value, isPending, onFile, onClear, onUrl,
 }: {
   label: string;
   hint: string;
@@ -58,9 +58,11 @@ function UploadZone({
   isPending: boolean;
   onFile: (file: File) => void;
   onClear: () => void;
+  onUrl?: (url: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlValue, setUrlValue] = useState("");
 
   return (
     <div className="space-y-2">
@@ -78,9 +80,9 @@ function UploadZone({
       <label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">{label}</label>
 
       {value ? (
-        <div className={`relative w-full ${previewHeight} rounded-xl border border-[#E8E6E2] bg-[#FAFAF9] flex items-center justify-center overflow-hidden`}>
+        <div className={`relative w-full ${previewHeight} rounded-xl border border-[#E8E6E2] bg-[#FAFAF9] flex items-center justify-center overflow-hidden group`}>
           <img src={value} alt={label} className="max-h-full max-w-full object-contain p-3" />
-          <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100 gap-2">
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -127,6 +129,27 @@ function UploadZone({
         <Link size={10} />
         {showUrlInput ? "Hide URL input" : "Or enter URL manually"}
       </button>
+
+      {showUrlInput && (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={urlValue}
+            onChange={e => setUrlValue(e.target.value)}
+            placeholder={`https://cdn.example.com/${label.toLowerCase()}.png`}
+            className="flex-1 h-9 px-3 border-[1.5px] border-[#E8E6E2] rounded-lg text-xs focus:outline-none focus:border-[#F5821F] bg-white"
+          />
+          <button
+            type="button"
+            onClick={() => { if (urlValue.trim() && onUrl) { onUrl(urlValue.trim()); setShowUrlInput(false); setUrlValue(""); } }}
+            disabled={!urlValue.trim()}
+            className="h-9 px-3 rounded-lg text-xs font-semibold text-white disabled:opacity-50"
+            style={{ background: "#F5821F" }}
+          >
+            Apply
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -264,6 +287,10 @@ export default function Branding() {
               setForm(p => ({ ...p, logoUrl: "" }));
               colorMutation.mutate({ logoUrl: null });
             }}
+            onUrl={(url) => {
+              setForm(p => ({ ...p, logoUrl: url }));
+              colorMutation.mutate({ logoUrl: url });
+            }}
           />
           <UploadZone
             label="Favicon"
@@ -276,6 +303,10 @@ export default function Branding() {
             onClear={() => {
               setForm(p => ({ ...p, faviconUrl: "" }));
               colorMutation.mutate({ faviconUrl: null });
+            }}
+            onUrl={(url) => {
+              setForm(p => ({ ...p, faviconUrl: url }));
+              colorMutation.mutate({ faviconUrl: url });
             }}
           />
         </div>

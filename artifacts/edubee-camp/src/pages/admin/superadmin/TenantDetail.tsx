@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, ArrowLeft, Building2, Globe, Mail, Users, GraduationCap,
   CreditCard, Calendar, Save, ExternalLink, Clock, Check, Zap, Palette, Image,
+  Upload, Link, XCircle,
 } from "lucide-react";
 import { formatDate } from "@/lib/date-format";
 
@@ -47,6 +48,118 @@ const PLAN_STATUS = [
   { value: "past_due",  label: "Past Due"         },
   { value: "cancelled", label: "Cancelled"        },
 ];
+
+// ── Image Upload Zone ──────────────────────────────────────────────────────────
+function ImageUploadZone({
+  label, accept, hint, previewHeight, value, onChange,
+}: {
+  label: string;
+  accept: string;
+  hint: string;
+  previewHeight: string;
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [showUrl, setShowUrl] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFile = (file: File) => {
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      onChange(result);
+      setUploading(false);
+    };
+    reader.onerror = () => setUploading(false);
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="space-y-2">
+      <input
+        ref={fileRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) handleFile(file);
+          e.target.value = "";
+        }}
+      />
+      <label className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide flex items-center gap-1">
+        {label === "Logo" ? <Image size={11} /> : <Palette size={11} />}
+        {label}
+      </label>
+
+      {value ? (
+        <div className={`relative w-full ${previewHeight} rounded-xl border border-[#E8E6E2] bg-[#FAFAF9] flex items-center justify-center overflow-hidden group`}>
+          <img
+            src={value}
+            alt={label}
+            className="max-h-full max-w-full object-contain p-3"
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-white text-[#1C1917] shadow flex items-center gap-1 disabled:opacity-50"
+            >
+              {uploading ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+              Change
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-white text-red-500 shadow flex items-center gap-1"
+            >
+              <XCircle size={10} /> Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className={`w-full ${previewHeight} rounded-xl border-2 border-dashed border-[#E8E6E2] flex flex-col items-center justify-center gap-1.5 hover:border-[#F5821F] hover:bg-[#FEF0E3] transition-colors disabled:opacity-50 cursor-pointer`}
+        >
+          {uploading ? (
+            <Loader2 size={18} className="animate-spin text-[#F5821F]" />
+          ) : (
+            <>
+              <Upload size={18} className="text-[#A8A29E]" />
+              <span className="text-[11px] font-medium text-[#57534E]">Click to upload</span>
+              <span className="text-[10px] text-[#A8A29E]">{hint}</span>
+            </>
+          )}
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setShowUrl(p => !p)}
+        className="flex items-center gap-1 text-[10px] text-[#A8A29E] hover:text-[#57534E] transition-colors"
+      >
+        <Link size={9} />
+        {showUrl ? "Hide URL input" : "Or paste a URL"}
+      </button>
+
+      {showUrl && (
+        <input
+          className={inp + " text-xs"}
+          placeholder={label === "Logo" ? "https://cdn.example.com/logo.png" : "https://cdn.example.com/favicon.ico"}
+          value={value.startsWith("data:") ? "" : value}
+          onChange={e => onChange(e.target.value)}
+        />
+      )}
+    </div>
+  );
+}
 
 const ORG_STATUS = [
   { value: "Active",    label: "Active"    },
@@ -458,52 +571,28 @@ export default function TenantDetail() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-1">
-            <Field label={<><Image size={11} /> Logo URL</>}>
-              <div className="space-y-1.5">
-                <input
-                  className={inp}
-                  placeholder="https://cdn.example.com/logo.png"
-                  value={val("logoUrl")}
-                  onChange={e => set("logoUrl", e.target.value)}
-                />
-                {val("logoUrl") && (
-                  <div className="h-16 border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] flex items-center justify-center overflow-hidden">
-                    <img
-                      src={val("logoUrl")}
-                      alt="Logo preview"
-                      className="max-h-full max-w-full object-contain p-2"
-                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                  </div>
-                )}
-              </div>
-            </Field>
-            <Field label={<><Palette size={11} /> Favicon URL</>}>
-              <div className="space-y-1.5">
-                <input
-                  className={inp}
-                  placeholder="https://cdn.example.com/favicon.ico"
-                  value={val("faviconUrl")}
-                  onChange={e => set("faviconUrl", e.target.value)}
-                />
-                {val("faviconUrl") && (
-                  <div className="h-16 border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] flex items-center justify-center overflow-hidden">
-                    <img
-                      src={val("faviconUrl")}
-                      alt="Favicon preview"
-                      className="h-8 w-8 object-contain"
-                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                  </div>
-                )}
-              </div>
-            </Field>
+          <div className="grid grid-cols-2 gap-6 pt-1">
+            <ImageUploadZone
+              label="Logo"
+              accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+              hint="PNG, JPG, SVG, WEBP — max 2MB"
+              previewHeight="h-28"
+              value={val("logoUrl")}
+              onChange={v => set("logoUrl", v)}
+            />
+            <ImageUploadZone
+              label="Favicon"
+              accept="image/x-icon,image/vnd.microsoft.icon,image/png"
+              hint="ICO or PNG 32×32px — max 500KB"
+              previewHeight="h-28"
+              value={val("faviconUrl")}
+              onChange={v => set("faviconUrl", v)}
+            />
           </div>
 
           <p className="text-xs text-[#A8A29E]">
-            Tenants can also upload logo/favicon images directly from their own Settings → Branding page.
-            Changes here are saved with the main Save Changes button above.
+            Uploaded images are stored as base64. Click an image to hover and see Change / Remove options.
+            Saved with the main Save Changes button above.
           </p>
         </div>
       </Section>
