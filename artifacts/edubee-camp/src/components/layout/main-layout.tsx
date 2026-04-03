@@ -3,7 +3,7 @@ import { AppSidebar } from "./app-sidebar";
 import { Header } from "./header";
 import { AdminChatWidget } from "./AdminChatWidget";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { useDateFormatLoader } from "@/hooks/use-date-format";
 
 function useMediaQuery(query: string) {
@@ -20,21 +20,24 @@ function useMediaQuery(query: string) {
 }
 
 function ImpersonationBanner() {
+  const [, navigate] = useLocation();
   const orgId   = sessionStorage.getItem("edubee_impersonate_org_id");
   const orgName = sessionStorage.getItem("edubee_impersonate_org_name") ?? "Unknown Tenant";
+  const returnPath = sessionStorage.getItem("edubee_impersonate_return") ?? "/superadmin/tenants";
   if (!orgId) return null;
   return (
     <div className="flex items-center justify-between px-4 py-1.5 text-sm font-medium text-white" style={{ background: "#D96A0A" }}>
-      <span>Impersonating <strong>{orgName}</strong> — All API requests are scoped to this tenant</span>
+      <span>Viewing as <strong>{orgName}</strong> — API requests scoped to this tenant</span>
       <button
         onClick={() => {
           sessionStorage.removeItem("edubee_impersonate_org_id");
           sessionStorage.removeItem("edubee_impersonate_org_name");
-          window.location.reload();
+          sessionStorage.removeItem("edubee_impersonate_return");
+          navigate(returnPath);
         }}
         className="ml-4 px-3 py-0.5 rounded bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition-colors"
       >
-        Exit Impersonation
+        ← Back to SuperAdmin
       </button>
     </div>
   );

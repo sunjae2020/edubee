@@ -425,9 +425,10 @@ export default function TenantDetail() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-              const url = `${window.location.origin}${base}/admin/dashboard?impersonateOrg=${org.id}&impersonateOrgName=${encodeURIComponent(org.name)}`;
-              window.open(url, "_blank");
+              sessionStorage.setItem("edubee_impersonate_org_id", org.id);
+              sessionStorage.setItem("edubee_impersonate_org_name", org.name);
+              sessionStorage.setItem("edubee_impersonate_return", `/superadmin/tenants/${org.id}`);
+              navigate("/admin/dashboard");
             }}
             className="h-9 px-4 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#E8E6E2] text-[#1C1917] hover:border-[#F5821F] hover:text-[#F5821F] transition-colors"
           >
