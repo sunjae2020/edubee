@@ -50,7 +50,8 @@ router.post("/platform-plans", ...guard, async (req, res) => {
       maxUsers, maxStudents, maxBranches, storageGb,
       featureCommission, featureVisa, featureServiceModules,
       featureMultiBranch, featureAiAssistant, featureAccounting,
-      featureAvetmiss, featureApiAccess, featureWhiteLabel,
+      featureCamp, featureFinance,
+      featureApiAccess, featureWhiteLabel,
       isPopular, sortOrder,
     } = req.body;
 
@@ -80,7 +81,8 @@ router.post("/platform-plans", ...guard, async (req, res) => {
         featureMultiBranch:    Boolean(featureMultiBranch),
         featureAiAssistant:    Boolean(featureAiAssistant),
         featureAccounting:     Boolean(featureAccounting),
-        featureAvetmiss:       Boolean(featureAvetmiss),
+        featureCamp:           Boolean(featureCamp),
+        featureFinance:        Boolean(featureFinance),
         featureApiAccess:      Boolean(featureApiAccess),
         featureWhiteLabel:     Boolean(featureWhiteLabel),
         isPopular:             Boolean(isPopular),
@@ -106,7 +108,8 @@ router.put("/platform-plans/:id", ...guard, async (req, res) => {
       maxUsers, maxStudents, maxBranches, storageGb,
       featureCommission, featureVisa, featureServiceModules,
       featureMultiBranch, featureAiAssistant, featureAccounting,
-      featureAvetmiss, featureApiAccess, featureWhiteLabel,
+      featureCamp, featureFinance,
+      featureApiAccess, featureWhiteLabel,
       isPopular, sortOrder,
     } = req.body;
 
@@ -124,7 +127,8 @@ router.put("/platform-plans/:id", ...guard, async (req, res) => {
     if (featureMultiBranch    !== undefined) set.featureMultiBranch    = Boolean(featureMultiBranch);
     if (featureAiAssistant    !== undefined) set.featureAiAssistant    = Boolean(featureAiAssistant);
     if (featureAccounting     !== undefined) set.featureAccounting     = Boolean(featureAccounting);
-    if (featureAvetmiss       !== undefined) set.featureAvetmiss       = Boolean(featureAvetmiss);
+    if (featureCamp           !== undefined) set.featureCamp           = Boolean(featureCamp);
+    if (featureFinance        !== undefined) set.featureFinance        = Boolean(featureFinance);
     if (featureApiAccess      !== undefined) set.featureApiAccess      = Boolean(featureApiAccess);
     if (featureWhiteLabel     !== undefined) set.featureWhiteLabel     = Boolean(featureWhiteLabel);
     if (isPopular      !== undefined) set.isPopular      = Boolean(isPopular);

@@ -24,7 +24,8 @@ type PlatformPlan = {
   featureMultiBranch: boolean;
   featureAiAssistant: boolean;
   featureAccounting: boolean;
-  featureAvetmiss: boolean;
+  featureCamp: boolean;
+  featureFinance: boolean;
   featureApiAccess: boolean;
   featureWhiteLabel: boolean;
   isPopular: boolean;
@@ -38,7 +39,8 @@ const EMPTY_FORM: Omit<PlatformPlan, "id" | "isActive" | "sortOrder"> = {
   maxUsers: 5, maxStudents: 100, maxBranches: 1, storageGb: 10,
   featureCommission: false, featureVisa: false, featureServiceModules: false,
   featureMultiBranch: false, featureAiAssistant: false, featureAccounting: false,
-  featureAvetmiss: false, featureApiAccess: false, featureWhiteLabel: false,
+  featureCamp: false, featureFinance: false,
+  featureApiAccess: false, featureWhiteLabel: false,
   isPopular: false,
 };
 
@@ -210,8 +212,10 @@ function FormPanel({
             onChange={v => setForm(p => ({ ...p, featureAiAssistant: v }))} />
           <Toggle id="facc" label="Full Accounting Module (AR/AP)" checked={form.featureAccounting}
             onChange={v => setForm(p => ({ ...p, featureAccounting: v }))} />
-          <Toggle id="fav" label="AVETMISS Reporting (Australian VET)" checked={form.featureAvetmiss}
-            onChange={v => setForm(p => ({ ...p, featureAvetmiss: v }))} />
+          <Toggle id="fcamp" label="Camp Management" checked={form.featureCamp}
+            onChange={v => setForm(p => ({ ...p, featureCamp: v }))} />
+          <Toggle id="ffin" label="Finance Module" checked={form.featureFinance}
+            onChange={v => setForm(p => ({ ...p, featureFinance: v }))} />
           <Toggle id="fapi" label="API Access" checked={form.featureApiAccess}
             onChange={v => setForm(p => ({ ...p, featureApiAccess: v }))} />
           <Toggle id="fwl" label="White-label & Custom Branding" checked={form.featureWhiteLabel}
@@ -265,8 +269,9 @@ const CHIP_LABELS: Array<{ key: keyof PlatformPlan; label: string }> = [
   { key: "featureServiceModules", label: "Services (Pickup/Homestay/Internship)" },
   { key: "featureMultiBranch",    label: "Multi-Branch"         },
   { key: "featureAiAssistant",    label: "AI Assistant"         },
-  { key: "featureAccounting",     label: "Accounting"           },
-  { key: "featureAvetmiss",       label: "AVETMISS Reporting"   },
+  { key: "featureAccounting",     label: "Accounting (AR/AP)"   },
+  { key: "featureCamp",           label: "Camp Management"      },
+  { key: "featureFinance",        label: "Finance Module"       },
   { key: "featureApiAccess",      label: "REST API / Webhook"   },
   { key: "featureWhiteLabel",     label: "White-label"          },
 ];
@@ -469,7 +474,8 @@ export default function PlatformPlans() {
       featureMultiBranch: plan.featureMultiBranch,
       featureAiAssistant: plan.featureAiAssistant,
       featureAccounting: plan.featureAccounting,
-      featureAvetmiss: plan.featureAvetmiss,
+      featureCamp: plan.featureCamp,
+      featureFinance: plan.featureFinance,
       featureApiAccess: plan.featureApiAccess,
       featureWhiteLabel: plan.featureWhiteLabel,
       isPopular: plan.isPopular,

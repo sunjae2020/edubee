@@ -185,6 +185,8 @@ export const platformPlans = pgTable("platform_plans", {
   featureAiAssistant:    boolean("feature_ai_assistant").notNull().default(false),
   featureAccounting:     boolean("feature_accounting").notNull().default(false),
   featureAvetmiss:       boolean("feature_avetmiss").notNull().default(false),
+  featureCamp:           boolean("feature_camp").notNull().default(false),
+  featureFinance:        boolean("feature_finance").notNull().default(false),
   featureApiAccess:      boolean("feature_api_access").notNull().default(false),
   featureWhiteLabel:     boolean("feature_white_label").notNull().default(false),
   // Stripe Price IDs (stored in DB for superadmin management)
