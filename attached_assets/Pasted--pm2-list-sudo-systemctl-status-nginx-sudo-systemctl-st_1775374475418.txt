@@ -1,0 +1,69 @@
+$ # 실행 중인 프로세스 확인
+pm2 list
+
+# 웹서버 확인
+sudo systemctl status nginx
+sudo systemctl status apache2
+
+# 리스닝 포트 확인
+sudo ss -tlnp | grep LISTEN$ sh: 2: pm2: not found
+$ $ $ sudo systemctl status apache2
+
+# 리스닝 포트 확인
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
+     Active: active (running) since Sun 2026-04-05 07:32:02 UTC; 1min 16s ago
+       Docs: man:nginx(8)
+    Process: 532 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; (code=exited, status=0/SU>
+    Process: 628 ExecStart=/usr/sbin/nginx -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+   Main PID: 663 (nginx)
+      Tasks: 2 (limit: 1066)
+     Memory: 17.0M
+        CPU: 78ms
+     CGroup: /system.slice/nginx.service
+             ├─663 "nginx: master process /usr/sbin/nginx -g daemon on; master_process on;"
+             └─667 "nginx: worker process" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" ">
+
+Apr 05 07:32:01 ip-172-31-23-245 systemd[1]: Starting A high performance web server and a reverse proxy server>
+Apr 05 07:32:02 ip-172-31-23-245 systemd[1]: Started A high performance web server and a reverse proxy server.
+...skipping...
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
+     Active: active (running) since Sun 2026-04-05 07:32:02 UTC; 1min 16s ago
+       Docs: man:nginx(8)
+    Process: 532 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; (code=exited, status=0/SU>
+    Process: 628 ExecStart=/usr/sbin/nginx -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+   Main PID: 663 (nginx)
+      Tasks: 2 (limit: 1066)
+     Memory: 17.0M
+        CPU: 78ms
+     CGroup: /system.slice/nginx.service
+             ├─663 "nginx: master process /usr/sbin/nginx -g daemon on; master_process on;"
+             └─667 "nginx: worker process" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" ">
+
+Apr 05 07:32:01 ip-172-31-23-245 systemd[1]: Starting A high performance web server and a reverse proxy server>
+Apr 05 07:32:02 ip-172-31-23-245 systemd[1]: Started A high performance web server and a reverse proxy server.
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+log file support is not available  (press RETURN)
