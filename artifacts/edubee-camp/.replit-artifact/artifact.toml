@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Edubee Camp"
+title = "Edubee CRM"
 version = "1.0.0"
 id = "artifacts/edubee-camp"
 router = "path"
