@@ -1,0 +1,291 @@
+{
+  "nav": {
+    "services": "Services", "platform": "Platform", "pricing": "Pricing",
+    "about": "About", "support": "Support", "login": "Login", "startFree": "Start for Free",
+    "services_sub": {
+      "student": "Student Management", "school": "School Management",
+      "partner": "Partner Management", "agency": "Agency Network",
+      "tuition": "Tuition Management", "branch": "Branch & Consultant Management",
+      "aiChatbot": "AI Chatbot", "aiForm": "AI Form & Quotation", "aiStudy": "AI Study Plan"
+    },
+    "platform_sub": {
+      "overview": "Program Overview", "operations": "Operations Automation",
+      "marketing": "Marketing Reports", "access": "Access & Environment"
+    },
+    "about_sub": { "company": "About Edubee", "why": "Why Edubee", "security": "Security & Data Policy" },
+    "support_sub": { "faq": "FAQ", "consulting": "Consulting Request", "notices": "Notices", "contact": "Contact Us" }
+  },
+  "banner": { "text": "Beta Launch — LITE and PLUS plans are currently FREE. No credit card required.", "cta": "Start Now →" },
+  "home": {
+    "hero": {
+      "eyebrow": "STUDY ABROAD CRM PLATFORM",
+      "headline1": "Focus on Consulting.",
+      "headline2": "Leave the rest to Edubee.",
+      "subheadline": "The all-in-one CRM built exclusively for international education agencies. Manage students, schools, visas, tuition, and branch staff — from one platform, anywhere in the world.",
+      "ctaPrimary": "Start for Free →", "ctaSecondary": "Book a Demo",
+      "trust1": "No setup fee", "trust2": "No lock-in contract", "trust3": "Free LITE plan"
+    },
+    "socialProof": { "label": "TRUSTED BY STUDY ABROAD AGENCIES IN" },
+    "problem": {
+      "label": "THE CHALLENGE",
+      "heading": "Running an agency shouldn't mean drowning in spreadsheets.",
+      "body": "Most study abroad agencies manage students in Excel, track commissions in separate files, and report to branch staff by email. As your agency grows, this breaks down fast.",
+      "card1Title": "Scattered Student Data", "card1Body": "Consultations, visas, tuition, and documents in separate files",
+      "card2Title": "Manual Reporting",      "card2Body": "Hours spent consolidating branch reports every week",
+      "card3Title": "Lost Commissions",      "card3Body": "Missed school commission deadlines with no automated tracking"
+    },
+    "services": {
+      "label": "WHAT EDUBEE DOES", "heading": "Everything your agency needs, in one place.",
+      "s1Title": "Student Management", "s1Body": "From first consultation to re-enrollment — track every student touchpoint across 6 structured workflow stages.",
+      "s2Title": "School Management",  "s2Body": "Organise schools from USA, Canada, Australia, Philippines and more by country, degree, and program.",
+      "s3Title": "Partner Management", "s3Body": "Manage travel agencies, insurance providers, and accommodation partners in one view.",
+      "s4Title": "Agency Network",     "s4Body": "Handle partner agency students and calculate sub-commissions automatically.",
+      "s5Title": "Tuition Management", "s5Body": "Track tuition per student, per term. Get automated commission payment reminders.",
+      "s6Title": "Branch & Consultant Management", "s6Body": "Connect head office and overseas branches. Track KPIs, daily reports, and payroll."
+    },
+    "workflow": {
+      "label": "HOW IT WORKS", "heading": "A structured workflow for every student journey.",
+      "stage1Title": "Consultation",       "stage1Body": "Profiling & estimates",
+      "stage2Title": "School Application", "stage2Body": "Documents & fees",
+      "stage3Title": "Visa Processing",    "stage3Body": "Lodgement & approval",
+      "stage4Title": "Payment Management", "stage4Body": "Batch processing",
+      "stage5Title": "Post-Enrollment",    "stage5Body": "Tuition & changes",
+      "stage6Title": "Re-enrollment",      "stage6Body": "Auto reminders"
+    },
+    "ai": {
+      "eyebrow": "NEW — AI-POWERED", "heading": "Smarter consulting, powered by AI.",
+      "subheadline": "Edubee's AI suite automates routine tasks so your team can focus on building student relationships.",
+      "chatbotTitle": "AI Chatbot",          "chatbotBody": "Multilingual live chat running 24/7. Captures leads automatically and saves them to your CRM.",
+      "formTitle":    "AI Form & Quotation", "formBody":    "Smart intake forms that auto-generate lead files and produce tailored quotations instantly.",
+      "studyTitle":   "AI Study Plan",       "studyBody":   "Generate personalised study plans. Auto-populates visa checklists and school requirement lists."
+    },
+    "automation": {
+      "heading": "Stop re-entering data. Start running your agency.",
+      "daily": "Daily",   "dailyBody":  "Branch income & expense auto-reconciliation",
+      "weekly": "Weekly", "weeklyBody": "Consultant performance reports",
+      "monthly": "Monthly", "monthlyBody": "Full agency analytics dashboard",
+      "auto": "Auto",     "autoBody":   "Visa expiry + commission + re-enrollment alerts",
+      "body": "One input. Every report. Edubee eliminates duplicate data entry — everything flows automatically into your reports, dashboards, and staff KPIs."
+    },
+    "pricingPreview": {
+      "heading": "Transparent pricing. No surprises.", "viewFull": "View Full Pricing →",
+      "colPlan": "Plan", "colPrice": "Price (AUD/mo)", "colStudents": "Students/mo",
+      "colStorage": "Storage", "colSchoolDB": "School DB", "colRemote": "Remote Support",
+      "noteGst": "All prices exclude GST (AUD).", "comingSoon": "Coming Soon"
+    },
+    "security": {
+      "heading": "Your data is safe with Edubee.",
+      "s1Title": "IDC Data Centre",     "s1Body": "Servers in a secure data centre with physical access controls and redundant power.",
+      "s2Title": "Strict Access Control", "s2Body": "Only authorised users can access data. Even Edubee staff cannot view your agency's data.",
+      "s3Title": "Redundant Backups",   "s3Body": "Data stored across dual distributed databases with automatic scheduled backups."
+    },
+    "cta": { "heading": "Ready to streamline your agency?", "sub": "Start with our free LITE plan today — no credit card required.", "primary": "Start for Free →", "secondary": "Contact Us" }
+  },
+  "servicesPage": {
+    "hero": {
+      "eyebrow": "All Services",
+      "heading": "Everything your agency needs,",
+      "headingOrange": "in one platform.",
+      "sub": "From student management to AI automation — Edubee gives international education agencies the tools to operate at their best."
+    },
+    "core": { "heading": "Core Services", "sub": "The essential tools every study abroad agency needs to operate efficiently." },
+    "ai": {
+      "eyebrow": "AI-Powered Features",
+      "heading": "The future of study abroad, powered by AI",
+      "sub": "New AI tools that automate the repetitive and enhance the human touch.",
+      "getStarted": "Get started",
+      "earlyAccess": "Request Early Access"
+    },
+    "student": {
+      "title": "Student Management",
+      "desc": "Track every student from first enquiry to graduation. Consultation history, profiles, and 6-stage workflow all in one place.",
+      "f1": "Consultation history & profiling", "f2": "Quotation & contract creation", "f3": "6-stage workflow tracking", "f4": "Visa lodgement & approval", "f5": "Re-enrollment reminders"
+    },
+    "school": {
+      "title": "School Management",
+      "desc": "Manage your entire school partner database — contracts, fees, commission rates, and application requirements in one searchable hub.",
+      "f1": "School database & contracts", "f2": "Commission rate management", "f3": "Program & course catalog", "f4": "School application tracking", "f5": "Document management"
+    },
+    "partner": {
+      "title": "Partner Management",
+      "desc": "Track referral partners, agreements, and commission payouts. Manage every relationship with full transparency.",
+      "f1": "Partner agreement database", "f2": "Commission calculation", "f3": "Referral source tracking", "f4": "Performance analytics", "f5": "Payment records"
+    },
+    "agency": {
+      "title": "Agency Management",
+      "desc": "Manage multi-branch agency operations from a single dashboard. Staff access control, performance visibility, and branch-level data.",
+      "f1": "Multi-branch operations", "f2": "Staff account management", "f3": "Role-based access control", "f4": "Head office dashboard", "f5": "Branch performance reports"
+    },
+    "tuition": {
+      "title": "Tuition & Commission",
+      "desc": "Automated commission tracking and invoicing. Know exactly what you're owed — and what's been paid — at a glance.",
+      "f1": "Commission auto-calculation", "f2": "Invoice generation", "f3": "Payment status tracking", "f4": "GST & tax management", "f5": "Financial reporting"
+    },
+    "branch": {
+      "title": "Branch Operations",
+      "desc": "Connect head office and overseas branches with real-time sync. Same platform, same data, anywhere in the world.",
+      "f1": "Real-time data sync", "f2": "Branch-level reporting", "f3": "Inter-branch student transfer", "f4": "Payroll management", "f5": "Operations dashboard"
+    },
+    "aiChatbot": {
+      "title": "AI Chatbot",
+      "desc": "Deploy a 24/7 AI student support assistant. Instantly answer common enquiries, qualify leads, and book consultations — without lifting a finger.",
+      "f1": "24/7 automated responses", "f2": "Lead qualification", "f3": "Appointment booking", "f4": "Multi-language support", "f5": "Handoff to human agent"
+    },
+    "aiForm": {
+      "title": "AI Smart Form",
+      "desc": "Intelligent application forms that auto-complete from existing student data. Reduce errors, save time, and delight students.",
+      "f1": "Auto-fill from student profile", "f2": "Smart field validation", "f3": "Document upload prompts", "f4": "Progress saving", "f5": "Submission notifications"
+    },
+    "aiStudy": {
+      "title": "AI Study Advisor",
+      "desc": "Personalised course and school recommendations powered by AI. Match each student to the perfect program based on their goals and profile.",
+      "f1": "Profile-based matching", "f2": "School ranking analysis", "f3": "Budget optimisation", "f4": "Visa success prediction", "f5": "Personalised report export"
+    }
+  },
+  "platformPage": {
+    "hero": {
+      "eyebrow": "Platform",
+      "heading": "Built for how study abroad",
+      "headingOrange": "agencies actually work.",
+      "sub": "Edubee's platform covers every stage of the student journey — from first contact to post-enrollment — with automation that saves hours every week."
+    },
+    "workflow": {
+      "eyebrow": "Program Overview",
+      "heading": "The 6-Stage Student Workflow",
+      "sub": "Every student follows a structured journey. Edubee tracks every step — ensuring nothing falls through the cracks."
+    },
+    "operations": {
+      "eyebrow": "Operations Automation",
+      "heading": "Automate the routine. Focus on students.",
+      "sub": "Edubee automatically generates daily, weekly, and monthly reports so your team can focus on consulting, not admin.",
+      "daily": "Daily", "weekly": "Weekly", "monthly": "Monthly",
+      "d1": "New enquiry notifications", "d2": "Task & follow-up reminders", "d3": "Visa expiry alerts", "d4": "Daily student status updates",
+      "w1": "Weekly pipeline summary", "w2": "Staff performance overview", "w3": "Commission reconciliation", "w4": "Branch sync reports",
+      "m1": "Monthly revenue report", "m2": "Conversion rate analysis", "m3": "School commission statement", "m4": "Marketing ROI summary"
+    },
+    "marketing": {
+      "eyebrow": "Marketing Reports",
+      "heading": "Data-driven marketing, made simple.",
+      "sub": "Stop guessing which marketing efforts work. Edubee tracks every lead source and gives you actionable ROI data.",
+      "m1Label": "Lead Sources", "m1Desc": "Track where students come from — web, referrals, social, events",
+      "m2Label": "Conversion Rate", "m2Desc": "Monitor enquiry-to-enrollment conversion at every funnel stage",
+      "m3Label": "Revenue by Channel", "m3Desc": "Know which marketing channels generate the most revenue",
+      "m4Label": "Campaign ROI", "m4Desc": "Compare campaign spend against student enrollments attributed"
+    },
+    "access": {
+      "eyebrow": "Access & Environment",
+      "heading": "Use Edubee from anywhere in the world.",
+      "sub": "Your office PC, home laptop, overseas branch, or mobile — same experience, same data, always in sync.",
+      "a1Title": "Web-Based, No Install", "a1Desc": "Access Edubee from any browser — Chrome, Safari, Edge. No installation, no updates to manage.",
+      "a2Title": "Global Multi-Branch",   "a2Desc": "Head office, overseas branches, and remote staff all share the same live data. No syncing needed.",
+      "a3Title": "6-Language Interface",  "a3Desc": "Switch between English, Korean, Japanese, Chinese, Thai, and Vietnamese instantly from any device.",
+      "a4Title": "Fast & Reliable",       "a4Desc": "Hosted on enterprise-grade infrastructure with 99.9% uptime SLA and automatic failover."
+    }
+  },
+  "aboutPage": {
+    "hero": {
+      "eyebrow": "About Edubee",
+      "heading": "Built by agency people,",
+      "headingOrange": "for agency people.",
+      "sub": "Edubee CRM was founded with a single mission: to give study abroad agencies the tools they need to run efficiently and grow confidently — without the enterprise price tag."
+    },
+    "story": {
+      "eyebrow": "Our Story",
+      "heading": "From frustration to solution.",
+      "p1": "We recognised that international education agencies were managing complex student journeys across spreadsheets, disconnected tools, and manual email reports.",
+      "p2": "As agencies grew — adding overseas branches, hiring consultants, and working with more schools — this approach broke down. Data was scattered. Commissions were missed. Students fell through the cracks.",
+      "p3": "Edubee brings student management, school database, commission tracking, visa management, branch operations, and marketing analytics into a single cloud-based platform — purpose-built for study abroad agencies.",
+      "p4": "We are headquartered in Melbourne, Australia, and serve agencies across South Korea, Japan, China, Southeast Asia, and beyond.",
+      "companyDetails": "Company Details", "company": "Company", "representative": "Representative", "founded": "Founded"
+    },
+    "why": {
+      "eyebrow": "Why Edubee",
+      "heading": "What makes us different.",
+      "sub": "We built Edubee around the realities of running a study abroad agency — not a generic sales team.",
+      "forYou": "Edubee is for you if...",
+      "s1Title": "Study Abroad Specialists", "s1Body": "Not a generic CRM. Built exclusively for international education agencies — every feature matches your exact workflow.",
+      "s2Title": "Affordable Pricing",       "s2Body": "Comparable international CRMs cost $100+/month. Edubee starts free and scales at a fraction of the cost.",
+      "s3Title": "All-in-One Platform",      "s3Body": "Student management, school database, commissions, accounting, branch operations — no need to switch tools.",
+      "s4Title": "Works Anywhere",           "s4Body": "Web-based. Works on your office PC, home laptop, smartphone, or at an overseas branch — same experience everywhere.",
+      "s5Title": "6-Language Support",       "s5Body": "Switch between English, Korean, Japanese, Chinese, Thai, and Vietnamese instantly. Built for multilingual agencies.",
+      "s6Title": "Enterprise-Grade Security","s6Body": "IDC data centre hosting, redundant database backups, strict access controls — your data as secure as a banking system.",
+      "fy1": "You feel that a CRM is necessary but the cost is a barrier",
+      "fy2": "You want to unify head office and branch student management",
+      "fy3": "You are managing growing student numbers with manual spreadsheets",
+      "fy4": "You need multi-branch accounting and payroll in one system",
+      "fy5": "You want data-driven marketing insights without Excel analysis"
+    },
+    "security": {
+      "eyebrow": "Security & Data",
+      "heading": "Your data is your most valuable asset.",
+      "sub": "Edubee is built with enterprise-grade security so you can focus on students — not data breaches.",
+      "s1Title": "IDC Data Centre",       "s1Body": "Servers hosted in a secure Internet Data Centre with physical access controls, fire suppression, redundant power, and 24/7 monitoring.",
+      "s2Title": "Access Control",        "s2Body": "Only authorised users can access your data. Edubee staff cannot view your agency data under any circumstances.",
+      "s3Title": "Dual Redundant Backup", "s3Body": "All data stored across two distributed database servers with automatic scheduled backups for full restoration capability.",
+      "s4Title": "Firewall Protection",   "s4Body": "Multiple layers of firewall and intrusion detection protect the system. All connections are encrypted via HTTPS/TLS."
+    }
+  },
+  "supportPage": {
+    "hero": {
+      "eyebrow": "Support",
+      "heading": "We're here to",
+      "headingOrange": "help.",
+      "sub": "Find answers in our FAQ or reach out directly — our team responds within one business day."
+    },
+    "faq": { "heading": "Frequently Asked Questions", "sub": "Quick answers to the most common questions about Edubee.", "searchPlaceholder": "Search questions..." },
+    "contact": {
+      "eyebrow": "Contact Us",
+      "detailsHeading": "Contact Details", "emailLabel": "Email", "addressLabel": "Address",
+      "responseHeading": "Response Time",
+      "responseBody": "We aim to respond within 1 business day (Mon–Fri, Melbourne AEST).",
+      "r1": "General enquiries: 1 business day", "r2": "Technical support: same day", "r3": "Billing questions: 1–2 business days"
+    }
+  },
+  "pricing": {
+    "heading": "Simple, transparent pricing for every agency.", "sub": "No setup fees. No lock-in contracts. Cancel anytime.",
+    "mostPopular": "Most Popular", "betaFree": "Beta Free", "comingSoon": "Coming Soon", "unlimited": "Unlimited",
+    "ctaPrimary": "Start Free with LITE →", "ctaSecondary": "Talk to Sales",
+    "refundHeading": "Refund Policy",
+    "refund1": "Free (LITE) plan — Cancel anytime, no cost.",
+    "refund2": "Paid plans — Full refund within 7 days of payment.",
+    "refund3": "After 7 days: no refund for current period; auto-renewal stops next cycle.",
+    "refund4": "No lock-in period. No cancellation fee.",
+    "refundContact": "Refund requests: info@edubee.co"
+  },
+  "faq": {
+    "heading": "Frequently Asked Questions", "search": "Search questions...",
+    "q1": "Is there a cancellation penalty?", "a1": "No. Cancel anytime with no fees. There is no lock-in period.",
+    "q2": "Can I use Edubee from my phone or tablet?", "a2": "Yes. Edubee is web-based and works on any internet-connected device.",
+    "q3": "Can I demo Edubee before paying?", "a3": "Yes. Sign up for the free LITE plan and access all features immediately.",
+    "q4": "How quickly can I start after signing up?", "a4": "The LITE plan activates instantly upon signup.",
+    "q5": "Is my agency's data secure?", "a5": "Yes. IDC dual-redundant servers, automatic backups. Even Edubee staff cannot view your data.",
+    "q6": "What if my computer breaks?", "a6": "No impact. All data is cloud-based and independent of your device.",
+    "q7": "Can I import my existing Excel data?", "a7": "Yes. Contact info@edubee.co for data migration assistance.",
+    "q8": "Can I set different access levels for staff?", "a8": "Yes. Set read-only, edit, or delete permissions per menu per staff member.",
+    "q9": "Can my overseas branch use the same system?", "a9": "Yes. Same platform, same experience, from any country.",
+    "q10": "What features are not yet in Beta?", "a10": "Phone support and remote assistance coming soon, along with BUSINESS and ENTERPRISE plans."
+  },
+  "contact": {
+    "heading": "Get in touch", "sub": "We typically respond within 1 business day via email.",
+    "agencyName": "Agency Name", "yourName": "Your Name", "phone": "Phone Number",
+    "email": "Email Address", "website": "Agency Website (optional)", "enquiryType": "Enquiry Type",
+    "enquiryGeneral": "General Enquiry", "enquiryService": "Service Enquiry",
+    "enquiryProposal": "Business Proposal", "enquiryRefund": "Refund / Cancellation",
+    "message": "Message", "submit": "Submit Request",
+    "successHeading": "Message sent!", "successBody": "Thank you. We will get back to you within 1 business day.",
+    "betaNote": "Currently in Beta — phone and remote support coming soon.", "required": "Required"
+  },
+  "footer": {
+    "tagline": "The CRM built for study abroad agencies.",
+    "col1": "Services", "col2": "Platform", "col3": "Company", "col4": "Support",
+    "copyright": "© 2026 Edubee.Co. All rights reserved.",
+    "address": "Suite 804, 343 Little Collins Street, Melbourne VIC 3000, Australia",
+    "email": "info@edubee.co"
+  },
+  "common": {
+    "learnMore": "Learn More →", "startFree": "Start for Free →", "bookDemo": "Book a Demo",
+    "contactUs": "Contact Us", "comingSoon": "Coming Soon", "newBadge": "NEW", "betaBadge": "BETA",
+    "viewAll": "View All", "loading": "Loading...", "error": "Something went wrong. Please try again.",
+    "backToHome": "Back to Home", "included": "Included", "notAvailable": "—"
+  }
+}

@@ -1,0 +1,32 @@
+kind = "web"
+  previewPath = "/website/"
+  title = "Edubee Website"
+  version = "1.0.0"
+  id = "artifacts/edubee-website"
+  router = "path"
+
+  [[integratedSkills]]
+  name = "react-vite"
+  version = "1.0.0"
+
+  [[services]]
+  localPort = 25981
+  name = "web"
+  paths = ["/website/"]
+
+  [services.development]
+  run = "pnpm --filter @workspace/edubee-website run dev"
+
+  [services.env]
+  PORT = "25981"
+  BASE_PATH = "/website/"
+
+  [services.production]
+  build = ["pnpm", "--filter", "@workspace/edubee-website", "run", "build"]
+  publicDir = "artifacts/edubee-website/dist/public"
+  serve = "static"
+
+  [[services.production.rewrites]]
+  from = "/*"
+  to = "/index.html"
+  

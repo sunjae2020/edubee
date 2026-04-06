@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /studio
+Disallow: /studio/
+Disallow: /api/
+
+Sitemap: https://www.edubee.co/sitemap.xml
+Host: https://www.edubee.co
