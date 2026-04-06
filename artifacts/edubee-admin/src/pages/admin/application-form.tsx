@@ -1,0 +1,800 @@
+import { useState, useRef } from "react";
+import { useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronLeft, Loader2, Upload } from "lucide-react";
+import SignaturePad from "@/components/shared/SignaturePad";
+import DatePickerInput from "@/components/shared/DatePickerInput";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// ── Design helpers ──────────────────────────────────────────────────────────
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <div className="bg-(--e-orange) text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-t-xl">
+      {title}
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border overflow-hidden">
+      <SectionHeader title={title} />
+      <div className="bg-card p-5 space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function Field({ label, required, half, children }: { label: string; required?: boolean; half?: boolean; children: React.ReactNode }) {
+  return (
+    <div className={half ? "col-span-1" : ""}>
+      <label className="block text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-1">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function RadioGroup({ name, options, value, onChange }: {
+  name: string; options: { label: string; value: string }[];
+  value: string; onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex gap-2 flex-wrap">
+      {options.map(o => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(o.value)}
+          className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+            value === o.value
+              ? "bg-(--e-orange) text-white border-(--e-orange)"
+              : "border-border text-muted-foreground hover:border-(--e-orange)/50"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const inputCls = "h-9 text-sm border-border focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange)";
+
+// ── Available services ──────────────────────────────────────────────────────
+const SERVICES = [
+  { key: "study_abroad",  label: "Study Abroad" },
+  { key: "accommodation", label: "Accommodation / Homestay / Boarding" },
+  { key: "pickup",        label: "Airport Pickup by Edubee" },
+  { key: "settlement",    label: "Settlement Service by Edubee" },
+  { key: "guardian",      label: "Family / Nanny Guardian Service" },
+  { key: "internship",    label: "Internship Placement" },
+];
+
+// ── Main component ──────────────────────────────────────────────────────────
+export default function ApplicationForm() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const passportRef  = useRef<HTMLInputElement>(null);
+  const enrolmentRef = useRef<HTMLInputElement>(null);
+
+  // ── Service checkboxes
+  const [services, setServices] = useState<string[]>([]);
+  const has = (k: string) => services.includes(k);
+  const toggle = (k: string) => setServices(p => p.includes(k) ? p.filter(s => s !== k) : [...p, k]);
+
+  // ── Personal Information
+  const [lastName,        setLastName]        = useState("");
+  const [firstName,       setFirstName]       = useState("");
+  const [nationality,     setNationality]     = useState("");
+  const [dob,             setDob]             = useState("");
+  const [sex,             setSex]             = useState("");
+  const [passportNo,      setPassportNo]      = useState("");
+  const [passportExpiry,  setPassportExpiry]  = useState("");
+  const [addlPassport,    setAddlPassport]    = useState("None");
+  const [firstYear,       setFirstYear]       = useState("");
+  const [address,         setAddress]         = useState("");
+  const [phoneMobile,     setPhoneMobile]     = useState("");
+  const [phoneHome,       setPhoneHome]       = useState("");
+  const [email,           setEmail]           = useState("");
+  const [schoolGradeYear, setSchoolGradeYear] = useState("");
+
+  // ── Emergency Contact
+  const [ecName,         setEcName]         = useState("");
+  const [ecRelationship, setEcRelationship] = useState("");
+  const [ecPhone,        setEcPhone]        = useState("");
+  const [ecEmail,        setEcEmail]        = useState("");
+
+  // ── School Information
+  const [institution,         setInstitution]         = useState("");
+  const [course,              setCourse]              = useState("");
+  const [enrollmentFrom,      setEnrollmentFrom]      = useState("");
+  const [enrollmentTo,        setEnrollmentTo]        = useState("");
+  const [schoolNote,          setSchoolNote]          = useState("");
+
+  // ── Airport Pickup
+  const [arrivalDate,     setArrivalDate]     = useState("");
+  const [flightNumber,    setFlightNumber]    = useState("");
+  const [numLuggage,      setNumLuggage]      = useState("");
+  const [pickupAddress,   setPickupAddress]   = useState("");
+  const [arrivalAirport,  setArrivalAirport]  = useState("");
+  const [departureAirport,setDepartureAirport]= useState("");
+  const [arrivalTime,     setArrivalTime]     = useState("");
+  const [passengerCount,  setPassengerCount]  = useState("");
+
+  // ── Accommodation
+  const [checkinDate,        setCheckinDate]        = useState("");
+  const [checkoutDate,       setCheckoutDate]       = useState("");
+  const [stayDuration,       setStayDuration]       = useState("");
+  const [roomType,           setRoomType]           = useState("");
+  const [accommodationOption,setAccommodationOption]= useState(""); // "student" | "homestay"
+
+  // ── Homestay Details
+  const [homestayType,    setHomestayType]    = useState("");
+  const [allergicPets,    setAllergicPets]    = useState("");
+  const [canLivePets,     setCanLivePets]     = useState("");
+  const [doSmoke,         setDoSmoke]         = useState("");
+  const [canLiveSmokers,  setCanLiveSmokers]  = useState("");
+  const [canLiveStudents, setCanLiveStudents] = useState("");
+  const [canLiveChildren, setCanLiveChildren] = useState("");
+  const [religiousBelief, setReligiousBelief] = useState("");
+  const [specialDiet,     setSpecialDiet]     = useState("");
+  const [foodAvoid,       setFoodAvoid]       = useState("");
+  const [otherReqs,       setOtherReqs]       = useState("");
+  const [hobbies,         setHobbies]         = useState("");
+  const [selfIntro,       setSelfIntro]       = useState("");
+  const [declHomestay,    setDeclHomestay]    = useState(false);
+
+  // ── Internship Information
+  const [intEnglishLevel,    setIntEnglishLevel]    = useState("");
+  const [intDriverLicense,   setIntDriverLicense]   = useState("");
+  const [intStartDate,       setIntStartDate]       = useState("");
+  const [intProgram,         setIntProgram]         = useState("");
+  const [intCity,            setIntCity]            = useState("");
+  const [intPositionType,    setIntPositionType]    = useState("");
+  const [intHealthIssue,     setIntHealthIssue]     = useState("");
+  const [intMentalIssue,     setIntMentalIssue]     = useState("");
+  const [intMedication,      setIntMedication]      = useState("");
+  const [declInternship,     setDeclInternship]     = useState(false);
+
+  // ── Signature & Date
+  const [signatureImage, setSignatureImage] = useState<string | null>(null);
+  const [signDate,       setSignDate]       = useState(() => new Date().toISOString().slice(0, 10));
+
+  // ── Declaration checkboxes
+  const [declAgree, setDeclAgree] = useState(false);
+
+  // ── Files (display only — not uploaded to server in this version)
+  const [passportFile,  setPassportFile]  = useState<File | null>(null);
+  const [enrolmentFile, setEnrolmentFile] = useState<File | null>(null);
+
+  // ── Notes / Agent
+  const [notes, setNotes]   = useState("");
+  const [agent, setAgent]   = useState("");
+
+  const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ") || "";
+
+  const submit = useMutation({
+    mutationFn: () => {
+      const extraNotes = [
+        ecName        ? `EC Name: ${ecName}`               : "",
+        ecRelationship? `EC Relationship: ${ecRelationship}` : "",
+        ecPhone       ? `EC Phone: ${ecPhone}`             : "",
+        ecEmail       ? `EC Email: ${ecEmail}`             : "",
+        passportNo    ? `Passport: ${passportNo} (exp ${passportExpiry})` : "",
+        numLuggage    ? `Luggage: ${numLuggage}`           : "",
+        pickupAddress ? `Pickup Address: ${pickupAddress}` : "",
+        stayDuration        ? `Duration: ${stayDuration}`                    : "",
+        accommodationOption ? `Accommodation Option: ${accommodationOption}` : "",
+        homestayType    ? `Homestay Type: ${homestayType}`           : "",
+        allergicPets    ? `Allergic to Dogs/Cats: ${allergicPets}`   : "",
+        canLivePets     ? `Can Live With Pets: ${canLivePets}`       : "",
+        doSmoke         ? `Do Smoke: ${doSmoke}`                     : "",
+        canLiveSmokers  ? `Can Live With Smokers: ${canLiveSmokers}` : "",
+        canLiveStudents ? `Can Live With Students: ${canLiveStudents}` : "",
+        canLiveChildren ? `Can Live With Children: ${canLiveChildren}` : "",
+        religiousBelief ? `Religious/Cultural Beliefs: ${religiousBelief}` : "",
+        specialDiet     ? `Special Diet: ${specialDiet}`             : "",
+        foodAvoid       ? `Food to Avoid: ${foodAvoid}`              : "",
+        otherReqs       ? `Other Requirements: ${otherReqs}`         : "",
+        hobbies         ? `Hobbies: ${hobbies}`                      : "",
+        selfIntro       ? `Self Intro: ${selfIntro}`                 : "",
+        intEnglishLevel  ? `Internship English Level: ${intEnglishLevel}` : "",
+        intDriverLicense ? `Australian Driver License: ${intDriverLicense}` : "",
+        intProgram       ? `Placement Program: ${intProgram}`        : "",
+        intCity          ? `Preferred City: ${intCity}`              : "",
+        intPositionType  ? `Preferred Position: ${intPositionType}`  : "",
+        intHealthIssue   ? `Health Issue: ${intHealthIssue}`         : "",
+        intMentalIssue   ? `Mental Issue: ${intMentalIssue}`         : "",
+        intMedication    ? `Medication: ${intMedication}`            : "",
+        schoolGradeYear ? `School/Grade/Year: ${schoolGradeYear}` : "",
+        agent         ? `Agent: ${agent}`                  : "",
+        schoolNote    ? `School Note: ${schoolNote}`       : "",
+        notes,
+      ].filter(Boolean).join("\n");
+
+      const payload: Record<string, unknown> = {
+        applicationType:    "service",
+        serviceTypes:       services,
+        applicantFirstName: firstName.trim() || undefined,
+        applicantLastName:  lastName.trim()  || undefined,
+        applicantName:      fullName || undefined,
+        applicantEmail:     email    || undefined,
+        applicantPhone:     phoneMobile || undefined,
+        applicantNationality: nationality || undefined,
+        applicationStatus:  "submitted",
+        status:             "submitted",
+        // school
+        institutionName:    institution    || undefined,
+        courseName:         course         || undefined,
+        studyStartDate:     enrollmentFrom || undefined,
+        studyEndDate:       enrollmentTo   || undefined,
+        destinationCountry: nationality    || undefined,
+        // pickup
+        flightNumber:       flightNumber     || undefined,
+        flightDate:         arrivalDate      || undefined,
+        arrivalTime:        arrivalTime      || undefined,
+        departureAirport:   departureAirport || undefined,
+        arrivalAirport:     arrivalAirport   || undefined,
+        passengerCount:     passengerCount ? Number(passengerCount) : undefined,
+        // accommodation
+        checkinDate:        checkinDate  || undefined,
+        checkoutDate:       checkoutDate || undefined,
+        roomType:           roomType     || undefined,
+        accommodationAddress: address    || undefined,
+        // internship
+        internshipStartDate: intStartDate    || undefined,
+        industry:            intProgram      || undefined,
+        companyPreference:   intCity         || undefined,
+        // signature
+        signatureImage:      signatureImage || undefined,
+        signatureDate:       signDate       || undefined,
+        // notes
+        notes: extraNotes || undefined,
+      };
+      Object.keys(payload).forEach(k => { if (payload[k] === undefined) delete payload[k]; });
+      return axios.post(`${BASE}/api/applications`, payload).then(r => r.data);
+    },
+    onSuccess: (data) => {
+      toast({ title: "Application submitted successfully" });
+      setLocation(`${BASE}/admin/applications/${data.id}`);
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to submit application" }),
+  });
+
+  const canSubmit = fullName.length > 0 && services.length > 0;
+
+  return (
+    <div className="max-w-3xl mx-auto py-8 px-4 space-y-5">
+      {/* Back nav */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setLocation(`${BASE}/admin/applications`)}
+          className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+        </button>
+        <div>
+          <h1 className="text-base font-semibold text-[#1C1917]">Program & Service Application</h1>
+          <p className="text-xs text-muted-foreground">Fill in all required fields and submit</p>
+        </div>
+      </div>
+
+      {/* ── 1. AVAILABLE SERVICE LIST ──────────────────────────────── */}
+      <Section title="Available Service List">
+        <p className="text-xs text-muted-foreground -mt-1">Select all services that apply (multiple selections allowed)</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {SERVICES.map(s => (
+            <label
+              key={s.key}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
+                has(s.key)
+                  ? "border-(--e-orange) bg-(--e-orange-lt)"
+                  : "border-border hover:border-(--e-orange)/40 hover:bg-muted/30"
+              }`}
+            >
+              <Checkbox
+                checked={has(s.key)}
+                onCheckedChange={() => toggle(s.key)}
+                className="data-[state=checked]:bg-(--e-orange) data-[state=checked]:border-(--e-orange) shrink-0"
+              />
+              <span className={`text-sm font-medium ${has(s.key) ? "text-(--e-orange)" : "text-[#1C1917]"}`}>
+                {s.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </Section>
+
+      {/* ── 2. PERSONAL INFORMATION ────────────────────────────────── */}
+      <Section title="Personal Information">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Last Name" required>
+            <Input className={inputCls} value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Family name" />
+          </Field>
+          <Field label="First Name" required>
+            <Input className={inputCls} value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Given name" />
+          </Field>
+          <Field label="Nationality" required>
+            <Input className={inputCls} value={nationality} onChange={e => setNationality(e.target.value)} placeholder="e.g. Korean" />
+          </Field>
+          <Field label="Date of Birth" required>
+            <DatePickerInput value={dob} onChange={setDob} fromYear={1920} toYear={new Date().getFullYear()} />
+          </Field>
+        </div>
+
+        <Field label="Sex" required>
+          <RadioGroup name="sex" value={sex} onChange={setSex}
+            options={[{ label: "Male", value: "male" }, { label: "Female", value: "female" }, { label: "Other", value: "other" }]}
+          />
+        </Field>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="ID / Passport No." required>
+            <Input className={inputCls} value={passportNo} onChange={e => setPassportNo(e.target.value)} placeholder="Passport number" />
+          </Field>
+          <Field label="Passport Expiry Date">
+            <DatePickerInput value={passportExpiry} onChange={setPassportExpiry} fromYear={new Date().getFullYear()} toYear={new Date().getFullYear() + 20} />
+          </Field>
+          <Field label="Additional Passport Country">
+            <Input className={inputCls} value={addlPassport} onChange={e => setAddlPassport(e.target.value)} placeholder="None (or country)" />
+          </Field>
+          <Field label="First Year in Australia?">
+            <RadioGroup name="firstYear" value={firstYear} onChange={setFirstYear}
+              options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+            />
+          </Field>
+        </div>
+
+        <Field label="Current Address" required>
+          <Input className={inputCls} value={address} onChange={e => setAddress(e.target.value)} placeholder="Full address" />
+        </Field>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Field label="Mobile Phone">
+            <Input className={inputCls} value={phoneMobile} onChange={e => setPhoneMobile(e.target.value)} placeholder="+82 10 xxxx xxxx" />
+          </Field>
+          <Field label="Home Phone">
+            <Input className={inputCls} value={phoneHome} onChange={e => setPhoneHome(e.target.value)} placeholder="Home number" />
+          </Field>
+          <Field label="Email Address">
+            <Input className={inputCls} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" />
+          </Field>
+        </div>
+
+        <Field label="School / Grade / Year">
+          <Input className={inputCls} value={schoolGradeYear} onChange={e => setSchoolGradeYear(e.target.value)} placeholder="e.g. Sydney High School / Year 10" />
+        </Field>
+      </Section>
+
+      {/* ── 3. EMERGENCY CONTACT DETAILS ───────────────────────────── */}
+      <Section title="Emergency Contact Details">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Contact Name">
+            <Input className={inputCls} value={ecName} onChange={e => setEcName(e.target.value)} placeholder="Full name" />
+          </Field>
+          <Field label="Relationship">
+            <Input className={inputCls} value={ecRelationship} onChange={e => setEcRelationship(e.target.value)} placeholder="e.g. Parent, Guardian" />
+          </Field>
+          <Field label="Contact Phone">
+            <Input className={inputCls} value={ecPhone} onChange={e => setEcPhone(e.target.value)} placeholder="Phone number" />
+          </Field>
+          <Field label="Contact Email">
+            <Input className={inputCls} type="email" value={ecEmail} onChange={e => setEcEmail(e.target.value)} placeholder="email@example.com" />
+          </Field>
+        </div>
+      </Section>
+
+      {/* ── 4. SCHOOL INFORMATION ──────────────────────────────────── */}
+      <Section title="School Information">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="School / Institution">
+            <Input className={inputCls} value={institution} onChange={e => setInstitution(e.target.value)} placeholder="School or university name" />
+          </Field>
+          <Field label="Course / Program" required={has("study_abroad")}>
+            <Input className={inputCls} value={course} onChange={e => setCourse(e.target.value)} placeholder="Course name" />
+          </Field>
+          <Field label="Enrollment From">
+            <DatePickerInput value={enrollmentFrom} onChange={setEnrollmentFrom} fromYear={new Date().getFullYear() - 2} toYear={new Date().getFullYear() + 10} />
+          </Field>
+          <Field label="Enrollment To">
+            <DatePickerInput value={enrollmentTo} onChange={setEnrollmentTo} fromYear={new Date().getFullYear() - 2} toYear={new Date().getFullYear() + 10} />
+          </Field>
+        </div>
+        <Field label="Note">
+          <Textarea className="text-sm min-h-[70px] border-border focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange)"
+            value={schoolNote} onChange={e => setSchoolNote(e.target.value)} placeholder="Any additional school information..." />
+        </Field>
+      </Section>
+
+      {/* ── 5. AIRPORT PICKUP (conditional) ───────────────────────── */}
+      {has("pickup") && (
+        <Section title="Airport Pickup">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Arrival Date" required>
+              <Input className={inputCls} type="date" value={arrivalDate} onChange={e => setArrivalDate(e.target.value)} />
+            </Field>
+            <Field label="Arrival Time">
+              <Input className={inputCls} type="time" value={arrivalTime} onChange={e => setArrivalTime(e.target.value)} />
+            </Field>
+            <Field label="Flight Number">
+              <Input className={inputCls} value={flightNumber} onChange={e => setFlightNumber(e.target.value)} placeholder="e.g. QF123" />
+            </Field>
+            <Field label="Number of Luggage">
+              <Input className={inputCls} type="number" min={0} value={numLuggage} onChange={e => setNumLuggage(e.target.value)} placeholder="0" />
+            </Field>
+            <Field label="Departure Airport">
+              <Input className={inputCls} value={departureAirport} onChange={e => setDepartureAirport(e.target.value)} placeholder="City or IATA code" />
+            </Field>
+            <Field label="Arrival Airport">
+              <Input className={inputCls} value={arrivalAirport} onChange={e => setArrivalAirport(e.target.value)} placeholder="e.g. SYD" />
+            </Field>
+            <Field label="Number of Passengers">
+              <Input className={inputCls} type="number" min={1} value={passengerCount} onChange={e => setPassengerCount(e.target.value)} placeholder="1" />
+            </Field>
+            <Field label="Pickup / Drop-off Address">
+              <Input className={inputCls} value={pickupAddress} onChange={e => setPickupAddress(e.target.value)} placeholder="Destination address" />
+            </Field>
+          </div>
+        </Section>
+      )}
+
+      {/* ── 6. ACCOMMODATION / HOMESTAY (conditional) ─────────────── */}
+      {has("accommodation") && (
+        <Section title="Accommodation / Homestay">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Check-in Date" required>
+                <Input className={inputCls} type="date" value={checkinDate} onChange={e => setCheckinDate(e.target.value)} />
+              </Field>
+              <Field label="Check-out Date">
+                <Input className={inputCls} type="date" value={checkoutDate} onChange={e => setCheckoutDate(e.target.value)} />
+              </Field>
+              <Field label="Duration">
+                <Input className={inputCls} value={stayDuration} onChange={e => setStayDuration(e.target.value)} placeholder="e.g. 4 weeks, 3 months" />
+              </Field>
+              <Field label="Room Type">
+                <select
+                  value={roomType}
+                  onChange={e => setRoomType(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-(--e-orange)/50"
+                >
+                  <option value="">Please Select</option>
+                  {["Single", "Twin", "Double", "Family"].map(r => (
+                    <option key={r} value={r.toLowerCase()}>{r}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Accommodation Option" className="col-span-2">
+                <select
+                  value={accommodationOption}
+                  onChange={e => setAccommodationOption(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-(--e-orange)/50"
+                >
+                  <option value="">Please Select</option>
+                  <option value="student">Student Accommodation</option>
+                  <option value="homestay">Homestay</option>
+                </select>
+              </Field>
+            </div>
+        </Section>
+      )}
+
+      {/* ── 7. HOMESTAY DETAILS (only when Homestay is selected) ──── */}
+      {has("accommodation") && accommodationOption === "homestay" && (
+        <Section title="Homestay Details">
+          {/* Homestay Type */}
+          <Field label="Homestay Type" className="mb-4">
+            <div className="flex flex-col gap-2">
+              {[
+                "1 Single (2 meals per/day)",
+                "2 Shared (2 meals per/day)",
+                "1 Single (Under 18)",
+                "2 Shared (Under 18)",
+              ].map(opt => (
+                <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="homestayType"
+                    value={opt}
+                    checked={homestayType === opt}
+                    onChange={() => setHomestayType(opt)}
+                    className="accent-(--e-orange) w-4 h-4"
+                  />
+                  <span className="text-sm text-stone-700">{opt}</span>
+                </label>
+              ))}
+            </div>
+          </Field>
+
+          {/* Yes/No grid */}
+          <div className="grid grid-cols-2 gap-x-10 gap-y-5 mb-5">
+            <Field label="Are you allergic to dogs / cats?">
+              <RadioGroup name="allergicPets" value={allergicPets} onChange={setAllergicPets}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
+            </Field>
+            <Field label="Can you live with pets?">
+              <RadioGroup name="canLivePets" value={canLivePets} onChange={setCanLivePets}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
+            </Field>
+            <Field label="Do you smoke?">
+              <RadioGroup name="doSmoke" value={doSmoke} onChange={setDoSmoke}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
+            </Field>
+            <Field label="Can you live with people who smoke?">
+              <RadioGroup name="canLiveSmokers" value={canLiveSmokers} onChange={setCanLiveSmokers}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
+            </Field>
+            <Field label="Can you live with other students?">
+              <RadioGroup name="canLiveStudents" value={canLiveStudents} onChange={setCanLiveStudents}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
+            </Field>
+            <Field label="Can you live with children in your homestay?">
+              <RadioGroup name="canLiveChildren" value={canLiveChildren} onChange={setCanLiveChildren}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]} />
+            </Field>
+          </div>
+
+          {/* Text fields */}
+          <div className="grid grid-cols-1 gap-4">
+            <Field label="Do you have religious / cultural / personal beliefs that your homestay should know about?">
+              <Input className={inputCls} value={religiousBelief} onChange={e => setReligiousBelief(e.target.value)} />
+            </Field>
+            <Field label="Any known allergies, or special diet requirements:">
+              <Input className={inputCls} value={specialDiet} onChange={e => setSpecialDiet(e.target.value)} />
+            </Field>
+            <Field label="Any food that you do not eat:">
+              <Input className={inputCls} value={foodAvoid} onChange={e => setFoodAvoid(e.target.value)} />
+            </Field>
+            <Field label="Other requirements:">
+              <Input className={inputCls} value={otherReqs} onChange={e => setOtherReqs(e.target.value)} />
+            </Field>
+            <Field label="What are your hobbies?">
+              <Input className={inputCls} value={hobbies} onChange={e => setHobbies(e.target.value)} />
+            </Field>
+            <Field label="Briefly introduce yourself to your host family:">
+              <textarea
+                value={selfIntro}
+                onChange={e => setSelfIntro(e.target.value)}
+                rows={4}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-stone-700 resize-y focus:outline-none focus:ring-2 focus:ring-(--e-orange)/50"
+              />
+            </Field>
+          </div>
+
+          {/* T&C */}
+          <div className="flex items-start gap-3 pt-3">
+            <Checkbox
+              id="declHomestay"
+              checked={declHomestay}
+              onCheckedChange={v => setDeclHomestay(!!v)}
+              className="mt-0.5 data-[state=checked]:bg-(--e-orange) data-[state=checked]:border-(--e-orange)"
+            />
+            <label htmlFor="declHomestay" className="text-sm text-stone-700 leading-snug cursor-pointer">
+              I agree to{" "}
+              <span className="text-blue-600 underline cursor-pointer">terms & conditions of homestay</span>.
+            </label>
+          </div>
+        </Section>
+      )}
+
+      {/* ── 7b. INTERNSHIP INFORMATION ──────────────────────────────── */}
+      {has("internship") && (
+        <Section title="Internship Information">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+
+            {/* Current English Level */}
+            <Field label="Current English Level" className="sm:col-span-2">
+              <div className="flex flex-wrap gap-3">
+                {["Elementary", "Pre-Inter", "Intermediate", "Upper Inter", "Advanced", "Other"].map(opt => (
+                  <button key={opt} type="button"
+                    onClick={() => setIntEnglishLevel(opt)}
+                    className={`px-4 py-1.5 rounded-full border text-sm font-medium transition-colors ${
+                      intEnglishLevel === opt
+                        ? "bg-(--e-orange) border-(--e-orange) text-white"
+                        : "border-border text-stone-600 hover:border-(--e-orange)/60"
+                    }`}
+                  >{opt}</button>
+                ))}
+              </div>
+            </Field>
+
+            {/* Australian Driver License */}
+            <Field label="Do you have an Australian Driver License?">
+              <RadioGroup name="intDriverLicense" value={intDriverLicense} onChange={setIntDriverLicense}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+            </Field>
+
+            {/* Preferred Starting Date */}
+            <Field label="Preferred Starting Date">
+              <Input type="date" value={intStartDate} onChange={e => setIntStartDate(e.target.value)}
+                className="h-9 text-sm" />
+            </Field>
+
+            {/* Placement Program */}
+            <Field label="Placement Program">
+              <select
+                value={intProgram}
+                onChange={e => setIntProgram(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-(--e-orange)/50"
+              >
+                <option value="">Please Select</option>
+                {["Hospitality & Tourism", "Business Administration", "IT & Technology",
+                  "Healthcare & Nursing", "Engineering", "Marketing & Media",
+                  "Education", "Finance & Accounting", "Retail & Customer Service", "Other"
+                ].map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </Field>
+
+            {/* Preferred City */}
+            <Field label="Preferred City">
+              <Input value={intCity} onChange={e => setIntCity(e.target.value)}
+                placeholder="e.g. Sydney" className="h-9 text-sm" />
+            </Field>
+
+            {/* Preferred Type of Position */}
+            <Field label="Preferred Type of Position" className="sm:col-span-2">
+              <Input value={intPositionType} onChange={e => setIntPositionType(e.target.value)}
+                placeholder="e.g. Front Desk, Barista, Marketing Assistant"
+                className="h-9 text-sm" />
+            </Field>
+
+            {/* Health Issue */}
+            <Field label="Do you have any health problem you might think that will be affected your ability working during your employment?" className="sm:col-span-2">
+              <RadioGroup name="intHealthIssue" value={intHealthIssue} onChange={setIntHealthIssue}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+            </Field>
+
+            {/* Mental Issue */}
+            <Field label="Do you or have you ever been suffering from any mental problem or illness?" className="sm:col-span-2">
+              <RadioGroup name="intMentalIssue" value={intMentalIssue} onChange={setIntMentalIssue}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+            </Field>
+
+            {/* Medication */}
+            <Field label="Are you currently taking any medication or drug which could affect to perform your duties when you work?" className="sm:col-span-2">
+              <RadioGroup name="intMedication" value={intMedication} onChange={setIntMedication}
+                options={[{ label: "Yes", value: "yes" }, { label: "No", value: "no" }]}
+              />
+            </Field>
+
+            {/* T&C Agreement */}
+            <div className="sm:col-span-2 flex items-start gap-3 pt-1">
+              <Checkbox id="declInternship" checked={declInternship}
+                onCheckedChange={v => setDeclInternship(!!v)}
+                className="mt-0.5 data-[state=checked]:bg-(--e-orange) data-[state=checked]:border-(--e-orange)"
+              />
+              <label htmlFor="declInternship" className="text-sm text-stone-700 leading-snug cursor-pointer">
+                I agree to{" "}
+                <span className="text-blue-600 underline cursor-pointer">terms & conditions of internship</span>.
+              </label>
+            </div>
+
+          </div>
+        </Section>
+      )}
+
+      {/* ── 8. DOCUMENTS & SIGN ────────────────────────────────────── */}
+      <Section title="Documents & Sign">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Passport */}
+          <div>
+            <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-2">Passport Copy</p>
+            <div
+              onClick={() => passportRef.current?.click()}
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-(--e-orange)/60 cursor-pointer py-6 transition-colors bg-muted/20"
+            >
+              <Upload className="w-5 h-5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {passportFile ? passportFile.name : "Browse Files"}
+              </span>
+            </div>
+            <input ref={passportRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
+              onChange={e => setPassportFile(e.target.files?.[0] ?? null)} />
+          </div>
+
+          {/* Enrolment */}
+          <div>
+            <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-2">Enrolment / Application</p>
+            <div
+              onClick={() => enrolmentRef.current?.click()}
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-(--e-orange)/60 cursor-pointer py-6 transition-colors bg-muted/20"
+            >
+              <Upload className="w-5 h-5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {enrolmentFile ? enrolmentFile.name : "Browse Files"}
+              </span>
+            </div>
+            <input ref={enrolmentRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
+              onChange={e => setEnrolmentFile(e.target.files?.[0] ?? null)} />
+          </div>
+
+        </div>
+
+        {/* Signature pad + Date */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5 items-start">
+          <SignaturePad
+            label="Signature (Draw)"
+            value={signatureImage}
+            onChange={setSignatureImage}
+            height={160}
+          />
+          <div>
+            <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-1.5">Date</p>
+            <DatePickerInput
+              value={signDate}
+              onChange={setSignDate}
+              fromYear={new Date().getFullYear() - 1}
+              toYear={new Date().getFullYear() + 5}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2.5 pt-4">
+          <Checkbox
+            id="decl"
+            checked={declAgree}
+            onCheckedChange={v => setDeclAgree(!!v)}
+            className="mt-0.5 data-[state=checked]:bg-(--e-orange) data-[state=checked]:border-(--e-orange)"
+          />
+          <label htmlFor="decl" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+            I confirm that all information provided in this application is true and correct. I agree to the{" "}
+            <span className="text-(--e-orange) underline cursor-pointer">terms and conditions</span>{" "}
+            of service.
+          </label>
+        </div>
+      </Section>
+
+      {/* ── 9. AGENT ───────────────────────────────────────────────── */}
+      <Section title="Agent">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Agent Name / Code">
+            <Input className={inputCls} value={agent} onChange={e => setAgent(e.target.value)} placeholder="Agent name or referral code" />
+          </Field>
+          <Field label="Additional Notes">
+            <Input className={inputCls} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any other information..." />
+          </Field>
+        </div>
+      </Section>
+
+      {/* ── Submit ─────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between pt-2 pb-8">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setLocation(`${BASE}/admin/applications`)}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white px-8 gap-2"
+          onClick={() => submit.mutate()}
+          disabled={submit.isPending || !canSubmit}
+        >
+          {submit.isPending ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+          ) : (
+            "Submit Application"
+          )}
+        </Button>
+      </div>
+
+      {!canSubmit && (
+        <p className="text-xs text-muted-foreground text-center -mt-4 pb-4">
+          Please select at least one service and enter applicant name to submit.
+        </p>
+      )}
+    </div>
+  );
+}
