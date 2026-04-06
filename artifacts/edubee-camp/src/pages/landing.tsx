@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowRight, ChevronUp, ArrowUpRight, LayoutDashboard, LogOut } from "lucide-react";
+import { Menu, X, ArrowRight, ChevronUp, ArrowUpRight } from "lucide-react";
 import { ChatWidget } from "@/components/public/ChatWidget";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -16,9 +16,8 @@ import { ApplicationModal } from "@/components/public/application-modal";
 import type { PublicProgram } from "@/lib/program-utils";
 import { getLocalizedName } from "@/lib/program-utils";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
-import { useAuth } from "@/hooks/use-auth";
-
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL ?? "/admin-crm";
 
 function fetchPrograms(): Promise<PublicProgram[]> {
   return axios.get(`${BASE}/api/public/packages`).then((r) => r.data);
@@ -57,8 +56,6 @@ const TESTIMONIALS = [
 
 export default function Landing() {
   const { t, i18n } = useTranslation();
-  const { user, logout, isAuthenticated } = useAuth();
-  const [, setLocation] = useLocation();
   const [scrolled, setScrolled]             = useState(false);
   const [showTop, setShowTop]               = useState(false);
   const [mobileOpen, setMobileOpen]         = useState(false);
@@ -133,43 +130,12 @@ export default function Landing() {
             {/* Divider */}
             <div className="w-px h-4 bg-border mx-1" />
 
-            {/* Auth area */}
-            {isAuthenticated && user ? (
-              <div className="flex items-center gap-1">
-                {/* User badge */}
-                <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-(--e-orange-lt)">
-                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-(--e-orange) text-white text-[9px] font-bold shrink-0">
-                    {(user.fullName ?? user.email ?? "?")[0].toUpperCase()}
-                  </span>
-                  <span className="text-[11px] font-medium text-(--e-orange) max-w-[80px] truncate leading-none">
-                    {user.fullName ?? user.email}
-                  </span>
-                </div>
-                {/* Admin link */}
-                <button
-                  onClick={() => setLocation(`${BASE}/admin/dashboard`)}
-                  className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors whitespace-nowrap"
-                  title="Admin Dashboard"
-                >
-                  <LayoutDashboard className="w-3 h-3" />
-                  <span className="hidden sm:inline">Admin</span>
-                </button>
-                {/* Logout */}
-                <button
-                  onClick={() => logout()}
-                  className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded transition-colors whitespace-nowrap"
-                >
-                  <LogOut className="w-3 h-3" />
-                  <span className="hidden sm:inline">{t("auth.logout")}</span>
-                </button>
-              </div>
-            ) : (
-              <Link href="/login">
-                <button className="px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-                  {t("nav.login")}
-                </button>
-              </Link>
-            )}
+            {/* Admin Login */}
+            <a href={`${ADMIN_URL}/login`}>
+              <button className="px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+                {t("nav.login")}
+              </button>
+            </a>
           </div>
         </div>
 
@@ -236,35 +202,9 @@ export default function Landing() {
                   {l.label}
                 </button>
               ))}
-              {isAuthenticated && user ? (
-                <>
-                  <div className="flex items-center gap-2 px-3 py-2.5 my-1 rounded-lg bg-(--e-orange-lt)">
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-(--e-orange) text-white text-xs font-bold shrink-0">
-                      {(user.fullName ?? user.email ?? "?")[0].toUpperCase()}
-                    </span>
-                    <div>
-                      <div className="text-sm font-semibold text-(--e-orange)">{user.fullName ?? user.email}</div>
-                      <div className="text-[10px] text-muted-foreground capitalize">{user.role?.replace("_", " ")}</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setLocation(`${BASE}/admin/dashboard`); setMobileOpen(false); }}
-                    className="flex items-center gap-2 px-3 py-2.5 text-base font-medium text-foreground hover:bg-muted rounded-md"
-                  >
-                    <LayoutDashboard className="w-4 h-4" /> Admin Dashboard
-                  </button>
-                  <button
-                    onClick={() => { logout(); setMobileOpen(false); }}
-                    className="flex items-center gap-2 px-3 py-2.5 text-base font-medium text-red-500 hover:bg-red-50 rounded-md"
-                  >
-                    <LogOut className="w-4 h-4" /> {t("auth.logout")}
-                  </button>
-                </>
-              ) : (
-                <Link href="/login" onClick={() => setMobileOpen(false)}>
-                  <div className="px-3 py-2.5 text-base font-medium text-foreground hover:bg-muted rounded-md cursor-pointer">{t("nav.login")}</div>
-                </Link>
-              )}
+              <a href={`${ADMIN_URL}/login`} onClick={() => setMobileOpen(false)}>
+                <div className="px-3 py-2.5 text-base font-medium text-foreground hover:bg-muted rounded-md cursor-pointer">{t("nav.login")}</div>
+              </a>
             </nav>
             <div className="p-5 space-y-3 border-t border-border">
               <LanguageSwitcher />
@@ -713,7 +653,7 @@ export default function Landing() {
                 </li>
               ))}
               <li>
-                <Link href="/login" className="text-sm hover:text-white transition-colors">{t("nav.login")}</Link>
+                <a href={`${ADMIN_URL}/login`} className="text-sm hover:text-white transition-colors">{t("nav.login")}</a>
               </li>
             </ul>
           </div>
