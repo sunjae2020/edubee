@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/admin-crm/"
+previewPath = "/admin/"
 title = "Edubee CRM"
 version = "1.0.0"
 id = "artifacts/edubee-admin"
@@ -11,7 +11,7 @@ version = "1.0.0"
 
 [[services]]
 name = "web"
-paths = [ "/admin-crm/" ]
+paths = [ "/admin/" ]
 localPort = 20008
 
 [services.development]
@@ -28,4 +28,4 @@ to = "/index.html"
 
 [services.env]
 PORT = "20008"
-BASE_PATH = "/admin-crm/"
+BASE_PATH = "/admin/"

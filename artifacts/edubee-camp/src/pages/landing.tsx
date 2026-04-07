@@ -17,7 +17,7 @@ import type { PublicProgram } from "@/lib/program-utils";
 import { getLocalizedName } from "@/lib/program-utils";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const ADMIN_URL = import.meta.env.VITE_ADMIN_URL ?? "/admin-crm";
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL ?? "/admin";
 
 function fetchPrograms(): Promise<PublicProgram[]> {
   return axios.get(`${BASE}/api/public/packages`).then((r) => r.data);
