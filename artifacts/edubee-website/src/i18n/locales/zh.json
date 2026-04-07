@@ -403,7 +403,9 @@
     "refund3": "7 天后：当前周期不退款；下周期停止自动续费。",
     "refund4": "无锁定期。无取消费用。",
     "refundContact": "退款申请：info@edubee.co",
-    "ctaFree": "免费开始 →"
+    "ctaFree": "免费开始 →",
+    "priceContact": "联系我们",
+    "ctaContact": "联系我们"
   },
   "faq": {
     "heading": "常见问题",

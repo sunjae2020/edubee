@@ -403,7 +403,9 @@
     "refund3": "7 日後：現在の期間は返金不可；次のサイクルから自動更新停止。",
     "refund4": "ロック期間なし。キャンセル料なし。",
     "refundContact": "返金申請：info@edubee.co",
-    "ctaFree": "無料で始める →"
+    "ctaFree": "無料で始める →",
+    "priceContact": "お問い合わせ",
+    "ctaContact": "お問い合わせ"
   },
   "faq": {
     "heading": "よくある質問",

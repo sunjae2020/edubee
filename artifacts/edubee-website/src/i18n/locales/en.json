@@ -403,7 +403,9 @@
     "refund3": "After 7 days: no refund for current period; auto-renewal stops next cycle.",
     "refund4": "No lock-in period. No cancellation fee.",
     "refundContact": "Refund requests: info@edubee.co",
-    "ctaFree": "Start for Free →"
+    "ctaFree": "Start for Free →",
+    "priceContact": "Contact Us",
+    "ctaContact": "Contact Us"
   },
   "faq": {
     "heading": "Frequently Asked Questions",

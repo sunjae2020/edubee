@@ -21,27 +21,28 @@ const PROBLEM_ICONS = [FileX, Clock, AlertTriangle]
 
 type PricingRow = {
   plan: string; price: string; students: string; storage: string;
-  schoolDB: boolean; remote: boolean; highlighted: boolean; comingSoon: boolean;
+  schoolDB: boolean; remote: boolean; highlighted: boolean; comingSoon: boolean; contact: boolean;
 }
 
 const PRICING_TABLE_FALLBACK: PricingRow[] = [
-  { plan: 'SOLO',       price: '$79/mo',   students: '100/mo',    storage: '10 GB',  schoolDB: false, remote: false, highlighted: false, comingSoon: false },
-  { plan: 'STARTER',    price: '$199/mo',  students: '500/mo',    storage: '50 GB',  schoolDB: true,  remote: false, highlighted: true,  comingSoon: false },
-  { plan: 'GROWTH',     price: '$449/mo',  students: '2000/mo',   storage: '200 GB', schoolDB: true,  remote: true,  highlighted: false, comingSoon: false },
-  { plan: 'ENTERPRISE', price: 'Free',     students: 'Unlimited', storage: '9.9 TB', schoolDB: true,  remote: true,  highlighted: false, comingSoon: false },
+  { plan: 'SOLO',       price: '$79/mo',  students: '100/mo',    storage: '10 GB',   schoolDB: false, remote: false, highlighted: false, comingSoon: false, contact: false },
+  { plan: 'STARTER',    price: '$199/mo', students: '500/mo',    storage: '50 GB',   schoolDB: true,  remote: false, highlighted: true,  comingSoon: false, contact: false },
+  { plan: 'GROWTH',     price: '$449/mo', students: '2000/mo',   storage: '200 GB',  schoolDB: true,  remote: true,  highlighted: false, comingSoon: false, contact: false },
+  { plan: 'ENTERPRISE', price: '',        students: 'Unlimited',  storage: 'Unlimited', schoolDB: true, remote: true,  highlighted: false, comingSoon: false, contact: true },
 ]
 
 function mapApiToPricingRow(p: any): PricingRow {
   const monthly = parseFloat(p.priceMonthly ?? '0') || 0
-  const students = (p.maxStudents >= 9999) ? 'Unlimited' : `${p.maxStudents}/mo`
+  const maxStudents = p.maxStudents ?? 0
+  const isContact = maxStudents >= 9999
+  const students = isContact ? 'Unlimited' : `${maxStudents}/mo`
   const gb = p.storageGb ?? 0
   const storage = gb >= 9999
     ? 'Unlimited'
     : gb >= 1000
       ? `${(gb / 1000).toFixed(0)} TB`
       : `${gb} GB`
-  const isFree = monthly === 0
-  const price = isFree ? 'Free' : `$${monthly % 1 === 0 ? monthly.toFixed(0) : monthly.toFixed(2)}/mo`
+  const price = isContact ? '' : `$${monthly % 1 === 0 ? monthly.toFixed(0) : monthly.toFixed(2)}/mo`
   return {
     plan: (p.name || p.code || '').toUpperCase(),
     price,
@@ -51,6 +52,7 @@ function mapApiToPricingRow(p: any): PricingRow {
     remote: !!(p.featureAiAssistant || p.featureApiAccess || p.featureWhiteLabel),
     highlighted: !!p.isPopular,
     comingSoon: false,
+    contact: isContact,
   }
 }
 
@@ -451,7 +453,9 @@ export default function HomePage() {
                       <td className="px-5 py-4">
                         {row.comingSoon
                           ? <Badge variant="neutral">{t('home.pricingPreview.comingSoon')}</Badge>
-                          : <span className={`font-semibold ${row.highlighted ? 'text-[#F5821F]' : 'text-neutral-900'}`}>{row.price}</span>
+                          : row.contact
+                            ? <span className="font-semibold text-neutral-500">{t('pricing.priceContact')}</span>
+                            : <span className={`font-semibold ${row.highlighted ? 'text-[#F5821F]' : 'text-neutral-900'}`}>{row.price}</span>
                         }
                       </td>
                       <td className="px-5 py-4 text-neutral-600">{row.students}</td>

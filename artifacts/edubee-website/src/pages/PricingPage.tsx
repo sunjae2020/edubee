@@ -11,7 +11,7 @@ import { PageBackground } from '@/components/ui/PageBackground'
 const STATIC_PLANS = [
   {
     planName: 'SOLO',
-    price: { amount: 79, isFree: false, betaFree: false, comingSoon: false },
+    price: { amount: 79, isFree: false, betaFree: false, isContact: false, comingSoon: false },
     studentsPerMonth: '100/mo',
     storage: '10 GB',
     schoolDB: false,
@@ -21,7 +21,7 @@ const STATIC_PLANS = [
   },
   {
     planName: 'STARTER',
-    price: { amount: 199, isFree: false, betaFree: false, comingSoon: false },
+    price: { amount: 199, isFree: false, betaFree: false, isContact: false, comingSoon: false },
     studentsPerMonth: '500/mo',
     storage: '50 GB',
     schoolDB: true,
@@ -31,7 +31,7 @@ const STATIC_PLANS = [
   },
   {
     planName: 'GROWTH',
-    price: { amount: 449, isFree: false, betaFree: false, comingSoon: false },
+    price: { amount: 449, isFree: false, betaFree: false, isContact: false, comingSoon: false },
     studentsPerMonth: '2000/mo',
     storage: '200 GB',
     schoolDB: true,
@@ -41,7 +41,7 @@ const STATIC_PLANS = [
   },
   {
     planName: 'ENTERPRISE',
-    price: { amount: 0, isFree: true, betaFree: false, comingSoon: false },
+    price: { amount: 0, isFree: false, betaFree: false, isContact: true, comingSoon: false },
     studentsPerMonth: 'Unlimited',
     storage: 'Unlimited',
     schoolDB: true,
@@ -55,15 +55,16 @@ type UiPlan = typeof STATIC_PLANS[0]
 
 function mapApiPlan(p: any): UiPlan {
   const monthly = parseFloat(p.priceMonthly ?? '0') || 0
-  const isFree = monthly === 0
   const maxStudents = p.maxStudents ?? 0
   const storageGb = p.storageGb ?? 0
+  const isContact = maxStudents >= 9999
   return {
     planName: (p.name || p.code || '').toUpperCase(),
     price: {
       amount: monthly,
-      isFree,
+      isFree: false,
       betaFree: false,
+      isContact,
       comingSoon: false,
     },
     studentsPerMonth: maxStudents >= 9999 ? 'Unlimited' : `${maxStudents}/mo`,
@@ -75,13 +76,14 @@ function mapApiPlan(p: any): UiPlan {
     schoolDB: !!(p.featureCommission || p.featureServiceModules || p.featureVisa),
     remote: !!(p.featureAiAssistant || p.featureApiAccess || p.featureWhiteLabel),
     highlighted: !!p.isPopular,
-    ctaUrl: '/register',
+    ctaUrl: isContact ? '/support/contact' : '/register',
   }
 }
 
 function PriceDisplay({ price }: { price: UiPlan['price'] }) {
   const { t } = useTranslation()
   if (price.comingSoon) return <Badge variant="neutral">{t('pricing.comingSoon')}</Badge>
+  if (price.isContact) return <span className="text-3xl font-bold text-neutral-900">{t('pricing.priceContact')}</span>
   if (price.isFree) return <span className="text-3xl font-bold text-neutral-900">Free</span>
   if (price.betaFree) return (
     <div>
@@ -171,8 +173,8 @@ export default function PricingPage() {
                   >
                     {plan.price.comingSoon
                       ? t('pricing.comingSoon')
-                      : plan.planName === 'ENTERPRISE'
-                        ? t('pricing.ctaSecondary')
+                      : plan.price.isContact
+                        ? t('pricing.ctaContact')
                         : plan.price.isFree || plan.price.betaFree
                           ? t('pricing.ctaFree')
                           : `Get ${plan.planName}`}

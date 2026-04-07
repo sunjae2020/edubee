@@ -403,7 +403,9 @@
     "refund3": "Sau 7 ngày: không hoàn tiền cho kỳ hiện tại; tự động gia hạn dừng vào kỳ tiếp theo.",
     "refund4": "Không có thời gian khóa. Không có phí hủy.",
     "refundContact": "Yêu cầu hoàn tiền: info@edubee.co",
-    "ctaFree": "Dùng miễn phí →"
+    "ctaFree": "Dùng miễn phí →",
+    "priceContact": "Liên hệ",
+    "ctaContact": "Liên hệ"
   },
   "faq": {
     "heading": "Câu hỏi thường gặp",

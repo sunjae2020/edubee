@@ -403,7 +403,9 @@
     "refund3": "7일 이후: 현재 기간 환불 불가; 다음 결제 주기부터 자동 갱신 중지.",
     "refund4": "약정 기간 없음. 해지 수수료 없음.",
     "refundContact": "환불 요청: info@edubee.co",
-    "ctaFree": "무료로 시작하기 →"
+    "ctaFree": "무료로 시작하기 →",
+    "priceContact": "문의",
+    "ctaContact": "문의하기"
   },
   "faq": {
     "heading": "자주 묻는 질문",
