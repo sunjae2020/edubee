@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
@@ -69,27 +69,19 @@ function CampApplicationRedirect({ slug }: { slug: string }) {
 export default function PublicFormGateway() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
-  const [errorStatus, setErrorStatus] = useState<number | null>(null);
 
-  const { data: form, isLoading, isError } = useQuery<FormInfo>({
+  const { data: form, isLoading, isError, error } = useQuery<FormInfo, AxiosError>({
     queryKey: ["public-form", slug],
-    queryFn: async () => {
-      try {
-        const res = await axios.get(`${BASE}/api/public/form/${slug}`);
-        return res.data;
-      } catch (err) {
-        const status = (err as AxiosError)?.response?.status ?? null;
-        setErrorStatus(status);
-        throw err;
-      }
-    },
+    queryFn: () => axios.get(`${BASE}/api/public/form/${slug}`).then(r => r.data),
     enabled: !!slug,
     retry: false,
   });
 
   if (isLoading) return <Spinner />;
+
   if (isError || !form) {
-    if (errorStatus === 403) return <UnavailableState />;
+    const httpStatus = (error as AxiosError | null)?.response?.status;
+    if (httpStatus === 403) return <UnavailableState />;
     return <NotFoundState />;
   }
 
