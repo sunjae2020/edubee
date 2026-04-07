@@ -28,8 +28,17 @@ const S: Record<Size, string> = {
   lg:'px-6 py-3 text-base',
 }
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+
+function resolveHref(href: string): string {
+  if (!href) return href
+  if (href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:')) return href
+  if (href.startsWith('/') && BASE) return `${BASE}${href}`
+  return href
+}
+
 export function Button({ children, variant='primary', size='md', onClick, href, type='button', disabled, className='', fullWidth }: ButtonProps) {
   const base = `inline-flex items-center justify-center gap-2 font-semibold rounded-[8px] border-[1.5px] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${V[variant]} ${S[size]} ${fullWidth?'w-full':''} ${className}`
-  if (href) return <a href={href} className={base}>{children}</a>
+  if (href) return <a href={resolveHref(href)} className={base}>{children}</a>
   return <button type={type} onClick={onClick} disabled={disabled} className={base}>{children}</button>
 }

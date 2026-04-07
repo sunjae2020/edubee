@@ -99,7 +99,8 @@ export default function PricingPage() {
   const [plans, setPlans] = useState<UiPlan[]>(STATIC_PLANS)
 
   useEffect(() => {
-    fetch('/api/public/platform-plans')
+    const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+    fetch(`${BASE}/api/public/platform-plans`)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (d?.success && Array.isArray(d.data) && d.data.length > 0) {

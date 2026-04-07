@@ -3,6 +3,9 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { Mail, MapPin } from 'lucide-react'
 const logoSrc = '/edubee-logo.png'
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+function link(path: string) { return `${BASE}${path}` }
+
 const LINKS = {
   services: [
     { l: 'Student Management', h: '/services/student' },
@@ -41,7 +44,7 @@ export function Footer() {
       <div className="max-w-[1280px] mx-auto px-6 py-12">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-10">
           <div className="col-span-2 md:col-span-1">
-            <a href="/" className="flex items-center mb-3">
+            <a href={link('/')} className="flex items-center mb-3">
               <img
                 src={logoSrc}
                 alt="Edubee.co"
@@ -67,9 +70,9 @@ export function Footer() {
                 {t(`footer.${col === 'services' ? 'col1' : col === 'platform' ? 'col2' : col === 'company' ? 'col3' : 'col4'}`)}
               </p>
               <ul className="space-y-2">
-                {LINKS[col].map(link => (
-                  <li key={link.h}>
-                    <a href={link.h} className="text-sm text-[#9CA3AF] hover:text-[#F5821F] transition-colors">{link.l}</a>
+                {LINKS[col].map(lnk => (
+                  <li key={lnk.h}>
+                    <a href={link(lnk.h)} className="text-sm text-[#9CA3AF] hover:text-[#F5821F] transition-colors">{lnk.l}</a>
                   </li>
                 ))}
               </ul>

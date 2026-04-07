@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/Button'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 const logoSrc = '/edubee-logo.png'
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+function link(path: string) { return `${BASE}${path}` }
+
 const NAV = [
   { key: 'services', href: '/services' },
   { key: 'platform', href: '/program' },
@@ -35,7 +38,7 @@ export function Header() {
         } : undefined}
       >
         <div className="max-w-[1280px] mx-auto px-6 h-full flex items-center justify-between gap-4">
-          <a href="/" className="flex items-center flex-shrink-0">
+          <a href={link('/')} className="flex items-center flex-shrink-0">
             <img src={logoSrc} alt="Edubee.co" className="h-[42px] w-auto" />
           </a>
 
@@ -43,7 +46,7 @@ export function Header() {
             {NAV.map(item => (
               <a
                 key={item.key}
-                href={item.href}
+                href={link(item.href)}
                 className="px-3 py-2 text-sm text-[#57534E] hover:text-[#1C1917] hover:bg-[#F4F3F1] rounded-lg transition-all"
               >
                 {t(`nav.${item.key}`)}
@@ -73,7 +76,7 @@ export function Header() {
               {NAV.map(item => (
                 <a
                   key={item.key}
-                  href={item.href}
+                  href={link(item.href)}
                   className="block px-4 py-3 text-sm text-[#57534E] font-medium rounded-lg hover:bg-[#F4F3F1] hover:text-[#1C1917] transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
