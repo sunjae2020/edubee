@@ -86,9 +86,9 @@ export async function tenantResolver(
     }
 
     // ── 3순위: MVP 폴백 — 첫 번째 Active 조직 자동 해석 ─────
-    // superadmin, auth 라우트는 테넌트 컨텍스트 불필요 → 건너뜀
-    // 나머지 모든 라우트(settings/theme, camp, finance 등)는 자동 해석
-    const skipPaths = ["/superadmin", "/auth", "/public"];
+    // superadmin, auth, public, settings/theme 라우트는 테넌트 컨텍스트 불필요 → 건너뜀
+    // settings/theme: org 없으면 기본 테마 반환 — X-Organisation-Id 또는 서브도메인이 있어야 테넌트 테마 적용
+    const skipPaths = ["/superadmin", "/auth", "/public", "/settings/theme"];
     const shouldFallback = !skipPaths.some((p) => req.path.startsWith(p));
 
     if (shouldFallback) {

@@ -55,9 +55,13 @@ export function useTenantTheme() {
 
   useEffect(() => {
     loadTheme();
-    // 임프로소네이션 변경 시 테마 재로드
+    // 임프로소네이션 변경 시 또는 로그인 후 org 설정 시 테마 재로드
     window.addEventListener("edubee:impersonation-changed", loadTheme);
-    return () => window.removeEventListener("edubee:impersonation-changed", loadTheme);
+    window.addEventListener("edubee:org-changed", loadTheme);
+    return () => {
+      window.removeEventListener("edubee:impersonation-changed", loadTheme);
+      window.removeEventListener("edubee:org-changed", loadTheme);
+    };
   }, [loadTheme]);
 
   return { theme, isLoading };
@@ -140,7 +144,7 @@ export function applyThemeToDom(theme: TenantTheme): void {
 
   // ── 페이지 타이틀 업데이트 ───────────────────────
   if (theme.companyName) {
-    document.title = `${theme.companyName} — CRM`;
+    document.title = `${theme.companyName} — CAMP`;
   }
 
   // ── 커스텀 CSS 주입 ──────────────────────────────

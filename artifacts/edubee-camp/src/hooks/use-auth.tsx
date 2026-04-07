@@ -10,9 +10,11 @@ axios.interceptors.request.use((config) => {
   const token = localStorage.getItem("edubee_token");
   const viewAsId = getViewAsUserId();
   const impersonateOrgId = sessionStorage.getItem("edubee_impersonate_org_id");
+  const userOrgId = localStorage.getItem("edubee_org_id");
   if (token) config.headers["Authorization"] = `Bearer ${token}`;
   if (viewAsId) config.headers["X-View-As-User-Id"] = viewAsId;
   if (impersonateOrgId) config.headers["X-Organisation-Id"] = impersonateOrgId;
+  else if (userOrgId) config.headers["X-Organisation-Id"] = userOrgId;
   return config;
 });
 
@@ -75,6 +77,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleLogin = async (data: LoginRequest) => {
     const res = await loginMutation.mutateAsync({ data });
     localStorage.setItem("edubee_token", res.accessToken);
+    const orgId = (res as any).user?.organisationId;
+    if (orgId) {
+      localStorage.setItem("edubee_org_id", orgId);
+      window.dispatchEvent(new Event("edubee:org-changed"));
+    }
     setToken(res.accessToken);
     await refetch();
     if ((res as any).user?.role === "super_admin" || (res as any).role === "super_admin") {
@@ -87,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     try { if (token) await logoutMutation.mutateAsync(); } finally {
       localStorage.removeItem("edubee_token");
+      localStorage.removeItem("edubee_org_id");
       setToken(null);
       setLocation("/login");
     }

@@ -244,7 +244,7 @@ router.post("/refresh", async (req, res) => {
 // POST /api/auth/logout
 router.post("/logout", authenticate, async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken } = req.body ?? {};
     if (refreshToken) {
       await db.delete(refreshTokens).where(eq(refreshTokens.token, refreshToken));
     }
