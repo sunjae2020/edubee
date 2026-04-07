@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import LeadInquiryContent from "./LeadInquiryContent";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -39,6 +39,22 @@ function NotFoundState() {
   );
 }
 
+function UnavailableState() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center px-4">
+      <div className="text-center max-w-sm">
+        <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 className="text-lg font-bold text-gray-800 mb-1">Form Temporarily Unavailable</h2>
+        <p className="text-sm text-gray-500">This form is currently paused. Please contact us for assistance.</p>
+      </div>
+    </div>
+  );
+}
+
 function CampApplicationRedirect({ slug }: { slug: string }) {
   const [, navigate] = useLocation();
 
@@ -53,16 +69,29 @@ function CampApplicationRedirect({ slug }: { slug: string }) {
 export default function PublicFormGateway() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
 
   const { data: form, isLoading, isError } = useQuery<FormInfo>({
     queryKey: ["public-form", slug],
-    queryFn: () => axios.get(`${BASE}/api/public/form/${slug}`).then(r => r.data),
+    queryFn: async () => {
+      try {
+        const res = await axios.get(`${BASE}/api/public/form/${slug}`);
+        return res.data;
+      } catch (err) {
+        const status = (err as AxiosError)?.response?.status ?? null;
+        setErrorStatus(status);
+        throw err;
+      }
+    },
     enabled: !!slug,
     retry: false,
   });
 
   if (isLoading) return <Spinner />;
-  if (isError || !form) return <NotFoundState />;
+  if (isError || !form) {
+    if (errorStatus === 403) return <UnavailableState />;
+    return <NotFoundState />;
+  }
 
   if (form.formType === "lead_inquiry") {
     return <LeadInquiryContent formInfo={form} />;

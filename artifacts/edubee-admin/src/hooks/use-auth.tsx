@@ -31,13 +31,14 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
-// Redirect to login on 401
+// Redirect to login on 401 — use BASE_URL so we stay in the admin CRM (e.g. /admin/login)
+const ADMIN_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 axios.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401 && !err.config?.url?.includes("/login")) {
       localStorage.removeItem("edubee_token");
-      window.location.href = "/login";
+      window.location.href = `${ADMIN_BASE}/login`;
     }
     return Promise.reject(err);
   }
