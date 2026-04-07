@@ -43,6 +43,7 @@ export const users = pgTable("users", {
   invitedAt: timestamp("invited_at"),
   inviteToken: varchar("invite_token", { length: 255 }),
   teamId: uuid("team_id"),
+  organisationId: uuid("organisation_id"),
 });
 
 export const refreshTokens = pgTable("refresh_tokens", {

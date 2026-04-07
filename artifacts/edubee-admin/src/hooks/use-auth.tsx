@@ -5,14 +5,29 @@ import { useLocation } from "wouter";
 import { getViewAsUserId } from "./use-view-as";
 import axios from "axios";
 
-// Attach JWT + View-As + Impersonation to every axios request
+// Decode JWT payload (no verification — client-side read only)
+function parseJwt(token: string): Record<string, any> | null {
+  try {
+    const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(base64));
+  } catch {
+    return null;
+  }
+}
+
+// Attach JWT + View-As + Org-Id (multi-tenant) to every axios request
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem("edubee_token");
   const viewAsId = getViewAsUserId();
+  // Impersonation overrides personal org (super-admin feature)
   const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
+  // For regular users: read organisationId from JWT
+  const personalOrgId = token ? (parseJwt(token)?.organisationId ?? null) : null;
+  const orgId = impersonateOrgId || personalOrgId;
+
   if (token) config.headers["Authorization"] = `Bearer ${token}`;
   if (viewAsId) config.headers["X-View-As-User-Id"] = viewAsId;
-  if (impersonateOrgId) config.headers["X-Organisation-Id"] = impersonateOrgId;
+  if (orgId) config.headers["X-Organisation-Id"] = orgId;
   return config;
 });
 
@@ -47,11 +62,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const currentToken = localStorage.getItem("edubee_token");
       const viewAsId = getViewAsUserId();
-      if (currentToken || viewAsId) {
+      const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
+      const personalOrgId = currentToken ? (parseJwt(currentToken)?.organisationId ?? null) : null;
+      const orgId = impersonateOrgId || personalOrgId;
+
+      if (currentToken || viewAsId || orgId) {
         init = init || {};
         const headers = new Headers(init.headers as HeadersInit);
         if (currentToken) headers.set("Authorization", `Bearer ${currentToken}`);
         if (viewAsId) headers.set("X-View-As-User-Id", viewAsId);
+        if (orgId) headers.set("X-Organisation-Id", orgId);
         init.headers = headers;
       }
       const response = await originalFetch(input, init);

@@ -1,8 +1,23 @@
-# Edubee Camp Platform
+# Edubee Platform — Multi-tenant CRM + Marketing Site
 
 ## Overview
 
-Edubee Camp is a multi-operator educational camp marketplace platform designed to connect educational agencies, camp coordinators, partner institutes, and parent clients. Its primary purpose is to streamline the end-to-end management of student enrollments for various educational camps. The platform aims to provide a comprehensive solution for camp management, sales, finance, and communication, enhancing efficiency for all stakeholders in the educational camp ecosystem.
+Edubee is a multi-tenant SaaS CRM platform for international education agencies. It consists of three apps: **edubee-website** (marketing site, www.edubee.co), **edubee-admin** (CRM, crm.edubee.co), and **edubee-camp** (camp management, camp.edubee.co), backed by a shared Express + PostgreSQL API server.
+
+## Multi-tenancy Architecture (Phase 2 — Activated)
+- `users` table has `organisation_id` FK linking each user to their tenant org
+- Login JWT (`generateStaffTokens`) includes `organisationId` payload
+- CRM (`use-auth.tsx`) reads `organisationId` from JWT via `parseJwt()` and sends `X-Organisation-Id` header on ALL API requests
+- Impersonation (`admin_impersonate_org_id` in sessionStorage) overrides personal org for super-admin
+- `tenantResolver` middleware: 1st X-Organisation-Id header → 2nd subdomain → 3rd MVP fallback (first Active org) → 4th passthrough
+- New registrations via `/api/auth/register` create an `organisations` record with auto-generated subdomain
+- Super admin (no orgId): relies on MVP fallback or impersonation
+
+## Website ↔ API Connection (Activated)
+- `LoginPage.tsx`: calls `POST /api/auth/login`, stores JWT in localStorage, redirects to `/admin/dashboard`
+- `RegisterPage.tsx`: calls `POST /api/auth/register` — creates org + user; redirects to login after success
+- `PricingPage.tsx`: fetches from `GET /api/public/platform-plans` (no auth), falls back to static plans
+- `GET /api/public/platform-plans`: new public endpoint in `public.ts` (no auth required)
 
 ## User Preferences
 

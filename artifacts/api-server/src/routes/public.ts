@@ -14,6 +14,7 @@ import {
   campApplications,
   applicationForms,
   leads,
+  platformPlans,
 } from "@workspace/db/schema";
 import { eq, and, inArray, sql, desc, isNotNull, asc } from "drizzle-orm";
 import {
@@ -616,6 +617,21 @@ router.post("/public/lead-inquiry", async (req, res) => {
   } catch (err) {
     console.error("[POST /public/lead-inquiry]", err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── Public: Platform Plans (no auth required, for marketing site) ─────────────
+router.get("/public/platform-plans", async (_req, res) => {
+  try {
+    const plans = await db
+      .select()
+      .from(platformPlans)
+      .where(eq(platformPlans.isActive, true))
+      .orderBy(asc(platformPlans.sortOrder), asc(platformPlans.priceMonthly));
+    return res.json({ success: true, data: plans });
+  } catch (err) {
+    console.error("GET /public/platform-plans", err);
+    return res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 });
 

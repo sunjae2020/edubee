@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, FormEvent } from 'react'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { PageBackground } from '@/components/ui/PageBackground'
+import { Loader2 } from 'lucide-react'
+
 const logoSrc = '/edubee-logo.png'
 
 const DEMO_ACCOUNTS = [
@@ -13,11 +15,47 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [filled, setFilled] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function fillDemo(account: typeof DEMO_ACCOUNTS[0]) {
     setEmail(account.email)
     setPassword(account.password)
     setFilled(account.label)
+    setError(null)
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!email || !password) return
+    setLoading(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.message || 'Invalid email or password.')
+        return
+      }
+
+      // Store JWT — shared localStorage across same domain (admin CRM reads this)
+      localStorage.setItem('edubee_token', data.accessToken)
+
+      // Redirect to CRM dashboard
+      const isSuperAdmin = data.user?.role === 'super_admin'
+      window.location.href = isSuperAdmin ? '/admin/superadmin' : '/admin/dashboard'
+    } catch {
+      setError('Unable to connect. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -29,7 +67,7 @@ export default function LoginPage() {
             <img src={logoSrc} alt="Edubee.co" className="h-10 w-auto mx-auto" />
           </a>
           <h1 className="text-xl font-bold text-neutral-900">Welcome back</h1>
-          <p className="text-sm text-neutral-500 mt-1">Sign in to your Edubee account</p>
+          <p className="text-sm text-neutral-500 mt-1">Sign in to your Edubee CRM</p>
         </div>
 
         <div className="mb-4">
@@ -52,7 +90,12 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="bg-white border border-neutral-200 rounded-[12px] p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded-[12px] p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-[8px] px-3 py-2">
+              {error}
+            </div>
+          )}
           <Input
             label="Email"
             type="email"
@@ -69,11 +112,33 @@ export default function LoginPage() {
             onChange={e => setPassword(e.target.value)}
             required
           />
-          <Button variant="primary" fullWidth href="https://edubee.co/login">Sign In</Button>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              height: '40px',
+              backgroundColor: '#F5821F',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</> : 'Sign In →'}
+          </button>
           <div className="text-center">
-            <a href="https://edubee.co/register" className="text-xs text-neutral-500 hover:text-[#F5821F]">Forgot password?</a>
+            <a href="/forgot-password" className="text-xs text-neutral-500 hover:text-[#F5821F]">Forgot password?</a>
           </div>
-        </div>
+        </form>
+
         <p className="text-center text-sm text-neutral-500 mt-6">
           Don't have an account?{' '}
           <a href="/register" className="text-[#F5821F] font-semibold hover:text-[#D96A0A]">Start for free →</a>

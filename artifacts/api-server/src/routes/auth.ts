@@ -33,7 +33,7 @@ async function writeAuthLog(
   }
 }
 
-function generateStaffTokens(user: { id: string; email: string; role: string; fullName: string; staffRole?: string | null }) {
+function generateStaffTokens(user: { id: string; email: string; role: string; fullName: string; staffRole?: string | null; organisationId?: string | null }) {
   const accessToken = jwt.sign(
     {
       userType: "staff",
@@ -42,6 +42,7 @@ function generateStaffTokens(user: { id: string; email: string; role: string; fu
       role: user.role,
       staffRole: user.staffRole ?? user.role,
       fullName: user.fullName,
+      organisationId: user.organisationId ?? null,
     },
     JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_EXPIRY }
@@ -283,6 +284,19 @@ router.get("/check-email", async (req, res) => {
   return res.json({ available: true });
 });
 
+// Generate a URL-safe subdomain from an org name + random suffix for uniqueness
+function generateSubdomain(name: string): string {
+  const base = name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 24);
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${base}-${suffix}`;
+}
+
 // POST /api/auth/register
 router.post("/register", async (req, res) => {
   try {
@@ -312,16 +326,36 @@ router.post("/register", async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(user.password, 10);
+    const subdomain = generateSubdomain(organisation.name);
 
     const result = await db.transaction(async (tx) => {
+      // 1. Create the tenant organisation record
+      const [newOrg] = await tx.insert(organisations).values({
+        name: organisation.name,
+        subdomain,
+        status: "Active",
+        ownerEmail: normalizedEmail,
+        phone: organisation.phone_number || null,
+        websiteUrl: organisation.organization_url || null,
+        address: organisation.address_line_1 || null,
+        hasAbn: false,
+        planType: account?.plan || "lite",
+        planStatus: "trial",
+      } as any).returning();
+
+      // 2. Create the admin user linked to this organisation
       const [newUser] = await tx.insert(users).values({
         email: normalizedEmail,
         passwordHash,
         role: "Admin",
         fullName: `${user.first_name} ${user.last_name}`,
+        firstName: user.first_name,
+        lastName: user.last_name,
         status: "active",
-      }).returning();
+        organisationId: newOrg.id,
+      } as any).returning();
 
+      // 3. Also create an accounts profile for CRM use (backward-compat)
       const [newAccount] = await tx.insert(accounts).values({
         name: organisation.name,
         accountType: account?.account_type || "Agent",
@@ -334,17 +368,30 @@ router.post("/register", async (req, res) => {
         manualInput: false,
         firstName: user.first_name,
         lastName: user.last_name,
+        organisationId: newOrg.id,
       } as any).returning();
 
-      return { newUser, newAccount };
+      return { newUser, newOrg, newAccount };
     });
+
+    // Send welcome email (non-blocking)
+    try {
+      await sendWelcomeEmail({
+        toEmail: normalizedEmail,
+        userName: `${user.first_name} ${user.last_name}`,
+        companyName: organisation.name,
+        loginUrl: `https://crm.edubee.co/login`,
+      });
+    } catch (emailErr) {
+      console.error("Welcome email failed (non-critical):", emailErr);
+    }
 
     return res.json({
       success: true,
-      message: "Account created successfully.",
+      message: "Account created successfully. Please sign in.",
       userId: result.newUser.id,
-      organisationId: result.newAccount.id,
-      accountId: result.newAccount.id,
+      organisationId: result.newOrg.id,
+      subdomain: result.newOrg.subdomain,
     });
   } catch (err) {
     console.error("Register error:", err);

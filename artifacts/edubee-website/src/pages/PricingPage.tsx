@@ -6,18 +6,74 @@ import { Badge } from '@/components/ui/Badge'
 import { FadeIn } from '@/components/ui/FadeIn'
 import { CtaBanner } from '@/components/sections/CtaBanner'
 import { PageBackground } from '@/components/ui/PageBackground'
-import { sanityFetch } from '@/lib/sanity/client'
-import { ALL_PLANS_QUERY } from '@/lib/sanity/queries'
-import { localise } from '@/lib/sanity/locale'
 
+// Static fallback plans (used if API is unavailable)
 const STATIC_PLANS = [
-  { planName: 'LITE',       price: { amount: 0,     isFree: true,  betaFree: false, comingSoon: false }, studentsPerMonth: '50/mo',     storage: '10 MB',  schoolDB: false, remote: false, highlighted: false, ctaUrl: '/register' },
-  { planName: 'PLUS',       price: { amount: 9.90,  isFree: false, betaFree: true,  comingSoon: false }, studentsPerMonth: 'Unlimited', storage: '100 MB', schoolDB: false, remote: false, highlighted: true,  ctaUrl: '/register' },
-  { planName: 'BUSINESS',   price: { amount: 19.90, isFree: false, betaFree: false, comingSoon: true  }, studentsPerMonth: 'Unlimited', storage: '500 MB', schoolDB: true,  remote: false, highlighted: false, ctaUrl: '/register' },
-  { planName: 'ENTERPRISE', price: { amount: 39.90, isFree: false, betaFree: false, comingSoon: true  }, studentsPerMonth: 'Unlimited', storage: '1 GB',   schoolDB: true,  remote: true,  highlighted: false, ctaUrl: '/register' },
+  {
+    planName: 'LITE',
+    price: { amount: 0, isFree: true, betaFree: false, comingSoon: false },
+    studentsPerMonth: '50/mo',
+    storage: '10 GB',
+    schoolDB: false,
+    remote: false,
+    highlighted: false,
+    ctaUrl: '/register',
+  },
+  {
+    planName: 'PLUS',
+    price: { amount: 9.90, isFree: false, betaFree: true, comingSoon: false },
+    studentsPerMonth: 'Unlimited',
+    storage: '100 GB',
+    schoolDB: false,
+    remote: false,
+    highlighted: true,
+    ctaUrl: '/register',
+  },
+  {
+    planName: 'BUSINESS',
+    price: { amount: 19.90, isFree: false, betaFree: false, comingSoon: false },
+    studentsPerMonth: 'Unlimited',
+    storage: '500 GB',
+    schoolDB: true,
+    remote: false,
+    highlighted: false,
+    ctaUrl: '/register',
+  },
+  {
+    planName: 'ENTERPRISE',
+    price: { amount: 39.90, isFree: false, betaFree: false, comingSoon: false },
+    studentsPerMonth: 'Unlimited',
+    storage: '1 TB',
+    schoolDB: true,
+    remote: true,
+    highlighted: false,
+    ctaUrl: '/support/contact',
+  },
 ]
 
-function PriceDisplay({ price }: { price: any }) {
+type UiPlan = typeof STATIC_PLANS[0]
+
+function mapApiPlan(p: any): UiPlan {
+  const monthly = parseFloat(p.priceMonthly ?? '0') || 0
+  const isFree = monthly === 0
+  return {
+    planName: (p.name || p.code || '').toUpperCase(),
+    price: {
+      amount: monthly,
+      isFree,
+      betaFree: !isFree && !!p.isPopular,
+      comingSoon: false,
+    },
+    studentsPerMonth: p.maxStudents ? `${p.maxStudents}/mo` : 'Unlimited',
+    storage: p.storageGb ? (p.storageGb >= 1000 ? `${p.storageGb / 1000} TB` : `${p.storageGb} GB`) : '10 GB',
+    schoolDB: !!(p.featureCommission || p.featureServiceModules || p.featureVisa),
+    remote: !!(p.featureAiAssistant || p.featureApiAccess || p.featureWhiteLabel),
+    highlighted: !!p.isPopular,
+    ctaUrl: '/register',
+  }
+}
+
+function PriceDisplay({ price }: { price: UiPlan['price'] }) {
   const { t } = useTranslation()
   if (price.comingSoon) return <Badge variant="neutral">{t('pricing.comingSoon')}</Badge>
   if (price.isFree) return <span className="text-3xl font-bold text-neutral-900">Free</span>
@@ -27,19 +83,30 @@ function PriceDisplay({ price }: { price: any }) {
         <span className="text-3xl font-bold text-[#F5821F]">Free</span>
         <Badge variant="brand">{t('pricing.betaFree')}</Badge>
       </div>
-      <span className="text-sm text-neutral-400 line-through">${price.amount}/mo</span>
+      <span className="text-sm text-neutral-400 line-through">${price.amount.toFixed(2)}/mo</span>
     </div>
   )
-  return <div><span className="text-3xl font-bold text-neutral-900">${price.amount}</span><span className="text-sm text-neutral-500">/mo</span></div>
+  return (
+    <div>
+      <span className="text-3xl font-bold text-neutral-900">${price.amount.toFixed(2)}</span>
+      <span className="text-sm text-neutral-500">/mo</span>
+    </div>
+  )
 }
 
 export default function PricingPage() {
-  const { t, i18n } = useTranslation()
-  const lang = i18n.language
-  const [plans, setPlans] = useState<any[]>(STATIC_PLANS)
+  const { t } = useTranslation()
+  const [plans, setPlans] = useState<UiPlan[]>(STATIC_PLANS)
 
   useEffect(() => {
-    sanityFetch<any[]>(ALL_PLANS_QUERY).then(d => { if (d?.length) setPlans(d) }).catch(() => {})
+    fetch('/api/public/platform-plans')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.success && Array.isArray(d.data) && d.data.length > 0) {
+          setPlans(d.data.map(mapApiPlan))
+        }
+      })
+      .catch(() => {})
   }, [])
 
   return (
@@ -64,31 +131,41 @@ export default function PricingPage() {
                   <h2 className="text-xl font-bold text-neutral-900 mb-4">{plan.planName}</h2>
                   <div className="mb-6"><PriceDisplay price={plan.price} /></div>
                   <ul className="space-y-2.5 mb-6 flex-1 text-sm">
-                    <li className="flex items-center gap-2 text-neutral-700"><CheckCircle size={14} className="text-green-500 flex-shrink-0" />{plan.studentsPerMonth} students/mo</li>
-                    <li className="flex items-center gap-2 text-neutral-700"><CheckCircle size={14} className="text-green-500 flex-shrink-0" />{plan.storage} storage</li>
                     <li className="flex items-center gap-2 text-neutral-700">
-                      {plan.schoolDB ? <CheckCircle size={14} className="text-green-500 flex-shrink-0" /> : <X size={14} className="text-neutral-300 flex-shrink-0" />}
+                      <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
+                      {plan.studentsPerMonth} students/mo
+                    </li>
+                    <li className="flex items-center gap-2 text-neutral-700">
+                      <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
+                      {plan.storage} storage
+                    </li>
+                    <li className="flex items-center gap-2 text-neutral-700">
+                      {plan.schoolDB
+                        ? <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
+                        : <X size={14} className="text-neutral-300 flex-shrink-0" />}
                       School database
                     </li>
                     <li className="flex items-center gap-2 text-neutral-700">
-                      {plan.remote ? <CheckCircle size={14} className="text-green-500 flex-shrink-0" /> : <X size={14} className="text-neutral-300 flex-shrink-0" />}
+                      {plan.remote
+                        ? <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
+                        : <X size={14} className="text-neutral-300 flex-shrink-0" />}
                       Remote support
                     </li>
-                    <li className="flex items-center gap-2 text-neutral-700"><CheckCircle size={14} className="text-green-500 flex-shrink-0" />Partner supplier list</li>
-                    {(plan.features || []).map((f: any, fi: number) => (
-                      <li key={fi} className="flex items-center gap-2 text-neutral-700">
-                        {f.included ? <CheckCircle size={14} className="text-green-500 flex-shrink-0" /> : <X size={14} className="text-neutral-300 flex-shrink-0" />}
-                        {typeof f.label === 'object' ? localise(f.label, lang) : f.text || f.label}
-                      </li>
-                    ))}
+                    <li className="flex items-center gap-2 text-neutral-700">
+                      <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
+                      Partner supplier list
+                    </li>
                   </ul>
                   <Button
                     variant={plan.highlighted ? 'primary' : 'secondary'}
                     fullWidth
                     href={plan.price.comingSoon ? '/support/contact' : (plan.ctaUrl || '/register')}
-                    disabled={plan.price.comingSoon}
                   >
-                    {plan.price.comingSoon ? t('pricing.comingSoon') : (plan.price.isFree || plan.price.betaFree ? t('pricing.ctaPrimary') : `Get ${plan.planName}`)}
+                    {plan.price.comingSoon
+                      ? t('pricing.comingSoon')
+                      : (plan.price.isFree || plan.price.betaFree
+                        ? t('pricing.ctaPrimary')
+                        : `Get ${plan.planName}`)}
                   </Button>
                 </div>
               </FadeIn>
@@ -102,7 +179,7 @@ export default function PricingPage() {
         <div className="max-w-2xl mx-auto px-6">
           <h2 className="text-xl font-bold text-neutral-900 mb-6">{t('pricing.refundHeading')}</h2>
           <div className="space-y-3">
-            {['refund1','refund2','refund3','refund4'].map(key => (
+            {['refund1', 'refund2', 'refund3', 'refund4'].map(key => (
               <div key={key} className="flex items-start gap-3">
                 <CheckCircle size={15} className="text-green-500 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-neutral-600">{t(`pricing.${key}`)}</p>
