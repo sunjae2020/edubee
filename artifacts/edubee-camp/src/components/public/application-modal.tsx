@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight, ChevronLeft, Plus, Trash2, CheckCircle2, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type PublicProgram, type SpotGrade, getLocalizedName } from "@/lib/program-utils";
+import DatePickerInput from "@/components/shared/DatePickerInput";
 import axios from "axios";
 import { DualPriceDisplay } from "@/components/public/dual-price-display";
 import { useDisplayCurrency } from "@/context/DisplayCurrencyContext";
@@ -454,7 +455,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                     )}
 
                     <Field label={t("apply.preferredStartDate")}>
-                      <Input type="date" value={startDate} onChange={setStartDate} />
+                      <DatePickerInput value={startDate} onChange={setStartDate} fromYear={new Date().getFullYear()} toYear={new Date().getFullYear() + 5} />
                     </Field>
 
                     <Field label={t("apply.howHeard")}>
@@ -501,7 +502,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                       </Field>
                       <Field label={t("apply.dateOfBirth")} required error={errors.dateOfBirth}>
                         <div className="flex items-center gap-2">
-                          <Input type="date" value={primary.dateOfBirth} onChange={(v) => updatePrimary("dateOfBirth", v)} className="flex-1" />
+                          <DatePickerInput value={primary.dateOfBirth} onChange={(v) => updatePrimary("dateOfBirth", v)} className="flex-1" fromYear={1960} toYear={new Date().getFullYear()} />
                           {calcAge(primary.dateOfBirth) !== null && (
                             <span className="text-sm text-muted-foreground whitespace-nowrap">
                               {t("apply.age", { age: calcAge(primary.dateOfBirth) })}
@@ -524,7 +525,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                         <Input value={primary.passportNumber} onChange={(v) => updatePrimary("passportNumber", v)} placeholder="M12345678" />
                       </Field>
                       <Field label={t("apply.passportExpiry")}>
-                        <Input type="date" value={primary.passportExpiry} onChange={(v) => updatePrimary("passportExpiry", v)} />
+                        <DatePickerInput value={primary.passportExpiry} onChange={(v) => updatePrimary("passportExpiry", v)} fromYear={new Date().getFullYear()} toYear={new Date().getFullYear() + 15} />
                       </Field>
                       <Field label={t("apply.grade")} required>
                         {selectedProgram ? (
@@ -666,7 +667,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                               <Input value={child.lastName} onChange={(v) => updateChild(idx, "lastName", v)} />
                             </Field>
                             <Field label={t("apply.dateOfBirth")} required>
-                              <Input type="date" value={child.dateOfBirth} onChange={(v) => updateChild(idx, "dateOfBirth", v)} />
+                              <DatePickerInput value={child.dateOfBirth} onChange={(v) => updateChild(idx, "dateOfBirth", v)} fromYear={1990} toYear={new Date().getFullYear()} />
                             </Field>
                             <Field label={t("apply.gender")} required>
                               <Select value={child.gender} onChange={(v) => updateChild(idx, "gender", v)}>

@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
 import { ImageCropDialog } from "@/components/shared/ImageCropDialog";
 import { fileToDataUrl } from "@/lib/imageResize";
 import { TrendingUp, TrendingDown, Minus, Pencil, Plus, Package, BarChart2, ExternalLink, Camera, Loader2 } from "lucide-react";
@@ -361,7 +360,7 @@ export default function UserDetail() {
                       <span className="font-mono font-semibold min-w-[90px]">{fmt(entry.amount)}</span>
                       <span className="text-muted-foreground truncate flex-1">{entry.description ?? entry.sourceType}</span>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {entry.entryDate ? format(new Date(entry.entryDate), "d MMM yyyy") : "—"}
+                        {entry.entryDate ? formatDate(entry.entryDate) : "—"}
                       </span>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${
                         entry.status === "confirmed" ? "bg-green-100 text-green-700" :

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { formatDate } from "@/lib/date-format";
 import { Loader2, CheckCircle2, Star, Users, GraduationCap, Clock } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -138,7 +139,7 @@ export default function PlanBilling() {
                 <Clock size={16} strokeWidth={1.5} />
                 <span className="text-sm font-semibold">{days} days left in trial</span>
               </div>
-              <p className="text-xs text-[#A8A29E] mt-1">Trial ends {plan?.trialEndsAt ? new Date(plan.trialEndsAt).toLocaleDateString("en-AU") : "—"}</p>
+              <p className="text-xs text-[#A8A29E] mt-1">Trial ends {plan?.trialEndsAt ? formatDate(plan.trialEndsAt) : "—"}</p>
             </div>
           )}
         </div>

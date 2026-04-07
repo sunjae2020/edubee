@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Percent, Plus, Loader2, Search } from "lucide-react";
-import { format, isAfter, isBefore, parseISO } from "date-fns";
+import { isAfter, isBefore, parseISO } from "date-fns";
+import { formatDate } from "@/lib/date-format";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -220,7 +221,7 @@ export default function Promotions() {
                 <td className="px-4 py-3 text-[#57534E]">{p.accountName ?? "—"}</td>
                 <td className="px-4 py-3 text-[#57534E] text-xs">
                   {p.fromDate && p.toDate
-                    ? `${format(parseISO(p.fromDate), "dd MMM yyyy")} – ${format(parseISO(p.toDate), "dd MMM yyyy")}`
+                    ? `${formatDate(p.fromDate)} – ${formatDate(p.toDate)}`
                     : "—"}
                 </td>
                 <td className="px-4 py-3 text-[#1C1917] font-medium">{p.promotionPrice ?? "—"}</td>

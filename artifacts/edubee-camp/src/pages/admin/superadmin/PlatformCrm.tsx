@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { formatDate } from "@/lib/date-format";
 import SuperAdminLayout from "./SuperAdminLayout";
 import {
   Plus, Search, Building2, Globe, Tag, ChevronRight,
@@ -280,7 +281,7 @@ export default function PlatformCrm() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-[#A8A29E] text-xs whitespace-nowrap">
-                        {new Date(p.createdAt).toLocaleDateString()}
+                        {formatDate(p.createdAt)}
                       </td>
                       <td className="px-4 py-3 text-[#A8A29E]">
                         <ChevronRight size={15} />

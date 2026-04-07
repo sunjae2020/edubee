@@ -18,7 +18,6 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ParticipantEditDialog, ParticipantAddDialog } from "@/components/shared/ParticipantDialogs";
 import { Pencil, Plus, ClipboardList, Loader2, ExternalLink, FileText } from "lucide-react";
-import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -377,7 +376,7 @@ export default function ApplicationDetail() {
                   </Select>
                 }
               />
-              <DetailRow label="Submitted" value={app.createdAt ? format(new Date(app.createdAt), "PPP") : "—"} />
+              <DetailRow label="Submitted" value={app.createdAt ? formatDate(app.createdAt) : "—"} />
               {/* Service type tags */}
               <div className="flex items-start gap-1.5 flex-wrap pt-0.5">
                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-full mb-0.5">Services</span>
@@ -423,11 +422,11 @@ export default function ApplicationDetail() {
                 editChildren={<Input className="h-8 text-sm" value={getValue("courseName") ?? ""} onChange={e => setField("courseName", e.target.value)} />}
               />
               <EditableField label="Enrollment From" isEditing={isEditing}
-                value={app.studyStartDate ? format(new Date(app.studyStartDate), "PPP") : null}
+                value={app.studyStartDate ? formatDate(app.studyStartDate) : null}
                 editChildren={<Input className="h-8 text-sm" type="date" value={getValue("studyStartDate") ?? ""} onChange={e => setField("studyStartDate", e.target.value)} />}
               />
               <EditableField label="Enrollment To" isEditing={isEditing}
-                value={app.studyEndDate ? format(new Date(app.studyEndDate), "PPP") : null}
+                value={app.studyEndDate ? formatDate(app.studyEndDate) : null}
                 editChildren={<Input className="h-8 text-sm" type="date" value={getValue("studyEndDate") ?? ""} onChange={e => setField("studyEndDate", e.target.value)} />}
               />
             </DetailSection>

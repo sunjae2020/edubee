@@ -1321,19 +1321,13 @@ export default function QuoteBuilderPage() {
     const ownerName = ownerUser ? (ownerUser.fullName ?? ownerUser.email ?? "") : "";
 
     // Created On formatted
-    const createdOnFmt = quote.createdOn
-      ? new Date(quote.createdOn).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" })
-      : "";
-    const expiryFmt = expiryDate
-      ? new Date(expiryDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" })
-      : "";
+    const createdOnFmt = quote.createdOn ? formatDate(quote.createdOn) : "";
+    const expiryFmt = expiryDate ? formatDate(expiryDate) : "";
 
     // Payment Plan rows (with due date and provider columns)
     const paymentRows = activeLines.map((l) => {
       const subtotal = Number(l.price ?? 0) * (l.quantity ?? 1);
-      const dueDateStr = l.dueDate
-        ? new Date(l.dueDate).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" })
-        : "";
+      const dueDateStr = l.dueDate ? formatDate(l.dueDate) : "";
       const isInitial = l.isInitialPayment
         ? `<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:999px;margin-left:4px">Initial</span>`
         : "";

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useAuth } from "@/hooks/use-auth";
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/date-format";
 import { Pin, Trash2, Send, StickyNote } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -174,7 +174,7 @@ export function NotePanel({
                 {note.createdByName ?? "User"}
               </span>
               <span className="text-[11px] text-muted-foreground">
-                {format(new Date(note.createdAt), "MMM d, yyyy HH:mm")}
+                {formatDateTime(note.createdAt)}
               </span>
               {note.noteType !== "internal" && (
                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
