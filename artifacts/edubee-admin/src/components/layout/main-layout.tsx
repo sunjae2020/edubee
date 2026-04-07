@@ -23,8 +23,8 @@ function useMediaQuery(query: string) {
 function ImpersonationBanner() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
-  const orgId     = sessionStorage.getItem("edubee_impersonate_org_id");
-  const orgName   = sessionStorage.getItem("edubee_impersonate_org_name") ?? "Unknown Tenant";
+  const orgId     = sessionStorage.getItem("admin_impersonate_org_id");
+  const orgName   = sessionStorage.getItem("admin_impersonate_org_name") ?? "Unknown Tenant";
   const returnPath = sessionStorage.getItem("edubee_impersonate_return") ?? "/superadmin/tenants";
 
   // 마운트 시 테마 재로드 트리거
@@ -41,8 +41,8 @@ function ImpersonationBanner() {
       <span>Viewing as <strong>{orgName}</strong></span>
       <button
         onClick={() => {
-          sessionStorage.removeItem("edubee_impersonate_org_id");
-          sessionStorage.removeItem("edubee_impersonate_org_name");
+          sessionStorage.removeItem("admin_impersonate_org_id");
+          sessionStorage.removeItem("admin_impersonate_org_name");
           sessionStorage.removeItem("edubee_impersonate_return");
           qc.clear();
           // 임프로소네이션 종료 후 기본 테넌트 테마로 복원

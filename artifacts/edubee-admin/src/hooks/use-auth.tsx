@@ -9,7 +9,7 @@ import axios from "axios";
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem("edubee_token");
   const viewAsId = getViewAsUserId();
-  const impersonateOrgId = sessionStorage.getItem("edubee_impersonate_org_id");
+  const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
   if (token) config.headers["Authorization"] = `Bearer ${token}`;
   if (viewAsId) config.headers["X-View-As-User-Id"] = viewAsId;
   if (impersonateOrgId) config.headers["X-Organisation-Id"] = impersonateOrgId;

@@ -612,12 +612,15 @@ function Router() {
 
 function ImpersonationInit() {
   useEffect(() => {
+    // 구형 공유 키 정리 (앱별 전용 키로 마이그레이션)
+    sessionStorage.removeItem("edubee_impersonate_org_id");
+    sessionStorage.removeItem("edubee_impersonate_org_name");
     const params = new URLSearchParams(window.location.search);
     const orgId = params.get("impersonateOrg");
     const orgName = params.get("impersonateOrgName");
     if (orgId) {
-      sessionStorage.setItem("edubee_impersonate_org_id", orgId);
-      if (orgName) sessionStorage.setItem("edubee_impersonate_org_name", decodeURIComponent(orgName));
+      sessionStorage.setItem("admin_impersonate_org_id", orgId);
+      if (orgName) sessionStorage.setItem("admin_impersonate_org_name", decodeURIComponent(orgName));
       params.delete("impersonateOrg");
       params.delete("impersonateOrgName");
       const clean = params.toString();

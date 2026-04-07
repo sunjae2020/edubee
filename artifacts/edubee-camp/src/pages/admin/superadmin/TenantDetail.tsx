@@ -425,8 +425,8 @@ export default function TenantDetail() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              sessionStorage.setItem("edubee_impersonate_org_id", org.id);
-              sessionStorage.setItem("edubee_impersonate_org_name", org.name);
+              sessionStorage.setItem("camp_impersonate_org_id", org.id);
+              sessionStorage.setItem("camp_impersonate_org_name", org.name);
               sessionStorage.setItem("edubee_impersonate_return", `/superadmin/tenants/${org.id}`);
               // React Query 캐시 전체 초기화 → 새 테넌트 데이터로 재fetch
               qc.clear();
