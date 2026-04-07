@@ -122,9 +122,28 @@ export default function Login() {
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full h-10 font-semibold gap-2" disabled={isLoading}>
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  width: '100%',
+                  height: '40px',
+                  backgroundColor: '#F5821F',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  opacity: isLoading ? 0.7 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
-              </Button>
+              </button>
             </form>
           </Form>
 

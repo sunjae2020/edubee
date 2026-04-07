@@ -10,16 +10,16 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "rounded-lg bg-(--e-orange) text-white border-none hover:bg-(--e-orange-hover) hover:-translate-y-px hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)] active:bg-(--e-orange-active)",
+          "rounded-lg text-white border-none hover:-translate-y-px hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)] active:opacity-90",
         destructive:
           "rounded-lg bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA] hover:bg-[#DC2626] hover:text-white",
         outline:
           "rounded-lg bg-white text-[#1C1917] border border-[#E8E6E2] hover:border-[#A8A29E] hover:bg-[#FAFAF9]",
         secondary:
-          "rounded-lg bg-(--e-orange-lt) text-(--e-orange) border border-(--e-orange)/20 hover:bg-(--e-orange)/15",
+          "rounded-lg text-orange-600 border border-orange-200 hover:opacity-90",
         ghost:
           "rounded-lg bg-transparent text-[#57534E] border border-transparent hover:bg-[#F4F3F1] hover:text-[#1C1917]",
-        link: "text-(--e-orange) underline-offset-4 hover:underline",
+        link: "underline-offset-4 hover:underline",
       },
       size: {
         default: "min-h-[40px] px-5 py-2.5",
@@ -35,6 +35,12 @@ const buttonVariants = cva(
   }
 )
 
+const VARIANT_STYLES: Record<string, React.CSSProperties> = {
+  default: { backgroundColor: "var(--e-orange, #F5821F)", color: "white" },
+  secondary: { backgroundColor: "var(--e-orange-lt, #FEF0E3)", color: "var(--e-orange, #F5821F)" },
+  link: { color: "var(--e-orange, #F5821F)" },
+}
+
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
@@ -42,11 +48,13 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, style: styleProp, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
+    const variantStyle = VARIANT_STYLES[variant ?? "default"] ?? {}
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
+        style={{ ...variantStyle, ...styleProp }}
         ref={ref}
         {...props}
       />
