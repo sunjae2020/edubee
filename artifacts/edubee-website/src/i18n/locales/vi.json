@@ -1,58 +1,477 @@
 {
-  "nav":{"services":"Dịch vụ","platform":"Nền tảng","pricing":"Bảng giá","about":"Giới thiệu","support":"Hỗ trợ","login":"Đăng nhập","startFree":"Dùng miễn phí",
-    "services_sub":{"student":"Quản lý học sinh","school":"Quản lý trường học","partner":"Quản lý đối tác","agency":"Mạng lưới đại lý","tuition":"Quản lý học phí","branch":"Quản lý chi nhánh","aiChatbot":"AI Chatbot","aiForm":"AI Form & Quotation","aiStudy":"AI Study Plan"},
-    "platform_sub":{"overview":"Tổng quan chương trình","operations":"Tự động hóa","marketing":"Báo cáo marketing","access":"Môi trường truy cập"},
-    "about_sub":{"company":"Về Edubee","why":"Tại sao chọn Edubee","security":"Chính sách bảo mật"},
-    "support_sub":{"faq":"Câu hỏi thường gặp","consulting":"Yêu cầu tư vấn","notices":"Thông báo","contact":"Liên hệ"}
+  "nav": {
+    "services": "Dịch vụ",
+    "platform": "Nền tảng",
+    "pricing": "Bảng giá",
+    "about": "Giới thiệu",
+    "support": "Hỗ trợ",
+    "login": "Đăng nhập",
+    "startFree": "Dùng miễn phí",
+    "services_sub": {
+      "student": "Quản lý học sinh",
+      "school": "Quản lý trường học",
+      "partner": "Quản lý đối tác",
+      "agency": "Mạng lưới đại lý",
+      "tuition": "Quản lý học phí",
+      "branch": "Quản lý chi nhánh",
+      "aiChatbot": "AI Chatbot",
+      "aiForm": "AI Form & Quotation",
+      "aiStudy": "AI Study Plan"
+    },
+    "platform_sub": {
+      "overview": "Tổng quan chương trình",
+      "operations": "Tự động hóa",
+      "marketing": "Báo cáo marketing",
+      "access": "Môi trường truy cập"
+    },
+    "about_sub": {
+      "company": "Về Edubee",
+      "why": "Tại sao chọn Edubee",
+      "security": "Chính sách bảo mật"
+    },
+    "support_sub": {
+      "faq": "Câu hỏi thường gặp",
+      "consulting": "Yêu cầu tư vấn",
+      "notices": "Thông báo",
+      "contact": "Liên hệ"
+    }
   },
-  "banner":{"text":"Ra mắt Beta — Gói LITE và PLUS hiện đang miễn phí. Không cần thẻ tín dụng.","cta":"Bắt đầu ngay →"},
-  "home":{
-    "hero":{"eyebrow":"NỀN TẢNG CRM DÀNH CHO CÔNG TY DU HỌC","headline1":"Tập trung tư vấn học sinh.","headline2":"Edubee lo phần còn lại.","subheadline":"CRM toàn diện cho công ty du học. Quản lý học sinh, trường học, visa, học phí và chi nhánh — trên một nền tảng, từ mọi nơi.","ctaPrimary":"Dùng miễn phí →","ctaSecondary":"Đặt lịch demo","trust1":"Không phí cài đặt","trust2":"Không ràng buộc hợp đồng","trust3":"Gói LITE miễn phí"},
-    "socialProof":{"label":"ĐƯỢC TIN DÙNG BỞI CÁC CÔNG TY DU HỌC"},
-    "problem":{"label":"THÁCH THỨC HIỆN TẠI","heading":"Điều hành công ty du học không nên là việc chìm đắm trong bảng tính.","body":"Hầu hết công ty du học quản lý học sinh bằng Excel, theo dõi hoa hồng trong các tệp riêng và báo cáo cho chi nhánh qua email. Khi công ty phát triển, cách này nhanh chóng sụp đổ.","card1Title":"Dữ liệu học sinh phân tán","card1Body":"Tư vấn, visa, học phí và tài liệu ở các tệp riêng biệt","card2Title":"Báo cáo thủ công","card2Body":"Mất nhiều giờ tổng hợp báo cáo chi nhánh mỗi tuần","card3Title":"Hoa hồng bị bỏ lỡ","card3Body":"Bỏ lỡ hạn nộp hoa hồng trường mà không có theo dõi tự động"},
-    "services":{"label":"EDUBEE LÀM GÌ","heading":"Mọi thứ công ty du học cần, trong một nơi.","s1Title":"Quản lý học sinh","s1Body":"Từ tư vấn đầu tiên đến tái đăng ký — theo dõi từng điểm tiếp xúc của học sinh qua 6 giai đoạn quy trình.","s2Title":"Quản lý trường học","s2Body":"Tổ chức các trường từ Mỹ, Canada, Úc, Philippines theo quốc gia, bằng cấp và chương trình.","s3Title":"Quản lý đối tác","s3Body":"Quản lý công ty du lịch, bảo hiểm và chỗ ở trong một giao diện.","s4Title":"Mạng lưới đại lý","s4Body":"Xử lý học sinh từ đại lý đối tác và tính hoa hồng phụ tự động.","s5Title":"Quản lý học phí","s5Body":"Theo dõi học phí theo học sinh, theo học kỳ. Nhận nhắc nhở thanh toán hoa hồng tự động.","s6Title":"Quản lý chi nhánh","s6Body":"Kết nối văn phòng chính và chi nhánh nước ngoài. Theo dõi KPI, báo cáo hàng ngày và bảng lương."},
-    "workflow":{"label":"CÁCH THỨC HOẠT ĐỘNG","heading":"Quy trình có cấu trúc cho mỗi hành trình học sinh.","stage1Title":"Tư vấn","stage1Body":"Lập hồ sơ & báo giá","stage2Title":"Nộp hồ sơ trường","stage2Body":"Tài liệu & phí","stage3Title":"Xử lý visa","stage3Body":"Nộp đơn & phê duyệt","stage4Title":"Quản lý thanh toán","stage4Body":"Xử lý hàng loạt","stage5Title":"Sau nhập học","stage5Body":"Học phí & thay đổi","stage6Title":"Tái đăng ký","stage6Body":"Nhắc nhở tự động"},
-    "ai":{"eyebrow":"MỚI — HỖ TRỢ AI","heading":"Tư vấn thông minh hơn với AI.","subheadline":"Bộ công cụ AI của Edubee tự động hóa các tác vụ thường xuyên để nhóm của bạn tập trung vào xây dựng mối quan hệ với học sinh.","chatbotTitle":"AI Chatbot","chatbotBody":"Chat trực tiếp đa ngôn ngữ hoạt động 24/7. Tự động thu thập khách hàng tiềm năng và lưu vào CRM.","formTitle":"AI Form & Quotation","formBody":"Biểu mẫu tiếp nhận thông minh tự động tạo hồ sơ khách hàng tiềm năng và tạo báo giá phù hợp ngay lập tức.","studyTitle":"AI Study Plan","studyBody":"Tạo kế hoạch học tập cá nhân hóa. Tự động điền danh sách kiểm tra visa và yêu cầu của trường."},
-    "automation":{"heading":"Dừng nhập dữ liệu lại. Bắt đầu vận hành công ty.","daily":"Hàng ngày","dailyBody":"Đối chiếu thu chi chi nhánh tự động","weekly":"Hàng tuần","weeklyBody":"Báo cáo hiệu suất tư vấn viên","monthly":"Hàng tháng","monthlyBody":"Bảng điều khiển phân tích toàn công ty","auto":"Tự động","autoBody":"Cảnh báo visa hết hạn + hoa hồng + tái đăng ký","body":"Một lần nhập. Mọi báo cáo. Edubee loại bỏ nhập dữ liệu trùng lặp — mọi thứ tự động chảy vào báo cáo, bảng điều khiển và KPI nhân viên."},
-    "pricingPreview":{"heading":"Định giá minh bạch. Không bất ngờ.","viewFull":"Xem bảng giá đầy đủ →","colPlan":"Gói","colPrice":"Giá (AUD/tháng)","colStudents":"Học sinh/tháng","colStorage":"Lưu trữ","colSchoolDB":"DB Trường","colRemote":"Hỗ trợ từ xa","noteGst":"Tất cả giá chưa bao gồm GST (AUD).","comingSoon":"Sắp ra mắt"},
-    "security":{"heading":"Dữ liệu của bạn an toàn với Edubee.","s1Title":"Trung tâm dữ liệu IDC","s1Body":"Máy chủ tại trung tâm dữ liệu an toàn với kiểm soát truy cập vật lý và nguồn điện dự phòng.","s2Title":"Kiểm soát truy cập nghiêm ngặt","s2Body":"Chỉ người dùng được ủy quyền mới có thể truy cập dữ liệu. Ngay cả nhân viên Edubee cũng không thể xem dữ liệu của bạn.","s3Title":"Sao lưu dự phòng","s3Body":"Dữ liệu được lưu trữ trên cơ sở dữ liệu phân tán kép với sao lưu tự động theo lịch."},
-    "cta":{"heading":"Sẵn sàng tối ưu hóa công ty du học của bạn?","sub":"Bắt đầu với gói LITE miễn phí ngay hôm nay — không cần thẻ tín dụng.","primary":"Dùng miễn phí →","secondary":"Liên hệ"}
+  "banner": {
+    "text": "Ra mắt Beta — Gói LITE và PLUS hiện đang miễn phí. Không cần thẻ tín dụng.",
+    "cta": "Bắt đầu ngay →"
   },
-  "servicesPage":{
-    "hero":{"eyebrow":"Tất cả dịch vụ","heading":"Mọi thứ công ty du học cần,","headingOrange":"trên một nền tảng.","sub":"Từ quản lý học sinh đến tự động hóa AI — Edubee cung cấp cho các công ty du học quốc tế công cụ để hoạt động tốt nhất."},
-    "core":{"heading":"Dịch vụ cốt lõi","sub":"Các công cụ thiết yếu mà mọi công ty du học cần để vận hành hiệu quả."},
-    "ai":{"eyebrow":"Tính năng hỗ trợ AI","heading":"Tương lai du học được vận hành bởi AI","sub":"Các công cụ AI mới tự động hóa công việc lặp đi lặp lại và nâng cao cảm xúc con người.","getStarted":"Bắt đầu","earlyAccess":"Đăng ký truy cập sớm"},
-    "student":{"title":"Quản lý học sinh","desc":"Theo dõi từng học sinh từ lần hỏi đầu tiên đến tốt nghiệp. Lịch sử tư vấn, hồ sơ và quy trình 6 giai đoạn đều ở một nơi.","f1":"Lịch sử tư vấn & lập hồ sơ","f2":"Tạo báo giá & hợp đồng","f3":"Theo dõi quy trình 6 giai đoạn","f4":"Nộp & phê duyệt visa","f5":"Nhắc nhở tái đăng ký"},
-    "school":{"title":"Quản lý trường học","desc":"Quản lý toàn bộ cơ sở dữ liệu đối tác trường học — hợp đồng, phí, tỷ lệ hoa hồng và yêu cầu nộp đơn trong một trung tâm tìm kiếm được.","f1":"DB trường học & hợp đồng","f2":"Quản lý tỷ lệ hoa hồng","f3":"Danh mục chương trình & khóa học","f4":"Theo dõi nộp hồ sơ trường","f5":"Quản lý tài liệu"},
-    "partner":{"title":"Quản lý đối tác","desc":"Theo dõi đối tác giới thiệu, thỏa thuận và thanh toán hoa hồng. Quản lý mọi mối quan hệ với sự minh bạch hoàn toàn.","f1":"DB thỏa thuận đối tác","f2":"Tính toán hoa hồng","f3":"Theo dõi nguồn giới thiệu","f4":"Phân tích hiệu suất","f5":"Hồ sơ thanh toán"},
-    "agency":{"title":"Quản lý mạng lưới đại lý","desc":"Quản lý hoạt động đại lý đa chi nhánh từ một bảng điều khiển. Kiểm soát truy cập nhân viên, hiển thị hiệu suất và dữ liệu cấp chi nhánh.","f1":"Hoạt động đa chi nhánh","f2":"Quản lý tài khoản nhân viên","f3":"Kiểm soát truy cập theo vai trò","f4":"Bảng điều khiển trụ sở chính","f5":"Báo cáo hiệu suất chi nhánh"},
-    "tuition":{"title":"Học phí & Hoa hồng","desc":"Theo dõi hoa hồng tự động và lập hóa đơn. Biết chính xác số tiền bạn được nhận — và số tiền đã được thanh toán — ngay một cái nhìn.","f1":"Tự động tính hoa hồng","f2":"Tạo hóa đơn","f3":"Theo dõi trạng thái thanh toán","f4":"Quản lý GST & thuế","f5":"Báo cáo tài chính"},
-    "branch":{"title":"Vận hành chi nhánh","desc":"Kết nối trụ sở chính và chi nhánh nước ngoài với đồng bộ thời gian thực. Cùng nền tảng, cùng dữ liệu, mọi nơi trên thế giới.","f1":"Đồng bộ dữ liệu thời gian thực","f2":"Báo cáo cấp chi nhánh","f3":"Chuyển học sinh giữa các chi nhánh","f4":"Quản lý bảng lương","f5":"Bảng điều khiển vận hành"},
-    "aiChatbot":{"title":"AI Chatbot","desc":"Triển khai trợ lý hỗ trợ học sinh AI 24/7. Trả lời ngay các câu hỏi thường gặp, đánh giá khách hàng tiềm năng và đặt lịch tư vấn — không cần nỗ lực.","f1":"Phản hồi tự động 24/7","f2":"Đánh giá khách hàng tiềm năng","f3":"Đặt lịch hẹn","f4":"Hỗ trợ đa ngôn ngữ","f5":"Chuyển cho nhân viên"},
-    "aiForm":{"title":"AI Smart Form","desc":"Biểu mẫu nộp đơn thông minh tự động hoàn thành từ dữ liệu học sinh hiện có. Giảm lỗi, tiết kiệm thời gian và làm hài lòng học sinh.","f1":"Tự động điền từ hồ sơ học sinh","f2":"Xác thực trường thông minh","f3":"Nhắc nhở tải tài liệu","f4":"Lưu tiến trình","f5":"Thông báo nộp đơn"},
-    "aiStudy":{"title":"AI Study Advisor","desc":"Đề xuất khóa học và trường học cá nhân hóa được hỗ trợ bởi AI. Ghép nối từng học sinh với chương trình hoàn hảo dựa trên mục tiêu và hồ sơ của họ.","f1":"Ghép nối dựa trên hồ sơ","f2":"Phân tích xếp hạng trường","f3":"Tối ưu hóa ngân sách","f4":"Dự đoán thành công visa","f5":"Xuất báo cáo cá nhân hóa"}
+  "home": {
+    "hero": {
+      "eyebrow": "NỀN TẢNG CRM DÀNH CHO CÔNG TY DU HỌC",
+      "headline1": "Tập trung tư vấn học sinh.",
+      "headline2": "Edubee lo phần còn lại.",
+      "subheadline": "CRM toàn diện cho công ty du học. Quản lý học sinh, trường học, visa, học phí và chi nhánh — trên một nền tảng, từ mọi nơi.",
+      "ctaPrimary": "Dùng miễn phí →",
+      "ctaSecondary": "Đặt lịch demo",
+      "trust1": "Không phí cài đặt",
+      "trust2": "Không ràng buộc hợp đồng",
+      "trust3": "Gói LITE miễn phí"
+    },
+    "socialProof": {
+      "label": "ĐƯỢC TIN DÙNG BỞI CÁC CÔNG TY DU HỌC"
+    },
+    "problem": {
+      "label": "THÁCH THỨC HIỆN TẠI",
+      "heading": "Điều hành công ty du học không nên là việc chìm đắm trong bảng tính.",
+      "body": "Hầu hết công ty du học quản lý học sinh bằng Excel, theo dõi hoa hồng trong các tệp riêng và báo cáo cho chi nhánh qua email. Khi công ty phát triển, cách này nhanh chóng sụp đổ.",
+      "card1Title": "Dữ liệu học sinh phân tán",
+      "card1Body": "Tư vấn, visa, học phí và tài liệu ở các tệp riêng biệt",
+      "card2Title": "Báo cáo thủ công",
+      "card2Body": "Mất nhiều giờ tổng hợp báo cáo chi nhánh mỗi tuần",
+      "card3Title": "Hoa hồng bị bỏ lỡ",
+      "card3Body": "Bỏ lỡ hạn nộp hoa hồng trường mà không có theo dõi tự động"
+    },
+    "services": {
+      "label": "EDUBEE LÀM GÌ",
+      "heading": "Mọi thứ công ty du học cần, trong một nơi.",
+      "s1Title": "Quản lý học sinh",
+      "s1Body": "Từ tư vấn đầu tiên đến tái đăng ký — theo dõi từng điểm tiếp xúc của học sinh qua 6 giai đoạn quy trình.",
+      "s2Title": "Quản lý trường học",
+      "s2Body": "Tổ chức các trường từ Mỹ, Canada, Úc, Philippines theo quốc gia, bằng cấp và chương trình.",
+      "s3Title": "Quản lý đối tác",
+      "s3Body": "Quản lý công ty du lịch, bảo hiểm và chỗ ở trong một giao diện.",
+      "s4Title": "Mạng lưới đại lý",
+      "s4Body": "Xử lý học sinh từ đại lý đối tác và tính hoa hồng phụ tự động.",
+      "s5Title": "Quản lý học phí",
+      "s5Body": "Theo dõi học phí theo học sinh, theo học kỳ. Nhận nhắc nhở thanh toán hoa hồng tự động.",
+      "s6Title": "Quản lý chi nhánh",
+      "s6Body": "Kết nối văn phòng chính và chi nhánh nước ngoài. Theo dõi KPI, báo cáo hàng ngày và bảng lương."
+    },
+    "workflow": {
+      "label": "CÁCH THỨC HOẠT ĐỘNG",
+      "heading": "Quy trình có cấu trúc cho mỗi hành trình học sinh.",
+      "stage1Title": "Tư vấn",
+      "stage1Body": "Lập hồ sơ & báo giá",
+      "stage2Title": "Nộp hồ sơ trường",
+      "stage2Body": "Tài liệu & phí",
+      "stage3Title": "Xử lý visa",
+      "stage3Body": "Nộp đơn & phê duyệt",
+      "stage4Title": "Quản lý thanh toán",
+      "stage4Body": "Xử lý hàng loạt",
+      "stage5Title": "Sau nhập học",
+      "stage5Body": "Học phí & thay đổi",
+      "stage6Title": "Tái đăng ký",
+      "stage6Body": "Nhắc nhở tự động"
+    },
+    "ai": {
+      "eyebrow": "MỚI — HỖ TRỢ AI",
+      "heading": "Tư vấn thông minh hơn với AI.",
+      "subheadline": "Bộ công cụ AI của Edubee tự động hóa các tác vụ thường xuyên để nhóm của bạn tập trung vào xây dựng mối quan hệ với học sinh.",
+      "chatbotTitle": "AI Chatbot",
+      "chatbotBody": "Chat trực tiếp đa ngôn ngữ hoạt động 24/7. Tự động thu thập khách hàng tiềm năng và lưu vào CRM.",
+      "formTitle": "AI Form & Quotation",
+      "formBody": "Biểu mẫu tiếp nhận thông minh tự động tạo hồ sơ khách hàng tiềm năng và tạo báo giá phù hợp ngay lập tức.",
+      "studyTitle": "AI Study Plan",
+      "studyBody": "Tạo kế hoạch học tập cá nhân hóa. Tự động điền danh sách kiểm tra visa và yêu cầu của trường."
+    },
+    "automation": {
+      "heading": "Dừng nhập dữ liệu lại. Bắt đầu vận hành công ty.",
+      "daily": "Hàng ngày",
+      "dailyBody": "Đối chiếu thu chi chi nhánh tự động",
+      "weekly": "Hàng tuần",
+      "weeklyBody": "Báo cáo hiệu suất tư vấn viên",
+      "monthly": "Hàng tháng",
+      "monthlyBody": "Bảng điều khiển phân tích toàn công ty",
+      "auto": "Tự động",
+      "autoBody": "Cảnh báo visa hết hạn + hoa hồng + tái đăng ký",
+      "body": "Một lần nhập. Mọi báo cáo. Edubee loại bỏ nhập dữ liệu trùng lặp — mọi thứ tự động chảy vào báo cáo, bảng điều khiển và KPI nhân viên."
+    },
+    "pricingPreview": {
+      "heading": "Định giá minh bạch. Không bất ngờ.",
+      "viewFull": "Xem bảng giá đầy đủ →",
+      "colPlan": "Gói",
+      "colPrice": "Giá (AUD/tháng)",
+      "colStudents": "Học sinh/tháng",
+      "colStorage": "Lưu trữ",
+      "colSchoolDB": "DB Trường",
+      "colRemote": "Hỗ trợ từ xa",
+      "noteGst": "Tất cả giá chưa bao gồm GST (AUD).",
+      "comingSoon": "Sắp ra mắt"
+    },
+    "security": {
+      "heading": "Dữ liệu của bạn an toàn với Edubee.",
+      "s1Title": "Trung tâm dữ liệu IDC",
+      "s1Body": "Máy chủ tại trung tâm dữ liệu an toàn với kiểm soát truy cập vật lý và nguồn điện dự phòng.",
+      "s2Title": "Kiểm soát truy cập nghiêm ngặt",
+      "s2Body": "Chỉ người dùng được ủy quyền mới có thể truy cập dữ liệu. Ngay cả nhân viên Edubee cũng không thể xem dữ liệu của bạn.",
+      "s3Title": "Sao lưu dự phòng",
+      "s3Body": "Dữ liệu được lưu trữ trên cơ sở dữ liệu phân tán kép với sao lưu tự động theo lịch."
+    },
+    "cta": {
+      "heading": "Sẵn sàng tối ưu hóa công ty du học của bạn?",
+      "sub": "Bắt đầu với gói LITE miễn phí ngay hôm nay — không cần thẻ tín dụng.",
+      "primary": "Dùng miễn phí →",
+      "secondary": "Liên hệ"
+    }
   },
-  "platformPage":{
-    "hero":{"eyebrow":"Nền tảng","heading":"Được xây dựng theo cách","headingOrange":"các công ty du học thực sự hoạt động.","sub":"Nền tảng Edubee bao phủ mọi giai đoạn của hành trình học sinh — từ liên hệ đầu tiên đến quản lý sau nhập học — với tự động hóa giúp tiết kiệm nhiều giờ mỗi tuần."},
-    "workflow":{"eyebrow":"Tổng quan chương trình","heading":"Quy trình học sinh 6 giai đoạn","sub":"Mỗi học sinh đều có một hành trình có cấu trúc. Edubee theo dõi mọi bước — đảm bảo không có gì bị bỏ lỡ."},
-    "operations":{"eyebrow":"Tự động hóa vận hành","heading":"Tự động hóa công việc thường xuyên. Tập trung vào học sinh.","sub":"Edubee tự động tạo báo cáo hàng ngày, hàng tuần và hàng tháng để nhóm của bạn tập trung vào tư vấn, không phải hành chính.","daily":"Hàng ngày","weekly":"Hàng tuần","monthly":"Hàng tháng","d1":"Thông báo yêu cầu mới","d2":"Nhắc nhở nhiệm vụ & theo dõi","d3":"Cảnh báo visa hết hạn","d4":"Cập nhật trạng thái học sinh hàng ngày","w1":"Tóm tắt pipeline hàng tuần","w2":"Tổng quan hiệu suất nhân viên","w3":"Đối chiếu hoa hồng","w4":"Báo cáo đồng bộ chi nhánh","m1":"Báo cáo doanh thu hàng tháng","m2":"Phân tích tỷ lệ chuyển đổi","m3":"Báo cáo hoa hồng trường học","m4":"Tóm tắt ROI marketing"},
-    "marketing":{"eyebrow":"Báo cáo marketing","heading":"Marketing dựa trên dữ liệu, đơn giản hóa.","sub":"Ngừng đoán xem nỗ lực marketing nào có hiệu quả. Edubee theo dõi mọi nguồn khách hàng tiềm năng và cung cấp dữ liệu ROI có thể hành động được.","m1Label":"Nguồn khách hàng tiềm năng","m1Desc":"Theo dõi học sinh đến từ đâu — web, giới thiệu, mạng xã hội, sự kiện","m2Label":"Tỷ lệ chuyển đổi","m2Desc":"Theo dõi chuyển đổi từ yêu cầu đến nhập học ở mọi giai đoạn","m3Label":"Doanh thu theo kênh","m3Desc":"Biết kênh marketing nào tạo ra nhiều doanh thu nhất","m4Label":"ROI chiến dịch","m4Desc":"So sánh chi phí chiến dịch với số học sinh nhập học được quy gán"},
-    "access":{"eyebrow":"Môi trường truy cập","heading":"Sử dụng Edubee từ bất cứ đâu trên thế giới.","sub":"Máy tính văn phòng, laptop ở nhà, chi nhánh nước ngoài hay điện thoại di động — cùng trải nghiệm, cùng dữ liệu, luôn đồng bộ.","a1Title":"Dựa trên web, không cần cài đặt","a1Desc":"Truy cập Edubee từ bất kỳ trình duyệt nào — Chrome, Safari, Edge. Không cần cài đặt, không cần quản lý cập nhật.","a2Title":"Đa chi nhánh toàn cầu","a2Desc":"Trụ sở chính, chi nhánh nước ngoài và nhân viên từ xa đều chia sẻ cùng dữ liệu trực tiếp. Không cần đồng bộ thêm.","a3Title":"Giao diện 6 ngôn ngữ","a3Desc":"Chuyển đổi ngay lập tức giữa tiếng Anh, Hàn, Nhật, Trung, Thái và Việt từ bất kỳ thiết bị nào.","a4Title":"Nhanh & đáng tin cậy","a4Desc":"Được lưu trữ trên cơ sở hạ tầng cấp doanh nghiệp với SLA thời gian hoạt động 99,9% và tự động chuyển đổi dự phòng."}
+  "servicesPage": {
+    "hero": {
+      "eyebrow": "Tất cả dịch vụ",
+      "heading": "Mọi thứ công ty du học cần,",
+      "headingOrange": "trên một nền tảng.",
+      "sub": "Từ quản lý học sinh đến tự động hóa AI — Edubee cung cấp cho các công ty du học quốc tế công cụ để hoạt động tốt nhất."
+    },
+    "core": {
+      "heading": "Dịch vụ cốt lõi",
+      "sub": "Các công cụ thiết yếu mà mọi công ty du học cần để vận hành hiệu quả."
+    },
+    "ai": {
+      "eyebrow": "Tính năng hỗ trợ AI",
+      "heading": "Tương lai du học được vận hành bởi AI",
+      "sub": "Các công cụ AI mới tự động hóa công việc lặp đi lặp lại và nâng cao cảm xúc con người.",
+      "getStarted": "Bắt đầu",
+      "earlyAccess": "Đăng ký truy cập sớm"
+    },
+    "student": {
+      "title": "Quản lý học sinh",
+      "desc": "Theo dõi từng học sinh từ lần hỏi đầu tiên đến tốt nghiệp. Lịch sử tư vấn, hồ sơ và quy trình 6 giai đoạn đều ở một nơi.",
+      "f1": "Lịch sử tư vấn & lập hồ sơ",
+      "f2": "Tạo báo giá & hợp đồng",
+      "f3": "Theo dõi quy trình 6 giai đoạn",
+      "f4": "Nộp & phê duyệt visa",
+      "f5": "Nhắc nhở tái đăng ký"
+    },
+    "school": {
+      "title": "Quản lý trường học",
+      "desc": "Quản lý toàn bộ cơ sở dữ liệu đối tác trường học — hợp đồng, phí, tỷ lệ hoa hồng và yêu cầu nộp đơn trong một trung tâm tìm kiếm được.",
+      "f1": "DB trường học & hợp đồng",
+      "f2": "Quản lý tỷ lệ hoa hồng",
+      "f3": "Danh mục chương trình & khóa học",
+      "f4": "Theo dõi nộp hồ sơ trường",
+      "f5": "Quản lý tài liệu"
+    },
+    "partner": {
+      "title": "Quản lý đối tác",
+      "desc": "Theo dõi đối tác giới thiệu, thỏa thuận và thanh toán hoa hồng. Quản lý mọi mối quan hệ với sự minh bạch hoàn toàn.",
+      "f1": "DB thỏa thuận đối tác",
+      "f2": "Tính toán hoa hồng",
+      "f3": "Theo dõi nguồn giới thiệu",
+      "f4": "Phân tích hiệu suất",
+      "f5": "Hồ sơ thanh toán"
+    },
+    "agency": {
+      "title": "Quản lý mạng lưới đại lý",
+      "desc": "Quản lý hoạt động đại lý đa chi nhánh từ một bảng điều khiển. Kiểm soát truy cập nhân viên, hiển thị hiệu suất và dữ liệu cấp chi nhánh.",
+      "f1": "Hoạt động đa chi nhánh",
+      "f2": "Quản lý tài khoản nhân viên",
+      "f3": "Kiểm soát truy cập theo vai trò",
+      "f4": "Bảng điều khiển trụ sở chính",
+      "f5": "Báo cáo hiệu suất chi nhánh"
+    },
+    "tuition": {
+      "title": "Học phí & Hoa hồng",
+      "desc": "Theo dõi hoa hồng tự động và lập hóa đơn. Biết chính xác số tiền bạn được nhận — và số tiền đã được thanh toán — ngay một cái nhìn.",
+      "f1": "Tự động tính hoa hồng",
+      "f2": "Tạo hóa đơn",
+      "f3": "Theo dõi trạng thái thanh toán",
+      "f4": "Quản lý GST & thuế",
+      "f5": "Báo cáo tài chính"
+    },
+    "branch": {
+      "title": "Vận hành chi nhánh",
+      "desc": "Kết nối trụ sở chính và chi nhánh nước ngoài với đồng bộ thời gian thực. Cùng nền tảng, cùng dữ liệu, mọi nơi trên thế giới.",
+      "f1": "Đồng bộ dữ liệu thời gian thực",
+      "f2": "Báo cáo cấp chi nhánh",
+      "f3": "Chuyển học sinh giữa các chi nhánh",
+      "f4": "Quản lý bảng lương",
+      "f5": "Bảng điều khiển vận hành"
+    },
+    "aiChatbot": {
+      "title": "AI Chatbot",
+      "desc": "Triển khai trợ lý hỗ trợ học sinh AI 24/7. Trả lời ngay các câu hỏi thường gặp, đánh giá khách hàng tiềm năng và đặt lịch tư vấn — không cần nỗ lực.",
+      "f1": "Phản hồi tự động 24/7",
+      "f2": "Đánh giá khách hàng tiềm năng",
+      "f3": "Đặt lịch hẹn",
+      "f4": "Hỗ trợ đa ngôn ngữ",
+      "f5": "Chuyển cho nhân viên"
+    },
+    "aiForm": {
+      "title": "AI Smart Form",
+      "desc": "Biểu mẫu nộp đơn thông minh tự động hoàn thành từ dữ liệu học sinh hiện có. Giảm lỗi, tiết kiệm thời gian và làm hài lòng học sinh.",
+      "f1": "Tự động điền từ hồ sơ học sinh",
+      "f2": "Xác thực trường thông minh",
+      "f3": "Nhắc nhở tải tài liệu",
+      "f4": "Lưu tiến trình",
+      "f5": "Thông báo nộp đơn"
+    },
+    "aiStudy": {
+      "title": "AI Study Advisor",
+      "desc": "Đề xuất khóa học và trường học cá nhân hóa được hỗ trợ bởi AI. Ghép nối từng học sinh với chương trình hoàn hảo dựa trên mục tiêu và hồ sơ của họ.",
+      "f1": "Ghép nối dựa trên hồ sơ",
+      "f2": "Phân tích xếp hạng trường",
+      "f3": "Tối ưu hóa ngân sách",
+      "f4": "Dự đoán thành công visa",
+      "f5": "Xuất báo cáo cá nhân hóa"
+    }
   },
-  "aboutPage":{
-    "hero":{"eyebrow":"Về Edubee","heading":"Được xây dựng bởi người trong ngành du học,","headingOrange":"dành cho người trong ngành du học.","sub":"Edubee CRM được thành lập với một sứ mệnh duy nhất: cung cấp cho các công ty du học công cụ để vận hành hiệu quả và phát triển tự tin — không cần mức giá doanh nghiệp."},
-    "story":{"eyebrow":"Câu chuyện của chúng tôi","heading":"Từ thất vọng đến giải pháp.","p1":"Chúng tôi nhận ra rằng các công ty du học quốc tế đang quản lý hành trình học sinh phức tạp qua bảng tính, các công cụ rời rạc và báo cáo email thủ công.","p2":"Khi các công ty phát triển — thêm chi nhánh nước ngoài, tuyển tư vấn viên, hợp tác với nhiều trường hơn — cách tiếp cận này sụp đổ. Dữ liệu bị phân tán. Hoa hồng bị bỏ lỡ. Học sinh rơi vào khoảng trống quản lý.","p3":"Edubee tích hợp quản lý học sinh, cơ sở dữ liệu trường học, theo dõi hoa hồng, quản lý visa, vận hành chi nhánh và phân tích marketing vào một nền tảng đám mây — được xây dựng riêng cho công ty du học.","p4":"Chúng tôi có trụ sở tại Melbourne, Úc và phục vụ các công ty ở Hàn Quốc, Nhật Bản, Trung Quốc, Đông Nam Á và hơn thế nữa.","companyDetails":"Thông tin công ty","company":"Công ty","representative":"Người đại diện","founded":"Thành lập tại"},
-    "why":{"eyebrow":"Tại sao chọn Edubee","heading":"Điều làm chúng tôi khác biệt.","sub":"Chúng tôi xây dựng Edubee xung quanh thực tế điều hành một công ty du học — không phải nhóm bán hàng thông thường.","forYou":"Edubee dành cho bạn nếu...","s1Title":"Chuyên gia du học","s1Body":"Không phải CRM thông thường. Được xây dựng riêng cho công ty du học quốc tế — mọi tính năng đều phù hợp với quy trình làm việc của bạn.","s2Title":"Giá cả hợp lý","s2Body":"CRM quốc tế tương đương có giá hơn 100 đô/tháng. Edubee bắt đầu miễn phí và mở rộng với chi phí nhỏ hơn nhiều.","s3Title":"Nền tảng tất cả trong một","s3Body":"Quản lý học sinh, cơ sở dữ liệu trường học, hoa hồng, kế toán, vận hành chi nhánh — không cần chuyển đổi công cụ.","s4Title":"Hoạt động mọi nơi","s4Body":"Dựa trên web. Hoạt động trên máy tính văn phòng, laptop ở nhà, điện thoại thông minh hoặc chi nhánh nước ngoài — cùng trải nghiệm.","s5Title":"Hỗ trợ 6 ngôn ngữ","s5Body":"Chuyển đổi ngay lập tức giữa tiếng Anh, Hàn, Nhật, Trung, Thái và Việt. Được xây dựng cho công ty đa ngôn ngữ.","s6Title":"Bảo mật cấp doanh nghiệp","s6Body":"Lưu trữ trung tâm dữ liệu IDC, sao lưu cơ sở dữ liệu dự phòng, kiểm soát truy cập nghiêm ngặt — dữ liệu của bạn an toàn như hệ thống ngân hàng.","fy1":"Bạn cảm thấy CRM là cần thiết nhưng chi phí là rào cản","fy2":"Bạn muốn thống nhất quản lý học sinh trụ sở chính và chi nhánh","fy3":"Bạn đang quản lý số lượng học sinh ngày càng tăng bằng bảng tính thủ công","fy4":"Bạn cần kế toán đa chi nhánh và bảng lương trong một hệ thống","fy5":"Bạn muốn có thông tin marketing dựa trên dữ liệu mà không cần phân tích Excel"},
-    "security":{"eyebrow":"Bảo mật & Dữ liệu","heading":"Dữ liệu của bạn là tài sản quý giá nhất.","sub":"Edubee được xây dựng với bảo mật cấp doanh nghiệp để bạn tập trung vào học sinh — không phải vi phạm dữ liệu.","s1Title":"Trung tâm dữ liệu IDC","s1Body":"Máy chủ được lưu trữ trong Trung tâm dữ liệu Internet an toàn với kiểm soát truy cập vật lý, hệ thống chữa cháy, nguồn điện dự phòng và giám sát 24/7.","s2Title":"Kiểm soát truy cập","s2Body":"Chỉ người dùng được ủy quyền mới có thể truy cập dữ liệu của bạn. Nhân viên Edubee không thể xem dữ liệu công ty du học của bạn trong bất kỳ trường hợp nào.","s3Title":"Sao lưu dự phòng kép","s3Body":"Tất cả dữ liệu được lưu trữ trên hai máy chủ cơ sở dữ liệu phân tán với sao lưu tự động theo lịch để có khả năng khôi phục đầy đủ.","s4Title":"Bảo vệ tường lửa","s4Body":"Nhiều lớp tường lửa và phát hiện xâm nhập bảo vệ hệ thống. Tất cả kết nối được mã hóa qua HTTPS/TLS."}
+  "platformPage": {
+    "hero": {
+      "eyebrow": "Nền tảng",
+      "heading": "Được xây dựng theo cách",
+      "headingOrange": "các công ty du học thực sự hoạt động.",
+      "sub": "Nền tảng Edubee bao phủ mọi giai đoạn của hành trình học sinh — từ liên hệ đầu tiên đến quản lý sau nhập học — với tự động hóa giúp tiết kiệm nhiều giờ mỗi tuần."
+    },
+    "workflow": {
+      "eyebrow": "Tổng quan chương trình",
+      "heading": "Quy trình học sinh 6 giai đoạn",
+      "sub": "Mỗi học sinh đều có một hành trình có cấu trúc. Edubee theo dõi mọi bước — đảm bảo không có gì bị bỏ lỡ."
+    },
+    "operations": {
+      "eyebrow": "Tự động hóa vận hành",
+      "heading": "Tự động hóa công việc thường xuyên. Tập trung vào học sinh.",
+      "sub": "Edubee tự động tạo báo cáo hàng ngày, hàng tuần và hàng tháng để nhóm của bạn tập trung vào tư vấn, không phải hành chính.",
+      "daily": "Hàng ngày",
+      "weekly": "Hàng tuần",
+      "monthly": "Hàng tháng",
+      "d1": "Thông báo yêu cầu mới",
+      "d2": "Nhắc nhở nhiệm vụ & theo dõi",
+      "d3": "Cảnh báo visa hết hạn",
+      "d4": "Cập nhật trạng thái học sinh hàng ngày",
+      "w1": "Tóm tắt pipeline hàng tuần",
+      "w2": "Tổng quan hiệu suất nhân viên",
+      "w3": "Đối chiếu hoa hồng",
+      "w4": "Báo cáo đồng bộ chi nhánh",
+      "m1": "Báo cáo doanh thu hàng tháng",
+      "m2": "Phân tích tỷ lệ chuyển đổi",
+      "m3": "Báo cáo hoa hồng trường học",
+      "m4": "Tóm tắt ROI marketing"
+    },
+    "marketing": {
+      "eyebrow": "Báo cáo marketing",
+      "heading": "Marketing dựa trên dữ liệu, đơn giản hóa.",
+      "sub": "Ngừng đoán xem nỗ lực marketing nào có hiệu quả. Edubee theo dõi mọi nguồn khách hàng tiềm năng và cung cấp dữ liệu ROI có thể hành động được.",
+      "m1Label": "Nguồn khách hàng tiềm năng",
+      "m1Desc": "Theo dõi học sinh đến từ đâu — web, giới thiệu, mạng xã hội, sự kiện",
+      "m2Label": "Tỷ lệ chuyển đổi",
+      "m2Desc": "Theo dõi chuyển đổi từ yêu cầu đến nhập học ở mọi giai đoạn",
+      "m3Label": "Doanh thu theo kênh",
+      "m3Desc": "Biết kênh marketing nào tạo ra nhiều doanh thu nhất",
+      "m4Label": "ROI chiến dịch",
+      "m4Desc": "So sánh chi phí chiến dịch với số học sinh nhập học được quy gán"
+    },
+    "access": {
+      "eyebrow": "Môi trường truy cập",
+      "heading": "Sử dụng Edubee từ bất cứ đâu trên thế giới.",
+      "sub": "Máy tính văn phòng, laptop ở nhà, chi nhánh nước ngoài hay điện thoại di động — cùng trải nghiệm, cùng dữ liệu, luôn đồng bộ.",
+      "a1Title": "Dựa trên web, không cần cài đặt",
+      "a1Desc": "Truy cập Edubee từ bất kỳ trình duyệt nào — Chrome, Safari, Edge. Không cần cài đặt, không cần quản lý cập nhật.",
+      "a2Title": "Đa chi nhánh toàn cầu",
+      "a2Desc": "Trụ sở chính, chi nhánh nước ngoài và nhân viên từ xa đều chia sẻ cùng dữ liệu trực tiếp. Không cần đồng bộ thêm.",
+      "a3Title": "Giao diện 6 ngôn ngữ",
+      "a3Desc": "Chuyển đổi ngay lập tức giữa tiếng Anh, Hàn, Nhật, Trung, Thái và Việt từ bất kỳ thiết bị nào.",
+      "a4Title": "Nhanh & đáng tin cậy",
+      "a4Desc": "Được lưu trữ trên cơ sở hạ tầng cấp doanh nghiệp với SLA thời gian hoạt động 99,9% và tự động chuyển đổi dự phòng."
+    }
   },
-  "supportPage":{
-    "hero":{"eyebrow":"Hỗ trợ","heading":"Chúng tôi luôn","headingOrange":"sẵn sàng giúp đỡ.","sub":"Tìm câu trả lời trong FAQ của chúng tôi hoặc liên hệ trực tiếp — nhóm của chúng tôi phản hồi trong vòng một ngày làm việc."},
-    "faq":{"heading":"Câu hỏi thường gặp","sub":"Câu trả lời nhanh cho những câu hỏi phổ biến nhất về Edubee.","searchPlaceholder":"Tìm kiếm câu hỏi..."},
-    "contact":{"eyebrow":"Liên hệ","detailsHeading":"Thông tin liên hệ","emailLabel":"Email","addressLabel":"Địa chỉ","responseHeading":"Thời gian phản hồi","responseBody":"Chúng tôi đặt mục tiêu phản hồi trong vòng 1 ngày làm việc (Thứ Hai - Thứ Sáu, Melbourne AEST).","r1":"Yêu cầu chung: 1 ngày làm việc","r2":"Hỗ trợ kỹ thuật: cùng ngày","r3":"Câu hỏi về thanh toán: 1–2 ngày làm việc"}
+  "aboutPage": {
+    "hero": {
+      "eyebrow": "Về Edubee",
+      "heading": "Được xây dựng bởi người trong ngành du học,",
+      "headingOrange": "dành cho người trong ngành du học.",
+      "sub": "Edubee CRM được thành lập với một sứ mệnh duy nhất: cung cấp cho các công ty du học công cụ để vận hành hiệu quả và phát triển tự tin — không cần mức giá doanh nghiệp."
+    },
+    "story": {
+      "eyebrow": "Câu chuyện của chúng tôi",
+      "heading": "Từ thất vọng đến giải pháp.",
+      "p1": "Chúng tôi nhận ra rằng các công ty du học quốc tế đang quản lý hành trình học sinh phức tạp qua bảng tính, các công cụ rời rạc và báo cáo email thủ công.",
+      "p2": "Khi các công ty phát triển — thêm chi nhánh nước ngoài, tuyển tư vấn viên, hợp tác với nhiều trường hơn — cách tiếp cận này sụp đổ. Dữ liệu bị phân tán. Hoa hồng bị bỏ lỡ. Học sinh rơi vào khoảng trống quản lý.",
+      "p3": "Edubee tích hợp quản lý học sinh, cơ sở dữ liệu trường học, theo dõi hoa hồng, quản lý visa, vận hành chi nhánh và phân tích marketing vào một nền tảng đám mây — được xây dựng riêng cho công ty du học.",
+      "p4": "Chúng tôi có trụ sở tại Melbourne, Úc và phục vụ các công ty ở Hàn Quốc, Nhật Bản, Trung Quốc, Đông Nam Á và hơn thế nữa.",
+      "companyDetails": "Thông tin công ty",
+      "company": "Công ty",
+      "representative": "Người đại diện",
+      "founded": "Thành lập tại"
+    },
+    "why": {
+      "eyebrow": "Tại sao chọn Edubee",
+      "heading": "Điều làm chúng tôi khác biệt.",
+      "sub": "Chúng tôi xây dựng Edubee xung quanh thực tế điều hành một công ty du học — không phải nhóm bán hàng thông thường.",
+      "forYou": "Edubee dành cho bạn nếu...",
+      "s1Title": "Chuyên gia du học",
+      "s1Body": "Không phải CRM thông thường. Được xây dựng riêng cho công ty du học quốc tế — mọi tính năng đều phù hợp với quy trình làm việc của bạn.",
+      "s2Title": "Giá cả hợp lý",
+      "s2Body": "CRM quốc tế tương đương có giá hơn 100 đô/tháng. Edubee bắt đầu miễn phí và mở rộng với chi phí nhỏ hơn nhiều.",
+      "s3Title": "Nền tảng tất cả trong một",
+      "s3Body": "Quản lý học sinh, cơ sở dữ liệu trường học, hoa hồng, kế toán, vận hành chi nhánh — không cần chuyển đổi công cụ.",
+      "s4Title": "Hoạt động mọi nơi",
+      "s4Body": "Dựa trên web. Hoạt động trên máy tính văn phòng, laptop ở nhà, điện thoại thông minh hoặc chi nhánh nước ngoài — cùng trải nghiệm.",
+      "s5Title": "Hỗ trợ 6 ngôn ngữ",
+      "s5Body": "Chuyển đổi ngay lập tức giữa tiếng Anh, Hàn, Nhật, Trung, Thái và Việt. Được xây dựng cho công ty đa ngôn ngữ.",
+      "s6Title": "Bảo mật cấp doanh nghiệp",
+      "s6Body": "Lưu trữ trung tâm dữ liệu IDC, sao lưu cơ sở dữ liệu dự phòng, kiểm soát truy cập nghiêm ngặt — dữ liệu của bạn an toàn như hệ thống ngân hàng.",
+      "fy1": "Bạn cảm thấy CRM là cần thiết nhưng chi phí là rào cản",
+      "fy2": "Bạn muốn thống nhất quản lý học sinh trụ sở chính và chi nhánh",
+      "fy3": "Bạn đang quản lý số lượng học sinh ngày càng tăng bằng bảng tính thủ công",
+      "fy4": "Bạn cần kế toán đa chi nhánh và bảng lương trong một hệ thống",
+      "fy5": "Bạn muốn có thông tin marketing dựa trên dữ liệu mà không cần phân tích Excel"
+    },
+    "security": {
+      "eyebrow": "Bảo mật & Dữ liệu",
+      "heading": "Dữ liệu của bạn là tài sản quý giá nhất.",
+      "sub": "Edubee được xây dựng với bảo mật cấp doanh nghiệp để bạn tập trung vào học sinh — không phải vi phạm dữ liệu.",
+      "s1Title": "Trung tâm dữ liệu IDC",
+      "s1Body": "Máy chủ được lưu trữ trong Trung tâm dữ liệu Internet an toàn với kiểm soát truy cập vật lý, hệ thống chữa cháy, nguồn điện dự phòng và giám sát 24/7.",
+      "s2Title": "Kiểm soát truy cập",
+      "s2Body": "Chỉ người dùng được ủy quyền mới có thể truy cập dữ liệu của bạn. Nhân viên Edubee không thể xem dữ liệu công ty du học của bạn trong bất kỳ trường hợp nào.",
+      "s3Title": "Sao lưu dự phòng kép",
+      "s3Body": "Tất cả dữ liệu được lưu trữ trên hai máy chủ cơ sở dữ liệu phân tán với sao lưu tự động theo lịch để có khả năng khôi phục đầy đủ.",
+      "s4Title": "Bảo vệ tường lửa",
+      "s4Body": "Nhiều lớp tường lửa và phát hiện xâm nhập bảo vệ hệ thống. Tất cả kết nối được mã hóa qua HTTPS/TLS."
+    }
   },
-  "pricing":{"heading":"Định giá đơn giản, minh bạch cho mọi công ty.","sub":"Không phí cài đặt. Không ràng buộc hợp đồng. Hủy bất cứ lúc nào.","mostPopular":"Phổ biến nhất","betaFree":"Beta Miễn phí","comingSoon":"Sắp ra mắt","unlimited":"Không giới hạn","ctaPrimary":"Bắt đầu miễn phí với LITE →","ctaSecondary":"Liên hệ Kinh doanh","refundHeading":"Chính sách hoàn tiền","refund1":"Gói miễn phí (LITE) — Hủy bất cứ lúc nào, không mất phí.","refund2":"Gói trả phí — Hoàn tiền đầy đủ trong vòng 7 ngày sau khi thanh toán.","refund3":"Sau 7 ngày: không hoàn tiền cho kỳ hiện tại; tự động gia hạn dừng vào kỳ tiếp theo.","refund4":"Không có thời gian khóa. Không có phí hủy.","refundContact":"Yêu cầu hoàn tiền: info@edubee.co"},
-  "faq":{"heading":"Câu hỏi thường gặp","search":"Tìm kiếm câu hỏi...","q1":"Có phí phạt hủy không?","a1":"Không. Hủy bất cứ lúc nào mà không mất phí. Không có thời gian khóa.","q2":"Tôi có thể sử dụng Edubee trên điện thoại hoặc máy tính bảng không?","a2":"Có. Edubee dựa trên web và hoạt động trên bất kỳ thiết bị nào có kết nối internet.","q3":"Tôi có thể dùng thử Edubee trước khi thanh toán không?","a3":"Có. Đăng ký gói LITE miễn phí và truy cập tất cả tính năng ngay lập tức.","q4":"Tôi có thể bắt đầu nhanh như thế nào sau khi đăng ký?","a4":"Gói LITE được kích hoạt ngay khi đăng ký.","q5":"Dữ liệu của công ty tôi có an toàn không?","a5":"Có. Máy chủ dự phòng kép IDC, sao lưu tự động. Ngay cả nhân viên Edubee cũng không thể xem dữ liệu của bạn.","q6":"Điều gì xảy ra nếu máy tính của tôi bị hỏng?","a6":"Không ảnh hưởng. Tất cả dữ liệu đều dựa trên đám mây và không phụ thuộc vào thiết bị.","q7":"Tôi có thể nhập dữ liệu Excel hiện có không?","a7":"Có. Liên hệ info@edubee.co để được hỗ trợ di chuyển dữ liệu.","q8":"Tôi có thể đặt các cấp truy cập khác nhau cho nhân viên không?","a8":"Có. Đặt quyền chỉ đọc, chỉnh sửa hoặc xóa theo menu cho từng nhân viên.","q9":"Chi nhánh nước ngoài của tôi có thể sử dụng cùng hệ thống không?","a9":"Có. Cùng nền tảng, cùng trải nghiệm, từ bất kỳ quốc gia nào.","q10":"Các tính năng nào chưa có trong Beta?","a10":"Hỗ trợ điện thoại và hỗ trợ từ xa sắp ra mắt, cùng với các gói BUSINESS và ENTERPRISE."},
-  "contact":{"heading":"Liên hệ với chúng tôi","sub":"Chúng tôi thường phản hồi trong vòng 1 ngày làm việc qua email.","agencyName":"Tên công ty du học","yourName":"Tên của bạn","phone":"Số điện thoại","email":"Địa chỉ email","website":"Website công ty (tùy chọn)","enquiryType":"Loại yêu cầu","enquiryGeneral":"Yêu cầu chung","enquiryService":"Yêu cầu dịch vụ","enquiryProposal":"Đề xuất kinh doanh","enquiryRefund":"Hoàn tiền / Hủy","message":"Tin nhắn","submit":"Gửi yêu cầu","successHeading":"Tin nhắn đã được gửi!","successBody":"Cảm ơn bạn. Chúng tôi sẽ liên hệ lại trong vòng 1 ngày làm việc.","betaNote":"Hiện đang trong giai đoạn Beta — hỗ trợ điện thoại và từ xa sắp ra mắt.","required":"Bắt buộc"},
-  "footer":{"tagline":"CRM được xây dựng cho công ty du học.","col1":"Dịch vụ","col2":"Nền tảng","col3":"Công ty","col4":"Hỗ trợ","copyright":"© 2026 Edubee.Co. All rights reserved.","address":"Suite 804, 343 Little Collins Street, Melbourne VIC 3000, Australia","email":"info@edubee.co"},
-  "common":{"learnMore":"Tìm hiểu thêm →","startFree":"Dùng miễn phí →","bookDemo":"Đặt lịch demo","contactUs":"Liên hệ","comingSoon":"Sắp ra mắt","newBadge":"MỚI","betaBadge":"BETA","viewAll":"Xem tất cả","loading":"Đang tải...","error":"Đã xảy ra lỗi. Vui lòng thử lại.","backToHome":"Về trang chủ","included":"Bao gồm","notAvailable":"—"}
+  "supportPage": {
+    "hero": {
+      "eyebrow": "Hỗ trợ",
+      "heading": "Chúng tôi luôn",
+      "headingOrange": "sẵn sàng giúp đỡ.",
+      "sub": "Tìm câu trả lời trong FAQ của chúng tôi hoặc liên hệ trực tiếp — nhóm của chúng tôi phản hồi trong vòng một ngày làm việc."
+    },
+    "faq": {
+      "heading": "Câu hỏi thường gặp",
+      "sub": "Câu trả lời nhanh cho những câu hỏi phổ biến nhất về Edubee.",
+      "searchPlaceholder": "Tìm kiếm câu hỏi..."
+    },
+    "contact": {
+      "eyebrow": "Liên hệ",
+      "detailsHeading": "Thông tin liên hệ",
+      "emailLabel": "Email",
+      "addressLabel": "Địa chỉ",
+      "responseHeading": "Thời gian phản hồi",
+      "responseBody": "Chúng tôi đặt mục tiêu phản hồi trong vòng 1 ngày làm việc (Thứ Hai - Thứ Sáu, Melbourne AEST).",
+      "r1": "Yêu cầu chung: 1 ngày làm việc",
+      "r2": "Hỗ trợ kỹ thuật: cùng ngày",
+      "r3": "Câu hỏi về thanh toán: 1–2 ngày làm việc"
+    }
+  },
+  "pricing": {
+    "heading": "Định giá đơn giản, minh bạch cho mọi công ty.",
+    "sub": "Không phí cài đặt. Không ràng buộc hợp đồng. Hủy bất cứ lúc nào.",
+    "mostPopular": "Phổ biến nhất",
+    "betaFree": "Beta Miễn phí",
+    "comingSoon": "Sắp ra mắt",
+    "unlimited": "Không giới hạn",
+    "ctaPrimary": "Bắt đầu miễn phí với LITE →",
+    "ctaSecondary": "Liên hệ Kinh doanh",
+    "refundHeading": "Chính sách hoàn tiền",
+    "refund1": "Gói miễn phí (LITE) — Hủy bất cứ lúc nào, không mất phí.",
+    "refund2": "Gói trả phí — Hoàn tiền đầy đủ trong vòng 7 ngày sau khi thanh toán.",
+    "refund3": "Sau 7 ngày: không hoàn tiền cho kỳ hiện tại; tự động gia hạn dừng vào kỳ tiếp theo.",
+    "refund4": "Không có thời gian khóa. Không có phí hủy.",
+    "refundContact": "Yêu cầu hoàn tiền: info@edubee.co",
+    "ctaFree": "Dùng miễn phí →"
+  },
+  "faq": {
+    "heading": "Câu hỏi thường gặp",
+    "search": "Tìm kiếm câu hỏi...",
+    "q1": "Có phí phạt hủy không?",
+    "a1": "Không. Hủy bất cứ lúc nào mà không mất phí. Không có thời gian khóa.",
+    "q2": "Tôi có thể sử dụng Edubee trên điện thoại hoặc máy tính bảng không?",
+    "a2": "Có. Edubee dựa trên web và hoạt động trên bất kỳ thiết bị nào có kết nối internet.",
+    "q3": "Tôi có thể dùng thử Edubee trước khi thanh toán không?",
+    "a3": "Có. Đăng ký gói LITE miễn phí và truy cập tất cả tính năng ngay lập tức.",
+    "q4": "Tôi có thể bắt đầu nhanh như thế nào sau khi đăng ký?",
+    "a4": "Gói LITE được kích hoạt ngay khi đăng ký.",
+    "q5": "Dữ liệu của công ty tôi có an toàn không?",
+    "a5": "Có. Máy chủ dự phòng kép IDC, sao lưu tự động. Ngay cả nhân viên Edubee cũng không thể xem dữ liệu của bạn.",
+    "q6": "Điều gì xảy ra nếu máy tính của tôi bị hỏng?",
+    "a6": "Không ảnh hưởng. Tất cả dữ liệu đều dựa trên đám mây và không phụ thuộc vào thiết bị.",
+    "q7": "Tôi có thể nhập dữ liệu Excel hiện có không?",
+    "a7": "Có. Liên hệ info@edubee.co để được hỗ trợ di chuyển dữ liệu.",
+    "q8": "Tôi có thể đặt các cấp truy cập khác nhau cho nhân viên không?",
+    "a8": "Có. Đặt quyền chỉ đọc, chỉnh sửa hoặc xóa theo menu cho từng nhân viên.",
+    "q9": "Chi nhánh nước ngoài của tôi có thể sử dụng cùng hệ thống không?",
+    "a9": "Có. Cùng nền tảng, cùng trải nghiệm, từ bất kỳ quốc gia nào.",
+    "q10": "Các tính năng nào chưa có trong Beta?",
+    "a10": "Hỗ trợ điện thoại và hỗ trợ từ xa sắp ra mắt, cùng với các gói BUSINESS và ENTERPRISE."
+  },
+  "contact": {
+    "heading": "Liên hệ với chúng tôi",
+    "sub": "Chúng tôi thường phản hồi trong vòng 1 ngày làm việc qua email.",
+    "agencyName": "Tên công ty du học",
+    "yourName": "Tên của bạn",
+    "phone": "Số điện thoại",
+    "email": "Địa chỉ email",
+    "website": "Website công ty (tùy chọn)",
+    "enquiryType": "Loại yêu cầu",
+    "enquiryGeneral": "Yêu cầu chung",
+    "enquiryService": "Yêu cầu dịch vụ",
+    "enquiryProposal": "Đề xuất kinh doanh",
+    "enquiryRefund": "Hoàn tiền / Hủy",
+    "message": "Tin nhắn",
+    "submit": "Gửi yêu cầu",
+    "successHeading": "Tin nhắn đã được gửi!",
+    "successBody": "Cảm ơn bạn. Chúng tôi sẽ liên hệ lại trong vòng 1 ngày làm việc.",
+    "betaNote": "Hiện đang trong giai đoạn Beta — hỗ trợ điện thoại và từ xa sắp ra mắt.",
+    "required": "Bắt buộc"
+  },
+  "footer": {
+    "tagline": "CRM được xây dựng cho công ty du học.",
+    "col1": "Dịch vụ",
+    "col2": "Nền tảng",
+    "col3": "Công ty",
+    "col4": "Hỗ trợ",
+    "copyright": "© 2026 Edubee.Co. All rights reserved.",
+    "address": "Suite 804, 343 Little Collins Street, Melbourne VIC 3000, Australia",
+    "email": "info@edubee.co"
+  },
+  "common": {
+    "learnMore": "Tìm hiểu thêm →",
+    "startFree": "Dùng miễn phí →",
+    "bookDemo": "Đặt lịch demo",
+    "contactUs": "Liên hệ",
+    "comingSoon": "Sắp ra mắt",
+    "newBadge": "MỚI",
+    "betaBadge": "BETA",
+    "viewAll": "Xem tất cả",
+    "loading": "Đang tải...",
+    "error": "Đã xảy ra lỗi. Vui lòng thử lại.",
+    "backToHome": "Về trang chủ",
+    "included": "Bao gồm",
+    "notAvailable": "—"
+  }
 }

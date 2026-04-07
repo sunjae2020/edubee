@@ -7,12 +7,12 @@ import { FadeIn } from '@/components/ui/FadeIn'
 import { CtaBanner } from '@/components/sections/CtaBanner'
 import { PageBackground } from '@/components/ui/PageBackground'
 
-// Static fallback plans (used if API is unavailable)
+// Static fallback plans — mirrors DB platform_plans (used if API is unavailable)
 const STATIC_PLANS = [
   {
-    planName: 'LITE',
-    price: { amount: 0, isFree: true, betaFree: false, comingSoon: false },
-    studentsPerMonth: '50/mo',
+    planName: 'SOLO',
+    price: { amount: 79, isFree: false, betaFree: false, comingSoon: false },
+    studentsPerMonth: '100/mo',
     storage: '10 GB',
     schoolDB: false,
     remote: false,
@@ -20,30 +20,30 @@ const STATIC_PLANS = [
     ctaUrl: '/register',
   },
   {
-    planName: 'PLUS',
-    price: { amount: 9.90, isFree: false, betaFree: true, comingSoon: false },
-    studentsPerMonth: 'Unlimited',
-    storage: '100 GB',
-    schoolDB: false,
+    planName: 'STARTER',
+    price: { amount: 199, isFree: false, betaFree: false, comingSoon: false },
+    studentsPerMonth: '500/mo',
+    storage: '50 GB',
+    schoolDB: true,
     remote: false,
     highlighted: true,
     ctaUrl: '/register',
   },
   {
-    planName: 'BUSINESS',
-    price: { amount: 19.90, isFree: false, betaFree: false, comingSoon: false },
-    studentsPerMonth: 'Unlimited',
-    storage: '500 GB',
+    planName: 'GROWTH',
+    price: { amount: 449, isFree: false, betaFree: false, comingSoon: false },
+    studentsPerMonth: '2000/mo',
+    storage: '200 GB',
     schoolDB: true,
-    remote: false,
+    remote: true,
     highlighted: false,
     ctaUrl: '/register',
   },
   {
     planName: 'ENTERPRISE',
-    price: { amount: 39.90, isFree: false, betaFree: false, comingSoon: false },
+    price: { amount: 0, isFree: true, betaFree: false, comingSoon: false },
     studentsPerMonth: 'Unlimited',
-    storage: '1 TB',
+    storage: 'Unlimited',
     schoolDB: true,
     remote: true,
     highlighted: false,
@@ -56,16 +56,22 @@ type UiPlan = typeof STATIC_PLANS[0]
 function mapApiPlan(p: any): UiPlan {
   const monthly = parseFloat(p.priceMonthly ?? '0') || 0
   const isFree = monthly === 0
+  const maxStudents = p.maxStudents ?? 0
+  const storageGb = p.storageGb ?? 0
   return {
     planName: (p.name || p.code || '').toUpperCase(),
     price: {
       amount: monthly,
       isFree,
-      betaFree: !isFree && !!p.isPopular,
+      betaFree: false,
       comingSoon: false,
     },
-    studentsPerMonth: p.maxStudents ? `${p.maxStudents}/mo` : 'Unlimited',
-    storage: p.storageGb ? (p.storageGb >= 1000 ? `${p.storageGb / 1000} TB` : `${p.storageGb} GB`) : '10 GB',
+    studentsPerMonth: maxStudents >= 9999 ? 'Unlimited' : `${maxStudents}/mo`,
+    storage: storageGb >= 9999
+      ? 'Unlimited'
+      : storageGb >= 1000
+        ? `${(storageGb / 1000).toFixed(0)} TB`
+        : `${storageGb} GB`,
     schoolDB: !!(p.featureCommission || p.featureServiceModules || p.featureVisa),
     remote: !!(p.featureAiAssistant || p.featureApiAccess || p.featureWhiteLabel),
     highlighted: !!p.isPopular,
@@ -86,9 +92,10 @@ function PriceDisplay({ price }: { price: UiPlan['price'] }) {
       <span className="text-sm text-neutral-400 line-through">${price.amount.toFixed(2)}/mo</span>
     </div>
   )
+  const formatted = price.amount % 1 === 0 ? price.amount.toFixed(0) : price.amount.toFixed(2)
   return (
     <div>
-      <span className="text-3xl font-bold text-neutral-900">${price.amount.toFixed(2)}</span>
+      <span className="text-3xl font-bold text-neutral-900">${formatted}</span>
       <span className="text-sm text-neutral-500">/mo</span>
     </div>
   )
@@ -164,9 +171,11 @@ export default function PricingPage() {
                   >
                     {plan.price.comingSoon
                       ? t('pricing.comingSoon')
-                      : (plan.price.isFree || plan.price.betaFree
-                        ? t('pricing.ctaPrimary')
-                        : `Get ${plan.planName}`)}
+                      : plan.planName === 'ENTERPRISE'
+                        ? t('pricing.ctaSecondary')
+                        : plan.price.isFree || plan.price.betaFree
+                          ? t('pricing.ctaFree')
+                          : `Get ${plan.planName}`}
                   </Button>
                 </div>
               </FadeIn>

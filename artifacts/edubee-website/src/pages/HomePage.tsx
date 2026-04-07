@@ -19,20 +19,61 @@ const SERVICE_ICONS = [GraduationCap, School, Handshake, Building2, CreditCard, 
 const AI_ICONS = [Bot, FileText, BookOpen]
 const PROBLEM_ICONS = [FileX, Clock, AlertTriangle]
 
-const PRICING_TABLE = [
-  { plan: 'LITE',       price: 'Free',      students: '50/mo',     storage: '10 MB',  schoolDB: false, remote: false, highlighted: false, comingSoon: false },
-  { plan: 'PLUS',       price: 'Beta Free', students: 'Unlimited', storage: '100 MB', schoolDB: false, remote: false, highlighted: true,  comingSoon: false },
-  { plan: 'BUSINESS',   price: '$19.90',    students: 'Unlimited', storage: '500 MB', schoolDB: true,  remote: false, highlighted: false, comingSoon: true  },
-  { plan: 'ENTERPRISE', price: '$39.90',    students: 'Unlimited', storage: '1 GB',   schoolDB: true,  remote: true,  highlighted: false, comingSoon: true  },
+type PricingRow = {
+  plan: string; price: string; students: string; storage: string;
+  schoolDB: boolean; remote: boolean; highlighted: boolean; comingSoon: boolean;
+}
+
+const PRICING_TABLE_FALLBACK: PricingRow[] = [
+  { plan: 'SOLO',       price: '$79/mo',   students: '100/mo',    storage: '10 GB',  schoolDB: false, remote: false, highlighted: false, comingSoon: false },
+  { plan: 'STARTER',    price: '$199/mo',  students: '500/mo',    storage: '50 GB',  schoolDB: true,  remote: false, highlighted: true,  comingSoon: false },
+  { plan: 'GROWTH',     price: '$449/mo',  students: '2000/mo',   storage: '200 GB', schoolDB: true,  remote: true,  highlighted: false, comingSoon: false },
+  { plan: 'ENTERPRISE', price: 'Free',     students: 'Unlimited', storage: '9.9 TB', schoolDB: true,  remote: true,  highlighted: false, comingSoon: false },
 ]
+
+function mapApiToPricingRow(p: any): PricingRow {
+  const monthly = parseFloat(p.priceMonthly ?? '0') || 0
+  const students = (p.maxStudents >= 9999) ? 'Unlimited' : `${p.maxStudents}/mo`
+  const gb = p.storageGb ?? 0
+  const storage = gb >= 9999
+    ? 'Unlimited'
+    : gb >= 1000
+      ? `${(gb / 1000).toFixed(0)} TB`
+      : `${gb} GB`
+  const isFree = monthly === 0
+  const price = isFree ? 'Free' : `$${monthly % 1 === 0 ? monthly.toFixed(0) : monthly.toFixed(2)}/mo`
+  return {
+    plan: (p.name || p.code || '').toUpperCase(),
+    price,
+    students,
+    storage,
+    schoolDB: !!(p.featureCommission || p.featureServiceModules || p.featureVisa),
+    remote: !!(p.featureAiAssistant || p.featureApiAccess || p.featureWhiteLabel),
+    highlighted: !!p.isPopular,
+    comingSoon: false,
+  }
+}
 
 export default function HomePage() {
   const { t, i18n } = useTranslation()
   const lang = i18n.language
   const [hero, setHero] = useState<any>(null)
+  const [pricingTable, setPricingTable] = useState<PricingRow[]>(PRICING_TABLE_FALLBACK)
 
   useEffect(() => {
     sanityFetch(ACTIVE_HERO_QUERY).then(setHero).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+    fetch(`${BASE}/api/public/platform-plans`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.success && Array.isArray(d.data) && d.data.length > 0) {
+          setPricingTable(d.data.map(mapApiToPricingRow))
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const heroHeadline = hero ? localise(hero.headline, lang) : null
@@ -401,7 +442,7 @@ export default function HomePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {PRICING_TABLE.map(row => (
+                  {pricingTable.map(row => (
                     <tr key={row.plan} className={`transition-colors ${row.highlighted ? 'bg-[#FEF0E3]' : 'hover:bg-neutral-50'}`}>
                       <td className="px-5 py-4 font-semibold text-neutral-900">
                         {row.plan}
