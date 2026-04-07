@@ -602,22 +602,16 @@ function Router() {
   );
 }
 
+// camp.edubee.co 는 멀티 테넌트와 무관 — 임포소네이션 없음
+// 구형 공유 키만 정리
 function ImpersonationInit() {
   useEffect(() => {
-    // 구형 공유 키 정리 (앱별 전용 키로 마이그레이션)
     sessionStorage.removeItem("edubee_impersonate_org_id");
     sessionStorage.removeItem("edubee_impersonate_org_name");
-    const params = new URLSearchParams(window.location.search);
-    const orgId = params.get("impersonateOrg");
-    const orgName = params.get("impersonateOrgName");
-    if (orgId) {
-      sessionStorage.setItem("camp_impersonate_org_id", orgId);
-      if (orgName) sessionStorage.setItem("camp_impersonate_org_name", decodeURIComponent(orgName));
-      params.delete("impersonateOrg");
-      params.delete("impersonateOrgName");
-      const clean = params.toString();
-      window.history.replaceState({}, "", window.location.pathname + (clean ? `?${clean}` : ""));
-    }
+    sessionStorage.removeItem("camp_impersonate_org_id");
+    sessionStorage.removeItem("camp_impersonate_org_name");
+    sessionStorage.removeItem("edubee_impersonate_return");
+    localStorage.removeItem("edubee_org_id");
   }, []);
   return null;
 }

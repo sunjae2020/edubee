@@ -424,21 +424,6 @@ export default function TenantDetail() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {
-              sessionStorage.setItem("camp_impersonate_org_id", org.id);
-              sessionStorage.setItem("camp_impersonate_org_name", org.name);
-              sessionStorage.setItem("edubee_impersonate_return", `/superadmin/tenants/${org.id}`);
-              // React Query 캐시 전체 초기화 → 새 테넌트 데이터로 재fetch
-              qc.clear();
-              // 테마 재로드는 ImpersonationBanner 마운트 시 실행됨 (navigate 이후)
-              navigate("/admin/dashboard");
-            }}
-            className="h-9 px-4 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#E8E6E2] text-[#1C1917] hover:border-(--e-orange) hover:text-(--e-orange) transition-colors"
-          >
-            <ExternalLink size={14} />
-            Open Admin Panel
-          </button>
-          <button
             onClick={() => save.mutate()}
             disabled={!dirty || save.isPending}
             className="h-9 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-40 transition-all"

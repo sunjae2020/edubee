@@ -1,5 +1,4 @@
-import { useEffect, useState, useCallback, createContext, useContext } from "react";
-import axios from "axios";
+import { useEffect, useState, createContext, useContext } from "react";
 
 export interface TenantTheme {
   organisationId: string | null;
@@ -15,14 +14,15 @@ export interface TenantTheme {
   features:       Record<string, boolean>;
 }
 
+// camp.edubee.co 는 멀티 테넌트와 무관 — 고정 Edubee 브랜딩 사용
 const DEFAULT_THEME: TenantTheme = {
   organisationId: null,
-  companyName:    "Edubee CRM",
+  companyName:    "Edubee",
   logoUrl:        null,
   faviconUrl:     null,
-  primaryColor:   "var(--e-orange)",
+  primaryColor:   "#F5821F",
   secondaryColor: "#1C1917",
-  accentColor:    "var(--e-orange-lt)",
+  accentColor:    "#FEF0E3",
   customCss:      null,
   subdomain:      null,
   planType:       "starter",
@@ -30,41 +30,17 @@ const DEFAULT_THEME: TenantTheme = {
 };
 
 /**
- * 테넌트 테마를 로드하고 CSS 변수로 document에 주입
- * App.tsx 내부 컴포넌트에서 1회 호출.
- * 임프로소네이션 변경 시 "edubee:impersonation-changed" 이벤트를 들어 자동 재로드.
+ * camp.edubee.co 전용 테마 훅 — API 호출 없이 고정 Edubee 브랜딩 적용
+ * 멀티 테넌트는 crm.edubee.co 에서만 동작
  */
 export function useTenantTheme() {
-  const [theme, setTheme] = useState<TenantTheme>(DEFAULT_THEME);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const loadTheme = useCallback(async () => {
-    try {
-      const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-      // axios 사용 → X-Organisation-Id 헤더가 인터셉터에 의해 자동 첨부됨
-      const { data } = await axios.get<TenantTheme>(`${BASE}/api/settings/theme`);
-      setTheme(data);
-      applyThemeToDom(data);
-    } catch (err) {
-      console.warn("[useTenantTheme] 기본 테마 사용:", err);
-      applyThemeToDom(DEFAULT_THEME);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const [theme] = useState<TenantTheme>(DEFAULT_THEME);
 
   useEffect(() => {
-    loadTheme();
-    // 임프로소네이션 변경 시 또는 로그인 후 org 설정 시 테마 재로드
-    window.addEventListener("edubee:impersonation-changed", loadTheme);
-    window.addEventListener("edubee:org-changed", loadTheme);
-    return () => {
-      window.removeEventListener("edubee:impersonation-changed", loadTheme);
-      window.removeEventListener("edubee:org-changed", loadTheme);
-    };
-  }, [loadTheme]);
+    applyThemeToDom(DEFAULT_THEME);
+  }, []);
 
-  return { theme, isLoading };
+  return { theme, isLoading: false };
 }
 
 // ── 테넌트 테마 Context (사이드바/헤더 등에서 logoUrl 접근용) ──────────────

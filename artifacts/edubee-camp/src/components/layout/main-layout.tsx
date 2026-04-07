@@ -3,9 +3,8 @@ import { AppSidebar } from "./app-sidebar";
 import { Header } from "./header";
 import { AdminChatWidget } from "./AdminChatWidget";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect, useLocation } from "wouter";
+import { Redirect } from "wouter";
 import { useDateFormatLoader } from "@/hooks/use-date-format";
-import { useQueryClient } from "@tanstack/react-query";
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(() =>
@@ -18,43 +17,6 @@ function useMediaQuery(query: string) {
     return () => mq.removeEventListener("change", handler);
   }, [query]);
   return matches;
-}
-
-function ImpersonationBanner() {
-  const [, navigate] = useLocation();
-  const qc = useQueryClient();
-  const orgId     = sessionStorage.getItem("camp_impersonate_org_id");
-  const orgName   = sessionStorage.getItem("camp_impersonate_org_name") ?? "Unknown Tenant";
-  const returnPath = sessionStorage.getItem("edubee_impersonate_return") ?? "/superadmin/tenants";
-
-  // 마운트 시 테마 재로드 트리거
-  // navigate() 이후에 이 컴포넌트가 마운트되므로, 이 시점에 sessionStorage 값이 확정됨
-  useEffect(() => {
-    if (orgId) {
-      window.dispatchEvent(new Event("edubee:impersonation-changed"));
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!orgId) return null;
-  return (
-    <div className="flex items-center justify-between px-4 py-1.5 text-sm font-medium text-white" style={{ background: "var(--e-orange-hover)" }}>
-      <span>Viewing as <strong>{orgName}</strong></span>
-      <button
-        onClick={() => {
-          sessionStorage.removeItem("camp_impersonate_org_id");
-          sessionStorage.removeItem("camp_impersonate_org_name");
-          sessionStorage.removeItem("edubee_impersonate_return");
-          qc.clear();
-          // 임프로소네이션 종료 후 기본 테넌트 테마로 복원
-          window.dispatchEvent(new Event("edubee:impersonation-changed"));
-          navigate(returnPath);
-        }}
-        className="ml-4 px-3 py-0.5 rounded bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition-colors"
-      >
-        ← Back to SuperAdmin
-      </button>
-    </div>
-  );
 }
 
 export function MainLayout({ children, title }: { children: React.ReactNode; title?: string }) {
@@ -122,7 +84,6 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header collapsed={sidebarCollapsed} onToggle={toggleCollapsed} title={title} />
-        <ImpersonationBanner />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8" style={{ background: "var(--e-bg-page)" }}>
           <div className="mx-auto max-w-7xl">
             {children}
