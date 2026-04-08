@@ -522,11 +522,9 @@ function Router() {
 
         {/* Super Admin */}
         <Route path="/superadmin/tenants/:id">
-          {() => (
-            <SuperAdminGuard>
-              <SuperAdminLayout><TenantDetail /></SuperAdminLayout>
-            </SuperAdminGuard>
-          )}
+          <SuperAdminGuard>
+            <SuperAdminLayout><TenantDetail /></SuperAdminLayout>
+          </SuperAdminGuard>
         </Route>
         <Route path="/superadmin/tenants">
           <SuperAdminGuard>
@@ -544,11 +542,9 @@ function Router() {
           </SuperAdminGuard>
         </Route>
         <Route path="/superadmin/crm/:id">
-          {() => (
-            <SuperAdminGuard>
-              <PlatformCrmDetail />
-            </SuperAdminGuard>
-          )}
+          <SuperAdminGuard>
+            <PlatformCrmDetail />
+          </SuperAdminGuard>
         </Route>
         <Route path="/superadmin/crm">
           <SuperAdminGuard>
