@@ -32,4 +32,4 @@ channel = "stable-25_05"
 
 [userenv.shared]
 PLATFORM_ADMIN_USER_ID = "639154e0-0f35-4e3b-a7c5-ee458b205fa1"
-APP_DOMAIN = "edubee.com"
+APP_DOMAIN = "edubee.co"
