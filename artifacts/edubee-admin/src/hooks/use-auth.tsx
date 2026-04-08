@@ -15,8 +15,24 @@ function parseJwt(token: string): Record<string, any> | null {
   }
 }
 
+// The admin app is served at BASE_URL = "/admin/" but the API server is at "/api/".
+// Components use `${BASE}/api/...` = `/admin/api/...` which incorrectly routes to
+// the static file server. Rewrite to `/api/...` so requests reach the API server.
+const ADMIN_BASE_STRIP = import.meta.env.BASE_URL.replace(/\/$/, ""); // e.g. "/admin"
+
+function fixApiUrl(url: string | undefined): string | undefined {
+  if (!url) return url;
+  if (ADMIN_BASE_STRIP && url.startsWith(ADMIN_BASE_STRIP + "/api")) {
+    return url.slice(ADMIN_BASE_STRIP.length);
+  }
+  return url;
+}
+
 // Attach JWT + View-As + Org-Id (multi-tenant) to every axios request
 axios.interceptors.request.use((config) => {
+  // Rewrite /admin/api/... → /api/... so requests reach the API server
+  config.url = fixApiUrl(config.url);
+
   const token = localStorage.getItem("edubee_token");
   const viewAsId = getViewAsUserId();
   // Impersonation overrides personal org (super-admin feature)
@@ -61,6 +77,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const originalFetch = window.fetch;
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      // Rewrite /admin/api/... → /api/... for fetch-based calls (same as axios interceptor)
+      if (typeof input === "string") {
+        input = fixApiUrl(input) ?? input;
+      } else if (input instanceof URL) {
+        const fixed = fixApiUrl(input.pathname);
+        if (fixed !== input.pathname) {
+          input = new URL(fixed!, input.origin);
+        }
+      }
+
       const currentToken = localStorage.getItem("edubee_token");
       const viewAsId = getViewAsUserId();
       const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
