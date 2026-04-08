@@ -147,12 +147,14 @@ export default function StripeSettings() {
     </div>
   );
 
-  if (error || !data) return (
-    <div className="p-8 text-red-500">Failed to load Stripe settings.</div>
+  if (error || !data || !data.keyStatus) return (
+    <div className="p-8 text-red-500">
+      {error ? "Failed to load Stripe settings." : "Stripe settings are unavailable. Please try again."}
+    </div>
   );
 
-  const { plans, keyStatus, webhookUrl } = data;
-  const allKeysSet = keyStatus.secretKey && keyStatus.webhookSecret;
+  const { plans = [], keyStatus, webhookUrl = "" } = data;
+  const allKeysSet = keyStatus?.secretKey && keyStatus?.webhookSecret;
 
   // Paid plans only (Enterprise = custom, skip)
   const paidPlans = plans.filter(p => p.code !== "enterprise");
@@ -202,8 +204,8 @@ export default function StripeSettings() {
           <span className="ml-auto text-xs text-[#A8A29E]">Managed via Replit Secrets</span>
         </div>
         <div className="px-6 py-2">
-          <KeyBadge set={keyStatus.secretKey}     label="STRIPE_SECRET_KEY" />
-          <KeyBadge set={keyStatus.webhookSecret} label="STRIPE_WEBHOOK_SECRET" />
+          <KeyBadge set={!!keyStatus?.secretKey}     label="STRIPE_SECRET_KEY" />
+          <KeyBadge set={!!keyStatus?.webhookSecret} label="STRIPE_WEBHOOK_SECRET" />
         </div>
 
         {/* Test Connection */}
@@ -211,7 +213,7 @@ export default function StripeSettings() {
           <div className="flex items-center gap-3">
             <button
               onClick={testConnection}
-              disabled={testing || !keyStatus.secretKey}
+              disabled={testing || !keyStatus?.secretKey}
               className="inline-flex items-center gap-2 px-4 py-2 bg-[#1C1917] text-white text-sm font-medium rounded-lg hover:bg-[#2C2927] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {testing
@@ -219,7 +221,7 @@ export default function StripeSettings() {
                 : <Zap className="w-3.5 h-3.5" />}
               {testing ? "Testing…" : "Test Connection"}
             </button>
-            {!keyStatus.secretKey && (
+            {!keyStatus?.secretKey && (
               <p className="text-xs text-[#A8A29E]">Set STRIPE_SECRET_KEY first</p>
             )}
           </div>
