@@ -196,7 +196,7 @@ export default function PickupManagement() {
         total={total}
       />
 
-      <TodayBanner rows={todayRows} onNavigate={id => navigate(`${BASE}/admin/services/pickup/${id}`)} />
+      <TodayBanner rows={todayRows} onNavigate={id => navigate(`/admin/services/pickup/${id}`)} />
 
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full min-w-[820px] text-sm">
@@ -240,7 +240,7 @@ export default function PickupManagement() {
                 <tr
                   key={row.id}
                   className={`hover:bg-(--e-orange-lt) transition-colors cursor-pointer ${todayFlag ? "bg-[#FEF9F5]" : ""}`}
-                  onClick={() => navigate(`${BASE}/admin/services/pickup/${row.id}`)}
+                  onClick={() => navigate(`/admin/services/pickup/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-mono text-xs font-semibold text-(--e-orange)">
                     {row.contractNumber ?? row.contractId?.slice(0, 8) ?? "—"}

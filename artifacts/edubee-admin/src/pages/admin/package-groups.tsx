@@ -225,7 +225,7 @@ export default function PackageGroups() {
   });
 
   const openCreate = () => {
-    setLocation(`${BASE}/admin/package-groups/new`);
+    setLocation(`/admin/package-groups/new`);
   };
 
   const openEdit = (g: PackageGroup) => {
@@ -420,7 +420,7 @@ export default function PackageGroups() {
             const country = getCountryInfo(g.countryCode);
             const isActive = g.status === "active";
             return (
-              <div key={g.id} className="bg-white rounded-xl border border-border p-5 hover:shadow-sm hover:border-(--e-orange)/30 transition-all group relative overflow-hidden cursor-pointer" onClick={() => setLocation(`${BASE}/admin/package-groups/${g.id}`)}>
+              <div key={g.id} className="bg-white rounded-xl border border-border p-5 hover:shadow-sm hover:border-(--e-orange)/30 transition-all group relative overflow-hidden cursor-pointer" onClick={() => setLocation(`/admin/package-groups/${g.id}`)}>
                 {g.thumbnailUrl && (
                   <div className="absolute inset-0 opacity-5">
                     <img src={g.thumbnailUrl} alt="" className="w-full h-full object-cover" />

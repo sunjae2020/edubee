@@ -158,7 +158,7 @@ export default function StudyAbroadPage() {
       qc.invalidateQueries({ queryKey: ["study-abroad"] });
       setShowCreate(false);
       setCreateForm({ contractId: "", notes: "" });
-      navigate(`${BASE}/admin/services/study-abroad/${created.id}`);
+      navigate(`/admin/services/study-abroad/${created.id}`);
     },
   });
 

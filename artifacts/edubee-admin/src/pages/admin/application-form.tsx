@@ -264,7 +264,7 @@ export default function ApplicationForm() {
     },
     onSuccess: (data) => {
       toast({ title: "Application submitted successfully" });
-      setLocation(`${BASE}/admin/applications/${data.id}`);
+      setLocation(`/admin/applications/${data.id}`);
     },
     onError: () => toast({ variant: "destructive", title: "Failed to submit application" }),
   });
@@ -277,7 +277,7 @@ export default function ApplicationForm() {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => setLocation(`${BASE}/admin/applications`)}
+          onClick={() => setLocation(`/admin/applications`)}
           className="p-1.5 rounded-lg hover:bg-muted transition-colors"
         >
           <ChevronLeft className="w-5 h-5 text-muted-foreground" />
@@ -772,7 +772,7 @@ export default function ApplicationForm() {
         <Button
           type="button"
           variant="outline"
-          onClick={() => setLocation(`${BASE}/admin/applications`)}
+          onClick={() => setLocation(`/admin/applications`)}
         >
           Cancel
         </Button>

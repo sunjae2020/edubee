@@ -175,7 +175,7 @@ export default function TourManagement() {
                 <MapIcon className="w-8 h-8 mx-auto mb-3 opacity-30" />No tour records found
               </td></tr>
             ) : sorted.map(r => (
-              <tr key={r.id} className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer" onClick={() => navigate(`${BASE}/admin/services/tour/${r.id}`)}>
+              <tr key={r.id} className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer" onClick={() => navigate(`/admin/services/tour/${r.id}`)}>
                 <td className="px-4 py-3 font-mono text-xs font-semibold text-(--e-orange)">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.clientName ?? r.studentName ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.tourName ?? "—"}</td>
@@ -202,7 +202,7 @@ export default function TourManagement() {
           </SheetHeader>
           {selected && (
             <div className="mt-4 space-y-4">
-              <ContractCard rec={selected} onViewContract={() => { const id = selected.contractId; setSelected(null); navigate(`${BASE}/admin/crm/contracts${id ? `?contractId=${id}` : ""}`); }} />
+              <ContractCard rec={selected} onViewContract={() => { const id = selected.contractId; setSelected(null); navigate(`/admin/crm/contracts${id ? `?contractId=${id}` : ""}`); }} />
               <div className="flex items-center justify-between">
                 <StatusBadge status={selected.status} />
                 {!editing && isAdmin && (

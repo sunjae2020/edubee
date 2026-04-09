@@ -373,7 +373,7 @@ export default function Products() {
               sorted.map(p => (
                 <tr key={p.id}
                   className="border-b last:border-0 hover:bg-(--e-orange-lt) transition-colors cursor-pointer"
-                  onClick={() => setLocation(`${BASE}/admin/products/${p.id}`)}>
+                  onClick={() => setLocation(`/admin/products/${p.id}`)}>
                   <td className="px-4 py-3 text-sm text-[#57534E]">
                     <div className="line-clamp-2">{p.providerName ?? <span className="text-muted-foreground">—</span>}</div>
                   </td>

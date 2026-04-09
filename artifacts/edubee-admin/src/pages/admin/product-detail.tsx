@@ -641,7 +641,7 @@ export default function ProductDetail() {
         title: "Product saved successfully",
         className: "border-[#16A34A] bg-[#DCFCE7] text-[#16A34A]",
       });
-      if (isNew) navigate(`${BASE}/admin/products/${savedId}`);
+      if (isNew) navigate(`/admin/products/${savedId}`);
     },
     onError: (err: any) => {
       if (err?.message === "validation") return;
@@ -683,7 +683,7 @@ export default function ProductDetail() {
     if (isDirty) {
       if (!window.confirm("You have unsaved changes. Are you sure you want to leave?")) return;
     }
-    navigate(`${BASE}/admin/products`);
+    navigate(`/admin/products`);
   };
 
   const handleGroupChange = (groupId: string) => {
@@ -1255,7 +1255,7 @@ export default function ProductDetail() {
                                 <div className="flex items-center justify-center gap-1">
                                   <button
                                     type="button"
-                                    onClick={() => navigate(`${BASE}/admin/packages/${row.packageId}`)}
+                                    onClick={() => navigate(`/admin/packages/${row.packageId}`)}
                                     className="text-muted-foreground hover:text-(--e-orange) transition-colors"
                                     title="Open package"
                                   >

@@ -146,7 +146,7 @@ export default function TeamDetailPage() {
     return (
       <div className="p-6 text-center text-muted-foreground">
         <p>Team not found.</p>
-        <Button variant="link" onClick={() => setLocation(`${BASE}/admin/teams`)}>Back to Teams</Button>
+        <Button variant="link" onClick={() => setLocation(`/admin/teams`)}>Back to Teams</Button>
       </div>
     );
   }
@@ -157,7 +157,7 @@ export default function TeamDetailPage() {
       <div className="flex items-center justify-between">
         <button
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          onClick={() => setLocation(`${BASE}/admin/teams`)}
+          onClick={() => setLocation(`/admin/teams`)}
         >
           <ArrowLeft className="w-4 h-4" /> Teams
         </button>
@@ -314,7 +314,7 @@ export default function TeamDetailPage() {
                 <tbody>
                   {team.members.map((m, i) => (
                     <tr key={m.id} className={`border-b border-border last:border-0 hover:bg-muted/20 cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}
-                      onClick={() => setLocation(`${BASE}/admin/users/${m.id}`)}>
+                      onClick={() => setLocation(`/admin/users/${m.id}`)}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-(--e-orange)/10 flex items-center justify-center text-(--e-orange) text-xs font-bold shrink-0">

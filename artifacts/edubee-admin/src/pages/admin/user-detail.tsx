@@ -209,7 +209,7 @@ export default function UserDetail() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => window.open(`${BASE}/admin/kpi/staff?staffId=${id}`, "_blank")}
+                    onClick={() => window.open(`/admin/kpi/staff?staffId=${id}`, "_blank")}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-[#E8E6E2] bg-white hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors text-[#57534E]"
                   >
                     <BarChart2 className="w-3.5 h-3.5" />

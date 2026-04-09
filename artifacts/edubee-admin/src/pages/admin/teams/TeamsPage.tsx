@@ -101,7 +101,7 @@ export default function TeamsPage() {
       toast({ title: "Team created successfully" });
       setShowCreate(false);
       setForm(EMPTY_FORM);
-      setLocation(`${BASE}/admin/teams/${team.id}`);
+      setLocation(`/admin/teams/${team.id}`);
     },
     onError: () => toast({ variant: "destructive", title: "Failed to create team" }),
   });
@@ -216,7 +216,7 @@ export default function TeamsPage() {
             {teams.map((team, i) => (
               <tr
                 key={team.id}
-                onClick={() => setLocation(`${BASE}/admin/teams/${team.id}`)}
+                onClick={() => setLocation(`/admin/teams/${team.id}`)}
                 className={`border-b border-[var(--e-border)] cursor-pointer transition-colors hover:bg-[#FFF8F5] ${
                   i % 2 === 0 ? "bg-white" : "bg-[#FAFAF9]"
                 }`}

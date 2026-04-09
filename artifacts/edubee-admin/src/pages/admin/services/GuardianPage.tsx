@@ -80,7 +80,7 @@ export default function GuardianPage() {
       qc.invalidateQueries({ queryKey: ["guardian"] });
       setShowCreate(false);
       setCreateForm({ contractId: "", notes: "" });
-      navigate(`${BASE}/admin/services/guardian/${created.id}`);
+      navigate(`/admin/services/guardian/${created.id}`);
     },
   });
 

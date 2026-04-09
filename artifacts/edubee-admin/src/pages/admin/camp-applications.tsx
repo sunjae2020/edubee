@@ -294,7 +294,7 @@ export default function CampApplications() {
             ) : (
               sorted.map(app => (
                 <tr key={app.id} className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer"
-                  onClick={() => setLocation(`${BASE}/admin/camp-applications/${app.id}`)}>
+                  onClick={() => setLocation(`/admin/camp-applications/${app.id}`)}>
                   <td className="px-4 py-3">
                     <ClientNameCell
                       fields={nameFromCampApplication({

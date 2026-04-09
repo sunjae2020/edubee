@@ -109,7 +109,7 @@ export default function Settlement() {
       setShowCreate(false);
       setForm({});
       if (created?.id) {
-        navigate(`${BASE}/admin/services/settlement/${created.id}`);
+        navigate(`/admin/services/settlement/${created.id}`);
       } else {
         toast({ title: "Settlement created", description: "But could not open the detail page." });
       }
@@ -206,7 +206,7 @@ export default function Settlement() {
             <tbody>
               {sorted.map(r => (
                 <tr key={r.id}
-                  onClick={() => navigate(`${BASE}/admin/services/settlement/${r.id}`)}
+                  onClick={() => navigate(`/admin/services/settlement/${r.id}`)}
                   className="border-b border-[#E8E6E2] cursor-pointer transition-colors hover:bg-(--e-orange-lt)">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">

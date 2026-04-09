@@ -143,7 +143,7 @@ export default function InternshipPage() {
       qc.invalidateQueries({ queryKey: ["internship"] });
       setShowCreate(false);
       setCreateForm({ contractId: "", notes: "" });
-      navigate(`${BASE}/admin/services/internship/${created.id}`);
+      navigate(`/admin/services/internship/${created.id}`);
     },
   });
 

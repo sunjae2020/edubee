@@ -178,7 +178,7 @@ export default function PackageGroupDetail() {
     onSuccess: (cloned) => {
       qc.invalidateQueries({ queryKey: ["package-groups"] });
       toast({ title: "Package group cloned", description: `"${cloned.nameEn}" created` });
-      setLocation(`${BASE}/admin/package-groups/${cloned.id}`);
+      setLocation(`/admin/package-groups/${cloned.id}`);
     },
     onError: () => toast({ variant: "destructive", title: "Failed to clone package group" }),
   });
@@ -671,7 +671,7 @@ export default function PackageGroupDetail() {
                   {Object.keys(liveRates).length > 0 && <span className="ml-1 text-xs text-green-600">(Up to date)</span>}
                 </span>
                 <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
-                  <a href={`${BASE}/admin/accounting/exchange-rates`}>
+                  <a href={`/admin/accounting/exchange-rates`}>
                     <RefreshCw className="h-3 w-3" /> Update Rates
                   </a>
                 </Button>

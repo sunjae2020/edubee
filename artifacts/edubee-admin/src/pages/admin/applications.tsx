@@ -152,7 +152,7 @@ export default function Applications() {
         onStatusChange={() => {}}
         total={total}
         addLabel="New Application"
-        onAdd={() => setLocation(`${BASE}/admin/applications/new`)}
+        onAdd={() => setLocation(`/admin/applications/new`)}
         csvExportTable="applications"
       />
 
@@ -190,7 +190,7 @@ export default function Applications() {
                 <tr
                   key={app.id}
                   className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer"
-                  onClick={() => setLocation(`${BASE}/admin/applications/${app.id}`)}
+                  onClick={() => setLocation(`/admin/applications/${app.id}`)}
                 >
                   <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{app.applicationNumber}</td>
                   <td className="px-4 py-3">

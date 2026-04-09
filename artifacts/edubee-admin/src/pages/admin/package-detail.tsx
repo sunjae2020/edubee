@@ -229,7 +229,7 @@ export default function PackageDetail() {
     onSuccess: (newPkg) => {
       qc.invalidateQueries({ queryKey: ["packages-list"] });
       toast({ title: "Package cloned", description: `"${newPkg.name}" created successfully.` });
-      setLocation(`${BASE}/admin/packages/${newPkg.id}`);
+      setLocation(`/admin/packages/${newPkg.id}`);
     },
     onError: () => toast({ variant: "destructive", title: "Failed to clone package" }),
   });
@@ -358,7 +358,7 @@ export default function PackageDetail() {
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-bold text-(--e-orange) uppercase tracking-wide">Package Group Info</p>
           <button
-            onClick={() => setLocation(`${BASE}/admin/package-groups/${rec.packageGroupId}`)}
+            onClick={() => setLocation(`/admin/package-groups/${rec.packageGroupId}`)}
             className="inline-flex items-center gap-1 text-xs text-(--e-orange) hover:underline font-medium"
           >
             <ExternalLink className="w-3 h-3" /> View Package Group →
@@ -517,7 +517,7 @@ export default function PackageDetail() {
         {sortedCurrencies.length === 0 ? (
           <div className="px-4 py-3 text-sm text-muted-foreground">
             No exchange rates configured. Add rates in{" "}
-            <a href={`${BASE}/admin/accounting/exchange-rates`} className="text-(--e-orange) underline">Exchange Rates</a>.
+            <a href={`/admin/accounting/exchange-rates`} className="text-(--e-orange) underline">Exchange Rates</a>.
           </div>
         ) : (
           sortedCurrencies.map(({ ccy, flag, sym, dec, field }) => {
@@ -1051,7 +1051,7 @@ export default function PackageDetail() {
                       <tr
                         key={c.id as string}
                         className={`border-b last:border-0 hover:bg-(--e-orange-lt) cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}
-                        onClick={() => setLocation(`${BASE}/admin/crm/contracts/${c.id}`)}
+                        onClick={() => setLocation(`/admin/crm/contracts/${c.id}`)}
                       >
                         <td className="px-3 py-2 font-mono text-xs font-medium text-(--e-orange)">
                           {c.contractNumber as string ?? "—"}

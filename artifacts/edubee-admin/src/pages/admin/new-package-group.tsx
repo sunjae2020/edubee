@@ -331,7 +331,7 @@ export default function NewPackageGroup() {
       }
 
       toast({ title: "Package group created!" });
-      setLocation(`${BASE}/admin/package-groups/${groupId}`);
+      setLocation(`/admin/package-groups/${groupId}`);
     } catch (e: any) {
       toast({ variant: "destructive", title: "Failed to save", description: e.response?.data?.error ?? e.message });
     } finally { setIsSaving(false); }
@@ -348,7 +348,7 @@ export default function NewPackageGroup() {
         <div className="px-6 pt-3 pb-0">
           <div
             className="text-xs text-muted-foreground mb-1 cursor-pointer hover:text-(--e-orange) flex items-center gap-1 w-fit"
-            onClick={() => setLocation(`${BASE}/admin/package-groups`)}
+            onClick={() => setLocation(`/admin/package-groups`)}
           >
             ← Package Groups
           </div>
@@ -891,7 +891,7 @@ export default function NewPackageGroup() {
 
         {/* Save CTA at bottom */}
         <div className="flex justify-end gap-3 pt-2 pb-8">
-          <Button variant="outline" onClick={() => setLocation(`${BASE}/admin/package-groups`)} className="text-sm">
+          <Button variant="outline" onClick={() => setLocation(`/admin/package-groups`)} className="text-sm">
             Cancel
           </Button>
           <Button

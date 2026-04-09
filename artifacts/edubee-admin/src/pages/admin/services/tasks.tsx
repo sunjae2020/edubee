@@ -448,13 +448,13 @@ export default function TasksPage() {
                     <div className="pt-2 border-t border-[#E7E5E4] flex flex-wrap gap-2">
                       {selected.contractId && (
                         <button
-                          onClick={() => { setSelected(null); navigate(`${BASE}/admin/crm/contracts?contractId=${selected.contractId}`); }}
+                          onClick={() => { setSelected(null); navigate(`/admin/crm/contracts?contractId=${selected.contractId}`); }}
                           className="flex items-center gap-1 text-xs text-(--e-orange) hover:underline"
                         ><LinkIcon className="w-3 h-3" /> View Contract</button>
                       )}
                       {selected.applicationId && (
                         <button
-                          onClick={() => { setSelected(null); navigate(`${BASE}/admin/applications`); }}
+                          onClick={() => { setSelected(null); navigate(`/admin/applications`); }}
                           className="flex items-center gap-1 text-xs text-(--e-orange) hover:underline"
                         ><LinkIcon className="w-3 h-3" /> View Application</button>
                       )}

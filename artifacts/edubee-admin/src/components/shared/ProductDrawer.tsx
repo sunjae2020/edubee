@@ -169,7 +169,7 @@ export default function ProductDrawer({
               {provider ? (
                 <div
                   className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity group"
-                  onClick={() => setLocation(`${BASE}/admin/users/${provider.id}`)}
+                  onClick={() => setLocation(`/admin/users/${provider.id}`)}
                 >
                   <Avatar className="h-9 w-9 shrink-0">
                     <AvatarFallback className="bg-(--e-orange)/10 text-(--e-orange) text-xs font-bold">{providerInitials}</AvatarFallback>

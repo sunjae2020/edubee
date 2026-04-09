@@ -103,7 +103,7 @@ export default function AccommodationPage() {
       qc.invalidateQueries({ queryKey: ["accommodation"] });
       setShowCreate(false);
       setCreateForm({ contractId: "", notes: "" });
-      navigate(`${BASE}/admin/services/accommodation/${created.id}`);
+      navigate(`/admin/services/accommodation/${created.id}`);
     },
   });
 

@@ -195,7 +195,7 @@ export default function Packages() {
       qc.invalidateQueries({ queryKey: ["pkg-groups-filter"] });
       closeDialog();
       toast({ title: "Package created", description: `"${newPkg.name}" has been created.` });
-      setLocation(`${BASE}/admin/packages/${newPkg.id}`);
+      setLocation(`/admin/packages/${newPkg.id}`);
     },
     onError: (e: any) => setFormError(e?.response?.data?.error ?? "Failed to create package"),
   });
@@ -426,7 +426,7 @@ export default function Packages() {
                     <tr
                       key={pkg.id}
                       className="border-b last:border-0 hover:bg-(--e-orange-lt)/40 cursor-pointer transition-colors"
-                      onClick={() => setLocation(`${BASE}/admin/packages/${pkg.id}`)}
+                      onClick={() => setLocation(`/admin/packages/${pkg.id}`)}
                     >
                       <td className="px-4 py-3 font-medium text-foreground">{pkg.name}</td>
                       <td className="px-4 py-3">
@@ -624,7 +624,7 @@ export default function Packages() {
             {sortedCurrencies.length === 0 ? (
               <p className="text-sm text-muted-foreground px-1">
                 No exchange rates configured.{" "}
-                <a href={`${BASE}/admin/accounting/exchange-rates`} className="text-(--e-orange) underline" target="_blank" rel="noreferrer">
+                <a href={`/admin/accounting/exchange-rates`} className="text-(--e-orange) underline" target="_blank" rel="noreferrer">
                   Set up rates →
                 </a>
               </p>

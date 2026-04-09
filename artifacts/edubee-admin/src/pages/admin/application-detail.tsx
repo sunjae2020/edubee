@@ -203,7 +203,7 @@ export default function ApplicationDetail() {
       qc.invalidateQueries({ queryKey: ["applications"] });
       setConvertQuoteDialog(false);
       toast({ title: `Quote created: ${data.quoteRefNumber}` });
-      window.location.href = `${BASE}/admin/crm/quotes/${data.quoteId}`;
+      window.location.href = `/admin/crm/quotes/${data.quoteId}`;
     },
     onError: (err: any) => {
       const msg = err.response?.data?.error ?? "Failed to convert";
@@ -340,7 +340,7 @@ export default function ApplicationDetail() {
           canEdit ? (
             app.quoteId ? (
               <a
-                href={`${BASE}/admin/crm/quotes/${app.quoteId}`}
+                href={`/admin/crm/quotes/${app.quoteId}`}
                 className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-(--e-orange) text-(--e-orange) text-xs font-medium hover:bg-(--e-orange-lt) transition-colors"
               >
                 <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -479,7 +479,7 @@ export default function ApplicationDetail() {
               <DetailSection title="Linked Records">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Quote</span>
-                  <a href={`${BASE}/admin/crm/quotes/${app.quoteId}`}
+                  <a href={`/admin/crm/quotes/${app.quoteId}`}
                     className="flex items-center gap-1 text-sm text-(--e-orange) hover:underline">
                     View Quote <ExternalLink className="w-3 h-3" />
                   </a>
