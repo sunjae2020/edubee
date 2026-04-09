@@ -167,7 +167,7 @@ export default function Login() {
                 style={{
                   width: '100%',
                   height: '40px',
-                  backgroundColor: '#F5821F',
+                  backgroundColor: 'var(--e-orange)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
