@@ -177,8 +177,28 @@ router.put("/:id", authenticate, async (req, res) => {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    const { password, passwordHash, ...rest } = req.body;
-    const updates: Record<string, any> = { ...rest, updatedAt: new Date() };
+    // Strip read-only / auto-managed fields before passing to Drizzle.
+    // Timestamp columns must be Date objects — strings from the client cause
+    // `value.toISOString is not a function` inside Drizzle's PgTimestamp serialiser.
+    const READONLY_FIELDS = new Set([
+      "id", "createdAt", "updatedAt", "lastLoginAt",
+      "organisationId", "passwordHash",
+    ]);
+
+    const { password, passwordHash: _ph, ...rest } = req.body;
+    const updates: Record<string, any> = { updatedAt: new Date() };
+
+    for (const [key, value] of Object.entries(rest)) {
+      if (READONLY_FIELDS.has(key)) continue;
+      // Convert ISO date strings to Date objects for any timestamp columns
+      if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+        const d = new Date(value);
+        updates[key] = isNaN(d.getTime()) ? value : d;
+      } else {
+        updates[key] = value;
+      }
+    }
+
     if (password && isAdmin) {
       updates.passwordHash = await bcrypt.hash(password, 12);
     }
