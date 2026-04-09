@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/public/language-switcher";
+import { useTenantThemeCtx } from "@/hooks/use-tenant-theme";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
 
 const loginSchema = z.object({
@@ -28,6 +29,7 @@ const DEMO_ACCOUNTS = [
 export default function Login() {
   const { login, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
+  const theme = useTenantThemeCtx();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
@@ -65,8 +67,14 @@ export default function Login() {
     <div className="min-h-screen w-full flex items-center justify-center" style={{ background: "var(--e-bg-page)" }}>
       <div className="w-full max-w-sm px-4 py-10 space-y-6">
         <div className="flex flex-col items-center gap-3 mb-2">
-          <img src={logoImg} alt="Edubee Camp" className="h-9 w-auto object-contain" />
-          <p className="text-sm" style={{ color: "var(--e-text-2)" }}>Admin Portal</p>
+          <img
+            src={theme.logoUrl ?? logoImg}
+            alt={theme.companyName}
+            className="h-9 w-auto object-contain"
+          />
+          <p className="text-sm font-medium" style={{ color: "var(--e-text-2)" }}>
+            {theme.organisationId ? theme.companyName : "Admin Portal"}
+          </p>
         </div>
 
         <div
@@ -147,48 +155,52 @@ export default function Login() {
             </form>
           </Form>
 
-          <div>
-            <div className="relative mb-3">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t" style={{ borderColor: "var(--e-border)" }} />
+          {!theme.organisationId && (
+            <div>
+              <div className="relative mb-3">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t" style={{ borderColor: "var(--e-border)" }} />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="px-2 text-xs" style={{ background: "var(--e-bg-surface)", color: "var(--e-text-3)" }}>Demo accounts — click to fill</span>
+                </div>
               </div>
-              <div className="relative flex justify-center">
-                <span className="px-2 text-xs" style={{ background: "var(--e-bg-surface)", color: "var(--e-text-3)" }}>Demo accounts — click to fill</span>
+
+              <div className="flex flex-wrap gap-1.5">
+                {DEMO_ACCOUNTS.map((acc) => (
+                  <button
+                    key={acc.email}
+                    type="button"
+                    title={acc.email}
+                    onClick={() => fillDemo(acc)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                    style={{
+                      background: selectedEmail === acc.email ? "var(--e-orange-lt)" : "var(--e-bg-muted)",
+                      color: selectedEmail === acc.email ? "var(--e-orange)" : "var(--e-text-2)",
+                      border: `1px solid ${selectedEmail === acc.email ? "var(--e-orange-shadow-40)" : "var(--e-border)"}`,
+                    }}
+                  >
+                    <span>{acc.emoji}</span>
+                    <span>{acc.label}</span>
+                  </button>
+                ))}
               </div>
-            </div>
 
-            <div className="flex flex-wrap gap-1.5">
-              {DEMO_ACCOUNTS.map((acc) => (
-                <button
-                  key={acc.email}
-                  type="button"
-                  title={acc.email}
-                  onClick={() => fillDemo(acc)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all"
-                  style={{
-                    background: selectedEmail === acc.email ? "var(--e-orange-lt)" : "var(--e-bg-muted)",
-                    color: selectedEmail === acc.email ? "var(--e-orange)" : "var(--e-text-2)",
-                    border: `1px solid ${selectedEmail === acc.email ? "var(--e-orange-shadow-40)" : "var(--e-border)"}`,
-                  }}
-                >
-                  <span>{acc.emoji}</span>
-                  <span>{acc.label}</span>
-                </button>
-              ))}
+              {filledEmail && (
+                <p className="mt-2 text-xs font-medium" style={{ color: "#16A34A" }}>✓ Filled: {filledEmail}</p>
+              )}
             </div>
-
-            {filledEmail && (
-              <p className="mt-2 text-xs font-medium" style={{ color: "#16A34A" }}>✓ Filled: {filledEmail}</p>
-            )}
-          </div>
+          )}
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#57534E' }}>
-          Don't have an account?{' '}
-          <Link href="/register" style={{ color: 'var(--e-orange)', fontWeight: 500 }}>
-            Start for free →
-          </Link>
-        </p>
+        {!theme.organisationId && (
+          <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#57534E' }}>
+            Don't have an account?{' '}
+            <Link href="/register" style={{ color: 'var(--e-orange)', fontWeight: 500 }}>
+              Start for free →
+            </Link>
+          </p>
+        )}
 
         <div className="flex justify-center">
           <LanguageSwitcher />

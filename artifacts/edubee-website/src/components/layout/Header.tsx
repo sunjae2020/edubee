@@ -56,8 +56,8 @@ export function Header() {
 
           <div className="flex items-center gap-2 flex-shrink-0">
             <LanguageSwitcher mode="dropdown" />
-            <Button variant="ghost" size="sm" href="/login" className="hidden sm:inline-flex">{t('nav.login')}</Button>
-            <Button variant="primary" size="sm" href="/register">{t('nav.startFree')}</Button>
+            <Button variant="ghost" size="sm" href="/admin/login" className="hidden sm:inline-flex">{t('nav.login')}</Button>
+            <Button variant="primary" size="sm" href="/admin/register">{t('nav.startFree')}</Button>
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className="lg:hidden p-2 rounded-lg text-[#57534E] hover:bg-[#F4F3F1]"
@@ -84,8 +84,8 @@ export function Header() {
                 </a>
               ))}
               <div className="pt-4 border-t border-[#E8E6E2] space-y-2">
-                <Button variant="secondary" fullWidth href="/login">{t('nav.login')}</Button>
-                <Button variant="primary" fullWidth href="/register">{t('nav.startFree')}</Button>
+                <Button variant="secondary" fullWidth href="/admin/login">{t('nav.login')}</Button>
+                <Button variant="primary" fullWidth href="/admin/register">{t('nav.startFree')}</Button>
               </div>
               <div className="pt-4 border-t border-[#E8E6E2]">
                 <p className="text-xs text-[#A8A29E] mb-2 uppercase tracking-wider font-medium">Language</p>
