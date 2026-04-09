@@ -804,12 +804,23 @@ router.delete("/domain/custom", ...settingsAccess, async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // GET /theme — 테넌트 테마 설정 반환 (공개 엔드포인트, 인증 불필요)
-// tenantResolver 에서 주입된 req.tenant 사용
+// 우선순위: tenantResolver(헤더/서브도메인) → ?subdomain= 쿼리 파라미터 (dev 미리보기용)
 // 앱 초기화 시 첫 번째 API 호출로 사용
 // ─────────────────────────────────────────────────────────────
 router.get("/theme", async (req, res) => {
   try {
-    const org = req.tenant;
+    let org = req.tenant;
+
+    // ?subdomain= 쿼리 파라미터 지원 (개발 모드 미리보기용)
+    if (!org && req.query.subdomain) {
+      const sub = String(req.query.subdomain).trim().toLowerCase();
+      const [found] = await db
+        .select()
+        .from(organisations)
+        .where(eq(organisations.subdomain as any, sub))
+        .limit(1);
+      if (found) org = found;
+    }
 
     if (!org) {
       return res.json(getDefaultTheme());

@@ -41,8 +41,14 @@ export function useTenantTheme() {
   const loadTheme = useCallback(async () => {
     try {
       const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+      // ?org=<subdomain> 쿼리 파라미터 지원 (개발 모드 테넌트 미리보기용)
+      const urlParams = new URLSearchParams(window.location.search);
+      const previewOrg = urlParams.get("org");
+      const themeUrl = previewOrg
+        ? `${BASE}/api/settings/theme?subdomain=${encodeURIComponent(previewOrg)}`
+        : `${BASE}/api/settings/theme`;
       // axios 사용 → X-Organisation-Id 헤더가 인터셉터에 의해 자동 첨부됨
-      const { data } = await axios.get<TenantTheme>(`${BASE}/api/settings/theme`);
+      const { data } = await axios.get<TenantTheme>(themeUrl);
       setTheme(data);
       applyThemeToDom(data);
     } catch (err) {
