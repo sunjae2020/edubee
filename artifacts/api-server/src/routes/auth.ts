@@ -536,11 +536,12 @@ router.post("/accept-invite", async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 12);
 
     await db.insert(users).values({
-      fullName:    `${firstName} ${lastName}`.trim(),
-      email:       invite.email,
+      fullName:       `${firstName} ${lastName}`.trim(),
+      email:          invite.email,
       passwordHash,
-      role:        invite.role as any,
-      status:      "active",
+      role:           invite.role as any,
+      status:         "active",
+      organisationId: invite.organisationId,
     } as any);
 
     // 5. Mark invitation as accepted
