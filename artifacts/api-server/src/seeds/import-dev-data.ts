@@ -20,16 +20,31 @@
 
 import { exec } from "child_process";
 import path from "path";
-import { fileURLToPath } from "url";
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+/**
+ * SQL 파일 경로 계산:
+ * - ESM 개발 환경(tsx): import.meta.url 사용
+ * - CJS 프로덕션 번들(esbuild): import.meta가 {} 로 변환되어 url이 undefined.
+ *   process.argv[1] (entry point 절대경로)을 기준으로 경로를 계산.
+ */
+function getSeedsDir(): string {
+  // ESM: import.meta.url is a full "file://" string
+  const metaUrl = (import.meta as any)?.url;
+  if (typeof metaUrl === "string" && metaUrl.startsWith("file://")) {
+    const { fileURLToPath } = require("url");
+    return path.dirname(fileURLToPath(metaUrl));
+  }
+  // CJS bundle fallback: navigate from dist/index.cjs → ../src/seeds
+  const entryPoint = process.argv[1] ?? process.cwd();
+  return path.resolve(path.dirname(path.resolve(entryPoint)), "..", "src", "seeds");
+}
 
 export function runDevSeedPsql(dbUrl: string): Promise<{ success: boolean; errors: string[]; elapsed: string }> {
   return new Promise((resolve) => {
-    const sqlFile = path.resolve(__dirname, "dev_seed.sql");
+    const seedsDir = getSeedsDir();
+    const sqlFile = path.resolve(seedsDir, "dev_seed.sql");
     const start = Date.now();
     exec(
       `psql "${dbUrl}" -f "${sqlFile}" 2>&1`,
