@@ -11,21 +11,24 @@ version = "1.0.0"
 
 [[services]]
 name = "web"
-paths = [ "/admin/" ]
+paths = ["/admin/"]
 localPort = 20008
 
 [services.development]
 run = "pnpm --filter @workspace/edubee-admin run dev"
 
+[services.env]
+PORT = "20008"
+BASE_PATH = "/admin/"
+
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/edubee-admin", "run", "build" ]
-publicDir = "artifacts/edubee-admin/dist/public"
-serve = "static"
+build = ["pnpm", "--filter", "@workspace/edubee-admin", "run", "build"]
+run = ["pnpm", "--filter", "@workspace/edubee-admin", "run", "serve"]
+
+[services.production.env]
+PORT = "20008"
+BASE_PATH = "/admin/"
 
 [[services.production.rewrites]]
 from = "/*"
 to = "/index.html"
-
-[services.env]
-PORT = "20008"
-BASE_PATH = "/admin/"

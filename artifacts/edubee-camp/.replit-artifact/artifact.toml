@@ -23,8 +23,11 @@ BASE_PATH = "/"
 
 [services.production]
 build = ["pnpm", "--filter", "@workspace/edubee-camp", "run", "build"]
-publicDir = "artifacts/edubee-camp/dist/public"
-serve = "static"
+run = ["pnpm", "--filter", "@workspace/edubee-camp", "run", "serve"]
+
+[services.production.env]
+PORT = "19156"
+BASE_PATH = "/"
 
 [[services.production.rewrites]]
 from = "/*"
