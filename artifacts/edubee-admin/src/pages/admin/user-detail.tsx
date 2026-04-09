@@ -16,7 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ImageCropDialog } from "@/components/shared/ImageCropDialog";
 import { fileToDataUrl } from "@/lib/imageResize";
-import { TrendingUp, TrendingDown, Minus, Pencil, Plus, Package, BarChart2, ExternalLink, Camera, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Pencil, Plus, Package, BarChart2, ExternalLink, Camera, Loader2, KeyRound, Eye, EyeOff } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import ProductDrawer from "@/components/shared/ProductDrawer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -63,6 +64,10 @@ export default function UserDetail() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [pwOpen, setPwOpen] = useState(false);
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["user-detail", id],
@@ -118,6 +123,30 @@ export default function UserDetail() {
     },
     onError: () => toast({ variant: "destructive", title: "Failed to update" }),
   });
+
+  const changePassword = useMutation({
+    mutationFn: (password: string) =>
+      axios.put(`${BASE}/api/users/${id}`, { password }).then(r => r.data),
+    onSuccess: () => {
+      toast({ title: "Password changed successfully" });
+      setNewPw("");
+      setConfirmPw("");
+      setPwOpen(false);
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to change password" }),
+  });
+
+  const handleChangePassword = () => {
+    if (newPw.length < 8) {
+      toast({ variant: "destructive", title: "Password must be at least 8 characters" });
+      return;
+    }
+    if (newPw !== confirmPw) {
+      toast({ variant: "destructive", title: "Passwords do not match" });
+      return;
+    }
+    changePassword.mutate(newPw);
+  };
 
   const { isEditing, isSaving, startEdit, cancelEdit, setField, saveEdit, getValue } = useDetailEdit({
     initialData: userRec ?? {},
@@ -298,6 +327,65 @@ export default function UserDetail() {
                 editValue={getValue("preferredLang")} onEdit={v => setField("preferredLang", v)} />
               <DetailRow label="2FA Enabled" value={userRec.twoFactorEnabled ? "Yes" : "No"} />
             </DetailSection>
+
+            {canEdit && (
+              <div className="lg:col-span-2">
+                <DetailSection title="Security">
+                  {!pwOpen ? (
+                    <div className="flex items-center justify-between py-1">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <KeyRound className="w-4 h-4" />
+                        <span>Login Password</span>
+                      </div>
+                      <Button size="sm" variant="outline" className="gap-1.5 border-(--e-orange) text-(--e-orange) hover:bg-(--e-orange-lt)"
+                        onClick={() => setPwOpen(true)}>
+                        <KeyRound className="w-3.5 h-3.5" /> Change Password
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">New Password</label>
+                        <div className="relative">
+                          <Input
+                            type={showPw ? "text" : "password"}
+                            value={newPw}
+                            onChange={e => setNewPw(e.target.value)}
+                            placeholder="Min. 8 characters"
+                            className="pr-9 h-8 text-sm"
+                          />
+                          <button type="button" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            onClick={() => setShowPw(v => !v)}>
+                            {showPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">Confirm New Password</label>
+                        <Input
+                          type={showPw ? "text" : "password"}
+                          value={confirmPw}
+                          onChange={e => setConfirmPw(e.target.value)}
+                          placeholder="Re-enter new password"
+                          className="h-8 text-sm"
+                          onKeyDown={e => { if (e.key === "Enter") handleChangePassword(); }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 pt-1">
+                        <Button size="sm" className="bg-(--e-orange) hover:bg-(--e-orange-dk) text-white gap-1.5"
+                          onClick={handleChangePassword} disabled={changePassword.isPending}>
+                          {changePassword.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                          Save Password
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => { setPwOpen(false); setNewPw(""); setConfirmPw(""); }}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </DetailSection>
+              </div>
+            )}
 
             <div className="lg:col-span-2">
               <SystemInfoSection owner={userRec.id ?? null} createdAt={userRec.createdAt} updatedAt={userRec.updatedAt} />
