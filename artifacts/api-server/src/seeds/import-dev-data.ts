@@ -52,7 +52,11 @@ export function runDevSeedPsql(dbUrl: string): Promise<{ success: boolean; error
       (err, stdout) => {
         const elapsed = ((Date.now() - start) / 1000).toFixed(1) + "s";
         const output = stdout || "";
-        const errors = output.split("\n").filter((l) => l.startsWith("ERROR")).slice(0, 20);
+        // psql errors appear as "psql:<file>:<line>: ERROR:  <msg>" — capture both formats
+        const errors = output
+          .split("\n")
+          .filter((l) => l.startsWith("ERROR") || /^psql:[^:]+:\d+: ERROR/i.test(l))
+          .slice(0, 20);
         if (err) {
           resolve({ success: false, errors: [err.message, ...errors], elapsed });
         } else {
