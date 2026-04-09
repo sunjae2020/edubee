@@ -123,7 +123,7 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header collapsed={sidebarCollapsed} onToggle={toggleCollapsed} title={title} />
         <ImpersonationBanner />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8" style={{ background: "var(--e-bg-page)" }}>
+        <main className="flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-20 lg:p-8 lg:pb-20" style={{ background: "var(--e-bg-page)" }}>
           <div className="mx-auto max-w-7xl">
             {children}
           </div>
