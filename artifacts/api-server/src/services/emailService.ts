@@ -42,6 +42,7 @@ export async function sendInvitationEmail(
     ? `https://${subdomain}.edubee.co`
     : process.env.APP_URL ?? 'https://app.edubee.co';
   const inviteUrl = `${baseUrl}/accept-invite?token=${inviteToken}`;
+  const logoUrl   = `${baseUrl}/edubee-symbol.png`;
 
   const expiryDate = expiresAt.toLocaleDateString('en-AU', {
     year: 'numeric', month: 'long', day: 'numeric',
@@ -52,7 +53,7 @@ export async function sendInvitationEmail(
       from:    FROM_EMAIL,
       to:      toEmail,
       subject: `[${companyName}] You've been invited to Edubee CRM`,
-      html:    buildInvitationHtml({ companyName, inviterName, role, inviteUrl, expiryDate }),
+      html:    buildInvitationHtml({ companyName, inviterName, role, inviteUrl, expiryDate, logoUrl }),
     });
 
     if (error) {
