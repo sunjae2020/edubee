@@ -221,19 +221,19 @@ function CategoryHeader({ group, hasActive, open, onToggle }: {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className="w-full flex items-center gap-1.5 px-2 pt-3 pb-1.5 rounded-md transition-all duration-150"
-      style={{ background: hovered && !hasActive ? "#FFF0E0" : "transparent" }}
+      style={{ background: hovered && !hasActive ? "var(--e-orange-lt)" : "transparent" }}
     >
       <CatIcon
         size={13}
         strokeWidth={hasActive || hovered ? 2.2 : 1.8}
         style={{
-          color: hasActive ? "var(--e-orange)" : hovered ? "#EA580C" : "var(--e-text-3)",
+          color: hasActive ? "var(--e-orange)" : hovered ? "var(--e-orange)" : "var(--e-text-3)",
           flexShrink: 0,
         }}
       />
       <span
         className="flex-1 text-left text-[11px] font-semibold uppercase tracking-[0.08em] truncate"
-        style={{ color: hasActive ? "var(--e-orange)" : hovered ? "#C2410C" : "var(--e-text-3)" }}
+        style={{ color: hasActive ? "var(--e-orange)" : hovered ? "var(--e-orange-dk)" : "var(--e-text-3)" }}
       >
         {group.label}
       </span>
@@ -241,7 +241,7 @@ function CategoryHeader({ group, hasActive, open, onToggle }: {
         size={11}
         strokeWidth={1.8}
         style={{
-          color: hovered ? "#EA580C" : "var(--e-text-3)",
+          color: hovered ? "var(--e-orange)" : "var(--e-text-3)",
           flexShrink: 0,
           transform: open ? "rotate(0deg)" : "rotate(-90deg)",
           transition: "transform 150ms ease",
@@ -262,7 +262,7 @@ function CollapsedIconItem({ item, Icon, isActive, onNavClick }: {
       <div
         className="w-10 h-9 flex items-center justify-center rounded-lg transition-all duration-150 cursor-pointer"
         style={{
-          background: isActive ? "var(--e-orange-lt)" : hovered ? "#FFF0E0" : "transparent",
+          background: isActive ? "var(--e-orange-lt)" : hovered ? "var(--e-orange-lt)" : "transparent",
         }}
         title={item.label}
         onMouseEnter={() => setHovered(true)}
@@ -271,7 +271,7 @@ function CollapsedIconItem({ item, Icon, isActive, onNavClick }: {
         <Icon
           size={16}
           strokeWidth={isActive || hovered ? 2.2 : 1.8}
-          style={{ color: isActive ? "var(--e-orange)" : hovered ? "#EA580C" : "var(--e-text-3)" }}
+          style={{ color: isActive ? "var(--e-orange)" : hovered ? "var(--e-orange)" : "var(--e-text-3)" }}
         />
       </div>
     </Link>
@@ -287,8 +287,8 @@ function FlyoutItem({ item, Icon, isActive, onClose }: {
       <div
         className="flex items-center gap-2.5 px-3 h-9 mx-1 rounded-lg text-[13px] cursor-pointer transition-all duration-150 select-none font-medium"
         style={{
-          background: isActive ? "var(--e-orange-lt)" : hovered ? "#FFF0E0" : "transparent",
-          color: isActive ? "var(--e-orange)" : hovered ? "#C2410C" : "var(--e-text-2)",
+          background: isActive ? "var(--e-orange-lt)" : hovered ? "var(--e-orange-lt)" : "transparent",
+          color: isActive ? "var(--e-orange)" : hovered ? "var(--e-orange-dk)" : "var(--e-text-2)",
           fontWeight: isActive ? 600 : undefined,
         }}
         onMouseEnter={() => setHovered(true)}
@@ -297,7 +297,7 @@ function FlyoutItem({ item, Icon, isActive, onClose }: {
         <Icon
           size={14}
           strokeWidth={isActive || hovered ? 2.2 : 1.8}
-          style={{ color: isActive ? "var(--e-orange)" : hovered ? "#EA580C" : "var(--e-text-3)", flexShrink: 0 }}
+          style={{ color: isActive ? "var(--e-orange)" : hovered ? "var(--e-orange)" : "var(--e-text-3)", flexShrink: 0 }}
         />
         <span className="truncate">{item.label}</span>
       </div>
@@ -669,10 +669,10 @@ function SidebarNavItem({
       style={{
         background: isActive
           ? "var(--e-orange-lt)"
-          : hovered ? "#FFF0E0" : "transparent",
+          : hovered ? "var(--e-orange-lt)" : "transparent",
         color: isActive
           ? "var(--e-orange)"
-          : hovered ? "#C2410C" : "var(--e-text-2)",
+          : hovered ? "var(--e-orange-dk)" : "var(--e-text-2)",
       }}
     >
       <Icon
@@ -682,7 +682,7 @@ function SidebarNavItem({
         style={{
           color: isActive
             ? "var(--e-orange)"
-            : hovered ? "#EA580C" : "var(--e-text-3)",
+            : hovered ? "var(--e-orange)" : "var(--e-text-3)",
         }}
       />
       {!collapsed && <span className="truncate">{label}</span>}
