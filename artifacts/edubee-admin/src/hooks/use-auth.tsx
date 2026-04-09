@@ -53,9 +53,13 @@ const ADMIN_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 axios.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 && !err.config?.url?.includes("/login")) {
+    const status = err.response?.status;
+    if (status === 401 && !err.config?.url?.includes("/login")) {
       localStorage.removeItem("edubee_token");
       window.location.href = `${ADMIN_BASE}/login`;
+    }
+    if (status >= 500) {
+      console.error(`[API 500] ${err.config?.method?.toUpperCase()} ${err.config?.url}`, err.response?.data);
     }
     return Promise.reject(err);
   }
