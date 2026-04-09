@@ -207,7 +207,12 @@ router.put("/:id", authenticate, async (req, res) => {
     if (!user) return res.status(404).json({ error: "Not Found" });
     const { passwordHash: _, ...userWithoutPassword } = user;
     return res.json(userWithoutPassword);
-  } catch (err) {
+  } catch (err: any) {
+    // Drizzle wraps PG errors in err.cause — check both for unique constraint violations
+    const pgErr = err?.cause ?? err;
+    if (pgErr?.code === "23505" && pgErr?.constraint?.includes("email")) {
+      return res.status(409).json({ error: "Email already in use by another account" });
+    }
     console.error("Update user error:", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }

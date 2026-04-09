@@ -121,7 +121,10 @@ export default function UserDetail() {
       qc.invalidateQueries({ queryKey: ["users"] });
       toast({ title: "User updated" });
     },
-    onError: () => toast({ variant: "destructive", title: "Failed to update" }),
+    onError: (err: any) => {
+      const msg = err?.response?.data?.error ?? "Failed to update";
+      toast({ variant: "destructive", title: msg });
+    },
   });
 
   const changePassword = useMutation({
@@ -265,7 +268,8 @@ export default function UserDetail() {
                     : userRec.fullName || "—"
                 }
               />
-              <DetailRow label="Email" value={userRec.email} />
+              <EditableField label="Email" isEditing={isEditing && canEdit} value={userRec.email}
+                editValue={getValue("email")} onEdit={v => setField("email", v)} />
               <EditableField label="Role" isEditing={isEditing} value={(userRec.role ?? "").replace(/_/g, " ")}
                 editChildren={
                   <Select value={getValue("role")} onValueChange={v => setField("role", v)}>
