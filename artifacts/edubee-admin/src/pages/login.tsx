@@ -3,12 +3,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect, Link } from "wouter";
+import { Redirect, Link, useLocation } from "wouter";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2, MonitorCheck } from "lucide-react";
 import { LanguageSwitcher } from "@/components/public/language-switcher";
 import { useTenantThemeCtx } from "@/hooks/use-tenant-theme";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
@@ -34,13 +34,19 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
   const [filledEmail, setFilledEmail] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const previewOrg = urlParams.get("org");
+  const isPreviewMode = !!previewOrg;
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
 
-  if (isAuthenticated) {
+  // 로그인 상태이지만 ?org= 미리보기 파라미터가 없으면 대시보드로 이동
+  if (isAuthenticated && !isPreviewMode) {
     return <Redirect to={(user as any)?.role === "super_admin" ? "/superadmin" : "/admin/dashboard"} />;
   }
 
@@ -64,7 +70,32 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center" style={{ background: "var(--e-bg-page)" }}>
+    <div className="min-h-screen w-full flex flex-col" style={{ background: "var(--e-bg-page)" }}>
+      {/* 개발 모드 미리보기 배너 */}
+      {isPreviewMode && (
+        <div className="w-full flex items-center justify-between px-4 py-2 text-xs font-medium"
+          style={{ background: "#1C1917", color: "#FCD34D" }}>
+          <div className="flex items-center gap-2">
+            <MonitorCheck className="w-3.5 h-3.5" />
+            <span>미리보기 모드: <strong>{previewOrg}</strong> 테넌트 로그인 화면</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {isAuthenticated && (
+              <button
+                onClick={() => setLocation((user as any)?.role === "super_admin" ? "/superadmin" : "/admin/dashboard")}
+                className="underline underline-offset-2 opacity-80 hover:opacity-100"
+              >
+                대시보드로 이동 →
+              </button>
+            )}
+            <a href="/admin/login" className="underline underline-offset-2 opacity-80 hover:opacity-100">
+              미리보기 종료
+            </a>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 flex items-center justify-center">
       <div className="w-full max-w-sm px-4 py-10 space-y-6">
         <div className="flex flex-col items-center gap-3 mb-2">
           <img
@@ -205,6 +236,7 @@ export default function Login() {
         <div className="flex justify-center">
           <LanguageSwitcher />
         </div>
+      </div>
       </div>
     </div>
   );
