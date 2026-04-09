@@ -88,13 +88,14 @@ export async function sendWelcomeEmail(
   if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' };
 
   const { toEmail, userName, companyName, loginUrl } = params;
+  const logoUrl = loginUrl.replace(/\/login$/, '/edubee-symbol.png');
 
   try {
     const { error } = await resend.emails.send({
       from:    FROM_EMAIL,
       to:      toEmail,
       subject: `[${companyName}] Your CRM account is ready`,
-      html:    buildWelcomeHtml({ userName, companyName, loginUrl }),
+      html:    buildWelcomeHtml({ userName, companyName, loginUrl, logoUrl }),
     });
 
     if (error) return { success: false, error: error.message };
@@ -120,13 +121,14 @@ export async function sendTenantCreatedEmail(params: {
 
   const { toEmail, orgName, subdomain, planType } = params;
   const loginUrl = `https://${subdomain}.edubee.co/login`;
+  const logoUrl  = `https://${subdomain}.edubee.co/edubee-symbol.png`;
 
   try {
     await resend.emails.send({
       from:    FROM_EMAIL,
       to:      toEmail,
-      subject: `🐝 Your Edubee CRM is ready — ${orgName}`,
-      html:    buildTenantCreatedHtml({ orgName, subdomain, planType, loginUrl }),
+      subject: `Your Edubee CRM is ready — ${orgName}`,
+      html:    buildTenantCreatedHtml({ orgName, subdomain, planType, loginUrl, logoUrl }),
     });
   } catch (err) {
     console.error('[EMAIL] Tenant creation notification failed:', err);
@@ -140,7 +142,7 @@ export async function sendTenantCreatedEmail(params: {
 
 function buildInvitationHtml(p: {
   companyName: string; inviterName: string; role: string;
-  inviteUrl: string; expiryDate: string;
+  inviteUrl: string; expiryDate: string; logoUrl: string;
 }): string {
   return `
 <!DOCTYPE html>
@@ -158,7 +160,9 @@ function buildInvitationHtml(p: {
                style="background:#FFFFFF;border-radius:12px;border:1px solid #E8E6E2;overflow:hidden;">
           <tr>
             <td style="background:#F5821F;padding:32px;text-align:center;">
-              <div style="font-size:28px;font-weight:700;color:#FFFFFF;">🐝 Edubee CRM</div>
+              <img src="${p.logoUrl}" alt="Edubee CRM" width="48" height="48"
+                   style="display:inline-block;border-radius:10px;margin-bottom:10px;" />
+              <div style="font-size:22px;font-weight:700;color:#FFFFFF;">Edubee CRM</div>
               <div style="font-size:14px;color:rgba(255,255,255,0.85);margin-top:6px;">${p.companyName}</div>
             </td>
           </tr>
@@ -209,7 +213,7 @@ function buildInvitationHtml(p: {
 }
 
 function buildWelcomeHtml(p: {
-  userName: string; companyName: string; loginUrl: string;
+  userName: string; companyName: string; loginUrl: string; logoUrl: string;
 }): string {
   return `
 <!DOCTYPE html>
@@ -223,7 +227,9 @@ function buildWelcomeHtml(p: {
                style="background:#FFFFFF;border-radius:12px;border:1px solid #E8E6E2;">
           <tr>
             <td style="background:#F5821F;padding:32px;text-align:center;">
-              <div style="font-size:28px;font-weight:700;color:#FFFFFF;">🐝 Edubee CRM</div>
+              <img src="${p.logoUrl}" alt="Edubee CRM" width="48" height="48"
+                   style="display:inline-block;border-radius:10px;margin-bottom:10px;" />
+              <div style="font-size:22px;font-weight:700;color:#FFFFFF;">Edubee CRM</div>
             </td>
           </tr>
           <tr>
@@ -259,7 +265,7 @@ function buildWelcomeHtml(p: {
 }
 
 function buildTenantCreatedHtml(p: {
-  orgName: string; subdomain: string; planType: string; loginUrl: string;
+  orgName: string; subdomain: string; planType: string; loginUrl: string; logoUrl: string;
 }): string {
   return `
 <!DOCTYPE html>
@@ -273,7 +279,9 @@ function buildTenantCreatedHtml(p: {
                style="background:#FFFFFF;border-radius:12px;border:1px solid #E8E6E2;">
           <tr>
             <td style="background:#F5821F;padding:32px;text-align:center;">
-              <div style="font-size:28px;font-weight:700;color:#FFFFFF;">🐝 Edubee CRM</div>
+              <img src="${p.logoUrl}" alt="Edubee CRM" width="48" height="48"
+                   style="display:inline-block;border-radius:10px;margin-bottom:10px;" />
+              <div style="font-size:22px;font-weight:700;color:#FFFFFF;">Edubee CRM</div>
               <div style="font-size:14px;color:rgba(255,255,255,0.85);margin-top:6px;">Account Created</div>
             </td>
           </tr>
