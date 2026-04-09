@@ -5,6 +5,7 @@ import { seedChartOfAccounts } from "./seeds/coa-seed.js";
 import { markOverdueArItems } from "./seeds/arap-overdue.js";
 import { seedUsersIfEmpty } from "./seeds/seed-users.js";
 import { seedMenuAllocation } from "./seeds/seed-menu-allocation.js";
+import { importDevDataIfNeeded } from "./seeds/import-dev-data.js";
 import { startTaxInvoiceScheduler } from "./jobs/taxInvoiceScheduler.js";
 import { startKpiScheduler, runKpiSchedulerNow } from "./jobs/kpiScheduler.js";
 
@@ -24,6 +25,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 const server = app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
+  importDevDataIfNeeded();
   seedUsersIfEmpty();
   seedChartOfAccounts();
   seedMenuAllocation();

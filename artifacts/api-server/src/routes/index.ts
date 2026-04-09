@@ -62,6 +62,7 @@ import tenantSettingsRouter from "./tenant-settings.js";
 import superAdminRouter from "./superadmin.js";
 import platformPlansRouter from "./platformPlans.js";
 import platformCrmRouter from "./platform-crm.js";
+import adminDataImportRouter from "./admin-data-import.js";
 import { tenantResolver } from "../middleware/tenantResolver.js";
 
 const router: IRouter = Router();
@@ -132,5 +133,6 @@ router.use(applicationFormsRouter);
 router.use(superAdminRouter);
 router.use(platformPlansRouter);
 router.use(platformCrmRouter);
+router.use("/admin", adminDataImportRouter);
 
 export default router;
