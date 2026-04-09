@@ -155,14 +155,23 @@ function AdminRoute({ children, title }: { children: React.ReactNode; title?: st
   return <MainLayout title={title}>{children}</MainLayout>;
 }
 
+function TenantRootRedirect() {
+  const hostname = window.location.hostname;
+  const parts = hostname.split(".");
+  const isSubdomain =
+    parts.length >= 3 && parts[0] !== "www" && parts[0] !== "localhost";
+  if (isSubdomain) return <Redirect to="/admin/login" />;
+  return <Landing />;
+}
+
 function Router() {
   const { theme } = useTenantTheme();
 
   return (
     <TenantThemeContext.Provider value={theme}>
       <Switch>
-        {/* Public landing page */}
-        <Route path="/" component={Landing} />
+        {/* Public landing page — redirect to admin login on tenant subdomains */}
+        <Route path="/" component={TenantRootRedirect} />
 
         {/* Auth routes — must be before /:slug catch-all */}
         <Route path="/login" component={Login} />
