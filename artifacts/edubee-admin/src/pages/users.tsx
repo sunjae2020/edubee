@@ -78,7 +78,7 @@ export default function Users() {
       role: user.role, avatarUrl: user.avatarUrl,
     });
     toast({ title: `Viewing as ${user.fullName}`, description: `Role: ${ROLE_LABELS[user.role] ?? user.role}` });
-    setLocation("/admin/dashboard");
+    setLocation("/dashboard");
   };
 
   const canImpersonate = (user: User) => {
@@ -210,7 +210,7 @@ export default function Users() {
                   style={{ borderBottom: "1px solid #F4F3F1" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--e-orange-lt)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "")}
-                  onClick={() => setLocation(`${BASE}/admin/users/${user.id}`)}
+                  onClick={() => setLocation(`/users/${user.id}`)}
                 >
                   <td className="px-4 py-3" style={{ height: 48 }}>
                     <div className="flex items-center gap-3">
