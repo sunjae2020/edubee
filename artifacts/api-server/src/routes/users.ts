@@ -188,8 +188,26 @@ router.put("/:id", authenticate, async (req, res) => {
     const { password, passwordHash: _ph, ...rest } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };
 
+    // Fetch current user record to compare email — prevents spurious 409 when
+    // the client sends back the same email the user already has (multi-tenant
+    // environments share a global unique constraint on email).
+    let currentEmail: string | undefined;
+    if ("email" in rest) {
+      const [current] = await db
+        .select({ email: users.email })
+        .from(users)
+        .where(eq(users.id, req.params.id))
+        .limit(1);
+      currentEmail = current?.email;
+    }
+
     for (const [key, value] of Object.entries(rest)) {
       if (READONLY_FIELDS.has(key)) continue;
+      // Skip email if it hasn't changed — avoids triggering the global unique
+      // constraint when another tenant's user happens to share the same email.
+      if (key === "email" && typeof value === "string" && value.toLowerCase() === currentEmail) {
+        continue;
+      }
       // Convert ISO date strings to Date objects for any timestamp columns
       if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
         const d = new Date(value);

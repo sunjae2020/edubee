@@ -37,24 +37,23 @@ const DEFAULT_THEME: TenantTheme = {
 export function useTenantTheme() {
   const [theme, setTheme] = useState<TenantTheme>(DEFAULT_THEME);
   const [isLoading, setIsLoading] = useState(true);
+  const inflight = { current: false };
 
   const loadTheme = useCallback(async () => {
+    if (inflight.current) return;
+    inflight.current = true;
     try {
       // ?org=<subdomain> 쿼리 파라미터 지원 (개발 모드 테넌트 미리보기용)
       const urlParams = new URLSearchParams(window.location.search);
       const previewOrg = urlParams.get("org");
 
-      // 항상 루트 /api 경로 사용 — axios 인터셉터가 /admin/api → /api 로 재작성하지만
-      // plain fetch는 인터셉터를 우회하므로 직접 /api 를 사용해야 함.
       const themeUrl = previewOrg
         ? `/api/settings/theme?subdomain=${encodeURIComponent(previewOrg)}`
         : `/api/settings/theme`;
 
-      // plain fetch 사용 — axios 인터셉터의 X-Organisation-Id 헤더를 우회해
-      // 테마는 반드시 서브도메인(hostname)으로만 결정됨. JWT org로 오염되지 않음.
-      const res = await fetch(themeUrl);
-      if (!res.ok) throw new Error(`Theme fetch failed: ${res.status}`);
-      const data: TenantTheme = await res.json();
+      // axios 사용 — 인터셉터가 X-Organisation-Id + Authorization 헤더를 자동으로 추가.
+      // 서브도메인이 없는 개발 환경에서도 JWT org 기반으로 올바른 테넌트 테마를 불러옴.
+      const { data } = await axios.get<TenantTheme>(themeUrl);
       setTheme(data);
       applyThemeToDom(data);
     } catch (err) {
@@ -62,6 +61,7 @@ export function useTenantTheme() {
       applyThemeToDom(DEFAULT_THEME);
     } finally {
       setIsLoading(false);
+      inflight.current = false;
     }
   }, []);
 
@@ -73,7 +73,7 @@ export function useTenantTheme() {
     // 플랜 변경 시 테마 재로드 (슈퍼어드민에서 planType 업데이트 후)
     window.addEventListener("edubee:plan-changed", loadTheme);
 
-    // 탭 포커스 복귀 시 테마 재로드 (플랜 변경 후 로그인 상태 그대로 반영)
+    // 탭 포커스 복귀 시 테마 재로드 — 중복 요청은 inflight 플래그로 차단
     const handleVisibility = () => {
       if (document.visibilityState === "visible") loadTheme();
     };
