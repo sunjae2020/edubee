@@ -160,11 +160,20 @@ function AdminRoute({ children, title }: { children: React.ReactNode; title?: st
 const APP_DOMAIN = "edubee.co";
 const SYSTEM_SUBS = new Set(["www", "camp", "admin", "crm", "api", "app", "demo", "staging", "dev", "mail", "localhost"]);
 
+// Known non-tenant hosting domains — these must NEVER trigger tenant redirect
+const DEV_DOMAIN_SUFFIXES = [".replit.app", ".replit.dev", ".riker.replit.dev", ".repl.co", "localhost"];
+
 function isTenantSubdomain(hostname: string): boolean {
   // Only treat as tenant subdomain when the base domain is edubee.co
   // e.g. sunnycamp.edubee.co → true
-  // e.g. edubee-crm-20260401.replit.app → false
+  // e.g. edubee-crm-20260401.replit.app → false (Replit dev/prod domain)
   // e.g. localhost → false
+
+  // Belt-and-suspenders: never redirect on known dev/hosting platforms
+  if (DEV_DOMAIN_SUFFIXES.some((s) => hostname === s.replace(/^\./, "") || hostname.endsWith(s))) {
+    return false;
+  }
+
   if (!hostname.endsWith(`.${APP_DOMAIN}`)) return false;
   const parts = hostname.split(".");
   if (parts.length < 3) return false;
@@ -176,8 +185,8 @@ function TenantRootRedirect() {
   const hostname = window.location.hostname;
 
   if (isTenantSubdomain(hostname)) {
-    // Tenant subdomain → redirect to admin portal
-    window.location.replace("/admin/login");
+    // Tenant subdomain (e.g. sunnycamp.edubee.co) → redirect to camp admin portal
+    window.location.replace(window.location.origin + "/admin/login");
     return null;
   }
   return <Landing />;
