@@ -268,7 +268,11 @@ router.put("/superadmin/tenants/:id", ...guard, async (req, res) => {
         ...(maxUsers     !== undefined && { maxUsers }),
         ...(maxStudents  !== undefined && { maxStudents }),
         ...(trialEndsAt  !== undefined && { trialEndsAt: trialEndsAt ? new Date(trialEndsAt) : null }),
-        ...(features       !== undefined && { features }),
+        // planType 변경 시 features도 자동 갱신 (명시적 features가 없는 경우에만)
+        ...(planType !== undefined && features === undefined && {
+          features: getDefaultFeatures(planType),
+        }),
+        ...(features !== undefined && { features }),
         ...(logoUrl        !== undefined && { logoUrl }),
         ...(faviconUrl     !== undefined && { faviconUrl }),
         ...(primaryColor   !== undefined && { primaryColor }),

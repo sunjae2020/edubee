@@ -10,6 +10,7 @@ import dns from "dns/promises";
 import { isReservedSubdomain } from "../utils/reservedSubdomains.js";
 import { sendInvitationEmail } from "../services/emailService.js";
 import { createCheckoutSession, createPortalSession } from "../services/stripeService.js";
+import { getDefaultFeatures } from "../middleware/featureGuard.js";
 
 const router = Router();
 
@@ -837,7 +838,18 @@ router.get("/theme", async (req, res) => {
       customCss:       org.customCss      ?? null,
       subdomain:       org.subdomain      ?? null,
       planType:        org.planType       ?? "starter",
-      features:        org.features       ?? {},
+      features:        (() => {
+        const planFeatures = getDefaultFeatures(org.planType ?? "starter");
+        const orgFeatures  = (org.features ?? {}) as Record<string, boolean>;
+        // org 커스텀 설정 기반으로 시작
+        const merged: Record<string, boolean> = { ...orgFeatures };
+        // 플랜이 true로 정한 기능은 org 설정으로 비활성화 불가 (플랜 다운그레이드 방지)
+        for (const [key, val] of Object.entries(planFeatures)) {
+          if (val === true) merged[key] = true;
+          else if (merged[key] === undefined) merged[key] = false;
+        }
+        return merged;
+      })(),
     });
   } catch (err) {
     console.error("[GET /settings/theme]", err);
