@@ -31,6 +31,66 @@ async function getOrgForReq(req: Request) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Public: Tenant branding by X-Subdomain header (no auth required)
+// GET /api/settings/tenant-settings
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.get("/tenant-settings", async (req, res) => {
+  try {
+    const subdomain = (req.headers["x-subdomain"] as string | undefined)?.trim().toLowerCase();
+
+    let org = null;
+
+    if (subdomain) {
+      const rows = await db
+        .select()
+        .from(organisations)
+        .where(eq(organisations.subdomain, subdomain))
+        .limit(1);
+      org = rows[0] ?? null;
+    }
+
+    if (!org) {
+      // Fallback: return default Edubee branding
+      return res.json({
+        organisationId: null,
+        companyName:    "Edubee",
+        logoUrl:        null,
+        faviconUrl:     null,
+        primaryColor:   "#F5821F",
+        secondaryColor: "#1C1917",
+        accentColor:    "#FEF0E3",
+        customCss:      null,
+        subdomain:      null,
+        planType:       "starter",
+        planStatus:     "active",
+        trialEndsAt:    null,
+        features:       {},
+      });
+    }
+
+    return res.json({
+      organisationId: org.id,
+      companyName:    org.name,
+      logoUrl:        org.logoUrl   ?? null,
+      faviconUrl:     org.faviconUrl ?? null,
+      primaryColor:   org.primaryColor   ?? "#F5821F",
+      secondaryColor: org.secondaryColor ?? "#1C1917",
+      accentColor:    org.accentColor    ?? "#FEF0E3",
+      customCss:      (org as any).customCss ?? null,
+      subdomain:      org.subdomain ?? null,
+      planType:       org.planType   ?? "starter",
+      planStatus:     org.planStatus ?? "active",
+      trialEndsAt:    org.trialEndsAt ?? null,
+      features:       (org as any).features ?? {},
+    });
+  } catch (err) {
+    console.error("GET /api/settings/tenant-settings", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Company Profile
 // ─────────────────────────────────────────────────────────────────────────────
 

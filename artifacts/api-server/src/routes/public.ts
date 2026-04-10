@@ -15,8 +15,15 @@ import {
   applicationForms,
   leads,
   platformPlans,
+  organisations,
+  users,
 } from "@workspace/db/schema";
 import { eq, and, inArray, sql, desc, isNotNull, asc } from "drizzle-orm";
+import bcrypt from "bcryptjs";
+import { isReservedSubdomain } from "../utils/reservedSubdomains.js";
+import { onboardTenant } from "../services/onboardingService.js";
+import { getDefaultFeatures } from "../middleware/featureGuard.js";
+import { sendCampOnboardWelcomeEmail } from "../services/emailService.js";
 import {
   initKnowledgeBase,
   retrieveContext,
@@ -617,6 +624,139 @@ router.post("/public/lead-inquiry", async (req, res) => {
   } catch (err) {
     console.error("[POST /public/lead-inquiry]", err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── Public: Check subdomain availability ──────────────────────────────────────
+router.get("/public/check-subdomain", async (req, res) => {
+  try {
+    const subdomain = String(req.query.subdomain ?? "").toLowerCase().trim();
+    if (!subdomain) return res.status(400).json({ available: false, reason: "Subdomain is required" });
+    if (!/^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/.test(subdomain))
+      return res.json({ available: false, reason: "Only lowercase letters, numbers and hyphens (3–32 chars)" });
+    if (isReservedSubdomain(subdomain))
+      return res.json({ available: false, reason: "This subdomain is reserved" });
+
+    const exists = await db
+      .select({ id: organisations.id })
+      .from(organisations)
+      .where(eq(organisations.subdomain, subdomain))
+      .limit(1);
+
+    return res.json({ available: exists.length === 0 });
+  } catch (err) {
+    console.error("GET /public/check-subdomain", err);
+    return res.status(500).json({ available: false, reason: "Server error" });
+  }
+});
+
+// ── Public: Camp organisation self-onboarding ─────────────────────────────────
+router.post("/public/onboard", async (req, res) => {
+  try {
+    const {
+      orgName, subdomain,
+      adminFullName, adminEmail, adminPassword,
+      phone, country,
+    } = req.body as Record<string, string>;
+
+    // ── Validation ──────────────────────────────────────────────────────────
+    if (!orgName?.trim()) return res.status(400).json({ error: "Organisation name is required" });
+    if (!subdomain?.trim()) return res.status(400).json({ error: "Subdomain is required" });
+    if (!adminEmail?.trim()) return res.status(400).json({ error: "Admin email is required" });
+    if (!adminPassword || adminPassword.length < 8)
+      return res.status(400).json({ error: "Password must be at least 8 characters" });
+
+    const sub = subdomain.trim().toLowerCase();
+    if (!/^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/.test(sub))
+      return res.status(400).json({ error: "Invalid subdomain format" });
+    if (isReservedSubdomain(sub))
+      return res.status(400).json({ error: "This subdomain is reserved" });
+
+    // ── Check subdomain uniqueness ──────────────────────────────────────────
+    const subExists = await db
+      .select({ id: organisations.id })
+      .from(organisations)
+      .where(eq(organisations.subdomain, sub))
+      .limit(1);
+    if (subExists.length) return res.status(409).json({ error: "Subdomain already taken" });
+
+    // ── Check email uniqueness ──────────────────────────────────────────────
+    const email = adminEmail.trim().toLowerCase();
+    const emailExists = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+    if (emailExists.length) return res.status(409).json({ error: "An account with this email already exists" });
+
+    // ── Create organisation (trial) ─────────────────────────────────────────
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+
+    const [org] = await db
+      .insert(organisations)
+      .values({
+        name:       orgName.trim(),
+        subdomain:  sub,
+        ownerEmail: email,
+        phone:      phone?.trim() || null,
+        country:    country?.trim() || null,
+        planType:   "starter",
+        planStatus: "trial",
+        trialEndsAt,
+        features:   getDefaultFeatures("starter"),
+        status:     "Active",
+      })
+      .returning();
+
+    // ── Seed default data ───────────────────────────────────────────────────
+    try {
+      await onboardTenant(org.id);
+    } catch (seedErr) {
+      await db.update(organisations).set({ status: "Inactive" }).where(eq(organisations.id, org.id));
+      console.error("[ONBOARDING FAILED]", org.id, seedErr);
+      return res.status(500).json({ error: "Onboarding failed, please try again" });
+    }
+
+    // ── Create admin user ───────────────────────────────────────────────────
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
+    const [adminUser] = await db
+      .insert(users)
+      .values({
+        email,
+        passwordHash,
+        fullName:       adminFullName?.trim() || email.split("@")[0],
+        role:           "admin",
+        staffRole:      "admin",
+        organisationId: org.id,
+        status:         "active",
+      })
+      .returning({ id: users.id, email: users.email, fullName: users.fullName });
+
+    // ── Send welcome email ──────────────────────────────────────────────────
+    try {
+      await sendCampOnboardWelcomeEmail({
+        toEmail:   email,
+        adminName: adminUser.fullName,
+        orgName:   org.name,
+        subdomain: sub,
+        loginUrl:  `https://${sub}.edubee.co/login`,
+        trialDays: 14,
+      });
+    } catch (emailErr) {
+      console.warn("[ONBOARD EMAIL FAILED]", emailErr);
+    }
+
+    return res.status(201).json({
+      success:   true,
+      orgId:     org.id,
+      subdomain: sub,
+      loginUrl:  `https://${sub}.edubee.co/login`,
+      message:   `Your camp portal is ready at ${sub}.edubee.co`,
+    });
+  } catch (err) {
+    console.error("POST /public/onboard", err);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

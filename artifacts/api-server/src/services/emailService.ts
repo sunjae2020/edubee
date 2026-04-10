@@ -334,3 +334,66 @@ function buildTenantCreatedHtml(p: {
 </body>
 </html>`;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Camp Onboard Welcome Email (sent when a new camp org signs up)
+// ─────────────────────────────────────────────────────────────
+export async function sendCampOnboardWelcomeEmail(params: {
+  toEmail:   string;
+  adminName: string;
+  orgName:   string;
+  subdomain: string;
+  loginUrl:  string;
+  trialDays: number;
+}): Promise<void> {
+  if (!EMAIL_ENABLED) return;
+  const resend = getResend();
+  if (!resend) return;
+
+  const { toEmail, adminName, orgName, subdomain, loginUrl, trialDays } = params;
+  const campUrl = `https://${subdomain}.edubee.co/camp/`;
+  const logoUrl = `https://edubee.co/edubee-symbol.png`;
+
+  try {
+    await resend.emails.send({
+      from:    FROM_EMAIL,
+      to:      toEmail,
+      subject: `Welcome to Edubee CAMP — Your portal is ready!`,
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Welcome</title></head>
+<body style="margin:0;padding:0;background:#FAFAF9;font-family:Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px;">
+    <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E8E6E2;">
+      <tr><td style="background:#F5821F;padding:32px 48px;">
+        <img src="${logoUrl}" alt="Edubee" width="36" height="36" style="display:block;">
+      </td></tr>
+      <tr><td style="padding:40px 48px;">
+        <h1 style="margin:0 0 8px;font-size:24px;color:#1C1917;">Welcome, ${adminName}!</h1>
+        <p style="margin:0 0 24px;font-size:16px;color:#57534E;">Your <strong>${orgName}</strong> camp portal is live.</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#FEF0E3;border-radius:8px;margin-bottom:24px;">
+          <tr><td style="padding:20px 24px;">
+            <p style="margin:0 0 4px;font-size:12px;color:#A8A29E;text-transform:uppercase;">YOUR PORTAL</p>
+            <p style="margin:0;font-size:18px;font-weight:700;color:#F5821F;">${campUrl}</p>
+          </td></tr>
+        </table>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F3F1;border-radius:8px;margin-bottom:32px;">
+          <tr><td style="padding:20px 24px;">
+            <p style="margin:0 0 4px;font-size:14px;color:#57534E;"><strong>Login email:</strong> ${toEmail}</p>
+            <p style="margin:0;font-size:13px;color:#A8A29E;">Free trial: ${trialDays} days full access</p>
+          </td></tr>
+        </table>
+        <a href="${loginUrl}" style="display:inline-block;background:#F5821F;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:600;">Go to my portal →</a>
+      </td></tr>
+      <tr><td style="background:#F4F3F1;padding:20px 48px;text-align:center;border-top:1px solid #E8E6E2;">
+        <p style="margin:0;font-size:12px;color:#A8A29E;">Powered by Edubee · edubee.co</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`,
+    });
+    console.log('[EMAIL SENT] Camp onboard welcome:', toEmail);
+  } catch (err) {
+    console.error('[EMAIL] Camp onboard welcome failed:', err);
+  }
+}

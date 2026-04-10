@@ -10,8 +10,10 @@ import "@/lib/i18n";
 
 import Landing from "@/pages/landing";
 import ApplyPage from "@/pages/public/ApplyPage";
+import OnboardPage from "@/pages/public/OnboardPage";
 import LeadInquiryPage from "@/pages/public/LeadInquiryPage";
 import PublicFormGateway from "@/pages/public/PublicFormGateway";
+import SuspendedPage from "@/pages/SuspendedPage";
 import Login from "@/pages/login";
 import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -186,6 +188,8 @@ function Router() {
 
         {/* Public form routes */}
         <Route path="/apply" component={ApplyPage} />
+        <Route path="/onboard" component={OnboardPage} />
+        <Route path="/suspended" component={SuspendedPage} />
         <Route path="/inquiry/:slug" component={LeadInquiryPage} />
 
         {/* Admin redirect */}

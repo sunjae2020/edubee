@@ -5,6 +5,8 @@ import { AdminChatWidget } from "./AdminChatWidget";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 import { useDateFormatLoader } from "@/hooks/use-date-format";
+import TrialBanner from "@/components/TrialBanner";
+import { useTenantThemeCtx } from "@/hooks/use-tenant-theme";
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(() =>
@@ -21,6 +23,7 @@ function useMediaQuery(query: string) {
 
 export function MainLayout({ children, title }: { children: React.ReactNode; title?: string }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const theme = useTenantThemeCtx();
   const isMobile = useMediaQuery("(max-width: 767px)");
   const isTablet = useMediaQuery("(max-width: 1023px)");
   useDateFormatLoader();
@@ -61,6 +64,9 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
 
   if (!isAuthenticated) return <Redirect to="/login" />;
 
+  // Redirect to suspended page if account is suspended
+  if (theme.planStatus === "suspended") return <Redirect to="/suspended" />;
+
   const sidebarCollapsed = isMobile ? false : collapsed;
 
   return (
@@ -83,6 +89,7 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
       </div>
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <TrialBanner />
         <Header collapsed={sidebarCollapsed} onToggle={toggleCollapsed} title={title} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8" style={{ background: "var(--e-bg-page)" }}>
           <div className="mx-auto max-w-7xl">
