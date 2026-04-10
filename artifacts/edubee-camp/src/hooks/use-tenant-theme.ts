@@ -36,20 +36,28 @@ const DEFAULT_THEME: TenantTheme = {
   features:       {},
 };
 
+const APP_DOMAIN = "edubee.co";
+
 // System subdomains that should NOT trigger tenant resolution
 const SYSTEM_SUBDOMAINS = new Set([
   "www", "camp", "admin", "crm", "api", "app", "demo",
   "test", "staging", "dev", "mail", "localhost",
 ]);
 
+/**
+ * Returns the tenant subdomain ONLY when the hostname is a true
+ * subdomain of edubee.co (e.g. sunnycamp.edubee.co → "sunnycamp").
+ * Returns null for Replit preview domains like edubee-crm-20260401.replit.app.
+ */
 function detectSubdomain(): string | null {
   if (typeof window === "undefined") return null;
-  const hostname = window.location.hostname;
+  const hostname = window.location.hostname.toLowerCase();
+  if (!hostname.endsWith(`.${APP_DOMAIN}`)) return null;
   const parts = hostname.split(".");
-  if (parts.length >= 3 && !SYSTEM_SUBDOMAINS.has(parts[0])) {
-    return parts[0];
-  }
-  return null;
+  if (parts.length < 3) return null;
+  const sub = parts[0];
+  if (SYSTEM_SUBDOMAINS.has(sub)) return null;
+  return sub;
 }
 
 export function useTenantTheme() {

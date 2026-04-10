@@ -20,7 +20,10 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const ADMIN_URL = import.meta.env.VITE_ADMIN_URL ?? "";
 
 function fetchPrograms(): Promise<PublicProgram[]> {
-  return axios.get(`${BASE}/api/public/packages`).then((r) => r.data);
+  return axios.get(`${BASE}/api/public/packages`).then((r) => {
+    const data = r.data;
+    return Array.isArray(data) ? data : [];
+  });
 }
 
 const STATS = [

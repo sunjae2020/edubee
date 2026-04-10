@@ -157,14 +157,26 @@ function AdminRoute({ children, title }: { children: React.ReactNode; title?: st
   return <MainLayout title={title}>{children}</MainLayout>;
 }
 
+const APP_DOMAIN = "edubee.co";
+const SYSTEM_SUBS = new Set(["www", "camp", "admin", "crm", "api", "app", "demo", "staging", "dev", "mail", "localhost"]);
+
+function isTenantSubdomain(hostname: string): boolean {
+  // Only treat as tenant subdomain when the base domain is edubee.co
+  // e.g. sunnycamp.edubee.co → true
+  // e.g. edubee-crm-20260401.replit.app → false
+  // e.g. localhost → false
+  if (!hostname.endsWith(`.${APP_DOMAIN}`)) return false;
+  const parts = hostname.split(".");
+  if (parts.length < 3) return false;
+  const sub = parts[0].toLowerCase();
+  return !SYSTEM_SUBS.has(sub);
+}
+
 function TenantRootRedirect() {
   const hostname = window.location.hostname;
-  const parts = hostname.split(".");
-  const isSubdomain =
-    parts.length >= 3 && parts[0] !== "www" && parts[0] !== "localhost";
 
-  if (isSubdomain) {
-    // 전체 페이지 이동 — SPA 내부 라우팅이 아닌 edubee-admin SPA(/admin/)로 실제 이동
+  if (isTenantSubdomain(hostname)) {
+    // Tenant subdomain → redirect to admin portal
     window.location.replace("/admin/login");
     return null;
   }
