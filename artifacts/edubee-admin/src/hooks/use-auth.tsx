@@ -42,9 +42,12 @@ axios.interceptors.request.use((config) => {
   const personalOrgId = token ? (parseJwt(token)?.organisationId ?? null) : null;
   const orgId = impersonateOrgId || personalOrgId;
 
+  // theme 엔드포인트는 X-Organisation-Id 없이 호출 — 서브도메인으로만 테넌트 결정
+  const isThemeEndpoint = config.url?.includes("/api/settings/theme");
+
   if (token) config.headers["Authorization"] = `Bearer ${token}`;
   if (viewAsId) config.headers["X-View-As-User-Id"] = viewAsId;
-  if (orgId) config.headers["X-Organisation-Id"] = orgId;
+  if (orgId && !isThemeEndpoint) config.headers["X-Organisation-Id"] = orgId;
   return config;
 });
 
@@ -98,12 +101,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const personalOrgId = currentToken ? (parseJwt(currentToken)?.organisationId ?? null) : null;
       const orgId = impersonateOrgId || personalOrgId;
 
-      if (currentToken || viewAsId || orgId) {
+      // theme 엔드포인트는 X-Organisation-Id 없이 호출 — 서브도메인으로만 테넌트 결정
+      const isThemeEndpoint = input.toString().includes("/api/settings/theme");
+
+      if (currentToken || viewAsId || (orgId && !isThemeEndpoint)) {
         init = init || {};
         const headers = new Headers(init.headers as HeadersInit);
         if (currentToken) headers.set("Authorization", `Bearer ${currentToken}`);
         if (viewAsId) headers.set("X-View-As-User-Id", viewAsId);
-        if (orgId) headers.set("X-Organisation-Id", orgId);
+        if (orgId && !isThemeEndpoint) headers.set("X-Organisation-Id", orgId);
         init.headers = headers;
       }
       const response = await originalFetch(input, init);

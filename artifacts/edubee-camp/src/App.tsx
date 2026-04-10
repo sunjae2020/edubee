@@ -160,7 +160,12 @@ function TenantRootRedirect() {
   const parts = hostname.split(".");
   const isSubdomain =
     parts.length >= 3 && parts[0] !== "www" && parts[0] !== "localhost";
-  if (isSubdomain) return <Redirect to="/admin/login" />;
+
+  if (isSubdomain) {
+    // 전체 페이지 이동 — SPA 내부 라우팅이 아닌 edubee-admin SPA(/admin/)로 실제 이동
+    window.location.replace("/admin/login");
+    return null;
+  }
   return <Landing />;
 }
 
