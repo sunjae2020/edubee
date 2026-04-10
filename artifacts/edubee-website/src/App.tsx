@@ -1,6 +1,6 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
+import { useEffect, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { lazy, Suspense } from "react";
 import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -43,6 +43,14 @@ const queryClient = new QueryClient();
 
 const StudioPage = lazy(() => import("@/pages/StudioPage"));
 
+function WebsiteRedirect() {
+  useEffect(() => {
+    const path = window.location.pathname.replace(/^\/website/, "") || "/";
+    window.location.replace(path + window.location.search + window.location.hash);
+  }, []);
+  return null;
+}
+
 function NotFound() {
   return (
     <div className="min-h-[70vh] flex items-center justify-center bg-neutral-50 px-6">
@@ -77,6 +85,10 @@ function SiteLayout({ children }: { children: React.ReactNode }) {
 function Router() {
   return (
     <Switch>
+      {/* /website/* → / redirect (www.edubee.co custom domain routing workaround) */}
+      <Route path="/website" component={WebsiteRedirect} />
+      <Route path="/website/:rest*" component={WebsiteRedirect} />
+
       {/* Sanity Studio — full screen, no site layout */}
       <Route path="/studio/:rest*">
         <Suspense fallback={

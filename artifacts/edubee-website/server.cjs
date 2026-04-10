@@ -51,6 +51,16 @@ function serveFile(res, filePath) {
 
 const server = http.createServer((req, res) => {
   let urlPath = (req.url || "/").split("?")[0];
+  const queryStr = (req.url || "").includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+
+  // /website/* 접근 시 루트 경로로 영구 리다이렉트
+  // Replit 배포가 www.edubee.co를 /website/ prefix로 라우팅하는 경우 대응
+  if (urlPath === "/website" || urlPath.startsWith("/website/")) {
+    const stripped = urlPath.slice("/website".length) || "/";
+    res.writeHead(301, { Location: stripped + queryStr });
+    res.end();
+    return;
+  }
 
   // BASE 접두사 제거: /admin/assets/... → /assets/...
   if (BASE && urlPath.startsWith(BASE)) {
