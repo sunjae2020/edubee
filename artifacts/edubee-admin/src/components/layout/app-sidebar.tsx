@@ -437,11 +437,15 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
 
   const allGroups  = buildNav(effectiveRole);
   const nav        = allGroups.filter(g => {
+    // 슈퍼어드민은 플랜 제한 없이 모든 메뉴 표시
+    if (isSA) return true;
     if (g.key === "camp"    && !campFeature.enabled)    return false;
     if (g.key === "finance" && !accountingFeat.enabled) return false;
     return true;
   });
   const lockedGroups = allGroups.filter(g => {
+    // 슈퍼어드민은 잠금 표시 없음
+    if (isSA) return false;
     if (g.key === "camp"    && !campFeature.enabled)    return true;
     if (g.key === "finance" && !accountingFeat.enabled) return true;
     return false;
