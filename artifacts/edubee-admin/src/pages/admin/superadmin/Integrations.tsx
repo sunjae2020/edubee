@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
   Mail, HardDrive, Globe, CheckCircle2, XCircle,
-  ExternalLink, Copy, Check, RefreshCw, Loader2, Cable, ImageIcon,
+  ExternalLink, Copy, Check, RefreshCw, Loader2, Cable, ImageIcon, CreditCard,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -85,7 +85,7 @@ export default function Integrations() {
     </div>
   );
 
-  const { resend, storage, cloudinary } = data ?? {};
+  const { resend, stripe, storage, cloudinary } = data ?? {};
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
@@ -144,6 +144,54 @@ export default function Integrations() {
                 Set <code className="font-mono">RESEND_API_KEY</code> and <code className="font-mono">FROM_EMAIL</code> environment variables to enable email sending.
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Stripe */}
+        <div className={card}>
+          <div className="p-5 border-b border-[#E8E6E2]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#F0FDF4] flex items-center justify-center shrink-0">
+                <CreditCard size={18} className="text-green-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-semibold text-[#1C1917]">Stripe</h3>
+                  <StatusBadge connected={stripe?.connected} />
+                  {stripe?.webhookConfigured && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                      <CheckCircle2 size={11} /> Webhook active
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-[#A8A29E] mt-0.5">Payment processing — subscription billing, plan upgrades</p>
+              </div>
+              <a
+                href={stripe?.docsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 flex items-center gap-1 text-xs text-[#A8A29E] hover:text-(--e-orange) transition-colors"
+              >
+                <ExternalLink size={12} /> Dashboard
+              </a>
+            </div>
+          </div>
+          <div className="p-5 space-y-3 bg-[#FAFAF9]">
+            <Field label="Secret Key" value={stripe?.secretKeyMasked ?? ""} masked />
+            <Field label="Webhook Endpoint" value={stripe?.webhookUrl ?? ""} />
+            {!stripe?.connected && (
+              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                Set <code className="font-mono">STRIPE_SECRET_KEY</code> environment variable. Configure the webhook in the Stripe dashboard.
+              </div>
+            )}
+            <div className="pt-1">
+              <a
+                href="/admin/superadmin/stripe-settings"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-(--e-orange) hover:underline"
+              >
+                <CreditCard size={12} /> Manage Stripe plan pricing →
+              </a>
+            </div>
           </div>
         </div>
 

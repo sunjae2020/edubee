@@ -11,12 +11,7 @@ const NAV: NavItem[] = [
   { href: "/superadmin/tenants",     label: "Tenants",      icon: Building2 },
   { href: "/superadmin/crm",         label: "SaaS CRM",     icon: Users2 },
   { href: "/superadmin/plans",       label: "Plans",        icon: CreditCard },
-  {
-    href: "/superadmin/integrations", label: "Integrations", icon: Cable,
-    children: [
-      { href: "/superadmin/stripe-settings", label: "Stripe", icon: Zap },
-    ],
-  },
+  { href: "/superadmin/integrations", label: "Integrations", icon: Cable },
 ];
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
