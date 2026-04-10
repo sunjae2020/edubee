@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
   Mail, CreditCard, HardDrive, Globe, CheckCircle2, XCircle,
-  ExternalLink, Copy, Check, RefreshCw, Loader2, Cable,
+  ExternalLink, Copy, Check, RefreshCw, Loader2, Cable, ImageIcon,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -85,7 +85,7 @@ export default function Integrations() {
     </div>
   );
 
-  const { resend, stripe, storage } = data ?? {};
+  const { resend, stripe, storage, cloudinary } = data ?? {};
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
@@ -228,6 +228,53 @@ export default function Integrations() {
             {!storage?.connected && (
               <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                 Set <code className="font-mono">AWS_ACCESS_KEY_ID</code> (or <code className="font-mono">R2_ACCESS_KEY_ID</code>), <code className="font-mono">AWS_REGION</code>, and <code className="font-mono">S3_BUCKET</code> to enable file uploads.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Cloudinary */}
+        <div className={card}>
+          <div className="p-5 border-b border-[#E8E6E2]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#F0F4FF] flex items-center justify-center shrink-0">
+                <ImageIcon size={18} className="text-indigo-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-semibold text-[#1C1917]">Cloudinary</h3>
+                  <StatusBadge connected={cloudinary?.connected} />
+                  {cloudinary?.hasSecret && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      <CheckCircle2 size={11} /> Secret set
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-[#A8A29E] mt-0.5">
+                  Image & media CDN — logo uploads, profile photos, document thumbnails
+                </p>
+              </div>
+              <a
+                href={cloudinary?.docsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 flex items-center gap-1 text-xs text-[#A8A29E] hover:text-(--e-orange) transition-colors"
+              >
+                <ExternalLink size={12} /> Console
+              </a>
+            </div>
+          </div>
+          <div className="p-5 space-y-3 bg-[#FAFAF9]">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Cloud Name" value={cloudinary?.cloudName ?? ""} />
+              <Field label="API Key" value={cloudinary?.apiKeyMasked ?? ""} masked />
+            </div>
+            {cloudinary?.uploadPreset && (
+              <Field label="Upload Base URL" value={cloudinary.uploadPreset} />
+            )}
+            {!cloudinary?.connected && (
+              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                Set <code className="font-mono">CLOUDINARY_CLOUD_NAME</code>, <code className="font-mono">CLOUDINARY_API_KEY</code>, and <code className="font-mono">CLOUDINARY_API_SECRET</code> environment variables to enable media uploads.
               </div>
             )}
           </div>

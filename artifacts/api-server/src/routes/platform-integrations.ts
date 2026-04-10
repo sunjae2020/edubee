@@ -20,6 +20,9 @@ router.get("/integrations/status", ...guard, async (_req, res) => {
     const s3Region      = process.env.AWS_REGION ?? "";
     const s3Key         = process.env.AWS_ACCESS_KEY_ID ?? process.env.R2_ACCESS_KEY_ID ?? "";
     const appUrl        = process.env.APP_URL ?? "";
+    const cloudName     = process.env.CLOUDINARY_CLOUD_NAME ?? "";
+    const cloudApiKey   = process.env.CLOUDINARY_API_KEY ?? "";
+    const cloudSecret   = process.env.CLOUDINARY_API_SECRET ?? "";
 
     const mask = (v: string) =>
       v.length > 8 ? v.slice(0, 4) + "••••••••" + v.slice(-4) : v ? "••••••••" : "";
@@ -44,6 +47,14 @@ router.get("/integrations/status", ...guard, async (_req, res) => {
         region:      s3Region || null,
         keyMasked:   mask(s3Key),
         docsUrl: "https://developers.cloudflare.com/r2/",
+      },
+      cloudinary: {
+        connected:     cloudName.length > 0 && cloudApiKey.length > 0,
+        cloudName:     cloudName || null,
+        apiKeyMasked:  mask(cloudApiKey),
+        hasSecret:     cloudSecret.length > 0,
+        uploadPreset:  cloudName ? `https://res.cloudinary.com/${cloudName}/image/upload/` : null,
+        docsUrl: "https://cloudinary.com/console",
       },
       appUrl,
     });
