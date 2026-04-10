@@ -87,6 +87,9 @@ export const organisations = pgTable("organisations", {
   // ── New: Feature Flags ─────────────────────────────────────────────────────
   features: jsonb("features").default({}),
 
+  // ── New: Integration Settings (SMTP, Zapier, etc.) ────────────────────────
+  integrations: jsonb("integrations").default({}),
+
   // ── New: Stripe Billing ────────────────────────────────────────────────────
   stripeCustomerId:     varchar("stripe_customer_id",      { length: 255 }),
   stripePriceId:        varchar("stripe_price_id",         { length: 255 }),

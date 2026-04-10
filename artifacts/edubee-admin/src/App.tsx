@@ -89,6 +89,7 @@ import Branding from "@/pages/admin/settings/branding";
 import DomainAccess from "@/pages/admin/settings/domain-access";
 import UsersTeams from "@/pages/admin/settings/users-teams";
 import PlanBilling from "@/pages/admin/settings/plan-billing";
+import TenantIntegrations from "@/pages/admin/settings/integrations";
 // Super Admin
 import SuperAdminLayout from "@/pages/admin/superadmin/SuperAdminLayout";
 import SuperAdminDashboard from "@/pages/admin/superadmin/SuperAdminDashboard";
@@ -98,6 +99,7 @@ import PlatformPlans from "@/pages/admin/superadmin/PlatformPlans";
 import StripeSettings from "@/pages/admin/superadmin/StripeSettings";
 import PlatformCrm from "@/pages/admin/superadmin/PlatformCrm";
 import PlatformCrmDetail from "@/pages/admin/superadmin/PlatformCrmDetail";
+import SuperAdminIntegrations from "@/pages/admin/superadmin/Integrations";
 import SuperAdminGuard from "@/components/guards/SuperAdminGuard";
 import { useTenantTheme, TenantThemeContext } from "@/hooks/use-tenant-theme";
 import Products from "@/pages/admin/products";
@@ -529,6 +531,9 @@ function Router() {
       <Route path="/admin/settings/plan">
         <AdminRoute title="Plan & Billing"><PlanBilling /></AdminRoute>
       </Route>
+      <Route path="/admin/settings/integrations">
+        <AdminRoute title="Integrations"><TenantIntegrations /></AdminRoute>
+      </Route>
 
       {/* ── Super Admin (role=super_admin only) ── */}
       <Route path="/superadmin/tenants/:id">
@@ -549,6 +554,11 @@ function Router() {
       <Route path="/superadmin/stripe-settings">
         <SuperAdminGuard>
           <SuperAdminLayout><StripeSettings /></SuperAdminLayout>
+        </SuperAdminGuard>
+      </Route>
+      <Route path="/superadmin/integrations">
+        <SuperAdminGuard>
+          <SuperAdminLayout><SuperAdminIntegrations /></SuperAdminLayout>
         </SuperAdminGuard>
       </Route>
       <Route path="/superadmin/crm/:id">

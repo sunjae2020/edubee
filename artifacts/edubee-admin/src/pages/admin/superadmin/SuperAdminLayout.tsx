@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { LayoutDashboard, Building2, CreditCard, Zap, Users2, Menu, X } from "lucide-react";
+import { LayoutDashboard, Building2, CreditCard, Zap, Users2, Cable, Menu, X } from "lucide-react";
 import logoImg from "@assets/edubee_logo_200x200_1775194540791.png";
 
 const NAV = [
-  { href: "/superadmin",                label: "Dashboard",     icon: LayoutDashboard, exact: true },
-  { href: "/superadmin/tenants",        label: "Tenants",       icon: Building2 },
-  { href: "/superadmin/crm",            label: "SaaS CRM",      icon: Users2 },
-  { href: "/superadmin/plans",          label: "Plans",         icon: CreditCard },
-  { href: "/superadmin/stripe-settings",label: "Stripe",        icon: Zap },
+  { href: "/superadmin",                  label: "Dashboard",     icon: LayoutDashboard, exact: true },
+  { href: "/superadmin/tenants",          label: "Tenants",       icon: Building2 },
+  { href: "/superadmin/crm",             label: "SaaS CRM",      icon: Users2 },
+  { href: "/superadmin/plans",           label: "Plans",         icon: CreditCard },
+  { href: "/superadmin/stripe-settings", label: "Stripe",        icon: Zap },
+  { href: "/superadmin/integrations",    label: "Integrations",  icon: Cable },
 ];
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
