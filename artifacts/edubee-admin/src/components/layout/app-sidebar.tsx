@@ -285,7 +285,7 @@ function FlyoutItem({ item, Icon, isActive, onClose }: {
   return (
     <Link href={item.href} onClick={onClose}>
       <div
-        className="flex items-center gap-2.5 px-3 h-9 mx-1 rounded-lg text-[13px] cursor-pointer transition-all duration-150 select-none font-medium"
+        className="flex items-center gap-2.5 px-3 h-9 mx-1 rounded-lg text-[12px] cursor-pointer transition-all duration-150 select-none font-medium"
         style={{
           background: isActive ? "var(--e-orange-lt)" : hovered ? "var(--e-orange-lt)" : "transparent",
           color: isActive ? "var(--e-orange)" : hovered ? "var(--e-orange-dk)" : "var(--e-text-2)",
@@ -661,7 +661,7 @@ function SidebarNavItem({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`
-        flex items-center gap-2.5 px-2 h-9 rounded-lg text-[13px] cursor-pointer
+        flex items-center gap-2.5 px-2 h-9 rounded-lg text-[12px] cursor-pointer
         transition-all duration-150 select-none
         ${collapsed ? "justify-center" : "ml-1"}
         ${isActive ? "font-semibold" : "font-medium"}
