@@ -4,13 +4,19 @@ import { useAuth } from "@/hooks/use-auth";
 import { LayoutDashboard, Building2, CreditCard, Zap, Users2, Cable, Menu, X } from "lucide-react";
 import logoImg from "@assets/edubee_logo_200x200_1775194540791.png";
 
-const NAV = [
-  { href: "/superadmin",                  label: "Dashboard",     icon: LayoutDashboard, exact: true },
-  { href: "/superadmin/tenants",          label: "Tenants",       icon: Building2 },
-  { href: "/superadmin/crm",             label: "SaaS CRM",      icon: Users2 },
-  { href: "/superadmin/plans",           label: "Plans",         icon: CreditCard },
-  { href: "/superadmin/stripe-settings", label: "Stripe",        icon: Zap },
-  { href: "/superadmin/integrations",    label: "Integrations",  icon: Cable },
+type NavItem = { href: string; label: string; icon: any; exact?: boolean; children?: { href: string; label: string; icon: any }[] };
+
+const NAV: NavItem[] = [
+  { href: "/superadmin",             label: "Dashboard",    icon: LayoutDashboard, exact: true },
+  { href: "/superadmin/tenants",     label: "Tenants",      icon: Building2 },
+  { href: "/superadmin/crm",         label: "SaaS CRM",     icon: Users2 },
+  { href: "/superadmin/plans",       label: "Plans",        icon: CreditCard },
+  {
+    href: "/superadmin/integrations", label: "Integrations", icon: Cable,
+    children: [
+      { href: "/superadmin/stripe-settings", label: "Stripe", icon: Zap },
+    ],
+  },
 ];
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
@@ -44,22 +50,48 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
         </div>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1">
-        {NAV.map(({ href, label, icon: Icon, exact }) => {
-          const active = isActive(href, exact);
+      <nav className="flex-1 p-3 space-y-0.5">
+        {NAV.map(({ href, label, icon: Icon, exact, children }) => {
+          const active    = isActive(href, exact);
+          const anyChildActive = children?.some(c => isActive(c.href));
           return (
-            <Link key={href} href={href}>
-              <div
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors text-sm font-medium"
-                style={{
-                  background: active ? "var(--e-orange)" : "transparent",
-                  color:      active ? "white"  : "rgba(255,255,255,0.65)",
-                }}
-              >
-                <Icon size={15} strokeWidth={1.8} />
-                {label}
-              </div>
-            </Link>
+            <div key={href}>
+              <Link href={href}>
+                <div
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors text-sm font-medium"
+                  style={{
+                    background: active ? "var(--e-orange)" : "transparent",
+                    color:      active ? "white" : "rgba(255,255,255,0.65)",
+                  }}
+                >
+                  <Icon size={15} strokeWidth={1.8} />
+                  {label}
+                </div>
+              </Link>
+
+              {/* Sub-items — shown when parent is active or a child is active */}
+              {children && (active || anyChildActive) && (
+                <div className="ml-3 mt-0.5 mb-1 pl-3 border-l border-white/15 space-y-0.5">
+                  {children.map(({ href: chHref, label: chLabel, icon: ChIcon }) => {
+                    const chActive = isActive(chHref);
+                    return (
+                      <Link key={chHref} href={chHref}>
+                        <div
+                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-md cursor-pointer transition-colors text-xs font-medium"
+                          style={{
+                            background: chActive ? "rgba(255,255,255,0.12)" : "transparent",
+                            color:      chActive ? "white" : "rgba(255,255,255,0.5)",
+                          }}
+                        >
+                          <ChIcon size={13} strokeWidth={1.8} />
+                          {chLabel}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>
