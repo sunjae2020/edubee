@@ -40,15 +40,21 @@ export function useTenantTheme() {
 
   const loadTheme = useCallback(async () => {
     try {
-      const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
       // ?org=<subdomain> 쿼리 파라미터 지원 (개발 모드 테넌트 미리보기용)
       const urlParams = new URLSearchParams(window.location.search);
       const previewOrg = urlParams.get("org");
+
+      // 항상 루트 /api 경로 사용 — axios 인터셉터가 /admin/api → /api 로 재작성하지만
+      // plain fetch는 인터셉터를 우회하므로 직접 /api 를 사용해야 함.
       const themeUrl = previewOrg
-        ? `${BASE}/api/settings/theme?subdomain=${encodeURIComponent(previewOrg)}`
-        : `${BASE}/api/settings/theme`;
-      // axios 사용 → X-Organisation-Id 헤더가 인터셉터에 의해 자동 첨부됨
-      const { data } = await axios.get<TenantTheme>(themeUrl);
+        ? `/api/settings/theme?subdomain=${encodeURIComponent(previewOrg)}`
+        : `/api/settings/theme`;
+
+      // plain fetch 사용 — axios 인터셉터의 X-Organisation-Id 헤더를 우회해
+      // 테마는 반드시 서브도메인(hostname)으로만 결정됨. JWT org로 오염되지 않음.
+      const res = await fetch(themeUrl);
+      if (!res.ok) throw new Error(`Theme fetch failed: ${res.status}`);
+      const data: TenantTheme = await res.json();
       setTheme(data);
       applyThemeToDom(data);
     } catch (err) {
