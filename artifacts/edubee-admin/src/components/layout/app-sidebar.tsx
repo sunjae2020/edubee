@@ -311,13 +311,20 @@ function CollapsedGroupFlyout({
   group, location, onNavClick,
 }: { group: NavGroup; location: string; onNavClick?: () => void }) {
   const [open, setOpen] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [flyoutTop, setFlyoutTop] = useState(0);
+  const timerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapRef   = useRef<HTMLDivElement>(null);
   const hasActive = group.items.some(
     item => location === item.href || location.startsWith(item.href + "/")
   );
 
   const show = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
+    // position: fixed 로 열기 위해 실제 뷰포트 Y 좌표를 계산
+    if (wrapRef.current) {
+      const rect = wrapRef.current.getBoundingClientRect();
+      setFlyoutTop(rect.top);
+    }
     setOpen(true);
   };
   const hide = () => {
@@ -325,7 +332,7 @@ function CollapsedGroupFlyout({
   };
 
   return (
-    <div className="relative mb-0.5" onMouseEnter={show} onMouseLeave={hide}>
+    <div ref={wrapRef} className="mb-0.5" onMouseEnter={show} onMouseLeave={hide}>
       {/* Collapsed icon row — one icon per group */}
       <div className="flex flex-col items-center gap-0.5 py-1">
         {group.items.map(item => {
@@ -343,11 +350,14 @@ function CollapsedGroupFlyout({
         })}
       </div>
 
-      {/* Flyout panel */}
+      {/* Flyout panel — position: fixed 로 overflow 제약 탈출 */}
       {open && (
         <div
-          className="absolute left-[56px] top-0 z-50 min-w-[190px] rounded-xl py-2"
+          className="z-50 min-w-[190px] rounded-xl py-2"
           style={{
+            position: "fixed",
+            left: 64,
+            top: flyoutTop,
             background: "var(--e-bg-sidebar)",
             border: "1px solid var(--e-border)",
             boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
@@ -479,7 +489,6 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
         width: collapsed ? 64 : 240,
         background: "var(--e-bg-sidebar)",
         borderRight: "1px solid var(--e-border)",
-        overflow: "visible",
       }}
     >
       {/* Logo header */}
@@ -520,7 +529,6 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
       {/* Nav */}
       <nav
         className="flex-1 overflow-y-auto py-3 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-        style={{ overflow: collapsed ? "visible" : undefined }}
       >
         {collapsed ? (
           /* ── Collapsed: flyout per group + locked icons ── */
