@@ -42,7 +42,7 @@ TRUNCATE_SQL=$(psql "$DB_URL" -t -A -c "
   FROM pg_tables
   WHERE schemaname = 'public'
     AND tablename NOT LIKE 'drizzle_%'
-    AND tablename NOT IN ('__drizzle_migrations')
+    AND tablename NOT IN ('__drizzle_migrations', '_seed_meta')
 " 2>/dev/null || true)
 
 if [ -n "$TRUNCATE_SQL" ]; then
@@ -60,6 +60,7 @@ pg_dump "$DB_URL" \
   --no-acl \
   --exclude-table='drizzle_*' \
   --exclude-table='__drizzle_migrations' \
+  --exclude-table='_seed_meta' \
   2>/dev/null >> "$OUTPUT"
 
 # ── 4. FK 재활성화 ────────────────────────────────────────────

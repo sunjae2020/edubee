@@ -16,7 +16,7 @@ run = "pnpm --filter @workspace/api-server run dev"
 PORT = "8080"
 
 [services.production]
-build = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
+build = ["bash", "scripts/build-api-prod.sh"]
 run = ["bash", "scripts/start-api-prod.sh"]
 
 [services.production.env]
