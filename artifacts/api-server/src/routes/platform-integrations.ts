@@ -4,6 +4,8 @@ import { organisations } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { superAdminOnly } from "../middleware/superAdminOnly.js";
+import { Resend } from "resend";
+import Stripe from "stripe";
 
 const router = Router();
 const guard  = [authenticate, superAdminOnly];
@@ -61,6 +63,116 @@ router.get("/integrations/status", ...guard, async (_req, res) => {
   } catch (err) {
     console.error("[GET /superadmin/integrations/status]", err);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ─── POST /api/superadmin/integrations/test/resend ───────────────────────────
+router.post("/integrations/test/resend", ...guard, async (req, res) => {
+  try {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) return res.status(400).json({ ok: false, error: "RESEND_API_KEY is not configured" });
+
+    const toEmail = (req as any).user?.email;
+    if (!toEmail) return res.status(400).json({ ok: false, error: "No authenticated user email found" });
+
+    const fromEmail = process.env.FROM_EMAIL ?? "noreply@edubee.co";
+    const resend    = new Resend(apiKey);
+
+    const { data, error } = await resend.emails.send({
+      from:    fromEmail,
+      to:      toEmail,
+      subject: "✅ Edubee – Resend Connection Test",
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+          <h2 style="color:#F5821F;margin-bottom:8px">Connection test successful</h2>
+          <p style="color:#57534E;font-size:14px">
+            This email confirms that your <strong>Resend</strong> integration is working correctly.
+          </p>
+          <hr style="border:none;border-top:1px solid #E8E6E2;margin:20px 0">
+          <p style="color:#A8A29E;font-size:12px">Sent from Edubee Platform Admin · ${new Date().toUTCString()}</p>
+        </div>`,
+    });
+
+    if (error) return res.status(400).json({ ok: false, error: error.message ?? "Resend API returned an error" });
+    return res.json({ ok: true, messageId: data?.id, to: toEmail });
+  } catch (err: any) {
+    console.error("[TEST /resend]", err);
+    return res.status(500).json({ ok: false, error: err?.message ?? "Unexpected error" });
+  }
+});
+
+// ─── POST /api/superadmin/integrations/test/stripe ───────────────────────────
+router.post("/integrations/test/stripe", ...guard, async (_req, res) => {
+  try {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) return res.status(400).json({ ok: false, error: "STRIPE_SECRET_KEY is not configured" });
+
+    const stripe  = new Stripe(secretKey);
+    const account = await stripe.accounts.retrieve();
+    return res.json({ ok: true, accountId: account.id, email: account.email ?? null, country: account.country ?? null });
+  } catch (err: any) {
+    console.error("[TEST /stripe]", err);
+    return res.status(400).json({ ok: false, error: err?.message ?? "Stripe connection failed" });
+  }
+});
+
+// ─── POST /api/superadmin/integrations/test/cloudinary ───────────────────────
+router.post("/integrations/test/cloudinary", ...guard, async (_req, res) => {
+  try {
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey    = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret)
+      return res.status(400).json({ ok: false, error: "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET are required" });
+
+    const credentials = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
+    const response    = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/ping`, {
+      headers: { Authorization: `Basic ${credentials}` },
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      return res.status(400).json({ ok: false, error: `Cloudinary returned ${response.status}: ${body}` });
+    }
+
+    const body = await response.json() as any;
+    return res.json({ ok: true, status: body.status ?? "ok", cloudName });
+  } catch (err: any) {
+    console.error("[TEST /cloudinary]", err);
+    return res.status(500).json({ ok: false, error: err?.message ?? "Unexpected error" });
+  }
+});
+
+// ─── POST /api/superadmin/integrations/test/storage ──────────────────────────
+router.post("/integrations/test/storage", ...guard, async (_req, res) => {
+  try {
+    const accessKey = process.env.AWS_ACCESS_KEY_ID ?? process.env.R2_ACCESS_KEY_ID;
+    const secretKey = process.env.AWS_SECRET_ACCESS_KEY ?? process.env.R2_SECRET_ACCESS_KEY;
+    const bucket    = process.env.S3_BUCKET ?? process.env.R2_BUCKET;
+    const region    = process.env.AWS_REGION ?? "auto";
+    const endpoint  = process.env.R2_ENDPOINT ?? process.env.S3_ENDPOINT;
+
+    if (!accessKey || !secretKey || !bucket)
+      return res.status(400).json({ ok: false, error: "Storage credentials (access key, secret key, bucket) are not fully configured" });
+
+    // Dynamic import to avoid hard dependency
+    const { S3Client, HeadBucketCommand } = await import("@aws-sdk/client-s3");
+    const client = new S3Client({
+      region,
+      credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
+      ...(endpoint ? { endpoint } : {}),
+    });
+
+    await client.send(new HeadBucketCommand({ Bucket: bucket }));
+    return res.json({ ok: true, bucket, region });
+  } catch (err: any) {
+    console.error("[TEST /storage]", err);
+    if (err?.name === "NotFound" || err?.$metadata?.httpStatusCode === 404)
+      return res.status(404).json({ ok: false, error: `Bucket not found` });
+    if (err?.name === "NoSuchBucket")
+      return res.status(404).json({ ok: false, error: "Bucket does not exist" });
+    return res.status(400).json({ ok: false, error: err?.message ?? "Storage connection failed" });
   }
 });
 
