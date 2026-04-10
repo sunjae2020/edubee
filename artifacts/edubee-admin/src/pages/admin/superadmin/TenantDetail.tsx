@@ -364,6 +364,8 @@ export default function TenantDetail() {
       toast({ title: "Tenant updated" });
       qc.invalidateQueries({ queryKey: ["tenant", id] });
       qc.invalidateQueries({ queryKey: ["superadmin-tenants"] });
+      // planType 변경 시 테마(features) 재로드 이벤트 발행
+      window.dispatchEvent(new CustomEvent("edubee:plan-changed"));
       setForm(null);
       setDirty(false);
     },

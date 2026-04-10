@@ -178,6 +178,7 @@ export default function TenantList() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["superadmin-tenants"] });
       toast({ title: "Plan updated" });
+      window.dispatchEvent(new CustomEvent("edubee:plan-changed"));
     },
   });
 

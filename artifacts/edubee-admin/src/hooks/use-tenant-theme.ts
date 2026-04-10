@@ -67,9 +67,23 @@ export function useTenantTheme() {
 
   useEffect(() => {
     loadTheme();
+
     // 임프로소네이션 변경 시 테마 재로드
     window.addEventListener("edubee:impersonation-changed", loadTheme);
-    return () => window.removeEventListener("edubee:impersonation-changed", loadTheme);
+    // 플랜 변경 시 테마 재로드 (슈퍼어드민에서 planType 업데이트 후)
+    window.addEventListener("edubee:plan-changed", loadTheme);
+
+    // 탭 포커스 복귀 시 테마 재로드 (플랜 변경 후 로그인 상태 그대로 반영)
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") loadTheme();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("edubee:impersonation-changed", loadTheme);
+      window.removeEventListener("edubee:plan-changed", loadTheme);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [loadTheme]);
 
   return { theme, isLoading };
