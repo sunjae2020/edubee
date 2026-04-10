@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Mail, HardDrive, Globe, CheckCircle2, XCircle,
   ExternalLink, Copy, Check, RefreshCw, Loader2,
