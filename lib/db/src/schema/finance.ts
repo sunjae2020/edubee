@@ -48,6 +48,8 @@ export const banking = pgTable("banking", {
   swiftCode: varchar("swift_code", { length: 20 }),
   countryCode: varchar("country_code", { length: 10 }),
   defaultCurrency: varchar("default_currency", { length: 10 }),
+  accountEntity: varchar("account_entity", { length: 255 }),
+  bankAddress: text("bank_address"),
   isPrimary: boolean("is_primary").default(false),
   status: varchar("status", { length: 20 }).default("active"),
   notes: text("notes"),

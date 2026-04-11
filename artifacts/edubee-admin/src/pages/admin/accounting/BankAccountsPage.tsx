@@ -33,12 +33,14 @@ interface BankAccount {
   id: string;
   organisationId: string | null;
   accountName: string | null;
+  accountEntity: string | null;
   bankName: string | null;
   accountNumber: string | null;
   accountHolder: string | null;
   bsb: string | null;
   bankCode: string | null;
   swiftCode: string | null;
+  bankAddress: string | null;
   countryCode: string | null;
   defaultCurrency: string | null;
   isPrimary: boolean;
@@ -50,12 +52,14 @@ interface BankAccount {
 
 const EMPTY_FORM: Partial<BankAccount> = {
   accountName: "",
+  accountEntity: "",
   bankName: "",
   accountNumber: "",
   accountHolder: "",
   bsb: "",
   bankCode: "",
   swiftCode: "",
+  bankAddress: "",
   countryCode: "AU",
   defaultCurrency: "AUD",
   isPrimary: false,
@@ -98,11 +102,30 @@ function AccountForm({
             className="text-sm"
           />
         </Field>
+        <Field label="Account (Entity / Agency)">
+          <Input
+            value={form.accountEntity ?? ""}
+            onChange={e => set("accountEntity", e.target.value)}
+            placeholder="e.g. Time Study, RED Uhak"
+            className="text-sm"
+          />
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
         <Field label="Bank Name" required>
           <Input
             value={form.bankName ?? ""}
             onChange={e => set("bankName", e.target.value)}
             placeholder="e.g. ANZ, NAB, CBA"
+            className="text-sm"
+          />
+        </Field>
+        <Field label="Bank Code / Initial">
+          <Input
+            value={form.bankCode ?? ""}
+            onChange={e => set("bankCode", e.target.value)}
+            placeholder="e.g. TS, RE, SJ"
             className="text-sm"
           />
         </Field>
@@ -127,7 +150,7 @@ function AccountForm({
         </Field>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Field label="BSB">
           <Input
             value={form.bsb ?? ""}
@@ -144,15 +167,17 @@ function AccountForm({
             className="text-sm"
           />
         </Field>
-        <Field label="Bank Code">
-          <Input
-            value={form.bankCode ?? ""}
-            onChange={e => set("bankCode", e.target.value)}
-            placeholder="Internal code"
-            className="text-sm"
-          />
-        </Field>
       </div>
+
+      <Field label="Bank Address">
+        <textarea
+          value={form.bankAddress ?? ""}
+          onChange={e => set("bankAddress", e.target.value)}
+          rows={2}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+          placeholder="Bank branch address (optional)"
+        />
+      </Field>
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Country">
@@ -322,6 +347,10 @@ export default function BankAccountsPage() {
                 className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
                 Account Name
               </SortableTh>
+              <SortableTh col="accountEntity" sortBy={sortBy} sortDir={sortDir} onSort={onSort}
+                className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
+                Entity
+              </SortableTh>
               <SortableTh col="bankName" sortBy={sortBy} sortDir={sortDir} onSort={onSort}
                 className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
                 Bank
@@ -351,13 +380,13 @@ export default function BankAccountsPage() {
           <tbody className="divide-y divide-stone-100">
             {isLoading ? (
               <tr>
-                <td colSpan={9} className="text-center py-16 text-stone-400 text-sm">
+                <td colSpan={10} className="text-center py-16 text-stone-400 text-sm">
                   Loading…
                 </td>
               </tr>
             ) : sorted.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-16">
+                <td colSpan={10} className="text-center py-16">
                   <div className="flex flex-col items-center gap-3 text-stone-400">
                     <Landmark size={36} strokeWidth={1.2} />
                     <p className="text-sm font-medium">No bank accounts registered</p>
@@ -392,6 +421,11 @@ export default function BankAccountsPage() {
                         {account.notes}
                       </p>
                     )}
+                  </td>
+
+                  {/* Entity */}
+                  <td className="px-4 py-3 text-stone-600 text-xs">
+                    {account.accountEntity ?? <span className="text-stone-300">—</span>}
                   </td>
 
                   {/* Bank */}

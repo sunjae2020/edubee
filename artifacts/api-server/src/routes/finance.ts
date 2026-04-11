@@ -597,6 +597,7 @@ router.post("/bank-accounts", authenticate, requireRole(["admin", "superadmin"])
     const {
       organisationId, accountName, bankName, accountNumber, accountHolder,
       bsb, bankCode, swiftCode, countryCode, defaultCurrency,
+      accountEntity, bankAddress,
       isPrimary, status, notes,
     } = req.body;
 
@@ -620,6 +621,8 @@ router.post("/bank-accounts", authenticate, requireRole(["admin", "superadmin"])
       swiftCode: swiftCode ?? null,
       countryCode: countryCode ?? "AU",
       defaultCurrency: defaultCurrency ?? "AUD",
+      accountEntity: accountEntity ?? null,
+      bankAddress: bankAddress ?? null,
       isPrimary: isPrimary ?? false,
       status: status ?? "active",
       notes: notes ?? null,
@@ -637,6 +640,7 @@ router.patch("/bank-accounts/:id", authenticate, requireRole(["admin", "superadm
     const {
       accountName, bankName, accountNumber, accountHolder,
       bsb, bankCode, swiftCode, countryCode, defaultCurrency,
+      accountEntity, bankAddress,
       isPrimary, status, notes,
     } = req.body;
 
@@ -655,6 +659,8 @@ router.patch("/bank-accounts/:id", authenticate, requireRole(["admin", "superadm
     if (swiftCode !== undefined)       updates.swiftCode      = swiftCode;
     if (countryCode !== undefined)     updates.countryCode    = countryCode;
     if (defaultCurrency !== undefined) updates.defaultCurrency = defaultCurrency;
+    if (accountEntity !== undefined)   updates.accountEntity  = accountEntity;
+    if (bankAddress !== undefined)     updates.bankAddress    = bankAddress;
     if (isPrimary !== undefined)       updates.isPrimary      = isPrimary;
     if (status !== undefined)          updates.status         = status;
     if (notes !== undefined)           updates.notes          = notes;
