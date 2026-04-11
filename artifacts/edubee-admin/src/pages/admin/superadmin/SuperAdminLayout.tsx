@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { LayoutDashboard, Building2, CreditCard, Zap, Users2, Cable, Menu, X } from "lucide-react";
+import { LayoutDashboard, Building2, CreditCard, Users2, Cable, Menu, X, ArrowLeft } from "lucide-react";
 import logoImg from "@assets/edubee_logo_200x200_1775194540791.png";
 
 type NavItem = { href: string; label: string; icon: any; exact?: boolean; children?: { href: string; label: string; icon: any }[] };
@@ -91,13 +91,14 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
         })}
       </nav>
 
-      <div className="p-3 border-t border-white/10">
+      <div className="p-3 border-t border-white/10 space-y-2">
         <Link href="/admin/dashboard">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-white/10 transition-colors">
-            <span className="text-xs text-white/50">← Back to CRM</span>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer bg-white/10 hover:bg-white/20 transition-colors border border-white/20">
+            <ArrowLeft size={14} className="text-white/80 shrink-0" />
+            <span className="text-xs font-medium text-white/90">Back to Edubee CRM</span>
           </div>
         </Link>
-        <div className="px-3 pt-1">
+        <div className="px-3">
           <p className="text-xs text-white/40 truncate">{user?.email ?? ""}</p>
         </div>
       </div>
@@ -129,6 +130,13 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           <Menu size={18} />
         </button>
         <span className="flex-1 text-center">⚠️ &nbsp;SUPER ADMIN MODE — Accessing all tenant data</span>
+        {/* CRM 복귀 버튼 */}
+        <Link href="/admin/dashboard">
+          <span className="hidden md:flex items-center gap-1 text-[11px] font-semibold bg-white/20 hover:bg-white/30 transition-colors px-2.5 py-1 rounded-md cursor-pointer">
+            <ArrowLeft size={12} />
+            CRM
+          </span>
+        </Link>
         {/* 모바일에서 여백 균형용 빈 공간 */}
         <span className="md:hidden w-7" />
       </div>
