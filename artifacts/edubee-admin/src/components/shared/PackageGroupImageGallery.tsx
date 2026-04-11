@@ -1,7 +1,7 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Star, Trash2, ImagePlus, Loader2, Upload } from "lucide-react";
+import { Star, Trash2, ImagePlus, Loader2, Upload, X, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -51,6 +51,93 @@ function resolveUrl(url: string): string {
   return url;
 }
 
+interface LightboxProps {
+  images: GalleryImage[];
+  index: number;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onGoTo: (i: number) => void;
+}
+
+function Lightbox({ images, index, onClose, onPrev, onNext, onGoTo }: LightboxProps) {
+  const img = images[index];
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") onPrev();
+      if (e.key === "ArrowRight") onNext();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose, onPrev, onNext]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[500] bg-black/90 flex items-center justify-center"
+      onClick={onClose}
+    >
+      {/* Close */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+      >
+        <X className="w-5 h-5" />
+      </button>
+
+      {/* Counter */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/70 text-sm font-medium px-3 py-1 rounded-full bg-black/40">
+        {index + 1} / {images.length}
+        {img.isPrimary && <span className="ml-2 text-amber-400 text-[11px] font-semibold">★ Main</span>}
+      </div>
+
+      {/* Prev */}
+      {images.length > 1 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onPrev(); }}
+          className="absolute left-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Image */}
+      <img
+        src={resolveUrl(img.imageUrl)}
+        alt="Preview"
+        className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+
+      {/* Next */}
+      {images.length > 1 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onNext(); }}
+          className="absolute right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Thumbnail strip */}
+      {images.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          {images.map((im, i) => (
+            <button
+              key={im.id}
+              onClick={(e) => { e.stopPropagation(); onGoTo(i); }}
+              className={`w-12 h-8 rounded overflow-hidden border-2 transition-all ${i === index ? "border-white scale-110" : "border-white/30 opacity-60 hover:opacity-90"}`}
+            >
+              <img src={resolveUrl(im.imageUrl)} alt="" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Props {
   packageGroupId: string;
   canEdit: boolean;
@@ -63,6 +150,7 @@ export function PackageGroupImageGallery({ packageGroupId, canEdit }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadQueue, setUploadQueue] = useState<UploadSlot[]>([]);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const { data: images = [], isLoading } = useQuery<GalleryImage[]>({
     queryKey: ["pkg-group-images", packageGroupId],
@@ -158,10 +246,27 @@ export function PackageGroupImageGallery({ packageGroupId, canEdit }: Props) {
 
   const activeUploads = uploadQueue.filter(s => s.status === "uploading" || s.status === "pending");
 
+  const openPreview = (index: number) => setPreviewIndex(index);
+  const closePreview = () => setPreviewIndex(null);
+  const prevImage = () => setPreviewIndex(i => i !== null ? (i - 1 + images.length) % images.length : null);
+  const nextImage = () => setPreviewIndex(i => i !== null ? (i + 1) % images.length : null);
+
   return (
     <div className="space-y-4">
 
-      {/* Drop Zone — only when canEdit and slots available */}
+      {/* Lightbox */}
+      {previewIndex !== null && images.length > 0 && (
+        <Lightbox
+          images={images}
+          index={previewIndex}
+          onClose={closePreview}
+          onPrev={prevImage}
+          onNext={nextImage}
+          onGoTo={setPreviewIndex}
+        />
+      )}
+
+      {/* Drop Zone */}
       {canEdit && slotsAvailable > 0 && (
         <div
           ref={dropRef}
@@ -207,8 +312,12 @@ export function PackageGroupImageGallery({ packageGroupId, canEdit }: Props) {
       ) : (
         <div className="grid grid-cols-5 gap-2">
           {/* Uploaded images */}
-          {images.map((img) => (
-            <div key={img.id} className="relative group aspect-[16/9] rounded-lg overflow-hidden border border-border bg-muted">
+          {images.map((img, idx) => (
+            <div
+              key={img.id}
+              className="relative group aspect-[16/9] rounded-lg overflow-hidden border border-border bg-muted cursor-zoom-in"
+              onClick={() => openPreview(idx)}
+            >
               <img
                 src={resolveUrl(img.imageUrl)}
                 alt="Program image"
@@ -224,28 +333,35 @@ export function PackageGroupImageGallery({ packageGroupId, canEdit }: Props) {
               )}
 
               {/* Hover overlay */}
-              {canEdit && (
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-end justify-center pb-2 gap-1.5 opacity-0 group-hover:opacity-100">
-                  {!img.isPrimary && (
-                    <button
-                      onClick={() => setPrimaryMut.mutate(img.id)}
-                      disabled={setPrimaryMut.isPending}
-                      className="flex items-center gap-0.5 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-semibold px-2 py-1 rounded-md shadow transition-colors"
-                      title="Set as main image"
-                    >
-                      <Star className="w-2.5 h-2.5" /> Main
-                    </button>
-                  )}
-                  <button
-                    onClick={() => deleteMut.mutate(img.id)}
-                    disabled={deleteMut.isPending}
-                    className="flex items-center gap-0.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-semibold px-2 py-1 rounded-md shadow transition-colors"
-                    title="Delete image"
-                  >
-                    <Trash2 className="w-2.5 h-2.5" />
-                  </button>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-all flex items-end justify-center pb-2 gap-1.5 opacity-0 group-hover:opacity-100">
+                {/* Zoom hint (top-right) */}
+                <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                  <ZoomIn className="w-3 h-3 text-white" />
                 </div>
-              )}
+
+                {canEdit && (
+                  <>
+                    {!img.isPrimary && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setPrimaryMut.mutate(img.id); }}
+                        disabled={setPrimaryMut.isPending}
+                        className="flex items-center gap-0.5 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-semibold px-2 py-1 rounded-md shadow transition-colors"
+                        title="Set as main image"
+                      >
+                        <Star className="w-2.5 h-2.5" /> Main
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteMut.mutate(img.id); }}
+                      disabled={deleteMut.isPending}
+                      className="flex items-center gap-0.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-semibold px-2 py-1 rounded-md shadow transition-colors"
+                      title="Delete image"
+                    >
+                      <Trash2 className="w-2.5 h-2.5" />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           ))}
 
@@ -279,7 +395,7 @@ export function PackageGroupImageGallery({ packageGroupId, canEdit }: Props) {
         {images.length > 0 && (
           <span className="text-(--e-orange) font-medium flex items-center gap-0.5">
             <Star className="w-3 h-3 fill-(--e-orange)" />
-            Hover an image → set as main or delete
+            Click to preview · Hover to manage
           </span>
         )}
       </div>
