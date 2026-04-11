@@ -41,6 +41,13 @@ interface PackageGroup {
   typeName?: string | null;
   createdAt: string;
   updatedAt?: string;
+  // New fields
+  year?: number | null;
+  month?: string | null;
+  instituteName?: string | null;
+  packageCode?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 interface Pkg {
@@ -347,7 +354,11 @@ export default function PackageGroups() {
     const matchSearch = !search ||
       (g.nameEn ?? "").toLowerCase().includes(search.toLowerCase()) ||
       (g.countryCode ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      (g.location ?? "").toLowerCase().includes(search.toLowerCase());
+      (g.location ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (g.instituteName ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (g.packageCode ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (g.month ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      String(g.year ?? "").includes(search);
     const matchStatus = statusFilter === "all" || g.status === statusFilter;
     const matchType = typeTab === "all" || g.typeId === typeTab;
     return matchSearch && matchStatus && matchType;
@@ -456,13 +467,33 @@ export default function PackageGroups() {
                   )}
 
                   <div className="space-y-1">
+                    {(g.year || g.month) && (
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted font-medium text-muted-foreground">
+                          📅 {[g.year, g.month].filter(Boolean).join(" ")}
+                        </span>
+                        {g.packageCode && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px]">
+                            {g.packageCode}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {g.instituteName && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="text-[10px]">🏫</span>
+                        <span className="truncate">{g.instituteName}</span>
+                      </div>
+                    )}
                     {g.countryCode && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Globe className="w-3.5 h-3.5" />
                         <span>{country ? `${country.flag} ${country.name}` : g.countryCode}</span>
+                        {g.location && <span className="text-muted-foreground/50">·</span>}
+                        {g.location && <span>{g.location}</span>}
                       </div>
                     )}
-                    {g.location && (
+                    {!g.countryCode && g.location && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <MapPin className="w-3.5 h-3.5" />
                         <span>{g.location}</span>
