@@ -537,12 +537,24 @@ router.get("/superadmin/tenants/:slug/backup", ...guard, async (req, res) => {
     res.setHeader("Content-Type", "application/sql");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 
+    // DATABASE_URL을 파싱하여 pg_dump 환경변수로 전달 (패스워드를 커맨드라인에 노출하지 않음)
+    const parsedUrl = new URL(dbUrl);
+    const pgEnv = {
+      ...process.env,
+      PGHOST:     parsedUrl.hostname,
+      PGPORT:     parsedUrl.port || "5432",
+      PGUSER:     parsedUrl.username,
+      PGPASSWORD: decodeURIComponent(parsedUrl.password),
+      PGDATABASE: parsedUrl.pathname.replace(/^\//, ""),
+    };
+
     // pg_dump: --schema=slug 로 해당 테넌트 schema만 덤프
     // --no-owner: 소유자 정보 제외 (이식성)
     // --no-privileges: 권한 정보 제외
-    const cmd = `pg_dump --schema="${slug}" --no-owner --no-privileges --dbname="${dbUrl}"`;
+    const cmd = `pg_dump --schema="${slug}" --no-owner --no-privileges`;
 
     const { stdout, stderr } = await execAsync(cmd, {
+      env: pgEnv,
       maxBuffer: 500 * 1024 * 1024, // 500MB
       timeout: 120_000,              // 2분
     });

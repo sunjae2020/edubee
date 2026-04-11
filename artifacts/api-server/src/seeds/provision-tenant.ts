@@ -70,23 +70,29 @@ export async function migrateTenantDataFromPublic(
   tenantSlug: string,
   orgId: string
 ): Promise<{ table: string; rowsMigrated: number }[]> {
-  const client = await pool.connect();
   const results: { table: string; rowsMigrated: number }[] = [];
 
-  // organisation_id 컬럼이 있는 테이블 목록 조회
-  const orgIdTables = await client.query<{ table_name: string }>(
-    `SELECT DISTINCT table_name FROM information_schema.columns
-     WHERE table_schema = 'public' AND column_name = 'organisation_id'
-     AND table_name = ANY($1::text[])`,
-    [TENANT_TABLES as unknown as string[]]
-  );
+  // 1. organisation_id 컬럼이 있는 테이블 목록 조회 (별도 client)
+  const infoClient = await pool.connect();
+  let orgIdTableNames: string[] = [];
+  try {
+    const orgIdTables = await infoClient.query<{ table_name: string }>(
+      `SELECT DISTINCT table_name FROM information_schema.columns
+       WHERE table_schema = 'public' AND column_name = 'organisation_id'
+       AND table_name = ANY($1::text[])`,
+      [TENANT_TABLES as unknown as string[]]
+    );
+    orgIdTableNames = orgIdTables.rows.map(r => r.table_name);
+  } finally {
+    infoClient.release();
+  }
 
+  // 2. 데이터 이전 (별도 transaction client)
+  const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    for (const row of orgIdTables.rows) {
-      const tbl = row.table_name;
-
+    for (const tbl of orgIdTableNames) {
       // tenant schema에 해당 테이블이 존재하는지 확인
       const tblCheck = await client.query(
         `SELECT 1 FROM information_schema.tables
