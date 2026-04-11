@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts } from "@workspace/db/schema";
 import { eq, and, count, asc, SQL, ilike, desc, sql, or } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -97,6 +98,11 @@ router.post("/package-groups", authenticate, requireRole(...ADMIN_ROLES, "camp_c
 
 router.get("/package-groups/:id", authenticate, async (req, res) => {
   try {
+    const acInstit  = alias(accounts, "acInstit");
+    const acAccom   = alias(accounts, "acAccom");
+    const acTour    = alias(accounts, "acTour");
+    const acPickup  = alias(accounts, "acPickup");
+
     const [row] = await db
       .select({
         group: packageGroups,
@@ -107,10 +113,18 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
         coordinatorCompany: users.companyName,
         coordinatorCountry: users.countryOfOps,
         typeName: productTypes.name,
+        instituteName2: acInstit.name,
+        accommodationName: acAccom.name,
+        tourCompanyName: acTour.name,
+        pickupDriverName: acPickup.name,
       })
       .from(packageGroups)
       .leftJoin(users, eq(packageGroups.campProviderId, users.id))
       .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
+      .leftJoin(acInstit,  eq(packageGroups.instituteId,      acInstit.id))
+      .leftJoin(acAccom,   eq(packageGroups.accommodationId,  acAccom.id))
+      .leftJoin(acTour,    eq(packageGroups.tourCompanyId,    acTour.id))
+      .leftJoin(acPickup,  eq(packageGroups.pickupDriverId,   acPickup.id))
       .where(eq(packageGroups.id, req.params.id))
       .limit(1);
     if (!row) return res.status(404).json({ error: "Not Found" });
@@ -125,8 +139,13 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
         companyName: row.coordinatorCompany,
         countryOfOps: row.coordinatorCountry,
       } : null,
+      instituteAccountName:     row.instituteName2 ?? null,
+      accommodationAccountName: row.accommodationName ?? null,
+      tourCompanyAccountName:   row.tourCompanyName ?? null,
+      pickupDriverAccountName:  row.pickupDriverName ?? null,
     });
   } catch (err) {
+    console.error("[GET /package-groups/:id]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -151,7 +170,7 @@ router.put("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES, "cam
     // Strip computed/unknown fields that aren't in the schema
     if (body.minAge !== undefined) (payload as any).minAge = toIntOrNull(body.minAge);
     if (body.maxAge !== undefined) (payload as any).maxAge = toIntOrNull(body.maxAge);
-    const allowed = ["campProviderId","nameEn","nameKo","nameJa","nameTh","descriptionEn","descriptionKo","descriptionJa","descriptionTh","inclusionsEn","inclusionsKo","exclusionsEn","exclusionsKo","durationText","thumbnailUrl","location","countryCode","status","sortOrder","landingOrder","minAge","maxAge","startDate","endDate","typeId","year","month","instituteName","accommodation","tourCompany","pickupDriver","requiredDocuments","packagePptUrl","googleDriveUrl","packageCode","localManual","departureOt","updatedAt"] as const;
+    const allowed = ["campProviderId","nameEn","nameKo","nameJa","nameTh","descriptionEn","descriptionKo","descriptionJa","descriptionTh","inclusionsEn","inclusionsKo","exclusionsEn","exclusionsKo","durationText","thumbnailUrl","location","countryCode","status","sortOrder","landingOrder","minAge","maxAge","startDate","endDate","typeId","year","month","instituteName","instituteId","accommodation","accommodationId","tourCompany","tourCompanyId","pickupDriver","pickupDriverId","requiredDocuments","packagePptUrl","googleDriveUrl","packageCode","localManual","departureOt","updatedAt"] as const;
     const cleanPayload = Object.fromEntries(allowed.filter(k => (payload as any)[k] !== undefined).map(k => [k, (payload as any)[k]]));
     cleanPayload.updatedAt = new Date();
     const [group] = await db.update(packageGroups).set(cleanPayload as any)

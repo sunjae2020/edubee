@@ -261,6 +261,14 @@ export default function PackageGroupDetail() {
   });
   const coordinators: any[] = coordinatorsData?.data ?? [];
 
+  // Accounts lookup — for partner account linking
+  const { data: accountsLookupData } = useQuery({
+    queryKey: ["accounts-lookup"],
+    queryFn: () => axios.get(`${BASE}/api/packages/products-lookup/accounts`).then(r => r.data),
+    staleTime: 120_000,
+  });
+  const accountsList: any[] = Array.isArray(accountsLookupData) ? accountsLookupData : [];
+
   // Product types — always fetched for display, cached
   // NOTE: /api/product-types returns a plain array (not { data: [...] })
   const { data: productTypesData } = useQuery({
@@ -418,9 +426,40 @@ export default function PackageGroupDetail() {
                 editValue={getValue("packageCode")} onEdit={v => setField("packageCode", v)}
                 placeholder="e.g. MEL26JulSC" />
 
-              <EditableField label="Institute" isEditing={isEditing} value={group.instituteName}
-                editValue={getValue("instituteName")} onEdit={v => setField("instituteName", v)}
-                placeholder="e.g. Oakleigh Grammar" />
+              {/* Institute — account link + text override */}
+              <DetailRow label="Institute">
+                {isEditing ? (
+                  <div className="space-y-1">
+                    <Select
+                      value={getValue("instituteId") ?? "none"}
+                      onValueChange={v => setField("instituteId", v === "none" ? null : v)}
+                    >
+                      <SelectTrigger className="h-8 text-sm border-(--e-orange)">
+                        <SelectValue placeholder="— Link account —" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60 overflow-y-auto">
+                        <SelectItem value="none">— No account linked —</SelectItem>
+                        {accountsList.map((a: any) => (
+                          <SelectItem key={a.id} value={a.id}>{a.name}{a.city ? ` · ${a.city}` : ""}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input value={getValue("instituteName") ?? ""} onChange={e => setField("instituteName", e.target.value)}
+                      placeholder="Or enter name manually"
+                      className="h-8 text-sm border-dashed border-muted-foreground/40 focus-visible:ring-(--e-orange)" />
+                  </div>
+                ) : (
+                  <div className="space-y-0.5">
+                    {group.instituteAccountName && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+                        <Building2 className="w-3 h-3" /> {group.instituteAccountName}
+                      </span>
+                    )}
+                    {group.instituteName && <span className="text-sm block">{group.instituteName}</span>}
+                    {!group.instituteAccountName && !group.instituteName && <span className="text-sm text-muted-foreground/60">—</span>}
+                  </div>
+                )}
+              </DetailRow>
 
               {/* Type — Product Type dropdown */}
               <DetailRow label="Type">
@@ -648,35 +687,110 @@ export default function PackageGroupDetail() {
 
             {/* Program Partners */}
             <DetailSection title="Program Partners" className="lg:col-span-2">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Accommodation</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Accommodation */}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">Accommodation</p>
                   {isEditing ? (
-                    <Input value={getValue("accommodation") ?? ""} onChange={e => setField("accommodation", e.target.value)}
-                      placeholder="e.g. Brady Hotel Flinders"
-                      className="h-8 text-sm border-(--e-orange) focus-visible:ring-(--e-orange)" />
+                    <>
+                      <Select
+                        value={getValue("accommodationId") ?? "none"}
+                        onValueChange={v => setField("accommodationId", v === "none" ? null : v)}
+                      >
+                        <SelectTrigger className="h-8 text-sm border-(--e-orange)">
+                          <SelectValue placeholder="— Link account —" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          <SelectItem value="none">— No account linked —</SelectItem>
+                          {accountsList.map((a: any) => (
+                            <SelectItem key={a.id} value={a.id}>{a.name}{a.city ? ` · ${a.city}` : ""}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input value={getValue("accommodation") ?? ""} onChange={e => setField("accommodation", e.target.value)}
+                        placeholder="Or enter name manually"
+                        className="h-8 text-sm border-dashed border-muted-foreground/40 focus-visible:ring-(--e-orange)" />
+                    </>
                   ) : (
-                    <span className="text-sm">{group.accommodation || <span className="text-muted-foreground/60">—</span>}</span>
+                    <div className="space-y-0.5">
+                      {group.accommodationAccountName && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+                          <Building2 className="w-3 h-3" /> {group.accommodationAccountName}
+                        </span>
+                      )}
+                      {group.accommodation && <span className="text-sm block">{group.accommodation}</span>}
+                      {!group.accommodationAccountName && !group.accommodation && <span className="text-sm text-muted-foreground/60">—</span>}
+                    </div>
                   )}
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Tour Company</p>
+                {/* Tour Company */}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">Tour Company</p>
                   {isEditing ? (
-                    <Input value={getValue("tourCompany") ?? ""} onChange={e => setField("tourCompany", e.target.value)}
-                      placeholder="e.g. Thanks Tour"
-                      className="h-8 text-sm border-(--e-orange) focus-visible:ring-(--e-orange)" />
+                    <>
+                      <Select
+                        value={getValue("tourCompanyId") ?? "none"}
+                        onValueChange={v => setField("tourCompanyId", v === "none" ? null : v)}
+                      >
+                        <SelectTrigger className="h-8 text-sm border-(--e-orange)">
+                          <SelectValue placeholder="— Link account —" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          <SelectItem value="none">— No account linked —</SelectItem>
+                          {accountsList.map((a: any) => (
+                            <SelectItem key={a.id} value={a.id}>{a.name}{a.city ? ` · ${a.city}` : ""}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input value={getValue("tourCompany") ?? ""} onChange={e => setField("tourCompany", e.target.value)}
+                        placeholder="Or enter name manually"
+                        className="h-8 text-sm border-dashed border-muted-foreground/40 focus-visible:ring-(--e-orange)" />
+                    </>
                   ) : (
-                    <span className="text-sm">{group.tourCompany || <span className="text-muted-foreground/60">—</span>}</span>
+                    <div className="space-y-0.5">
+                      {group.tourCompanyAccountName && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+                          <Building2 className="w-3 h-3" /> {group.tourCompanyAccountName}
+                        </span>
+                      )}
+                      {group.tourCompany && <span className="text-sm block">{group.tourCompany}</span>}
+                      {!group.tourCompanyAccountName && !group.tourCompany && <span className="text-sm text-muted-foreground/60">—</span>}
+                    </div>
                   )}
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Pickup Driver</p>
+                {/* Pickup Driver */}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">Pickup Driver</p>
                   {isEditing ? (
-                    <Input value={getValue("pickupDriver") ?? ""} onChange={e => setField("pickupDriver", e.target.value)}
-                      placeholder="e.g. Boong Boong Pickup"
-                      className="h-8 text-sm border-(--e-orange) focus-visible:ring-(--e-orange)" />
+                    <>
+                      <Select
+                        value={getValue("pickupDriverId") ?? "none"}
+                        onValueChange={v => setField("pickupDriverId", v === "none" ? null : v)}
+                      >
+                        <SelectTrigger className="h-8 text-sm border-(--e-orange)">
+                          <SelectValue placeholder="— Link account —" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          <SelectItem value="none">— No account linked —</SelectItem>
+                          {accountsList.map((a: any) => (
+                            <SelectItem key={a.id} value={a.id}>{a.name}{a.city ? ` · ${a.city}` : ""}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input value={getValue("pickupDriver") ?? ""} onChange={e => setField("pickupDriver", e.target.value)}
+                        placeholder="Or enter name manually"
+                        className="h-8 text-sm border-dashed border-muted-foreground/40 focus-visible:ring-(--e-orange)" />
+                    </>
                   ) : (
-                    <span className="text-sm">{group.pickupDriver || <span className="text-muted-foreground/60">—</span>}</span>
+                    <div className="space-y-0.5">
+                      {group.pickupDriverAccountName && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+                          <Building2 className="w-3 h-3" /> {group.pickupDriverAccountName}
+                        </span>
+                      )}
+                      {group.pickupDriver && <span className="text-sm block">{group.pickupDriver}</span>}
+                      {!group.pickupDriverAccountName && !group.pickupDriver && <span className="text-sm text-muted-foreground/60">—</span>}
+                    </div>
                   )}
                 </div>
               </div>
