@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, Building2, ChevronLeft, ChevronRight, Plus, X, Pencil } from "lucide-react";
+import { Loader2, Search, Building2, ChevronLeft, ChevronRight, Plus, X, Pencil, Trash2 } from "lucide-react";
 import { formatDate } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -246,8 +246,9 @@ export default function TenantList() {
             <tbody>
               {tenants.map((t: any) => {
                 const planStyle   = PLAN_STYLE[t.plan_type ?? "starter"] ?? PLAN_STYLE.solo;
-                const statusStyle = STATUS_STYLE[t.status ?? "Active"] ?? STATUS_STYLE.Active;
-                const isActive    = t.status === "Active";
+                const statusStyle  = STATUS_STYLE[t.status ?? "Active"] ?? STATUS_STYLE.Active;
+                const isActive     = t.status === "Active";
+                const isCancelled  = t.status === "Cancelled";
 
                 return (
                   <tr
@@ -287,16 +288,41 @@ export default function TenantList() {
                         >
                           <Pencil size={12} />
                         </button>
-                        <button
-                          onClick={() => toggleStatus.mutate({ id: t.id, status: isActive ? "Suspended" : "Active" })}
-                          disabled={toggleStatus.isPending}
-                          className="text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors disabled:opacity-40"
-                          style={isActive
-                            ? { borderColor: "#FECACA", color: "#DC2626", background: "#FFF1F2" }
-                            : { borderColor: "#BBF7D0", color: "#15803D", background: "#F0FDF4" }}
-                        >
-                          {isActive ? "Suspend" : "Activate"}
-                        </button>
+                        {isCancelled ? (
+                          <button
+                            onClick={() => toggleStatus.mutate({ id: t.id, status: "Active" })}
+                            disabled={toggleStatus.isPending}
+                            className="text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors disabled:opacity-40"
+                            style={{ borderColor: "#BBF7D0", color: "#15803D", background: "#F0FDF4" }}
+                          >
+                            Restore
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => toggleStatus.mutate({ id: t.id, status: isActive ? "Suspended" : "Active" })}
+                              disabled={toggleStatus.isPending}
+                              className="text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors disabled:opacity-40"
+                              style={isActive
+                                ? { borderColor: "#FECACA", color: "#DC2626", background: "#FFF1F2" }
+                                : { borderColor: "#BBF7D0", color: "#15803D", background: "#F0FDF4" }}
+                            >
+                              {isActive ? "Suspend" : "Activate"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Cancel "${t.name}"? This will mark the tenant as Cancelled (can be restored later).`)) {
+                                  toggleStatus.mutate({ id: t.id, status: "Cancelled" });
+                                }
+                              }}
+                              disabled={toggleStatus.isPending}
+                              className="h-7 w-7 flex items-center justify-center rounded-lg border border-[#E8E6E2] text-[#A8A29E] hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-40"
+                              title="Cancel tenant (soft delete)"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

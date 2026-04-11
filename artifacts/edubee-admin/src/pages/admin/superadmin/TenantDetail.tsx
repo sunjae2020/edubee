@@ -408,6 +408,17 @@ export default function TenantDetail() {
     },
   });
 
+  const reseed = useMutation({
+    mutationFn: (orgId: string) =>
+      axios.post(`${BASE}/api/superadmin/tenants/${orgId}/re-seed`).then(r => r.data),
+    onSuccess: () => {
+      toast({ title: "Re-seed complete", description: "Master data (tax rates, CoA, etc.) seeded into tenant schema" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Re-seed failed", description: e?.response?.data?.error ?? e.message, variant: "destructive" });
+    },
+  });
+
   if (orgLoading || plansLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -705,6 +716,25 @@ export default function TenantDetail() {
                     : <Download size={14} />
                   }
                   Migrate Data from Public
+                </button>
+              )}
+
+              {/* Re-seed Master Data */}
+              {hasSchema && (
+                <button
+                  onClick={() => {
+                    if (!confirm("이 테넌트 schema에 마스터 데이터(세금 코드, CoA, 결제 수단 등)를 다시 시드합니다. 계속하시겠습니까?")) return;
+                    reseed.mutate(org.id);
+                  }}
+                  disabled={reseed.isPending}
+                  className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                  style={{ background: "#F5F3FF", color: "#6D28D9", border: "1px solid #DDD6FE" }}
+                >
+                  {reseed.isPending
+                    ? <Loader2 size={14} className="animate-spin" />
+                    : <ShieldCheck size={14} />
+                  }
+                  Re-seed Master Data
                 </button>
               )}
 

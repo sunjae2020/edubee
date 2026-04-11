@@ -161,16 +161,30 @@ export const _tenantDbStorage = new AsyncLocalStorage<NodePgDatabase<typeof sche
 /**
  * 지정된 테넌트 schema context에서 fn을 실행.
  * 내부의 모든 db.select/insert/update/delete는 자동으로 tenant schema를 사용.
+ * async callback을 지원하며 Promise를 반환.
  *
  * @param tenantSlug  테넌트 slug (예: 'ts', 'myagency')
- * @param fn          실행할 콜백 (Express next() 포함)
+ * @param fn          실행할 콜백 (동기/비동기 모두 지원)
  */
 export function runWithTenantSchema(
   tenantSlug: string,
-  fn: () => void,
-): void {
-  const tenantDb = getTenantDb(tenantSlug);
-  _tenantDbStorage.run(tenantDb, fn);
+  fn: () => void | Promise<void>,
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const tenantDb = getTenantDb(tenantSlug);
+    _tenantDbStorage.run(tenantDb, () => {
+      try {
+        const result = fn();
+        if (result instanceof Promise) {
+          result.then(resolve).catch(reject);
+        } else {
+          resolve();
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
+  });
 }
 
 /**

@@ -7,6 +7,9 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { authenticate } from "../middleware/authenticate.js";
 import { sendWelcomeEmail } from "../services/emailService.js";
+import { provisionTenantSchema, migrateTenantDataFromPublic } from "../seeds/provision-tenant.js";
+import { onboardTenant } from "../services/onboardingService.js";
+import { runWithTenantSchema } from "@workspace/db/tenant-context";
 
 const router = Router();
 
@@ -373,6 +376,23 @@ router.post("/register", async (req, res) => {
 
       return { newUser, newOrg, newAccount };
     });
+
+    // Provision tenant schema + seed master data (non-fatal if fails)
+    const { newOrg } = result;
+    if (newOrg.subdomain) {
+      try {
+        await provisionTenantSchema(newOrg.subdomain);
+        console.log(`[Register] Provisioned schema "${newOrg.subdomain}" for org ${newOrg.id}`);
+
+        await migrateTenantDataFromPublic(newOrg.subdomain, newOrg.id);
+        console.log(`[Register] Migrated initial data to schema "${newOrg.subdomain}"`);
+
+        await runWithTenantSchema(newOrg.subdomain, () => onboardTenant(newOrg.id));
+        console.log(`[Register] Onboarded tenant "${newOrg.subdomain}"`);
+      } catch (provErr) {
+        console.warn("[Register] Schema provision/onboard failed (non-fatal):", provErr);
+      }
+    }
 
     // Send welcome email (non-blocking)
     try {

@@ -47,6 +47,20 @@ export function useTenantTheme() {
       const urlParams = new URLSearchParams(window.location.search);
       const previewOrg = urlParams.get("org");
 
+      // 공개 페이지(register, login 등)는 Edubee 기본 테마를 항상 표시.
+      // axios 인터셉터가 이전 세션의 X-Organisation-Id 헤더를 붙여서
+      // 다른 테넌트 테마가 bleeding되는 버그를 차단.
+      const publicPaths = ["/register", "/login", "/forgot-password", "/reset-password", "/accept-invite"];
+      const isPublicPage = publicPaths.some((p) => window.location.pathname.endsWith(p));
+
+      if (isPublicPage && !previewOrg) {
+        setTheme(DEFAULT_THEME);
+        applyThemeToDom(DEFAULT_THEME);
+        setIsLoading(false);
+        inflight.current = false;
+        return;
+      }
+
       const themeUrl = previewOrg
         ? `/api/settings/theme?subdomain=${encodeURIComponent(previewOrg)}`
         : `/api/settings/theme`;

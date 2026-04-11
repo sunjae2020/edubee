@@ -15,6 +15,7 @@ import {
   checkTenantSchemaExists,
   listTenantSchemas,
 } from "../seeds/provision-tenant.js";
+import { runWithTenantSchema } from "@workspace/db/tenant-context";
 
 const execAsync = promisify(exec);
 
@@ -173,9 +174,13 @@ router.post("/superadmin/tenants", ...guard, async (req, res) => {
       }
     }
 
-    // Run onboarding seed (ensures global master data + marks onboardedAt)
+    // Run onboarding seed in tenant schema context (tax_rates, product_groups, etc.)
     try {
-      await onboardTenant(created.id);
+      if (created.subdomain) {
+        await runWithTenantSchema(created.subdomain, () => onboardTenant(created.id));
+      } else {
+        await onboardTenant(created.id);
+      }
     } catch (seedErr) {
       // Soft Delete the partially-created organisation
       await db
@@ -240,16 +245,22 @@ router.get("/superadmin/tenants/:id/seed-status", ...guard, async (req, res) => 
 
 router.post("/superadmin/tenants/:id/re-seed", ...guard, async (req, res) => {
   try {
-    const org = await db
-      .select({ id: organisations.id })
+    const [org] = await db
+      .select({ id: organisations.id, subdomain: organisations.subdomain })
       .from(organisations)
       .where(eq(organisations.id, req.params.id))
       .limit(1);
-    if (!org.length) return res.status(404).json({ error: "Tenant not found" });
+    if (!org) return res.status(404).json({ error: "Tenant not found" });
 
-    await onboardTenant(req.params.id);
+    // Run in tenant schema context so seed data goes to the correct schema
+    if (org.subdomain) {
+      await runWithTenantSchema(org.subdomain, () => onboardTenant(org.id));
+    } else {
+      await onboardTenant(org.id);
+    }
+
     const status = await getSeedStatus(req.params.id);
-    return res.json({ success: true, message: "Re-seed completed", ...status });
+    return res.json({ success: true, message: "Re-seed completed in tenant schema", ...status });
   } catch (err) {
     console.error("POST /api/superadmin/tenants/:id/re-seed", err);
     return res.status(500).json({ error: "Re-seed failed" });
