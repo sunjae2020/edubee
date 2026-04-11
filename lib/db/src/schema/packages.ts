@@ -86,6 +86,27 @@ export const packages = pgTable("packages", {
   agentCommissionType: varchar("agent_commission_type", { length: 20 }), // 'percentage' | 'fixed' | null
   agentCommissionRate: decimal("agent_commission_rate", { precision: 5, scale: 2 }),
   agentCommissionFixed: decimal("agent_commission_fixed", { precision: 12, scale: 2 }),
+  // ── Group A: Package identification & pricing ─────────────────────────
+  packageOption: varchar("package_option", { length: 100 }),
+  packageCode:   varchar("package_code",   { length: 50 }),
+  netPrice:      decimal("net_price",      { precision: 12, scale: 2 }),
+  agentCommKrw:  decimal("agent_comm_krw", { precision: 15, scale: 0 }),
+  revenue:       decimal("revenue",        { precision: 12, scale: 2 }),
+  campMgt:       decimal("camp_mgt",       { precision: 12, scale: 2 }),
+  kakaoName:     varchar("kakao_name",     { length: 100 }),
+  // ── Group B: Accommodation detail ────────────────────────────────────
+  roomType:      varchar("room_type",      { length: 100 }),
+  pricePerNight: decimal("price_per_night",{ precision: 10, scale: 2 }),
+  checkInDate:   date("check_in_date"),
+  checkOutDate:  date("check_out_date"),
+  // ── Group C: School & activities ─────────────────────────────────────
+  schoolStartDate: date("school_start_date"),
+  schoolDuration:  varchar("school_duration", { length: 50 }),
+  // ── Group D: Airport pickup / drop-off ───────────────────────────────
+  pickupDate:    date("pickup_date"),
+  pickupFee:     decimal("pickup_fee",     { precision: 10, scale: 2 }),
+  dropDate:      date("drop_date"),
+  dropFee:       decimal("drop_fee",       { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
