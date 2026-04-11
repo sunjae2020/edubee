@@ -372,10 +372,55 @@ export default function PackageGroupDetail() {
                 editValue={getValue("nameJa")} onEdit={v => setField("nameJa", v)} />
               <EditableField label="Name (TH)" isEditing={isEditing} value={group.nameTh}
                 editValue={getValue("nameTh")} onEdit={v => setField("nameTh", v)} />
-              <EditableField label="Location" isEditing={isEditing} value={group.location}
+              <EditableField label="Location (City)" isEditing={isEditing} value={group.location}
                 editValue={getValue("location")} onEdit={v => setField("location", v)} />
               <EditableField label="Country Code" isEditing={isEditing} value={group.countryCode}
                 editValue={getValue("countryCode")} onEdit={v => setField("countryCode", v)} />
+
+              {/* Year */}
+              <DetailRow label="Year">
+                {isEditing ? (
+                  <input
+                    type="number"
+                    min={2020}
+                    max={2035}
+                    value={getValue("year") ?? ""}
+                    onChange={e => setField("year", e.target.value === "" ? null : parseInt(e.target.value))}
+                    placeholder="e.g. 2026"
+                    className="h-8 px-2 text-sm border border-(--e-orange) rounded-md focus:outline-none focus:ring-1 focus:ring-(--e-orange) w-full"
+                  />
+                ) : (
+                  <span className="text-sm">{group.year ?? <span className="text-muted-foreground/60">—</span>}</span>
+                )}
+              </DetailRow>
+
+              {/* Month */}
+              <DetailRow label="Month">
+                {isEditing ? (
+                  <Select
+                    value={getValue("month") ?? "none"}
+                    onValueChange={v => setField("month", v === "none" ? null : v)}
+                  >
+                    <SelectTrigger className="h-8 text-sm border-(--e-orange)"><SelectValue placeholder="— Select month —" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
+                      {["January","February","March","April","May","June","July","August","September","October","November","December"].map(m => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span className="text-sm">{group.month ?? <span className="text-muted-foreground/60">—</span>}</span>
+                )}
+              </DetailRow>
+
+              <EditableField label="Package Code" isEditing={isEditing} value={group.packageCode}
+                editValue={getValue("packageCode")} onEdit={v => setField("packageCode", v)}
+                placeholder="e.g. MEL26JulSC" />
+
+              <EditableField label="Institute" isEditing={isEditing} value={group.instituteName}
+                editValue={getValue("instituteName")} onEdit={v => setField("instituteName", v)}
+                placeholder="e.g. Oakleigh Grammar" />
 
               {/* Type — Product Type dropdown */}
               <DetailRow label="Type">
@@ -599,6 +644,104 @@ export default function PackageGroupDetail() {
                   ))}
                 </ul>
               ) : <span className="text-muted-foreground/60 text-sm">—</span>}
+            </DetailSection>
+
+            {/* Program Partners */}
+            <DetailSection title="Program Partners" className="lg:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Accommodation</p>
+                  {isEditing ? (
+                    <Input value={getValue("accommodation") ?? ""} onChange={e => setField("accommodation", e.target.value)}
+                      placeholder="e.g. Brady Hotel Flinders"
+                      className="h-8 text-sm border-(--e-orange) focus-visible:ring-(--e-orange)" />
+                  ) : (
+                    <span className="text-sm">{group.accommodation || <span className="text-muted-foreground/60">—</span>}</span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Tour Company</p>
+                  {isEditing ? (
+                    <Input value={getValue("tourCompany") ?? ""} onChange={e => setField("tourCompany", e.target.value)}
+                      placeholder="e.g. Thanks Tour"
+                      className="h-8 text-sm border-(--e-orange) focus-visible:ring-(--e-orange)" />
+                  ) : (
+                    <span className="text-sm">{group.tourCompany || <span className="text-muted-foreground/60">—</span>}</span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Pickup Driver</p>
+                  {isEditing ? (
+                    <Input value={getValue("pickupDriver") ?? ""} onChange={e => setField("pickupDriver", e.target.value)}
+                      placeholder="e.g. Boong Boong Pickup"
+                      className="h-8 text-sm border-(--e-orange) focus-visible:ring-(--e-orange)" />
+                  ) : (
+                    <span className="text-sm">{group.pickupDriver || <span className="text-muted-foreground/60">—</span>}</span>
+                  )}
+                </div>
+              </div>
+            </DetailSection>
+
+            {/* Resources & Links */}
+            <DetailSection title="Resources & Links" className="lg:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Package PPT (Canva)</p>
+                  {isEditing ? (
+                    <Input value={getValue("packagePptUrl") ?? ""} onChange={e => setField("packagePptUrl", e.target.value)}
+                      placeholder="https://www.canva.com/..."
+                      className="h-8 text-sm border-(--e-orange) focus-visible:ring-(--e-orange)" />
+                  ) : group.packagePptUrl ? (
+                    <a href={group.packagePptUrl} target="_blank" rel="noopener noreferrer"
+                      className="text-sm text-(--e-orange) underline underline-offset-2 break-all hover:opacity-80">
+                      {group.packagePptUrl.length > 60 ? group.packagePptUrl.slice(0, 60) + "…" : group.packagePptUrl}
+                    </a>
+                  ) : <span className="text-sm text-muted-foreground/60">—</span>}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Google Drive</p>
+                  {isEditing ? (
+                    <Input value={getValue("googleDriveUrl") ?? ""} onChange={e => setField("googleDriveUrl", e.target.value)}
+                      placeholder="https://drive.google.com/..."
+                      className="h-8 text-sm border-(--e-orange) focus-visible:ring-(--e-orange)" />
+                  ) : group.googleDriveUrl ? (
+                    <a href={group.googleDriveUrl} target="_blank" rel="noopener noreferrer"
+                      className="text-sm text-(--e-orange) underline underline-offset-2 break-all hover:opacity-80">
+                      {group.googleDriveUrl.length > 60 ? group.googleDriveUrl.slice(0, 60) + "…" : group.googleDriveUrl}
+                    </a>
+                  ) : <span className="text-sm text-muted-foreground/60">—</span>}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Local Manual</p>
+                  {isEditing ? (
+                    <Input value={getValue("localManual") ?? ""} onChange={e => setField("localManual", e.target.value)}
+                      placeholder="Link or text"
+                      className="h-8 text-sm border-(--e-orange) focus-visible:ring-(--e-orange)" />
+                  ) : (
+                    <span className="text-sm">{group.localManual || <span className="text-muted-foreground/60">—</span>}</span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Departure OT</p>
+                  {isEditing ? (
+                    <Input value={getValue("departureOt") ?? ""} onChange={e => setField("departureOt", e.target.value)}
+                      placeholder="Departure overtime info"
+                      className="h-8 text-sm border-(--e-orange) focus-visible:ring-(--e-orange)" />
+                  ) : (
+                    <span className="text-sm">{group.departureOt || <span className="text-muted-foreground/60">—</span>}</span>
+                  )}
+                </div>
+              </div>
+              <div className="mt-3">
+                <p className="text-xs text-muted-foreground mb-1">Required Documents</p>
+                {isEditing ? (
+                  <textarea value={getValue("requiredDocuments") ?? ""} onChange={e => setField("requiredDocuments", e.target.value)}
+                    placeholder="List required documents, one per line"
+                    className="w-full border border-(--e-orange) rounded-md px-3 py-2 text-sm resize-none h-20 focus:outline-none focus:ring-1 focus:ring-(--e-orange)" />
+                ) : group.requiredDocuments ? (
+                  <p className="text-sm whitespace-pre-wrap">{group.requiredDocuments}</p>
+                ) : <span className="text-sm text-muted-foreground/60">—</span>}
+              </div>
             </DetailSection>
 
             {/* Coordinator Section */}
