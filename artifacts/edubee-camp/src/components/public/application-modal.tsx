@@ -233,6 +233,15 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
     if (defaultProgramId) setProgramId(defaultProgramId);
   }, [defaultProgramId]);
 
+  // Auto-fill startDate from fixed program dates; clear when switching to flexible program
+  useEffect(() => {
+    if (selectedProgram?.startDate) {
+      setStartDate(selectedProgram.startDate);
+    } else if (programId) {
+      setStartDate("");
+    }
+  }, [programId, selectedProgram?.startDate]);
+
   useEffect(() => {
     if (!open) {
       setStep(1);
@@ -454,9 +463,22 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                       </div>
                     )}
 
-                    <Field label={t("apply.preferredStartDate")}>
-                      <DatePickerInput value={startDate} onChange={setStartDate} fromYear={new Date().getFullYear()} toYear={new Date().getFullYear() + 5} />
-                    </Field>
+                    {selectedProgram?.startDate ? (
+                      <div className="rounded-xl border border-(--e-orange)/30 bg-(--e-orange)/5 px-4 py-3 flex items-center gap-3">
+                        <span className="text-xl">📅</span>
+                        <div>
+                          <p className="text-[10px] font-semibold text-(--e-orange) uppercase tracking-wide mb-0.5">Program Dates (Fixed)</p>
+                          <p className="text-sm font-semibold text-foreground">
+                            {selectedProgram.startDate}
+                            {selectedProgram.endDate ? ` – ${selectedProgram.endDate}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <Field label={t("apply.preferredStartDate")}>
+                        <DatePickerInput value={startDate} onChange={setStartDate} fromYear={new Date().getFullYear()} toYear={new Date().getFullYear() + 5} />
+                      </Field>
+                    )}
 
                     <Field label={t("apply.howHeard")}>
                       <Select value={howHeard} onChange={setHowHeard}>
