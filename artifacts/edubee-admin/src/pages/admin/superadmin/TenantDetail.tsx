@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, ArrowLeft, Building2, Globe, Mail, Users, GraduationCap,
   CreditCard, Calendar, Save, ExternalLink, Clock, Check, Zap, Palette, Image,
-  Upload, Link, XCircle,
+  Upload, Link, XCircle, Database, Download, ShieldCheck, AlertTriangle,
 } from "lucide-react";
 import { formatDate } from "@/lib/date-format";
 
@@ -378,6 +378,36 @@ export default function TenantDetail() {
     },
   });
 
+  const { data: schemaInfo, refetch: refetchSchema } = useQuery<{ schemas: string[] }>({
+    queryKey: ["tenant-schemas"],
+    queryFn: () => axios.get(`${BASE}/api/superadmin/tenant-schemas`).then(r => r.data),
+    staleTime: 30_000,
+  });
+  const hasSchema = !!(org?.subdomain && schemaInfo?.schemas?.includes(org.subdomain));
+
+  const provision = useMutation({
+    mutationFn: (slug: string) =>
+      axios.post(`${BASE}/api/superadmin/tenants/${slug}/provision`).then(r => r.data),
+    onSuccess: (data) => {
+      toast({ title: data.created ? "Schema created" : "Schema synced", description: data.message });
+      refetchSchema();
+    },
+    onError: (e: any) => {
+      toast({ title: "Provision failed", description: e?.response?.data?.error ?? e.message, variant: "destructive" });
+    },
+  });
+
+  const migrate = useMutation({
+    mutationFn: (args: { slug: string; orgId: string }) =>
+      axios.post(`${BASE}/api/superadmin/tenants/${args.slug}/migrate`, { orgId: args.orgId }).then(r => r.data),
+    onSuccess: (data) => {
+      toast({ title: "Migration complete", description: `${data.totalMigrated} rows moved to schema "${data.slug}"` });
+    },
+    onError: (e: any) => {
+      toast({ title: "Migration failed", description: e?.response?.data?.error ?? e.message, variant: "destructive" });
+    },
+  });
+
   if (orgLoading || plansLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -615,6 +645,91 @@ export default function TenantDetail() {
           </p>
         </div>
       </Section>
+
+      {/* Database Management */}
+      {org.subdomain && (
+        <Section title="Database Management">
+          <div className="space-y-4">
+            {/* Schema Status */}
+            <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: hasSchema ? "#F0FDF4" : "#FFF7ED", border: `1px solid ${hasSchema ? "#BBF7D0" : "#FDE0C0"}` }}>
+              <div className="flex items-center gap-2">
+                {hasSchema
+                  ? <ShieldCheck size={16} className="text-green-600" />
+                  : <AlertTriangle size={16} className="text-orange-500" />
+                }
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: hasSchema ? "#15803D" : "#C2410C" }}>
+                    {hasSchema ? "격리된 Schema 존재" : "Schema 미생성 (public 공유 중)"}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: hasSchema ? "#166534" : "#9A3412" }}>
+                    {hasSchema
+                      ? `PostgreSQL schema "${org.subdomain}" — 완전 격리된 전용 DB`
+                      : "아직 전용 schema가 없습니다. 아래 Provision Schema를 클릭하세요."}
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "rgba(0,0,0,0.06)", color: "#57534E" }}>
+                {hasSchema ? org.subdomain : "public"}
+              </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-3">
+              {/* Provision Schema */}
+              <button
+                onClick={() => provision.mutate(org.subdomain)}
+                disabled={provision.isPending}
+                className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+                style={{ background: "var(--e-orange)" }}
+              >
+                {provision.isPending
+                  ? <Loader2 size={14} className="animate-spin" />
+                  : <Database size={14} />
+                }
+                {hasSchema ? "Sync Schema Tables" : "Provision Schema"}
+              </button>
+
+              {/* Migrate existing data */}
+              {hasSchema && (
+                <button
+                  onClick={() => {
+                    if (!confirm(`public schema의 "${org.subdomain}" 데이터를 전용 schema로 이전합니다. 계속하시겠습니까?`)) return;
+                    migrate.mutate({ slug: org.subdomain, orgId: org.id });
+                  }}
+                  disabled={migrate.isPending}
+                  className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                  style={{ background: "#F4F3F1", color: "#1C1917", border: "1px solid #E8E6E2" }}
+                >
+                  {migrate.isPending
+                    ? <Loader2 size={14} className="animate-spin" />
+                    : <Download size={14} />
+                  }
+                  Migrate Data from Public
+                </button>
+              )}
+
+              {/* Download Backup */}
+              {hasSchema && (
+                <a
+                  href={`${BASE}/api/superadmin/tenants/${org.subdomain}/backup`}
+                  download
+                  className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors"
+                  style={{ background: "#F0FDF4", color: "#15803D", border: "1px solid #BBF7D0" }}
+                >
+                  <Download size={14} />
+                  DB 백업 다운로드
+                </a>
+              )}
+            </div>
+
+            {/* Info */}
+            <p className="text-xs text-[#A8A29E]">
+              Schema를 프로비저닝하면 이 테넌트만의 전용 PostgreSQL schema가 생성됩니다.
+              이후 데이터는 다른 테넌트와 완전히 분리되며, 백업 다운로드가 가능합니다.
+            </p>
+          </div>
+        </Section>
+      )}
 
       {/* System Info */}
       <Section title="System Information">

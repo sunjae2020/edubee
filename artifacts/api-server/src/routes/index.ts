@@ -65,6 +65,8 @@ import platformCrmRouter from "./platform-crm.js";
 import adminDataImportRouter from "./admin-data-import.js";
 import platformIntegrationsRouter from "./platform-integrations.js";
 import { tenantResolver } from "../middleware/tenantResolver.js";
+import { runWithTenantSchema, tenantSchemaExists, pool } from "@workspace/db";
+import type { Request, Response, NextFunction } from "express";
 
 const router: IRouter = Router();
 
@@ -72,6 +74,24 @@ router.use(healthRouter);
 router.use(storageRouter);
 // ── Tenant resolver: reads X-Organisation-Id header → req.tenantId / req.tenant ──
 router.use(tenantResolver);
+// ── Tenant Schema 미들웨어 ────────────────────────────────────────────────────
+// tenantResolver 이후 실행. 테넌트의 PostgreSQL schema가 존재하면
+// AsyncLocalStorage context에서 요청을 실행 → 모든 db 쿼리가 tenant schema 사용.
+// schema 미존재 → public schema 사용 (기존 동작 유지)
+router.use(async (req: Request, res: Response, next: NextFunction) => {
+  const subdomain = (req as any).tenant?.subdomain as string | undefined;
+  if (!subdomain) return next();
+  try {
+    const schemaExists = await tenantSchemaExists(subdomain, pool);
+    if (schemaExists) {
+      runWithTenantSchema(subdomain, next);
+    } else {
+      next();
+    }
+  } catch {
+    next();
+  }
+});
 // ── Public settings route (theme, no auth) — registered early before auth-guarded routers ──
 router.use("/settings", tenantSettingsRouter);
 router.use("/auth", authRouter);

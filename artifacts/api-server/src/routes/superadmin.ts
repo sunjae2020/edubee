@@ -7,6 +7,16 @@ import { superAdminOnly } from "../middleware/superAdminOnly.js";
 import { onboardTenant, getSeedStatus } from "../services/onboardingService.js";
 import { getDefaultFeatures } from "../middleware/featureGuard.js";
 import { sendTenantCreatedEmail } from "../services/emailService.js";
+import { exec } from "child_process";
+import { promisify } from "util";
+import {
+  provisionTenantSchema,
+  migrateTenantDataFromPublic,
+  checkTenantSchemaExists,
+  listTenantSchemas,
+} from "../seeds/provision-tenant.js";
+
+const execAsync = promisify(exec);
 
 const router = Router();
 const guard  = [authenticate, superAdminOnly];
@@ -150,6 +160,18 @@ router.post("/superadmin/tenants", ...guard, async (req, res) => {
         status: "Active",
       })
       .returning();
+
+    // ── 테넌트 PostgreSQL Schema 자동 프로비저닝 ────────────────────────────
+    // 신규 테넌트는 자신만의 격리된 schema에서 시작 (빈 상태로 초기화)
+    if (created.subdomain) {
+      try {
+        await provisionTenantSchema(created.subdomain);
+        console.log(`[Schema] Provisioned schema "${created.subdomain}" for new tenant`);
+      } catch (provisionErr) {
+        // Non-fatal: public schema fallback으로 동작 가능
+        console.warn(`[Schema WARN] Could not provision schema for "${created.subdomain}":`, provisionErr);
+      }
+    }
 
     // Run onboarding seed (ensures global master data + marks onboardedAt)
     try {
@@ -416,6 +438,123 @@ router.put("/superadmin/stripe-settings", ...guard, async (req, res) => {
   } catch (err) {
     console.error("[PUT /superadmin/stripe-settings]", err);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tenant Schema 관리 (프로비저닝 & 백업)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/superadmin/tenant-schemas — 존재하는 테넌트 schema 목록
+router.get("/superadmin/tenant-schemas", ...guard, async (_req, res) => {
+  try {
+    const schemas = await listTenantSchemas();
+    return res.json({ schemas });
+  } catch (err) {
+    console.error("[GET /superadmin/tenant-schemas]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// POST /api/superadmin/tenants/:slug/provision — 테넌트 schema 프로비저닝
+router.post("/superadmin/tenants/:slug/provision", ...guard, async (req, res) => {
+  const { slug } = req.params;
+  if (!slug || !/^[a-z0-9_-]+$/.test(slug)) {
+    return res.status(400).json({ error: "Invalid tenant slug" });
+  }
+  try {
+    const alreadyExists = await checkTenantSchemaExists(slug);
+    await provisionTenantSchema(slug);
+    return res.json({
+      success: true,
+      slug,
+      created: !alreadyExists,
+      message: alreadyExists
+        ? `Schema "${slug}" already existed — tables synced`
+        : `Schema "${slug}" created with all tenant tables`,
+    });
+  } catch (err: any) {
+    console.error(`[POST /superadmin/tenants/${slug}/provision]`, err);
+    return res.status(500).json({ error: err.message ?? "Provision failed" });
+  }
+});
+
+// POST /api/superadmin/tenants/:slug/migrate — public → tenant schema 데이터 이전
+router.post("/superadmin/tenants/:slug/migrate", ...guard, async (req, res) => {
+  const { slug } = req.params;
+  const { orgId } = req.body as { orgId?: string };
+
+  if (!slug || !/^[a-z0-9_-]+$/.test(slug)) {
+    return res.status(400).json({ error: "Invalid tenant slug" });
+  }
+  if (!orgId) {
+    return res.status(400).json({ error: "orgId is required" });
+  }
+
+  try {
+    const schemaExists = await checkTenantSchemaExists(slug);
+    if (!schemaExists) {
+      return res.status(404).json({ error: `Schema "${slug}" does not exist. Provision it first.` });
+    }
+    const results = await migrateTenantDataFromPublic(slug, orgId);
+    const totalMigrated = results.reduce((sum, r) => sum + r.rowsMigrated, 0);
+    return res.json({
+      success: true,
+      slug,
+      orgId,
+      totalMigrated,
+      tables: results,
+    });
+  } catch (err: any) {
+    console.error(`[POST /superadmin/tenants/${slug}/migrate]`, err);
+    return res.status(500).json({ error: err.message ?? "Migration failed" });
+  }
+});
+
+// GET /api/superadmin/tenants/:slug/backup — pg_dump → SQL 파일 다운로드
+// 해당 테넌트 schema 전체를 SQL 파일로 스트리밍 다운로드
+router.get("/superadmin/tenants/:slug/backup", ...guard, async (req, res) => {
+  const { slug } = req.params;
+
+  if (!slug || !/^[a-z0-9_-]+$/.test(slug)) {
+    return res.status(400).json({ error: "Invalid tenant slug" });
+  }
+
+  try {
+    const schemaExists = await checkTenantSchemaExists(slug);
+    if (!schemaExists) {
+      return res.status(404).json({ error: `Schema "${slug}" does not exist` });
+    }
+
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
+      return res.status(500).json({ error: "DATABASE_URL not configured" });
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const filename  = `${slug}_backup_${timestamp}.sql`;
+
+    res.setHeader("Content-Type", "application/sql");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+    // pg_dump: --schema=slug 로 해당 테넌트 schema만 덤프
+    // --no-owner: 소유자 정보 제외 (이식성)
+    // --no-privileges: 권한 정보 제외
+    const cmd = `pg_dump --schema="${slug}" --no-owner --no-privileges --dbname="${dbUrl}"`;
+
+    const { stdout, stderr } = await execAsync(cmd, {
+      maxBuffer: 500 * 1024 * 1024, // 500MB
+      timeout: 120_000,              // 2분
+    });
+
+    if (stderr && !stderr.includes("WARNING")) {
+      console.error(`[pg_dump stderr for ${slug}]:`, stderr);
+    }
+
+    return res.send(stdout);
+  } catch (err: any) {
+    console.error(`[GET /superadmin/tenants/${slug}/backup]`, err);
+    return res.status(500).json({ error: err.message ?? "Backup failed" });
   }
 });
 
