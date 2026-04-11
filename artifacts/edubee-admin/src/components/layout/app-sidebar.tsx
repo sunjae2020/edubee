@@ -17,7 +17,7 @@ import {
   Ticket, FolderOpen, Bot, Tags, Cable,
   BookOpen, CreditCard, BookMarked, Briefcase, Shield, Wrench, Stamp,
   Tag, Percent, BadgeDollarSign,
-  Palette, Globe,
+  Palette, Globe, Landmark,
   LucideIcon,
 } from "lucide-react";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
@@ -123,6 +123,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
       { icon: BookMarked,     label: "Journal Entries",   href: "/admin/accounting/journal"        },
       { icon: BookOpen,       label: "Chart of Accounts", href: "/admin/accounting/coa"            },
       { icon: RefreshCw,      label: "Exchange Rates",    href: "/admin/accounting/exchange-rates" },
+      { icon: Landmark,       label: "Bank Accounts",     href: "/admin/accounting/bank-accounts"  },
     );
   }
   if (isCC || isConsultant) {
