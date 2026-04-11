@@ -59,6 +59,7 @@ export const packageGroups = pgTable("package_groups", {
   packageCode:        varchar("package_code", { length: 50 }),
   localManual:        text("local_manual"),
   departureOt:        text("departure_ot"),
+  enrollmentSpots:    integer("enrollment_spots"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
