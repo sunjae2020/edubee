@@ -5,13 +5,41 @@ import { useLocation } from "wouter";
 import { getViewAsUserId } from "./use-view-as";
 import axios from "axios";
 
-// Attach JWT + View-As headers to every axios request
-// camp.edubee.co is NOT multi-tenant — no X-Organisation-Id header
+// JWT 페이로드 파싱 (클라이언트 측 읽기 전용)
+function parseJwt(token: string): Record<string, any> | null {
+  try {
+    const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(base64));
+  } catch {
+    return null;
+  }
+}
+
+// BASE_PATH 에서 "/api/..." 앞의 접두사 제거
+// 예: "/camp/api/..." → "/api/..."  (Replit 프록시 라우팅 호환)
+const CAMP_BASE_STRIP = import.meta.env.BASE_URL.replace(/\/$/, ""); // e.g. "/camp"
+
+function fixApiUrl(url: string | undefined): string | undefined {
+  if (!url) return url;
+  if (CAMP_BASE_STRIP && url.startsWith(CAMP_BASE_STRIP + "/api")) {
+    return url.slice(CAMP_BASE_STRIP.length);
+  }
+  return url;
+}
+
+// Attach JWT + View-As + Org-Id headers to every axios request
 axios.interceptors.request.use((config) => {
+  // URL 재작성: /camp/api/... → /api/...
+  config.url = fixApiUrl(config.url);
+
   const token = localStorage.getItem("edubee_token");
   const viewAsId = getViewAsUserId();
+  // JWT에서 organisationId 추출 → X-Organisation-Id 헤더 설정
+  const orgId = token ? (parseJwt(token)?.organisationId ?? null) : null;
+
   if (token) config.headers["Authorization"] = `Bearer ${token}`;
   if (viewAsId) config.headers["X-View-As-User-Id"] = viewAsId;
+  if (orgId) config.headers["X-Organisation-Id"] = orgId;
   return config;
 });
 
@@ -46,11 +74,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const currentToken = localStorage.getItem("edubee_token");
       const viewAsId = getViewAsUserId();
-      if (currentToken || viewAsId) {
+      const currentOrgId = currentToken ? (parseJwt(currentToken)?.organisationId ?? null) : null;
+
+      // URL 재작성: /camp/api/... → /api/...
+      let url = input instanceof Request ? input.url : input.toString();
+      const fixedUrl = fixApiUrl(url) ?? url;
+      if (fixedUrl !== url) {
+        input = fixedUrl;
+      }
+
+      if (currentToken || viewAsId || currentOrgId) {
         init = init || {};
         const headers = new Headers(init.headers as HeadersInit);
         if (currentToken) headers.set("Authorization", `Bearer ${currentToken}`);
         if (viewAsId) headers.set("X-View-As-User-Id", viewAsId);
+        if (currentOrgId) headers.set("X-Organisation-Id", currentOrgId);
         init.headers = headers;
       }
       const response = await originalFetch(input, init);
