@@ -91,36 +91,33 @@ export async function seedUsersIfEmpty(): Promise<void> {
     const pgResult = await db.execute(sql`SELECT COUNT(*)::int AS cnt FROM package_groups`);
     const pgCount = (pgResult.rows as { cnt: number }[])[0]?.cnt ?? 0;
 
-    const [coordinator] = await db.select({ id: users.id }).from(users).where(eq(users.email, "coordinator@edubee.co")).limit(1);
-    const coordId = coordinator?.id ?? null;
-
     if (pgCount === 0) {
       console.log("[SeedUsers] No package groups found — seeding demo programs...");
 
       await db.execute(sql`
-        INSERT INTO package_groups (camp_provider_id, name_en, name_ko, description_en, description_ko, location, country_code, status, sort_order, landing_order, min_age, max_age)
+        INSERT INTO package_groups (name_en, name_ko, description_en, description_ko, location, country_code, status, sort_order, landing_order, min_age, max_age)
         VALUES
-          (${coordId}, 'Bangkok English Immersion 2025', '방콕 영어 몰입 캠프 2025',
+          ('Bangkok English Immersion 2025', '방콕 영어 몰입 캠프 2025',
            'Full English immersion program in Bangkok with cultural activities and language classes.',
            '방콕에서의 완전 영어 몰입 프로그램. 문화 활동과 언어 수업 포함.',
            'Bangkok, Thailand', 'TH', 'active', 1, 1, 10, 18),
-          (${coordId}, 'Tokyo Language & Culture Camp', '도쿄 언어 & 문화 캠프',
+          ('Tokyo Language & Culture Camp', '도쿄 언어 & 문화 캠프',
            'Experience Japanese language and culture in Tokyo. Language classes, cultural activities, and guided tours of historic sites.',
            '도쿄에서 일본어와 문화를 체험합니다. 언어 수업, 문화 활동, 역사 투어.',
            'Tokyo, Japan', 'JP', 'active', 2, 2, 14, 22),
-          (${coordId}, 'London Academic Program', '런던 학문 영어 프로그램',
+          ('London Academic Program', '런던 학문 영어 프로그램',
            'Study at London''s finest language school. Language learning with cultural experiences in the UK capital.',
            '런던 최고의 언어 학교에서 공부합니다. 영국 수도의 문화 체험과 함께하는 언어 학습.',
            'London, UK', 'GB', 'active', 3, 3, 14, 25),
-          (${coordId}, 'Melbourne Arts & Language', '멜버른 아트 & 언어 캠프',
+          ('Melbourne Arts & Language', '멜버른 아트 & 언어 캠프',
            'Combine arts education with English language learning in Melbourne. Creative workshops and language immersion.',
            '멜버른에서 예술 교육과 영어 학습을 결합합니다. 창의적 워크숍과 언어 몰입.',
            'Melbourne, Australia', 'AU', 'active', 4, 4, 12, 20),
-          (${coordId}, 'Dublin English Academy', '더블린 영어 아카데미',
+          ('Dublin English Academy', '더블린 영어 아카데미',
            'Learn English in Ireland with homestay accommodation and cultural trips across the Emerald Isle.',
            '아일랜드에서 홈스테이와 문화 여행과 함께 영어를 배웁니다.',
            'Dublin, Ireland', 'IE', 'active', 5, 5, 14, 24),
-          (${coordId}, 'Singapore Business English', '싱가포르 비즈니스 영어',
+          ('Singapore Business English', '싱가포르 비즈니스 영어',
            'Intensive business English program for high school students in Singapore. Finance, tech, and communication skills.',
            '싱가포르 고등학생을 위한 집중 비즈니스 영어 프로그램. 금융, 기술, 커뮤니케이션 스킬.',
            'Singapore', 'SG', 'active', 6, 6, 15, 22)
