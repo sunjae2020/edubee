@@ -61,7 +61,12 @@ export async function tenantResolver(
     }
 
     // ── 2순위: 서브도메인 자동 감지 ──────────────────────────
-    const subdomain = extractSubdomain(req.hostname, BASE_DOMAIN);
+    // Cloudflare Worker가 X-Subdomain 헤더로 서브도메인을 전달 (*.edubee.co 와일드카드 프록시 시)
+    // X-Forwarded-Host 또는 req.hostname에서 직접 추출 (trust proxy 설정 시)
+    const xSubdomain = req.headers["x-subdomain"] as string | undefined;
+    const subdomain = (xSubdomain && !SYSTEM_SUBDOMAINS.has(xSubdomain))
+      ? xSubdomain
+      : extractSubdomain(req.hostname, BASE_DOMAIN);
 
     if (subdomain && !SYSTEM_SUBDOMAINS.has(subdomain)) {
       const [org] = await db

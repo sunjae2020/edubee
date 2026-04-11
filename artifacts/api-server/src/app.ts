@@ -5,6 +5,10 @@ import webhookRoutes from "./routes/webhook.js";
 
 const app: Express = express();
 
+// Cloudflare 및 Replit 리버스 프록시 신뢰
+// X-Forwarded-Host, X-Forwarded-For 등을 req.hostname / req.ip에 반영
+app.set("trust proxy", true);
+
 app.use(cors());
 
 // ⚠️ Stripe webhook MUST be registered BEFORE express.json() to receive raw body
