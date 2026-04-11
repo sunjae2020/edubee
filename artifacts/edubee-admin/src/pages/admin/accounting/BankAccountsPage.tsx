@@ -19,14 +19,14 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const CURRENCIES = ["AUD", "USD", "EUR", "GBP", "SGD", "JPY", "KRW", "NZD", "CNY", "THB", "HKD"];
 const COUNTRIES = [
-  { code: "AU", label: "호주" },
-  { code: "US", label: "미국" },
-  { code: "GB", label: "영국" },
-  { code: "SG", label: "싱가포르" },
-  { code: "KR", label: "대한민국" },
-  { code: "JP", label: "일본" },
-  { code: "NZ", label: "뉴질랜드" },
-  { code: "HK", label: "홍콩" },
+  { code: "AU", label: "Australia" },
+  { code: "US", label: "United States" },
+  { code: "GB", label: "United Kingdom" },
+  { code: "SG", label: "Singapore" },
+  { code: "KR", label: "South Korea" },
+  { code: "JP", label: "Japan" },
+  { code: "NZ", label: "New Zealand" },
+  { code: "HK", label: "Hong Kong" },
 ];
 
 interface BankAccount {
@@ -62,7 +62,6 @@ const EMPTY_FORM: Partial<BankAccount> = {
   notes: "",
 };
 
-// ── 폼 필드 래퍼 ─────────────────────────────────────────────────────────────
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
@@ -74,7 +73,6 @@ function Field({ label, required, children }: { label: string; required?: boolea
   );
 }
 
-// ── 계좌 추가 / 수정 폼 ────────────────────────────────────────────────────────
 function AccountForm({
   initial,
   onSave,
@@ -92,38 +90,38 @@ function AccountForm({
   return (
     <div className="space-y-4 pt-1">
       <div className="grid grid-cols-2 gap-3">
-        <Field label="계좌 표시명" required>
+        <Field label="Account Name" required>
           <Input
             value={form.accountName ?? ""}
             onChange={e => set("accountName", e.target.value)}
-            placeholder="예: ANZ 법인계좌"
+            placeholder="e.g. ANZ Business Account"
             className="text-sm"
           />
         </Field>
-        <Field label="은행명" required>
+        <Field label="Bank Name" required>
           <Input
             value={form.bankName ?? ""}
             onChange={e => set("bankName", e.target.value)}
-            placeholder="예: ANZ, NAB, CBA"
+            placeholder="e.g. ANZ, NAB, CBA"
             className="text-sm"
           />
         </Field>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="예금주">
+        <Field label="Account Holder">
           <Input
             value={form.accountHolder ?? ""}
             onChange={e => set("accountHolder", e.target.value)}
-            placeholder="예금주명"
+            placeholder="Account holder name"
             className="text-sm"
           />
         </Field>
-        <Field label="계좌번호">
+        <Field label="Account Number">
           <Input
             value={form.accountNumber ?? ""}
             onChange={e => set("accountNumber", e.target.value)}
-            placeholder="계좌번호"
+            placeholder="Account number"
             className="text-sm"
           />
         </Field>
@@ -146,18 +144,18 @@ function AccountForm({
             className="text-sm"
           />
         </Field>
-        <Field label="은행 코드">
+        <Field label="Bank Code">
           <Input
             value={form.bankCode ?? ""}
             onChange={e => set("bankCode", e.target.value)}
-            placeholder="내부 코드"
+            placeholder="Internal code"
             className="text-sm"
           />
         </Field>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="국가">
+        <Field label="Country">
           <Select value={form.countryCode ?? "AU"} onValueChange={v => set("countryCode", v)}>
             <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -167,7 +165,7 @@ function AccountForm({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="기본 통화">
+        <Field label="Default Currency">
           <Select value={form.defaultCurrency ?? "AUD"} onValueChange={v => set("defaultCurrency", v)}>
             <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -179,13 +177,13 @@ function AccountForm({
         </Field>
       </div>
 
-      <Field label="메모">
+      <Field label="Notes">
         <textarea
           value={form.notes ?? ""}
           onChange={e => set("notes", e.target.value)}
           rows={2}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-          placeholder="추가 메모 (선택)"
+          placeholder="Additional notes (optional)"
         />
       </Field>
 
@@ -198,13 +196,13 @@ function AccountForm({
           className="h-4 w-4 rounded border-stone-300"
         />
         <label htmlFor="isPrimary" className="text-sm text-stone-600 cursor-pointer">
-          주거래 계좌로 설정 (기존 주거래 계좌는 자동 해제)
+          Set as primary account (existing primary will be unset automatically)
         </label>
       </div>
 
       <div className="flex justify-end gap-2 pt-2 border-t border-stone-100">
         <Button variant="outline" size="sm" onClick={onCancel} disabled={saving}>
-          취소
+          Cancel
         </Button>
         <Button
           size="sm"
@@ -213,14 +211,13 @@ function AccountForm({
           style={{ background: "var(--e-orange)" }}
           className="text-white hover:opacity-90"
         >
-          {saving ? "저장 중..." : "저장"}
+          {saving ? "Saving…" : "Save"}
         </Button>
       </div>
     </div>
   );
 }
 
-// ── 메인 페이지 ───────────────────────────────────────────────────────────────
 export default function BankAccountsPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -241,9 +238,9 @@ export default function BankAccountsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bank-accounts"] });
       setAddOpen(false);
-      toast({ title: "은행 계좌가 추가됐습니다." });
+      toast({ title: "Bank account added." });
     },
-    onError: () => toast({ title: "저장 실패", variant: "destructive" }),
+    onError: () => toast({ title: "Failed to save", variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
@@ -252,9 +249,9 @@ export default function BankAccountsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bank-accounts"] });
       setEditing(null);
-      toast({ title: "계좌 정보가 수정됐습니다." });
+      toast({ title: "Bank account updated." });
     },
-    onError: () => toast({ title: "저장 실패", variant: "destructive" }),
+    onError: () => toast({ title: "Failed to save", variant: "destructive" }),
   });
 
   const setPrimaryMutation = useMutation({
@@ -262,9 +259,9 @@ export default function BankAccountsPage() {
       axios.patch(`${BASE}/api/finance/bank-accounts/${id}`, { isPrimary: true }).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bank-accounts"] });
-      toast({ title: "주거래 계좌가 변경됐습니다." });
+      toast({ title: "Primary account updated." });
     },
-    onError: () => toast({ title: "처리 실패", variant: "destructive" }),
+    onError: () => toast({ title: "Failed to update", variant: "destructive" }),
   });
 
   const deactivateMutation = useMutation({
@@ -272,9 +269,9 @@ export default function BankAccountsPage() {
       axios.delete(`${BASE}/api/finance/bank-accounts/${id}`).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bank-accounts"] });
-      toast({ title: "계좌가 비활성화됐습니다." });
+      toast({ title: "Account deactivated." });
     },
-    onError: () => toast({ title: "처리 실패", variant: "destructive" }),
+    onError: () => toast({ title: "Failed to update", variant: "destructive" }),
   });
 
   const primaryCount = accounts.filter(a => a.isPrimary).length;
@@ -282,20 +279,22 @@ export default function BankAccountsPage() {
   return (
     <div className="p-6 space-y-6">
 
-      {/* ── 페이지 헤더 ─────────────────────────────────────────────────────── */}
+      {/* ── Page Header ─────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-stone-800">은행 계좌</h1>
+          <h1 className="text-3xl font-bold text-stone-800">Bank Accounts</h1>
           <p className="text-sm text-stone-500 mt-1">
-            회사 운영 은행 계좌 관리 — AR/AP Tracker, 거래, 인보이스에 사용
+            Manage company bank accounts — used in Transactions, AR/AP Tracker, and Invoices
           </p>
         </div>
         <div className="flex items-center gap-2">
           {primaryCount > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium"
-              style={{ background: "#DCFCE7", borderColor: "#BBF7D0", color: "#16A34A" }}>
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium"
+              style={{ background: "#DCFCE7", borderColor: "#BBF7D0", color: "#16A34A" }}
+            >
               <CheckCircle2 size={14} />
-              주거래 설정됨
+              Primary set
             </div>
           )}
           <Button
@@ -305,47 +304,47 @@ export default function BankAccountsPage() {
             className="text-white hover:opacity-90 gap-1.5"
           >
             <Plus className="h-4 w-4" />
-            계좌 추가
+            Add Account
           </Button>
         </div>
       </div>
 
-      {/* ── 테이블 ──────────────────────────────────────────────────────────── */}
+      {/* ── Table ───────────────────────────────────────────────────────────── */}
       <div className="rounded-xl border border-stone-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">
               <SortableTh col="isPrimary" sortBy={sortBy} sortDir={sortDir} onSort={onSort}
                 className="text-center px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-16">
-                주거래
+                Primary
               </SortableTh>
               <SortableTh col="accountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort}
                 className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
-                계좌명
+                Account Name
               </SortableTh>
               <SortableTh col="bankName" sortBy={sortBy} sortDir={sortDir} onSort={onSort}
                 className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
-                은행
+                Bank
               </SortableTh>
               <SortableTh col="accountHolder" sortBy={sortBy} sortDir={sortDir} onSort={onSort}
                 className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
-                예금주
+                Account Holder
               </SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
                 BSB
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
-                계좌번호
+                Account No.
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">
                 SWIFT
               </th>
               <SortableTh col="defaultCurrency" sortBy={sortBy} sortDir={sortDir} onSort={onSort}
                 className="text-center px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-20">
-                통화
+                Currency
               </SortableTh>
               <th className="text-center px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide w-14">
-                관리
+                Actions
               </th>
             </tr>
           </thead>
@@ -353,7 +352,7 @@ export default function BankAccountsPage() {
             {isLoading ? (
               <tr>
                 <td colSpan={9} className="text-center py-16 text-stone-400 text-sm">
-                  불러오는 중…
+                  Loading…
                 </td>
               </tr>
             ) : sorted.length === 0 ? (
@@ -361,37 +360,29 @@ export default function BankAccountsPage() {
                 <td colSpan={9} className="text-center py-16">
                   <div className="flex flex-col items-center gap-3 text-stone-400">
                     <Landmark size={36} strokeWidth={1.2} />
-                    <p className="text-sm font-medium">등록된 은행 계좌가 없습니다</p>
+                    <p className="text-sm font-medium">No bank accounts registered</p>
                     <button
                       onClick={() => setAddOpen(true)}
                       className="text-xs hover:underline"
                       style={{ color: "var(--e-orange)" }}
                     >
-                      첫 계좌 추가하기 →
+                      Add your first account →
                     </button>
                   </div>
                 </td>
               </tr>
             ) : (
               sorted.map(account => (
-                <tr
-                  key={account.id}
-                  className="hover:bg-orange-50 transition-colors"
-                >
-                  {/* 주거래 */}
+                <tr key={account.id} className="hover:bg-orange-50 transition-colors">
+
+                  {/* Primary */}
                   <td className="px-4 py-3 text-center">
                     {account.isPrimary && (
-                      <span className="inline-flex items-center justify-center">
-                        <Star
-                          size={16}
-                          fill="var(--e-orange)"
-                          style={{ color: "var(--e-orange)" }}
-                        />
-                      </span>
+                      <Star size={16} fill="var(--e-orange)" style={{ color: "var(--e-orange)" }} />
                     )}
                   </td>
 
-                  {/* 계좌명 */}
+                  {/* Account Name */}
                   <td className="px-4 py-3">
                     <span className="font-semibold text-stone-800">
                       {account.accountName ?? "—"}
@@ -403,12 +394,12 @@ export default function BankAccountsPage() {
                     )}
                   </td>
 
-                  {/* 은행 */}
+                  {/* Bank */}
                   <td className="px-4 py-3 text-stone-700">
                     {account.bankName ?? "—"}
                   </td>
 
-                  {/* 예금주 */}
+                  {/* Account Holder */}
                   <td className="px-4 py-3 text-stone-600">
                     {account.accountHolder ?? <span className="text-stone-300">—</span>}
                   </td>
@@ -418,7 +409,7 @@ export default function BankAccountsPage() {
                     {account.bsb ?? <span className="text-stone-300">—</span>}
                   </td>
 
-                  {/* 계좌번호 */}
+                  {/* Account Number */}
                   <td className="px-4 py-3 font-mono text-stone-600 text-xs">
                     {account.accountNumber ?? <span className="text-stone-300">—</span>}
                   </td>
@@ -428,14 +419,14 @@ export default function BankAccountsPage() {
                     {account.swiftCode ?? <span className="text-stone-300">—</span>}
                   </td>
 
-                  {/* 통화 */}
+                  {/* Currency */}
                   <td className="px-4 py-3 text-center">
                     <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-600">
                       {account.defaultCurrency ?? "AUD"}
                     </span>
                   </td>
 
-                  {/* 관리 */}
+                  {/* Actions */}
                   <td className="px-4 py-3 text-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -448,21 +439,21 @@ export default function BankAccountsPage() {
                           onClick={() => setEditing(account)}
                           className="gap-2 cursor-pointer"
                         >
-                          <Pencil size={13} /> 수정
+                          <Pencil size={13} /> Edit
                         </DropdownMenuItem>
                         {!account.isPrimary && (
                           <DropdownMenuItem
                             onClick={() => setPrimaryMutation.mutate(account.id)}
                             className="gap-2 cursor-pointer"
                           >
-                            <Star size={13} /> 주거래 계좌로 설정
+                            <Star size={13} /> Set as Primary
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
                           onClick={() => deactivateMutation.mutate(account.id)}
                           className="gap-2 cursor-pointer text-red-600 focus:text-red-600"
                         >
-                          <Power size={13} /> 비활성화
+                          <Power size={13} /> Deactivate
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -473,35 +464,36 @@ export default function BankAccountsPage() {
           </tbody>
         </table>
 
-        {/* 테이블 푸터 */}
+        {/* Table footer */}
         {sorted.length > 0 && (
           <div className="px-4 py-3 bg-stone-50 border-t border-stone-200 flex items-center justify-between">
             <span className="text-xs text-stone-500">
-              총 {sorted.length}개 계좌
+              {sorted.length} {sorted.length === 1 ? "account" : "accounts"}
             </span>
             {primaryCount === 0 && (
               <span className="text-xs text-amber-600 font-medium">
-                ⚠ 주거래 계좌가 지정되지 않았습니다
+                ⚠ No primary account set
               </span>
             )}
           </div>
         )}
       </div>
 
-      {/* 안내 문구 */}
+      {/* Info note */}
       <div className="flex items-start gap-2.5 bg-stone-50 border border-stone-200 rounded-xl p-4">
         <Landmark size={15} className="text-stone-400 mt-0.5 shrink-0" />
         <p className="text-xs text-stone-500 leading-relaxed">
-          등록된 은행 계좌는 <strong className="text-stone-600">거래(Transactions), AR/AP 트래커, 인보이스</strong>에서
-          선택할 수 있습니다. 주거래 계좌는 결제 기록 시 기본값으로 사용됩니다.
+          Registered bank accounts can be selected in{" "}
+          <strong className="text-stone-600">Transactions, AR/AP Tracker, and Invoices</strong>.
+          The primary account is used as the default when recording payments.
         </p>
       </div>
 
-      {/* ── 계좌 추가 모달 ──────────────────────────────────────────────────── */}
+      {/* Add Modal */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>은행 계좌 추가</DialogTitle>
+            <DialogTitle>Add Bank Account</DialogTitle>
           </DialogHeader>
           <AccountForm
             initial={EMPTY_FORM}
@@ -512,11 +504,11 @@ export default function BankAccountsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── 계좌 수정 모달 ──────────────────────────────────────────────────── */}
+      {/* Edit Modal */}
       <Dialog open={!!editing} onOpenChange={open => !open && setEditing(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>계좌 수정</DialogTitle>
+            <DialogTitle>Edit Bank Account</DialogTitle>
           </DialogHeader>
           {editing && (
             <AccountForm
