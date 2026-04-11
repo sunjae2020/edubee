@@ -35,4 +35,3 @@ PLATFORM_ADMIN_USER_ID = "639154e0-0f35-4e3b-a7c5-ee458b205fa1"
 APP_DOMAIN = "edubee.co"
 
 [userenv.production]
-FORCE_DEV_DATA_IMPORT = "true"
