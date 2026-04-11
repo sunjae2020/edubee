@@ -13,7 +13,7 @@ import {
 import { users } from "./users";
 import { contracts } from "./contracts";
 import { leads } from "./applications";
-import { quotes, accounts } from "./crm";
+import { quotes, accounts, contacts } from "./crm";
 import { products } from "./packages";
 
 // ── Camp Package Groups ────────────────────────────────────────────────────
@@ -97,6 +97,13 @@ export const campApplications = pgTable("camp_applications", {
   applicantPhone:        varchar("applicant_phone", { length: 50 }),
   applicantNationality:  varchar("applicant_nationality", { length: 100 }),
   applicantDob:          date("applicant_dob"),
+  streetAddress:         varchar("street_address",   { length: 500 }),
+  streetAddress2:        varchar("street_address_2", { length: 500 }),
+  applicantCity:         varchar("applicant_city",   { length: 100 }),
+  applicantState:        varchar("applicant_state",  { length: 100 }),
+  postalCode:            varchar("postal_code",      { length: 20  }),
+  applicantCountry:      varchar("applicant_country",{ length: 100 }),
+  programCity:           varchar("program_city",     { length: 100 }),
   adultCount:            integer("adult_count").notNull().default(1),
   studentCount:          integer("student_count").notNull().default(0),
   preferredStartDate:    date("preferred_start_date"),
@@ -148,4 +155,15 @@ export const campTourMgt = pgTable("camp_tour_mgt", {
   createdAt:             timestamp("created_at").notNull().defaultNow(),
   updatedAt:             timestamp("updated_at").notNull().defaultNow(),
   isActive:              boolean("is_active").notNull().default(true),
+});
+
+// ── Camp Application Contacts ──────────────────────────────────────────────
+// Junction table linking contacts (students / additional adults) to a camp application.
+// role: "child" | "adult" | "primary"
+export const campApplicationContacts = pgTable("camp_application_contacts", {
+  id:                 uuid("id").primaryKey().defaultRandom(),
+  campApplicationId:  uuid("camp_application_id").notNull().references(() => campApplications.id, { onDelete: "cascade" }),
+  contactId:          uuid("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  role:               varchar("role", { length: 20 }).notNull().default("child"),
+  createdAt:          timestamp("created_at").notNull().defaultNow(),
 });
