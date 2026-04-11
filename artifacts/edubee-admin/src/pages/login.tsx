@@ -47,7 +47,10 @@ export default function Login() {
 
   // 로그인 상태이지만 ?org= 미리보기 파라미터가 없으면 대시보드로 이동
   if (isAuthenticated && !isPreviewMode) {
-    return <Redirect to={(user as any)?.role === "super_admin" ? "/superadmin" : "/admin/dashboard"} />;
+    // 플랫폼 어드민: role=super_admin + 조직 없음 → /superadmin
+    // 테넌트 슈퍼 어드민 (ts, myagency 등): role=super_admin + 조직 있음 → /admin/dashboard
+    const isPlatformAdmin = (user as any)?.role === "super_admin" && !(user as any)?.organisationId;
+    return <Redirect to={isPlatformAdmin ? "/superadmin" : "/admin/dashboard"} />;
   }
 
   function fillDemo(acc: typeof DEMO_ACCOUNTS[0]) {

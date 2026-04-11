@@ -55,6 +55,7 @@ export interface User {
   email: string;
   role: UserRole;
   fullName: string;
+  organisationId?: string | null;
   phone?: string | null;
   whatsapp?: string | null;
   lineId?: string | null;
