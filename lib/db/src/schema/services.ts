@@ -156,6 +156,18 @@ export const studyAbroadMgt = pgTable("study_abroad_mgt", {
   studentGrade:            varchar("student_grade", { length: 100 }),
   studentSchoolName:       varchar("student_school_name", { length: 255 }),
   isActive:                boolean("is_active").notNull().default(true),
+  // ── Institute MGT fields (CSV import) ────────────────────────────────────
+  spokenLanguage:          varchar("spoken_language", { length: 100 }),
+  programDuration:         varchar("program_duration", { length: 50 }),
+  schoolStatus:            varchar("school_status", { length: 50 }),
+  weeklyFee:               decimal("weekly_fee", { precision: 12, scale: 2 }),
+  enrolmentFee:            decimal("enrolment_fee", { precision: 12, scale: 2 }),
+  regiFee:                 decimal("regi_fee", { precision: 12, scale: 2 }),
+  materialFee:             decimal("material_fee", { precision: 12, scale: 2 }),
+  tuitionFee:              decimal("tuition_fee", { precision: 12, scale: 2 }),
+  schoolCommission:        decimal("school_commission", { precision: 12, scale: 2 }),
+  applicationLink:         text("application_link"),
+  appFileName:             varchar("app_file_name", { length: 500 }),
 });
 
 // ── Phase 1 Type Definitions ──────────────────────────────────────────────

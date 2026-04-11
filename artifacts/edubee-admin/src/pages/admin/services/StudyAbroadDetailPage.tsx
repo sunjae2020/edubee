@@ -217,6 +217,25 @@ interface SARecord {
   studentPassportExpiry?: string | null;
   studentGrade?: string | null;
   studentSchoolName?: string | null;
+  // institute MGT fields
+  spokenLanguage?: string | null;
+  programDuration?: string | null;
+  schoolStatus?: string | null;
+  weeklyFee?: string | null;
+  enrolmentFee?: string | null;
+  regiFee?: string | null;
+  materialFee?: string | null;
+  tuitionFee?: string | null;
+  schoolCommission?: string | null;
+  applicationLink?: string | null;
+  appFileName?: string | null;
+  // program fields
+  programName?: string | null;
+  programType?: string | null;
+  programStartDate?: string | null;
+  programEndDate?: string | null;
+  assignedClass?: string | null;
+  partnerCost?: string | null;
 }
 
 // ─── Pipeline stages ─────────────────────────────────────────────────────────
@@ -381,6 +400,18 @@ function OverviewTab({ record, onStageChange, onSave }: {
   const [studentPassportExpiry, setStudentPassportExpiry] = useState(record.studentPassportExpiry ?? "");
   const [studentGrade,         setStudentGrade]         = useState(record.studentGrade ?? "");
   const [studentSchoolName,    setStudentSchoolName]    = useState(record.studentSchoolName ?? "");
+  // institute MGT fields
+  const [spokenLanguage,   setSpokenLanguage]   = useState(record.spokenLanguage ?? "");
+  const [programDuration,  setProgramDuration]  = useState(record.programDuration ?? "");
+  const [schoolStatus,     setSchoolStatus]     = useState(record.schoolStatus ?? "");
+  const [weeklyFee,        setWeeklyFee]        = useState(record.weeklyFee ?? "");
+  const [enrolmentFee,     setEnrolmentFee]     = useState(record.enrolmentFee ?? "");
+  const [regiFee,          setRegiFee]          = useState(record.regiFee ?? "");
+  const [materialFee,      setMaterialFee]      = useState(record.materialFee ?? "");
+  const [tuitionFee,       setTuitionFee]       = useState(record.tuitionFee ?? "");
+  const [schoolCommission, setSchoolCommission] = useState(record.schoolCommission ?? "");
+  const [applicationLink,  setApplicationLink]  = useState(record.applicationLink ?? "");
+  const [appFileName,      setAppFileName]      = useState(record.appFileName ?? "");
 
   const { data: usersData } = useQuery({
     queryKey: ["users-list"],
@@ -409,6 +440,17 @@ function OverviewTab({ record, onStageChange, onSave }: {
     setStudentPassportExpiry(record.studentPassportExpiry ?? "");
     setStudentGrade(record.studentGrade ?? "");
     setStudentSchoolName(record.studentSchoolName ?? "");
+    setSpokenLanguage(record.spokenLanguage ?? "");
+    setProgramDuration(record.programDuration ?? "");
+    setSchoolStatus(record.schoolStatus ?? "");
+    setWeeklyFee(record.weeklyFee ?? "");
+    setEnrolmentFee(record.enrolmentFee ?? "");
+    setRegiFee(record.regiFee ?? "");
+    setMaterialFee(record.materialFee ?? "");
+    setTuitionFee(record.tuitionFee ?? "");
+    setSchoolCommission(record.schoolCommission ?? "");
+    setApplicationLink(record.applicationLink ?? "");
+    setAppFileName(record.appFileName ?? "");
     setIsDirty(false);
   };
 
@@ -424,6 +466,18 @@ function OverviewTab({ record, onStageChange, onSave }: {
       studentNationality: studentNationality || null,
       studentPassportNumber: studentPassportNumber || null, studentPassportExpiry: studentPassportExpiry || null,
       studentGrade: studentGrade || null, studentSchoolName: studentSchoolName || null,
+      // institute MGT fields
+      spokenLanguage: spokenLanguage || null,
+      programDuration: programDuration || null,
+      schoolStatus: schoolStatus || null,
+      weeklyFee: weeklyFee || null,
+      enrolmentFee: enrolmentFee || null,
+      regiFee: regiFee || null,
+      materialFee: materialFee || null,
+      tuitionFee: tuitionFee || null,
+      schoolCommission: schoolCommission || null,
+      applicationLink: applicationLink || null,
+      appFileName: appFileName || null,
     });
     setIsDirty(false);
   };
@@ -584,8 +638,91 @@ function OverviewTab({ record, onStageChange, onSave }: {
             <Input value={studentSchoolName} onChange={e => { setStudentSchoolName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Seoul Elementary School" />
           </div>
           <div className="col-span-2 space-y-1.5">
+            <Label className="text-xs text-stone-500">Spoken Language</Label>
+            <Input value={spokenLanguage} onChange={e => { setSpokenLanguage(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Korean, English" />
+          </div>
+          <div className="col-span-2 space-y-1.5">
             <Label className="text-xs text-stone-500">Notes</Label>
             <Textarea value={notes} onChange={e => { setNotes(e.target.value); mark(); }} className="text-xs min-h-[60px] resize-none" placeholder="Internal notes…" />
+          </div>
+        </div>
+      </div>
+
+      {/* School & Programme Info */}
+      <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
+        <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">School & Programme Info</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-500">School Status</Label>
+            <Select value={schoolStatus || "_none"} onValueChange={v => { setSchoolStatus(v === "_none" ? "" : v); mark(); }}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">—</SelectItem>
+                {["Applied School", "Accepted", "Waitlisted", "Cancelled", "Rejected"].map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-500">Program Duration</Label>
+            <Input value={programDuration} onChange={e => { setProgramDuration(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. 3 Weeks, 15 Days" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-500">Assigned Class / Grade</Label>
+            <Input value={record.assignedClass ?? ""} readOnly className="h-8 text-xs bg-stone-50 text-stone-500 cursor-default" />
+          </div>
+        </div>
+
+        {/* Fees */}
+        <div className="pt-3 border-t border-stone-100">
+          <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide mb-3">Fee Breakdown</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Weekly Fee</Label>
+              <Input type="number" value={weeklyFee} onChange={e => { setWeeklyFee(e.target.value); mark(); }} className="h-8 text-xs" placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Enrolment Fee</Label>
+              <Input type="number" value={enrolmentFee} onChange={e => { setEnrolmentFee(e.target.value); mark(); }} className="h-8 text-xs" placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Registration Fee</Label>
+              <Input type="number" value={regiFee} onChange={e => { setRegiFee(e.target.value); mark(); }} className="h-8 text-xs" placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Material Fee</Label>
+              <Input type="number" value={materialFee} onChange={e => { setMaterialFee(e.target.value); mark(); }} className="h-8 text-xs" placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">Tuition Fee</Label>
+              <Input type="number" value={tuitionFee} onChange={e => { setTuitionFee(e.target.value); mark(); }} className="h-8 text-xs" placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">School Commission</Label>
+              <Input type="number" value={schoolCommission} onChange={e => { setSchoolCommission(e.target.value); mark(); }} className="h-8 text-xs" placeholder="0" />
+            </div>
+          </div>
+        </div>
+
+        {/* Documents */}
+        <div className="pt-3 border-t border-stone-100 space-y-3">
+          <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide">Application Documents</p>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-500">Application Link</Label>
+            <div className="flex gap-2">
+              <Input value={applicationLink} onChange={e => { setApplicationLink(e.target.value); mark(); }} className="h-8 text-xs flex-1" placeholder="https://docs.google.com/…" />
+              {applicationLink && (
+                <a href={applicationLink} target="_blank" rel="noopener noreferrer"
+                  className="h-8 px-3 flex items-center gap-1 rounded-md border border-stone-200 text-xs text-stone-600 hover:bg-stone-50 shrink-0">
+                  <ExternalLink size={12} /> Open
+                </a>
+              )}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-500">App File Name</Label>
+            <Input value={appFileName} onChange={e => { setAppFileName(e.target.value); mark(); }} className="h-8 text-xs font-mono" placeholder="e.g. KIM_Jiwon-Application Oakleigh Grammar-2026/04/09" />
           </div>
         </div>
       </div>

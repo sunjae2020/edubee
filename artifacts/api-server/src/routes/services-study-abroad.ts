@@ -31,6 +31,38 @@ const SELECT_COLS = {
   isActive:            studyAbroadMgt.isActive,
   createdAt:           studyAbroadMgt.createdAt,
   updatedAt:           studyAbroadMgt.updatedAt,
+  // student fields
+  studentFirstName:     studyAbroadMgt.studentFirstName,
+  studentLastName:      studyAbroadMgt.studentLastName,
+  studentEnglishName:   studyAbroadMgt.studentEnglishName,
+  studentOriginalName:  studyAbroadMgt.studentOriginalName,
+  studentDateOfBirth:   studyAbroadMgt.studentDateOfBirth,
+  studentGender:        studyAbroadMgt.studentGender,
+  studentNationality:   studyAbroadMgt.studentNationality,
+  studentPassportNumber: studyAbroadMgt.studentPassportNumber,
+  studentPassportExpiry: studyAbroadMgt.studentPassportExpiry,
+  studentGrade:         studyAbroadMgt.studentGrade,
+  studentSchoolName:    studyAbroadMgt.studentSchoolName,
+  // program fields
+  programName:          studyAbroadMgt.programName,
+  programType:          studyAbroadMgt.programType,
+  programStartDate:     studyAbroadMgt.programStartDate,
+  programEndDate:       studyAbroadMgt.programEndDate,
+  assignedClass:        studyAbroadMgt.assignedClass,
+  partnerCost:          studyAbroadMgt.partnerCost,
+  // institute MGT new fields
+  spokenLanguage:       studyAbroadMgt.spokenLanguage,
+  programDuration:      studyAbroadMgt.programDuration,
+  schoolStatus:         studyAbroadMgt.schoolStatus,
+  weeklyFee:            studyAbroadMgt.weeklyFee,
+  enrolmentFee:         studyAbroadMgt.enrolmentFee,
+  regiFee:              studyAbroadMgt.regiFee,
+  materialFee:          studyAbroadMgt.materialFee,
+  tuitionFee:           studyAbroadMgt.tuitionFee,
+  schoolCommission:     studyAbroadMgt.schoolCommission,
+  applicationLink:      studyAbroadMgt.applicationLink,
+  appFileName:          studyAbroadMgt.appFileName,
+  // contract join
   contractNumber:      contracts.contractNumber,
   clientName:          accounts.name,
   studentName:         contracts.studentName,
@@ -190,6 +222,10 @@ router.patch(
         studentFirstName, studentLastName, studentEnglishName, studentOriginalName,
         studentDateOfBirth, studentGender, studentNationality,
         studentPassportNumber, studentPassportExpiry, studentGrade, studentSchoolName,
+        // institute MGT fields
+        spokenLanguage, programDuration, schoolStatus,
+        weeklyFee, enrolmentFee, regiFee, materialFee, tuitionFee, schoolCommission,
+        applicationLink, appFileName,
       } = req.body;
 
       const [updated] = await db
@@ -220,6 +256,18 @@ router.patch(
           ...(studentPassportExpiry !== undefined && { studentPassportExpiry: studentPassportExpiry || null }),
           ...(studentGrade        !== undefined && { studentGrade }),
           ...(studentSchoolName   !== undefined && { studentSchoolName }),
+          // institute MGT fields
+          ...(spokenLanguage   !== undefined && { spokenLanguage }),
+          ...(programDuration  !== undefined && { programDuration }),
+          ...(schoolStatus     !== undefined && { schoolStatus }),
+          ...(weeklyFee        !== undefined && { weeklyFee: weeklyFee || null }),
+          ...(enrolmentFee     !== undefined && { enrolmentFee: enrolmentFee || null }),
+          ...(regiFee          !== undefined && { regiFee: regiFee || null }),
+          ...(materialFee      !== undefined && { materialFee: materialFee || null }),
+          ...(tuitionFee       !== undefined && { tuitionFee: tuitionFee || null }),
+          ...(schoolCommission !== undefined && { schoolCommission: schoolCommission || null }),
+          ...(applicationLink  !== undefined && { applicationLink }),
+          ...(appFileName      !== undefined && { appFileName }),
           updatedAt: new Date(),
         })
         .where(
