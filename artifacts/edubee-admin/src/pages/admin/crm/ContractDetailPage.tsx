@@ -3782,6 +3782,39 @@ export default function ContractDetailPage() {
                 )}
               </DetailSection>
             )}
+            {/* Camp Operations Info */}
+            {(contract.agentName || contract.kakaoName || contract.googleFolderTitle || contract.adminNote || contract.partnerNote) && (
+              <DetailSection title="Camp Operations">
+                {contract.agentName && (
+                  <DetailRow label="Agent">
+                    <span className="text-sm font-medium text-foreground">
+                      {contract.agentName}
+                      {contract.agentInitial && (
+                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#F4F3F1] text-[#57534E]">
+                          {contract.agentInitial}
+                        </span>
+                      )}
+                    </span>
+                  </DetailRow>
+                )}
+                {contract.kakaoName && (
+                  <DetailRow label="Kakao / Code">{contract.kakaoName}</DetailRow>
+                )}
+                {contract.googleFolderTitle && (
+                  <DetailRow label="Google Folder">{contract.googleFolderTitle}</DetailRow>
+                )}
+                {contract.adminNote && (
+                  <DetailRow label="Admin Note">
+                    <span className="text-sm text-[#1C1917] whitespace-pre-line">{contract.adminNote}</span>
+                  </DetailRow>
+                )}
+                {contract.partnerNote && (
+                  <DetailRow label="Partner Note">
+                    <span className="text-sm text-[#1C1917] whitespace-pre-line">{contract.partnerNote}</span>
+                  </DetailRow>
+                )}
+              </DetailSection>
+            )}
             <SystemInfoSection
               id={contract.id}
               recordIdLabel="Contract ID"

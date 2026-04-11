@@ -276,7 +276,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
                u.id           AS owner_user_id,
                u.full_name    AS owner_name,
                q.quote_ref_number,
-               q.camp_application_id,
+               COALESCE(c.camp_application_id, q.camp_application_id) AS effective_camp_app_id,
                ca.application_ref  AS camp_app_ref,
                ca.applicant_name   AS camp_app_name,
                COALESCE(ct1.id,          ct2.id)                       AS contact_id,
@@ -289,7 +289,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
         LEFT JOIN contacts       ct2 ON ct2.id = c.customer_contact_id
         LEFT JOIN users          u   ON u.id   = a.owner_id
         LEFT JOIN quotes         q   ON q.id   = c.quote_id
-        LEFT JOIN camp_applications ca ON ca.id = q.camp_application_id
+        LEFT JOIN camp_applications ca ON ca.id = COALESCE(c.camp_application_id, q.camp_application_id)
         WHERE c.id = ${id}::uuid
       `),
       db.execute(sql`
@@ -424,6 +424,15 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       serviceModulesActivated: c.service_modules_activated ?? [],
       primaryServiceModule:    c.primary_service_module ?? null,
       notes:                   c.notes,
+      adminNote:               c.admin_note ?? null,
+      partnerNote:             c.partner_note ?? null,
+      kakaoName:               c.kakao_name ?? null,
+      googleFolderTitle:       c.google_folder_title ?? null,
+      agentName:               c.agent_name ?? null,
+      agentInitial:            c.agent_initial ?? null,
+      currency:                c.currency ?? "AUD",
+      paidAmount:              parseFloat(c.paid_amount ?? "0"),
+      balanceAmount:           parseFloat(c.balance_amount ?? "0"),
       isActive:                c.is_active ?? true,
       createdAt:               c.created_at ?? null,
       updatedAt:               c.updated_at ?? null,
@@ -462,8 +471,8 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       studentName: c.student_name,
       clientEmail: c.contact_email ?? c.client_email ?? null,
       quote:           c.quote_id  ? { id: c.quote_id,  quoteRefNumber: c.quote_ref_number } : null,
-      campApplication: c.camp_application_id ? {
-        id:             c.camp_application_id,
+      campApplication: c.effective_camp_app_id ? {
+        id:             c.effective_camp_app_id,
         applicationRef: c.camp_app_ref  ?? null,
         applicantName:  c.camp_app_name ?? null,
       } : null,

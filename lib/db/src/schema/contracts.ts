@@ -20,10 +20,11 @@ import { organisations } from "./settings";
 
 export const contracts = pgTable("contracts", {
   id: uuid("id").primaryKey().defaultRandom(),
-  contractNumber: varchar("contract_number", { length: 50 }).unique(),
+  contractNumber: varchar("contract_number", { length: 500 }).unique(),
   applicationId: uuid("application_id")
     .references(() => applications.id)
     .unique(),
+  campApplicationId: uuid("camp_application_id"), // FK to camp_applications (no circular ref)
   campProviderId: uuid("camp_provider_id").references(() => users.id),
   agentAccountId: uuid("agent_account_id").references(() => accounts.id, { onDelete: "set null" }),
   totalAmount: decimal("total_amount", { precision: 12, scale: 2 }),
@@ -40,7 +41,12 @@ export const contracts = pgTable("contracts", {
   packageGroupName: varchar("package_group_name", { length: 255 }),
   packageName: varchar("package_name", { length: 255 }),
   agentName: varchar("agent_name", { length: 255 }),
+  agentInitial: varchar("agent_initial", { length: 10 }),
   notes: text("notes"),
+  adminNote: text("admin_note"),
+  partnerNote: text("partner_note"),
+  kakaoName: varchar("kakao_name", { length: 100 }),
+  googleFolderTitle: varchar("google_folder_title", { length: 255 }),
   paymentFrequency: varchar("payment_frequency", { length: 50 }),
   commissionType: varchar("commission_type", { length: 20 }),
   courseStartDate: date("course_start_date"),
