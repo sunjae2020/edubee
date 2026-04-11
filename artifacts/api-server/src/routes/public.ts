@@ -196,6 +196,8 @@ router.get("/public/packages", async (req, res) => {
         thumbnailUrl: group.thumbnailUrl,
         location: group.location,
         countryCode: group.countryCode,
+        startDate: group.startDate ? group.startDate.toISOString().slice(0, 10) : null,
+        endDate: group.endDate ? group.endDate.toISOString().slice(0, 10) : null,
         primaryCurrency: currency,
         primaryCurrencySymbol: symbol,
         countryFlag: flag,

@@ -30,6 +30,8 @@ export type PublicProgram = {
   thumbnailUrl: string | null;
   location: string | null;
   countryCode: string | null;
+  startDate: string | null;
+  endDate: string | null;
   primaryCurrency: string;
   primaryCurrencySymbol: string;
   countryFlag: string;

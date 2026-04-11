@@ -97,7 +97,7 @@ export default function DatePickerInput({
           <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0 ml-1" />
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0 z-[200]" align="start">
         <Calendar
           mode="single"
           selected={selected}

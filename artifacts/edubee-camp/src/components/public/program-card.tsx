@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { MapPin, ChevronRight } from "lucide-react";
+import { MapPin, ChevronRight, Calendar } from "lucide-react";
 import { getLocalizedName, getLocalizedDesc, getLowestPackagePrice, type PublicProgram } from "@/lib/program-utils";
 import { Button } from "@/components/ui/button";
 import { DualPriceDisplay } from "@/components/public/dual-price-display";
@@ -77,6 +77,16 @@ export function ProgramCard({ program, onViewDetails }: Props) {
         </div>
         {program.countryFlag && (
           <span className="absolute top-3 right-3 text-xl">{program.countryFlag}</span>
+        )}
+        {/* Date band — shown only when startDate exists */}
+        {program.startDate && (
+          <div className="absolute bottom-0 inset-x-0 bg-black/55 flex items-center gap-1.5 px-3 py-1.5">
+            <Calendar className="w-3 h-3 text-white/80 shrink-0" />
+            <span className="text-white text-[11px] font-medium leading-none">
+              {program.startDate}
+              {program.endDate ? ` – ${program.endDate}` : ""}
+            </span>
+          </div>
         )}
       </div>
 
