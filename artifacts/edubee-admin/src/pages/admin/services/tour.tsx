@@ -20,7 +20,7 @@ import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
-const STATUSES = ["pending", "confirmed", "in_progress", "completed", "cancelled"];
+const STATUSES = ["processing", "pending", "confirmed", "in_progress", "completed", "cancelled"];
 
 const CONTRACT_STATUS_COLORS: Record<string, string> = {
   draft: "bg-[#F4F3F1] text-[#57534E]", active: "bg-[#DCFCE7] text-[#16A34A]",
@@ -31,6 +31,7 @@ const CONTRACT_STATUS_COLORS: Record<string, string> = {
 function StatusBadge({ status }: { status?: string | null }) {
   const s = (status ?? "pending").toLowerCase();
   const map: Record<string, string> = {
+    processing: "bg-[#FEF9C3] text-[#A16207]",
     pending: "bg-[#FEF9C3] text-[#CA8A04]", confirmed: "bg-(--e-orange-lt) text-(--e-orange)",
     in_progress: "bg-(--e-orange-lt) text-(--e-orange)", completed: "bg-[#DCFCE7] text-[#16A34A]", cancelled: "bg-[#FEF2F2] text-[#DC2626]",
   };
