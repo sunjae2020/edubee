@@ -123,9 +123,9 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
         LEFT JOIN accounts a         ON a.id = c.account_id
         LEFT JOIN users   u         ON u.id = c.owner_id
         LEFT JOIN quotes  q         ON q.id = c.quote_id
-        LEFT JOIN study_abroad_mgt  sa ON sa.contract_id = c.id
-        LEFT JOIN pickup_mgt        pk ON pk.contract_id = c.id
-        LEFT JOIN accommodation_mgt ac ON ac.contract_id = c.id
+        LEFT JOIN LATERAL (SELECT id, status FROM study_abroad_mgt  WHERE contract_id = c.id LIMIT 1) sa ON true
+        LEFT JOIN LATERAL (SELECT id, status FROM pickup_mgt        WHERE contract_id = c.id LIMIT 1) pk ON true
+        LEFT JOIN LATERAL (SELECT id, status FROM accommodation_mgt WHERE contract_id = c.id LIMIT 1) ac ON true
         WHERE ${where}
         ORDER BY c.created_at DESC
         LIMIT ${pageSizeNum} OFFSET ${offsetNum}
@@ -141,7 +141,14 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
       `),
     ]);
 
-    const rows    = r(rowsRes);
+    const rawRows = r(rowsRes);
+    // Deduplicate by contract id — safety net against JOIN fanout
+    const seenIds = new Set<string>();
+    const rows = rawRows.filter((row: any) => {
+      if (seenIds.has(row.id)) return false;
+      seenIds.add(row.id);
+      return true;
+    });
     const total   = parseInt(r(countRes)[0]?.total ?? "0");
     const summary = r(summaryRes)[0] ?? {};
 

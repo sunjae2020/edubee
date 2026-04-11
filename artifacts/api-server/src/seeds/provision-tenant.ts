@@ -69,7 +69,7 @@ export async function provisionTenantSchema(tenantSlug: string): Promise<void> {
  * 이 테이블들은 공유 데이터로 생성되므로 organisation_id 없이 public → tenant 이전.
  * (신규 테넌트에는 해당하지 않고, legacy single-tenant public 데이터 이전 전용)
  */
-const FULL_COPY_TABLES = ["package_groups", "packages", "camp_applications"] as const;
+const FULL_COPY_TABLES = ["package_groups", "package_group_images", "packages", "camp_applications", "camp_application_contacts"] as const;
 
 /**
  * 기존 테넌트 데이터를 public → tenant schema로 이전.
