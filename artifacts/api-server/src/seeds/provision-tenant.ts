@@ -65,8 +65,16 @@ export async function provisionTenantSchema(tenantSlug: string): Promise<void> {
 }
 
 /**
+ * organisation_id 없이 전체 이전 대상인 테넌트 테이블.
+ * 이 테이블들은 공유 데이터로 생성되므로 organisation_id 없이 public → tenant 이전.
+ * (신규 테넌트에는 해당하지 않고, legacy single-tenant public 데이터 이전 전용)
+ */
+const FULL_COPY_TABLES = ["package_groups", "packages", "camp_applications"] as const;
+
+/**
  * 기존 테넌트 데이터를 public → tenant schema로 이전.
- * organisation_id가 있는 테이블만 이전 (HAS_ORG_ID 테이블 20개).
+ * - organisation_id가 있는 테이블: orgId로 필터링하여 이전
+ * - organisation_id가 없는 FULL_COPY_TABLES: 전체 행을 이전 (ON CONFLICT DO NOTHING)
  *
  * @param tenantSlug   테넌트 slug (예: 'ts')
  * @param orgId        organisations 테이블의 UUID
@@ -97,8 +105,8 @@ export async function migrateTenantDataFromPublic(
   try {
     await client.query("BEGIN");
 
+    // 2a. organisation_id 기반 테이블 이전
     for (const tbl of orgIdTableNames) {
-      // tenant schema에 해당 테이블이 존재하는지 확인
       const tblCheck = await client.query(
         `SELECT 1 FROM information_schema.tables
          WHERE table_schema = $1 AND table_name = $2`,
@@ -106,13 +114,30 @@ export async function migrateTenantDataFromPublic(
       );
       if ((tblCheck.rowCount ?? 0) === 0) continue;
 
-      // 기존 데이터 중복 방지: 이미 이전된 레코드 제외 (id 기준)
       const res = await client.query(
         `INSERT INTO "${tenantSlug}"."${tbl}"
          SELECT * FROM public."${tbl}"
          WHERE organisation_id = $1
          ON CONFLICT (id) DO NOTHING`,
         [orgId]
+      );
+
+      results.push({ table: tbl, rowsMigrated: res.rowCount ?? 0 });
+    }
+
+    // 2b. organisation_id 없는 테이블 전체 이전 (package_groups, packages, camp_applications)
+    for (const tbl of FULL_COPY_TABLES) {
+      const tblCheck = await client.query(
+        `SELECT 1 FROM information_schema.tables
+         WHERE table_schema = $1 AND table_name = $2`,
+        [tenantSlug, tbl]
+      );
+      if ((tblCheck.rowCount ?? 0) === 0) continue;
+
+      const res = await client.query(
+        `INSERT INTO "${tenantSlug}"."${tbl}"
+         SELECT * FROM public."${tbl}"
+         ON CONFLICT (id) DO NOTHING`
       );
 
       results.push({ table: tbl, rowsMigrated: res.rowCount ?? 0 });
