@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Upload, X, ImageIcon, Loader2 } from "lucide-react";
+import axios from "axios";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -7,7 +8,7 @@ const MAX_WIDTH = 1280;
 const MAX_HEIGHT = 720;
 const JPEG_QUALITY = 0.82;
 
-async function compressImage(file: File): Promise<string> {
+async function compressToBlob(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -25,7 +26,14 @@ async function compressImage(file: File): Promise<string> {
       const ctx = canvas.getContext("2d");
       if (!ctx) { reject(new Error("Canvas context error")); return; }
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Failed to create blob"));
+        },
+        "image/jpeg",
+        JPEG_QUALITY,
+      );
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Failed to load image")); };
     img.src = url;
@@ -43,14 +51,14 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
 
-  const getImageSrc = () => {
-    if (preview) return preview;
+  const getImageSrc = (): string | null => {
+    if (localPreview) return localPreview;
     if (!currentUrl) return null;
-    if (currentUrl.startsWith("data:")) return currentUrl;
     if (currentUrl.startsWith("/objects/")) return `${BASE}/api/storage${currentUrl}`;
     if (currentUrl.startsWith("http")) return currentUrl;
+    if (currentUrl.startsWith("data:")) return currentUrl;
     return currentUrl;
   };
 
@@ -66,17 +74,36 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
 
     setError(null);
     setIsUploading(true);
-    setProgress(20);
+    setProgress(10);
 
     try {
-      const dataUrl = await compressImage(file);
-      setProgress(90);
-      setPreview(dataUrl);
-      onUploaded(dataUrl);
+      // Step 1: Compress image to JPEG blob
+      const blob = await compressToBlob(file);
+      setProgress(40);
+
+      // Step 2: Upload to Object Storage via direct endpoint
+      const formData = new FormData();
+      formData.append("file", blob, "thumbnail.jpg");
+
+      const { data } = await axios.post<{ objectPath: string }>(
+        `${BASE}/api/storage/uploads/direct`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (e) => {
+            if (e.total) setProgress(40 + Math.round((e.loaded / e.total) * 50));
+          },
+          withCredentials: true,
+        },
+      );
+
       setProgress(100);
+      // Set a local preview using object storage URL
+      setLocalPreview(`${BASE}/api/storage${data.objectPath}`);
+      onUploaded(data.objectPath);
     } catch (e: any) {
-      setError(e.message ?? "Upload failed");
-      setPreview(null);
+      setError(e.response?.data?.error ?? e.message ?? "Upload failed");
+      setLocalPreview(null);
     } finally {
       setIsUploading(false);
     }
@@ -131,7 +158,7 @@ export function ThumbnailUploader({ currentUrl, onUploaded, disabled }: Thumbnai
         {imgSrc && !disabled && !isUploading && (
           <button
             type="button"
-            onClick={() => { setPreview(null); onUploaded(""); }}
+            onClick={() => { setLocalPreview(null); onUploaded(""); }}
             className="text-[11px] text-red-500 hover:text-red-600 flex items-center gap-0.5"
           >
             <X className="w-3 h-3" /> Remove
