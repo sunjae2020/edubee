@@ -297,11 +297,11 @@ export default function PickupMgtDetail() {
               }
             />
             <EditableField
-              label="Flight No"
+              label="Pickup No."
               isEditing={isEditing}
-              value={rec.flightNo}
-              editValue={getValue("flightNo")}
-              onEdit={v => setField("flightNo", v)}
+              value={rec.pickupNo}
+              editValue={getValue("pickupNo")}
+              onEdit={v => setField("pickupNo", v)}
             />
             <EditableField
               label="From Location"
@@ -316,6 +316,36 @@ export default function PickupMgtDetail() {
               value={rec.toLocation}
               editValue={getValue("toLocation")}
               onEdit={v => setField("toLocation", v)}
+            />
+          </DetailSection>
+
+          <DetailSection title="Flight Info">
+            <EditableField
+              label="Flight Date"
+              isEditing={isEditing}
+              value={rec.flightDate ? formatDate(rec.flightDate) : "—"}
+              editChildren={
+                <input
+                  type="date"
+                  value={getValue("flightDate") ?? ""}
+                  onChange={e => setField("flightDate", e.target.value || null)}
+                  className="w-full h-8 text-sm border border-(--e-orange) rounded-md px-2 focus:outline-none focus:ring-1 focus:ring-(--e-orange)"
+                />
+              }
+            />
+            <EditableField
+              label="Flight Time"
+              isEditing={isEditing}
+              value={rec.flightTime}
+              editValue={getValue("flightTime")}
+              onEdit={v => setField("flightTime", v)}
+            />
+            <EditableField
+              label="Flight No"
+              isEditing={isEditing}
+              value={rec.flightNo}
+              editValue={getValue("flightNo")}
+              onEdit={v => setField("flightNo", v)}
             />
           </DetailSection>
 
@@ -398,6 +428,21 @@ export default function PickupMgtDetail() {
             ) : (
               <p className="text-sm text-foreground whitespace-pre-wrap">
                 {rec.driverNotes || <span className="text-muted-foreground/60">—</span>}
+              </p>
+            )}
+          </DetailSection>
+
+          <DetailSection title="Pickup Message" className="lg:col-span-2">
+            {isEditing ? (
+              <textarea
+                value={getValue("pickupMessage") ?? ""}
+                onChange={e => setField("pickupMessage", e.target.value)}
+                className="w-full border border-(--e-orange) rounded-md px-3 py-2 text-sm resize-none h-28 focus:outline-none focus:ring-1 focus:ring-(--e-orange)"
+                placeholder="Pickup instruction message sent to driver…"
+              />
+            ) : (
+              <p className="text-sm text-foreground whitespace-pre-wrap font-mono text-xs bg-stone-50 rounded-md p-3">
+                {rec.pickupMessage || <span className="text-muted-foreground/60">—</span>}
               </p>
             )}
           </DetailSection>

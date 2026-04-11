@@ -250,6 +250,10 @@ export const pickupMgt = pgTable("pickup_mgt", {
   flightNo:      varchar("flight_no",   { length: 50 }),
   timezone:      varchar("timezone",    { length: 100 }),
   isActive:      boolean("is_active").notNull().default(true),
+  pickupNo:      varchar("pickup_no",   { length: 50 }),
+  flightDate:    date("flight_date"),
+  flightTime:    varchar("flight_time", { length: 20 }),
+  pickupMessage: text("pickup_message"),
 });
 
 // ── Tour Management ────────────────────────────────────────────────────────

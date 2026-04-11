@@ -29,6 +29,10 @@ const SELECT_COLS = {
   flightNo:       pickupMgt.flightNo,
   timezone:       pickupMgt.timezone,
   isActive:       pickupMgt.isActive,
+  pickupNo:       pickupMgt.pickupNo,
+  flightDate:     pickupMgt.flightDate,
+  flightTime:     pickupMgt.flightTime,
+  pickupMessage:  pickupMgt.pickupMessage,
   createdAt:      pickupMgt.createdAt,
   updatedAt:      pickupMgt.updatedAt,
   // joined
@@ -208,6 +212,7 @@ router.patch(
         pickupType, fromLocation, toLocation, pickupDatetime,
         vehicleInfo, driverNotes, driverName, driverContact,
         status, productId, serviceFee, apCost, flightNo, timezone,
+        pickupNo, flightDate, flightTime, pickupMessage,
       } = req.body;
 
       const [updated] = await db
@@ -227,6 +232,10 @@ router.patch(
           ...(apCost         !== undefined && { apCost: apCost != null ? String(apCost) : null }),
           ...(flightNo       !== undefined && { flightNo: flightNo || null }),
           ...(timezone       !== undefined && { timezone: timezone || null }),
+          ...(pickupNo       !== undefined && { pickupNo: pickupNo || null }),
+          ...(flightDate     !== undefined && { flightDate: flightDate || null }),
+          ...(flightTime     !== undefined && { flightTime: flightTime || null }),
+          ...(pickupMessage  !== undefined && { pickupMessage: pickupMessage || null }),
           updatedAt: new Date(),
         })
         .where(eq(pickupMgt.id, req.params.id))
