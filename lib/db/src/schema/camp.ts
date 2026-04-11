@@ -85,9 +85,9 @@ export const campPackageProducts = pgTable("camp_package_products", {
 // Note: agentAccountId references future 'accounts' table — plain uuid
 export const campApplications = pgTable("camp_applications", {
   id:                    uuid("id").primaryKey().defaultRandom(),
-  applicationRef:        varchar("application_ref", { length: 50 }).unique(),
-  packageGroupId:        uuid("package_group_id").notNull().references(() => campPackageGroups.id),
-  packageId:             uuid("package_id").notNull().references(() => campPackages.id),
+  applicationRef:        varchar("application_ref", { length: 500 }).unique(),
+  packageGroupId:        uuid("package_group_id"),
+  packageId:             uuid("package_id"),
   applicantFirstName:    varchar("applicant_first_name", { length: 255 }),
   applicantLastName:     varchar("applicant_last_name", { length: 255 }),
   applicantOriginalName: varchar("applicant_original_name", { length: 255 }),
