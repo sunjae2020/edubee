@@ -40,10 +40,12 @@ const COUNTRY_TO_CURRENCY: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  active: "bg-green-100 text-green-700",
+  active:   "bg-green-100 text-green-700",
   inactive: "bg-amber-100 text-amber-700",
   archived: "bg-red-100 text-red-700",
-  draft: "bg-gray-100 text-gray-600",
+  draft:    "bg-gray-100 text-gray-600",
+  expired:  "bg-slate-100 text-slate-500",
+  pending:  "bg-blue-100 text-blue-600",
 };
 
 const CONTRACT_STATUS_COLORS: Record<string, string> = {
@@ -484,7 +486,7 @@ export default function PackageDetail() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(["active", "inactive", "archived", "draft"] as const).map(s => (
+                    {(["active", "expired", "pending", "draft", "inactive", "archived"] as const).map(s => (
                       <SelectItem key={s} value={s}>
                         <span className={`capitalize font-medium ${STATUS_COLORS[s]?.replace("bg-", "text-").replace(/ text-\S+/, "") ?? ""}`}>
                           {s}

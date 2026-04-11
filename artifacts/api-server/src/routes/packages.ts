@@ -176,6 +176,14 @@ router.put("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES, "cam
     const [group] = await db.update(packageGroups).set(cleanPayload as any)
       .where(eq(packageGroups.id, req.params.id)).returning();
     if (!group) return res.status(404).json({ error: "Not Found" });
+
+    // Cascade status to all packages in this group when group status changes
+    if (cleanPayload.status) {
+      await db.update(packages)
+        .set({ status: cleanPayload.status as string, updatedAt: new Date() })
+        .where(eq(packages.packageGroupId, req.params.id));
+    }
+
     return res.json(group);
   } catch (err) {
     console.error("[PUT /package-groups/:id]", err);
