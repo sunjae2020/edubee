@@ -1,10 +1,15 @@
 /**
- * 테넌트 PostgreSQL Schema 프로비저닝
+ * 테넌트 PostgreSQL Schema 프로비저닝 + 자동 동기화
  *
- * 신규 테넌트 가입 시 자동 실행:
+ * 신규 테넌트 가입 시:
  *   1. CREATE SCHEMA IF NOT EXISTS "{slug}"
  *   2. 84개 테넌트 테이블을 public schema 구조 기반으로 생성
  *      (LIKE public.{table} INCLUDING DEFAULTS INCLUDING INDEXES)
+ *
+ * 서버 시작 시 (syncAllTenantSchemas):
+ *   - 신규 테이블 → CREATE TABLE IF NOT EXISTS (from public)
+ *   - 신규 컬럼   → ALTER TABLE ADD COLUMN IF NOT EXISTS
+ *   - 완전 idempotent: 변경 없으면 아무것도 하지 않음
  *
  * 플랫폼 테이블(organisations, users 등)은 public에 그대로 유지.
  */
@@ -150,4 +155,155 @@ export async function listTenantSchemas(): Promise<string[]> {
   return result.rows
     .map((r) => r.nspname)
     .filter((n) => !systemSchemas.has(n) && !n.startsWith("pg_"));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// syncAllTenantSchemas — 서버 시작 시 자동 실행
+//
+// 모든 테넌트 schema를 public 기준으로 동기화.
+// 신규 테이블, 신규 컬럼을 자동 감지하여 추가 (완전 idempotent).
+// ─────────────────────────────────────────────────────────────────────────────
+
+type ColInfo = {
+  table_name: string;
+  column_name: string;
+  data_type: string;            // format_type() 결과 (예: "character varying(255)")
+  column_default: string | null;
+  is_nullable: string;          // 'YES' | 'NO'
+  is_generated: string;         // 'YES' | 'NO'
+};
+
+/**
+ * 서버 시작 시 모든 테넌트 schema를 public schema 기준으로 동기화.
+ *
+ * ① 신규 테이블 → CREATE TABLE IF NOT EXISTS ... LIKE public.{table}
+ * ② 신규 컬럼  → ALTER TABLE ADD COLUMN IF NOT EXISTS
+ *
+ * 변경이 없으면 아무 작업도 하지 않음 (idempotent, 빠름).
+ * 에러가 발생해도 다른 테넌트 처리는 계속 진행.
+ */
+export async function syncAllTenantSchemas(): Promise<void> {
+  const tenantSlugs = await listTenantSchemas();
+  if (tenantSlugs.length === 0) {
+    console.log("[SchemaSync] No tenant schemas found — skipping");
+    return;
+  }
+
+  const startMs = Date.now();
+  console.log(`[SchemaSync] Syncing ${tenantSlugs.length} tenant schema(s)...`);
+
+  // ── 1. public schema의 모든 테넌트 테이블 컬럼 정보를 한 번에 조회 ──────────
+  //    pg_attribute + format_type()으로 정확한 타입 문자열 획득
+  const pubClient = await pool.connect();
+  let publicCols: ColInfo[] = [];
+  let publicTableSet: Set<string>;
+  try {
+    const res = await pubClient.query<ColInfo>(`
+      SELECT
+        c.relname                                        AS table_name,
+        a.attname                                        AS column_name,
+        format_type(a.atttypid, a.atttypmod)            AS data_type,
+        pg_get_expr(ad.adbin, ad.adrelid)               AS column_default,
+        CASE WHEN a.attnotnull THEN 'NO' ELSE 'YES' END AS is_nullable,
+        CASE WHEN a.attgenerated <> ''  THEN 'YES' ELSE 'NO' END AS is_generated
+      FROM pg_attribute a
+      JOIN pg_class     c  ON c.oid  = a.attrelid
+      JOIN pg_namespace n  ON n.oid  = c.relnamespace
+      LEFT JOIN pg_attrdef ad ON ad.adrelid = a.attrelid AND ad.adnum = a.attnum
+      WHERE n.nspname   = 'public'
+        AND c.relname   = ANY($1::text[])
+        AND c.relkind   = 'r'
+        AND a.attnum    > 0
+        AND NOT a.attisdropped
+      ORDER BY c.relname, a.attnum
+    `, [TENANT_TABLES as unknown as string[]]);
+    publicCols    = res.rows;
+    publicTableSet = new Set(publicCols.map(r => r.table_name));
+  } finally {
+    pubClient.release();
+  }
+
+  let totalTablesAdded = 0;
+  let totalColsAdded   = 0;
+
+  // ── 2. 테넌트별 동기화 ────────────────────────────────────────────────────
+  for (const slug of tenantSlugs) {
+    const client = await pool.connect();
+    try {
+      // 2a. 해당 테넌트 schema의 기존 테이블·컬럼 목록을 한 번에 조회
+      const tenantRes = await client.query<{ table_name: string; column_name: string }>(`
+        SELECT c.relname AS table_name, a.attname AS column_name
+        FROM pg_attribute a
+        JOIN pg_class     c ON c.oid = a.attrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = $1
+          AND c.relname = ANY($2::text[])
+          AND c.relkind = 'r'
+          AND a.attnum  > 0
+          AND NOT a.attisdropped
+      `, [slug, TENANT_TABLES as unknown as string[]]);
+
+      const tenantColSet   = new Set(tenantRes.rows.map(r => `${r.table_name}.${r.column_name}`));
+      const tenantTableSet = new Set(tenantRes.rows.map(r => r.table_name));
+
+      // 2b. 각 테넌트 테이블 처리
+      for (const tableName of TENANT_TABLES) {
+        if (!publicTableSet.has(tableName)) continue;   // public에 없는 테이블은 건너뜀
+
+        // ── 신규 테이블: public 구조를 복사해서 생성 ──────────────────────────
+        if (!tenantTableSet.has(tableName)) {
+          await client.query(`
+            CREATE TABLE IF NOT EXISTS "${slug}"."${tableName}"
+            (LIKE public."${tableName}" INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING INDEXES)
+          `);
+          totalTablesAdded++;
+          console.log(`[SchemaSync]   + table  "${slug}"."${tableName}"`);
+          continue;  // 방금 복사했으므로 컬럼 비교 불필요
+        }
+
+        // ── 기존 테이블: 누락 컬럼만 추가 ────────────────────────────────────
+        const tableCols = publicCols.filter(r => r.table_name === tableName);
+        for (const col of tableCols) {
+          if (col.is_generated === "YES") continue;                       // GENERATED 컬럼 제외
+          if (tenantColSet.has(`${tableName}.${col.column_name}`)) continue; // 이미 존재
+
+          // 컬럼 DDL 구성
+          // - DEFAULT: sequence(nextval) 제외, 나머지는 그대로 복사
+          // - NOT NULL: DEFAULT가 있을 때만 적용
+          //   (DEFAULT 없이 NOT NULL 추가 시 기존 행 삽입 불가)
+          let colDef = `"${col.column_name}" ${col.data_type}`;
+          const hasNonSeqDefault =
+            col.column_default !== null &&
+            !col.column_default.startsWith("nextval(");
+
+          if (hasNonSeqDefault) {
+            colDef += ` DEFAULT ${col.column_default}`;
+            if (col.is_nullable === "NO") colDef += " NOT NULL";
+          }
+          // NOT NULL + DEFAULT 없음 → nullable로 추가 (기존 행 보호)
+
+          await client.query(
+            `ALTER TABLE "${slug}"."${tableName}" ADD COLUMN IF NOT EXISTS ${colDef}`
+          );
+          totalColsAdded++;
+          console.log(`[SchemaSync]   + column "${slug}"."${tableName}"."${col.column_name}" ${col.data_type}`);
+        }
+      }
+    } catch (err) {
+      // 개별 테넌트 오류는 무시하고 다음 테넌트 계속 처리
+      console.error(`[SchemaSync] ⚠️  Error syncing "${slug}":`, (err as Error).message);
+    } finally {
+      client.release();
+    }
+  }
+
+  const elapsed = Date.now() - startMs;
+  if (totalTablesAdded === 0 && totalColsAdded === 0) {
+    console.log(`[SchemaSync] ✅ All ${tenantSlugs.length} schemas up-to-date (${elapsed}ms)`);
+  } else {
+    console.log(
+      `[SchemaSync] ✅ Sync complete — +${totalTablesAdded} tables, +${totalColsAdded} columns` +
+      ` across ${tenantSlugs.length} tenants (${elapsed}ms)`
+    );
+  }
 }
