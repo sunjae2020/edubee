@@ -10,15 +10,24 @@ router.use(authenticate, requireRole("super_admin", "admin"));
 
 // ── Lookup groups metadata ──────────────────────────────────────────────────
 export const LOOKUP_GROUPS: Record<string, { label: string; description: string }> = {
-  account_type:     { label: "Account Type",       description: "Types for CRM Accounts (e.g. Student, Agent, Institute)" },
-  contact_type:     { label: "Contact Type",        description: "Types for CRM Contacts" },
-  influx_channel:   { label: "Influx Channel",      description: "How leads heard about us" },
-  sns_type:         { label: "SNS / Messaging",     description: "Social & messaging platforms" },
-  inquiry_type:     { label: "Inquiry Type",        description: "Lead inquiry categories" },
-  nationality:      { label: "Nationality",         description: "Student nationality options" },
-  language:         { label: "Language",            description: "Language options" },
-  visa_type:        { label: "Visa Type",           description: "Visa type options" },
-  product_unit:     { label: "Product Unit",        description: "Pricing unit options for products (e.g. per person, per night)" },
+  // ── CRM ─────────────────────────────────────────────────────────────────────
+  account_type:     { label: "Account Type",        description: "Types for CRM Accounts (e.g. Student, Agent, Institute)" },
+  contact_type:     { label: "Contact Type",         description: "Types for CRM Contacts" },
+  influx_channel:   { label: "Influx Channel",       description: "How leads heard about us" },
+  sns_type:         { label: "SNS / Messaging",      description: "Social & messaging platforms" },
+  inquiry_type:     { label: "Inquiry Type",         description: "Lead inquiry categories" },
+  nationality:      { label: "Nationality",          description: "Student nationality options" },
+  language:         { label: "Language",             description: "Language options" },
+  visa_type:        { label: "Visa Type",            description: "Visa type options" },
+  product_unit:     { label: "Product Unit",         description: "Pricing unit options for products (e.g. per person, per night)" },
+  // ── Package & Package Group ──────────────────────────────────────────────────
+  program_status:   { label: "Program Status",       description: "Status values for Package Groups and Packages (Active, Expired, Pending, Draft)" },
+  package_type:     { label: "Package Type",         description: "Program type categories (e.g. Family Camp, Short-term Schooling, English Camp, Summer Camp)" },
+  package_currency: { label: "Package Currency",     description: "Currency options used for package pricing" },
+  program_country:  { label: "Program Country",      description: "Destination country options for programs" },
+  program_city:     { label: "Program City",         description: "Destination city / location options for programs" },
+  program_duration: { label: "Program Duration",     description: "Duration text options (e.g. 1 Week, 2 Weeks, 3 Weeks)" },
+  room_type:        { label: "Room Type",            description: "Accommodation room type options for packages (e.g. 1 Bedroom, 2 Bedrooms, School Boarding)" },
 };
 
 // ── GET /api/settings/lookups/groups ─────────────────────────────────────────
@@ -169,6 +178,7 @@ router.post("/settings/lookups/reorder", async (req, res) => {
 router.post("/settings/lookups/seed", async (req, res) => {
   try {
     const SEED_DATA: Record<string, string[]> = {
+      // ── CRM ────────────────────────────────────────────────────────────────
       account_type:     ["Student", "Agent", "School", "Partner", "Client", "Organisation", "Staff", "Other"],
       account_category: ["VIP", "General", "New", "Alumni", "Corporate", "Government", "NGO", "Individual", "Group"],
       contact_type:     ["Student", "Organisation", "Agent", "School", "Staff", "Other"],
@@ -179,6 +189,14 @@ router.post("/settings/lookups/seed", async (req, res) => {
       language:         ["Korean", "English", "Chinese", "Japanese", "Thai", "Vietnamese", "Spanish", "French", "Other"],
       visa_type:        ["Student Visa", "Working Holiday", "Tourist", "Business", "Dependent", "Other"],
       product_unit:     ["per package", "per person", "per night", "per day", "per session", "per trip", "per group", "per week", "per transfer", "per meal", "per semester", "per annual", "per course", "flat fee"],
+      // ── Package & Package Group ────────────────────────────────────────────
+      program_status:   ["Active", "Expired", "Pending", "Draft", "Inactive", "Cancelled"],
+      package_type:     ["Family Camp", "Short-term Schooling", "English Camp", "Summer Camp", "Winter Camp", "Language Camp", "STEM Camp", "Art & Culture Camp", "Sports Camp", "Other"],
+      package_currency: ["AUS $ (AUD)", "Thai ฿ (THB)", "Korean ₩ (KRW)", "US $ (USD)", "Japanese ¥ (JPY)", "Philippine ₱ (PHP)", "Singapore $ (SGD)", "British £ (GBP)", "Canadian $ (CAD)"],
+      program_country:  ["Australia", "Thailand", "Japan", "Singapore", "Philippines", "United Kingdom", "United States", "Canada", "New Zealand", "Malaysia", "Other"],
+      program_city:     ["Melbourne", "Sydney", "Brisbane", "Gold Coast", "Townsville", "Adelaide", "Perth", "Bangkok", "Phuket", "Chiang Mai", "Tokyo", "Osaka", "Singapore", "Manila", "Kuala Lumpur", "London", "Other"],
+      program_duration: ["1 Week", "2 Weeks", "3 Weeks", "4 Weeks", "5 Weeks", "6 Weeks", "8 Weeks", "10 Weeks", "12 Weeks", "1 Month", "2 Months", "3 Months", "1 Semester", "1 Year"],
+      room_type:        ["1 Bedroom", "2 Bedrooms", "3 Bedrooms", "1 Bedroom + 1 Extra Bed", "1 Bedroom + 1 Sofa Bed", "1 Bedroom + 1 Studio", "Studio", "School Boarding", "Homestay", "Homestay + Pick/Drop", "Shared Room", "Other"],
     };
 
     let created = 0;
