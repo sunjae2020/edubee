@@ -18,6 +18,9 @@ interface StudyAbroadRow {
   contractNumber?: string | null;
   clientName?: string | null;
   studentName?: string | null;
+  studentFirstName?: string | null;
+  studentLastName?: string | null;
+  studentEnglishName?: string | null;
   agentName?: string | null;
   applicationStage?: string | null;
   coeNumber?: string | null;
@@ -288,7 +291,9 @@ export default function StudyAbroadPage() {
                   onClick={() => navigate(`/admin/services/study-abroad/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-medium text-stone-800 hover:text-(--e-orange) transition-colors">
-                    {row.clientName ?? row.studentName ?? "—"}
+                    {(row.studentFirstName || row.studentLastName)
+                      ? `${row.studentFirstName ?? ""} ${row.studentLastName ?? ""}`.trim()
+                      : (row.clientName ?? "—")}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-stone-500">{row.contractNumber ?? "—"}</td>
                   <td className="px-4 py-3">
