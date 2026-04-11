@@ -8,7 +8,7 @@ import { UserRound, Mail, Phone, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DetailPageLayout, DetailSection, DetailRow, EditableField } from "@/components/shared/DetailPageLayout";
-import { ThumbnailUploader } from "@/components/shared/ThumbnailUploader";
+import { PackageGroupImageGallery } from "@/components/shared/PackageGroupImageGallery";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { useDetailEdit } from "@/hooks/useDetailEdit";
 import { Button } from "@/components/ui/button";
@@ -593,24 +593,11 @@ export default function PackageGroupDetail() {
                   )}
                 </DetailRow>
               )}
-              <DetailRow label="Thumbnail">
-                {canEdit ? (
-                  <ThumbnailUploader
-                    currentUrl={group.thumbnailUrl}
-                    onUploaded={async (objectPath) => {
-                      await updateGroup.mutateAsync({ ...group, thumbnailUrl: objectPath || null });
-                    }}
-                  />
-                ) : group.thumbnailUrl ? (
-                  <img
-                    src={group.thumbnailUrl.startsWith("/objects/") ? `${BASE}/api/storage${group.thumbnailUrl}` : group.thumbnailUrl}
-                    alt="Thumbnail"
-                    className="w-full max-w-xs rounded-lg object-cover border"
-                    style={{ aspectRatio: "16/9" }}
-                  />
-                ) : (
-                  <span className="text-muted-foreground/60 text-sm">—</span>
-                )}
+              <DetailRow label="Program Images">
+                <PackageGroupImageGallery
+                  packageGroupId={group.id}
+                  canEdit={canEdit}
+                />
               </DetailRow>
               <DetailRow label="Created" value={group.createdAt ? formatDate(group.createdAt) : "—"} />
               <DetailRow label="Updated" value={group.updatedAt ? formatDate(group.updatedAt) : "—"} />

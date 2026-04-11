@@ -241,9 +241,19 @@ export const insertProductSchema = createInsertSchema(products).omit({
   updatedAt: true,
 });
 
+export const packageGroupImages = pgTable("package_group_images", {
+  id:             uuid("id").primaryKey().defaultRandom(),
+  packageGroupId: uuid("package_group_id").references(() => packageGroups.id, { onDelete: "cascade" }).notNull(),
+  imageUrl:       text("image_url").notNull(),
+  isPrimary:      boolean("is_primary").default(false),
+  sortOrder:      integer("sort_order").default(0),
+  createdAt:      timestamp("created_at").defaultNow(),
+});
+
 export type InsertPackageGroup = z.infer<typeof insertPackageGroupSchema>;
 export type PackageGroup = typeof packageGroups.$inferSelect;
 export type InsertPackage = z.infer<typeof insertPackageSchema>;
 export type Package = typeof packages.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Product = typeof products.$inferSelect;
+export type PackageGroupImage = typeof packageGroupImages.$inferSelect;

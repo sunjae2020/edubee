@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts } from "@workspace/db/schema";
+import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts, packageGroupImages } from "@workspace/db/schema";
 import { eq, and, count, asc, SQL, ilike, desc, sql, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate } from "../middleware/authenticate.js";
@@ -219,6 +219,118 @@ router.post("/package-groups/:id/clone", authenticate, requireRole(...ADMIN_ROLE
     return res.status(201).json(cloned);
   } catch (err) {
     console.error("[POST /package-groups/:id/clone]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── Package Group Images ──────────────────────────────────────────────────────
+
+// GET /package-groups/:id/images
+router.get("/package-groups/:id/images", authenticate, async (req, res) => {
+  try {
+    const images = await db
+      .select()
+      .from(packageGroupImages)
+      .where(eq(packageGroupImages.packageGroupId, req.params.id))
+      .orderBy(asc(packageGroupImages.sortOrder), asc(packageGroupImages.createdAt));
+    return res.json(images);
+  } catch (err) {
+    console.error("[GET /package-groups/:id/images]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// POST /package-groups/:id/images
+router.post("/package-groups/:id/images", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const { imageUrl } = req.body as { imageUrl: string };
+    if (!imageUrl) return res.status(400).json({ error: "imageUrl is required" });
+
+    const existing = await db
+      .select({ id: packageGroupImages.id })
+      .from(packageGroupImages)
+      .where(eq(packageGroupImages.packageGroupId, req.params.id));
+
+    if (existing.length >= 5) {
+      return res.status(400).json({ error: "Maximum 5 images per package group" });
+    }
+
+    const isFirst = existing.length === 0;
+    const [image] = await db
+      .insert(packageGroupImages)
+      .values({
+        packageGroupId: req.params.id,
+        imageUrl,
+        isPrimary: isFirst,
+        sortOrder: existing.length,
+      })
+      .returning();
+
+    if (isFirst) {
+      await db.update(packageGroups).set({ thumbnailUrl: imageUrl, updatedAt: new Date() })
+        .where(eq(packageGroups.id, req.params.id));
+    }
+
+    return res.status(201).json(image);
+  } catch (err) {
+    console.error("[POST /package-groups/:id/images]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// DELETE /package-groups/:id/images/:imageId
+router.delete("/package-groups/:id/images/:imageId", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const [deleted] = await db
+      .delete(packageGroupImages)
+      .where(and(
+        eq(packageGroupImages.id, req.params.imageId),
+        eq(packageGroupImages.packageGroupId, req.params.id),
+      ))
+      .returning();
+
+    if (deleted?.isPrimary) {
+      // Promote next image to primary
+      const [next] = await db.select().from(packageGroupImages)
+        .where(eq(packageGroupImages.packageGroupId, req.params.id))
+        .orderBy(asc(packageGroupImages.sortOrder)).limit(1);
+
+      if (next) {
+        await db.update(packageGroupImages).set({ isPrimary: true }).where(eq(packageGroupImages.id, next.id));
+        await db.update(packageGroups).set({ thumbnailUrl: next.imageUrl, updatedAt: new Date() })
+          .where(eq(packageGroups.id, req.params.id));
+      } else {
+        await db.update(packageGroups).set({ thumbnailUrl: null, updatedAt: new Date() })
+          .where(eq(packageGroups.id, req.params.id));
+      }
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("[DELETE /package-groups/:id/images/:imageId]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PUT /package-groups/:id/images/:imageId/set-primary
+router.put("/package-groups/:id/images/:imageId/set-primary", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  try {
+    const { id: groupId, imageId } = req.params;
+    await db.update(packageGroupImages).set({ isPrimary: false })
+      .where(eq(packageGroupImages.packageGroupId, groupId));
+
+    const [image] = await db.update(packageGroupImages).set({ isPrimary: true })
+      .where(and(eq(packageGroupImages.id, imageId), eq(packageGroupImages.packageGroupId, groupId)))
+      .returning();
+
+    if (image) {
+      await db.update(packageGroups).set({ thumbnailUrl: image.imageUrl, updatedAt: new Date() })
+        .where(eq(packageGroups.id, groupId));
+    }
+
+    return res.json(image);
+  } catch (err) {
+    console.error("[PUT /package-groups/:id/images/:imageId/set-primary]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
