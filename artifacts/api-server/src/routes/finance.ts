@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { invoices, transactions, exchangeRates, receipts, contracts, applications, users, accountLedgerEntries, settlementMgt } from "@workspace/db/schema";
-import { eq, and, count, inArray, sql, SQL } from "drizzle-orm";
+import { invoices, transactions, exchangeRates, receipts, contracts, applications, users, accountLedgerEntries, settlementMgt, banking } from "@workspace/db/schema";
+import { eq, and, count, inArray, sql, SQL, desc, asc } from "drizzle-orm";
 import { createLedgerEntry, confirmLedgerEntriesBySource, reverseLedgerEntry } from "../services/ledgerService.js";
 import { sendMail } from "../mailer.js";
 
@@ -559,6 +559,124 @@ router.post("/receipts", authenticate, requireRole(...ADMIN_ROLES), async (req, 
     }
 
     return res.status(201).json(receipt);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── Bank Accounts ────────────────────────────────────────────────────────────
+
+// GET /finance/bank-accounts
+router.get("/bank-accounts", authenticate, async (req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(banking)
+      .where(eq(banking.status, "active"))
+      .orderBy(desc(banking.isPrimary), asc(banking.accountName));
+    return res.json(rows);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /finance/bank-accounts/:id
+router.get("/bank-accounts/:id", authenticate, async (req, res) => {
+  try {
+    const [row] = await db.select().from(banking).where(eq(banking.id, req.params.id));
+    if (!row) return res.status(404).json({ error: "Not found" });
+    return res.json(row);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// POST /finance/bank-accounts
+router.post("/bank-accounts", authenticate, requireRole(["admin", "superadmin"]), async (req, res) => {
+  try {
+    const {
+      organisationId, accountName, bankName, accountNumber, accountHolder,
+      bsb, bankCode, swiftCode, countryCode, defaultCurrency,
+      isPrimary, status, notes,
+    } = req.body;
+
+    if (!accountName || !bankName) {
+      return res.status(400).json({ error: "accountName and bankName are required" });
+    }
+
+    // If new account is primary, unset existing primary
+    if (isPrimary) {
+      await db.update(banking).set({ isPrimary: false });
+    }
+
+    const [created] = await db.insert(banking).values({
+      organisationId: organisationId ?? null,
+      accountName,
+      bankName,
+      accountNumber: accountNumber ?? null,
+      accountHolder: accountHolder ?? null,
+      bsb: bsb ?? null,
+      bankCode: bankCode ?? null,
+      swiftCode: swiftCode ?? null,
+      countryCode: countryCode ?? "AU",
+      defaultCurrency: defaultCurrency ?? "AUD",
+      isPrimary: isPrimary ?? false,
+      status: status ?? "active",
+      notes: notes ?? null,
+    }).returning();
+
+    return res.status(201).json(created);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PATCH /finance/bank-accounts/:id
+router.patch("/bank-accounts/:id", authenticate, requireRole(["admin", "superadmin"]), async (req, res) => {
+  try {
+    const {
+      accountName, bankName, accountNumber, accountHolder,
+      bsb, bankCode, swiftCode, countryCode, defaultCurrency,
+      isPrimary, status, notes,
+    } = req.body;
+
+    // If setting as primary, unset others first
+    if (isPrimary === true) {
+      await db.update(banking).set({ isPrimary: false });
+    }
+
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (accountName !== undefined)     updates.accountName    = accountName;
+    if (bankName !== undefined)        updates.bankName       = bankName;
+    if (accountNumber !== undefined)   updates.accountNumber  = accountNumber;
+    if (accountHolder !== undefined)   updates.accountHolder  = accountHolder;
+    if (bsb !== undefined)             updates.bsb            = bsb;
+    if (bankCode !== undefined)        updates.bankCode       = bankCode;
+    if (swiftCode !== undefined)       updates.swiftCode      = swiftCode;
+    if (countryCode !== undefined)     updates.countryCode    = countryCode;
+    if (defaultCurrency !== undefined) updates.defaultCurrency = defaultCurrency;
+    if (isPrimary !== undefined)       updates.isPrimary      = isPrimary;
+    if (status !== undefined)          updates.status         = status;
+    if (notes !== undefined)           updates.notes          = notes;
+
+    const [updated] = await db.update(banking).set(updates).where(eq(banking.id, req.params.id)).returning();
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    return res.json(updated);
+  } catch (err) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// DELETE /finance/bank-accounts/:id  (soft delete)
+router.delete("/bank-accounts/:id", authenticate, requireRole(["admin", "superadmin"]), async (req, res) => {
+  try {
+    const [updated] = await db
+      .update(banking)
+      .set({ status: "inactive", updatedAt: new Date() })
+      .where(eq(banking.id, req.params.id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
   }

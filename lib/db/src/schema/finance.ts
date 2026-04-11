@@ -38,15 +38,19 @@ export const exchangeRates = pgTable(
 
 export const banking = pgTable("banking", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").references(() => users.id),
+  organisationId: uuid("organisation_id"),
+  accountName: varchar("account_name", { length: 255 }),
   bankName: varchar("bank_name", { length: 255 }),
   accountNumber: varchar("account_number", { length: 100 }),
   accountHolder: varchar("account_holder", { length: 255 }),
+  bsb: varchar("bsb", { length: 20 }),
   bankCode: varchar("bank_code", { length: 50 }),
+  swiftCode: varchar("swift_code", { length: 20 }),
   countryCode: varchar("country_code", { length: 10 }),
   defaultCurrency: varchar("default_currency", { length: 10 }),
   isPrimary: boolean("is_primary").default(false),
   status: varchar("status", { length: 20 }).default("active"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
