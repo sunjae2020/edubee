@@ -19,11 +19,14 @@ import { DollarSign, Map, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const STATUSES = ["pending", "confirmed", "in_progress", "completed", "cancelled"];
+const STATUSES = ["processing", "pending", "confirmed", "in_progress", "completed", "cancelled"];
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700", confirmed: "bg-orange-100 text-orange-700",
-  in_progress: "bg-blue-100 text-blue-700", completed: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
+  processing:  "bg-yellow-50 text-yellow-600",
+  pending:     "bg-yellow-100 text-yellow-700",
+  confirmed:   "bg-orange-100 text-orange-700",
+  in_progress: "bg-blue-100 text-blue-700",
+  completed:   "bg-green-100 text-green-700",
+  cancelled:   "bg-red-100 text-red-700",
 };
 
 function fmtMoney(v?: string | null) {
@@ -215,15 +218,25 @@ export default function TourMgtDetail() {
                     <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
                   </Select>
                 } />
-              <DetailRow label="Tour Date" value={rec.tourDate ? formatDate(rec.tourDate) : "—"} />
               <EditableField label="Tour Name" isEditing={isEditing} value={rec.tourName}
                 editValue={getValue("tourName")} onEdit={v => setField("tourName", v)} />
-              <EditableField label="Meeting Point" isEditing={isEditing} value={rec.meetingPoint}
-                editValue={getValue("meetingPoint")} onEdit={v => setField("meetingPoint", v)} />
+              <EditableField label="Tour Type" isEditing={isEditing} value={rec.tourType}
+                editValue={getValue("tourType")} onEdit={v => setField("tourType", v)} />
+              <EditableField label="Tour No." isEditing={isEditing} value={rec.tourNo}
+                editValue={getValue("tourNo")} onEdit={v => setField("tourNo", v)} />
+              <EditableField label="Tour Date" isEditing={isEditing}
+                value={rec.tourDate ? formatDate(rec.tourDate) : "—"}
+                editChildren={
+                  <input type="date" value={getValue("tourDate") ?? ""}
+                    onChange={e => setField("tourDate", e.target.value || null)}
+                    className="w-full h-8 text-sm border border-(--e-orange) rounded-md px-2 focus:outline-none" />
+                } />
               <EditableField label="Start Time" isEditing={isEditing} value={rec.startTime}
                 editValue={getValue("startTime")} onEdit={v => setField("startTime", v)} />
               <EditableField label="End Time" isEditing={isEditing} value={rec.endTime}
                 editValue={getValue("endTime")} onEdit={v => setField("endTime", v)} />
+              <EditableField label="Meeting Point" isEditing={isEditing} value={rec.meetingPoint}
+                editValue={getValue("meetingPoint")} onEdit={v => setField("meetingPoint", v)} />
               <EditableField label="Guide Info" isEditing={isEditing} value={rec.guideInfo}
                 editValue={getValue("guideInfo")} onEdit={v => setField("guideInfo", v)} />
             </DetailSection>
@@ -239,6 +252,31 @@ export default function TourMgtDetail() {
                   </button>
                 ) : <span>{rec.contractNumber ?? "—"}</span>}
               </DetailRow>
+            </DetailSection>
+
+            <DetailSection title="Tour Pricing">
+              <EditableField label="Adult Fee" isEditing={isEditing}
+                value={rec.adultFee ? `AUD ${Number(rec.adultFee).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+                editValue={getValue("adultFee")} onEdit={v => setField("adultFee", v)} inputType="number" />
+              <EditableField label="Child Fee" isEditing={isEditing}
+                value={rec.childFee ? `AUD ${Number(rec.childFee).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+                editValue={getValue("childFee")} onEdit={v => setField("childFee", v)} inputType="number" />
+              <EditableField label="Adult No." isEditing={isEditing} value={rec.adultNo != null ? String(rec.adultNo) : "—"}
+                editValue={getValue("adultNo")} onEdit={v => setField("adultNo", v)} inputType="number" />
+              <EditableField label="Child No." isEditing={isEditing} value={rec.childNo != null ? String(rec.childNo) : "—"}
+                editValue={getValue("childNo")} onEdit={v => setField("childNo", v)} inputType="number" />
+              <EditableField label="Meal" isEditing={isEditing} value={rec.meal}
+                editValue={getValue("meal")} onEdit={v => setField("meal", v)} />
+              <EditableField label="Meal Fee" isEditing={isEditing}
+                value={rec.mealFee ? `AUD ${Number(rec.mealFee).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—"}
+                editValue={getValue("mealFee")} onEdit={v => setField("mealFee", v)} inputType="number" />
+              <EditableField label="Payment Date" isEditing={isEditing}
+                value={rec.paymentDate ? formatDate(rec.paymentDate) : "—"}
+                editChildren={
+                  <input type="date" value={getValue("paymentDate") ?? ""}
+                    onChange={e => setField("paymentDate", e.target.value || null)}
+                    className="w-full h-8 text-sm border border-(--e-orange) rounded-md px-2 focus:outline-none" />
+                } />
             </DetailSection>
 
             <DetailSection title="Product Linkage">

@@ -278,6 +278,15 @@ export const tourMgt = pgTable("tour_mgt", {
   serviceFee:    decimal("service_fee", { precision: 12, scale: 2 }),
   apCost:        decimal("ap_cost",     { precision: 12, scale: 2 }),
   isActive:      boolean("is_active").notNull().default(true),
+  tourType:      varchar("tour_type",    { length: 100 }),
+  childFee:      decimal("child_fee",    { precision: 12, scale: 2 }),
+  adultFee:      decimal("adult_fee",    { precision: 12, scale: 2 }),
+  childNo:       integer("child_no"),
+  adultNo:       integer("adult_no"),
+  paymentDate:   date("payment_date"),
+  meal:          varchar("meal",         { length: 255 }),
+  mealFee:       decimal("meal_fee",     { precision: 12, scale: 2 }),
+  tourNo:        varchar("tour_no",      { length: 50 }),
 });
 
 // ── Settlement Management ──────────────────────────────────────────────────

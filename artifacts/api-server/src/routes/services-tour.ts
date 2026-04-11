@@ -27,6 +27,15 @@ const SELECT_COLS = {
   serviceFee:     tourMgt.serviceFee,
   apCost:         tourMgt.apCost,
   isActive:       tourMgt.isActive,
+  tourType:       tourMgt.tourType,
+  childFee:       tourMgt.childFee,
+  adultFee:       tourMgt.adultFee,
+  childNo:        tourMgt.childNo,
+  adultNo:        tourMgt.adultNo,
+  paymentDate:    tourMgt.paymentDate,
+  meal:           tourMgt.meal,
+  mealFee:        tourMgt.mealFee,
+  tourNo:         tourMgt.tourNo,
   createdAt:      tourMgt.createdAt,
   updatedAt:      tourMgt.updatedAt,
   // joined
@@ -202,6 +211,8 @@ router.patch(
         tourName, tourDate, startTime, endTime, meetingPoint,
         highlights, guideInfo, tourNotes, status, tourCompanyId,
         productId, serviceFee, apCost,
+        tourType, childFee, adultFee, childNo, adultNo,
+        paymentDate, meal, mealFee, tourNo,
       } = req.body;
 
       const updates: Record<string, any> = { updatedAt: new Date() };
@@ -213,7 +224,7 @@ router.patch(
 
       if (true) {
         if (tourName     !== undefined) updates.tourName     = tourName;
-        if (tourDate     !== undefined) updates.tourDate     = tourDate;
+        if (tourDate     !== undefined) updates.tourDate     = tourDate || null;
         if (startTime    !== undefined) updates.startTime    = startTime;
         if (endTime      !== undefined) updates.endTime      = endTime;
         if (meetingPoint !== undefined) updates.meetingPoint = meetingPoint;
@@ -221,6 +232,15 @@ router.patch(
         if (productId    !== undefined) updates.productId   = productId || null;
         if (serviceFee   !== undefined) updates.serviceFee  = serviceFee != null ? String(serviceFee) : null;
         if (apCost       !== undefined) updates.apCost      = apCost    != null ? String(apCost)      : null;
+        if (tourType     !== undefined) updates.tourType    = tourType  || null;
+        if (childFee     !== undefined) updates.childFee    = childFee  != null ? String(childFee)    : null;
+        if (adultFee     !== undefined) updates.adultFee    = adultFee  != null ? String(adultFee)    : null;
+        if (childNo      !== undefined) updates.childNo     = childNo   != null ? Number(childNo)     : null;
+        if (adultNo      !== undefined) updates.adultNo     = adultNo   != null ? Number(adultNo)     : null;
+        if (paymentDate  !== undefined) updates.paymentDate = paymentDate || null;
+        if (meal         !== undefined) updates.meal        = meal      || null;
+        if (mealFee      !== undefined) updates.mealFee     = mealFee   != null ? String(mealFee)     : null;
+        if (tourNo       !== undefined) updates.tourNo      = tourNo    || null;
       }
 
       const [updated] = await db
@@ -258,6 +278,8 @@ router.put(
         tourName, tourDate, startTime, endTime, meetingPoint,
         highlights, guideInfo, tourNotes, status, tourCompanyId,
         productId, serviceFee, apCost,
+        tourType, childFee, adultFee, childNo, adultNo,
+        paymentDate, meal, mealFee, tourNo,
       } = req.body;
 
       const updates: Record<string, any> = { updatedAt: new Date() };
@@ -269,7 +291,7 @@ router.put(
 
       if (true) {
         if (tourName     !== undefined) updates.tourName     = tourName;
-        if (tourDate     !== undefined) updates.tourDate     = tourDate;
+        if (tourDate     !== undefined) updates.tourDate     = tourDate || null;
         if (startTime    !== undefined) updates.startTime    = startTime;
         if (endTime      !== undefined) updates.endTime      = endTime;
         if (meetingPoint !== undefined) updates.meetingPoint = meetingPoint;
@@ -277,6 +299,15 @@ router.put(
         if (productId    !== undefined) updates.productId   = productId || null;
         if (serviceFee   !== undefined) updates.serviceFee  = serviceFee != null ? String(serviceFee) : null;
         if (apCost       !== undefined) updates.apCost      = apCost    != null ? String(apCost)      : null;
+        if (tourType     !== undefined) updates.tourType    = tourType  || null;
+        if (childFee     !== undefined) updates.childFee    = childFee  != null ? String(childFee)    : null;
+        if (adultFee     !== undefined) updates.adultFee    = adultFee  != null ? String(adultFee)    : null;
+        if (childNo      !== undefined) updates.childNo     = childNo   != null ? Number(childNo)     : null;
+        if (adultNo      !== undefined) updates.adultNo     = adultNo   != null ? Number(adultNo)     : null;
+        if (paymentDate  !== undefined) updates.paymentDate = paymentDate || null;
+        if (meal         !== undefined) updates.meal        = meal      || null;
+        if (mealFee      !== undefined) updates.mealFee     = mealFee   != null ? String(mealFee)     : null;
+        if (tourNo       !== undefined) updates.tourNo      = tourNo    || null;
       }
 
       const [updated] = await db
