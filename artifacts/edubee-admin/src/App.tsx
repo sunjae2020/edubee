@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -101,7 +101,7 @@ import PlatformCrm from "@/pages/admin/superadmin/PlatformCrm";
 import PlatformCrmDetail from "@/pages/admin/superadmin/PlatformCrmDetail";
 import SuperAdminIntegrations from "@/pages/admin/superadmin/Integrations";
 import SuperAdminGuard from "@/components/guards/SuperAdminGuard";
-import { useTenantTheme, TenantThemeContext } from "@/hooks/use-tenant-theme";
+import { useTenantTheme, TenantThemeContext, DEFAULT_THEME, applyThemeToDom } from "@/hooks/use-tenant-theme";
 import Products from "@/pages/admin/products";
 import ProductDetail from "@/pages/admin/product-detail";
 import ProductGroups from "@/pages/admin/product-groups";
@@ -177,9 +177,19 @@ function AdminRoute({ children, title }: { children: React.ReactNode; title?: st
 
 function Router() {
   const { theme } = useTenantTheme();
+  const [location] = useLocation();
+
+  // 슈퍼 어드민 경로에서는 항상 Edubee 기본 테마 사용.
+  // 테넌트 JWT로 인해 테넌트 색상이 슈퍼 어드민 UI에 bleeding되는 것을 방지.
+  const isSuperAdmin = location.startsWith("/superadmin");
+  const effectiveTheme = isSuperAdmin ? DEFAULT_THEME : theme;
+
+  useEffect(() => {
+    applyThemeToDom(isSuperAdmin ? DEFAULT_THEME : theme);
+  }, [isSuperAdmin, theme]);
 
   return (
-    <TenantThemeContext.Provider value={theme}>
+    <TenantThemeContext.Provider value={effectiveTheme}>
     <Switch>
       {/* Root → login */}
       <Route path="/"><Redirect to="/login" /></Route>
