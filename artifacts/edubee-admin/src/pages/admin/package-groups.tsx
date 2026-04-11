@@ -117,7 +117,7 @@ export default function PackageGroups() {
   const [, setLocation] = useLocation();
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("active");
   const [typeTab, setTypeTab] = useState("all");
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
@@ -376,8 +376,8 @@ export default function PackageGroups() {
         total={filtered.length}
         addLabel="New Package Group"
         onAdd={openCreate}
-        statuses={["active", "draft", "archived"]}
-        statusLabels={{ active: "Active", draft: "Draft", archived: "Archived" }}
+        statuses={["active", "expired", "pending", "draft"]}
+        statusLabels={{ active: "Active", expired: "Expired", pending: "Pending", draft: "Draft" }}
         activeStatus={statusFilter}
         onStatusChange={v => { setStatusFilter(v); setPage(1); }}
       />
@@ -441,8 +441,13 @@ export default function PackageGroups() {
                   <div className="flex items-start justify-between mb-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${isActive ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>
-                          {isActive ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                          g.status === "active"  ? "bg-green-50 text-green-700" :
+                          g.status === "expired" ? "bg-slate-100 text-slate-500" :
+                          g.status === "pending" ? "bg-blue-50 text-blue-600" :
+                          "bg-amber-50 text-amber-700"
+                        }`}>
+                          {g.status === "active"  ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
                           {g.status ?? "draft"}
                         </span>
                         {g.typeName && (
