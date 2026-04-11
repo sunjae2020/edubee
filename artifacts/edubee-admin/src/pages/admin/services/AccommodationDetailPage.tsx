@@ -44,6 +44,14 @@ interface AccomDetail {
   roomType?: string | null;
   welfareCheckDates?: WelfareCheck[] | null;
   relocationReason?: string | null;
+  // Hotel MGT fields
+  bookingConfirmationNo?: string | null;
+  roomNumber?: string | null;
+  perNightRate?: string | null;
+  subTotal?: string | null;
+  otherFee?: string | null;
+  totalHotelFee?: string | null;
+  paymentDate?: string | null;
   status?: string | null;
   notes?: string | null;
   isActive?: boolean | null;
@@ -151,8 +159,21 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
   const [checkout, setCheckout] = useState(record.checkoutDate ?? "");
   const [weeklyRate, setWeeklyRate] = useState(record.weeklyRate ?? "");
   const [notes, setNotes]     = useState(record.notes ?? "");
+  const [bookingConfirmationNo, setBookingConfirmationNo] = useState(record.bookingConfirmationNo ?? "");
+  const [roomNumber, setRoomNumber] = useState(record.roomNumber ?? "");
+  const [perNightRate, setPerNightRate] = useState(record.perNightRate ?? "");
+  const [subTotal, setSubTotal] = useState(record.subTotal ?? "");
+  const [otherFee, setOtherFee] = useState(record.otherFee ?? "");
+  const [totalHotelFee, setTotalHotelFee] = useState(record.totalHotelFee ?? "");
+  const [paymentDate, setPaymentDate] = useState(record.paymentDate ?? "");
 
   const mark = () => setIsDirty(true);
+
+  const nights = (() => {
+    if (!checkin || !checkout) return null;
+    try { return differenceInCalendarDays(parseISO(checkout), parseISO(checkin)); }
+    catch { return null; }
+  })();
 
   const discard = () => {
     setStatus(record.status ?? "searching");
@@ -160,8 +181,30 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
     setCheckout(record.checkoutDate ?? "");
     setWeeklyRate(record.weeklyRate ?? "");
     setNotes(record.notes ?? "");
+    setBookingConfirmationNo(record.bookingConfirmationNo ?? "");
+    setRoomNumber(record.roomNumber ?? "");
+    setPerNightRate(record.perNightRate ?? "");
+    setSubTotal(record.subTotal ?? "");
+    setOtherFee(record.otherFee ?? "");
+    setTotalHotelFee(record.totalHotelFee ?? "");
+    setPaymentDate(record.paymentDate ?? "");
     setIsDirty(false);
   };
+
+  const savePayload = () => ({
+    checkinDate: checkin || null,
+    checkoutDate: checkout || null,
+    weeklyRate: weeklyRate || null,
+    status,
+    notes,
+    bookingConfirmationNo: bookingConfirmationNo || null,
+    roomNumber: roomNumber || null,
+    perNightRate: perNightRate || null,
+    subTotal: subTotal || null,
+    otherFee: otherFee || null,
+    totalHotelFee: totalHotelFee || null,
+    paymentDate: paymentDate || null,
+  });
 
   return (
     <div className="space-y-5">
@@ -188,15 +231,15 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
           <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">Host / Provider</h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-stone-400">Name</span><span className="font-medium text-stone-800">{record.hostName ?? "—"}</span></div>
-            <div className="flex justify-between"><span className="text-stone-400">Contact</span><span className="text-stone-600">{record.hostContact ?? "—"}</span></div>
-            <div className="flex justify-between"><span className="text-stone-400">Address</span><span className="text-stone-600 text-xs text-right max-w-[160px] leading-snug">{record.hostAddress ?? "—"}</span></div>
-            <div className="flex justify-between"><span className="text-stone-400">To School</span><span className="text-stone-600">{record.distanceToSchool ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-stone-400">Hotel</span><span className="font-medium text-stone-800">{record.hostName ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-stone-400">Room Type</span><span className="text-stone-600">{record.roomType ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-stone-400">Room Number</span><span className="text-stone-600">{record.roomNumber ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-stone-400">Confirmation #</span><span className="text-stone-600 text-xs">{record.bookingConfirmationNo ?? "—"}</span></div>
           </div>
         </div>
       </div>
 
-      {/* Editable fields */}
+      {/* Booking Details editable */}
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">Booking Details</h3>
@@ -206,7 +249,7 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
                 className="flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 border border-stone-200 rounded-md px-2.5 py-1 transition-colors">
                 <RotateCcw size={11} /> Discard
               </button>
-              <button onClick={() => { onSave({ checkinDate: checkin || null, checkoutDate: checkout || null, weeklyRate: weeklyRate || null, status, notes }); setIsDirty(false); }}
+              <button onClick={() => { onSave(savePayload()); setIsDirty(false); }}
                 className="flex items-center gap-1 text-xs text-white rounded-md px-2.5 py-1 font-semibold"
                 style={{ background: "var(--e-orange)" }}>
                 <Save size={11} /> Save Changes
@@ -230,22 +273,62 @@ function DetailsTab({ record, onSave }: { record: AccomDetail; onSave: (p: objec
             <Input type="date" value={checkout} onChange={e => { setCheckout(e.target.value); mark(); }} className="h-9 text-sm" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-600">Weekly Rate ($)</Label>
-            <Input type="number" value={weeklyRate} onChange={e => { setWeeklyRate(e.target.value); mark(); }} className="h-9 text-sm" placeholder="0.00" />
+            <Label className="text-xs text-stone-600">Nights</Label>
+            <div className="h-9 flex items-center px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-600">
+              {nights !== null ? nights : "—"}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Booking Confirmation #</Label>
+            <Input value={bookingConfirmationNo} onChange={e => { setBookingConfirmationNo(e.target.value); mark(); }} className="h-9 text-sm" placeholder="Confirmation number" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Room Number</Label>
+            <Input value={roomNumber} onChange={e => { setRoomNumber(e.target.value); mark(); }} className="h-9 text-sm" placeholder="Room number" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-600">Status</Label>
             <Select value={status} onValueChange={v => { setStatus(v); mark(); }}>
               <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {["searching", "confirmed", "checked_in", "checked_out", "cancelled"].map(s => (
+                {["searching", "applied", "confirmed", "checked_in", "checked_out", "cancelled"].map(s => (
                   <SelectItem key={s} value={s} className="capitalize">{s.replace(/_/g, " ")}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="col-span-2 space-y-1.5">
-            <Label className="text-xs text-stone-600">Notes</Label>
+        </div>
+      </div>
+
+      {/* Hotel Fee section */}
+      <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <DollarSign size={14} style={{ color: "var(--e-orange)" }} />
+          <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">Hotel Fees</h3>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Per Night Rate ($)</Label>
+            <Input type="number" value={perNightRate} onChange={e => { setPerNightRate(e.target.value); mark(); }} className="h-9 text-sm" placeholder="0.00" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Sub Total ($)</Label>
+            <Input type="number" value={subTotal} onChange={e => { setSubTotal(e.target.value); mark(); }} className="h-9 text-sm" placeholder="0.00" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Other Fee ($)</Label>
+            <Input type="number" value={otherFee} onChange={e => { setOtherFee(e.target.value); mark(); }} className="h-9 text-sm" placeholder="0.00" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Total Hotel Fee ($)</Label>
+            <Input type="number" value={totalHotelFee} onChange={e => { setTotalHotelFee(e.target.value); mark(); }} className="h-9 text-sm" placeholder="0.00" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-stone-600">Payment Date</Label>
+            <Input type="date" value={paymentDate} onChange={e => { setPaymentDate(e.target.value); mark(); }} className="h-9 text-sm" />
+          </div>
+          <div className="col-span-3 space-y-1.5">
+            <Label className="text-xs text-stone-600">Booking Note</Label>
             <Textarea value={notes} onChange={e => { setNotes(e.target.value); mark(); }} className="text-sm min-h-[36px] resize-none" />
           </div>
         </div>

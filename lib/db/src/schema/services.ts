@@ -38,12 +38,20 @@ export const accommodationMgt = pgTable("accommodation_mgt", {
   distanceToSchool:  varchar("distance_to_school", { length: 100 }),
   welfareCheckDates: jsonb("welfare_check_dates"),
   relocationReason:  text("relocation_reason"),
-  settlementId:      uuid("settlement_id"),
-  status:            varchar("status", { length: 50 }).notNull().default("searching"),
-  notes:             text("notes"),
-  createdAt:         timestamp("created_at").notNull().defaultNow(),
-  updatedAt:         timestamp("updated_at").notNull().defaultNow(),
-  isActive:          boolean("is_active").notNull().default(true),
+  settlementId:          uuid("settlement_id"),
+  // Hotel MGT fields
+  bookingConfirmationNo: varchar("booking_confirmation_no", { length: 200 }),
+  roomNumber:            varchar("room_number", { length: 50 }),
+  perNightRate:          decimal("per_night_rate", { precision: 12, scale: 2 }),
+  subTotal:              decimal("sub_total", { precision: 12, scale: 2 }),
+  otherFee:              decimal("other_fee", { precision: 12, scale: 2 }),
+  totalHotelFee:         decimal("total_hotel_fee", { precision: 12, scale: 2 }),
+  paymentDate:           date("payment_date"),
+  status:                varchar("status", { length: 50 }).notNull().default("searching"),
+  notes:                 text("notes"),
+  createdAt:             timestamp("created_at").notNull().defaultNow(),
+  updatedAt:             timestamp("updated_at").notNull().defaultNow(),
+  isActive:              boolean("is_active").notNull().default(true),
 });
 
 // ── Internship Management ──────────────────────────────────────────────────

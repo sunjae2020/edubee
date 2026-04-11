@@ -33,8 +33,9 @@ function fmtDate(d: string | null | undefined): string {
 
 const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
   searching:   { bg: "var(--e-orange-lt)", text: "var(--e-orange)" },
-  confirmed:   { bg: "#FEF9C3", text: "#CA8A04" },
-  checked_in:  { bg: "#DCFCE7", text: "#16A34A" },
+  applied:     { bg: "#FEF9C3", text: "#CA8A04" },
+  confirmed:   { bg: "#DCFCE7", text: "#16A34A" },
+  checked_in:  { bg: "#D1FAE5", text: "#065F46" },
   checked_out: { bg: "#F4F3F1", text: "#57534E" },
   cancelled:   { bg: "#FEF2F2", text: "#DC2626" },
 };
@@ -162,6 +163,7 @@ export default function AccommodationPage() {
         >
           <option value="">All Statuses</option>
           <option value="searching">Searching</option>
+          <option value="applied">Applied</option>
           <option value="confirmed">Confirmed</option>
           <option value="checked_in">Checked In</option>
           <option value="checked_out">Checked Out</option>
