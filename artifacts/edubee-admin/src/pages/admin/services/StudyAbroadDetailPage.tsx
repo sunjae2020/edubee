@@ -518,10 +518,6 @@ function OverviewTab({ record, onStageChange, onSave }: {
           </div>
           <div className="space-y-3 pt-2 border-t border-stone-100">
             <div className="space-y-1.5">
-              <Label className="text-xs text-stone-500">School Name</Label>
-              <Input value={studentSchoolName} onChange={e => { setStudentSchoolName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Seoul Elementary School" />
-            </div>
-            <div className="space-y-1.5">
               <Label className="text-xs text-stone-500">Status</Label>
               <Select value={status} onValueChange={v => { setStatus(v); mark(); }}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
@@ -652,6 +648,10 @@ function OverviewTab({ record, onStageChange, onSave }: {
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">School & Programme Info</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="col-span-3 space-y-1.5">
+            <Label className="text-xs text-stone-500">School Name</Label>
+            <Input value={studentSchoolName} onChange={e => { setStudentSchoolName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Seoul Elementary School" />
+          </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-500">School Status</Label>
             <Select value={schoolStatus || "_none"} onValueChange={v => { setSchoolStatus(v === "_none" ? "" : v); mark(); }}>
