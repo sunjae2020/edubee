@@ -13,8 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Tag, Pencil, Plus, Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { ListPagination } from "@/components/ui/list-pagination";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const PAGE_SIZE = 10;
 
 interface ProductGroup { id: string; name: string; status: string }
 interface ProductType {
@@ -64,6 +66,7 @@ export default function ProductTypes() {
   const [search, setSearch]          = useState("");
   const [statusFilter, setStatus]    = useState("Active");
   const [groupFilter, setGroupFilter]= useState("all");
+  const [page, setPage]              = useState(1);
   const [modalOpen, setModalOpen]    = useState(false);
   const [editing, setEditing]        = useState<ProductType | null>(null);
   const [form, setForm]              = useState<FormState>(EMPTY_FORM);
@@ -85,6 +88,9 @@ export default function ProductTypes() {
       return axios.get(`${BASE}/api/product-types?${p}`).then(r => r.data);
     },
   });
+
+  const sorted = useSorted(types, sortBy, sortDir);
+  const paged  = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const openCreate = () => { setEditing(null); setForm(EMPTY_FORM); setNameError(""); setModalOpen(true); };
   const openEdit   = (t: ProductType) => {
@@ -152,16 +158,16 @@ export default function ProductTypes() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E]" />
-          <Input placeholder="Search by name..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 border-[#E8E6E2]" />
+          <Input placeholder="Search by name..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9 h-9 border-[#E8E6E2]" />
         </div>
-        <Select value={groupFilter} onValueChange={setGroupFilter}>
+        <Select value={groupFilter} onValueChange={v => { setGroupFilter(v); setPage(1); }}>
           <SelectTrigger className="w-44 h-9 border-[#E8E6E2]"><SelectValue placeholder="All Groups" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Groups</SelectItem>
             {groups.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={setStatus}>
+        <Select value={statusFilter} onValueChange={v => { setStatus(v); setPage(1); }}>
           <SelectTrigger className="w-36 h-9 border-[#E8E6E2]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
@@ -193,9 +199,9 @@ export default function ProductTypes() {
                   <td key={j} className="px-4 py-3"><div className="h-4 bg-[#F4F3F1] rounded animate-pulse" /></td>
                 ))}</tr>
               ))
-            ) : types.length === 0 ? (
+            ) : sorted.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No product types found</td></tr>
-            ) : types.map(t => (
+            ) : paged.map(t => (
               <tr
                 key={t.id}
                 className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors"
@@ -235,6 +241,8 @@ export default function ProductTypes() {
           </tbody>
         </table>
       </div>
+
+      <ListPagination page={page} pageSize={PAGE_SIZE} total={sorted.length} onChange={setPage} />
 
       {/* Modal */}
       <Dialog open={modalOpen} onOpenChange={o => { if (!o) closeModal(); }}>
