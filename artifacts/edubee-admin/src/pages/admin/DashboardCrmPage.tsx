@@ -221,6 +221,8 @@ interface OverviewData {
   totalLeads: number; activeLeads: number;
   totalContracts: number; activeContracts: number;
   totalUsers: number; activeUsers: number;
+  thisMonthLeads: number; lastMonthLeads: number; leadMoMPct: number;
+  thisMonthContracts: number; lastMonthContracts: number; contractMoMPct: number;
   kpi: {
     periodStart: string; periodEnd: string;
     netRevenue: number; arCollected: number; arScheduled: number;
@@ -229,20 +231,20 @@ interface OverviewData {
   recentLeads: Array<{ id: string; name: string; status: string; source: string | null; createdAt: string }>;
 }
 interface OperationData {
-  tasksDueCount: number; tasksOverdueCount: number;
+  tasksDueCount: number; tasksOverdueCount: number; tasksUrgentCount: number;
   interviewsThisWeek: number; visaPendingCount: number; visaUrgentCount: number;
   enrollmentTotal: number; enrollmentAvailable: number;
   visaStages: Array<{ stage: string; count: number }>;
   pendingTasks: Array<{ id: string; title: string; dueDate: string | null; assignedTo: string | null; priority: string | null; status: string }>;
-  upcomingInterviews: Array<{ id: string; contactName: string; initials: string; schoolName: string | null; interviewType: string | null; scheduledAt: string }>;
+  upcomingInterviews: Array<{ id: string; contactName: string; initials: string; location: string | null; interviewType: string | null; scheduledAt: string }>;
   recentActivity: Array<{ id: string; type: string; description: string; createdAt: string }>;
 }
 interface SalesData {
-  pipeline: { new: number; inProgress: number; qualified: number; contracted: number; total: number };
-  monthlyLeads: Array<{ month: string; year: number; count: number }>;
+  pipeline: { new: number; open: number; inProgress: number; qualified: number; contracted: number; total: number };
+  monthlyLeads: Array<{ month: string; year: number; count: number; contracts: number }>;
   leadSources: Array<{ source: string; count: number; percentage: number }>;
-  recentQuotes: Array<{ id: string; quoteNumber: string; contactName: string; schoolName: string | null; totalAmount: number; status: string; createdAt: string }>;
-  goals: { newLeadsTarget: number; newLeadsActual: number; applicationsTarget: number; applicationsActual: number; contractsTarget: number; contractsActual: number };
+  recentQuotes: Array<{ id: string; quoteNumber: string; contactName: string; totalAmount: number; status: string; createdAt: string }>;
+  goals: { newLeadsTarget: number; newLeadsActual: number; contractsTarget: number; contractsActual: number; conversionRate: number };
   totalQuoteValue: number;
 }
 interface FinanceData {
@@ -259,6 +261,22 @@ interface FinanceData {
 // ─── Source colors for pie chart ──────────────────────────────────────────────
 const SOURCE_COLORS = [T.orange, T.orangeDark, T.neutral400, T.border, T.success, T.warning, "#6366F1", "#EC4899"];
 
+// ─── MoM badge ───────────────────────────────────────────────────────────────
+function MoMBadge({ pct, thisMonth }: { pct: number; thisMonth: number }) {
+  if (thisMonth === 0 && pct === 0) return null;
+  const up = pct >= 0;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600,
+      padding: "2px 7px", borderRadius: 999,
+      background: up ? T.successBg : T.dangerBg,
+      color: up ? T.success : T.danger,
+    }}>
+      {up ? "↑" : "↓"} {Math.abs(pct)}% vs last month
+    </span>
+  );
+}
+
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 function OverviewTab({ data, loading }: { data: OverviewData | undefined; loading: boolean }) {
   const [, navigate] = useLocation();
@@ -269,10 +287,40 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Top KPIs */}
+      {/* Top KPIs with MoM */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={Users}     value={data?.totalLeads ?? 0}     label="Total Leads"     subLabel={`${data?.activeLeads ?? 0} active`} />
-        <KpiCard icon={FileText}  value={data?.totalContracts ?? 0}  label="Total Contracts"  subLabel={`${data?.activeContracts ?? 0} active`} />
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: "18px 20px" }} className="hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: T.orangeLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Users className="w-5 h-5" style={{ color: T.orange }} strokeWidth={1.8} />
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: T.neutral900, lineHeight: 1 }}>{data?.totalLeads ?? 0}</div>
+              <div style={{ fontSize: 13, color: T.neutral600, marginTop: 4 }}>Total Leads</div>
+              <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>{data?.activeLeads ?? 0} active</div>
+              <div style={{ marginTop: 6 }}>
+                <MoMBadge pct={data?.leadMoMPct ?? 0} thisMonth={data?.thisMonthLeads ?? 0} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: "18px 20px" }} className="hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: T.orangeLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <FileText className="w-5 h-5" style={{ color: T.orange }} strokeWidth={1.8} />
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: T.neutral900, lineHeight: 1 }}>{data?.totalContracts ?? 0}</div>
+              <div style={{ fontSize: 13, color: T.neutral600, marginTop: 4 }}>Total Contracts</div>
+              <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>{data?.activeContracts ?? 0} active</div>
+              <div style={{ marginTop: 6 }}>
+                <MoMBadge pct={data?.contractMoMPct ?? 0} thisMonth={data?.thisMonthContracts ?? 0} />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <KpiCard icon={Users}     value={data?.totalUsers ?? 0}      label="Total Users"      subLabel={`${data?.activeUsers ?? 0} active`} />
         <KpiCard icon={TrendingUp} value={fmtAUD(kpi?.netRevenue ?? 0)} label="Net Revenue (MTD)" accentLeft={T.orange} />
       </div>
@@ -375,25 +423,38 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
   );
 }
 
+// Task priority styles
+const PRIORITY_STYLES: Record<string, { bg: string; color: string; dot: string }> = {
+  urgent: { bg: "#FEF2F2", color: "#DC2626", dot: "#DC2626" },
+  high:   { bg: "#FEF0E3", color: "#C2410C", dot: "#F5821F" },
+  normal: { bg: "#F4F3F1", color: "#57534E", dot: "#A8A29E" },
+  low:    { bg: "#F4F3F1", color: "#A8A29E", dot: "#D4D0CB" },
+};
+
 // ─── Operation Tab ────────────────────────────────────────────────────────────
 function OperationTab({ data, loading }: { data: OperationData | undefined; loading: boolean }) {
   if (loading) return <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}</div>;
 
-  const urgencyColor = { high: T.danger, medium: T.warning, low: T.neutral600 };
-  const visaStageColors = [T.orange, T.orange, T.warning, T.success, T.danger];
+  const visaStageColors = [T.orange, T.warning, "#6366F1", T.success, T.danger, T.neutral400];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={CheckSquare} value={data?.tasksDueCount ?? 0}      label="Tasks Due (7d)"
-          subLabel={`${data?.tasksOverdueCount ?? 0} overdue`}
-          trendType={(data?.tasksOverdueCount ?? 0) > 0 ? "danger" : "neutral"}
-          trend={(data?.tasksOverdueCount ?? 0) > 0 ? `${data?.tasksOverdueCount} overdue` : "On track"} />
-        <KpiCard icon={Calendar}    value={data?.interviewsThisWeek ?? 0}  label="Interviews (This Week)" />
-        <KpiCard icon={Shield}      value={data?.visaPendingCount ?? 0}     label="Visa Pending"
-          subLabel={`${data?.visaUrgentCount ?? 0} expiring soon`}
-          trendType={(data?.visaUrgentCount ?? 0) > 0 ? "warning" : "neutral"} />
-        <KpiCard icon={Target}      value={0}                               label="Enrollment Spots" subLabel="No data yet" />
+        <KpiCard icon={CheckSquare} value={data?.tasksDueCount ?? 0} label="Tasks Due (7d)"
+          subLabel={(data?.tasksUrgentCount ?? 0) > 0 ? `${data?.tasksUrgentCount} urgent` : `${data?.tasksOverdueCount ?? 0} overdue`}
+          trendType={(data?.tasksUrgentCount ?? 0) > 0 ? "danger" : (data?.tasksOverdueCount ?? 0) > 0 ? "warning" : "neutral"}
+          trend={(data?.tasksUrgentCount ?? 0) > 0 ? `${data?.tasksUrgentCount} urgent!` : (data?.tasksOverdueCount ?? 0) > 0 ? `${data?.tasksOverdueCount} overdue` : "All on track"} />
+        <KpiCard icon={Calendar}    value={data?.interviewsThisWeek ?? 0} label="Interviews (This Week)"
+          trend={data?.interviewsThisWeek === 0 ? "No interviews scheduled" : undefined} />
+        <KpiCard icon={Shield}      value={data?.visaPendingCount ?? 0}    label="Visa Pending"
+          subLabel={`${data?.visaUrgentCount ?? 0} expiring ≤30 days`}
+          trendType={(data?.visaUrgentCount ?? 0) > 0 ? "warning" : "neutral"}
+          iconBg={(data?.visaUrgentCount ?? 0) > 0 ? T.warningBg : T.orangeLight}
+          iconColor={(data?.visaUrgentCount ?? 0) > 0 ? T.warning : T.orange} />
+        <KpiCard icon={Activity}    value={data?.tasksOverdueCount ?? 0}   label="Overdue Tasks"
+          accentLeft={(data?.tasksOverdueCount ?? 0) > 0 ? T.danger : T.border}
+          iconBg={(data?.tasksOverdueCount ?? 0) > 0 ? T.dangerBg : T.neutral100}
+          iconColor={(data?.tasksOverdueCount ?? 0) > 0 ? T.danger : T.neutral400} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 16 }}>
@@ -403,9 +464,16 @@ function OperationTab({ data, loading }: { data: OperationData | undefined; load
               <div style={{ padding: "24px 0", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No pending tasks</div>
             ) : (data?.pendingTasks ?? []).map(task => {
               const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
+              const pri = task.priority?.toLowerCase() ?? "normal";
+              const priStyle = PRIORITY_STYLES[pri] ?? PRIORITY_STYLES.normal;
               return (
-                <div key={task.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 0", borderBottom: `1px solid ${T.neutral100}` }}>
-                  <CheckSquare className="w-4 h-4 mt-0.5 shrink-0" style={{ color: task.status === "done" ? T.orange : T.neutral400 }} />
+                <div key={task.id} style={{
+                  display: "flex", alignItems: "flex-start", gap: 10,
+                  padding: "10px 10px", marginBottom: 4,
+                  borderRadius: 8, background: priStyle.bg,
+                  borderLeft: `3px solid ${priStyle.dot}`,
+                }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: priStyle.dot, marginTop: 5, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 500, color: T.neutral900 }}>{task.title}</div>
                     <div style={{ fontSize: 11, color: isOverdue ? T.danger : T.neutral400, marginTop: 2 }}>
@@ -413,9 +481,9 @@ function OperationTab({ data, loading }: { data: OperationData | undefined; load
                       {task.assignedTo ? ` · ${task.assignedTo}` : ""}
                     </div>
                   </div>
-                  {task.priority === "urgent" && (
-                    <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 999, background: T.warningBg, color: T.warning, fontWeight: 600 }}>Urgent</span>
-                  )}
+                  <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 999, background: "rgba(255,255,255,0.7)", color: priStyle.color, fontWeight: 700, flexShrink: 0, border: `1px solid ${priStyle.dot}30` }}>
+                    {pri}
+                  </span>
                 </div>
               );
             })}
@@ -493,9 +561,10 @@ function SalesTab({
 
   const stageCards = [
     { label: "New",         value: pipeline?.new        ?? 0, color: T.neutral400,  accent: undefined },
-    { label: "In Progress", value: pipeline?.inProgress  ?? 0, color: T.orange,     accent: T.orange  },
-    { label: "Qualified",   value: pipeline?.qualified   ?? 0, color: T.warning,    accent: undefined },
-    { label: "Contracted",  value: pipeline?.contracted  ?? 0, color: T.success,    accent: T.success },
+    { label: "Open",        value: pipeline?.open       ?? 0, color: "#3B82F6",     accent: undefined },
+    { label: "In Progress", value: pipeline?.inProgress ?? 0, color: T.orange,      accent: T.orange  },
+    { label: "Qualified",   value: pipeline?.qualified  ?? 0, color: T.warning,     accent: undefined },
+    { label: "Contracted",  value: pipeline?.contracted ?? 0, color: T.success,     accent: T.success },
   ];
 
   const pipelineTotal = stageCards.reduce((s, c) => s + c.value, 0);
@@ -506,7 +575,7 @@ function SalesTab({
       {/* Pipeline Stage Cards */}
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, color: T.neutral400, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Sales Pipeline</div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {stageCards.map(s => (
             <div key={s.label} style={{
               background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: "16px 18px",
@@ -544,20 +613,25 @@ function SalesTab({
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Lead Acquisition Chart */}
-          <Card title="Lead Acquisition — Monthly">
+          {/* Lead Acquisition + Contracts Chart */}
+          <Card title="Leads vs Contracts — Monthly">
             {(salesData?.monthlyLeads ?? []).length === 0 ? (
               <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: T.neutral400 }}>No lead data</div>
             ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={salesData!.monthlyLeads} barSize={24}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={T.neutral100} vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
-                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
-                  <Bar dataKey="count" fill={T.orange} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={salesData!.monthlyLeads} barSize={16} barGap={3}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={T.neutral100} vertical={false} />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
+                      formatter={(v: number, name: string) => [v, name === "count" ? "Leads" : "Contracts"]} />
+                    <Legend formatter={(v: string) => v === "count" ? "Leads" : "Contracts"} wrapperStyle={{ fontSize: 11 }} />
+                    <Bar dataKey="count"     name="count"     fill={T.orange}  radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="contracts" name="contracts" fill={T.success} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </>
             )}
           </Card>
 
@@ -626,9 +700,8 @@ function SalesTab({
           {/* Monthly Goals */}
           <Card title="Monthly Goals">
             {goals && [
-              { label: "New Leads",    actual: goals.newLeadsActual,    target: goals.newLeadsTarget },
-              { label: "Applications", actual: goals.applicationsActual, target: goals.applicationsTarget },
-              { label: "Contracts",   actual: goals.contractsActual,   target: goals.contractsTarget },
+              { label: "New Leads",  actual: goals.newLeadsActual,  target: goals.newLeadsTarget },
+              { label: "Contracts",  actual: goals.contractsActual, target: goals.contractsTarget },
             ].map(g => (
               <div key={g.label} style={{ marginBottom: 14 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
@@ -641,6 +714,12 @@ function SalesTab({
                 />
               </div>
             ))}
+            {goals && (
+              <div style={{ marginTop: 16, padding: "12px", borderRadius: 8, background: T.orangeLight, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: T.neutral600 }}>Lead → Contract Rate</span>
+                <span style={{ fontSize: 18, fontWeight: 700, color: T.orange }}>{goals.conversionRate}%</span>
+              </div>
+            )}
           </Card>
         </div>
       </div>

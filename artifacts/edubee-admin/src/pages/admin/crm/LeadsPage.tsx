@@ -286,25 +286,43 @@ export default function CrmLeadsPage() {
 
       {view === "table" && (
         <>
-          <div className="flex flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[220px]">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-              <Input
-                placeholder="Search by name, email, or ref…"
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1); }}
-                className="pl-9 h-9 text-sm"
-              />
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-3">
+              <div className="relative flex-1 min-w-[220px]">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <Input
+                  placeholder="Search by name, email, or ref…"
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); setPage(1); }}
+                  className="pl-9 h-9 text-sm"
+                />
+              </div>
             </div>
-            <Select value={statusFilter} onValueChange={v => { setStatus(v); setPage(1); }}>
-              <SelectTrigger className="w-40 h-9 text-sm"><SelectValue placeholder="Status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {KANBAN_COLS.map(c => (
-                  <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Status filter chips */}
+            <div className="flex flex-wrap items-center gap-2">
+              {[{ key: "all", label: "All" }, ...KANBAN_COLS].map(c => {
+                const active = statusFilter === c.key;
+                const style = active
+                  ? STATUS_COLORS[c.key] ?? "bg-(--e-orange-lt) text-(--e-orange)"
+                  : "bg-stone-100 text-stone-500";
+                return (
+                  <button
+                    key={c.key}
+                    onClick={() => { setStatus(c.key); setPage(1); }}
+                    className={`h-7 px-3 rounded-full text-xs font-medium transition-all border ${
+                      active
+                        ? "border-transparent shadow-sm"
+                        : "border-stone-200 hover:border-stone-300"
+                    } ${style}`}
+                  >
+                    {c.label}
+                    {active && total > 0 && (
+                      <span className="ml-1.5 opacity-70">({total})</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="rounded-xl border border-stone-200 overflow-x-auto">

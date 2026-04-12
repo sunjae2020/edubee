@@ -3,8 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, Building2, ChevronLeft, ChevronRight, Plus, X, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Search, Building2, ChevronLeft, ChevronRight, Plus, X, Pencil, Trash2, Database } from "lucide-react";
 import { formatDate } from "@/lib/date-format";
+
+function trialDaysLeft(trialEndsAt: string | null | undefined): number | null {
+  if (!trialEndsAt) return null;
+  const diff = new Date(trialEndsAt).getTime() - Date.now();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -162,6 +168,13 @@ export default function TenantList() {
       axios.get(`${BASE}/api/superadmin/tenants`, { params: { search: debSearch, page, pageSize: 20 } }).then(r => r.data),
   });
 
+  const { data: schemaInfo } = useQuery<{ schemas: string[] }>({
+    queryKey: ["tenant-schemas-list"],
+    queryFn: () => axios.get(`${BASE}/api/superadmin/tenant-schemas`).then(r => r.data),
+    staleTime: 60_000,
+  });
+  const schemaSet = new Set<string>(schemaInfo?.schemas ?? []);
+
   const toggleStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       axios.put(`${BASE}/api/superadmin/tenants/${id}`, { status }).then(r => r.data),
@@ -238,7 +251,7 @@ export default function TenantList() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#E8E6E2] bg-[#FAFAF9]">
-                {["Company", "Subdomain", "Plan", "Status", "Users", "Joined", "Actions"].map(h => (
+                {["Company", "Subdomain", "Plan", "Status", "Schema", "Trial", "Users", "Joined", "Actions"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">{h}</th>
                 ))}
               </tr>
@@ -276,6 +289,33 @@ export default function TenantList() {
                     </td>
                     <td className="px-4 py-3">
                       <Badge label={t.plan_status === "trial" ? "Trial" : (t.status ?? "Active")} style={t.plan_status === "trial" ? STATUS_STYLE.trial : statusStyle} />
+                    </td>
+                    {/* Schema indicator */}
+                    <td className="px-4 py-3">
+                      {t.subdomain ? (
+                        schemaSet.has(t.subdomain) ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#15803D]">
+                            <Database size={11} /> OK
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#A8A29E]">
+                            <Database size={11} /> —
+                          </span>
+                        )
+                      ) : <span className="text-[11px] text-[#A8A29E]">—</span>}
+                    </td>
+                    {/* Trial remaining days */}
+                    <td className="px-4 py-3">
+                      {t.plan_status === "trial" && t.trial_ends_at ? (() => {
+                        const days = trialDaysLeft(t.trial_ends_at);
+                        if (days === null) return <span className="text-[11px] text-[#A8A29E]">—</span>;
+                        const color = days <= 0 ? "#DC2626" : days <= 5 ? "#CA8A04" : "#15803D";
+                        return (
+                          <span style={{ fontSize: 11, fontWeight: 700, color }}>
+                            {days <= 0 ? "Expired" : `${days}d left`}
+                          </span>
+                        );
+                      })() : <span className="text-[11px] text-[#A8A29E]">—</span>}
                     </td>
                     <td className="px-4 py-3 text-[#57534E]">{t.user_count ?? 0}</td>
                     <td className="px-4 py-3 text-[#57534E] text-xs">{formatDate(t.created_on)}</td>
