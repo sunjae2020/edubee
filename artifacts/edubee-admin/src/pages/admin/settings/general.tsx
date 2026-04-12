@@ -177,7 +177,7 @@ function BrandingSection() {
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      const bodyKey = type === "logo" ? { logoPath: dataUrl } : { faviconPath: dataUrl };
+      const bodyKey = type === "logo" ? { logoUrl: dataUrl } : { faviconUrl: dataUrl };
       await axios.put(`${BASE}/api/settings/branding`, bodyKey);
       await qc.invalidateQueries({ queryKey: ["settings-branding"] });
       toast({ title: `${type === "logo" ? "Logo" : "Favicon"} saved successfully` });
@@ -190,7 +190,7 @@ function BrandingSection() {
 
   async function resetAsset(type: AssetType) {
     try {
-      const bodyKey = type === "logo" ? { logoPath: "" } : { faviconPath: "" };
+      const bodyKey = type === "logo" ? { logoUrl: "" } : { faviconUrl: "" };
       await axios.put(`${BASE}/api/settings/branding`, bodyKey);
       await qc.invalidateQueries({ queryKey: ["settings-branding"] });
       toast({ title: `${type === "logo" ? "Logo" : "Favicon"} reset to default` });
@@ -199,14 +199,14 @@ function BrandingSection() {
     }
   }
 
-  function resolveSrc(path: string | undefined): string {
-    if (!path) return "";
-    if (path.startsWith("data:")) return path;
-    return `${BASE}/api/storage${path}`;
+  function resolveSrc(url: string | undefined): string {
+    if (!url) return "";
+    if (url.startsWith("data:") || url.startsWith("http")) return url;
+    return `${BASE}/api/storage${url}`;
   }
 
-  const logoSrc = resolveSrc(branding?.logoPath);
-  const faviconSrc = resolveSrc(branding?.faviconPath);
+  const logoSrc = resolveSrc(branding?.logoUrl);
+  const faviconSrc = resolveSrc(branding?.faviconUrl);
 
   return (
     <RuleCard title="Logo & Favicon">
