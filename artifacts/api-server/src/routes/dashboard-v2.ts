@@ -142,8 +142,8 @@ router.get("/dashboard/v2/operation", authenticate, requireRole(...ADMIN_ROLES),
       scalar(sql`SELECT COUNT(*)::int AS val FROM tasks WHERE status NOT IN ('closed','resolved','done') AND due_date >= CURRENT_DATE AND due_date <= CURRENT_DATE + INTERVAL '7 days'`),
       scalar(sql`SELECT COUNT(*)::int AS val FROM tasks WHERE status NOT IN ('closed','resolved','done') AND due_date < CURRENT_DATE`),
       scalar(sql`SELECT COUNT(*)::int AS val FROM interview_schedules WHERE scheduled_datetime >= date_trunc('week', NOW()) AND scheduled_datetime < date_trunc('week', NOW()) + INTERVAL '7 days'`),
-      scalar(sql`SELECT COUNT(*)::int AS val FROM visa_services_mgt WHERE visa_status NOT IN ('granted','rejected') OR visa_status IS NULL`),
-      scalar(sql`SELECT COUNT(*)::int AS val FROM visa_services_mgt WHERE visa_expiry_date <= CURRENT_DATE + INTERVAL '30 days' AND visa_expiry_date >= CURRENT_DATE`),
+      scalar(sql`SELECT COUNT(*)::int AS val FROM visa_services_mgt WHERE status NOT IN ('granted','rejected') OR status IS NULL`),
+      scalar(sql`SELECT COUNT(*)::int AS val FROM visa_services_mgt WHERE end_date <= CURRENT_DATE + INTERVAL '30 days' AND end_date >= CURRENT_DATE`),
       scalar(sql`SELECT COUNT(*)::int AS val FROM tasks WHERE status NOT IN ('closed','resolved','done') AND priority = 'urgent'`),
     ]);
 
@@ -197,10 +197,10 @@ router.get("/dashboard/v2/operation", authenticate, requireRole(...ADMIN_ROLES),
 
     const visaStageRows = await rows(sql`
       SELECT
-        COALESCE(visa_status, 'pending') AS stage,
+        COALESCE(status, 'pending') AS stage,
         COUNT(*)::int AS count
       FROM visa_services_mgt
-      GROUP BY visa_status
+      GROUP BY status
       ORDER BY count DESC
       LIMIT 8
     `);
