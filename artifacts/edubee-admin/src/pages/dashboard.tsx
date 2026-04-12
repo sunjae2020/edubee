@@ -176,17 +176,27 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold" style={{ color: "#1C1917" }}>
-          {greeting()}, {effectiveUser?.fullName?.split(" ")[0]} 👋
-        </h2>
-        <p className="text-sm mt-0.5" style={{ color: "#57534E" }}>
-          {isSAorAD ? "Full platform overview — Edubee Camp Admin." :
-           isCC ? "Your active programs and service management." :
-           isEA ? "Your leads, applications and conversions." :
-           isPartner ? "Your service assignments and settlements." :
-           "Your enrolled programs and upcoming activities."}
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold" style={{ color: "#1C1917" }}>
+            {greeting()}, {effectiveUser?.fullName?.split(" ")[0]} 👋
+          </h2>
+          <p className="text-sm mt-0.5" style={{ color: "#57534E" }}>
+            {isSAorAD ? "Full platform overview — Edubee Camp Admin." :
+             isCC ? "Your active programs and service management." :
+             isEA ? "Your leads, applications and conversions." :
+             isPartner ? "Your service assignments and settlements." :
+             "Your enrolled programs and upcoming activities."}
+          </p>
+        </div>
+        {isSAorAD && (
+          <Link href="/admin/dashboard/crm"
+            className="shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-colors hover:opacity-90"
+            style={{ background: "var(--e-orange)", color: "#fff" }}>
+            <BarChart className="w-3.5 h-3.5" />
+            Analytics Dashboard
+          </Link>
+        )}
       </div>
 
       {/* KPI Cards */}
