@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import axios from "axios";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -1183,18 +1183,18 @@ export default function DashboardCrmPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [location, navigate] = useLocation();
+  const [, navigate] = useLocation();
+  const search = useSearch();
   const isSA = user?.role === "super_admin";
   const isSAorAD = isSA || user?.role === "admin";
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // ── Tab state synced to URL ──
-  const searchParams = new URLSearchParams(location.split("?")[1] ?? "");
+  // ── Tab state synced to URL (wouter v3: useSearch() returns query string without "?") ──
+  const searchParams = new URLSearchParams(search);
   const activeTab = (searchParams.get("tab") as TabId) ?? "overview";
 
   function setTab(tab: TabId) {
-    const base = location.split("?")[0];
-    navigate(`${base}?tab=${tab}`);
+    navigate(`/dashboard/crm?tab=${tab}`);
   }
 
   // ── New V2 API queries ──
