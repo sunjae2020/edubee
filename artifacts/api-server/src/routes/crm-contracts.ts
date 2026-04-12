@@ -313,7 +313,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
         WHERE t.contract_id = ${id}::uuid
         ORDER BY t.transaction_date DESC
       `),
-      db.execute(sql`SELECT * FROM study_abroad_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
+      db.execute(sql`SELECT * FROM study_abroad_mgt WHERE contract_id = ${id}::uuid ORDER BY created_at`),
       db.execute(sql`SELECT * FROM pickup_mgt WHERE contract_id = ${id}::uuid`),
       db.execute(sql`SELECT * FROM accommodation_mgt WHERE contract_id = ${id}::uuid ORDER BY created_at`),
       db.execute(sql`SELECT id, status, position_title, hourly_rate, employment_type, start_date, end_date, english_level, employment_type FROM internship_mgt WHERE contract_id = ${id}::uuid LIMIT 1`),
@@ -406,7 +406,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       paymentInfoId: t.payment_info_id ?? null,
     }));
 
-    const saArr = r(saRes); const sa = saArr[0] ?? null;
+    const saArr = r(saRes);
     const pkArr = r(pkRes);
     const acArr = r(acRes);
     const inArr = r(inRes); const intern = inArr[0] ?? null;
@@ -489,7 +489,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       transactions,
       commissionSummary,
       services: {
-        studyAbroad:   sa ? {
+        studyAbroad: saArr.length ? saArr.map((sa: any) => ({
           id: sa.id, status: sa.status, visaType: sa.visa_type,
           departureDate: sa.departure_date, coeNumber: sa.coe_number,
           targetSchools: sa.target_schools,
@@ -497,7 +497,8 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
           weeklyHours: sa.weekly_hours,
           fromDate: sa.program_start_date, toDate: sa.program_end_date,
           applicationStage: sa.application_stage,
-        } : null,
+          studentFirstName: sa.student_first_name, studentLastName: sa.student_last_name,
+        })) : null,
         pickup: pkArr.length ? pkArr.map((p: any) => ({
           id: p.id, status: p.status, pickupType: p.pickup_type,
           from: p.from_location, to: p.to_location,

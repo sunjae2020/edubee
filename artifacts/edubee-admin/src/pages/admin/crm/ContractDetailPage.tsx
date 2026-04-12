@@ -2580,7 +2580,7 @@ function ServicesPanel({ contract, primaryServiceType, setPrimaryServiceType, on
   const [, navigate] = useLocation();
   const svcs = contract.services ?? {};
 
-  const ARRAY_KEYS = ["pickup", "camp", "tour", "accommodation", "other"];
+  const ARRAY_KEYS = ["studyAbroad", "pickup", "camp", "tour", "accommodation", "other"];
   const withData = ALL_SVC_DEFS.map(d => ({
     ...d,
     data: ARRAY_KEYS.includes(d.key)
@@ -2658,7 +2658,7 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
   const svcs = contract.services ?? {};
 
   // Flatten all services into rows (supports multiple of same type, e.g. multiple pickups, tours, camp sessions, accommodations)
-  const MULTI_KEYS = ["pickup", "camp", "tour", "accommodation", "other"];
+  const MULTI_KEYS = ["studyAbroad", "pickup", "camp", "tour", "accommodation", "other"];
   type SvcRow = { key: string; label: string; Icon: any; data: any };
   const rows: SvcRow[] = [];
   for (const def of ALL_SVC_DEFS) {
@@ -2675,7 +2675,11 @@ function ServicesGridTab({ contract, primaryServiceType, setPrimaryServiceType, 
     if (!data) return "—";
     if (key === "pickup")        return [data.pickupType, data.from].filter(Boolean).join(" · ") || "—";
     if (key === "accommodation") return [data.type, data.hostName].filter(Boolean).join(" · ") || "—";
-    if (key === "studyAbroad")   return [data.programName, data.programType].filter(Boolean).join(" · ") || "—";
+    if (key === "studyAbroad") {
+      const name = (data.studentFirstName || data.studentLastName)
+        ? `${data.studentFirstName ?? ""} ${data.studentLastName ?? ""}`.trim() : null;
+      return [name, data.programName, data.programType].filter(Boolean).join(" · ") || "—";
+    }
     if (key === "internship")    return [data.positionTitle, data.employmentType].filter(Boolean).join(" · ") || "—";
     if (key === "settlement")    return data.serviceDescription ?? "—";
     if (key === "guardian")      return [data.billingCycle].filter(Boolean).join(" · ") || "—";
@@ -3461,7 +3465,7 @@ export default function ContractDetailPage() {
   const svcs = contract.services ?? {};
   const primData = (() => {
     const t = primaryServiceType;
-    if (t === "studyAbroad" || t === "study_abroad") return svcs.studyAbroad;
+    if (t === "studyAbroad" || t === "study_abroad") return Array.isArray(svcs.studyAbroad) ? svcs.studyAbroad[0] : svcs.studyAbroad;
     if (t === "pickup")        return svcs.pickup?.[0];
     if (t === "accommodation") return svcs.accommodation;
     if (t === "internship")    return svcs.internship;
