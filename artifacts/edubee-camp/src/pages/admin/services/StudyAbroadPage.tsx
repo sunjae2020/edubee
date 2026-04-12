@@ -236,6 +236,7 @@ export default function StudyAbroadPage() {
             <tr>
               <>
               <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
+              <SortableTh key="School Name" col="studentSchoolName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">School Name</SortableTh>
               <SortableTh key="Account / Contract" col="accountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Account / Contract</SortableTh>
               <SortableTh key="Stage" col="applicationStage" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Stage</SortableTh>
               <SortableTh key="Staff" col="staffName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Staff</SortableTh>
@@ -247,10 +248,10 @@ export default function StudyAbroadPage() {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
             )}
             {sorted.map(row => {
               const stage   = row.applicationStage ?? "counseling";
@@ -268,6 +269,7 @@ export default function StudyAbroadPage() {
                   <td className="px-4 py-3 font-medium text-stone-800 hover:text-(--e-orange) transition-colors">
                     {row.clientName ?? row.studentName ?? "—"}
                   </td>
+                  <td className="px-4 py-3 text-xs text-stone-600">{row.studentSchoolName ?? "—"}</td>
                   <td className="px-4 py-3 font-mono text-xs text-stone-500">{row.contractNumber ?? "—"}</td>
                   <td className="px-4 py-3">
                     <span
