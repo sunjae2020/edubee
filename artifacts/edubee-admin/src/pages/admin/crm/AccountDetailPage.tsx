@@ -24,6 +24,191 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const INDIVIDUAL_TYPES = ["Student", "Client"];
 
+// Account types that represent a business entity (eligible to become a tenant)
+const BUSINESS_TYPES = ["Company", "Agent", "Institute", "Partner", "Organization", "School",
+  "Sub_Agency", "Super_Agency", "Provider", "Supplier", "Branch"];
+
+function getMyRole(): string {
+  try {
+    const token = localStorage.getItem("edubee_token") ?? "";
+    if (!token) return "";
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return (payload.role ?? payload.staffRole ?? "") as string;
+  } catch { return ""; }
+}
+
+function slugify(text: string): string {
+  return text.toLowerCase().trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 40);
+}
+
+const TENANT_PLANS = [
+  { value: "solo",       label: "Solo"       },
+  { value: "starter",    label: "Starter"    },
+  { value: "growth",     label: "Growth"     },
+  { value: "enterprise", label: "Enterprise" },
+];
+
+const dlgInp = "w-full h-9 rounded-lg border border-[#E8E6E2] bg-white px-3 text-sm text-[#1C1917] outline-none focus:ring-2 focus:ring-[--e-orange]/30 focus:border-[--e-orange] transition-all";
+
+interface CreateTenantDialogProps {
+  account: { name: string; email?: string | null; website?: string | null };
+  onClose: () => void;
+}
+
+function CreateTenantDialog({ account, onClose }: CreateTenantDialogProps) {
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name:       account.name ?? "",
+    subdomain:  slugify(account.name ?? ""),
+    ownerEmail: account.email ?? "",
+    planType:   "starter",
+    planStatus: "trial",
+  });
+
+  const set = (k: keyof typeof form, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleCreate = async () => {
+    if (!form.name.trim()) {
+      toast({ title: "Company name is required", variant: "destructive" }); return;
+    }
+    setSaving(true);
+    try {
+      const resp = await axios.post(`${BASE}/api/superadmin/tenants`, {
+        name:       form.name.trim(),
+        subdomain:  form.subdomain.trim() || undefined,
+        ownerEmail: form.ownerEmail.trim() || undefined,
+        planType:   form.planType,
+        planStatus: form.planStatus,
+      });
+      toast({
+        title: "Tenant created",
+        description: `${form.name} — ${resp.data?.subdomain ?? form.subdomain}.edubee.co`,
+      });
+      onClose();
+      navigate("/admin/superadmin/tenants");
+    } catch (e: any) {
+      toast({
+        title: "Failed to create tenant",
+        description: e?.response?.data?.error ?? "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.35)" }}>
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl" style={{ border: "1px solid #E8E6E2" }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #F4F3F1" }}>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--e-orange-lt)" }}>
+              <Building2 size={15} style={{ color: "var(--e-orange)" }} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#1C1917]">Create as Tenant</p>
+              <p className="text-xs text-[#A8A29E]">New independent organisation on Edubee</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-[#A8A29E] hover:text-[#1C1917] transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          {/* Name */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">
+              Company Name <span style={{ color: "var(--e-orange)" }}>*</span>
+            </label>
+            <input className={dlgInp} value={form.name} onChange={e => set("name", e.target.value)} />
+          </div>
+
+          {/* Subdomain */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Subdomain</label>
+            <div className="relative">
+              <input
+                className={dlgInp}
+                placeholder="e.g. acme"
+                value={form.subdomain}
+                onChange={e => set("subdomain", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                style={{ paddingRight: "6.5rem" }}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#A8A29E]">.edubee.co</span>
+            </div>
+          </div>
+
+          {/* Owner Email */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Owner Email</label>
+            <input
+              className={dlgInp}
+              type="email"
+              placeholder="admin@company.com"
+              value={form.ownerEmail}
+              onChange={e => set("ownerEmail", e.target.value)}
+            />
+          </div>
+
+          {/* Plan + Status row */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Plan</label>
+              <select className={dlgInp} value={form.planType} onChange={e => set("planType", e.target.value)}>
+                {TENANT_PLANS.map(p => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Status</label>
+              <select className={dlgInp} value={form.planStatus} onChange={e => set("planStatus", e.target.value)}>
+                <option value="trial">Trial (30 days)</option>
+                <option value="active">Active</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Info box */}
+          <div className="rounded-lg px-4 py-3 text-xs text-[#92400E] leading-relaxed"
+            style={{ background: "#FEF0E3", border: "1px solid #FDE68A" }}>
+            <strong>테넌트 생성 시 자동으로:</strong> PostgreSQL 스키마 프로비저닝 + 기본 설정 데이터 세팅 + Owner Email로 환영 이메일 발송
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 px-6 py-4" style={{ borderTop: "1px solid #F4F3F1" }}>
+          <button
+            onClick={onClose}
+            className="h-9 px-4 rounded-lg text-sm font-medium text-[#57534E] transition-colors hover:bg-[#F4F3F1]"
+            style={{ border: "1px solid #E8E6E2" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreate}
+            disabled={saving}
+            className="h-9 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-50 transition-all"
+            style={{ background: "var(--e-orange)" }}
+          >
+            {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+            Create Tenant
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function getAccountTypeBadge(accountType?: string | null): { bg: string; text: string; label: string } {
   switch (accountType) {
     case "Student":      return { bg: "var(--e-orange-lt)", text: "var(--e-orange)", label: "Student" };
@@ -633,6 +818,8 @@ export default function AccountDetailPage() {
   const [copiedId, setCopiedId] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [showTenantDlg, setShowTenantDlg] = useState(false);
+  const isSuperAdmin = getMyRole() === "super_admin";
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -866,6 +1053,19 @@ export default function AccountDetailPage() {
             }`}>{account.status}</span>
           )}
         </div>
+        <div className="flex items-center gap-2">
+          {/* Create as Tenant — super_admin only, business account types only */}
+          {!isNew && isSuperAdmin && account && BUSINESS_TYPES.includes(account.accountType ?? "") && (
+            <button
+              onClick={() => setShowTenantDlg(true)}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold transition-all"
+              style={{ border: "1px solid var(--e-orange)", color: "var(--e-orange)", background: "var(--e-orange-lt)" }}
+              title="Create this account as a new independent tenant"
+            >
+              <Building2 size={13} />
+              Create as Tenant
+            </button>
+          )}
         {(isNew || dirty) && (
           <div className="flex items-center gap-2">
             {!isNew && (
@@ -916,6 +1116,7 @@ export default function AccountDetailPage() {
             </Button>
           </div>
         )}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -1745,6 +1946,10 @@ export default function AccountDetailPage() {
           </div>
         )}
       </div>
+
+      {showTenantDlg && account && (
+        <CreateTenantDialog account={account} onClose={() => setShowTenantDlg(false)} />
+      )}
 
       <ImageCropDialog
         file={pendingFile}
