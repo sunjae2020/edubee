@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import { db } from "@workspace/db";
+import { staticDb } from "@workspace/db";
 import { organisations } from "@workspace/db/schema";
 import { eq, and, asc } from "drizzle-orm";
+
+// UUID 형식 여부 판별 (e.g. "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 declare global {
   namespace Express {
@@ -45,14 +48,17 @@ export async function tenantResolver(
     const headerOrgId = req.headers["x-organisation-id"] as string | undefined;
 
     if (headerOrgId) {
-      // X-Organisation-Id 헤더는 slug(subdomain) 형식으로 전달됨.
-      // organisations.id는 UUID 타입이므로 subdomain으로 조회해야 함.
-      const [org] = await db
+      // X-Organisation-Id 헤더는 UUID(JWT에서) 또는 slug(subdomain) 양쪽 모두 지원.
+      // UUID면 id 컬럼, slug면 subdomain 컬럼으로 조회. staticDb 사용 (항상 public schema).
+      const isUuid = UUID_RE.test(headerOrgId);
+      const [org] = await staticDb
         .select()
         .from(organisations)
         .where(
           and(
-            eq(organisations.subdomain as any, headerOrgId),
+            isUuid
+              ? eq(organisations.id, headerOrgId)
+              : eq(organisations.subdomain as any, headerOrgId),
             eq(organisations.status as any, "Active")
           )
         )
@@ -77,7 +83,7 @@ export async function tenantResolver(
       : extractSubdomain(req.hostname, BASE_DOMAIN);
 
     if (subdomain && !SYSTEM_SUBDOMAINS.has(subdomain)) {
-      const [org] = await db
+      const [org] = await staticDb
         .select()
         .from(organisations)
         .where(
@@ -107,7 +113,7 @@ export async function tenantResolver(
 
     if (shouldFallback) {
       // PLATFORM_SUBDOMAIN으로 조직 조회
-      const [platformOrg] = await db
+      const [platformOrg] = await staticDb
         .select()
         .from(organisations)
         .where(
@@ -123,7 +129,7 @@ export async function tenantResolver(
         req.tenant   = platformOrg;
       } else {
         // PLATFORM_SUBDOMAIN 조직이 없으면 첫 번째 Active 조직으로 폴백 (안전망)
-        const [firstOrg] = await db
+        const [firstOrg] = await staticDb
           .select()
           .from(organisations)
           .where(eq(organisations.status as any, "Active"))
