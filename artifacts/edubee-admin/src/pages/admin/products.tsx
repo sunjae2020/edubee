@@ -500,15 +500,31 @@ export default function Products() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Grade</Label>
-                <Input value={form.productGrade}
-                  onChange={e => setForm(f => ({ ...f, productGrade: e.target.value }))}
-                  className="mt-1 h-8 text-sm" placeholder="e.g. A, B, Premium" />
+                <Select value={form.productGrade || ""} onValueChange={v => setForm(f => ({ ...f, productGrade: v }))}>
+                  <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue placeholder="— None —" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">— None —</SelectItem>
+                    <SelectItem value="A">A — Premier</SelectItem>
+                    <SelectItem value="B">B — Superior</SelectItem>
+                    <SelectItem value="C">C — Standard</SelectItem>
+                    <SelectItem value="D">D — Economy</SelectItem>
+                    <SelectItem value="E">E — Basic</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label className="text-xs">Priority</Label>
-                <Input type="number" min="1" max="999" value={form.productPriority}
-                  onChange={e => setForm(f => ({ ...f, productPriority: e.target.value }))}
-                  className="mt-1 h-8 text-sm font-mono" placeholder="1" />
+                <Select value={form.productPriority || ""} onValueChange={v => setForm(f => ({ ...f, productPriority: v }))}>
+                  <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue placeholder="— None —" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">— None —</SelectItem>
+                    <SelectItem value="6">6 — Average</SelectItem>
+                    <SelectItem value="7">7 — Good</SelectItem>
+                    <SelectItem value="8">8 — Very Good</SelectItem>
+                    <SelectItem value="9">9 — Excellent</SelectItem>
+                    <SelectItem value="10">10 — Outstanding</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

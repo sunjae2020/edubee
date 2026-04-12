@@ -30,8 +30,20 @@ const DEFAULT_SEARCH_CATEGORIES = [
   { value: "provider", label: "Provider (School)" },
 ];
 
-const PRIORITIES = ["10","9","8","7","6","5"];
-const GRADES     = ["A","B","C","D"];
+const PRIORITIES = [
+  { value: "10", label: "10 — Outstanding" },
+  { value: "9",  label: "9 — Excellent" },
+  { value: "8",  label: "8 — Very Good" },
+  { value: "7",  label: "7 — Good" },
+  { value: "6",  label: "6 — Average" },
+];
+const GRADES = [
+  { value: "A", label: "A — Premier" },
+  { value: "B", label: "B — Superior" },
+  { value: "C", label: "C — Standard" },
+  { value: "D", label: "D — Economy" },
+  { value: "E", label: "E — Basic" },
+];
 const STATUSES   = ["active","inactive","archived"];
 
 const S = {
@@ -233,7 +245,7 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
               <div style={S.selectWrap}>
                 <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.productPriority} onChange={set("productPriority")}>
                   <option value="">Any</option>
-                  {PRIORITIES.map(v => <option key={v} value={v}>{v}</option>)}
+                  {PRIORITIES.map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
                 </FocusSelect>
                 <span style={S.chevron}><ChevronDown size={13} strokeWidth={1.5} /></span>
               </div>
@@ -245,7 +257,7 @@ export function ProductAdvancedSearch({ onSearch, options = {} }: ProductAdvance
               <div style={S.selectWrap}>
                 <FocusSelect style={{ ...S.select, width: "100%" }} value={filters.productGrade} onChange={set("productGrade")}>
                   <option value="">Any</option>
-                  {GRADES.map(v => <option key={v} value={v}>{v}</option>)}
+                  {GRADES.map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
                 </FocusSelect>
                 <span style={S.chevron}><ChevronDown size={13} strokeWidth={1.5} /></span>
               </div>
