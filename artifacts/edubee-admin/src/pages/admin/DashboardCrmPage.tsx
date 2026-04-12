@@ -431,114 +431,193 @@ const PRIORITY_STYLES: Record<string, { bg: string; color: string; dot: string }
   low:    { bg: "#F4F3F1", color: "#A8A29E", dot: "#D4D0CB" },
 };
 
-// ─── Operation Tab ────────────────────────────────────────────────────────────
+const VISA_STAGE_COLORS = [T.orange, T.warning, "#6366F1", T.success, T.danger, T.neutral400];
+
+function EmptyState({ icon: Icon, title, sub }: { icon: React.ElementType; title: string; sub?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-8 gap-2">
+      <Icon className="w-8 h-8" style={{ color: T.neutral400 }} strokeWidth={1.5} />
+      <p style={{ fontSize: 13, color: T.neutral400, fontWeight: 500 }}>{title}</p>
+      {sub && <p style={{ fontSize: 11, color: T.neutral400 }}>{sub}</p>}
+    </div>
+  );
+}
+
+// ─── Operation Tab ─────────────────────────────────────────────────────────
 function OperationTab({ data, loading }: { data: OperationData | undefined; loading: boolean }) {
   if (loading) return <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}</div>;
 
-  const visaStageColors = [T.orange, T.warning, "#6366F1", T.success, T.danger, T.neutral400];
+  const tasks      = data?.pendingTasks       ?? [];
+  const interviews = data?.upcomingInterviews ?? [];
+  const visaStages = data?.visaStages         ?? [];
+  const activity   = data?.recentActivity     ?? [];
+
+  const urgentTasks    = data?.tasksUrgentCount  ?? 0;
+  const overdueTasks   = data?.tasksOverdueCount ?? 0;
+  const urgentVisa     = data?.visaUrgentCount   ?? 0;
+  const visaTotal      = visaStages.reduce((s, v) => s + v.count, 0) || 1;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="flex flex-col gap-5">
+      {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={CheckSquare} value={data?.tasksDueCount ?? 0} label="Tasks Due (7d)"
-          subLabel={(data?.tasksUrgentCount ?? 0) > 0 ? `${data?.tasksUrgentCount} urgent` : `${data?.tasksOverdueCount ?? 0} overdue`}
-          trendType={(data?.tasksUrgentCount ?? 0) > 0 ? "danger" : (data?.tasksOverdueCount ?? 0) > 0 ? "warning" : "neutral"}
-          trend={(data?.tasksUrgentCount ?? 0) > 0 ? `${data?.tasksUrgentCount} urgent!` : (data?.tasksOverdueCount ?? 0) > 0 ? `${data?.tasksOverdueCount} overdue` : "All on track"} />
-        <KpiCard icon={Calendar}    value={data?.interviewsThisWeek ?? 0} label="Interviews (This Week)"
-          trend={data?.interviewsThisWeek === 0 ? "No interviews scheduled" : undefined} />
-        <KpiCard icon={Shield}      value={data?.visaPendingCount ?? 0}    label="Visa Pending"
-          subLabel={`${data?.visaUrgentCount ?? 0} expiring ≤30 days`}
-          trendType={(data?.visaUrgentCount ?? 0) > 0 ? "warning" : "neutral"}
-          iconBg={(data?.visaUrgentCount ?? 0) > 0 ? T.warningBg : T.orangeLight}
-          iconColor={(data?.visaUrgentCount ?? 0) > 0 ? T.warning : T.orange} />
-        <KpiCard icon={Activity}    value={data?.tasksOverdueCount ?? 0}   label="Overdue Tasks"
-          accentLeft={(data?.tasksOverdueCount ?? 0) > 0 ? T.danger : T.border}
-          iconBg={(data?.tasksOverdueCount ?? 0) > 0 ? T.dangerBg : T.neutral100}
-          iconColor={(data?.tasksOverdueCount ?? 0) > 0 ? T.danger : T.neutral400} />
+        <KpiCard icon={CheckSquare} value={data?.tasksDueCount ?? 0} label="Tasks Due (7 days)"
+          subLabel={urgentTasks > 0 ? `${urgentTasks} urgent` : `${overdueTasks} overdue`}
+          trendType={urgentTasks > 0 ? "danger" : overdueTasks > 0 ? "warning" : "neutral"}
+          trend={urgentTasks > 0 ? `${urgentTasks} urgent!` : overdueTasks > 0 ? `${overdueTasks} overdue` : "All on track"} />
+        <KpiCard icon={Activity} value={overdueTasks} label="Overdue Tasks"
+          accentLeft={overdueTasks > 0 ? T.danger : T.border}
+          iconBg={overdueTasks > 0 ? T.dangerBg : T.neutral100}
+          iconColor={overdueTasks > 0 ? T.danger : T.neutral400}
+          trend={overdueTasks > 0 ? "Requires attention" : "None overdue"}
+          trendType={overdueTasks > 0 ? "danger" : "neutral"} />
+        <KpiCard icon={Calendar} value={data?.interviewsThisWeek ?? 0} label="Interviews This Week"
+          trend={(data?.interviewsThisWeek ?? 0) === 0 ? "None scheduled" : `${data?.interviewsThisWeek} scheduled`}
+          trendType="neutral" />
+        <KpiCard icon={Shield} value={data?.visaPendingCount ?? 0} label="Visa Pending"
+          subLabel={`${urgentVisa} expiring ≤ 30 days`}
+          trendType={urgentVisa > 0 ? "warning" : "neutral"}
+          iconBg={urgentVisa > 0 ? T.warningBg : T.orangeLight}
+          iconColor={urgentVisa > 0 ? T.warning : T.orange}
+          trend={urgentVisa > 0 ? `${urgentVisa} expiring soon` : "All clear"} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 16 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <Card title="Pending Tasks">
-            {(data?.pendingTasks ?? []).length === 0 ? (
-              <div style={{ padding: "24px 0", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No pending tasks</div>
-            ) : (data?.pendingTasks ?? []).map(task => {
-              const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
-              const pri = task.priority?.toLowerCase() ?? "normal";
-              const priStyle = PRIORITY_STYLES[pri] ?? PRIORITY_STYLES.normal;
-              return (
-                <div key={task.id} style={{
-                  display: "flex", alignItems: "flex-start", gap: 10,
-                  padding: "10px 10px", marginBottom: 4,
-                  borderRadius: 8, background: priStyle.bg,
-                  borderLeft: `3px solid ${priStyle.dot}`,
-                }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: priStyle.dot, marginTop: 5, flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: T.neutral900 }}>{task.title}</div>
-                    <div style={{ fontSize: 11, color: isOverdue ? T.danger : T.neutral400, marginTop: 2 }}>
-                      {task.dueDate ? `Due ${fmtDate(task.dueDate)}` : "No due date"}
-                      {task.assignedTo ? ` · ${task.assignedTo}` : ""}
+      {/* 3-column grid: tasks+interviews (2/3) | visa+activity (1/3) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 flex flex-col gap-4">
+
+          {/* Pending Tasks */}
+          <Card title="Pending Tasks" titleRight={
+            tasks.length > 0
+              ? <span style={{ fontSize: 12, color: T.neutral400 }}>{tasks.length} task{tasks.length !== 1 ? "s" : ""}</span>
+              : undefined
+          }>
+            {tasks.length === 0
+              ? <EmptyState icon={CheckSquare} title="No pending tasks" sub="All caught up — nothing due in the next 7 days" />
+              : tasks.map(task => {
+                  const overdue   = task.dueDate && new Date(task.dueDate) < new Date();
+                  const pri       = task.priority?.toLowerCase() ?? "normal";
+                  const priStyle  = PRIORITY_STYLES[pri] ?? PRIORITY_STYLES.normal;
+                  return (
+                    <div key={task.id} style={{
+                      display: "flex", alignItems: "flex-start", gap: 12,
+                      padding: "10px 12px", marginBottom: 6,
+                      borderRadius: 8, background: priStyle.bg,
+                      borderLeft: `3px solid ${priStyle.dot}`,
+                    }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: priStyle.dot, marginTop: 5, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: T.neutral900 }}>{task.title}</div>
+                        <div style={{ display: "flex", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 11, color: overdue ? T.danger : T.neutral400 }}>
+                            {task.dueDate ? `Due ${fmtDate(task.dueDate)}` : "No due date"}
+                          </span>
+                          {task.assignedTo && <span style={{ fontSize: 11, color: T.neutral400 }}>· {task.assignedTo}</span>}
+                        </div>
+                      </div>
+                      <span style={{
+                        fontSize: 10, padding: "2px 8px", borderRadius: 999,
+                        background: "rgba(255,255,255,0.8)", color: priStyle.color,
+                        fontWeight: 700, flexShrink: 0, border: `1px solid ${priStyle.dot}30`,
+                        textTransform: "capitalize",
+                      }}>{pri}</span>
                     </div>
-                  </div>
-                  <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 999, background: "rgba(255,255,255,0.7)", color: priStyle.color, fontWeight: 700, flexShrink: 0, border: `1px solid ${priStyle.dot}30` }}>
-                    {pri}
-                  </span>
-                </div>
-              );
-            })}
+                  );
+                })}
           </Card>
 
-          <Card title="Upcoming Interviews">
-            {(data?.upcomingInterviews ?? []).length === 0 ? (
-              <div style={{ padding: "24px 0", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No upcoming interviews</div>
-            ) : (data?.upcomingInterviews ?? []).map(iv => (
-              <div key={iv.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${T.neutral100}` }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", background: T.orangeLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: T.orange, flexShrink: 0 }}>
-                  {iv.initials}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: T.neutral900 }}>{iv.contactName}</div>
-                  <div style={{ fontSize: 11, color: T.neutral400 }}>{iv.interviewType ?? "Interview"}</div>
-                </div>
-                <div style={{ fontSize: 12, color: T.orange, fontWeight: 500, textAlign: "right" }}>
-                  {new Date(iv.scheduledAt).toLocaleDateString("en-AU", { month: "short", day: "numeric" })}
-                </div>
-              </div>
-            ))}
+          {/* Upcoming Interviews */}
+          <Card title="Upcoming Interviews" titleRight={
+            interviews.length > 0
+              ? <span style={{ fontSize: 12, color: T.neutral400 }}>This week</span>
+              : undefined
+          }>
+            {interviews.length === 0
+              ? <EmptyState icon={Calendar} title="No interviews this week" sub="Interviews will appear here once scheduled" />
+              : interviews.map(iv => (
+                  <div key={iv.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: `1px solid ${T.neutral100}` }}>
+                    <div style={{
+                      width: 38, height: 38, borderRadius: "50%",
+                      background: T.orangeLight, display: "flex", alignItems: "center",
+                      justifyContent: "center", fontSize: 12, fontWeight: 700,
+                      color: T.orange, flexShrink: 0, letterSpacing: -0.5,
+                    }}>{iv.initials}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: T.neutral900 }}>{iv.contactName}</div>
+                      <div style={{ fontSize: 11, color: T.neutral400, marginTop: 1 }}>
+                        {iv.interviewType ?? "Interview"}{iv.location ? ` · ${iv.location}` : ""}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: T.orange }}>
+                        {new Date(iv.scheduledAt).toLocaleDateString("en-AU", { weekday: "short", month: "short", day: "numeric" })}
+                      </div>
+                      <div style={{ fontSize: 11, color: T.neutral400 }}>
+                        {new Date(iv.scheduledAt).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
           </Card>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <Card title="Visa Status Tracker">
-            {(data?.visaStages ?? []).length === 0 ? (
-              <div style={{ padding: "16px 0", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No visa data</div>
-            ) : (data?.visaStages ?? []).slice(0, 6).map((vs, i) => {
-              const total = (data?.visaPendingCount ?? 0) + 1;
-              return (
-                <div key={vs.stage} style={{ marginBottom: 10 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                    <span style={{ fontSize: 12, color: T.neutral600, textTransform: "capitalize" }}>{vs.stage.replace(/_/g, " ")}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: visaStageColors[i] ?? T.neutral600 }}>{vs.count}</span>
-                  </div>
-                  <ProgressBar value={(vs.count / Math.max(total, 1)) * 100} color={visaStageColors[i] ?? T.neutral400} />
+        {/* Right: Visa Tracker + Activity */}
+        <div className="flex flex-col gap-4">
+
+          {/* Visa Stage Tracker */}
+          <Card title="Visa Stage Tracker">
+            {visaStages.length === 0
+              ? <EmptyState icon={Shield} title="No visa records" sub="Visa applications will appear here" />
+              : (
+                <div className="flex flex-col gap-3 pt-1">
+                  {visaStages.slice(0, 6).map((vs, i) => {
+                    const pct = Math.round((vs.count / visaTotal) * 100);
+                    return (
+                      <div key={vs.stage}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                          <span style={{ fontSize: 12, color: T.neutral600, textTransform: "capitalize" }}>
+                            {vs.stage.replace(/_/g, " ")}
+                          </span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 11, color: T.neutral400 }}>{pct}%</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: VISA_STAGE_COLORS[i] ?? T.neutral600 }}>
+                              {vs.count}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ height: 6, background: T.neutral100, borderRadius: 999, overflow: "hidden" }}>
+                          <div style={{
+                            width: `${pct}%`, height: "100%",
+                            background: VISA_STAGE_COLORS[i] ?? T.neutral400,
+                            borderRadius: 999, transition: "width 600ms ease",
+                          }} />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              )}
           </Card>
 
+          {/* Recent Activity */}
           <Card title="Recent Activity">
-            {(data?.recentActivity ?? []).length === 0 ? (
-              <div style={{ padding: "16px 0", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No activity</div>
-            ) : (data?.recentActivity ?? []).map(act => (
-              <div key={act.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 0", borderBottom: `1px solid ${T.neutral100}` }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: act.type === "lead" ? T.orange : T.success, marginTop: 4, flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: T.neutral900 }}>{act.description}</div>
-                  <div style={{ fontSize: 11, color: T.neutral400 }}>{fmtRelative(act.createdAt)}</div>
-                </div>
-              </div>
-            ))}
+            {activity.length === 0
+              ? <EmptyState icon={Activity} title="No recent activity" sub="Activity will appear here as you use the CRM" />
+              : activity.map(act => (
+                  <div key={act.id} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: `1px solid ${T.neutral100}` }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                      background: act.type === "lead" ? T.orangeLight : T.successBg,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: act.type === "lead" ? T.orange : T.success }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, color: T.neutral900, lineHeight: 1.4 }}>{act.description}</div>
+                      <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>{fmtRelative(act.createdAt)}</div>
+                    </div>
+                  </div>
+                ))}
           </Card>
         </div>
       </div>
@@ -546,10 +625,9 @@ function OperationTab({ data, loading }: { data: OperationData | undefined; load
   );
 }
 
-// ─── Sales Tab ────────────────────────────────────────────────────────────────
+// ─── Sales Tab ─────────────────────────────────────────────────────────────
 function SalesTab({
-  salesData, salesLoading,
-  funnelData,
+  salesData, salesLoading, funnelData,
 }: {
   salesData: SalesData | undefined; salesLoading: boolean;
   funnelData: { data: FunnelRow[] } | undefined;
@@ -557,81 +635,91 @@ function SalesTab({
   if (salesLoading) return <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}</div>;
 
   const pipeline = salesData?.pipeline;
-  const funnelRows: FunnelRow[] = funnelData?.data ?? [];
+  const goals    = salesData?.goals;
+  const quotes   = salesData?.recentQuotes   ?? [];
+  const sources  = salesData?.leadSources    ?? [];
+  const monthly  = salesData?.monthlyLeads   ?? [];
 
   const stageCards = [
-    { label: "New",         value: pipeline?.new        ?? 0, color: T.neutral400,  accent: undefined },
-    { label: "Open",        value: pipeline?.open       ?? 0, color: "#3B82F6",     accent: undefined },
-    { label: "In Progress", value: pipeline?.inProgress ?? 0, color: T.orange,      accent: T.orange  },
-    { label: "Qualified",   value: pipeline?.qualified  ?? 0, color: T.warning,     accent: undefined },
-    { label: "Contracted",  value: pipeline?.contracted ?? 0, color: T.success,     accent: T.success },
+    { label: "New",         value: pipeline?.new        ?? 0, color: T.neutral400, bar: "#A8A29E" },
+    { label: "Open",        value: pipeline?.open       ?? 0, color: "#3B82F6",    bar: "#3B82F6" },
+    { label: "In Progress", value: pipeline?.inProgress ?? 0, color: T.orange,     bar: T.orange  },
+    { label: "Qualified",   value: pipeline?.qualified  ?? 0, color: T.warning,    bar: T.warning },
+    { label: "Contracted",  value: pipeline?.contracted ?? 0, color: T.success,    bar: T.success },
   ];
-
   const pipelineTotal = stageCards.reduce((s, c) => s + c.value, 0);
-  const goals = salesData?.goals;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Pipeline Stage Cards */}
+    <div className="flex flex-col gap-5">
+      {/* Pipeline header */}
       <div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: T.neutral400, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Sales Pipeline</div>
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          {stageCards.map(s => (
-            <div key={s.label} style={{
-              background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: "16px 18px",
-              borderTop: s.accent ? `3px solid ${s.accent}` : undefined,
-            }}>
-              <div style={{ fontSize: 32, fontWeight: 700, color: s.color }}>{s.value}</div>
-              <div style={{ fontSize: 13, color: T.neutral600, marginTop: 4 }}>{s.label}</div>
-            </div>
-          ))}
+        <div style={{ fontSize: 11, fontWeight: 700, color: T.neutral400, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>
+          Sales Pipeline — {pipelineTotal} total leads
         </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {stageCards.map((s, i) => {
+            const pct = pipelineTotal > 0 ? Math.round((s.value / pipelineTotal) * 100) : 0;
+            return (
+              <div key={s.label} style={{
+                background: T.card, border: `1px solid ${T.border}`, borderRadius: 12,
+                padding: "16px 18px", position: "relative", overflow: "hidden",
+              }} className="hover:shadow-md transition-shadow">
+                {/* Stage progress bar at bottom */}
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: T.neutral100 }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: s.bar, transition: "width 600ms ease" }} />
+                </div>
+                <div style={{ fontSize: 30, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 12, color: T.neutral600, marginTop: 4 }}>{s.label}</div>
+                <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>{pct}% of pipeline</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Visual funnel bar */}
+        {pipelineTotal > 0 && (
+          <div style={{ marginTop: 12, background: T.card, border: `1px solid ${T.border}`, borderRadius: 10, padding: "12px 16px" }}>
+            <div style={{ height: 10, borderRadius: 999, overflow: "hidden", display: "flex", gap: 2 }}>
+              {stageCards.filter(s => s.value > 0).map(s => (
+                <div key={s.label} style={{
+                  flex: s.value, background: s.bar, minWidth: 4,
+                  borderRadius: 999, transition: "flex 500ms ease",
+                }} title={`${s.label}: ${s.value}`} />
+              ))}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", marginTop: 8 }}>
+              {stageCards.map(s => (
+                <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 9, height: 9, borderRadius: "50%", background: s.bar }} />
+                  <span style={{ fontSize: 11, color: T.neutral600 }}>{s.label} ({s.value})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Funnel bar */}
-      {pipelineTotal > 0 && (
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: "14px 18px" }}>
-          <div style={{ fontSize: 12, color: T.neutral600, marginBottom: 8, fontWeight: 500 }}>Pipeline Funnel</div>
-          <div style={{ height: 12, borderRadius: 999, overflow: "hidden", display: "flex" }}>
-            {stageCards.map(s => (
-              <div key={s.label} style={{
-                flex: s.value, background: s.color, minWidth: s.value > 0 ? 4 : 0,
-                transition: "flex 500ms ease",
-              }} title={`${s.label}: ${s.value}`} />
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
-            {stageCards.map(s => (
-              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: s.color }} />
-                <span style={{ fontSize: 11, color: T.neutral600 }}>{s.label} ({s.value})</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* 3-col grid: chart+quotes (2/3) | sources+goals (1/3) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 flex flex-col gap-4">
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Lead Acquisition + Contracts Chart */}
+          {/* Monthly Leads vs Contracts */}
           <Card title="Leads vs Contracts — Monthly">
-            {(salesData?.monthlyLeads ?? []).length === 0 ? (
-              <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: T.neutral400 }}>No lead data</div>
+            {monthly.length === 0 ? (
+              <EmptyState icon={TrendingUp} title="No monthly data yet" sub="Lead and contract trends will appear here" />
             ) : (
-              <>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={salesData!.monthlyLeads} barSize={16} barGap={3}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={T.neutral100} vertical={false} />
-                    <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
-                      formatter={(v: number, name: string) => [v, name === "count" ? "Leads" : "Contracts"]} />
-                    <Legend formatter={(v: string) => v === "count" ? "Leads" : "Contracts"} wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="count"     name="count"     fill={T.orange}  radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="contracts" name="contracts" fill={T.success} radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </>
+              <ResponsiveContainer width="100%" height={210}>
+                <BarChart data={monthly} barSize={14} barGap={3} barCategoryGap="30%">
+                  <CartesianGrid strokeDasharray="3 3" stroke={T.neutral100} vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
+                    formatter={(v: number, name: string) => [v, name === "count" ? "Leads" : "Contracts"]} />
+                  <Legend formatter={(v: string) => v === "count" ? "Leads" : "Contracts"} wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="count"     name="count"     fill={T.orange}  radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="contracts" name="contracts" fill={T.success} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </Card>
 
@@ -641,55 +729,61 @@ function SalesTab({
               Total: <strong style={{ color: T.orange }}>{fmtAUD(salesData?.totalQuoteValue ?? 0)}</strong>
             </span>
           }>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${T.border}` }}>
-                  {["Student", "School", "Value", "Status"].map(h => (
-                    <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 600, color: T.neutral400, textTransform: "uppercase" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(salesData?.recentQuotes ?? []).length === 0 ? (
-                  <tr><td colSpan={4} style={{ padding: "24px 10px", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No quotes yet</td></tr>
-                ) : (salesData?.recentQuotes ?? []).map(q => (
-                  <tr key={q.id} style={{ borderBottom: `1px solid ${T.neutral100}` }}>
-                    <td style={{ padding: "10px 10px", fontSize: 13, color: T.neutral900, fontWeight: 500 }}>{q.contactName}</td>
-                    <td style={{ padding: "10px 10px", fontSize: 12, color: T.neutral600 }}>{q.schoolName ?? "—"}</td>
-                    <td style={{ padding: "10px 10px", fontSize: 13, color: T.orange, fontWeight: 600 }}>{fmtAUD(q.totalAmount)}</td>
-                    <td style={{ padding: "10px 10px" }}><StatusBadge status={q.status?.toLowerCase() ?? "draft"} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {quotes.length === 0 ? (
+              <EmptyState icon={FileText} title="No quotes yet" sub="Quotes will appear here once created" />
+            ) : (
+              <div className="overflow-x-auto">
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+                      {["Student", "Value", "Status", "Date"].map(h => (
+                        <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 600, color: T.neutral400, textTransform: "uppercase", letterSpacing: 0.4 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quotes.map(q => (
+                      <tr key={q.id} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[#FAFAF9]">
+                        <td style={{ padding: "10px 10px", fontSize: 13, color: T.neutral900, fontWeight: 500 }}>{q.contactName}</td>
+                        <td style={{ padding: "10px 10px", fontSize: 13, color: T.orange, fontWeight: 600 }}>{fmtAUD(q.totalAmount)}</td>
+                        <td style={{ padding: "10px 10px" }}><StatusBadge status={q.status?.toLowerCase() ?? "draft"} /></td>
+                        <td style={{ padding: "10px 10px", fontSize: 11, color: T.neutral400 }}>{fmtRelative(q.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Card>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {/* Lead Sources donut */}
+        {/* Right: Sources + Goals */}
+        <div className="flex flex-col gap-4">
+
+          {/* Lead Sources */}
           <Card title="Lead Sources">
-            {(salesData?.leadSources ?? []).length === 0 ? (
-              <div style={{ padding: "40px 0", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No source data</div>
+            {sources.length === 0 ? (
+              <EmptyState icon={Users} title="No source data" sub="Sources will appear once leads are recorded" />
             ) : (
               <>
-                <ResponsiveContainer width="100%" height={160}>
+                <ResponsiveContainer width="100%" height={150}>
                   <PieChart>
-                    <Pie data={salesData!.leadSources} dataKey="count" nameKey="source" cx="50%" cy="50%" outerRadius={65} innerRadius={35}>
-                      {salesData!.leadSources.map((_, i) => (
+                    <Pie data={sources} dataKey="count" nameKey="source" cx="50%" cy="50%" outerRadius={60} innerRadius={32}>
+                      {sources.map((_, i) => (
                         <Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number, name: string) => [v, name]} />
                   </PieChart>
                 </ResponsiveContainer>
-                <div style={{ marginTop: 8 }}>
-                  {salesData!.leadSources.slice(0, 5).map((s, i) => (
+                <div className="flex flex-col gap-1 mt-2">
+                  {sources.slice(0, 6).map((s, i) => (
                     <div key={s.source} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 0" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: SOURCE_COLORS[i % SOURCE_COLORS.length] }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <div style={{ width: 9, height: 9, borderRadius: "50%", background: SOURCE_COLORS[i % SOURCE_COLORS.length], flexShrink: 0 }} />
                         <span style={{ fontSize: 12, color: T.neutral600 }}>{s.source}</span>
                       </div>
-                      <span style={{ fontSize: 12, color: T.neutral900, fontWeight: 500 }}>{s.percentage}%</span>
+                      <span style={{ fontSize: 12, color: T.neutral900, fontWeight: 600 }}>{s.percentage}%</span>
                     </div>
                   ))}
                 </div>
@@ -699,25 +793,41 @@ function SalesTab({
 
           {/* Monthly Goals */}
           <Card title="Monthly Goals">
-            {goals && [
-              { label: "New Leads",  actual: goals.newLeadsActual,  target: goals.newLeadsTarget },
-              { label: "Contracts",  actual: goals.contractsActual, target: goals.contractsTarget },
-            ].map(g => (
-              <div key={g.label} style={{ marginBottom: 14 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                  <span style={{ fontSize: 12, color: T.neutral600 }}>{g.label}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: T.neutral900 }}>{g.actual} / {g.target}</span>
+            {!goals ? (
+              <EmptyState icon={Target} title="No goals set" sub="Set targets in settings" />
+            ) : (
+              <div className="flex flex-col gap-5 pt-1">
+                {[
+                  { label: "New Leads",  actual: goals.newLeadsActual,  target: goals.newLeadsTarget  },
+                  { label: "Contracts",  actual: goals.contractsActual, target: goals.contractsTarget },
+                ].map(g => {
+                  const pct = g.target > 0 ? Math.min(100, Math.round((g.actual / g.target) * 100)) : 0;
+                  const met = g.actual >= g.target;
+                  return (
+                    <div key={g.label}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                        <span style={{ fontSize: 12, color: T.neutral600 }}>{g.label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: met ? T.success : T.neutral900 }}>
+                          {g.actual} <span style={{ fontWeight: 400, color: T.neutral400 }}>/ {g.target}</span>
+                        </span>
+                      </div>
+                      <div style={{ height: 8, background: T.neutral100, borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{
+                          width: `${pct}%`, height: "100%", borderRadius: 999,
+                          background: met ? T.success : T.orange,
+                          transition: "width 600ms ease",
+                        }} />
+                      </div>
+                      <div style={{ fontSize: 11, color: T.neutral400, marginTop: 3 }}>{pct}% of target</div>
+                    </div>
+                  );
+                })}
+
+                {/* Conversion Rate */}
+                <div style={{ padding: "14px 16px", borderRadius: 10, background: T.orangeLight, textAlign: "center" }}>
+                  <div style={{ fontSize: 11, color: T.neutral600, marginBottom: 4 }}>Lead → Contract Rate</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: T.orange }}>{goals.conversionRate}<span style={{ fontSize: 16 }}>%</span></div>
                 </div>
-                <ProgressBar
-                  value={g.target > 0 ? (g.actual / g.target) * 100 : 0}
-                  color={g.actual >= g.target ? T.success : T.orange}
-                />
-              </div>
-            ))}
-            {goals && (
-              <div style={{ marginTop: 16, padding: "12px", borderRadius: 8, background: T.orangeLight, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 12, color: T.neutral600 }}>Lead → Contract Rate</span>
-                <span style={{ fontSize: 18, fontWeight: 700, color: T.orange }}>{goals.conversionRate}%</span>
               </div>
             )}
           </Card>
@@ -727,14 +837,14 @@ function SalesTab({
   );
 }
 
-// ─── Finance Tab ──────────────────────────────────────────────────────────────
+// ─── Finance Tab ───────────────────────────────────────────────────────────
 function FinanceTab({
   financeData, financeLoading,
   revData, agingData, staffData,
   isSA, selectedIds, toggleSelect, toggleAll, approveMutation,
 }: {
   financeData: FinanceData | undefined; financeLoading: boolean;
-  revData: { data: RevenueRow[] } | undefined;
+  revData:   { data: RevenueRow[]  } | undefined;
   agingData: { data: AgingRow[]; total: number } | undefined;
   staffData: { data: StaffKpiRow[] } | undefined;
   isSA: boolean;
@@ -743,12 +853,12 @@ function FinanceTab({
   toggleAll: () => void;
   approveMutation: any;
 }) {
-  const agingRows: AgingRow[] = agingData?.data ?? [];
+  const agingRows: AgingRow[]    = agingData?.data ?? [];
   const staffRows: StaffKpiRow[] = staffData?.data ?? [];
 
   const revenueChart = useMemo(() => {
     const rows: RevenueRow[] = revData?.data ?? [];
-    const months = [...new Set(rows.map(r => r.month))].sort();
+    const months      = [...new Set(rows.map(r => r.month))].sort();
     const serviceTypes = [...new Set(rows.map(r => r.service_type))];
     return months.map(m => {
       const entry: Record<string, any> = { month: MONTH_FMT(m) };
@@ -767,32 +877,64 @@ function FinanceTab({
 
   if (financeLoading) return <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}</div>;
 
-  const urgencyColor = { high: T.orange, medium: T.warning, low: T.neutral600 };
+  const urgencyColor: Record<string, string> = { high: T.danger, medium: T.warning, low: T.neutral600 };
+
+  const fd = financeData;
+  const arOutstanding = fd?.arSummary.outstanding ?? 0;
+  const apOverdue     = fd?.apSummary.overdue     ?? 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Top Finance KPIs */}
+    <div className="flex flex-col gap-5">
+      {/* Top 4 KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={TrendingUp} value={fmtAUD(financeData?.netRevenue ?? 0)}  label="Net Revenue (MTD)"  accentLeft={T.orange} />
-        <KpiCard icon={DollarSign} value={fmtAUD(financeData?.arCollected ?? 0)} label="AR Collected"        accentLeft={T.success} iconBg={T.successBg} iconColor={T.success} />
-        <KpiCard icon={CreditCard} value={fmtAUD(financeData?.apPaid ?? 0)}       label="AP Paid"             accentLeft={T.neutral400} iconBg={T.neutral100} iconColor={T.neutral600} />
-        <KpiCard icon={Award}      value={fmtAUD(financeData?.totalIncentive ?? 0)} label="Total Incentive"   accentLeft={T.warning}  iconBg={T.warningBg}  iconColor={T.warning} />
+        <KpiCard icon={TrendingUp} value={fmtAUD(fd?.netRevenue ?? 0)}    label="Net Revenue (MTD)"  accentLeft={T.orange} />
+        <KpiCard icon={DollarSign} value={fmtAUD(fd?.arCollected ?? 0)}   label="AR Collected"
+          subLabel={`Scheduled: ${fmtAUD(fd?.arScheduled ?? 0)}`}
+          accentLeft={T.success} iconBg={T.successBg} iconColor={T.success} />
+        <KpiCard icon={CreditCard} value={fmtAUD(fd?.apPaid ?? 0)}         label="AP Paid"
+          subLabel={apOverdue > 0 ? `${fmtAUD(apOverdue)} overdue` : "No overdue payments"}
+          accentLeft={apOverdue > 0 ? T.danger : T.neutral400}
+          iconBg={apOverdue > 0 ? T.dangerBg : T.neutral100}
+          iconColor={apOverdue > 0 ? T.danger : T.neutral600} />
+        <KpiCard icon={Award}      value={fmtAUD(fd?.totalIncentive ?? 0)} label="Staff Incentives"
+          subLabel={`${fd?.staffIncentives?.length ?? 0} staff members`}
+          accentLeft={T.warning} iconBg={T.warningBg} iconColor={T.warning} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Monthly Revenue Chart (legacy CRM data) */}
-          <Card title="Monthly Revenue by Service Type (last 6 months)">
+      {/* AR / AP quick summary tiles */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Total AR",        value: fmtAUD(fd?.arSummary.total       ?? 0), sub: `${fd?.arSummary.invoiceCount ?? 0} invoices`,  color: T.neutral900, bg: T.card },
+          { label: "AR Outstanding",  value: fmtAUD(arOutstanding),                  sub: `${fd?.arSummary.overdueCount ?? 0} overdue`,   color: arOutstanding > 0 ? T.warning : T.neutral900, bg: arOutstanding > 0 ? T.warningBg : T.card },
+          { label: "Total AP",        value: fmtAUD(fd?.apSummary.total       ?? 0), sub: `${fd?.apSummary.payableCount ?? 0} payables`,  color: T.neutral900, bg: T.card },
+          { label: "AP Overdue",      value: fmtAUD(apOverdue),                      sub: `${fd?.apSummary.urgentCount ?? 0} urgent`,     color: apOverdue > 0 ? T.danger : T.neutral900, bg: apOverdue > 0 ? T.dangerBg : T.card },
+        ].map(s => (
+          <div key={s.label} style={{ padding: "14px 16px", background: s.bg, border: `1px solid ${T.border}`, borderRadius: 10 }}>
+            <div style={{ fontSize: 11, color: T.neutral400, marginBottom: 5 }}>{s.label}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: T.neutral400, marginTop: 3 }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Main 3-col grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 flex flex-col gap-4">
+
+          {/* Monthly Revenue Chart */}
+          <Card title="Monthly Revenue by Service Type">
             {revenueChart.length === 0 ? (
-              <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: T.neutral400 }}>No revenue data yet</div>
+              <EmptyState icon={TrendingUp} title="No revenue data yet" sub="Revenue will appear here once contracts are active" />
             ) : (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={revenueChart} barSize={28}>
                   <CartesianGrid strokeDasharray="3 3" stroke={T.neutral100} vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={40} />
+                  <YAxis tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v}
+                    tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={40} />
                   <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
                     formatter={(v: number, name: string) => [fmtAUD(v), SERVICE_LABELS[name] ?? name]} />
+                  <Legend formatter={(v: string) => SERVICE_LABELS[v] ?? v} wrapperStyle={{ fontSize: 11 }} />
                   {revenueServiceTypes.map(st => (
                     <Bar key={st} dataKey={st} stackId="a" fill={SERVICE_COLORS[st] ?? T.neutral400}
                       radius={revenueServiceTypes[revenueServiceTypes.length - 1] === st ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
@@ -802,120 +944,123 @@ function FinanceTab({
             )}
           </Card>
 
+          {/* AR Aging */}
+          <Card title="AR Aging">
+            {agingRows.length === 0 ? (
+              <EmptyState icon={DollarSign} title="No outstanding AR items" sub="All accounts receivable are current" />
+            ) : (
+              <div className="overflow-x-auto">
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+                      {["Aging Bucket", "Invoices", "Amount", "% of Total"].map(h => (
+                        <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 600, color: T.neutral400, textTransform: "uppercase", letterSpacing: 0.4 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {agingRows.map(row => {
+                      const critical = row.bucket === "90+";
+                      const rowColor = critical ? T.danger : T.neutral900;
+                      return (
+                        <tr key={row.bucket} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[#FAFAF9]">
+                          <td style={{ padding: "10px 10px", fontWeight: 600, color: rowColor }}>
+                            {row.bucket === "current" ? "Current" : `${row.bucket} days`}
+                          </td>
+                          <td style={{ padding: "10px 10px", color: critical ? T.danger : T.neutral600 }}>{row.count}</td>
+                          <td style={{ padding: "10px 10px", fontWeight: 600, color: rowColor }}>{fmtAUD(row.amount)}</td>
+                          <td style={{ padding: "10px 10px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div style={{ flex: 1, height: 6, background: T.neutral100, borderRadius: 999, overflow: "hidden" }}>
+                                <div style={{ width: `${row.pct}%`, height: "100%", background: critical ? T.danger : T.orange, borderRadius: 999 }} />
+                              </div>
+                              <span style={{ fontSize: 11, color: critical ? T.danger : T.neutral600, width: 32, textAlign: "right" }}>{row.pct}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+
           {/* Commission Breakdown */}
           <Card title="Commission Breakdown" titleRight={
             <span style={{ fontSize: 12, color: T.neutral600 }}>
-              Total: <strong style={{ color: T.orange }}>{fmtAUD(financeData?.totalExpectedCommission ?? 0)}</strong>
+              Expected: <strong style={{ color: T.orange }}>{fmtAUD(fd?.totalExpectedCommission ?? 0)}</strong>
             </span>
           }>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${T.border}` }}>
-                  {["School/Partner", "Student", "Expected", "Status"].map(h => (
-                    <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 600, color: T.neutral400, textTransform: "uppercase" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(financeData?.commissions ?? []).length === 0 ? (
-                  <tr><td colSpan={4} style={{ padding: "24px 10px", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No commission data</td></tr>
-                ) : (financeData?.commissions ?? []).map(c => (
-                  <tr key={c.id} style={{ borderBottom: `1px solid ${T.neutral100}` }}>
-                    <td style={{ padding: "10px 10px", fontSize: 12, color: T.neutral900 }}>{c.schoolName}</td>
-                    <td style={{ padding: "10px 10px", fontSize: 12, color: T.neutral600 }}>{c.studentName}</td>
-                    <td style={{ padding: "10px 10px", fontSize: 13, color: T.orange, fontWeight: 600 }}>{fmtAUD(c.expectedAmount)}</td>
-                    <td style={{ padding: "10px 10px" }}><StatusBadge status={c.status} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
-
-          {/* AR Aging (legacy) */}
-          <Card title="AR Aging">
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${T.border}` }}>
-                  {["Aging", "Count", "Amount (AUD)", "% of Total"].map(h => (
-                    <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 600, color: T.neutral400, textTransform: "uppercase" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {agingRows.length === 0 ? (
-                  <tr><td colSpan={4} style={{ padding: "24px 10px", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No outstanding AR items</td></tr>
-                ) : agingRows.map(row => {
-                  const is90plus = row.bucket === "90+";
-                  return (
-                    <tr key={row.bucket} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[#FAFAF9]">
-                      <td style={{ padding: "10px 10px", fontWeight: is90plus ? 700 : 500, color: is90plus ? T.danger : T.neutral900 }}>
-                        {row.bucket === "current" ? "Current" : `${row.bucket} days`}
-                      </td>
-                      <td style={{ padding: "10px 10px", color: is90plus ? T.danger : T.neutral600 }}>{row.count}</td>
-                      <td style={{ padding: "10px 10px", fontWeight: 500, color: is90plus ? T.danger : T.neutral900 }}>{fmtAUD(row.amount)}</td>
-                      <td style={{ padding: "10px 10px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ width: 80, height: 6, borderRadius: 999, overflow: "hidden", background: T.neutral100 }}>
-                            <div style={{ width: `${row.pct}%`, height: "100%", background: is90plus ? T.danger : T.orange, borderRadius: 999 }} />
-                          </div>
-                          <span style={{ fontSize: 11, color: is90plus ? T.danger : T.neutral600 }}>{row.pct}%</span>
-                        </div>
-                      </td>
+            {(fd?.commissions ?? []).length === 0 ? (
+              <EmptyState icon={BookOpen} title="No commission records" sub="Commissions will appear once contracts are invoiced" />
+            ) : (
+              <div className="overflow-x-auto">
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+                      {["School / Partner", "Student", "Expected", "Status"].map(h => (
+                        <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 600, color: T.neutral400, textTransform: "uppercase", letterSpacing: 0.4 }}>{h}</th>
+                      ))}
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {fd!.commissions.map(c => (
+                      <tr key={c.id} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[#FAFAF9]">
+                        <td style={{ padding: "10px 10px", fontSize: 13, fontWeight: 500, color: T.neutral900 }}>{c.schoolName}</td>
+                        <td style={{ padding: "10px 10px", fontSize: 12, color: T.neutral600 }}>{c.studentName}</td>
+                        <td style={{ padding: "10px 10px", fontSize: 13, fontWeight: 600, color: T.orange }}>{fmtAUD(c.expectedAmount)}</td>
+                        <td style={{ padding: "10px 10px" }}><StatusBadge status={c.status} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Card>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {/* AR / AP Summary */}
-          <Card title="AR / AP Summary">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {[
-                { label: "Total AR",     value: fmtAUD(financeData?.arSummary.total ?? 0),        color: T.neutral900 },
-                { label: "Outstanding",  value: fmtAUD(financeData?.arSummary.outstanding ?? 0),   color: T.warning   },
-                { label: "Total AP",     value: fmtAUD(financeData?.apSummary.total ?? 0),         color: T.neutral900 },
-                { label: "Overdue AP",   value: fmtAUD(financeData?.apSummary.overdue ?? 0),       color: T.danger    },
-              ].map(s => (
-                <div key={s.label} style={{ padding: "12px", background: T.neutral100, borderRadius: 8 }}>
-                  <div style={{ fontSize: 11, color: T.neutral400, marginBottom: 4 }}>{s.label}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: s.color }}>{s.value}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
+        {/* Right column */}
+        <div className="flex flex-col gap-4">
 
           {/* Staff Incentives */}
           <Card title="Staff Incentives">
-            {(financeData?.staffIncentives ?? []).length === 0 ? (
-              <div style={{ padding: "24px 0", textAlign: "center", border: `2px dashed ${T.border}`, borderRadius: 8 }}>
-                <Award className="w-8 h-8 mx-auto mb-2" style={{ color: T.neutral400 }} />
-                <div style={{ fontSize: 12, color: T.neutral400 }}>No incentives calculated yet</div>
+            {(fd?.staffIncentives ?? []).length === 0 ? (
+              <div style={{ padding: "20px 0", textAlign: "center", border: `2px dashed ${T.border}`, borderRadius: 8 }}>
+                <Award className="w-8 h-8 mx-auto mb-2" style={{ color: T.neutral400 }} strokeWidth={1.5} />
+                <div style={{ fontSize: 12, color: T.neutral400, fontWeight: 500 }}>No incentives calculated yet</div>
                 <div style={{ fontSize: 11, color: T.neutral400, marginTop: 4 }}>Generated once contracts are active</div>
               </div>
-            ) : (financeData?.staffIncentives ?? []).map(si => (
-              <div key={si.staffId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${T.neutral100}` }}>
+            ) : fd!.staffIncentives.map(si => (
+              <div key={si.staffId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${T.neutral100}` }}>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 500, color: T.neutral900 }}>{si.staffName}</div>
-                  <div style={{ fontSize: 11, color: T.neutral400 }}>{si.period}</div>
+                  <div style={{ fontSize: 11, color: T.neutral400, marginTop: 1 }}>{si.period}</div>
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.orange }}>{fmtAUD(si.amount)}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: T.orange }}>{fmtAUD(si.amount)}</div>
               </div>
             ))}
           </Card>
 
           {/* Upcoming Payments */}
           <Card title="Upcoming Payments">
-            {(financeData?.upcomingPayments ?? []).length === 0 ? (
-              <div style={{ padding: "16px 0", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No upcoming payments</div>
-            ) : (financeData?.upcomingPayments ?? []).map(p => (
-              <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "8px 0", borderBottom: `1px solid ${T.neutral100}` }}>
-                <div style={{ fontSize: 12, color: T.neutral900, flex: 1, marginRight: 8 }}>{p.description}</div>
+            {(fd?.upcomingPayments ?? []).length === 0 ? (
+              <EmptyState icon={CreditCard} title="No upcoming payments" sub="Scheduled payments will appear here" />
+            ) : fd!.upcomingPayments.map(p => (
+              <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "9px 0", borderBottom: `1px solid ${T.neutral100}`, gap: 8 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: T.neutral900, lineHeight: 1.4 }}>{p.description}</div>
+                  <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>{fmtAUD(p.amount)}</div>
+                </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 12, color: urgencyColor[p.urgency], fontWeight: 600 }}>{fmtDate(p.dueDate)}</div>
-                  <div style={{ fontSize: 11, color: T.neutral600 }}>{fmtAUD(p.amount)}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: urgencyColor[p.urgency] ?? T.neutral600 }}>
+                    {fmtDate(p.dueDate)}
+                  </div>
+                  <span style={{
+                    fontSize: 10, padding: "1px 7px", borderRadius: 999, marginTop: 3, display: "inline-block",
+                    background: p.urgency === "high" ? T.dangerBg : p.urgency === "medium" ? T.warningBg : T.neutral100,
+                    color: urgencyColor[p.urgency] ?? T.neutral600, fontWeight: 600, textTransform: "capitalize",
+                  }}>{p.urgency}</span>
                 </div>
               </div>
             ))}
@@ -923,7 +1068,7 @@ function FinanceTab({
         </div>
       </div>
 
-      {/* Staff KPI Table (SA/Admin approve) */}
+      {/* Staff KPI Table */}
       <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12 }}>
         <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
@@ -947,13 +1092,17 @@ function FinanceTab({
                     onChange={toggleAll} />
                 </th>}
                 {["Staff", "Leads", "Converted", "Conv. Rate", "Revenue", "Incentive", "Tier", "Status"].map(h => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 600, color: T.neutral600, textTransform: "uppercase" }}>{h}</th>
+                  <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 600, color: T.neutral600, textTransform: "uppercase", letterSpacing: 0.4 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {staffRows.length === 0 ? (
-                <tr><td colSpan={isSA ? 9 : 8} style={{ padding: "24px 14px", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No staff KPI data for this month</td></tr>
+                <tr>
+                  <td colSpan={isSA ? 9 : 8} style={{ padding: "32px 14px", textAlign: "center" }}>
+                    <EmptyState icon={Users} title="No staff KPI data for this month" sub="KPI records are generated monthly" />
+                  </td>
+                </tr>
               ) : staffRows.map(row => {
                 const tier    = (row.bonus_tier ?? "standard").toLowerCase();
                 const tierCls = TIER_STYLES[tier] ?? TIER_STYLES.standard;
@@ -967,9 +1116,11 @@ function FinanceTab({
                     <td style={{ padding: "10px 14px", fontWeight: 500, color: T.neutral900 }}>{row.staff_name}</td>
                     <td style={{ padding: "10px 14px", color: T.neutral600 }}>{row.lead_count}</td>
                     <td style={{ padding: "10px 14px", color: T.neutral600 }}>{row.conversion_count}</td>
-                    <td style={{ padding: "10px 14px", color: T.neutral600 }}>{row.conversion_rate != null ? `${(Number(row.conversion_rate) * 100).toFixed(1)}%` : "—"}</td>
+                    <td style={{ padding: "10px 14px", color: T.neutral600 }}>
+                      {row.conversion_rate != null ? `${(Number(row.conversion_rate) * 100).toFixed(1)}%` : "—"}
+                    </td>
                     <td style={{ padding: "10px 14px", fontWeight: 500, color: T.neutral900 }}>{fmtAUD(Number(row.attributed_revenue))}</td>
-                    <td style={{ padding: "10px 14px", fontWeight: 500, color: T.orange }}>{fmtAUD(Number(row.incentive_amount))}</td>
+                    <td style={{ padding: "10px 14px", fontWeight: 600, color: T.orange }}>{fmtAUD(Number(row.incentive_amount))}</td>
                     <td style={{ padding: "10px 14px" }}>
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${tierCls}`}>{tier}</span>
                     </td>
