@@ -634,10 +634,6 @@ function OverviewTab({ record, onStageChange, onSave }: {
             <Input type="date" value={studentPassportExpiry} onChange={e => { setStudentPassportExpiry(e.target.value); mark(); }} className="h-8 text-xs" />
           </div>
           <div className="col-span-2 space-y-1.5">
-            <Label className="text-xs text-stone-500">School Name</Label>
-            <Input value={studentSchoolName} onChange={e => { setStudentSchoolName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Seoul Elementary School" />
-          </div>
-          <div className="col-span-2 space-y-1.5">
             <Label className="text-xs text-stone-500">Spoken Language</Label>
             <Input value={spokenLanguage} onChange={e => { setSpokenLanguage(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Korean, English" />
           </div>
@@ -652,6 +648,10 @@ function OverviewTab({ record, onStageChange, onSave }: {
       <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
         <h3 className="text-xs font-semibold text-(--e-orange) uppercase tracking-wide">School & Programme Info</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="col-span-3 space-y-1.5">
+            <Label className="text-xs text-stone-500">School Name</Label>
+            <Input value={studentSchoolName} onChange={e => { setStudentSchoolName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Seoul Elementary School" />
+          </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-500">School Status</Label>
             <Select value={schoolStatus || "_none"} onValueChange={v => { setSchoolStatus(v === "_none" ? "" : v); mark(); }}>
