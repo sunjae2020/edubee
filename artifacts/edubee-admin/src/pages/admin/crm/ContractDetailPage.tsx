@@ -2409,24 +2409,42 @@ function AddServiceModal({ contract, defaultType, onClose }: {
           </div>
 
           {/* Step 1: Type selection */}
-          {!selectedType && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {SVC_DEFS_MODAL.map(({ key, label, icon: Icon, desc }) => (
-                <button key={key}
-                  onClick={() => { setSelectedType(key); setForm(initForm()); }}
-                  className="flex items-start gap-3 p-4 rounded-xl border border-[#E8E6E2] hover:border-(--e-orange) hover:bg-(--e-orange-lt) transition-colors text-left group">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
-                    style={{ background: "#F4F3F1" }}>
-                    <Icon size={16} style={{ color: "var(--e-orange)" }} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[#1C1917]">{label}</p>
-                    <p className="text-xs text-[#A8A29E] mt-0.5 leading-snug">{desc}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+          {!selectedType && (() => {
+            const SINGLETON_KEYS = ["internship", "settlement", "guardian", "visa"];
+            const svcs = contract.services ?? {};
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {SVC_DEFS_MODAL.map(({ key, label, icon: Icon, desc }) => {
+                  const isSingleton = SINGLETON_KEYS.includes(key);
+                  const alreadyExists = isSingleton && !!svcs[key];
+                  return (
+                    <button key={key}
+                      onClick={() => { if (!alreadyExists) { setSelectedType(key); setForm(initForm()); } }}
+                      disabled={alreadyExists}
+                      className={`flex items-start gap-3 p-4 rounded-xl border transition-colors text-left ${
+                        alreadyExists
+                          ? "border-[#E8E6E2] bg-[#FAFAF9] cursor-not-allowed opacity-60"
+                          : "border-[#E8E6E2] hover:border-(--e-orange) hover:bg-(--e-orange-lt) group"
+                      }`}>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: "#F4F3F1" }}>
+                        <Icon size={16} style={{ color: alreadyExists ? "#D6D3D1" : "var(--e-orange)" }} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-[#1C1917]">{label}</p>
+                          {alreadyExists && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#E8E6E2] text-[#78716C]">Added</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[#A8A29E] mt-0.5 leading-snug">{desc}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* Step 2: Type-specific form */}
           {selectedType && (
