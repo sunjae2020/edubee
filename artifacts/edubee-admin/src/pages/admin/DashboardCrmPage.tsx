@@ -455,7 +455,12 @@ function OperationTab({ data, loading }: { data: OperationData | undefined; load
   const urgentTasks    = data?.tasksUrgentCount  ?? 0;
   const overdueTasks   = data?.tasksOverdueCount ?? 0;
   const urgentVisa     = data?.visaUrgentCount   ?? 0;
-  const visaTotal      = visaStages.reduce((s, v) => s + v.count, 0) || 1;
+
+  const DEFAULT_VISA_STAGES = ["Applied", "Docs Submitted", "Under Review", "Approved", "Issued", "Rejected"];
+  const displayVisaStages   = visaStages.length > 0
+    ? visaStages
+    : DEFAULT_VISA_STAGES.map(s => ({ stage: s, count: 0 }));
+  const visaTotal = displayVisaStages.reduce((s, v) => s + v.count, 0) || 1;
 
   return (
     <div className="flex flex-col gap-5">
@@ -493,7 +498,12 @@ function OperationTab({ data, loading }: { data: OperationData | undefined; load
               : undefined
           }>
             {tasks.length === 0
-              ? <EmptyState icon={CheckSquare} title="No pending tasks" sub="All caught up — nothing due in the next 7 days" />
+              ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 8, background: T.neutral100 }}>
+                  <CheckSquare className="w-4 h-4 shrink-0" style={{ color: T.neutral400 }} strokeWidth={1.5} />
+                  <span style={{ fontSize: 13, color: T.neutral400 }}>No pending tasks — all caught up</span>
+                </div>
+              )
               : tasks.map(task => {
                   const overdue   = task.dueDate && new Date(task.dueDate) < new Date();
                   const pri       = task.priority?.toLowerCase() ?? "normal";
@@ -533,7 +543,12 @@ function OperationTab({ data, loading }: { data: OperationData | undefined; load
               : undefined
           }>
             {interviews.length === 0
-              ? <EmptyState icon={Calendar} title="No interviews this week" sub="Interviews will appear here once scheduled" />
+              ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 8, background: T.neutral100 }}>
+                  <Calendar className="w-4 h-4 shrink-0" style={{ color: T.neutral400 }} strokeWidth={1.5} />
+                  <span style={{ fontSize: 13, color: T.neutral400 }}>No interviews scheduled this week</span>
+                </div>
+              )
               : interviews.map(iv => (
                   <div key={iv.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: `1px solid ${T.neutral100}` }}>
                     <div style={{
@@ -566,43 +581,44 @@ function OperationTab({ data, loading }: { data: OperationData | undefined; load
 
           {/* Visa Stage Tracker */}
           <Card title="Visa Stage Tracker">
-            {visaStages.length === 0
-              ? <EmptyState icon={Shield} title="No visa records" sub="Visa applications will appear here" />
-              : (
-                <div className="flex flex-col gap-3 pt-1">
-                  {visaStages.slice(0, 6).map((vs, i) => {
-                    const pct = Math.round((vs.count / visaTotal) * 100);
-                    return (
-                      <div key={vs.stage}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                          <span style={{ fontSize: 12, color: T.neutral600, textTransform: "capitalize" }}>
-                            {vs.stage.replace(/_/g, " ")}
-                          </span>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontSize: 11, color: T.neutral400 }}>{pct}%</span>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: VISA_STAGE_COLORS[i] ?? T.neutral600 }}>
-                              {vs.count}
-                            </span>
-                          </div>
-                        </div>
-                        <div style={{ height: 6, background: T.neutral100, borderRadius: 999, overflow: "hidden" }}>
-                          <div style={{
-                            width: `${pct}%`, height: "100%",
-                            background: VISA_STAGE_COLORS[i] ?? T.neutral400,
-                            borderRadius: 999, transition: "width 600ms ease",
-                          }} />
-                        </div>
+            <div className="flex flex-col gap-3 pt-1">
+              {displayVisaStages.slice(0, 6).map((vs, i) => {
+                const pct = Math.round((vs.count / visaTotal) * 100);
+                return (
+                  <div key={vs.stage}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                      <span style={{ fontSize: 12, color: T.neutral600, textTransform: "capitalize" }}>
+                        {vs.stage.replace(/_/g, " ")}
+                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 11, color: T.neutral400 }}>{pct}%</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: VISA_STAGE_COLORS[i] ?? T.neutral600 }}>
+                          {vs.count}
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    </div>
+                    <div style={{ height: 6, background: T.neutral100, borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{
+                        width: `${pct}%`, height: "100%",
+                        background: VISA_STAGE_COLORS[i] ?? T.neutral400,
+                        borderRadius: 999, transition: "width 600ms ease",
+                      }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </Card>
 
           {/* Recent Activity */}
           <Card title="Recent Activity">
             {activity.length === 0
-              ? <EmptyState icon={Activity} title="No recent activity" sub="Activity will appear here as you use the CRM" />
+              ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 8, background: T.neutral100 }}>
+                  <Activity className="w-4 h-4 shrink-0" style={{ color: T.neutral400 }} strokeWidth={1.5} />
+                  <span style={{ fontSize: 13, color: T.neutral400 }}>No recent activity recorded</span>
+                </div>
+              )
               : activity.map(act => (
                   <div key={act.id} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: `1px solid ${T.neutral100}` }}>
                     <div style={{
@@ -649,6 +665,12 @@ function SalesTab({
   ];
   const pipelineTotal = stageCards.reduce((s, c) => s + c.value, 0);
 
+  // Placeholder monthly data (last 6 months, 0 values) shown when no real data
+  const monthlyDisplay = monthly.length > 0 ? monthly : Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(); d.setMonth(d.getMonth() - (5 - i));
+    return { month: d.toLocaleDateString("en-AU", { month: "short" }), year: d.getFullYear(), count: 0, contracts: 0 };
+  });
+
   return (
     <div className="flex flex-col gap-5">
       {/* Pipeline header */}
@@ -676,27 +698,28 @@ function SalesTab({
           })}
         </div>
 
-        {/* Visual funnel bar */}
-        {pipelineTotal > 0 && (
-          <div style={{ marginTop: 12, background: T.card, border: `1px solid ${T.border}`, borderRadius: 10, padding: "12px 16px" }}>
-            <div style={{ height: 10, borderRadius: 999, overflow: "hidden", display: "flex", gap: 2 }}>
-              {stageCards.filter(s => s.value > 0).map(s => (
-                <div key={s.label} style={{
-                  flex: s.value, background: s.bar, minWidth: 4,
-                  borderRadius: 999, transition: "flex 500ms ease",
-                }} title={`${s.label}: ${s.value}`} />
-              ))}
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", marginTop: 8 }}>
-              {stageCards.map(s => (
-                <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                  <div style={{ width: 9, height: 9, borderRadius: "50%", background: s.bar }} />
-                  <span style={{ fontSize: 11, color: T.neutral600 }}>{s.label} ({s.value})</span>
-                </div>
-              ))}
-            </div>
+        {/* Visual funnel bar — always visible */}
+        <div style={{ marginTop: 12, background: T.card, border: `1px solid ${T.border}`, borderRadius: 10, padding: "12px 16px" }}>
+          <div style={{ height: 10, borderRadius: 999, overflow: "hidden", display: "flex", gap: 2 }}>
+            {pipelineTotal > 0
+              ? stageCards.filter(s => s.value > 0).map(s => (
+                  <div key={s.label} style={{
+                    flex: s.value, background: s.bar, minWidth: 4,
+                    borderRadius: 999, transition: "flex 500ms ease",
+                  }} title={`${s.label}: ${s.value}`} />
+                ))
+              : <div style={{ flex: 1, background: T.neutral100, borderRadius: 999 }} />
+            }
           </div>
-        )}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", marginTop: 8 }}>
+            {stageCards.map(s => (
+              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 9, height: 9, borderRadius: "50%", background: s.bar }} />
+                <span style={{ fontSize: 11, color: T.neutral600 }}>{s.label} ({s.value})</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* 3-col grid: chart+quotes (2/3) | sources+goals (1/3) */}
@@ -705,22 +728,18 @@ function SalesTab({
 
           {/* Monthly Leads vs Contracts */}
           <Card title="Leads vs Contracts — Monthly">
-            {monthly.length === 0 ? (
-              <EmptyState icon={TrendingUp} title="No monthly data yet" sub="Lead and contract trends will appear here" />
-            ) : (
-              <ResponsiveContainer width="100%" height={210}>
-                <BarChart data={monthly} barSize={14} barGap={3} barCategoryGap="30%">
-                  <CartesianGrid strokeDasharray="3 3" stroke={T.neutral100} vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
-                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
-                    formatter={(v: number, name: string) => [v, name === "count" ? "Leads" : "Contracts"]} />
-                  <Legend formatter={(v: string) => v === "count" ? "Leads" : "Contracts"} wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="count"     name="count"     fill={T.orange}  radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="contracts" name="contracts" fill={T.success} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            <ResponsiveContainer width="100%" height={210}>
+              <BarChart data={monthlyDisplay} barSize={14} barGap={3} barCategoryGap="30%">
+                <CartesianGrid strokeDasharray="3 3" stroke={T.neutral100} vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
+                  formatter={(v: number, name: string) => [v, name === "count" ? "Leads" : "Contracts"]} />
+                <Legend formatter={(v: string) => v === "count" ? "Leads" : "Contracts"} wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="count"     name="count"     fill={T.orange}  radius={[4, 4, 0, 0]} />
+                <Bar dataKey="contracts" name="contracts" fill={T.success} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </Card>
 
           {/* Recent Quotes */}
@@ -730,7 +749,10 @@ function SalesTab({
             </span>
           }>
             {quotes.length === 0 ? (
-              <EmptyState icon={FileText} title="No quotes yet" sub="Quotes will appear here once created" />
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 8, background: T.neutral100 }}>
+                <FileText className="w-4 h-4 shrink-0" style={{ color: T.neutral400 }} strokeWidth={1.5} />
+                <span style={{ fontSize: 13, color: T.neutral400 }}>No quotes created yet</span>
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -763,7 +785,10 @@ function SalesTab({
           {/* Lead Sources */}
           <Card title="Lead Sources">
             {sources.length === 0 ? (
-              <EmptyState icon={Users} title="No source data" sub="Sources will appear once leads are recorded" />
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 8, background: T.neutral100 }}>
+                <Users className="w-4 h-4 shrink-0" style={{ color: T.neutral400 }} strokeWidth={1.5} />
+                <span style={{ fontSize: 13, color: T.neutral400 }}>No lead sources recorded yet</span>
+              </div>
             ) : (
               <>
                 <ResponsiveContainer width="100%" height={150}>
@@ -875,6 +900,16 @@ function FinanceTab({
     return [...new Set(rows.map(r => r.service_type))];
   }, [revData]);
 
+  // Placeholder revenue data (last 6 months, 0) shown when no real data
+  const displayRevChart = useMemo(() => {
+    if (revenueChart.length > 0) return revenueChart;
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(); d.setMonth(d.getMonth() - (5 - i));
+      return { month: MONTH_FMT(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`), study_abroad: 0 };
+    });
+  }, [revenueChart]);
+  const displayRevServiceTypes = revenueServiceTypes.length > 0 ? revenueServiceTypes : ["study_abroad"];
+
   if (financeLoading) return <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}</div>;
 
   const urgencyColor: Record<string, string> = { high: T.danger, medium: T.warning, low: T.neutral600 };
@@ -923,25 +958,21 @@ function FinanceTab({
 
           {/* Monthly Revenue Chart */}
           <Card title="Monthly Revenue by Service Type">
-            {revenueChart.length === 0 ? (
-              <EmptyState icon={TrendingUp} title="No revenue data yet" sub="Revenue will appear here once contracts are active" />
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={revenueChart} barSize={28}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={T.neutral100} vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v}
-                    tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={40} />
-                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
-                    formatter={(v: number, name: string) => [fmtAUD(v), SERVICE_LABELS[name] ?? name]} />
-                  <Legend formatter={(v: string) => SERVICE_LABELS[v] ?? v} wrapperStyle={{ fontSize: 11 }} />
-                  {revenueServiceTypes.map(st => (
-                    <Bar key={st} dataKey={st} stackId="a" fill={SERVICE_COLORS[st] ?? T.neutral400}
-                      radius={revenueServiceTypes[revenueServiceTypes.length - 1] === st ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={displayRevChart} barSize={28}>
+                <CartesianGrid strokeDasharray="3 3" stroke={T.neutral100} vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)}
+                  tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={40} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
+                  formatter={(v: number, name: string) => [fmtAUD(v), SERVICE_LABELS[name] ?? name]} />
+                <Legend formatter={(v: string) => SERVICE_LABELS[v] ?? v} wrapperStyle={{ fontSize: 11 }} />
+                {displayRevServiceTypes.map(st => (
+                  <Bar key={st} dataKey={st} stackId="a" fill={SERVICE_COLORS[st] ?? T.neutral400}
+                    radius={displayRevServiceTypes[displayRevServiceTypes.length - 1] === st ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
           </Card>
 
           {/* AR Aging */}
@@ -993,7 +1024,10 @@ function FinanceTab({
             </span>
           }>
             {(fd?.commissions ?? []).length === 0 ? (
-              <EmptyState icon={BookOpen} title="No commission records" sub="Commissions will appear once contracts are invoiced" />
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 8, background: T.neutral100 }}>
+                <BookOpen className="w-4 h-4 shrink-0" style={{ color: T.neutral400 }} strokeWidth={1.5} />
+                <span style={{ fontSize: 13, color: T.neutral400 }}>No commission records this period</span>
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -1026,10 +1060,9 @@ function FinanceTab({
           {/* Staff Incentives */}
           <Card title="Staff Incentives">
             {(fd?.staffIncentives ?? []).length === 0 ? (
-              <div style={{ padding: "20px 0", textAlign: "center", border: `2px dashed ${T.border}`, borderRadius: 8 }}>
-                <Award className="w-8 h-8 mx-auto mb-2" style={{ color: T.neutral400 }} strokeWidth={1.5} />
-                <div style={{ fontSize: 12, color: T.neutral400, fontWeight: 500 }}>No incentives calculated yet</div>
-                <div style={{ fontSize: 11, color: T.neutral400, marginTop: 4 }}>Generated once contracts are active</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 8, background: T.neutral100 }}>
+                <Award className="w-4 h-4 shrink-0" style={{ color: T.neutral400 }} strokeWidth={1.5} />
+                <span style={{ fontSize: 13, color: T.neutral400 }}>No incentives this period</span>
               </div>
             ) : fd!.staffIncentives.map(si => (
               <div key={si.staffId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${T.neutral100}` }}>
@@ -1045,7 +1078,10 @@ function FinanceTab({
           {/* Upcoming Payments */}
           <Card title="Upcoming Payments">
             {(fd?.upcomingPayments ?? []).length === 0 ? (
-              <EmptyState icon={CreditCard} title="No upcoming payments" sub="Scheduled payments will appear here" />
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 8, background: T.neutral100 }}>
+                <CreditCard className="w-4 h-4 shrink-0" style={{ color: T.neutral400 }} strokeWidth={1.5} />
+                <span style={{ fontSize: 13, color: T.neutral400 }}>No upcoming payments scheduled</span>
+              </div>
             ) : fd!.upcomingPayments.map(p => (
               <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "9px 0", borderBottom: `1px solid ${T.neutral100}`, gap: 8 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1099,8 +1135,8 @@ function FinanceTab({
             <tbody>
               {staffRows.length === 0 ? (
                 <tr>
-                  <td colSpan={isSA ? 9 : 8} style={{ padding: "32px 14px", textAlign: "center" }}>
-                    <EmptyState icon={Users} title="No staff KPI data for this month" sub="KPI records are generated monthly" />
+                  <td colSpan={isSA ? 9 : 8} style={{ padding: "24px 14px", textAlign: "center", fontSize: 13, color: T.neutral400 }}>
+                    No staff KPI data for this month
                   </td>
                 </tr>
               ) : staffRows.map(row => {
