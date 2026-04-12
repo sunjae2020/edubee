@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import axios from "axios";
 import { AlertTriangle, ChevronRight, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { format, differenceInDays, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { TableFooter } from "@/components/ui/table-footer";
 
@@ -238,9 +238,6 @@ export default function StudyAbroadPage() {
               <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
               <SortableTh key="Account / Contract" col="accountName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Account / Contract</SortableTh>
               <SortableTh key="Stage" col="applicationStage" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Stage</SortableTh>
-              <SortableTh key="COE #" col="coeNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">COE #</SortableTh>
-              <SortableTh key="Visa Type" col="visaType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Visa Type</SortableTh>
-              <SortableTh key="Visa Expiry" col="visaExpiry" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Visa Expiry</SortableTh>
               <SortableTh key="Staff" col="staffName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Staff</SortableTh>
               <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
               <SortableTh key="Created" col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Created</SortableTh>
@@ -250,10 +247,10 @@ export default function StudyAbroadPage() {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={10} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={10} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No records found</td></tr>
             )}
             {sorted.map(row => {
               const stage   = row.applicationStage ?? "counseling";
@@ -261,25 +258,6 @@ export default function StudyAbroadPage() {
               const staffName = row.staffFirstName
                 ? `${row.staffFirstName} ${row.staffLastName ?? ""}`.trim()
                 : "—";
-
-              // Visa expiry warning
-              let expiryBadge = null;
-              if (row.visaExpiryDate) {
-                const days = differenceInDays(parseISO(row.visaExpiryDate), new Date());
-                if (days < 30) {
-                  expiryBadge = (
-                    <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#FEF2F2] text-[#DC2626]">
-                      !{days}d
-                    </span>
-                  );
-                } else if (days < 90) {
-                  expiryBadge = (
-                    <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#FEF9C3] text-[#CA8A04]">
-                      {days}d
-                    </span>
-                  );
-                }
-              }
 
               return (
                 <tr
@@ -298,12 +276,6 @@ export default function StudyAbroadPage() {
                     >
                       {STAGES.find(s => s.key === stage)?.label ?? stage}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-stone-600">{row.coeNumber ?? "—"}</td>
-                  <td className="px-4 py-3 text-stone-600 text-xs">{row.visaType ?? "—"}</td>
-                  <td className="px-4 py-3 text-stone-700 whitespace-nowrap">
-                    <span>{fmtDate(row.visaExpiryDate)}</span>
-                    {expiryBadge}
                   </td>
                   <td className="px-4 py-3 text-stone-600 text-xs">{staffName}</td>
                   <td className="px-4 py-3">
