@@ -10,6 +10,14 @@ import { Menu, Bell, LogOut, ChevronDown, Eye, RotateCcw, User as UserIcon, Cloc
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
+
+const LANGUAGES = [
+  { code: "en", label: "English", flag: "🇦🇺" },
+  { code: "ko", label: "한국어",  flag: "🇰🇷" },
+  { code: "ja", label: "日本語",  flag: "🇯🇵" },
+  { code: "th", label: "ภาษาไทย", flag: "🇹🇭" },
+];
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -103,8 +111,10 @@ export function Header({ collapsed, onToggle, title }: Props) {
   const { user, logout } = useAuth();
   const { viewAsUser, setViewAs, clearViewAs, isImpersonating } = useViewAs();
   const { theme, toggleTheme } = useTheme();
+  const { i18n } = useTranslation();
   const [location, navigate] = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const [viewAsOpen, setViewAsOpen] = useState(false);
   const [viewTab, setViewTab] = useState<ViewTab>("users");
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
@@ -402,6 +412,43 @@ export function Header({ collapsed, onToggle, title }: Props) {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+
+          {/* Language switcher */}
+          <DropdownMenu open={langOpen} onOpenChange={setLangOpen}>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="h-8 px-2 rounded-lg flex items-center gap-1 text-[#57534E] hover:bg-[#F4F3F1] dark:text-[#A8A29E] dark:hover:bg-[#242220] transition-colors text-sm font-medium"
+                title="Change language"
+              >
+                <span className="text-base leading-none">
+                  {LANGUAGES.find(l => l.code === i18n.language)?.flag ?? "🇦🇺"}
+                </span>
+                <span className="hidden sm:inline text-xs">
+                  {LANGUAGES.find(l => l.code === i18n.language)?.label ?? "English"}
+                </span>
+                <ChevronDown className="w-3 h-3 opacity-50" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 p-1">
+              {LANGUAGES.map(lang => (
+                <DropdownMenuItem
+                  key={lang.code}
+                  onClick={() => { i18n.changeLanguage(lang.code); setLangOpen(false); }}
+                  className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md cursor-pointer text-sm ${
+                    lang.code === i18n.language
+                      ? "bg-(--e-orange-lt) text-(--e-orange) font-semibold"
+                      : ""
+                  }`}
+                >
+                  <span className="text-base">{lang.flag}</span>
+                  <span>{lang.label}</span>
+                  {lang.code === i18n.language && (
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-(--e-orange)" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Dark mode toggle */}
           <button
