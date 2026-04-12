@@ -67,20 +67,19 @@ const PAYMENT_TERMS = [
 ];
 const PRIORITIES = [
   { value: NONE, label: "— None —" },
-  { value: "1", label: "Low" },
-  { value: "2", label: "Normal" },
-  { value: "3", label: "High" },
-  { value: "4", label: "Featured" },
+  { value: "6",  label: "6 — Average" },
+  { value: "7",  label: "7 — Good" },
+  { value: "8",  label: "8 — Very Good" },
+  { value: "9",  label: "9 — Excellent" },
+  { value: "10", label: "10 — Outstanding" },
 ];
 const GRADES = [
   { value: NONE, label: "— None —" },
-  { value: "Beginner", label: "Beginner" },
-  { value: "Elementary", label: "Elementary" },
-  { value: "Intermediate", label: "Intermediate" },
-  { value: "Upper-Intermediate", label: "Upper-Intermediate" },
-  { value: "Advanced", label: "Advanced" },
-  { value: "Professional", label: "Professional" },
-  { value: "All Levels", label: "All Levels" },
+  { value: "A",  label: "A — Premier" },
+  { value: "B",  label: "B — Superior" },
+  { value: "C",  label: "C — Standard" },
+  { value: "D",  label: "D — Economy" },
+  { value: "E",  label: "E — Basic" },
 ];
 const PRODUCT_CONTEXTS = [
   { value: "general",      label: "General" },
@@ -478,7 +477,7 @@ export default function ProductDetail() {
       productName:        newName,
       price:              rawPrice != null ? String(rawPrice) : f.price,
       currency,
-      productPriority:    3,
+      productPriority:    8,
       defaultPaymentTerm: "Multiple Times",
       numberOfPayments:   2,
       minimumPayment:     "1000",
