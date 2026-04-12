@@ -45,12 +45,14 @@ export async function tenantResolver(
     const headerOrgId = req.headers["x-organisation-id"] as string | undefined;
 
     if (headerOrgId) {
+      // X-Organisation-Id 헤더는 slug(subdomain) 형식으로 전달됨.
+      // organisations.id는 UUID 타입이므로 subdomain으로 조회해야 함.
       const [org] = await db
         .select()
         .from(organisations)
         .where(
           and(
-            eq(organisations.id, headerOrgId),
+            eq(organisations.subdomain as any, headerOrgId),
             eq(organisations.status as any, "Active")
           )
         )
