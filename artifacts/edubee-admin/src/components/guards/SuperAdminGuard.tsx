@@ -5,12 +5,9 @@ import { useAuth } from "@/hooks/use-auth";
 /**
  * Edubee 플랫폼 어드민 전용 가드.
  *
- * 허용 조건: role === "super_admin" AND organisationId가 없음(null/undefined)
- *   - superadmin@edubee.co → 허용 (Edubee 플랫폼 관리자)
+ * 허용 조건: role === "super_admin"
  *
  * 차단 조건:
- *   - 테넌트 super_admin (organisationId 있음) → /admin/dashboard 로 이동
- *     예: sunjae@timest.com.au (ts 테넌트)
  *   - 일반 admin/coordinator/consultant → /admin/dashboard 로 이동
  *   - 비로그인 → /login 으로 이동
  */
@@ -18,8 +15,7 @@ export default function SuperAdminGuard({ children }: { children: React.ReactNod
   const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
-  const isPlatformAdmin =
-    user?.role === "super_admin" && !user?.organisationId;
+  const isPlatformAdmin = user?.role === "super_admin";
 
   useEffect(() => {
     if (isLoading) return;
