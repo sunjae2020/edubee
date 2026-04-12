@@ -323,7 +323,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h3 className="text-xs font-semibold uppercase tracking-widest text-(--e-orange) border-b border-(--e-orange)/20 pb-1.5">
         {title}
       </h3>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3">{children}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">{children}</div>
     </div>
   );
 }
@@ -1141,7 +1141,7 @@ export default function AccountDetailPage() {
       </div>
 
       {/* Content */}
-      <div className="flex gap-6 items-start">
+      <div className="flex flex-col gap-5 items-start lg:flex-row lg:gap-6">
         {/* Main form */}
         <div className="flex-1 min-w-0 space-y-6">
           {tab === "overview" && (
@@ -1782,7 +1782,7 @@ export default function AccountDetailPage() {
 
         {/* Sidebar */}
         {!isNew && (
-          <div className="w-64 shrink-0 space-y-3">
+          <div className="w-full lg:w-64 lg:shrink-0 space-y-3">
             {getTabs(account?.accountType).some(t => t.key === "leads") && (
               <div className="bg-white rounded-xl border border-[#E8E6E2] p-4">
                 <p className="text-xs text-stone-400 mb-1">Leads</p>

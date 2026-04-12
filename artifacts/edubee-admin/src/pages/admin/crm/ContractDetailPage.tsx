@@ -93,7 +93,7 @@ function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryS
   const readyItems = (contract.contractProducts ?? []).filter((cp: any) => cp.apStatus === "ready");
 
   return (
-    <div className="grid grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
       {/* Left: Contract Details */}
       <div className="space-y-4">
         <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
@@ -929,7 +929,7 @@ function ContractCatalogModal({
               {/* AR */}
               <div className="bg-[#EFF6FF] rounded-xl p-4 space-y-3 border border-[#BFDBFE]">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-[#0369A1]">AR — Accounts Receivable</p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-[10px] text-[#57534E] block mb-1">AR Amount</label>
                     <input type="number" min="0" step="0.01" className={inp} value={arAmount} onChange={e => setArAmount(e.target.value)} placeholder="0.00" />
@@ -950,7 +950,7 @@ function ContractCatalogModal({
               {/* AP */}
               <div className="rounded-xl p-4 space-y-3 border border-[#FDE8CC]" style={{ background: "#FFFAF5" }}>
                 <p className="text-[10px] font-bold uppercase tracking-wide text-[#9A3412]">AP — Accounts Payable (optional)</p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-[10px] text-[#57534E] block mb-1">AP Amount</label>
                     <input type="number" min="0" step="0.01" className={inp} value={apAmount} onChange={e => setApAmount(e.target.value)} placeholder="0.00" />

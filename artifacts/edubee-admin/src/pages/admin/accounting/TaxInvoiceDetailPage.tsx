@@ -214,7 +214,7 @@ export default function TaxInvoiceDetailPage() {
           Invoice Details
         </h2>
 
-        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
           <InfoRow label="Invoice Date" value={fmtDate(invoice.invoiceDate)} />
           <InfoRow label="Invoice Type" value={
             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
@@ -225,7 +225,7 @@ export default function TaxInvoiceDetailPage() {
           <InfoRow label="GST" value={invoice.isGstFree ? <span className="text-[#A8A29E] italic">GST-Free</span> : fmtAud(invoice.gstAmount)} />
         </div>
 
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4 border-t border-[#F4F3F1] pt-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 border-t border-[#F4F3F1] pt-5">
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Status</Label>
             <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
@@ -258,7 +258,7 @@ export default function TaxInvoiceDetailPage() {
         )}
 
         {invoice.sentAt && (
-          <div className="border-t border-[#F4F3F1] pt-4 grid grid-cols-2 gap-x-8">
+          <div className="border-t border-[#F4F3F1] pt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8">
             <InfoRow label="Email Sent" value={fmtDate(invoice.sentAt)} />
             {invoice.sentToEmail && <InfoRow label="Sent To" value={invoice.sentToEmail} />}
           </div>

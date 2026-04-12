@@ -120,7 +120,7 @@ export default function JournalEntryDetailPage() {
           Entry Details
         </h2>
 
-        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
           <InfoRow
             label="Entry Date"
             value={formatDate(entry.entryDate)}
@@ -142,7 +142,7 @@ export default function JournalEntryDetailPage() {
 
         <div className="border-t border-[#F4F3F1] pt-5 space-y-5">
           <h3 className="text-xs font-semibold uppercase tracking-widest text-(--e-orange)">Journal Lines</h3>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
             <InfoRow
               label="Debit Account"
               value={<CoaBadge code={entry.debitCoa} name={entry.debitCoaName} />}

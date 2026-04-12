@@ -111,7 +111,7 @@ function BillTab({ record }: { record: any }) {
           <Map size={14} style={{ color: "var(--e-orange)" }} />
           <h3 className="text-xs font-bold uppercase tracking-wide text-(--e-orange)">Tour Info</h3>
         </div>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-stone-400">Tour Name</span>
             <span className="text-stone-700">{record.tourName || "—"}</span>

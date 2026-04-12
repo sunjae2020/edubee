@@ -157,7 +157,7 @@ export default function PaymentDetailPage() {
         <h2 className="text-xs font-semibold uppercase tracking-widest text-[#A8A29E] border-b border-[#F4F3F1] pb-3">
           Payment Details
         </h2>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
           <InfoRow label="Payment Date" value={fmtDate(payment.paymentDate)} />
           <InfoRow label="Payment Type" value={
             <span className="px-2 py-0.5 rounded text-xs font-medium bg-(--e-orange-lt) text-(--e-orange)">
