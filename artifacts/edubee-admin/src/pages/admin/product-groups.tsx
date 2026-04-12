@@ -13,8 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Layers, Pencil, Plus, Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { ListPagination } from "@/components/ui/list-pagination";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const PAGE_SIZE = 10;
 
 interface ProductGroup {
   id: string;
@@ -42,6 +44,7 @@ export default function ProductGroups() {
 
   const [search, setSearch]       = useState("");
   const [statusFilter, setStatus] = useState("Active");
+  const [page, setPage]           = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing]     = useState<ProductGroup | null>(null);
   const [form, setForm]           = useState<FormState>(EMPTY_FORM);
@@ -57,6 +60,9 @@ export default function ProductGroups() {
       return axios.get(`${BASE}/api/product-groups?${p}`).then(r => r.data);
     },
   });
+
+  const sorted = useSorted(groups, sortBy, sortDir);
+  const paged  = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const openCreate = () => { setEditing(null); setForm(EMPTY_FORM); setNameError(""); setModalOpen(true); };
   const openEdit   = (g: ProductGroup) => { setEditing(g); setForm({ name: g.name, description: g.description ?? "", status: g.status }); setNameError(""); setModalOpen(true); };
@@ -108,11 +114,11 @@ export default function ProductGroups() {
           <Input
             placeholder="Search by name..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
             className="pl-9 h-9 border-[#E8E6E2]"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatus}>
+        <Select value={statusFilter} onValueChange={v => { setStatus(v); setPage(1); }}>
           <SelectTrigger className="w-36 h-9 border-[#E8E6E2]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
@@ -144,9 +150,9 @@ export default function ProductGroups() {
                   <td key={j} className="px-4 py-3"><div className="h-4 bg-[#F4F3F1] rounded animate-pulse" /></td>
                 ))}</tr>
               ))
-            ) : groups.length === 0 ? (
+            ) : sorted.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No product groups found</td></tr>
-            ) : groups.map(g => (
+            ) : paged.map(g => (
               <tr key={g.id} className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors">
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <button
@@ -182,6 +188,8 @@ export default function ProductGroups() {
           </tbody>
         </table>
       </div>
+
+      <ListPagination page={page} pageSize={PAGE_SIZE} total={sorted.length} onChange={setPage} />
 
       {/* Modal */}
       <Dialog open={modalOpen} onOpenChange={o => { if (!o) closeModal(); }}>
