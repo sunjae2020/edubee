@@ -242,7 +242,11 @@ export default function TourMgtDetail() {
             </DetailSection>
 
             <DetailSection title="Client Info">
-              <DetailRow label="Client" value={rec.clientName ?? rec.studentName} />
+              <DetailRow label="Client" value={
+                rec.clientName
+                ?? rec.contractNumber?.split('_').pop()?.trim()
+                ?? rec.studentName
+              } />
               <DetailRow label="Email" value={rec.clientEmail} />
               <DetailRow label="Contract #">
                 {rec.contractId ? (
