@@ -604,8 +604,8 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
         )}
       </nav>
 
-      {/* Platform Admin link — Edubee 플랫폼 어드민 전용 (테넌트 super_admin 제외) */}
-      {isSA && !user?.organisationId && (
+      {/* Platform Admin link — super_admin 역할이면 항상 표시 */}
+      {isSA && (
         <div className="px-3 pb-1 shrink-0">
           <Link href="/superadmin">
             <div
