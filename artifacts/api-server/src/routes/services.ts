@@ -228,13 +228,6 @@ router.post("/services/settlement", authenticate, async (req, res) => {
     const role = req.user!.role;
     if (!isAdminOrCC(role)) return res.status(403).json({ error: "Forbidden" });
 
-    const { contractId } = req.body;
-    if (contractId) {
-      const [dup] = await db.select({ id: settlementMgt.id }).from(settlementMgt)
-        .where(eq(settlementMgt.contractId, contractId)).limit(1);
-      if (dup) return res.status(409).json({ error: "Settlement service already exists for this contract" });
-    }
-
     const [settlement] = await db.insert(settlementMgt).values({
       ...req.body,
       createdAt: new Date(), updatedAt: new Date(),

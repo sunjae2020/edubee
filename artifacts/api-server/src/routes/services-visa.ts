@@ -151,10 +151,6 @@ router.post(
         return res.status(400).json({ error: "contractId is required" });
       }
 
-      const [dup] = await db.select({ id: visaServicesMgt.id }).from(visaServicesMgt)
-        .where(eq(visaServicesMgt.contractId, contractId)).limit(1);
-      if (dup) return res.status(409).json({ error: "Visa service already exists for this contract" });
-
       const [created] = await db
         .insert(visaServicesMgt)
         .values({

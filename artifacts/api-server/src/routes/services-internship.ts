@@ -204,10 +204,6 @@ router.post(
       const { contractId, status, assignedStaffId, notes } = req.body;
       if (!contractId) return res.status(400).json({ error: "contractId is required" });
 
-      const [dup] = await db.select({ id: internshipMgt.id }).from(internshipMgt)
-        .where(eq(internshipMgt.contractId, contractId)).limit(1);
-      if (dup) return res.status(409).json({ error: "Internship service already exists for this contract" });
-
       const [record] = await db
         .insert(internshipMgt)
         .values({
