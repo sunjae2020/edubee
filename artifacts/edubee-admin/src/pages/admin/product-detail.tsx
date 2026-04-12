@@ -530,6 +530,7 @@ export default function ProductDetail() {
   const selectedProvider    = (accountOpts as any[]).find((a: any) => a.id === (form["providerId"] ?? "")) ?? null;
   const providerCountry:  string = selectedProvider?.country   ?? (form["providerCountry"]  as string) ?? "";
   const providerLocation: string = selectedProvider?.location  ?? (form["providerLocation"] as string) ?? "";
+  const providerCity:     string = selectedProvider?.city      ?? "";
 
   // ── Derived: product types filtered by selected group ─────────────────────
   const filteredTypes: SelectOption[] = selectedGroupId
@@ -975,6 +976,25 @@ export default function ProductDetail() {
                     placeholder="Search accounts…"
                     loading={acctLoading}
                   />
+                  {(providerCountry || providerCity || providerLocation) && (
+                    <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                      {providerCountry && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-700 border border-orange-100">
+                          {providerCountry}
+                        </span>
+                      )}
+                      {providerCity && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-stone-100 text-stone-600 border border-stone-200">
+                          {providerCity}
+                        </span>
+                      )}
+                      {providerLocation && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-stone-100 text-stone-600 border border-stone-200">
+                          {providerLocation}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <p className="text-xs text-[#A8A29E] mt-1">
                     The institute or organization that provides this product
                   </p>
