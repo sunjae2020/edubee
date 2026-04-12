@@ -28,23 +28,26 @@ interface CoaRow {
 const TABS: Array<{ label: string; type: string; prefix: string; badge: string }> = [
   { label: "Assets",        type: "asset",     prefix: "1xxx", badge: "#DCFCE7" },
   { label: "Liabilities",   type: "liability", prefix: "2xxx", badge: "#FEF9C3" },
-  { label: "Revenue",       type: "revenue",   prefix: "3xxx", badge: "var(--e-orange-lt)" },
-  { label: "Cost of Sales", type: "cogs",      prefix: "4xxx", badge: "#FEF2F2" },
-  { label: "Expenses",      type: "expense",   prefix: "5xxx", badge: "#F4F3F1" },
+  { label: "Equity",        type: "equity",    prefix: "3xxx", badge: "#EDE9FE" },
+  { label: "Revenue",       type: "revenue",   prefix: "4xxx", badge: "var(--e-orange-lt)" },
+  { label: "Cost of Sales", type: "cogs",      prefix: "5xxx", badge: "#FEF2F2" },
+  { label: "Expenses",      type: "expense",   prefix: "6xxx", badge: "#F4F3F1" },
 ];
 
 function codeBadgeColor(code: string): string {
   if (code.startsWith("1")) return "#DCFCE7";
   if (code.startsWith("2")) return "#FEF9C3";
-  if (code.startsWith("3")) return "var(--e-orange-lt)";
-  if (code.startsWith("4")) return "#FEF2F2";
+  if (code.startsWith("3")) return "#EDE9FE";
+  if (code.startsWith("4")) return "var(--e-orange-lt)";
+  if (code.startsWith("5")) return "#FEF2F2";
   return "#F4F3F1";
 }
 function codeTextColor(code: string): string {
   if (code.startsWith("1")) return "#16A34A";
   if (code.startsWith("2")) return "#CA8A04";
-  if (code.startsWith("3")) return "var(--e-orange)";
-  if (code.startsWith("4")) return "#DC2626";
+  if (code.startsWith("3")) return "#7C3AED";
+  if (code.startsWith("4")) return "var(--e-orange)";
+  if (code.startsWith("5")) return "#DC2626";
   return "#57534E";
 }
 
@@ -105,6 +108,7 @@ function EditSheet({ account, onClose, isNew, isSuperAdmin }: EditSheetProps) {
               <SelectContent>
                 <SelectItem value="asset">Asset</SelectItem>
                 <SelectItem value="liability">Liability</SelectItem>
+                <SelectItem value="equity">Equity</SelectItem>
                 <SelectItem value="revenue">Revenue</SelectItem>
                 <SelectItem value="cogs">Cost of Sales</SelectItem>
                 <SelectItem value="expense">Expense</SelectItem>

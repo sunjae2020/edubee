@@ -34,6 +34,7 @@ interface FormState {
 const ACCOUNT_TYPE_OPTS = [
   { value: "asset",     label: "Asset" },
   { value: "liability", label: "Liability" },
+  { value: "equity",    label: "Equity" },
   { value: "revenue",   label: "Revenue" },
   { value: "cogs",      label: "Cost of Sales" },
   { value: "expense",   label: "Expense" },
@@ -44,15 +45,17 @@ const EMPTY_FORM: FormState = { name: "", accountType: "asset", description: "",
 function codeBadgeColor(code: string): string {
   if (code.startsWith("1")) return "#DCFCE7";
   if (code.startsWith("2")) return "#FEF9C3";
-  if (code.startsWith("3")) return "var(--e-orange-lt)";
-  if (code.startsWith("4")) return "#FEF2F2";
+  if (code.startsWith("3")) return "#EDE9FE";
+  if (code.startsWith("4")) return "var(--e-orange-lt)";
+  if (code.startsWith("5")) return "#FEF2F2";
   return "#F4F3F1";
 }
 function codeTextColor(code: string): string {
   if (code.startsWith("1")) return "#16A34A";
   if (code.startsWith("2")) return "#CA8A04";
-  if (code.startsWith("3")) return "var(--e-orange)";
-  if (code.startsWith("4")) return "#DC2626";
+  if (code.startsWith("3")) return "#7C3AED";
+  if (code.startsWith("4")) return "var(--e-orange)";
+  if (code.startsWith("5")) return "#DC2626";
   return "#57534E";
 }
 
