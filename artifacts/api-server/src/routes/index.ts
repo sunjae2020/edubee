@@ -118,7 +118,7 @@ router.use(settingsLookupsRouter);
 router.use(chatbotRouter);
 router.use(aiRouter);
 router.use(contractFinanceRouter);
-router.use("/api/contract-signing", contractSigningRouter);
+router.use("/contract-signing", contractSigningRouter);
 router.use(crmContactsRouter);
 router.use(crmLeadsRouter);
 router.use(crmQuotesRouter);

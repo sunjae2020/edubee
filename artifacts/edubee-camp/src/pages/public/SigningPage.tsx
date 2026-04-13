@@ -227,7 +227,30 @@ export default function SigningPage() {
   const [agreed, setAgreed] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
+  const isPreview = token === "preview";
+
   useEffect(() => {
+    // Preview mode: decode contract data from URL hash
+    if (isPreview) {
+      try {
+        const hash = window.location.hash.slice(1);
+        if (!hash) throw new Error("No preview data");
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(hash))));
+        setRequest({
+          id: "preview",
+          status: "pending",
+          signers: decoded.signers ?? [],
+          contractData: decoded.contractData ?? {},
+          expiresAt: "",
+        });
+        setState("ready");
+      } catch {
+        setErrorMsg("Invalid preview link.");
+        setState("error");
+      }
+      return;
+    }
+
     if (!token) { setErrorMsg("Invalid signing link."); setState("error"); return; }
     axios.get(`${API}/api/contract-signing/public/${token}`)
       .then(r => { setRequest(r.data); setState("ready"); })
@@ -236,7 +259,7 @@ export default function SigningPage() {
         setErrorMsg(msg);
         setState("error");
       });
-  }, [token]);
+  }, [token, isPreview]);
 
   const handleSig = (role: string, dataUrl: string | null) => {
     setSignatures(prev => ({ ...prev, [role]: dataUrl }));
@@ -244,6 +267,7 @@ export default function SigningPage() {
 
   const handleSubmit = async () => {
     if (!request) return;
+    if (isPreview) { setSubmitError("This is a preview — you cannot submit signatures here."); return; }
     setSubmitError("");
 
     // Validate required signers
@@ -337,6 +361,17 @@ export default function SigningPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
+        {/* Preview banner */}
+        {isPreview && (
+          <div className="flex items-center gap-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-3">
+            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-amber-800">Preview Mode</p>
+              <p className="text-xs text-amber-700">This is a preview of the signing page. Signers cannot submit here — send the actual link via "Send Signing Request".</p>
+            </div>
+          </div>
+        )}
+
         {/* Page title */}
         <div>
           <h1 className="text-xl font-bold text-[#1C1917]">Review & Sign Agreement</h1>
