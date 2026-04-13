@@ -291,8 +291,10 @@ router.patch("/camp-applications/:id/status", authenticate, requireRole(...ADMIN
 
 router.put("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    if (!UUID_RE.test(req.params.id))
+    if (!UUID_RE.test(req.params.id)) {
+      console.warn("[PUT /camp-applications/:id] Invalid UUID:", req.params.id);
       return res.status(400).json({ error: "Invalid application ID format" });
+    }
 
     const ALLOWED_FIELDS = [
       "applicantFirstName", "applicantLastName",
@@ -302,13 +304,14 @@ router.put("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
       "specialRequirements", "dietaryRequirements", "medicalConditions",
       "emergencyContactName", "emergencyContactPhone",
       "assignedStaffId", "applicationStatus", "notes",
+      "packageGroupId", "packageId",
     ] as const;
 
     const payload: Record<string, unknown> = { updatedAt: new Date() };
     for (const key of ALLOWED_FIELDS) {
       if (key in req.body) {
         const val = req.body[key];
-        payload[key] = val === "" ? null : val;
+        payload[key] = (val === "" || val === undefined) ? null : val;
       }
     }
 
@@ -319,9 +322,14 @@ router.put("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
       payload.applicantName = [fn, ln ? ln.toUpperCase() : ""].filter(Boolean).join(" ") || payload.applicantName;
     }
 
-    if (payload.applicationStatus !== undefined) {
-      if (!(VALID_STATUSES as readonly string[]).includes(payload.applicationStatus as string))
-        return res.status(400).json({ error: `Invalid status. Allowed: ${VALID_STATUSES.join(", ")}` });
+    if (payload.applicationStatus !== undefined && payload.applicationStatus !== null) {
+      if (!(VALID_STATUSES as readonly string[]).includes(payload.applicationStatus as string)) {
+        console.warn("[PUT /camp-applications/:id] Invalid status:", payload.applicationStatus);
+        return res.status(400).json({ error: `Invalid status "${payload.applicationStatus}". Allowed: ${VALID_STATUSES.join(", ")}` });
+      }
+    } else if (payload.applicationStatus === null) {
+      // null status → remove from payload (keep existing DB value)
+      delete payload.applicationStatus;
     }
 
     const [updated] = await db.update(campApplications)

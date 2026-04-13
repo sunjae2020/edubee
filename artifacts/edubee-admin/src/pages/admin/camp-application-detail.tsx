@@ -374,7 +374,11 @@ export default function CampApplicationDetail() {
       qc.invalidateQueries({ queryKey: ["camp-applications"] });
       toast({ title: "Camp Application updated" });
     },
-    onError: () => toast({ variant: "destructive", title: "Failed to update" }),
+    onError: (err: any) => toast({
+      variant: "destructive",
+      title: "Failed to update",
+      description: err?.response?.data?.error ?? err?.message ?? "Unknown error",
+    }),
   });
 
   const changeStatus = useMutation({
@@ -384,7 +388,11 @@ export default function CampApplicationDetail() {
       qc.invalidateQueries({ queryKey: ["camp-application-detail-page", id] });
       qc.invalidateQueries({ queryKey: ["camp-applications"] });
     },
-    onError: () => toast({ variant: "destructive", title: "Failed to update status" }),
+    onError: (err: any) => toast({
+      variant: "destructive",
+      title: "Failed to update status",
+      description: err?.response?.data?.error ?? err?.message ?? "Unknown error",
+    }),
   });
 
   const updateParticipant = useMutation({
