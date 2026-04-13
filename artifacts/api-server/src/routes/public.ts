@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, pool, staticDb } from "@workspace/db";
 import { GoogleGenAI } from "@google/genai";
 import {
   packageGroups,
@@ -533,14 +533,43 @@ router.post("/public/chatbot/message", async (req, res) => {
 });
 
 // ── GET /api/public/form/:slug ─────────────────────────────────────────────
-// Returns form info for any form type (gateway lookup)
+// Returns form info for any form type (gateway lookup).
+// Falls back to cross-schema search when no tenant context is set
+// (e.g. when visitor arrives via edubee.co without subdomain auth).
 router.get("/public/form/:slug", async (req, res) => {
   try {
-    const [form] = await db
-      .select({ id: applicationForms.id, name: applicationForms.name, description: applicationForms.description, formType: applicationForms.formType, status: applicationForms.status, redirectUrl: applicationForms.redirectUrl })
-      .from(applicationForms)
-      .where(eq(applicationForms.slug, req.params.slug))
-      .limit(1);
+    const slug = req.params.slug;
+    const SELECT_COLS = "id, name, description, form_type AS \"formType\", status, redirect_url AS \"redirectUrl\"";
+
+    // 1️⃣  Try current tenant context (header-based or subdomain-based)
+    let form: { id: string; name: string; description: string | null; formType: string; status: string; redirectUrl: string | null } | undefined;
+    try {
+      const rows = await db
+        .select({ id: applicationForms.id, name: applicationForms.name, description: applicationForms.description, formType: applicationForms.formType, status: applicationForms.status, redirectUrl: applicationForms.redirectUrl })
+        .from(applicationForms)
+        .where(eq(applicationForms.slug, slug))
+        .limit(1);
+      form = rows[0];
+    } catch { /* ignore */ }
+
+    // 2️⃣  No tenant context → search all active tenant schemas
+    if (!form) {
+      const orgs = await staticDb
+        .select({ subdomain: organisations.subdomain })
+        .from(organisations)
+        .where(isNotNull(organisations.subdomain));
+
+      for (const org of orgs) {
+        if (!org.subdomain) continue;
+        try {
+          const result = await pool.query<{ id: string; name: string; description: string | null; formType: string; status: string; redirectUrl: string | null }>(
+            `SELECT ${SELECT_COLS} FROM "${org.subdomain}".application_forms WHERE slug = $1 LIMIT 1`,
+            [slug],
+          );
+          if (result.rows.length > 0) { form = result.rows[0]; break; }
+        } catch { /* schema may not have the table */ }
+      }
+    }
 
     if (!form) return res.status(404).json({ error: "Form not found" });
     if (form.status !== "active") return res.status(403).json({ error: "This form is currently inactive" });
