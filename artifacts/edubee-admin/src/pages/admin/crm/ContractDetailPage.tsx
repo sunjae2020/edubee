@@ -3580,9 +3580,10 @@ export default function ContractDetailPage() {
         </div>
       </div>
 
-      {/* Summary strip — full-width, flush edges */}
-      <div className="bg-white border-b border-[#E8E6E2]">
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-[#F4F3F1]">
+      {/* Summary strip — px-6 padded, rounded card to match tab content */}
+      <div className="px-6 pt-4">
+        <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-[#F4F3F1]">
 
             {/* Client */}
             <div className="px-4 py-3 flex flex-col gap-0.5 min-w-0">
@@ -3707,6 +3708,7 @@ export default function ContractDetailPage() {
                 </button>
               )}
             </div>
+          </div>
         </div>
       </div>
 
