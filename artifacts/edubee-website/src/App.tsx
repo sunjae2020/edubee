@@ -209,6 +209,17 @@ function Router() {
         <SiteLayout><RegisterPage /></SiteLayout>
       </Route>
 
+      {/* Public form / camp application slugs → redirect to CAMP app */}
+      <Route path="/:slug">
+        {(params) => {
+          useEffect(() => {
+            const qs = window.location.search;
+            window.location.replace(`/camp/${params.slug}${qs}`);
+          }, [params.slug]);
+          return null;
+        }}
+      </Route>
+
       {/* 404 */}
       <Route>
         <SiteLayout><NotFound /></SiteLayout>
