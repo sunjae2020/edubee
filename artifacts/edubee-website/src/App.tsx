@@ -1,5 +1,6 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { useEffect, lazy, Suspense } from "react";
+import { CampApplicationModal } from "@/components/CampApplicationModal";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
 import { Header } from "@/components/layout/Header";
@@ -209,14 +210,21 @@ function Router() {
         <SiteLayout><RegisterPage /></SiteLayout>
       </Route>
 
-      {/* Public form / camp application slugs → redirect to CAMP app */}
+      {/* Public form / camp application slugs → show as popup over landing page */}
       <Route path="/:slug">
         {(params) => {
-          useEffect(() => {
-            const qs = window.location.search;
-            window.location.replace(`/camp/${params.slug}${qs}`);
-          }, [params.slug]);
-          return null;
+          const [, navigate] = useLocation();
+          const qs = window.location.search;
+          return (
+            <>
+              <SiteLayout><HomePage /></SiteLayout>
+              <CampApplicationModal
+                slug={params.slug}
+                queryString={qs}
+                onClose={() => navigate("/")}
+              />
+            </>
+          );
         }}
       </Route>
 
