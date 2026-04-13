@@ -56,6 +56,7 @@ export const TENANT_TABLES = [
   "agent_commission_configs",
   "application_form_partners",
   "application_forms",
+  "form_terms_content",
   "application_grade",
   "application_participants",
   "applications",
