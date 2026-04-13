@@ -684,11 +684,11 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
 
               <div id="field-signatureDate">
                 <Fld label="Date" required error={errors.signatureDate}>
-                  <input
-                    type="date"
+                  <DatePickerInput
                     value={signatureDate}
-                    onChange={e => setSignatureDate(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition"
+                    onChange={setSignatureDate}
+                    fromYear={new Date().getFullYear() - 1}
+                    toYear={new Date().getFullYear() + 1}
                   />
                 </Fld>
               </div>
