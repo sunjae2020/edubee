@@ -1,8 +1,9 @@
-import { useEffect } from "react";
-import { useParams, useLocation } from "wouter";
+import { useParams, useSearch } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import LeadInquiryContent from "./LeadInquiryContent";
+import CampApplicationFullPage from "./CampApplicationFullPage";
+import { type PublicProgram } from "@/lib/program-utils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -55,20 +56,25 @@ function UnavailableState() {
   );
 }
 
-function CampApplicationRedirect({ slug }: { slug: string }) {
-  const [, navigate] = useLocation();
+function CampFormLoader({ form, partnerCode }: { form: FormInfo; partnerCode?: string }) {
+  const { data: programs = [], isLoading } = useQuery<PublicProgram[]>({
+    queryKey: ["public-packages"],
+    queryFn: () => axios.get(`${BASE}/api/public/packages`).then(r => r.data),
+  });
 
-  useEffect(() => {
-    sessionStorage.setItem("formSlug", slug);
-    navigate("/apply");
-  }, [slug, navigate]);
+  if (isLoading) return <Spinner />;
 
-  return <Spinner />;
+  return <CampApplicationFullPage formInfo={form} programs={programs} partnerCode={partnerCode} />;
 }
 
 export default function PublicFormGateway() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
+
+  // Read ?partner= query param for pre-filling referral code
+  const search = useSearch();
+  const searchParams = new URLSearchParams(search);
+  const partnerCode = searchParams.get("partner") || undefined;
 
   const { data: form, isLoading, isError, error } = useQuery<FormInfo, AxiosError>({
     queryKey: ["public-form", slug],
@@ -89,6 +95,6 @@ export default function PublicFormGateway() {
     return <LeadInquiryContent formInfo={form} />;
   }
 
-  // camp_application and any other types → redirect to /apply with slug context
-  return <CampApplicationRedirect slug={slug} />;
+  // camp_application → single-page full form (no redirect)
+  return <CampFormLoader form={form} partnerCode={partnerCode} />;
 }
