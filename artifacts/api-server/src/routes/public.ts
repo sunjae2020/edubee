@@ -21,6 +21,7 @@ import {
 import { eq, and, inArray, sql, desc, isNotNull, asc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { isReservedSubdomain } from "../utils/reservedSubdomains.js";
+import { listTenantSchemas } from "../seeds/provision-tenant.js";
 import { onboardTenant } from "../services/onboardingService.js";
 import { getDefaultFeatures } from "../middleware/featureGuard.js";
 import { sendCampOnboardWelcomeEmail } from "../services/emailService.js";
@@ -552,7 +553,7 @@ router.get("/public/form/:slug", async (req, res) => {
       form = rows[0];
     } catch { /* ignore */ }
 
-    // 2️⃣  No tenant context → search all active tenant schemas
+    // 2️⃣  No tenant context → search all org subdomain schemas
     if (!form) {
       const orgs = await staticDb
         .select({ subdomain: organisations.subdomain })
@@ -569,6 +570,22 @@ router.get("/public/form/:slug", async (req, res) => {
           if (result.rows.length > 0) { form = result.rows[0]; break; }
         } catch { /* schema may not have the table */ }
       }
+    }
+
+    // 3️⃣  Fallback: search actual DB schemas (e.g. _system in production)
+    if (!form) {
+      try {
+        const actualSchemas = await listTenantSchemas();
+        for (const schema of actualSchemas) {
+          try {
+            const result = await pool.query<{ id: string; name: string; description: string | null; formType: string; status: string; redirectUrl: string | null }>(
+              `SELECT ${SELECT_COLS} FROM "${schema}".application_forms WHERE slug = $1 LIMIT 1`,
+              [slug],
+            );
+            if (result.rows.length > 0) { form = result.rows[0]; break; }
+          } catch { /* schema may not have the table */ }
+        }
+      } catch { /* ignore */ }
     }
 
     if (!form) return res.status(404).json({ error: "Form not found" });
