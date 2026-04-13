@@ -17,32 +17,40 @@ type Adult = {
   phone: string; email: string; whatsapp: string; lineId: string;
   isEmergencyContact: boolean;
 };
+
+// Child now includes full student detail fields
 type Child = {
-  firstName: string; lastName: string; dateOfBirth: string; gender: string;
-  nationality: string; passportNumber: string; grade: string;
-  enrollmentSpotId: string; medicalConditions: string;
-};
-type PrimaryStudent = {
-  firstName: string; lastName: string; fullNameNative: string; englishName: string;
-  dateOfBirth: string; gender: string; nationality: string; passportNumber: string;
-  passportExpiry: string; grade: string; enrollmentSpotId: string; schoolName: string;
-  englishLevel: string; medicalConditions: string; dietaryRequirements: string;
-  specialNeeds: string; phone: string; whatsapp: string; lineId: string;
+  firstName: string; lastName: string;
+  dateOfBirth: string; gender: string;
+  nationality: string; passportNumber: string; passportExpiry: string;
+  grade: string; enrollmentSpotId: string;
+  schoolName: string; englishLevel: string;
+  medicalConditions: string; dietaryRequirements: string; specialNeeds: string;
 };
 
-const mkStudent = (): PrimaryStudent => ({
-  firstName:"",lastName:"",fullNameNative:"",englishName:"",dateOfBirth:"",gender:"",
-  nationality:"",passportNumber:"",passportExpiry:"",grade:"",enrollmentSpotId:"",
-  schoolName:"",englishLevel:"",medicalConditions:"",dietaryRequirements:"",
-  specialNeeds:"",phone:"",whatsapp:"",lineId:"",
+// Main applicant: contact info only (no student detail fields)
+type MainApplicant = {
+  firstName: string; lastName: string;
+  fullNameNative: string; englishName: string;
+  phone: string; whatsapp: string; lineId: string;
+};
+
+const mkApplicant = (): MainApplicant => ({
+  firstName: "", lastName: "", fullNameNative: "", englishName: "",
+  phone: "", whatsapp: "", lineId: "",
 });
 const mkAdult = (): Adult => ({
-  firstName:"",lastName:"",relationship:"",dateOfBirth:"",nationality:"",
-  passportNumber:"",phone:"",email:"",whatsapp:"",lineId:"",isEmergencyContact:false,
+  firstName: "", lastName: "", relationship: "", dateOfBirth: "", nationality: "",
+  passportNumber: "", phone: "", email: "", whatsapp: "", lineId: "",
+  isEmergencyContact: false,
 });
 const mkChild = (): Child => ({
-  firstName:"",lastName:"",dateOfBirth:"",gender:"",nationality:"",
-  passportNumber:"",grade:"",enrollmentSpotId:"",medicalConditions:"",
+  firstName: "", lastName: "",
+  dateOfBirth: "", gender: "",
+  nationality: "", passportNumber: "", passportExpiry: "",
+  grade: "", enrollmentSpotId: "",
+  schoolName: "", englishLevel: "",
+  medicalConditions: "", dietaryRequirements: "", specialNeeds: "",
 });
 
 function calcAge(dob: string): number | null {
@@ -54,27 +62,27 @@ function calcAge(dob: string): number | null {
 }
 
 // ─── UI Atoms ─────────────────────────────────────────────────────────────────
-function Inp({ value, onChange, placeholder, type="text", disabled }: {
-  value:string; onChange:(v:string)=>void; placeholder?:string; type?:string; disabled?:boolean;
+function Inp({ value, onChange, placeholder, type = "text", disabled }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; type?: string; disabled?: boolean;
 }) {
   return (
-    <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
+    <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
       disabled={disabled}
       className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition disabled:opacity-50" />
   );
 }
 function Sel({ value, onChange, children, disabled }: {
-  value:string; onChange:(v:string)=>void; children:React.ReactNode; disabled?:boolean;
+  value: string; onChange: (v: string) => void; children: React.ReactNode; disabled?: boolean;
 }) {
   return (
-    <select value={value} onChange={e=>onChange(e.target.value)} disabled={disabled}
+    <select value={value} onChange={e => onChange(e.target.value)} disabled={disabled}
       className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition disabled:opacity-50">
       {children}
     </select>
   );
 }
 function Fld({ label, required, error, children, span2 }: {
-  label:string; required?:boolean; error?:string; children:React.ReactNode; span2?:boolean;
+  label: string; required?: boolean; error?: string; children: React.ReactNode; span2?: boolean;
 }) {
   return (
     <div className={span2 ? "col-span-2" : ""}>
@@ -86,27 +94,122 @@ function Fld({ label, required, error, children, span2 }: {
     </div>
   );
 }
-function Section({ id, icon, title, children, collapsible=false }: {
-  id:string; icon:string; title:string; children:React.ReactNode; collapsible?:boolean;
+function Section({ id, icon, title, subtitle, children, collapsible = false }: {
+  id: string; icon: string; title: string; subtitle?: string; children: React.ReactNode; collapsible?: boolean;
 }) {
   const [open, setOpen] = useState(true);
   return (
     <div id={id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <button
         type="button"
-        onClick={() => collapsible && setOpen(o=>!o)}
+        onClick={() => collapsible && setOpen(o => !o)}
         className={`w-full flex items-center gap-3 px-6 py-4 text-left ${collapsible ? "cursor-pointer hover:bg-gray-50" : "cursor-default"}`}
       >
         <span className="text-2xl leading-none">{icon}</span>
-        <span className="font-semibold text-gray-900 text-base flex-1">{title}</span>
-        {collapsible && (open ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />)}
+        <div className="flex-1 min-w-0">
+          <span className="font-semibold text-gray-900 text-base block">{title}</span>
+          {subtitle && <span className="text-xs text-gray-400 mt-0.5 block">{subtitle}</span>}
+        </div>
+        {collapsible && (open ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />)}
       </button>
       {open && <div className="px-6 pb-6 space-y-4">{children}</div>}
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Student Detail Fields (shared between child cards) ────────────────────
+function StudentDetailFields({
+  child, idx, upChild, selectedProgram, t,
+}: {
+  child: Child; idx: number;
+  upChild: (i: number, k: keyof Child, v: string) => void;
+  selectedProgram: PublicProgram | null;
+  t: (key: string, opts?: object) => string;
+}) {
+  return (
+    <>
+      <div className="col-span-2 border-t border-gray-100 pt-3 mt-1">
+        <p className="text-[10px] font-semibold text-orange-500 uppercase tracking-wide mb-3">Student Details</p>
+      </div>
+
+      <Fld label={t("apply.dateOfBirth")} required>
+        <div className="flex items-center gap-2">
+          <DatePickerInput value={child.dateOfBirth} onChange={v => upChild(idx, "dateOfBirth", v)} className="flex-1" fromYear={1990} toYear={new Date().getFullYear()} />
+          {calcAge(child.dateOfBirth) !== null && (
+            <span className="text-sm text-gray-500 whitespace-nowrap">{t("apply.age", { age: calcAge(child.dateOfBirth) })}</span>
+          )}
+        </div>
+      </Fld>
+
+      <Fld label={t("apply.gender")} required>
+        <Sel value={child.gender} onChange={v => upChild(idx, "gender", v)}>
+          <option value="">Select…</option>
+          <option value="male">{t("apply.male")}</option>
+          <option value="female">{t("apply.female")}</option>
+          <option value="other">{t("apply.other")}</option>
+        </Sel>
+      </Fld>
+
+      <Fld label={t("apply.nationality")} required>
+        <Inp value={child.nationality} onChange={v => upChild(idx, "nationality", v)} placeholder="e.g. Korean" />
+      </Fld>
+
+      <Fld label={t("apply.englishLevel")} required>
+        <Sel value={child.englishLevel} onChange={v => upChild(idx, "englishLevel", v)}>
+          <option value="">Select…</option>
+          {["Beginner", "Elementary", "Pre-Intermediate", "Intermediate", "Upper-Intermediate", "Advanced", "Native"].map(l => (
+            <option key={l} value={l}>{l}</option>
+          ))}
+        </Sel>
+      </Fld>
+
+      <Fld label={t("apply.passportNumber")}>
+        <Inp value={child.passportNumber} onChange={v => upChild(idx, "passportNumber", v)} placeholder="e.g. M12345678" />
+      </Fld>
+
+      <Fld label={t("apply.passportExpiry")}>
+        <DatePickerInput value={child.passportExpiry} onChange={v => upChild(idx, "passportExpiry", v)} fromYear={new Date().getFullYear()} toYear={new Date().getFullYear() + 20} />
+      </Fld>
+
+      <Fld label={t("apply.grade")} required>
+        {selectedProgram?.spotSummary ? (
+          <Sel value={child.enrollmentSpotId} onChange={id => {
+            upChild(idx, "enrollmentSpotId", id);
+            const g = selectedProgram.spotSummary!.grades.find(x => x.id === id);
+            if (g) upChild(idx, "grade", g.label);
+          }}>
+            <option value="">Select grade…</option>
+            {selectedProgram.spotSummary.grades.map(g => (
+              <option key={g.id} value={g.id} disabled={g.status === "full"}>
+                {g.status === "full" ? `${g.label} (Full)` : `${g.label} (${g.available} spots)`}
+              </option>
+            ))}
+          </Sel>
+        ) : (
+          <Inp value={child.grade} onChange={v => upChild(idx, "grade", v)} placeholder="e.g. Grade 8" />
+        )}
+      </Fld>
+
+      <Fld label={t("apply.schoolName")}>
+        <Inp value={child.schoolName} onChange={v => upChild(idx, "schoolName", v)} placeholder="e.g. Seoul Middle School" />
+      </Fld>
+
+      <Fld label={t("apply.medicalConditions")} span2>
+        <Inp value={child.medicalConditions} onChange={v => upChild(idx, "medicalConditions", v)} placeholder="Any allergies, medications, or conditions…" />
+      </Fld>
+
+      <Fld label={t("apply.dietaryRequirements")} span2>
+        <Inp value={child.dietaryRequirements} onChange={v => upChild(idx, "dietaryRequirements", v)} placeholder="Vegetarian, halal, etc." />
+      </Fld>
+
+      <Fld label={t("apply.specialNeeds")} span2>
+        <Inp value={child.specialNeeds} onChange={v => upChild(idx, "specialNeeds", v)} placeholder="Any additional support needed…" />
+      </Fld>
+    </>
+  );
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 interface Props {
   formInfo: { id: string; name: string; description: string | null };
   programs: PublicProgram[];
@@ -114,6 +217,7 @@ interface Props {
   partnerCode?: string;
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function CampApplicationFullPage({ formInfo, programs, defaultProgramId, partnerCode }: Props) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
@@ -121,8 +225,8 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
   const topRef = useRef<HTMLDivElement>(null);
 
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState<string|null>(null);
-  const [errors, setErrors] = useState<Record<string,string>>({});
+  const [submitted, setSubmitted] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // ── Form state ──
   const [programId, setProgramId] = useState(defaultProgramId || "");
@@ -131,7 +235,7 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
   const [howHeard, setHowHeard] = useState("");
   const [refCode, setRefCode] = useState(partnerCode || "");
   const [specialRequests, setSpecialRequests] = useState("");
-  const [primary, setPrimary] = useState<PrimaryStudent>(mkStudent());
+  const [applicant, setApplicant] = useState<MainApplicant>(mkApplicant());
   const [adults, setAdults] = useState<Adult[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -146,33 +250,28 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
     else if (programId) setStartDate("");
   }, [programId, selectedProgram?.startDate]);
 
-  function upPrimary<K extends keyof PrimaryStudent>(k:K, v:PrimaryStudent[K]) {
-    setPrimary(p => ({...p, [k]:v}));
+  function upApplicant<K extends keyof MainApplicant>(k: K, v: MainApplicant[K]) {
+    setApplicant(p => ({ ...p, [k]: v }));
   }
-  function upAdult<K extends keyof Adult>(i:number, k:K, v:Adult[K]) {
-    setAdults(a => a.map((x,j) => j===i ? {...x,[k]:v} : x));
+  function upAdult<K extends keyof Adult>(i: number, k: K, v: Adult[K]) {
+    setAdults(a => a.map((x, j) => j === i ? { ...x, [k]: v } : x));
   }
-  function upChild<K extends keyof Child>(i:number, k:K, v:Child[K]) {
-    setChildren(c => c.map((x,j) => j===i ? {...x,[k]:v} : x));
+  function upChild<K extends keyof Child>(i: number, k: K, v: Child[K]) {
+    setChildren(c => c.map((x, j) => j === i ? { ...x, [k]: v } : x));
   }
 
   function validate(): boolean {
-    const e: Record<string,string> = {};
+    const e: Record<string, string> = {};
     if (!programId) e.programId = t("common.required");
-    if (!primary.firstName) e.firstName = t("common.required");
-    if (!primary.lastName) e.lastName = t("common.required");
-    if (!primary.dateOfBirth) e.dateOfBirth = t("common.required");
-    if (!primary.gender) e.gender = t("common.required");
-    if (!primary.nationality) e.nationality = t("common.required");
-    if (!primary.englishLevel) e.englishLevel = t("common.required");
-    if (!primary.phone) e.phone = t("common.required");
+    if (!applicant.firstName) e.firstName = t("common.required");
+    if (!applicant.lastName) e.lastName = t("common.required");
+    if (!applicant.phone) e.phone = t("common.required");
     if (!termsAccepted) e.terms = t("common.required");
     if (!privacyAccepted) e.privacy = t("common.required");
     setErrors(e);
     if (Object.keys(e).length > 0) {
-      // scroll to first error
       const firstKey = Object.keys(e)[0];
-      document.getElementById(`field-${firstKey}`)?.scrollIntoView({ behavior:"smooth", block:"center" });
+      document.getElementById(`field-${firstKey}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
     return Object.keys(e).length === 0;
   }
@@ -184,67 +283,60 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
     try {
       const participants = [
         {
-          participantType:"primary_student",
-          firstName:primary.firstName, lastName:primary.lastName,
-          fullName:`${primary.firstName} ${primary.lastName.toUpperCase()}`.trim(),
-          fullNameNative:primary.fullNameNative||undefined,
-          englishName:primary.englishName||undefined,
-          dateOfBirth:primary.dateOfBirth||undefined,
-          gender:primary.gender||undefined,
-          nationality:primary.nationality||undefined,
-          passportNumber:primary.passportNumber||undefined,
-          passportExpiry:primary.passportExpiry||undefined,
-          grade:primary.grade||undefined,
-          enrollmentSpotId:primary.enrollmentSpotId||undefined,
-          schoolName:primary.schoolName||undefined,
-          englishLevel:primary.englishLevel||undefined,
-          medicalConditions:primary.medicalConditions||undefined,
-          dietaryRequirements:primary.dietaryRequirements||undefined,
-          specialNeeds:primary.specialNeeds||undefined,
-          phone:primary.phone||undefined,
-          whatsapp:primary.whatsapp||undefined,
-          lineId:primary.lineId||undefined,
+          participantType: "primary_student",
+          firstName: applicant.firstName, lastName: applicant.lastName,
+          fullName: `${applicant.firstName} ${applicant.lastName.toUpperCase()}`.trim(),
+          fullNameNative: applicant.fullNameNative || undefined,
+          englishName: applicant.englishName || undefined,
+          phone: applicant.phone || undefined,
+          whatsapp: applicant.whatsapp || undefined,
+          lineId: applicant.lineId || undefined,
         },
         ...adults.map(a => ({
-          participantType:"adult" as const,
-          firstName:a.firstName, lastName:a.lastName,
-          fullName:`${a.firstName} ${a.lastName.toUpperCase()}`.trim(),
-          dateOfBirth:a.dateOfBirth||undefined,
-          nationality:a.nationality||undefined,
-          passportNumber:a.passportNumber||undefined,
-          relationshipToStudent:a.relationship||undefined,
-          isEmergencyContact:a.isEmergencyContact,
-          email:a.email||undefined,
-          phone:a.phone||undefined,
-          whatsapp:a.whatsapp||undefined,
-          lineId:a.lineId||undefined,
+          participantType: "adult" as const,
+          firstName: a.firstName, lastName: a.lastName,
+          fullName: `${a.firstName} ${a.lastName.toUpperCase()}`.trim(),
+          dateOfBirth: a.dateOfBirth || undefined,
+          nationality: a.nationality || undefined,
+          passportNumber: a.passportNumber || undefined,
+          relationshipToStudent: a.relationship || undefined,
+          isEmergencyContact: a.isEmergencyContact,
+          email: a.email || undefined,
+          phone: a.phone || undefined,
+          whatsapp: a.whatsapp || undefined,
+          lineId: a.lineId || undefined,
         })),
         ...children.map(c => ({
-          participantType:"child" as const,
-          firstName:c.firstName, lastName:c.lastName,
-          fullName:`${c.firstName} ${c.lastName.toUpperCase()}`.trim(),
-          dateOfBirth:c.dateOfBirth||undefined,
-          gender:c.gender||undefined,
-          nationality:c.nationality||undefined,
-          passportNumber:c.passportNumber||undefined,
-          grade:c.grade||undefined,
-          enrollmentSpotId:c.enrollmentSpotId||undefined,
-          medicalConditions:c.medicalConditions||undefined,
+          participantType: "child" as const,
+          firstName: c.firstName, lastName: c.lastName,
+          fullName: `${c.firstName} ${c.lastName.toUpperCase()}`.trim(),
+          dateOfBirth: c.dateOfBirth || undefined,
+          gender: c.gender || undefined,
+          nationality: c.nationality || undefined,
+          passportNumber: c.passportNumber || undefined,
+          passportExpiry: c.passportExpiry || undefined,
+          grade: c.grade || undefined,
+          enrollmentSpotId: c.enrollmentSpotId || undefined,
+          schoolName: c.schoolName || undefined,
+          englishLevel: c.englishLevel || undefined,
+          medicalConditions: c.medicalConditions || undefined,
+          dietaryRequirements: c.dietaryRequirements || undefined,
+          specialNeeds: c.specialNeeds || undefined,
         })),
       ];
       const { data } = await axios.post(`${BASE}/api/public/applications`, {
-        packageGroupId:programId,
-        packageId:packageId||undefined,
-        preferredStartDate:startDate||undefined,
-        referralSource:howHeard||undefined,
-        referralAgentCode:refCode||undefined,
-        primaryLanguage:lang,
-        specialRequests:specialRequests||undefined,
-        termsAccepted:true,
+        packageGroupId: programId,
+        packageId: packageId || undefined,
+        preferredStartDate: startDate || undefined,
+        referralSource: howHeard || undefined,
+        referralAgentCode: refCode || undefined,
+        primaryLanguage: lang,
+        specialRequests: specialRequests || undefined,
+        termsAccepted: true,
         participants,
       });
       setSubmitted(data.applicationNumber);
-      topRef.current?.scrollIntoView({ behavior:"smooth" });
+      topRef.current?.scrollIntoView({ behavior: "smooth" });
     } catch (err: unknown) {
       const axErr = err as { response?: { data?: { message?: string } } };
       setErrors({ submit: axErr.response?.data?.message || "Submission failed. Please try again." });
@@ -271,14 +363,15 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
-      {/* Header */}
+      {/* Sticky Header */}
       <div ref={topRef} className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="font-bold text-gray-900 text-lg leading-tight">{formInfo.name}</h1>
             {formInfo.description && <p className="text-xs text-gray-500 mt-0.5">{formInfo.description}</p>}
           </div>
-          <img src={`${BASE}/edubee-logo.svg`} alt="Edubee" className="h-8 opacity-80" onError={e=>{(e.target as HTMLImageElement).style.display="none";}} />
+          <img src={`${BASE}/edubee-logo.svg`} alt="Edubee" className="h-8 opacity-80"
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
         </div>
       </div>
 
@@ -339,7 +432,7 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
               </div>
             ) : (
               <Fld label={t("apply.preferredStartDate")}>
-                <DatePickerInput value={startDate} onChange={setStartDate} fromYear={new Date().getFullYear()} toYear={new Date().getFullYear()+5} />
+                <DatePickerInput value={startDate} onChange={setStartDate} fromYear={new Date().getFullYear()} toYear={new Date().getFullYear() + 5} />
               </Fld>
             )}
 
@@ -347,7 +440,7 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
               <Fld label={t("apply.howHeard")}>
                 <Sel value={howHeard} onChange={setHowHeard}>
                   <option value="">Select…</option>
-                  {["Instagram","Facebook","Google","YouTube","Referral","Education Fair","School","Other"].map(s=>(
+                  {["Instagram", "Facebook", "Google", "YouTube", "Referral", "Education Fair", "School", "Other"].map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </Sel>
@@ -358,236 +451,154 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
             </div>
 
             <Fld label={t("apply.specialRequests")}>
-              <textarea value={specialRequests} onChange={e=>setSpecialRequests(e.target.value)} rows={2}
+              <textarea value={specialRequests} onChange={e => setSpecialRequests(e.target.value)} rows={2}
                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 resize-none"
                 placeholder="Any special requests or notes…" />
             </Fld>
           </Section>
 
-          {/* ── Section 2: Primary Student ── */}
-          <Section id="sec-student" icon="🎓" title={t("apply.primaryStudent")}>
+          {/* ── Section 2: Main Applicant ── */}
+          <Section id="sec-applicant" icon="👤" title="Main Applicant Information"
+            subtitle="The person submitting this application (parent / guardian / student)">
             <div className="grid grid-cols-2 gap-4">
               <div id="field-firstName">
                 <Fld label={t("apply.firstName")} required error={errors.firstName}>
-                  <Inp value={primary.firstName} onChange={v=>upPrimary("firstName",v)} placeholder="e.g. Ji-won" />
+                  <Inp value={applicant.firstName} onChange={v => upApplicant("firstName", v)} placeholder="e.g. Ji-won" />
                 </Fld>
               </div>
               <div id="field-lastName">
                 <Fld label={t("apply.lastName")} required error={errors.lastName}>
-                  <Inp value={primary.lastName} onChange={v=>upPrimary("lastName",v)} placeholder="e.g. Kim" />
+                  <Inp value={applicant.lastName} onChange={v => upApplicant("lastName", v)} placeholder="e.g. Kim" />
                 </Fld>
               </div>
               <Fld label={t("apply.nativeName")}>
-                <Inp value={primary.fullNameNative} onChange={v=>upPrimary("fullNameNative",v)} placeholder="김지원" />
+                <Inp value={applicant.fullNameNative} onChange={v => upApplicant("fullNameNative", v)} placeholder="김지원" />
               </Fld>
               <Fld label={t("apply.englishName")}>
-                <Inp value={primary.englishName} onChange={v=>upPrimary("englishName",v)} placeholder="e.g. Kevin" />
-              </Fld>
-              <div id="field-dateOfBirth">
-                <Fld label={t("apply.dateOfBirth")} required error={errors.dateOfBirth}>
-                  <div className="flex items-center gap-2">
-                    <DatePickerInput value={primary.dateOfBirth} onChange={v=>upPrimary("dateOfBirth",v)} className="flex-1" fromYear={1960} toYear={new Date().getFullYear()} />
-                    {calcAge(primary.dateOfBirth) !== null && (
-                      <span className="text-sm text-gray-500 whitespace-nowrap">{t("apply.age",{age:calcAge(primary.dateOfBirth)})}</span>
-                    )}
-                  </div>
-                </Fld>
-              </div>
-              <div id="field-gender">
-                <Fld label={t("apply.gender")} required error={errors.gender}>
-                  <Sel value={primary.gender} onChange={v=>upPrimary("gender",v)}>
-                    <option value="">Select…</option>
-                    <option value="male">{t("apply.male")}</option>
-                    <option value="female">{t("apply.female")}</option>
-                    <option value="other">{t("apply.other")}</option>
-                  </Sel>
-                </Fld>
-              </div>
-              <div id="field-nationality">
-                <Fld label={t("apply.nationality")} required error={errors.nationality}>
-                  <Inp value={primary.nationality} onChange={v=>upPrimary("nationality",v)} placeholder="e.g. Korean" />
-                </Fld>
-              </div>
-              <div id="field-englishLevel">
-                <Fld label={t("apply.englishLevel")} required error={errors.englishLevel}>
-                  <Sel value={primary.englishLevel} onChange={v=>upPrimary("englishLevel",v)}>
-                    <option value="">Select…</option>
-                    {["Beginner","Elementary","Pre-Intermediate","Intermediate","Upper-Intermediate","Advanced","Native"].map(l=>(
-                      <option key={l} value={l}>{l}</option>
-                    ))}
-                  </Sel>
-                </Fld>
-              </div>
-              <Fld label={t("apply.passportNumber")}>
-                <Inp value={primary.passportNumber} onChange={v=>upPrimary("passportNumber",v)} placeholder="e.g. M12345678" />
-              </Fld>
-              <Fld label={t("apply.passportExpiry")}>
-                <DatePickerInput value={primary.passportExpiry} onChange={v=>upPrimary("passportExpiry",v)} fromYear={new Date().getFullYear()} toYear={new Date().getFullYear()+20} />
-              </Fld>
-              <Fld label={t("apply.grade")}>
-                {selectedProgram?.spotSummary ? (
-                  <Sel value={primary.enrollmentSpotId} onChange={id=>{
-                    upPrimary("enrollmentSpotId",id);
-                    const g = selectedProgram.spotSummary!.grades.find(x=>x.id===id);
-                    if(g) upPrimary("grade",g.label);
-                  }}>
-                    <option value="">Select grade…</option>
-                    {selectedProgram.spotSummary.grades.map(g=>(
-                      <option key={g.id} value={g.id} disabled={g.status==="full"}>
-                        {g.status==="full" ? `${g.label} (Full)` : `${g.label} (${g.available} spots)`}
-                      </option>
-                    ))}
-                  </Sel>
-                ) : (
-                  <Inp value={primary.grade} onChange={v=>upPrimary("grade",v)} placeholder="e.g. Grade 8" />
-                )}
-              </Fld>
-              <Fld label={t("apply.schoolName")}>
-                <Inp value={primary.schoolName} onChange={v=>upPrimary("schoolName",v)} placeholder="e.g. Seoul Middle School" />
+                <Inp value={applicant.englishName} onChange={v => upApplicant("englishName", v)} placeholder="e.g. Kevin" />
               </Fld>
               <div id="field-phone">
                 <Fld label={t("apply.phone")} required error={errors.phone}>
-                  <Inp value={primary.phone} onChange={v=>upPrimary("phone",v)} placeholder="+82 10-0000-0000" />
+                  <Inp value={applicant.phone} onChange={v => upApplicant("phone", v)} placeholder="+82 10-0000-0000" />
                 </Fld>
               </div>
               <Fld label={t("apply.whatsapp")}>
-                <Inp value={primary.whatsapp} onChange={v=>upPrimary("whatsapp",v)} placeholder="+82 10-0000-0000" />
+                <Inp value={applicant.whatsapp} onChange={v => upApplicant("whatsapp", v)} placeholder="+82 10-0000-0000" />
               </Fld>
-              <Fld label="LINE ID">
-                <Inp value={primary.lineId} onChange={v=>upPrimary("lineId",v)} placeholder="@lineid" />
-              </Fld>
-              <Fld label={t("apply.medicalConditions")} span2>
-                <Inp value={primary.medicalConditions} onChange={v=>upPrimary("medicalConditions",v)} placeholder="Any allergies, medications, or conditions…" />
-              </Fld>
-              <Fld label={t("apply.dietaryRequirements")} span2>
-                <Inp value={primary.dietaryRequirements} onChange={v=>upPrimary("dietaryRequirements",v)} placeholder="Vegetarian, halal, etc." />
-              </Fld>
-              <Fld label={t("apply.specialNeeds")} span2>
-                <Inp value={primary.specialNeeds} onChange={v=>upPrimary("specialNeeds",v)} placeholder="Any additional support needed…" />
+              <Fld label="LINE ID" span2>
+                <Inp value={applicant.lineId} onChange={v => upApplicant("lineId", v)} placeholder="@lineid" />
               </Fld>
             </div>
           </Section>
 
-          {/* ── Section 3: Additional Participants ── */}
-          <Section id="sec-participants" icon="👨‍👩‍👧" title={t("apply.additionalParticipants")} collapsible>
-            {/* Adults */}
+          {/* ── Section 3: Students (Children) ── */}
+          <Section id="sec-children" icon="🎓" title="Additional Children (Students)"
+            subtitle="Add each student attending the program" collapsible>
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("apply.adultsLabel")}</h4>
-                {adults.length < 4 && (
-                  <Button type="button" size="sm" variant="outline" className="gap-1 rounded-full text-xs h-7 px-3"
-                    onClick={()=>setAdults([...adults,mkAdult()])}>
-                    <Plus className="w-3 h-3" /> {t("apply.addAdult")}
+                <p className="text-sm text-gray-500">Each student's full details are required for enrollment.</p>
+                {children.length < 5 && (
+                  <Button type="button" size="sm" variant="outline" className="gap-1 rounded-full text-xs h-7 px-3 shrink-0"
+                    onClick={() => setChildren([...children, mkChild()])}>
+                    <Plus className="w-3 h-3" /> Add Student
                   </Button>
                 )}
               </div>
-              {adults.map((adult,idx)=>(
-                <div key={idx} className="border border-gray-200 rounded-xl p-4 mb-3 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">Adult {idx+1}</span>
-                    <button type="button" onClick={()=>setAdults(adults.filter((_,i)=>i!==idx))} className="text-red-400 hover:text-red-600 transition-colors">
+
+              {children.length === 0 && (
+                <div className="text-center py-6 border border-dashed border-gray-200 rounded-xl">
+                  <p className="text-sm text-gray-400">No students added yet.</p>
+                  <p className="text-xs text-gray-400 mt-1">Click "Add Student" to add a student's information.</p>
+                </div>
+              )}
+
+              {children.map((child, idx) => (
+                <div key={idx} className="border border-gray-200 rounded-xl p-4 mb-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold text-gray-700">Student {idx + 1}</span>
+                    <button type="button" onClick={() => setChildren(children.filter((_, i) => i !== idx))}
+                      className="text-red-400 hover:text-red-600 transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <Fld label={t("apply.firstName")} required><Inp value={adult.firstName} onChange={v=>upAdult(idx,"firstName",v)} /></Fld>
-                    <Fld label={t("apply.lastName")} required><Inp value={adult.lastName} onChange={v=>upAdult(idx,"lastName",v)} /></Fld>
-                    <Fld label={t("apply.relationship")} required>
-                      <Sel value={adult.relationship} onChange={v=>upAdult(idx,"relationship",v)}>
-                        <option value="">Select…</option>
-                        {["Parent","Guardian","Sibling","Grandparent","Teacher","Other"].map(r=><option key={r} value={r}>{r}</option>)}
-                      </Sel>
+                    <Fld label={t("apply.firstName")} required>
+                      <Inp value={child.firstName} onChange={v => upChild(idx, "firstName", v)} placeholder="e.g. Ji-won" />
                     </Fld>
-                    <Fld label={t("apply.nationality")}><Inp value={adult.nationality} onChange={v=>upAdult(idx,"nationality",v)} /></Fld>
-                    <Fld label={t("apply.phone")} required><Inp value={adult.phone} onChange={v=>upAdult(idx,"phone",v)} /></Fld>
-                    <Fld label={t("apply.email")}><Inp type="email" value={adult.email} onChange={v=>upAdult(idx,"email",v)} /></Fld>
-                    <Fld label={t("apply.whatsapp")}><Inp value={adult.whatsapp} onChange={v=>upAdult(idx,"whatsapp",v)} /></Fld>
+                    <Fld label={t("apply.lastName")} required>
+                      <Inp value={child.lastName} onChange={v => upChild(idx, "lastName", v)} placeholder="e.g. Kim" />
+                    </Fld>
+                    <StudentDetailFields child={child} idx={idx} upChild={upChild} selectedProgram={selectedProgram} t={t} />
                   </div>
-                  <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                    <input type="checkbox" checked={adult.isEmergencyContact} onChange={e=>upAdult(idx,"isEmergencyContact",e.target.checked)} className="rounded" />
-                    {t("apply.isEmergencyContact")}
-                  </label>
                 </div>
               ))}
             </div>
+          </Section>
 
-            {/* Children */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("apply.childrenLabel")}</h4>
-                {children.length < 5 && (
-                  <Button type="button" size="sm" variant="outline" className="gap-1 rounded-full text-xs h-7 px-3"
-                    onClick={()=>setChildren([...children,mkChild()])}>
-                    <Plus className="w-3 h-3" /> {t("apply.addChild")}
-                  </Button>
-                )}
-              </div>
-              {children.map((child,idx)=>(
-                <div key={idx} className="border border-gray-200 rounded-xl p-4 mb-3 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">Child {idx+1}</span>
-                    <button type="button" onClick={()=>setChildren(children.filter((_,i)=>i!==idx))} className="text-red-400 hover:text-red-600 transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Fld label={t("apply.firstName")} required><Inp value={child.firstName} onChange={v=>upChild(idx,"firstName",v)} /></Fld>
-                    <Fld label={t("apply.lastName")} required><Inp value={child.lastName} onChange={v=>upChild(idx,"lastName",v)} /></Fld>
-                    <Fld label={t("apply.dateOfBirth")} required>
-                      <DatePickerInput value={child.dateOfBirth} onChange={v=>upChild(idx,"dateOfBirth",v)} fromYear={1990} toYear={new Date().getFullYear()} />
-                    </Fld>
-                    <Fld label={t("apply.gender")} required>
-                      <Sel value={child.gender} onChange={v=>upChild(idx,"gender",v)}>
-                        <option value="">Select…</option>
-                        <option value="male">{t("apply.male")}</option>
-                        <option value="female">{t("apply.female")}</option>
-                        <option value="other">{t("apply.other")}</option>
-                      </Sel>
-                    </Fld>
-                    <Fld label={t("apply.nationality")} required><Inp value={child.nationality} onChange={v=>upChild(idx,"nationality",v)} /></Fld>
-                    <Fld label={t("apply.grade")} required>
-                      {selectedProgram?.spotSummary ? (
-                        <Sel value={child.enrollmentSpotId} onChange={id=>{
-                          upChild(idx,"enrollmentSpotId",id);
-                          const g=selectedProgram.spotSummary!.grades.find(x=>x.id===id);
-                          if(g) upChild(idx,"grade",g.label);
-                        }}>
-                          <option value="">Select grade…</option>
-                          {selectedProgram.spotSummary.grades.map(g=>(
-                            <option key={g.id} value={g.id} disabled={g.status==="full"}>
-                              {g.status==="full" ? `${g.label} (Full)` : `${g.label} (${g.available} spots)`}
-                            </option>
-                          ))}
-                        </Sel>
-                      ) : (
-                        <Inp value={child.grade} onChange={v=>upChild(idx,"grade",v)} />
-                      )}
-                    </Fld>
-                    <Fld label={t("apply.medicalConditions")} span2>
-                      <Inp value={child.medicalConditions} onChange={v=>upChild(idx,"medicalConditions",v)} />
-                    </Fld>
-                  </div>
-                </div>
-              ))}
-              {adults.length===0 && children.length===0 && (
-                <p className="text-sm text-gray-400 text-center py-4">
-                  Optional — click the buttons above to add accompanying family members.
-                </p>
+          {/* ── Section 4: Accompanying Adults ── */}
+          <Section id="sec-adults" icon="👨‍👩‍👧" title={t("apply.adultsLabel")}
+            subtitle="Optional — parents or guardians accompanying the student" collapsible>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm text-gray-500">Add adults travelling with the student(s).</p>
+              {adults.length < 4 && (
+                <Button type="button" size="sm" variant="outline" className="gap-1 rounded-full text-xs h-7 px-3 shrink-0"
+                  onClick={() => setAdults([...adults, mkAdult()])}>
+                  <Plus className="w-3 h-3" /> {t("apply.addAdult")}
+                </Button>
               )}
             </div>
+
+            {adults.length === 0 && (
+              <div className="text-center py-6 border border-dashed border-gray-200 rounded-xl">
+                <p className="text-sm text-gray-400">No accompanying adults added.</p>
+              </div>
+            )}
+
+            {adults.map((adult, idx) => (
+              <div key={idx} className="border border-gray-200 rounded-xl p-4 mb-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-700">Adult {idx + 1}</span>
+                  <button type="button" onClick={() => setAdults(adults.filter((_, i) => i !== idx))}
+                    className="text-red-400 hover:text-red-600 transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Fld label={t("apply.firstName")} required><Inp value={adult.firstName} onChange={v => upAdult(idx, "firstName", v)} /></Fld>
+                  <Fld label={t("apply.lastName")} required><Inp value={adult.lastName} onChange={v => upAdult(idx, "lastName", v)} /></Fld>
+                  <Fld label={t("apply.relationship")} required>
+                    <Sel value={adult.relationship} onChange={v => upAdult(idx, "relationship", v)}>
+                      <option value="">Select…</option>
+                      {["Parent", "Guardian", "Sibling", "Grandparent", "Teacher", "Other"].map(r => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </Sel>
+                  </Fld>
+                  <Fld label={t("apply.nationality")}><Inp value={adult.nationality} onChange={v => upAdult(idx, "nationality", v)} /></Fld>
+                  <Fld label={t("apply.phone")} required><Inp value={adult.phone} onChange={v => upAdult(idx, "phone", v)} /></Fld>
+                  <Fld label={t("apply.email")}><Inp type="email" value={adult.email} onChange={v => upAdult(idx, "email", v)} /></Fld>
+                  <Fld label={t("apply.whatsapp")}><Inp value={adult.whatsapp} onChange={v => upAdult(idx, "whatsapp", v)} /></Fld>
+                </div>
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                  <input type="checkbox" checked={adult.isEmergencyContact}
+                    onChange={e => upAdult(idx, "isEmergencyContact", e.target.checked)} className="rounded" />
+                  {t("apply.isEmergencyContact")}
+                </label>
+              </div>
+            ))}
           </Section>
 
-          {/* ── Section 4: Terms & Submit ── */}
+          {/* ── Section 5: Terms & Submit ── */}
           <Section id="sec-terms" icon="✅" title={t("apply.review")}>
             <div className="space-y-3">
               <label id="field-terms" className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={termsAccepted} onChange={e=>setTermsAccepted(e.target.checked)} className="mt-0.5 rounded" />
+                <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-0.5 rounded" />
                 <span className="text-sm text-gray-700">{t("apply.termsAccept")}</span>
               </label>
               {errors.terms && <p className="text-xs text-red-600 ml-7">{errors.terms}</p>}
 
               <label id="field-privacy" className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={privacyAccepted} onChange={e=>setPrivacyAccepted(e.target.checked)} className="mt-0.5 rounded" />
+                <input type="checkbox" checked={privacyAccepted} onChange={e => setPrivacyAccepted(e.target.checked)} className="mt-0.5 rounded" />
                 <span className="text-sm text-gray-700">{t("apply.privacyAccept")}</span>
               </label>
               {errors.privacy && <p className="text-xs text-red-600 ml-7">{errors.privacy}</p>}
