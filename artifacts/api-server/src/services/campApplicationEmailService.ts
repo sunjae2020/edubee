@@ -18,7 +18,7 @@ import { Resend } from "resend";
 import { db } from "@workspace/db";
 import {
   organisations, accounts, users,
-  applicationFormPartners, applicationForms,
+  applicationFormPartners, applicationForms, formTermsContent,
   packageGroups, packages,
 } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -28,6 +28,20 @@ import { getResendConfig } from "../mailer.js";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function val(v: string | null | undefined) { return v ?? "—"; }
+
+/** Strip markdown syntax for plain-text PDF rendering */
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/^#+\s+/gm, "")           // headings
+    .replace(/\*\*(.+?)\*\*/g, "$1")   // bold
+    .replace(/\*(.+?)\*/g, "$1")       // italic
+    .replace(/_{1,2}(.+?)_{1,2}/g, "$1") // underline/italic
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1") // links
+    .replace(/^\s*[-*+]\s+/gm, "• ")   // bullets
+    .replace(/^\s*\d+\.\s+/gm, "")     // numbered list markers
+    .replace(/`(.+?)`/g, "$1")         // inline code
+    .trim();
+}
 
 function fmtDate(v: string | null | undefined) {
   if (!v) return "—";
@@ -121,6 +135,7 @@ export interface CampAppEmailData {
   // Resolved names (filled during send)
   programName?: string;
   packageName?: string;
+  termsContent?: string;
 }
 
 // ─── PDF Document ─────────────────────────────────────────────────────────────
@@ -259,6 +274,29 @@ function CampApplicationDocument({
         ce(View, { style: S.thinDivider }),
       ),
 
+      // ── Terms & Conditions ───────────────────────────────────────────────────
+      data.termsContent && ce(View, null,
+        ce(Text, { style: S.sectionTitle }, "Terms & Conditions"),
+        ce(View, { style: { backgroundColor: "#FAFAF9", borderRadius: 4, padding: "10 12", border: "1 solid #E8E6E2" } },
+          ...stripMarkdown(data.termsContent)
+            .split("\n")
+            .filter(line => line.trim() !== "")
+            .map((line, i) =>
+              ce(Text, {
+                key: i,
+                style: {
+                  fontSize: 8,
+                  color: line.startsWith("•") ? "#1C1917" : "#57534E",
+                  lineHeight: 1.5,
+                  marginBottom: 2,
+                  fontFamily: line.startsWith("•") ? "Helvetica" : "Helvetica",
+                }
+              }, line)
+            ),
+        ),
+        ce(View, { style: S.thinDivider }),
+      ),
+
       // ── Signature ────────────────────────────────────────────────────────────
       ce(View, null,
         ce(Text, { style: S.sectionTitle }, "Agreement & Signature"),
@@ -288,7 +326,40 @@ function CampApplicationDocument({
   );
 }
 
-// ─── Generate PDF Buffer ──────────────────────────────────────────────────────
+// ─── Fetch Terms Content + Generate PDF Buffer ────────────────────────────────
+
+export async function fetchTermsForPackageGroup(packageGroupId: string, lang = "en"): Promise<string | null> {
+  try {
+    // 1. Get organisationId from packageGroups
+    const [pg] = await db.select({ organisationId: packageGroups.organisationId })
+      .from(packageGroups).where(eq(packageGroups.id, packageGroupId)).limit(1);
+    if (!pg?.organisationId) return null;
+
+    // 2. Find camp application form for this organisation
+    const [form] = await db.select({ id: applicationForms.id })
+      .from(applicationForms)
+      .where(and(
+        eq(applicationForms.organisationId, pg.organisationId),
+        eq(applicationForms.formType, "camp_application"),
+      ))
+      .limit(1);
+    if (!form) return null;
+
+    // 3. Fetch terms content (prefer requested lang → default → en → any)
+    const rows = await db.select()
+      .from(formTermsContent)
+      .where(eq(formTermsContent.formId, form.id));
+    if (rows.length === 0) return null;
+
+    const exact    = rows.find(r => r.language === lang);
+    const def      = rows.find(r => r.isDefault);
+    const fallback = rows.find(r => r.language === "en") ?? rows[0];
+    return (exact ?? def ?? fallback)?.content ?? null;
+  } catch (err) {
+    console.warn("[CampEmail] fetchTermsForPackageGroup failed:", err);
+    return null;
+  }
+}
 
 export async function generateCampApplicationPdf(data: CampAppEmailData): Promise<Buffer> {
   const logoDataUri = await getLogoDataUri();
@@ -436,6 +507,11 @@ export async function sendCampApplicationEmails(data: CampAppEmailData): Promise
     }
   } catch (err) {
     console.warn("[CampEmail] Failed to resolve program/package names:", err);
+  }
+
+  // ── Fetch Terms & Conditions ────────────────────────────────────────────────
+  if (!data.termsContent) {
+    data.termsContent = (await fetchTermsForPackageGroup(data.packageGroupId)) ?? undefined;
   }
 
   // ── Resolve admin email ─────────────────────────────────────────────────────

@@ -6,7 +6,7 @@ import { packageProducts, products, packageGroups, packages as pkgsTable } from 
 import { eq, ilike, or, count, and, desc, SQL, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
-import { generateCampApplicationPdf, CampAppEmailData } from "../services/campApplicationEmailService.js";
+import { generateCampApplicationPdf, CampAppEmailData, fetchTermsForPackageGroup } from "../services/campApplicationEmailService.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
@@ -153,12 +153,18 @@ router.get("/camp-applications/:id/pdf", authenticate, requireRole(...ADMIN_ROLE
       whatsapp:               p.whatsapp ?? undefined,
     }));
 
+    // Fetch Terms & Conditions
+    const termsContent = app.packageGroupId
+      ? (await fetchTermsForPackageGroup(app.packageGroupId)) ?? undefined
+      : undefined;
+
     const data: CampAppEmailData = {
       applicationNumber:     app.applicationNumber ?? "N/A",
       packageGroupId:        app.packageGroupId ?? "",
       packageId:             app.packageId ?? undefined,
       programName:           pgRow?.nameEn ?? undefined,
       packageName:           pkgRow?.name  ?? undefined,
+      termsContent,
       applicantFirstName:    app.applicantFirstName ?? "",
       applicantLastName:     app.applicantLastName  ?? "",
       applicantPhone:        app.applicantPhone     ?? undefined,
