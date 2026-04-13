@@ -386,7 +386,7 @@ export default function AllApplicationsPage() {
                   i % 2 === 0 ? "bg-white" : "bg-[#FAFAF9]"
                 }`}
               >
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                <td className="px-4 py-3 font-mono text-xs text-muted-foreground max-w-[110px] break-all leading-relaxed">
                   {row.ref ?? "—"}
                 </td>
                 <td className="px-4 py-3">
