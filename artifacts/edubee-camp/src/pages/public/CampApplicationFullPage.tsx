@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DualPriceDisplay } from "@/components/public/dual-price-display";
 import { useDisplayCurrency } from "@/context/DisplayCurrencyContext";
 import DatePickerInput from "@/components/shared/DatePickerInput";
+import SignaturePad from "@/components/shared/SignaturePad";
 import { type PublicProgram, getLocalizedName } from "@/lib/program-utils";
 import axios from "axios";
 
@@ -209,6 +210,22 @@ function StudentDetailFields({
   );
 }
 
+// ─── Markdown → HTML ─────────────────────────────────────────────────────────
+function mdToHtml(md: string): string {
+  return md
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/^### (.+)$/gm, "<h3 class='font-semibold text-base mt-3 mb-1 text-gray-900'>$1</h3>")
+    .replace(/^## (.+)$/gm, "<h2 class='font-bold text-lg mt-4 mb-1 text-gray-900'>$1</h2>")
+    .replace(/^# (.+)$/gm, "<h1 class='font-bold text-xl mt-5 mb-2 text-gray-900'>$1</h1>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/_(.+?)_/g, "<em>$1</em>")
+    .replace(/^---$/gm, "<hr class='border-gray-200 my-3'>")
+    .replace(/^- (.+)$/gm, "<li class='ml-5 list-disc'>$1</li>")
+    .replace(/^(\d+)\. (.+)$/gm, "<li class='ml-5 list-decimal'>$2</li>")
+    .replace(/\n\n/g, "<br><br>")
+    .replace(/\n/g, "<br>");
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface Props {
   formInfo: { id: string; name: string; description: string | null };
@@ -239,8 +256,10 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
   const [adults, setAdults] = useState<Adult[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [signatureName, setSignatureName] = useState("");
+  const [signatureImage, setSignatureImage] = useState<string | null>(null);
   const [signatureDate, setSignatureDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [termsContent, setTermsContent] = useState<string | null>(null);
+  const [termsLang, setTermsLang] = useState<string | null>(null);
 
   const selectedProgram = programs.find(p => p.id === programId) || null;
   const selectedPackage = selectedProgram?.packages.find(p => p.id === packageId) || null;
@@ -250,6 +269,19 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
     if (selectedProgram?.startDate) setStartDate(selectedProgram.startDate);
     else if (programId) setStartDate("");
   }, [programId, selectedProgram?.startDate]);
+
+  // Fetch terms content from API
+  useEffect(() => {
+    if (!formInfo?.id) return;
+    // We need the slug — formInfo has an id, look up the slug or pass it
+    const slug = window.location.pathname.split("/").filter(Boolean).pop() ?? "";
+    axios.get(`${BASE}/api/public/form/${slug}/terms?lang=${lang}`)
+      .then(r => {
+        setTermsContent(r.data.content ?? null);
+        setTermsLang(r.data.language ?? null);
+      })
+      .catch(() => { /* no terms configured yet */ });
+  }, [formInfo?.id, lang]);
 
   function upApplicant<K extends keyof MainApplicant>(k: K, v: MainApplicant[K]) {
     setApplicant(p => ({ ...p, [k]: v }));
@@ -268,7 +300,7 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
     if (!applicant.lastName) e.lastName = t("common.required");
     if (!applicant.phone) e.phone = t("common.required");
     if (!termsAccepted) e.terms = "Please read and accept the Terms & Conditions.";
-    if (!signatureName.trim()) e.signatureName = "Please enter your full name as signature.";
+    if (!signatureImage) e.signatureName = "Please draw your signature above.";
     if (!signatureDate) e.signatureDate = t("common.required");
     setErrors(e);
     if (Object.keys(e).length > 0) {
@@ -335,7 +367,7 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
         primaryLanguage: lang,
         specialRequests: specialRequests || undefined,
         termsAccepted: true,
-        signatureName: signatureName.trim(),
+        signatureImage: signatureImage ?? undefined,
         signatureDate: signatureDate,
         participants,
       });
@@ -595,69 +627,29 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
           {/* ── Section 5: Terms & Conditions ── */}
           <Section id="sec-terms" icon="📄" title="Terms & Conditions">
 
-            {/* Rich-text terms box */}
+            {/* Terms content box */}
             <div className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
-              <div className="h-72 overflow-y-auto px-5 py-4 space-y-4 text-sm text-gray-700 leading-relaxed">
-                <h3 className="font-bold text-gray-900 text-base">Camp Participation Agreement</h3>
-
-                <section>
-                  <h4 className="font-semibold text-gray-800 mb-1">1. Enrollment & Registration</h4>
-                  <p>Enrollment is confirmed upon receipt of the completed application form and the required deposit payment. Places are allocated on a first-come, first-served basis. The organiser reserves the right to cancel an application if the deposit is not received within the specified period.</p>
-                </section>
-
-                <section>
-                  <h4 className="font-semibold text-gray-800 mb-1">2. Program Fees & Payment</h4>
-                  <p>All program fees are listed in the chosen billing currency. The full balance is due by the stated deadline prior to the program start date. Late payments may result in the cancellation of the reservation. Bank transfer fees and currency conversion costs are the sole responsibility of the applicant.</p>
-                </section>
-
-                <section>
-                  <h4 className="font-semibold text-gray-800 mb-1">3. Cancellation & Refund Policy</h4>
-                  <p>Cancellation requests must be submitted in writing. Refunds are subject to the following schedule:</p>
-                  <ul className="list-disc ml-5 mt-1 space-y-0.5">
-                    <li>More than 60 days before departure: 90% refund of fees paid</li>
-                    <li>30–60 days before departure: 50% refund of fees paid</li>
-                    <li>Less than 30 days before departure: No refund</li>
-                  </ul>
-                  <p className="mt-1">The registration/administration fee is non-refundable under all circumstances.</p>
-                </section>
-
-                <section>
-                  <h4 className="font-semibold text-gray-800 mb-1">4. Health & Medical Conditions</h4>
-                  <p>The applicant is required to disclose all known medical conditions, allergies, dietary requirements, and special needs at the time of application. The organiser accepts no responsibility for conditions not disclosed. Participants must be covered by valid travel and health insurance for the duration of the program.</p>
-                </section>
-
-                <section>
-                  <h4 className="font-semibold text-gray-800 mb-1">5. Behaviour & Conduct</h4>
-                  <p>All participants are expected to respect fellow students, staff, and host families. The organiser reserves the right to dismiss any participant whose behaviour is deemed unacceptable, without refund of fees. The parent or guardian will be responsible for any costs incurred as a result of early departure due to misconduct.</p>
-                </section>
-
-                <section>
-                  <h4 className="font-semibold text-gray-800 mb-1">6. Photography & Media</h4>
-                  <p>Photographs and videos taken during the program may be used by the organiser for promotional purposes. If you do not consent to your child's image being used, please notify us in writing prior to the program start.</p>
-                </section>
-
-                <section>
-                  <h4 className="font-semibold text-gray-800 mb-1">7. Privacy Policy</h4>
-                  <p>Personal information collected in this form is used solely for the purpose of processing your application and administering the program. We will not share your information with third parties without your consent, except where required by law. You may request access to, correction of, or deletion of your personal data at any time by contacting us.</p>
-                </section>
-
-                <section>
-                  <h4 className="font-semibold text-gray-800 mb-1">8. Liability Waiver</h4>
-                  <p>The organiser, its employees, and agents shall not be held liable for any loss, damage, injury, illness, or death arising from participation in the program, except where caused by gross negligence on the part of the organiser. The applicant participates at their own risk.</p>
-                </section>
-
-                <section>
-                  <h4 className="font-semibold text-gray-800 mb-1">9. Changes to Program</h4>
-                  <p>The organiser reserves the right to modify the program itinerary, accommodation, or activities where circumstances beyond its control require it to do so. In such cases, reasonable alternatives of comparable value will be provided wherever possible.</p>
-                </section>
-
-                <section>
-                  <h4 className="font-semibold text-gray-800 mb-1">10. Governing Law</h4>
-                  <p>This agreement shall be governed by the laws of the jurisdiction in which the program is operated. Any disputes shall be resolved through negotiation in the first instance, and if necessary, through binding arbitration.</p>
-                </section>
+              <div className="h-72 overflow-y-auto px-5 py-4 text-sm text-gray-700 leading-relaxed">
+                {termsContent ? (
+                  <div
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: mdToHtml(termsContent) }}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-gray-900 text-base">Camp Participation Agreement</h3>
+                    <p className="text-gray-400 italic text-xs">
+                      Terms & Conditions content will be provided by the organiser.
+                      Please contact us if you have any questions before signing.
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="border-t border-gray-200 bg-white px-5 py-2 flex items-center gap-2">
+              <div className="border-t border-gray-200 bg-white px-5 py-2 flex items-center justify-between">
                 <span className="text-[10px] text-gray-400 italic">↑ Scroll to read the full Terms & Conditions</span>
+                {termsLang && (
+                  <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-mono">{termsLang.toUpperCase()}</span>
+                )}
               </div>
             </div>
 
@@ -673,27 +665,21 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
               {errors.terms && <p className="text-xs text-red-600 mt-1 ml-7">{errors.terms}</p>}
             </div>
 
-            {/* Signature */}
+            {/* Signature Pad */}
             <div className="border border-gray-200 rounded-xl p-5 bg-white space-y-4">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Signature</p>
 
               <div id="field-signatureName">
-                <Fld label="Full Name (Signature)" required error={errors.signatureName}>
-                  <div className="relative">
-                    <Inp
-                      value={signatureName}
-                      onChange={setSignatureName}
-                      placeholder="Type your full name to sign"
-                    />
-                    {signatureName && (
-                      <div className="mt-2 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 min-h-[48px] flex items-center">
-                        <span className="font-['Dancing_Script',_'Brush_Script_MT',_cursive] text-2xl text-gray-800 italic tracking-wide">
-                          {signatureName}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </Fld>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  Draw Your Signature <span className="text-red-500">*</span>
+                </label>
+                <SignaturePad
+                  value={signatureImage}
+                  onChange={setSignatureImage}
+                  height={160}
+                  label=""
+                />
+                {errors.signatureName && <p className="text-xs text-red-600 mt-1">{errors.signatureName}</p>}
               </div>
 
               <div id="field-signatureDate">

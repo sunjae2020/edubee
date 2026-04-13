@@ -165,6 +165,7 @@ import Notifications from "@/pages/admin/notifications";
 import ApplicationFormList    from "@/pages/admin/application-forms/list";
 import ApplicationFormEdit    from "@/pages/admin/application-forms/edit";
 import ApplicationFormPartners from "@/pages/admin/application-forms/partners";
+import ApplicationFormTerms from "@/pages/admin/application-forms/terms";
 
 import { MainLayout } from "@/components/layout/main-layout";
 
@@ -610,6 +611,9 @@ function Router() {
       </Route>
       <Route path="/admin/application-forms/:id/partners">
         <AdminRoute title="Partner Links"><ApplicationFormPartners /></AdminRoute>
+      </Route>
+      <Route path="/admin/application-forms/:id/terms">
+        <AdminRoute title="Terms & Conditions"><ApplicationFormTerms /></AdminRoute>
       </Route>
       <Route path="/admin/application-forms">
         <AdminRoute title="Application Forms"><ApplicationFormList /></AdminRoute>

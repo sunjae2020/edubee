@@ -327,23 +327,45 @@ export default function ApplicationFormPartners() {
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-[#E8E6E2] px-6 py-4">
-        <div className="flex items-center gap-2 text-sm mb-1">
-          <button
-            onClick={() => setLocation("/admin/application-forms")}
-            className="text-[#A8A29E] hover:text-(--e-orange) transition-colors"
-          >
-            Application Forms
-          </button>
-          <ChevronLeft className="w-3.5 h-3.5 text-[#A8A29E] rotate-180" />
-          <button
-            onClick={() => setLocation(`/admin/application-forms/${form.id}/edit`)}
-            className="text-[#A8A29E] hover:text-(--e-orange) transition-colors"
-          >
-            {form.name}
-          </button>
-          <ChevronLeft className="w-3.5 h-3.5 text-[#A8A29E] rotate-180" />
-          <span className="font-semibold text-[#1C1917]">Partner Links</span>
+      <div className="sticky top-0 z-10 bg-white border-b border-[#E8E6E2]">
+        <div className="px-6 py-4">
+          <div className="flex items-center gap-2 text-sm mb-3">
+            <button
+              onClick={() => setLocation("/admin/application-forms")}
+              className="text-[#A8A29E] hover:text-(--e-orange) transition-colors"
+            >
+              Application Forms
+            </button>
+            <ChevronLeft className="w-3.5 h-3.5 text-[#A8A29E] rotate-180" />
+            <button
+              onClick={() => setLocation(`/admin/application-forms/${form.id}/edit`)}
+              className="text-[#A8A29E] hover:text-(--e-orange) transition-colors"
+            >
+              {form.name}
+            </button>
+            <ChevronLeft className="w-3.5 h-3.5 text-[#A8A29E] rotate-180" />
+            <span className="font-semibold text-[#1C1917]">Partner Links</span>
+          </div>
+        </div>
+        {/* Tab Nav */}
+        <div className="flex gap-1 border-t border-[#E8E6E2] px-6">
+          {[
+            { label: "Settings",           path: `/admin/application-forms/${form.id}/edit` },
+            { label: "Partner Links",      path: `/admin/application-forms/${form.id}/partners`, active: true },
+            { label: "Terms & Conditions", path: `/admin/application-forms/${form.id}/terms` },
+          ].map(tab => (
+            <button
+              key={tab.label}
+              onClick={() => setLocation(tab.path)}
+              className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors -mb-px ${
+                tab.active
+                  ? "border-(--e-orange) text-(--e-orange)"
+                  : "border-transparent text-[#A8A29E] hover:text-[#57534E]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 

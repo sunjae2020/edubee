@@ -32,6 +32,17 @@ export const applicationFormPartners = pgTable("application_form_partners", {
   modifiedOn:          timestamp("modified_on").defaultNow().notNull(),
 });
 
+export const formTermsContent = pgTable("form_terms_content", {
+  id:         uuid("id").primaryKey().defaultRandom(),
+  formId:     uuid("form_id").notNull().references(() => applicationForms.id, { onDelete: "cascade" }),
+  language:   varchar("language", { length: 10 }).notNull(),
+  content:    text("content").notNull(),
+  isDefault:  boolean("is_default").notNull().default(false),
+  createdAt:  timestamp("created_at").defaultNow().notNull(),
+  updatedAt:  timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type ApplicationForm        = typeof applicationForms.$inferSelect;
 export type NewApplicationForm     = typeof applicationForms.$inferInsert;
 export type ApplicationFormPartner = typeof applicationFormPartners.$inferSelect;
+export type FormTermsContent       = typeof formTermsContent.$inferSelect;

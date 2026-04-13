@@ -13,6 +13,7 @@ import {
   exchangeRates,
   campApplications,
   applicationForms,
+  formTermsContent,
   leads,
   platformPlans,
   organisations,
@@ -614,6 +615,40 @@ router.get("/public/inquiry-form/:slug", async (req, res) => {
     return res.json(form);
   } catch (err) {
     console.error("[GET /public/inquiry-form/:slug]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── GET /api/public/form/:slug/terms  — fetch terms & conditions for a form ─
+router.get("/public/form/:slug/terms", async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const lang = (req.query.lang as string) || "en";
+
+    const [form] = await db
+      .select({ id: applicationForms.id })
+      .from(applicationForms)
+      .where(eq(applicationForms.slug, slug))
+      .limit(1);
+
+    if (!form) return res.status(404).json({ error: "Form not found" });
+
+    // Try exact language first, then default, then any
+    const rows = await db
+      .select()
+      .from(formTermsContent)
+      .where(eq(formTermsContent.formId, form.id));
+
+    if (rows.length === 0) return res.json({ content: null, language: null });
+
+    const exact   = rows.find(r => r.language === lang);
+    const def     = rows.find(r => r.isDefault);
+    const fallback = rows.find(r => r.language === "en") ?? rows[0];
+    const chosen  = exact ?? def ?? fallback;
+
+    return res.json({ content: chosen.content, language: chosen.language });
+  } catch (err) {
+    console.error("[GET /public/form/:slug/terms]", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });

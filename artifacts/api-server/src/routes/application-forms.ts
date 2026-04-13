@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { applicationForms, applicationFormPartners } from "@workspace/db/schema";
+import { applicationForms, applicationFormPartners, formTermsContent } from "@workspace/db/schema";
 import { accounts, organisations } from "@workspace/db/schema";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -350,6 +350,78 @@ router.get("/partner-accounts", requireRole(...ADMIN_ROLES), async (req, res) =>
     return res.json(rows);
   } catch (err) {
     console.error("[GET /api/partner-accounts]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── Terms Content ───────────────────────────────────────────────────────────
+
+// GET /api/application-forms/:formId/terms  — list all language versions
+router.get("/application-forms/:formId/terms", requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { formId } = req.params;
+    const rows = await db
+      .select()
+      .from(formTermsContent)
+      .where(eq(formTermsContent.formId, formId))
+      .orderBy(formTermsContent.language);
+    return res.json(rows);
+  } catch (err) {
+    console.error("[GET /api/application-forms/:formId/terms]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PUT /api/application-forms/:formId/terms/:lang  — upsert a language version
+router.put("/application-forms/:formId/terms/:lang", requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { formId, lang } = req.params;
+    const { content, isDefault } = req.body;
+    if (!content) return res.status(400).json({ error: "content is required" });
+
+    // if setting this as default, clear others
+    if (isDefault) {
+      await db
+        .update(formTermsContent)
+        .set({ isDefault: false })
+        .where(eq(formTermsContent.formId, formId));
+    }
+
+    const existing = await db
+      .select({ id: formTermsContent.id })
+      .from(formTermsContent)
+      .where(and(eq(formTermsContent.formId, formId), eq(formTermsContent.language, lang)));
+
+    let row;
+    if (existing.length > 0) {
+      [row] = await db
+        .update(formTermsContent)
+        .set({ content, isDefault: !!isDefault, updatedAt: new Date() })
+        .where(and(eq(formTermsContent.formId, formId), eq(formTermsContent.language, lang)))
+        .returning();
+    } else {
+      [row] = await db
+        .insert(formTermsContent)
+        .values({ formId, language: lang, content, isDefault: !!isDefault })
+        .returning();
+    }
+    return res.json(row);
+  } catch (err) {
+    console.error("[PUT /api/application-forms/:formId/terms/:lang]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE /api/application-forms/:formId/terms/:lang
+router.delete("/application-forms/:formId/terms/:lang", requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { formId, lang } = req.params;
+    await db
+      .delete(formTermsContent)
+      .where(and(eq(formTermsContent.formId, formId), eq(formTermsContent.language, lang)));
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("[DELETE /api/application-forms/:formId/terms/:lang]", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
