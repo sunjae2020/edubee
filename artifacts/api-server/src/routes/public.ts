@@ -254,6 +254,8 @@ const publicApplicationSchema = z.object({
   specialRequests: z.string().optional(),
   signatureImage: z.string().optional(),
   termsAccepted: z.literal(true),
+  emergencyContactName: z.string().optional(),
+  emergencyContactPhone: z.string().optional(),
   participants: z.array(participantSchema).min(1),
 });
 
@@ -370,9 +372,10 @@ router.post("/public/applications", async (req, res) => {
     if (data.packageId) {
       try {
         const studentCount = data.participants.filter(p => p.participantType !== "adult").length;
-        const adultCount   = data.participants.filter(p => p.participantType === "adult").length;
+        // adultCount = 1 (main applicant/contact) + accompanying adults
+        const adultCount = 1 + data.participants.filter(p => p.participantType === "adult").length;
 
-        await db.insert(campApplications).values({
+        const [newCampApp] = await db.insert(campApplications).values({
           applicationRef: applicationNumber,
           packageGroupId: data.packageGroupId,
           packageId: data.packageId,
@@ -388,9 +391,19 @@ router.post("/public/applications", async (req, res) => {
           adultCount,
           preferredStartDate: data.preferredStartDate ?? null,
           specialRequirements: data.specialRequests ?? null,
+          emergencyContactName: data.emergencyContactName ?? null,
+          emergencyContactPhone: data.emergencyContactPhone ?? null,
           applicationStatus: "submitted",
           status: "Active",
-        });
+        }).returning();
+
+        // Link participants to this campApplication so admin detail can find them
+        if (newCampApp?.id) {
+          await db
+            .update(applicationParticipants)
+            .set({ campApplicationId: newCampApp.id })
+            .where(eq(applicationParticipants.applicationId, newApp.id));
+        }
       } catch (mirrorErr) {
         console.error("[public/applications] camp_applications mirror failed:", mirrorErr);
       }

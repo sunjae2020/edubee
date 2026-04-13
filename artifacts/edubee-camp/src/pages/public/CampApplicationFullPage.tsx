@@ -255,6 +255,8 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
   const [applicant, setApplicant] = useState<MainApplicant>(mkApplicant());
   const [adults, setAdults] = useState<Adult[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
+  const [emergencyContactName, setEmergencyContactName] = useState("");
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [signatureImage, setSignatureImage] = useState<string | null>(null);
   const [signatureDate, setSignatureDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -299,6 +301,8 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
     if (!applicant.firstName) e.firstName = t("common.required");
     if (!applicant.lastName) e.lastName = t("common.required");
     if (!applicant.phone) e.phone = t("common.required");
+    if (!emergencyContactName.trim()) e.emergencyContactName = t("common.required");
+    if (!emergencyContactPhone.trim()) e.emergencyContactPhone = t("common.required");
     if (!termsAccepted) e.terms = "Please read and accept the Terms & Conditions.";
     if (!signatureImage) e.signatureName = "Please draw your signature above.";
     if (!signatureDate) e.signatureDate = t("common.required");
@@ -369,6 +373,8 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
         termsAccepted: true,
         signatureImage: signatureImage ?? undefined,
         signatureDate: signatureDate,
+        emergencyContactName: emergencyContactName || undefined,
+        emergencyContactPhone: emergencyContactPhone || undefined,
         participants,
       });
       setSubmitted(data.applicationNumber);
@@ -624,7 +630,28 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
             ))}
           </Section>
 
-          {/* ── Section 5: Terms & Conditions ── */}
+          {/* ── Section 5: Emergency Contact ── */}
+          <Section id="sec-emergency" icon="🚨" title="Emergency Contact"
+            subtitle="Person to contact in case of emergency (if different from main applicant)">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Fld label="Emergency Contact Name" required error={errors.emergencyContactName}>
+                <Inp
+                  value={emergencyContactName}
+                  onChange={setEmergencyContactName}
+                  placeholder="Full name"
+                />
+              </Fld>
+              <Fld label="Emergency Contact Phone" required error={errors.emergencyContactPhone}>
+                <Inp
+                  value={emergencyContactPhone}
+                  onChange={setEmergencyContactPhone}
+                  placeholder="+82 10-1234-5678"
+                />
+              </Fld>
+            </div>
+          </Section>
+
+          {/* ── Section 6: Terms & Conditions ── */}
           <Section id="sec-terms" icon="📄" title="Terms & Conditions">
 
             {/* Terms content box */}
