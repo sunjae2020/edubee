@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   ChevronRight, FileText, GitMerge, Loader2,
   User, Users, CalendarCheck, Video, MapPin, CheckCircle2, XCircle, Clock, AlertCircle,
-  Pencil, X, Check, Plus, Trash2, Package, ChevronLeft, ListChecks, FileSignature,
+  Pencil, X, Check, Plus, Trash2, Package, ChevronLeft, ListChecks, FileSignature, FileDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
@@ -316,7 +316,21 @@ export default function CampApplications() {
                     {app.createdAt ? formatDate(app.createdAt) : "—"}
                   </td>
                   <td className="px-4 py-3"><AppStatusBadge status={app.status} /></td>
-                  <td className="px-4 py-3"><ChevronRight className="w-4 h-4 text-muted-foreground" /></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        title="Download PDF"
+                        onClick={e => {
+                          e.stopPropagation();
+                          window.open(`${BASE}/api/camp-applications/${app.id}/pdf`, "_blank");
+                        }}
+                        className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <FileDown className="w-4 h-4" />
+                      </button>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </td>
                 </tr>
               ))
             )}

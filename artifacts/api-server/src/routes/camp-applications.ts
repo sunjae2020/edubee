@@ -6,6 +6,7 @@ import { packageProducts, products, packageGroups, packages as pkgsTable } from 
 import { eq, ilike, or, count, and, desc, SQL, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { generateCampApplicationPdf, CampAppEmailData } from "../services/campApplicationEmailService.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
@@ -103,6 +104,87 @@ router.get("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
   } catch (err) {
     console.error("[GET /api/camp-applications/:id]", err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /api/camp-applications/:id/pdf — generate and download PDF
+router.get("/camp-applications/:id/pdf", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    if (!UUID_RE.test(req.params.id))
+      return res.status(400).json({ error: "Invalid application ID format" });
+
+    const [app] = await db.select().from(campApplications)
+      .where(eq(campApplications.id, req.params.id)).limit(1);
+    if (!app) return res.status(404).json({ error: "Application not found" });
+
+    // Resolve program / package names
+    const [pgRow] = app.packageGroupId
+      ? await db.select({ nameEn: packageGroups.nameEn })
+          .from(packageGroups).where(eq(packageGroups.id, app.packageGroupId)).limit(1)
+      : [null];
+
+    const [pkgRow] = app.packageId
+      ? await db.select({ name: pkgsTable.name })
+          .from(pkgsTable).where(eq(pkgsTable.id, app.packageId)).limit(1)
+      : [null];
+
+    // Fetch participants
+    const rawParticipants = await db.select().from(applicationParticipants)
+      .where(eq(applicationParticipants.campApplicationId, req.params.id));
+
+    const participants: CampAppEmailData["participants"] = rawParticipants.map(p => ({
+      participantType:        p.participantType ?? "student",
+      firstName:              p.firstName ?? "",
+      lastName:               p.lastName  ?? "",
+      dateOfBirth:            p.dateOfBirth ?? undefined,
+      gender:                 p.gender ?? undefined,
+      nationality:            p.nationality ?? undefined,
+      passportNumber:         p.passportNumber ?? undefined,
+      passportExpiry:         p.passportExpiry ?? undefined,
+      grade:                  p.grade ?? undefined,
+      schoolName:             p.schoolName ?? undefined,
+      englishLevel:           p.englishLevel ?? undefined,
+      medicalConditions:      p.medicalConditions ?? undefined,
+      dietaryRequirements:    p.dietaryRequirements ?? undefined,
+      specialNeeds:           p.specialNeeds ?? undefined,
+      relationshipToStudent:  p.relationshipToStudent ?? undefined,
+      phone:                  p.phone ?? undefined,
+      email:                  p.email ?? undefined,
+      whatsapp:               p.whatsapp ?? undefined,
+    }));
+
+    const data: CampAppEmailData = {
+      applicationNumber:     app.applicationNumber ?? "N/A",
+      packageGroupId:        app.packageGroupId ?? "",
+      packageId:             app.packageId ?? undefined,
+      programName:           pgRow?.nameEn ?? undefined,
+      packageName:           pkgRow?.name  ?? undefined,
+      applicantFirstName:    app.applicantFirstName ?? "",
+      applicantLastName:     app.applicantLastName  ?? "",
+      applicantPhone:        app.applicantPhone     ?? undefined,
+      applicantEmail:        app.applicantEmail     ?? undefined,
+      preferredStartDate:    app.preferredStartDate ?? undefined,
+      specialRequests:       app.specialRequests    ?? undefined,
+      emergencyContactName:  app.emergencyContactName  ?? undefined,
+      emergencyContactPhone: app.emergencyContactPhone ?? undefined,
+      signatureImage:        app.signatureImage   ?? undefined,
+      signatureDate:         app.signatureDate    ?? undefined,
+      referralAgentCode:     app.referralAgentCode ?? undefined,
+      referralSource:        app.referralSource   ?? undefined,
+      primaryLanguage:       app.primaryLanguage  ?? undefined,
+      participants,
+    };
+
+    const pdfBuffer = await generateCampApplicationPdf(data);
+    const filename = `camp-application-${app.applicationNumber ?? req.params.id}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    return res.send(pdfBuffer);
+  } catch (err) {
+    console.error("[GET /api/camp-applications/:id/pdf]", err);
+    return res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
 

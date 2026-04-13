@@ -290,7 +290,7 @@ function CampApplicationDocument({
 
 // ─── Generate PDF Buffer ──────────────────────────────────────────────────────
 
-async function generateCampApplicationPdf(data: CampAppEmailData): Promise<Buffer> {
+export async function generateCampApplicationPdf(data: CampAppEmailData): Promise<Buffer> {
   const logoDataUri = await getLogoDataUri();
   const element = React.createElement(CampApplicationDocument, { data, logoDataUri });
   const buffer = await renderToBuffer(element as any);
