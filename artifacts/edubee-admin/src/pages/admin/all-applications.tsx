@@ -6,7 +6,7 @@ import axios from "axios";
 import {
   Search, Plus, Download, ChevronDown,
   Tent, GraduationCap, Plane, Building2, Briefcase,
-  Shield, Stamp, Car, Globe, Bus,
+  Shield, Stamp, Car, Globe, Bus, FileDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -351,17 +351,18 @@ export default function AllApplicationsPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Assigned Staff</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Date</th>
+              <th className="px-4 py-3 w-10" />
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={7} className="text-center py-12 text-muted-foreground text-sm">Loading...</td>
+                <td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">Loading...</td>
               </tr>
             )}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="text-center py-12 text-muted-foreground text-sm">No applications found</td>
+                <td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">No applications found</td>
               </tr>
             )}
             {rows.map((row, i) => (
@@ -392,6 +393,20 @@ export default function AllApplicationsPage() {
                 </td>
                 <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                   {row.createdAt ? formatDate(row.createdAt) : "—"}
+                </td>
+                <td className="px-4 py-3">
+                  {row.sourceType === "camp" && (
+                    <button
+                      title="Download PDF"
+                      onClick={e => {
+                        e.stopPropagation();
+                        window.open(`${BASE}/api/camp-applications/${row.id}/pdf`, "_blank");
+                      }}
+                      className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <FileDown className="w-4 h-4" />
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
