@@ -81,108 +81,127 @@ const TABS = [
 type TabKey = (typeof TABS)[number]["key"];
 
 // ── Overview Tab ───────────────────────────────────────────────────────────
-function OverviewTab({ contract, onEditContract, primaryServiceType, setPrimaryServiceType, onAddService }: {
+function OverviewTab({ contract, onEditContract }: {
   contract: any;
   onEditContract: () => void;
-  primaryServiceType: string;
-  setPrimaryServiceType: (s: string) => void;
-  onAddService: (defaultType?: string) => void;
+  primaryServiceType?: string;
+  setPrimaryServiceType?: (s: string) => void;
+  onAddService?: (defaultType?: string) => void;
 }) {
   const [, navigate] = useLocation();
   const arPct = contract.totalArAmount > 0
     ? Math.round((((contract.totalArAmount - (contract.arOutstanding ?? 0)) / contract.totalArAmount) * 100))
     : 0;
+  const apPct = contract.totalApAmount > 0
+    ? Math.round((((contract.totalApAmount - (contract.apOutstanding ?? 0)) / contract.totalApAmount) * 100))
+    : 0;
   const readyItems = (contract.contractProducts ?? []).filter((cp: any) => cp.apStatus === "ready");
+  const netRevenue = (contract.totalArAmount ?? 0) - (contract.totalApAmount ?? 0);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      {/* Left: Contract Details */}
-      <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Action Required Alert */}
+      {readyItems.length > 0 && (
+        <div className="flex items-center gap-3 border border-amber-200 rounded-xl px-4 py-3 bg-amber-50">
+          <AlertCircle size={16} className="text-amber-500 shrink-0" />
+          <p className="text-sm text-amber-700">
+            <span className="font-semibold">Action Required:</span>{" "}
+            {readyItems.length} AP instalment{readyItems.length > 1 ? "s" : ""} ready to be remitted.
+          </p>
+        </div>
+      )}
+
+      {/* 2-column main grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Left: Contract Details */}
         <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-[#1C1917]">Contract Details</h3>
             <button onClick={onEditContract}
               className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#57534E]">
               <Pencil size={13} />
             </button>
           </div>
-          <InfoRow label="Quote Ref" value={
-            contract.quote?.id && contract.quote?.quoteRefNumber
-              ? (
-                <button
-                  onClick={() => navigate(`/admin/crm/quotes/${contract.quote.id}`)}
-                  className="font-mono text-(--e-orange) hover:text-[#E5721F] hover:underline flex items-center gap-1 text-right"
-                >
-                  {contract.quote.quoteRefNumber}
-                  <ExternalLink size={11} />
-                </button>
-              )
-              : (contract.quote?.quoteRefNumber ?? "—")
-          } />
-          <InfoRow label="Payment Count"   value={
-            contract.contractProducts?.length
-              ? `${contract.contractProducts.length} instalment${contract.contractProducts.length > 1 ? "s" : ""}`
-              : "—"
-          } />
-          <InfoRow label="Contract From"   value={fmtDate(contract.fromDate)} />
-          <InfoRow label="Contract To"     value={fmtDate(contract.toDate)} />
-          {contract.fromDate && contract.toDate && (() => {
-            const days = Math.round((new Date(contract.toDate).getTime() - new Date(contract.fromDate).getTime()) / 86400000) + 1;
-            return <InfoRow label="Duration" value={
-              <span className="font-semibold" style={{ color:"var(--e-orange)" }}>{days === 1 ? "1 day" : `${days} days`}</span>
-            } />;
-          })()}
-          <InfoRow label="Notes"           value={contract.notes} />
+          <div className="space-y-0">
+            <InfoRow label="Ref No." value={<span className="font-mono font-semibold text-[#1C1917]">{contract.contractRefDisplay ?? "—"}</span>} />
+            <InfoRow label="Quote Ref" value={
+              contract.quote?.id && contract.quote?.quoteRefNumber
+                ? (
+                  <button onClick={() => navigate(`/admin/crm/quotes/${contract.quote.id}`)}
+                    className="font-mono text-(--e-orange) hover:underline flex items-center gap-1">
+                    {contract.quote.quoteRefNumber} <ExternalLink size={11} />
+                  </button>
+                )
+                : (contract.quote?.quoteRefNumber ?? "—")
+            } />
+            <InfoRow label="Period" value={
+              contract.fromDate && contract.toDate
+                ? `${fmtDate(contract.fromDate)} → ${fmtDate(contract.toDate)}`
+                : fmtDate(contract.fromDate) ?? "—"
+            } />
+            {contract.fromDate && contract.toDate && (() => {
+              const days = Math.round((new Date(contract.toDate).getTime() - new Date(contract.fromDate).getTime()) / 86400000) + 1;
+              return <InfoRow label="Duration" value={
+                <span className="font-semibold" style={{ color:"var(--e-orange)" }}>{days === 1 ? "1 day" : `${days} days`}</span>
+              } />;
+            })()}
+            <InfoRow label="Instalments" value={
+              contract.contractProducts?.length
+                ? `${contract.contractProducts.length} instalment${contract.contractProducts.length > 1 ? "s" : ""}`
+                : "—"
+            } />
+            <InfoRow label="Signed" value={fmtDate(contract.signedAt) ?? "Not signed"} />
+            {contract.notes && <InfoRow label="Notes" value={contract.notes} />}
+          </div>
         </div>
-      </div>
 
-      {/* Center: AR/AP + Alerts */}
-      <div className="space-y-4">
+        {/* Right: Financial Progress */}
         <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-[#1C1917] mb-3">AR / AP Progress</h3>
+          <h3 className="text-sm font-semibold text-[#1C1917] mb-4">Financial Progress</h3>
+
+          {/* Key numbers */}
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="bg-[#FAFAF9] rounded-lg p-3 text-center">
+              <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Contract Value</p>
+              <p className="text-base font-bold text-[#1C1917]">{fmtMoney(contract.contractAmount)}</p>
+            </div>
+            <div className="bg-[#FAFAF9] rounded-lg p-3 text-center">
+              <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Net Revenue</p>
+              <p className="text-base font-bold" style={{ color: netRevenue >= 0 ? "var(--e-orange)" : "#DC2626" }}>
+                {fmtMoney(netRevenue)}
+              </p>
+            </div>
+          </div>
+
+          {/* AR Progress */}
           <div className="space-y-3">
             <div>
-              <div className="flex justify-between text-xs text-[#57534E] mb-1">
-                <span>AR Collected</span>
-                <span className="font-medium" style={{ color:"var(--e-orange)" }}>{fmtMoney(contract.totalArAmount)}</span>
+              <div className="flex justify-between text-xs mb-1.5">
+                <span className="text-[#57534E] font-medium">AR Collected</span>
+                <span className="font-semibold" style={{ color:"var(--e-orange)" }}>
+                  {fmtMoney(contract.totalArAmount)} <span className="text-[#A8A29E] font-normal">({arPct}%)</span>
+                </span>
               </div>
               <div className="h-2 rounded-full bg-[#F4F3F1] overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${Math.min(arPct,100)}%`, background:"var(--e-orange)" }} />
+                <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(arPct,100)}%`, background:"var(--e-orange)" }} />
               </div>
+              {contract.arOutstanding > 0 && (
+                <p className="text-[11px] text-[#A8A29E] mt-1">Outstanding: {fmtMoney(contract.arOutstanding)}</p>
+              )}
             </div>
             <div>
-              <div className="flex justify-between text-xs text-[#57534E] mb-1">
-                <span>AP Remitted</span>
-                <span className="font-medium" style={{ color:"#DC2626" }}>{fmtMoney(contract.totalApAmount)}</span>
+              <div className="flex justify-between text-xs mb-1.5">
+                <span className="text-[#57534E] font-medium">AP Remitted</span>
+                <span className="font-semibold text-[#DC2626]">
+                  {fmtMoney(contract.totalApAmount)} <span className="text-[#A8A29E] font-normal">({apPct}%)</span>
+                </span>
               </div>
               <div className="h-2 rounded-full bg-[#F4F3F1] overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${Math.min(arPct,100)}%`, background:"#DC2626" }} />
+                <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(apPct,100)}%`, background:"#DC2626" }} />
               </div>
             </div>
           </div>
         </div>
-
-        {readyItems.length > 0 && (
-          <div className="border border-(--e-orange)/30 rounded-xl p-4" style={{ background:"#FFFCF9" }}>
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle size={14} style={{ color:"var(--e-orange)" }} />
-              <span className="text-sm font-semibold" style={{ color:"var(--e-orange)" }}>Action Required</span>
-            </div>
-            <p className="text-xs text-[#57534E]">
-              {readyItems.length} AP instalment{readyItems.length > 1 ? "s" : ""} are ready to be remitted.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Right: Services Panel */}
-      <div>
-        <ServicesPanel
-          contract={contract}
-          primaryServiceType={primaryServiceType}
-          setPrimaryServiceType={setPrimaryServiceType}
-          onAddService={onAddService}
-        />
       </div>
     </div>
   );
@@ -3560,61 +3579,31 @@ export default function ContractDetailPage() {
         </div>
       </div>
 
-      {/* Camp Application Badge — only shown when this contract originated from a camp application */}
-      {linkedCampApp && (
-        <div className="bg-white border-b border-[#F4F3F1] px-6 py-2.5">
-          <div style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "var(--e-orange-lt)",
-            border: "1px solid var(--e-orange-ring)",
-            borderRadius: 8,
-            padding: "8px 16px",
-            fontSize: 13,
-            color: "var(--e-orange)",
-          }}>
-            <span>📋</span>
-            <span>Camp Application: <strong>{linkedCampApp.applicationRef ?? linkedCampApp.id}</strong></span>
-            <button
-              onClick={() => navigate(`/admin/camp-applications/${linkedCampApp.id}`)}
-              style={{ fontWeight: 600, cursor: "pointer", background: "none", border: "none", color: "var(--e-orange)", padding: 0 }}
-              onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
-              onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
-            >
-              View →
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Compact summary strip */}
+      <div className="px-6 pt-4 pb-0">
+        <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
+          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-[#F4F3F1]">
 
-      <div className="p-6 pb-0">
-
-        {/* 3 Info Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Student */}
-          <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              {(() => { const b = getAccountTypeBadge(contract.studentAccount?.accountType); return (
-                <span className="text-[12px] font-medium rounded-full px-2.5 py-0.5"
-                  style={{ background: b.bg, color: b.color }}>{b.label}</span>
-              ); })()}
-              <div className="flex items-center gap-1">
-                <button onClick={() => setEditingAccount(true)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#57534E]">
-                  <Pencil size={13} />
-                </button>
-                {(contract.studentAccount?.id ?? contract.account?.id) && (
-                  <button onClick={() => navigate(`/admin/crm/accounts/${contract.studentAccount?.id ?? contract.account?.id}`)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-(--e-orange)">
-                    <ExternalLink size={13} />
+            {/* Client */}
+            <div className="px-4 py-3 flex flex-col gap-0.5 min-w-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                {(() => { const b = getAccountTypeBadge(contract.studentAccount?.accountType); return (
+                  <span className="text-[10px] font-semibold rounded-full px-2 py-0.5 shrink-0"
+                    style={{ background: b.bg, color: b.color }}>{b.label}</span>
+                ); })()}
+                <div className="flex items-center gap-0.5 ml-auto">
+                  <button onClick={() => setEditingAccount(true)}
+                    className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]">
+                    <Pencil size={11} />
                   </button>
-                )}
+                  {(contract.studentAccount?.id ?? contract.account?.id) && (
+                    <button onClick={() => navigate(`/admin/crm/accounts/${contract.studentAccount?.id ?? contract.account?.id}`)}
+                      className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-(--e-orange)">
+                      <ExternalLink size={11} />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-            {/* Name — always */}
-            <div className="mb-2">
-              <span className="block text-[11px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-0.5">Name</span>
               <ClientNameDisplay
                 fields={nameFromAccount({
                   firstName:    contract.studentAccount?.firstName  ?? contract.account?.firstName,
@@ -3622,91 +3611,102 @@ export default function ContractDetailPage() {
                   originalName: contract.studentAccount?.originalName ?? contract.account?.originalName,
                   name:         contract.studentAccount?.name       ?? contract.account?.name,
                 })}
-                size="md"
+                size="sm"
               />
+              {(() => {
+                const aType = contract.studentAccount?.accountType ?? contract.account?.accountType;
+                const email = aType === "Student"
+                  ? (contract.studentContact?.email ?? contract.studentAccount?.email)
+                  : (contract.studentAccount?.email ?? contract.account?.email);
+                const phone = aType === "Student"
+                  ? (contract.studentContact?.phone ?? contract.studentAccount?.phone)
+                  : (contract.studentAccount?.phone ?? contract.account?.phone);
+                const extra = aType === "Student"
+                  ? contract.studentContact?.nationality
+                  : (contract.studentAccount?.country ?? contract.account?.country);
+                return (
+                  <div className="mt-1 space-y-0.5">
+                    {extra && <p className="text-[11px] text-[#A8A29E] truncate">{extra}</p>}
+                    {email && <p className="text-[11px] text-[#57534E] truncate">{email}</p>}
+                    {phone && <p className="text-[11px] text-[#57534E]">{phone}</p>}
+                  </div>
+                );
+              })()}
             </div>
-            {/* Type-specific middle rows */}
-            {(() => {
-              const aType = contract.studentAccount?.accountType ?? contract.account?.accountType;
-              if (aType === "Student") {
-                return (
-                  <>
-                    <InfoRow label="Nationality" value={contract.studentContact?.nationality} />
-                    <InfoRow label="Email"        value={contract.studentContact?.email ?? contract.studentAccount?.email} />
-                    <InfoRow label="Phone"        value={contract.studentContact?.phone ?? contract.studentAccount?.phone} />
-                  </>
-                );
-              }
-              if (["Organisation","Branch","Sub_Agency","Super_Agency","Agent"].includes(aType ?? "")) {
-                return (
-                  <>
-                    <InfoRow label="Country" value={contract.studentAccount?.country ?? contract.account?.country} />
-                    <InfoRow label="Email"   value={contract.studentAccount?.email ?? contract.account?.email} />
-                    <InfoRow label="Phone"   value={contract.studentAccount?.phone ?? contract.account?.phone} />
-                  </>
-                );
-              }
-              // Default: School, Supplier, Staff, Provider, Partner, etc.
-              return (
-                <>
-                  <InfoRow label="Email" value={contract.studentAccount?.email ?? contract.account?.email} />
-                  <InfoRow label="Phone" value={contract.studentAccount?.phone ?? contract.account?.phone} />
-                </>
-              );
-            })()}
-            {/* Owner — always */}
-            <InfoRow label="Owner (EC)"  value={contract.studentOwner?.name ?? contract.owner?.name} />
-          </div>
 
-          {/* Primary Service */}
-          <div className="bg-white rounded-xl p-5" style={{ border:"2px solid var(--e-orange)" }}>
-            <div className="flex items-center gap-2 mb-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Primary Service</p>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-(--e-orange-lt) text-(--e-orange)">
+            {/* Primary Service */}
+            <div className="px-4 py-3 flex flex-col gap-0.5 min-w-0">
+              <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Primary Service</p>
+              <span className="inline-flex self-start px-2 py-0.5 rounded-full text-[10px] font-semibold bg-(--e-orange-lt) text-(--e-orange) mb-1">
                 {primaryServiceType.replace(/_/g," ").replace(/\b\w/g,(c: string)=>c.toUpperCase())}
               </span>
+              {primDates.from && (
+                <p className="text-[12px] text-[#1C1917] font-medium">
+                  {fmtDate(primDates.from)}{primDates.to ? ` → ${fmtDate(primDates.to)}` : ""}
+                </p>
+              )}
+              {primDates.dur && (
+                <p className="text-[11px] font-semibold" style={{ color:"var(--e-orange)" }}>{primDates.dur}</p>
+              )}
+              {primData && "programName" in primData && primData.programName && (
+                <p className="text-[11px] text-[#57534E] truncate mt-0.5">{primData.programName}</p>
+              )}
+              {!primData && <p className="text-[11px] text-[#A8A29E]">No service data</p>}
             </div>
-            {primData ? (
-              <>
-                {primDates.from && <InfoRow label="From" value={<span className="font-medium">{fmtDate(primDates.from)}</span>} />}
-                {primDates.to   && <InfoRow label="To"   value={<span className="font-medium">{fmtDate(primDates.to)}</span>} />}
-                {primDates.dur  && (
-                  <InfoRow label="Duration" value={
-                    <span className="font-semibold" style={{ color:"var(--e-orange)" }}>{primDates.dur}</span>
-                  } />
-                )}
-                {"programName"   in primData && primData.programName   && <InfoRow label="Program" value={primData.programName} />}
-                {"type"          in primData && primData.type          && <InfoRow label="Type"    value={primData.type} />}
-                {"hostName"      in primData && primData.hostName      && <InfoRow label="Host"    value={primData.hostName} />}
-                {"positionTitle" in primData && primData.positionTitle && <InfoRow label="Position" value={primData.positionTitle} />}
-                {"tourName"      in primData && primData.tourName      && <InfoRow label="Tour"    value={primData.tourName} />}
-                {"roomType"      in primData && primData.roomType      && <InfoRow label="Room"    value={primData.roomType} />}
-                {"title"         in primData && primData.title         && <InfoRow label="Service" value={primData.title} />}
-                {"coeNumber"     in primData && primData.coeNumber     && <InfoRow label="COE"     value={primData.coeNumber} />}
-                {"visaType"      in primData && primData.visaType      && <InfoRow label="Visa"    value={primData.visaType} />}
-              </>
-            ) : (
-              <p className="text-sm text-[#A8A29E]">No primary service data</p>
-            )}
-          </div>
 
-          {/* Financial Summary */}
-          <div className="bg-white border border-[#E8E6E2] rounded-xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Financial Summary</p>
-              <button onClick={() => setEditingContract(true)}
-                className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] transition-colors text-[#A8A29E] hover:text-[#57534E]">
-                <Pencil size={13} />
-              </button>
+            {/* Financial */}
+            <div className="px-4 py-3 flex flex-col gap-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide">Financials</p>
+                <button onClick={() => setEditingContract(true)}
+                  className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]">
+                  <Pencil size={11} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between text-[12px]">
+                <span className="text-[#A8A29E]">Value</span>
+                <span className="font-semibold text-[#1C1917]">{fmtMoney(contract.contractAmount)}</span>
+              </div>
+              <div className="flex items-center justify-between text-[12px]">
+                <span className="text-[#A8A29E]">AR</span>
+                <span className="font-semibold" style={{ color:"var(--e-orange)" }}>{fmtMoney(contract.totalArAmount)}</span>
+              </div>
+              <div className="flex items-center justify-between text-[12px]">
+                <span className="text-[#A8A29E]">AP</span>
+                <span className="font-semibold text-[#DC2626]">{fmtMoney(contract.totalApAmount)}</span>
+              </div>
+              <div className="flex items-center justify-between text-[12px] pt-1 border-t border-[#F4F3F1]">
+                <span className="text-[#A8A29E]">Net Rev.</span>
+                <span className="font-bold" style={{ color:"var(--e-orange)" }}>
+                  {fmtMoney((contract.totalArAmount ?? 0) - (contract.totalApAmount ?? 0))}
+                </span>
+              </div>
             </div>
-            <InfoRow label="Contract Value" value={fmtMoney(contract.contractAmount)} />
-            <InfoRow label="Total AR"       value={<span className="font-semibold" style={{ color:"var(--e-orange)" }}>{fmtMoney(contract.totalArAmount)}</span>} />
-            <InfoRow label="Total AP"       value={<span className="font-semibold" style={{ color:"#DC2626" }}>{fmtMoney(contract.totalApAmount)}</span>} />
-            <InfoRow label="Est. Net Rev."  value={
-              <span className="font-bold" style={{ color:"var(--e-orange)" }}>
-                {fmtMoney((contract.totalArAmount ?? 0) - (contract.totalApAmount ?? 0))}
-              </span>
-            } />
+
+            {/* EC Owner + Quick Links */}
+            <div className="px-4 py-3 flex flex-col gap-1 min-w-0">
+              <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wide mb-1">Assigned To</p>
+              <p className="text-[13px] font-semibold text-[#1C1917]">
+                {contract.studentOwner?.name ?? contract.owner?.name ?? "—"}
+              </p>
+              {contract.agentName && (
+                <p className="text-[11px] text-[#57534E]">
+                  Agent: {contract.agentName}
+                  {contract.agentInitial && <span className="ml-1 text-[#A8A29E]">({contract.agentInitial})</span>}
+                </p>
+              )}
+              {contract.kakaoName && (
+                <p className="text-[11px] text-[#A8A29E]">Kakao: {contract.kakaoName}</p>
+              )}
+              {linkedCampApp && (
+                <button
+                  onClick={() => navigate(`/admin/camp-applications/${linkedCampApp.id}`)}
+                  className="mt-1 inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                  style={{ background:"var(--e-orange-lt)", color:"var(--e-orange)" }}>
+                  📋 Camp App: {linkedCampApp.applicationRef ?? linkedCampApp.id}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -3743,9 +3743,6 @@ export default function ContractDetailPage() {
             <OverviewTab
               contract={contract}
               onEditContract={() => setEditingContract(true)}
-              primaryServiceType={primaryServiceType}
-              setPrimaryServiceType={handleSetPrimary}
-              onAddService={openAddService}
             />
             {(contract.campApplication || contract.quote) && (
               <DetailSection title="Linked Records">
