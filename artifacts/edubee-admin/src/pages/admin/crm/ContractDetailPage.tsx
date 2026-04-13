@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment, lazy, Suspense } from "react";
+const ContractSignatureTab = lazy(() => import("@/components/contracts/ContractSignatureTab"));
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -74,6 +75,7 @@ const TABS = [
   { key: "schedule",     label: "Payment Schedule" },
   { key: "transactions", label: "Transactions"     },
   { key: "documents",    label: "Documents"        },
+  { key: "signature",    label: "E-Signature"      },
   { key: "activity",     label: "Activity"         },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
@@ -3843,6 +3845,11 @@ export default function ContractDetailPage() {
         {activeTab === "schedule"     && <PaymentScheduleTab     contract={contract} />}
         {activeTab === "transactions" && <UnifiedTransactionsTab contract={contract} onRecordPayment={() => setRecordingPayment(true)} />}
         {activeTab === "documents"    && <DocumentsTab contractId={String(contract.id)} />}
+        {activeTab === "signature"    && (
+          <Suspense fallback={<div className="py-8 text-center text-sm text-muted-foreground">Loading…</div>}>
+            <ContractSignatureTab contractId={String(contract.id)} contract={contract as Record<string, unknown>} />
+          </Suspense>
+        )}
         {activeTab === "activity"     && <ActivityTab contractId={id!} />}
 
       </div>

@@ -94,6 +94,31 @@ export const contractProducts = pgTable("contract_products", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ── Contract E-Signature Requests ──────────────────────────────────────────────
+export const contractSigningRequests = pgTable("contract_signing_requests", {
+  id:             uuid("id").primaryKey().defaultRandom(),
+  contractId:     uuid("contract_id").references(() => contracts.id, { onDelete: "cascade" }),
+  organisationId: uuid("organisation_id"),
+  token:          varchar("token",   { length: 255 }).unique().notNull(),
+  status:         varchar("status",  { length: 50 }).default("pending"), // pending | signed | expired | cancelled
+  expiresAt:      timestamp("expires_at"),
+  // Signer configuration (set by admin)
+  signers:        jsonb("signers"),    // [{role, name, email, required}]
+  // Template data snapshot
+  contractData:   jsonb("contract_data"),
+  // Collected signatures
+  signatures:     jsonb("signatures"), // [{role, name, signatureImage, signedAt}]
+  // Generated PDF
+  pdfPath:        varchar("pdf_path", { length: 500 }),
+  pdfGeneratedAt: timestamp("pdf_generated_at"),
+  // Audit
+  requestedBy:    uuid("requested_by"),
+  signedAt:       timestamp("signed_at"),
+  createdAt:      timestamp("created_at").defaultNow(),
+  updatedAt:      timestamp("updated_at").defaultNow(),
+});
+export type ContractSigningRequest = typeof contractSigningRequests.$inferSelect;
+
 export const insertContractSchema = createInsertSchema(contracts).omit({
   id: true,
   createdAt: true,

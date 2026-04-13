@@ -13,6 +13,7 @@ import ApplyPage from "@/pages/public/ApplyPage";
 import OnboardPage from "@/pages/public/OnboardPage";
 import LeadInquiryPage from "@/pages/public/LeadInquiryPage";
 import PublicFormGateway from "@/pages/public/PublicFormGateway";
+import SigningPage from "@/pages/public/SigningPage";
 import SuspendedPage from "@/pages/SuspendedPage";
 import Login from "@/pages/login";
 import Register from "@/pages/Register";
@@ -212,6 +213,7 @@ function Router() {
         <Route path="/onboard" component={OnboardPage} />
         <Route path="/suspended" component={SuspendedPage} />
         <Route path="/inquiry/:slug" component={LeadInquiryPage} />
+        <Route path="/sign/:token" component={SigningPage} />
 
         {/* Admin redirect */}
         <Route path="/admin"><Redirect to="/admin/dashboard" /></Route>
