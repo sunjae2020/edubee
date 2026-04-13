@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, staticDb } from "@workspace/db";
 import { contracts, contractSigningRequests, organisations } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
@@ -53,7 +53,7 @@ router.post("/:contractId/request", authenticate, requireRole(ADMIN_ROLES), asyn
       signedAt:       contract.signedAt,
     };
 
-    const [req_] = await db.insert(contractSigningRequests).values({
+    const [req_] = await staticDb.insert(contractSigningRequests).values({
       contractId,
       organisationId: contract.organisationId ?? undefined,
       token,
@@ -125,7 +125,7 @@ router.post("/:contractId/request", authenticate, requireRole(ADMIN_ROLES), asyn
 // Admin: get latest signing request status for a contract
 router.get("/status/:contractId", authenticate, async (req, res) => {
   try {
-    const rows = await db.select().from(contractSigningRequests)
+    const rows = await staticDb.select().from(contractSigningRequests)
       .where(eq(contractSigningRequests.contractId, req.params.contractId))
       .orderBy(contractSigningRequests.createdAt);
     res.json(rows);
@@ -138,7 +138,7 @@ router.get("/status/:contractId", authenticate, async (req, res) => {
 // PUBLIC (no auth): get signing request data for the signing page
 router.get("/public/:token", async (req, res) => {
   try {
-    const [row] = await db.select().from(contractSigningRequests)
+    const [row] = await staticDb.select().from(contractSigningRequests)
       .where(eq(contractSigningRequests.token, req.params.token)).limit(1);
     if (!row) return res.status(404).json({ error: "Signing request not found" });
 
@@ -146,7 +146,7 @@ router.get("/public/:token", async (req, res) => {
     if (row.status === "expired")   return res.status(410).json({ error: "expired",          message: "This signing link has expired." });
     if (row.status === "cancelled") return res.status(410).json({ error: "cancelled",        message: "This signing request has been cancelled." });
     if (row.expiresAt && new Date(row.expiresAt) < new Date()) {
-      await db.update(contractSigningRequests).set({ status: "expired" }).where(eq(contractSigningRequests.id, row.id));
+      await staticDb.update(contractSigningRequests).set({ status: "expired" }).where(eq(contractSigningRequests.id, row.id));
       return res.status(410).json({ error: "expired", message: "This signing link has expired." });
     }
 
@@ -166,12 +166,12 @@ router.get("/public/:token", async (req, res) => {
 // PUBLIC (no auth): submit signatures
 router.post("/public/:token/sign", async (req, res) => {
   try {
-    const [row] = await db.select().from(contractSigningRequests)
+    const [row] = await staticDb.select().from(contractSigningRequests)
       .where(eq(contractSigningRequests.token, req.params.token)).limit(1);
     if (!row) return res.status(404).json({ error: "Signing request not found" });
     if (row.status !== "pending") return res.status(410).json({ error: "This request is no longer active." });
     if (row.expiresAt && new Date(row.expiresAt) < new Date()) {
-      await db.update(contractSigningRequests).set({ status: "expired" }).where(eq(contractSigningRequests.id, row.id));
+      await staticDb.update(contractSigningRequests).set({ status: "expired" }).where(eq(contractSigningRequests.id, row.id));
       return res.status(410).json({ error: "Signing link has expired." });
     }
 
@@ -202,7 +202,7 @@ router.post("/public/:token/sign", async (req, res) => {
     fs.writeFileSync(pdfPath, pdfBuffer);
 
     const now = new Date();
-    await db.update(contractSigningRequests).set({
+    await staticDb.update(contractSigningRequests).set({
       status:         "signed",
       signatures,
       pdfPath,
@@ -228,7 +228,7 @@ router.post("/public/:token/sign", async (req, res) => {
 // Admin: download signed PDF
 router.get("/pdf/:id", authenticate, async (req, res) => {
   try {
-    const [row] = await db.select().from(contractSigningRequests)
+    const [row] = await staticDb.select().from(contractSigningRequests)
       .where(eq(contractSigningRequests.id, req.params.id)).limit(1);
     if (!row || !row.pdfPath || !fs.existsSync(row.pdfPath)) {
       return res.status(404).json({ error: "PDF not found" });
@@ -245,7 +245,7 @@ router.get("/pdf/:id", authenticate, async (req, res) => {
 // ── DELETE /api/contract-signing/:id/cancel ───────────────────────────────────
 router.delete("/:id/cancel", authenticate, requireRole(ADMIN_ROLES), async (req, res) => {
   try {
-    await db.update(contractSigningRequests)
+    await staticDb.update(contractSigningRequests)
       .set({ status: "cancelled", updatedAt: new Date() })
       .where(eq(contractSigningRequests.id, req.params.id));
     res.json({ success: true });
