@@ -344,7 +344,7 @@ export default function AllApplicationsPage() {
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-[var(--e-bg-sidebar)] z-10">
             <tr className="border-b border-[var(--e-border)]">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Ref No.</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap min-w-[200px]">Ref No.</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Applicant</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Programme / Service</th>
@@ -372,7 +372,7 @@ export default function AllApplicationsPage() {
                   i % 2 === 0 ? "bg-white" : "bg-[#FAFAF9]"
                 }`}
               >
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground w-[200px]">
+                <td className="px-4 py-3 font-mono text-xs text-muted-foreground min-w-[200px] w-[200px]">
                   <span className="line-clamp-2 break-words leading-relaxed">{row.ref ?? "—"}</span>
                 </td>
                 <td className="px-4 py-3">
