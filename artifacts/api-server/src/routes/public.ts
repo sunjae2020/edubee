@@ -22,6 +22,7 @@ import {
 import { eq, and, inArray, sql, desc, isNotNull, asc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { isReservedSubdomain } from "../utils/reservedSubdomains.js";
+import { sendCampApplicationEmails } from "../services/campApplicationEmailService.js";
 import { listTenantSchemas } from "../seeds/provision-tenant.js";
 import { onboardTenant } from "../services/onboardingService.js";
 import { getDefaultFeatures } from "../middleware/featureGuard.js";
@@ -409,10 +410,31 @@ router.post("/public/applications", async (req, res) => {
       }
     }
 
-    return res.status(201).json({
+    res.status(201).json({
       applicationNumber,
       message: "Application submitted successfully. We will contact you within 2 business days.",
     });
+
+    // Non-blocking: send email notifications with PDF attachment
+    sendCampApplicationEmails({
+      applicationNumber,
+      packageGroupId: data.packageGroupId,
+      packageId: data.packageId,
+      applicantFirstName: applicantFirstName ?? "",
+      applicantLastName:  applicantLastName  ?? "",
+      applicantPhone:     applicantPhone     ?? undefined,
+      applicantEmail:     applicantEmail,
+      preferredStartDate: data.preferredStartDate,
+      specialRequests:    data.specialRequests,
+      emergencyContactName:  data.emergencyContactName,
+      emergencyContactPhone: data.emergencyContactPhone,
+      referralAgentCode:  data.referralAgentCode,
+      referralSource:     data.referralSource,
+      primaryLanguage:    data.primaryLanguage,
+      participants: data.participants as any[],
+    }).catch(err => console.error("[CampEmail] Notification failed:", err));
+
+    return;
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Internal Server Error" });
