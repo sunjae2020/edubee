@@ -13,6 +13,19 @@ import { Input } from "@/components/ui/input";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+async function downloadCampPdf(id: string) {
+  const res = await axios.get(`${BASE}/api/camp-applications/${id}/pdf`, {
+    responseType: "blob",
+    withCredentials: true,
+  });
+  const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `camp-application-${id}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ── Source / service type config ───────────────────────────────────────────
 
 const SOURCE_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
@@ -398,10 +411,7 @@ export default function AllApplicationsPage() {
                   {row.sourceType === "camp" && (
                     <button
                       title="Download PDF"
-                      onClick={e => {
-                        e.stopPropagation();
-                        window.open(`${BASE}/api/camp-applications/${row.id}/pdf`, "_blank");
-                      }}
+                      onClick={e => { e.stopPropagation(); downloadCampPdf(row.id); }}
                       className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <FileDown className="w-4 h-4" />

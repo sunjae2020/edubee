@@ -30,6 +30,19 @@ import { NameFieldGroup } from "@/components/common/NameFieldGroup";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
 
+async function downloadCampPdf(id: string, label?: string) {
+  const res = await axios.get(`${BASE}/api/camp-applications/${id}/pdf`, {
+    responseType: "blob",
+    withCredentials: true,
+  });
+  const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `camp-application-${label ?? id}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 const APP_STATUSES = ["submitted", "reviewing", "quoted", "confirmed", "cancelled"];
 
 interface Application {
@@ -320,10 +333,7 @@ export default function CampApplications() {
                     <div className="flex items-center gap-2">
                       <button
                         title="Download PDF"
-                        onClick={e => {
-                          e.stopPropagation();
-                          window.open(`${BASE}/api/camp-applications/${app.id}/pdf`, "_blank");
-                        }}
+                        onClick={e => { e.stopPropagation(); downloadCampPdf(app.id, app.applicationNumber); }}
                         className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <FileDown className="w-4 h-4" />
