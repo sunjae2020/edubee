@@ -356,7 +356,7 @@ export default function CampApplicationDetail() {
   const participants: any[] = app?.participants ?? [];
 
   const appStatus    = app?.applicationStatus ?? app?.status ?? "submitted";
-  const isContracted = appStatus === "confirmed";
+  const isContracted = !!app?.contractId;
   const canEdit      = ["super_admin", "admin", "camp_coordinator"].includes(user?.role ?? "") &&
                        !isContracted;
 
