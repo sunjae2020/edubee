@@ -372,8 +372,8 @@ export default function AllApplicationsPage() {
                   i % 2 === 0 ? "bg-white" : "bg-[#FAFAF9]"
                 }`}
               >
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground max-w-[110px] break-all leading-relaxed">
-                  {row.ref ?? "—"}
+                <td className="px-4 py-3 font-mono text-xs text-muted-foreground w-[160px]">
+                  <span className="line-clamp-2 break-words leading-relaxed">{row.ref ?? "—"}</span>
                 </td>
                 <td className="px-4 py-3">
                   <SourceBadge sourceType={row.sourceType} />
