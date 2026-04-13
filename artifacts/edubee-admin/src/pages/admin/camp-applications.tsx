@@ -38,7 +38,8 @@ async function downloadCampPdf(id: string, label?: string) {
   const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = `camp-application-${label ?? id}.pdf`;
+  const safeRef = (label ?? id).replace(/[^a-zA-Z0-9\-_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+  a.download = `${safeRef}_Application.pdf`;
   a.click();
   URL.revokeObjectURL(url);
 }

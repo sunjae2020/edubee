@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-async function downloadCampPdf(id: string) {
+async function downloadCampPdf(id: string, ref?: string | null) {
   const res = await axios.get(`${BASE}/api/camp-applications/${id}/pdf`, {
     responseType: "blob",
     withCredentials: true,
@@ -21,7 +21,8 @@ async function downloadCampPdf(id: string) {
   const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = `camp-application-${id}.pdf`;
+  const safeRef = (ref ?? id).replace(/[^a-zA-Z0-9\-_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+  a.download = `${safeRef}_Application.pdf`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -411,7 +412,7 @@ export default function AllApplicationsPage() {
                   {row.sourceType === "camp" && (
                     <button
                       title="Download PDF"
-                      onClick={e => { e.stopPropagation(); downloadCampPdf(row.id); }}
+                      onClick={e => { e.stopPropagation(); downloadCampPdf(row.id, row.ref); }}
                       className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <FileDown className="w-4 h-4" />
