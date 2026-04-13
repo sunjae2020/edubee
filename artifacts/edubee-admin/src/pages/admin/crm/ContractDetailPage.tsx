@@ -3545,44 +3545,44 @@ export default function ContractDetailPage() {
     <div className="min-h-screen bg-[#FAFAF9]">
 
       {/* Top bar */}
-      <div className="bg-white border-b border-[#E8E6E2] px-6 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-        <div className="flex items-center gap-3">
+      <div className="bg-white border-b border-[#E8E6E2] px-6 py-0 flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center gap-3 min-w-0 py-2.5">
           <button onClick={() => navigate("/admin/crm/contracts")}
-            className="text-[#57534E] hover:text-[#1C1917] flex items-center gap-1 text-sm">
-            <ArrowLeft size={16} /> Back
+            className="text-[#57534E] hover:text-[#1C1917] flex items-center gap-1.5 text-sm shrink-0">
+            <ArrowLeft size={15} /> Back
           </button>
-          <span className="text-[#E8E6E2]">|</span>
-          <span className="font-mono text-lg font-bold" style={{ color:"var(--e-orange)" }}>
+          <span className="text-[#E8E6E2] shrink-0">|</span>
+          <span className="font-mono text-sm font-bold truncate" style={{ color:"var(--e-orange)" }}>
             {contract.contractRefDisplay}
           </span>
           <Badge s={contract.contractStatus} map={CONTRACT_STATUS_BADGE} />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0 pl-4">
           <button onClick={() => setEditingContract(true)}
-            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[#F4F3F1]">
-            <Pencil size={13} /> Edit
+            className="h-7 px-2.5 rounded-lg border border-[#E8E6E2] text-xs text-[#57534E] flex items-center gap-1 hover:bg-[#F4F3F1]">
+            <Pencil size={12} /> Edit
           </button>
           {contract.quote?.id && (
             <button onClick={() => navigate(`/admin/crm/quotes/${contract.quote.id}`)}
-              className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[#F4F3F1]">
-              <ExternalLink size={13} /> View Quote
+              className="h-7 px-2.5 rounded-lg border border-[#E8E6E2] text-xs text-[#57534E] flex items-center gap-1 hover:bg-[#F4F3F1]">
+              <ExternalLink size={12} /> Quote
             </button>
           )}
           <button onClick={() => setGeneratingInvoice(true)}
-            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors">
-            <FileText size={13} /> Generate Invoice
+            className="h-7 px-2.5 rounded-lg border border-[#E8E6E2] text-xs text-[#57534E] flex items-center gap-1 hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors">
+            <FileText size={12} /> Invoice
           </button>
           <button onClick={() => setRecordingPayment(true)}
-            className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors">
-            <CreditCard size={13} /> Record Payment
+            className="h-7 px-2.5 rounded-lg text-xs text-white flex items-center gap-1 transition-colors"
+            style={{ background:"var(--e-orange)" }}>
+            <CreditCard size={12} /> Record Payment
           </button>
         </div>
       </div>
 
-      {/* Compact summary strip */}
-      <div className="px-6 pt-4 pb-0">
-        <div className="bg-white border border-[#E8E6E2] rounded-xl overflow-hidden">
-          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-[#F4F3F1]">
+      {/* Summary strip — full-width, flush edges */}
+      <div className="bg-white border-b border-[#E8E6E2]">
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-[#F4F3F1]">
 
             {/* Client */}
             <div className="px-4 py-3 flex flex-col gap-0.5 min-w-0">
@@ -3707,12 +3707,11 @@ export default function ContractDetailPage() {
                 </button>
               )}
             </div>
-          </div>
         </div>
       </div>
 
       {/* Tab Bar — sticky below top bar, full-width, horizontally scrollable */}
-      <div className="sticky top-[65px] z-20 bg-white border-b border-[#E8E6E2] overflow-x-auto mt-5">
+      <div className="sticky top-[44px] z-20 bg-white border-b border-[#E8E6E2] overflow-x-auto">
         <div className="flex gap-0 px-6">
           {TABS.map(tab => {
             const count = counts[tab.key];
