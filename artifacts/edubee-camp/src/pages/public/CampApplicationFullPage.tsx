@@ -239,7 +239,8 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
   const [adults, setAdults] = useState<Adult[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [signatureName, setSignatureName] = useState("");
+  const [signatureDate, setSignatureDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   const selectedProgram = programs.find(p => p.id === programId) || null;
   const selectedPackage = selectedProgram?.packages.find(p => p.id === packageId) || null;
@@ -266,8 +267,9 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
     if (!applicant.firstName) e.firstName = t("common.required");
     if (!applicant.lastName) e.lastName = t("common.required");
     if (!applicant.phone) e.phone = t("common.required");
-    if (!termsAccepted) e.terms = t("common.required");
-    if (!privacyAccepted) e.privacy = t("common.required");
+    if (!termsAccepted) e.terms = "Please read and accept the Terms & Conditions.";
+    if (!signatureName.trim()) e.signatureName = "Please enter your full name as signature.";
+    if (!signatureDate) e.signatureDate = t("common.required");
     setErrors(e);
     if (Object.keys(e).length > 0) {
       const firstKey = Object.keys(e)[0];
@@ -333,6 +335,8 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
         primaryLanguage: lang,
         specialRequests: specialRequests || undefined,
         termsAccepted: true,
+        signatureName: signatureName.trim(),
+        signatureDate: signatureDate,
         participants,
       });
       setSubmitted(data.applicationNumber);
@@ -588,20 +592,120 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
             ))}
           </Section>
 
-          {/* ── Section 5: Terms & Submit ── */}
-          <Section id="sec-terms" icon="✅" title={t("apply.review")}>
-            <div className="space-y-3">
-              <label id="field-terms" className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-0.5 rounded" />
-                <span className="text-sm text-gray-700">{t("apply.termsAccept")}</span>
-              </label>
-              {errors.terms && <p className="text-xs text-red-600 ml-7">{errors.terms}</p>}
+          {/* ── Section 5: Terms & Conditions ── */}
+          <Section id="sec-terms" icon="📄" title="Terms & Conditions">
 
-              <label id="field-privacy" className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={privacyAccepted} onChange={e => setPrivacyAccepted(e.target.checked)} className="mt-0.5 rounded" />
-                <span className="text-sm text-gray-700">{t("apply.privacyAccept")}</span>
+            {/* Rich-text terms box */}
+            <div className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
+              <div className="h-72 overflow-y-auto px-5 py-4 space-y-4 text-sm text-gray-700 leading-relaxed">
+                <h3 className="font-bold text-gray-900 text-base">Camp Participation Agreement</h3>
+
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-1">1. Enrollment & Registration</h4>
+                  <p>Enrollment is confirmed upon receipt of the completed application form and the required deposit payment. Places are allocated on a first-come, first-served basis. The organiser reserves the right to cancel an application if the deposit is not received within the specified period.</p>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-1">2. Program Fees & Payment</h4>
+                  <p>All program fees are listed in the chosen billing currency. The full balance is due by the stated deadline prior to the program start date. Late payments may result in the cancellation of the reservation. Bank transfer fees and currency conversion costs are the sole responsibility of the applicant.</p>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-1">3. Cancellation & Refund Policy</h4>
+                  <p>Cancellation requests must be submitted in writing. Refunds are subject to the following schedule:</p>
+                  <ul className="list-disc ml-5 mt-1 space-y-0.5">
+                    <li>More than 60 days before departure: 90% refund of fees paid</li>
+                    <li>30–60 days before departure: 50% refund of fees paid</li>
+                    <li>Less than 30 days before departure: No refund</li>
+                  </ul>
+                  <p className="mt-1">The registration/administration fee is non-refundable under all circumstances.</p>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-1">4. Health & Medical Conditions</h4>
+                  <p>The applicant is required to disclose all known medical conditions, allergies, dietary requirements, and special needs at the time of application. The organiser accepts no responsibility for conditions not disclosed. Participants must be covered by valid travel and health insurance for the duration of the program.</p>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-1">5. Behaviour & Conduct</h4>
+                  <p>All participants are expected to respect fellow students, staff, and host families. The organiser reserves the right to dismiss any participant whose behaviour is deemed unacceptable, without refund of fees. The parent or guardian will be responsible for any costs incurred as a result of early departure due to misconduct.</p>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-1">6. Photography & Media</h4>
+                  <p>Photographs and videos taken during the program may be used by the organiser for promotional purposes. If you do not consent to your child's image being used, please notify us in writing prior to the program start.</p>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-1">7. Privacy Policy</h4>
+                  <p>Personal information collected in this form is used solely for the purpose of processing your application and administering the program. We will not share your information with third parties without your consent, except where required by law. You may request access to, correction of, or deletion of your personal data at any time by contacting us.</p>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-1">8. Liability Waiver</h4>
+                  <p>The organiser, its employees, and agents shall not be held liable for any loss, damage, injury, illness, or death arising from participation in the program, except where caused by gross negligence on the part of the organiser. The applicant participates at their own risk.</p>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-1">9. Changes to Program</h4>
+                  <p>The organiser reserves the right to modify the program itinerary, accommodation, or activities where circumstances beyond its control require it to do so. In such cases, reasonable alternatives of comparable value will be provided wherever possible.</p>
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-gray-800 mb-1">10. Governing Law</h4>
+                  <p>This agreement shall be governed by the laws of the jurisdiction in which the program is operated. Any disputes shall be resolved through negotiation in the first instance, and if necessary, through binding arbitration.</p>
+                </section>
+              </div>
+              <div className="border-t border-gray-200 bg-white px-5 py-2 flex items-center gap-2">
+                <span className="text-[10px] text-gray-400 italic">↑ Scroll to read the full Terms & Conditions</span>
+              </div>
+            </div>
+
+            {/* Single agreement checkbox */}
+            <div id="field-terms">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded accent-orange-500 shrink-0" />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+                  I have read, understood, and agree to the <strong>Terms & Conditions</strong> and <strong>Privacy Policy</strong> above, on behalf of myself and all participants listed in this application.<span className="text-red-500 ml-0.5">*</span>
+                </span>
               </label>
-              {errors.privacy && <p className="text-xs text-red-600 ml-7">{errors.privacy}</p>}
+              {errors.terms && <p className="text-xs text-red-600 mt-1 ml-7">{errors.terms}</p>}
+            </div>
+
+            {/* Signature */}
+            <div className="border border-gray-200 rounded-xl p-5 bg-white space-y-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Signature</p>
+
+              <div id="field-signatureName">
+                <Fld label="Full Name (Signature)" required error={errors.signatureName}>
+                  <div className="relative">
+                    <Inp
+                      value={signatureName}
+                      onChange={setSignatureName}
+                      placeholder="Type your full name to sign"
+                    />
+                    {signatureName && (
+                      <div className="mt-2 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 min-h-[48px] flex items-center">
+                        <span className="font-['Dancing_Script',_'Brush_Script_MT',_cursive] text-2xl text-gray-800 italic tracking-wide">
+                          {signatureName}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </Fld>
+              </div>
+
+              <div id="field-signatureDate">
+                <Fld label="Date" required error={errors.signatureDate}>
+                  <input
+                    type="date"
+                    value={signatureDate}
+                    onChange={e => setSignatureDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition"
+                  />
+                </Fld>
+              </div>
             </div>
 
             {errors.submit && (
