@@ -63,14 +63,17 @@ export function Header() {
           </nav>
 
           <div className="hidden lg:flex items-center gap-4">
+            {/* Divider */}
+            <div className="w-px h-6 bg-[#D5CFC7] mx-1" />
+
             <div className="relative">
               <button
                 onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-1.5 text-[17px] font-semibold text-[#200E00] hover:text-[#E7873C] transition-colors"
+                className="flex items-center gap-1.5 text-[15px] font-semibold text-[#200E00] hover:text-[#E7873C] transition-colors"
               >
-                <Globe size={18} />
-                <span>{currentLang.label}</span>
-                <ChevronDown size={15} />
+                <Globe size={17} />
+                <span>{currentLang.code.toUpperCase()}</span>
+                <ChevronDown size={14} />
               </button>
               {langOpen && (
                 <>
@@ -92,14 +95,14 @@ export function Header() {
 
             <a
               href={link('/admin/login')}
-              className="text-[17px] font-semibold text-[#200E00] hover:text-[#E7873C] transition-colors"
+              className="text-[15px] font-semibold text-[#200E00] hover:text-[#E7873C] transition-colors"
             >
               {t('nav.login')}
             </a>
 
             <a
               href={link('/admin/register')}
-              className="px-5 py-2 text-[17px] font-medium text-white rounded-[28px] hover:opacity-90 transition-opacity"
+              className="px-5 py-2 text-[15px] font-semibold text-white rounded-[28px] hover:opacity-90 transition-opacity"
               style={{ background: '#E7873C' }}
             >
               {t('nav.startFree')}
