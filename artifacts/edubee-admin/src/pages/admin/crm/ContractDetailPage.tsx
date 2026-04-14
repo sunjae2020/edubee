@@ -28,6 +28,42 @@ const fmtMoney = (n?: number | null) =>
   n != null ? `$${n.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
 const fmtNum = (n?: number | null) => (n != null ? n.toLocaleString() : "—");
 
+// Convert YYYY-MM-DD ↔ DD/MM/YYYY for inputs
+const isoToDmy = (iso: string) => {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+};
+const dmyToIso = (dmy: string) => {
+  const m = dmy.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return "";
+  return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+};
+
+function DateInputDMY({
+  value, onChange, className,
+}: { value: string; onChange: (iso: string) => void; className?: string }) {
+  const [display, setDisplay] = useState(() => isoToDmy(value));
+  useEffect(() => { setDisplay(isoToDmy(value)); }, [value]);
+  const commit = () => {
+    if (!display) { onChange(""); return; }
+    const iso = dmyToIso(display);
+    if (iso) { onChange(iso); setDisplay(isoToDmy(iso)); }
+  };
+  return (
+    <input
+      type="text"
+      value={display}
+      placeholder="DD/MM/YYYY"
+      maxLength={10}
+      onChange={e => setDisplay(e.target.value)}
+      onBlur={commit}
+      onKeyDown={e => e.key === "Enter" && commit()}
+      className={className}
+    />
+  );
+}
+
 const AR_BADGE: Record<string, string> = {
   scheduled: "bg-[#F4F3F1] text-[#57534E]",
   invoiced:  "bg-(--e-orange-lt) text-(--e-orange)",
@@ -447,7 +483,7 @@ function ScheduleEditRow({
           </div>
         </td>
         {/* AR */}
-        <td className="px-2 py-2"><input type="date" className={inp} value={draft.arDueDate} onChange={e => onChange("arDueDate", e.target.value)} /></td>
+        <td className="px-2 py-2"><DateInputDMY className={inp} value={draft.arDueDate} onChange={v => onChange("arDueDate", v)} /></td>
         <td className="px-2 py-2"><input type="number" min="0" step="0.01" className={inp} value={draft.arAmount} onChange={e => onChange("arAmount", e.target.value)} placeholder="0.00" /></td>
         <td className="px-2 py-2">
           <select className={sel} value={draft.arStatus} onChange={e => onChange("arStatus", e.target.value)}>
@@ -455,7 +491,7 @@ function ScheduleEditRow({
           </select>
         </td>
         {/* AP */}
-        <td className="px-2 py-2"><input type="date" className={inp} value={draft.apDueDate} onChange={e => onChange("apDueDate", e.target.value)} /></td>
+        <td className="px-2 py-2"><DateInputDMY className={inp} value={draft.apDueDate} onChange={v => onChange("apDueDate", v)} /></td>
         <td className="px-2 py-2"><input type="number" min="0" step="0.01" className={inp} value={draft.apAmount} onChange={e => onChange("apAmount", e.target.value)} placeholder="0.00" /></td>
         <td className="px-2 py-2">
           <select className={sel} value={draft.apStatus} onChange={e => onChange("apStatus", e.target.value)}>
@@ -957,7 +993,7 @@ function ContractCatalogModal({
                   </div>
                   <div>
                     <label className="text-[10px] text-[#57534E] block mb-1">AR Due Date</label>
-                    <input type="date" className={inp} value={arDueDate} onChange={e => setArDueDate(e.target.value)} />
+                    <DateInputDMY className={inp} value={arDueDate} onChange={setArDueDate} />
                   </div>
                   <div>
                     <label className="text-[10px] text-[#57534E] block mb-1">AR Status</label>
@@ -978,7 +1014,7 @@ function ContractCatalogModal({
                   </div>
                   <div>
                     <label className="text-[10px] text-[#57534E] block mb-1">AP Due Date</label>
-                    <input type="date" className={inp} value={apDueDate} onChange={e => setApDueDate(e.target.value)} />
+                    <DateInputDMY className={inp} value={apDueDate} onChange={setApDueDate} />
                   </div>
                   <div>
                     <label className="text-[10px] text-[#57534E] block mb-1">AP Status</label>
@@ -1154,7 +1190,7 @@ function GenerateScheduleModal({ contract, onClose }: { contract: any; onClose: 
                       readOnly={item.key === "balance"}
                       className={`w-28 text-right ${inp} ${item.key === "balance" ? "bg-[#F4F3F1] text-[#A8A29E] cursor-not-allowed" : ""}`} />
                   </div>
-                  <input type="date" value={item.arDueDate} onChange={e => updateItem(item.key, "arDueDate", e.target.value)}
+                  <DateInputDMY value={item.arDueDate} onChange={v => updateItem(item.key, "arDueDate", v)}
                     className={`w-36 text-xs ${inp}`} />
                 </div>
               ))}
@@ -1177,7 +1213,7 @@ function GenerateScheduleModal({ contract, onClose }: { contract: any; onClose: 
                     <input type="number" min="0" value={item.apAmount} onChange={e => updateItem(item.key, "apAmount", e.target.value)}
                       placeholder="0" className={`w-28 text-right ${inp}`} />
                   </div>
-                  <input type="date" value={item.apDueDate} onChange={e => updateItem(item.key, "apDueDate", e.target.value)}
+                  <DateInputDMY value={item.apDueDate} onChange={v => updateItem(item.key, "apDueDate", v)}
                     className={`w-36 text-xs ${inp}`} />
                 </div>
               ))}
