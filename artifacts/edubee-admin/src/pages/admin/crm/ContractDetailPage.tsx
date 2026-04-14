@@ -1048,8 +1048,8 @@ function GenerateScheduleModal({ contract, onClose }: { contract: any; onClose: 
     const hasPK       = (contract.services?.pickup?.length ?? 0) > 0;
 
     setItems([
-      { key:"deposit",     name:"계약금 (Deposit)",           serviceModuleType:null,                isInitialPayment:true,  arAmount:String(depositAmt),   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ar", enabled:true,         sortIndex:0 },
-      { key:"balance",     name:"잔금 (Balance)",             serviceModuleType:null,                isInitialPayment:false, arAmount:String(balanceAmt),   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ar", enabled:true,         sortIndex:1 },
+      { key:"deposit",     name:"Deposit",                    serviceModuleType:null,                isInitialPayment:true,  arAmount:String(depositAmt),   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ar", enabled:true,         sortIndex:0 },
+      { key:"balance",     name:"Balance",                    serviceModuleType:null,                isInitialPayment:false, arAmount:String(balanceAmt),   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ar", enabled:true,         sortIndex:1 },
       { key:"study",       name:"Study Abroad Service Fee",   serviceModuleType:"study_abroad",      isInitialPayment:false, arAmount:"",                   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ap", enabled:hasSA,        sortIndex:2 },
       { key:"accom",       name:"Accommodation",              serviceModuleType:"accommodation",     isInitialPayment:false, arAmount:"",                   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ap", enabled:hasAC,        sortIndex:3 },
       { key:"pickup",      name:"Pickup / Transfer",          serviceModuleType:"pickup",            isInitialPayment:false, arAmount:"",                   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ap", enabled:hasPK,        sortIndex:4 },
@@ -1115,9 +1115,9 @@ function GenerateScheduleModal({ contract, onClose }: { contract: any; onClose: 
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
           <div>
             <h2 className="text-base font-bold text-[#1C1917] flex items-center gap-2">
-              <Wand2 size={16} style={{ color:"var(--e-orange)" }} /> Payment Schedule 자동 생성
+              <Wand2 size={16} style={{ color:"var(--e-orange)" }} /> Generate Payment Schedule
             </h2>
-            <p className="text-xs text-[#A8A29E] mt-0.5">서비스 연동 정보를 기반으로 항목을 생성합니다</p>
+            <p className="text-xs text-[#A8A29E] mt-0.5">Auto-generate schedule items from connected service modules</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] text-[#57534E]"><X size={16}/></button>
         </div>
@@ -1128,23 +1128,23 @@ function GenerateScheduleModal({ contract, onClose }: { contract: any; onClose: 
             <input type="checkbox" checked={clearExisting} onChange={e => setClearExisting(e.target.checked)}
               className="w-4 h-4 rounded accent-[var(--e-orange)]" />
             <span className="text-sm text-[#57534E]">
-              기존 Schedule 항목 삭제 후 생성
-              <span className="ml-1 text-[#A8A29E] text-xs">(결제 연동 항목은 보존됨)</span>
+              Clear existing schedule items before generating
+              <span className="ml-1 text-[#A8A29E] text-xs">(items linked to payments are preserved)</span>
             </span>
           </label>
 
           {/* AR Section */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[11px] font-bold text-[#1C1917] uppercase tracking-widest">AR — 수금 (Client 납부)</span>
-              <span className="text-[11px] text-[#A8A29E]">계약 총액: {fmtMoney(contract.contractAmount)}</span>
+              <span className="text-[11px] font-bold text-[#1C1917] uppercase tracking-widest">AR — Receivable (Client Payment)</span>
+              <span className="text-[11px] text-[#A8A29E]">Contract Total: {fmtMoney(contract.contractAmount)}</span>
             </div>
             <div className="space-y-1.5">
               {items.filter(i => i.side === "ar").map(item => (
                 <div key={item.key} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm ${item.enabled ? "border-[#E8E6E2] bg-white" : "border-[#F4F3F1] bg-[#FAFAF9] opacity-50"}`}>
                   <input type="checkbox" checked={item.enabled} onChange={() => toggleItem(item.key)} className="w-4 h-4 shrink-0 accent-[var(--e-orange)]" />
                   <span className="font-medium text-[#1C1917] w-40 shrink-0 flex items-center gap-1.5">
-                    {item.key === "deposit" ? "💰 계약금" : "💳 잔금"}
+                    {item.key === "deposit" ? "💰 Deposit" : "💳 Balance"}
                     {item.isInitialPayment && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{background:"var(--e-orange-lt)", color:"var(--e-orange)"}}>Initial</span>}
                   </span>
                   <div className="flex items-center gap-1 flex-1">
@@ -1164,7 +1164,7 @@ function GenerateScheduleModal({ contract, onClose }: { contract: any; onClose: 
           {/* AP Section */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[11px] font-bold text-[#1C1917] uppercase tracking-widest">AP — 지급 (서비스 제공자)</span>
+              <span className="text-[11px] font-bold text-[#1C1917] uppercase tracking-widest">AP — Payable (Service Providers)</span>
             </div>
             <div className="space-y-1.5">
               {items.filter(i => i.side === "ap").map(item => (
@@ -1187,15 +1187,15 @@ function GenerateScheduleModal({ contract, onClose }: { contract: any; onClose: 
           {/* Summary */}
           <div className="bg-[#FAFAF9] rounded-xl p-4 space-y-1.5 border border-[#F4F3F1]">
             <div className="flex justify-between text-sm">
-              <span className="text-[#57534E]">Total AR (수금 예정)</span>
+              <span className="text-[#57534E]">Total AR (Expected Receivable)</span>
               <span className="font-semibold text-[#1C1917]">{fmtMoney(totalArGen)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-[#57534E]">Total AP (지급 예정)</span>
+              <span className="text-[#57534E]">Total AP (Expected Payable)</span>
               <span className="font-semibold text-red-500">{fmtMoney(totalApGen)}</span>
             </div>
             <div className="flex justify-between text-sm pt-1.5 border-t border-[#E8E6E2]">
-              <span className="font-semibold text-[#1C1917]">Net Revenue (예상)</span>
+              <span className="font-semibold text-[#1C1917]">Net Revenue (Estimated)</span>
               <span className="font-bold" style={{ color:"var(--e-orange)" }}>{fmtMoney(totalArGen - totalApGen)}</span>
             </div>
           </div>
@@ -1205,12 +1205,12 @@ function GenerateScheduleModal({ contract, onClose }: { contract: any; onClose: 
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E8E6E2]">
-          <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">취소</button>
+          <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">Cancel</button>
           <button onClick={handleGenerate} disabled={saving || enabledCnt === 0}
             className="h-9 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-50"
             style={{ background:"var(--e-orange)" }}>
             <Wand2 size={14} />
-            {saving ? "생성 중…" : `${enabledCnt}개 항목 생성`}
+            {saving ? "Generating…" : `Generate ${enabledCnt} Item${enabledCnt !== 1 ? "s" : ""}`}
           </button>
         </div>
       </div>
