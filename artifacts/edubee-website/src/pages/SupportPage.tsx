@@ -1,35 +1,51 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HelpCircle, Mail, MapPin, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Mail, MapPin, CheckCircle, ChevronDown, ChevronUp, Check } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
-import { Button } from '@/components/ui/Button'
-import { FadeIn } from '@/components/ui/FadeIn'
-import { PageBackground } from '@/components/ui/PageBackground'
-import { CtaBanner } from '@/components/sections/CtaBanner'
 import { sanityFetch } from '@/lib/sanity/client'
 import { ALL_FAQ_QUERY } from '@/lib/sanity/queries'
 import { localise } from '@/lib/sanity/locale'
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+function link(path: string) { return `${BASE}${path}` }
 
 const STATIC_FAQ_KEYS = ['q1','q2','q3','q4','q5','q6','q7','q8','q9','q10']
 
 function FaqAccordion({ items }: { items: { question: string; answer: string }[] }) {
   const [open, setOpen] = useState<number | null>(0)
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {items.map((item, i) => (
-        <div key={i} className="bg-white border border-neutral-200 rounded-[12px] overflow-hidden hover:border-[#F5821F]/30 transition-colors">
+        <div
+          key={i}
+          className="overflow-hidden transition-all"
+          style={{
+            background: '#fff',
+            borderRadius: 16,
+            boxShadow: open === i ? '0 4px 16px rgba(255,144,57,0.15)' : '2px 3px 5px rgba(0,0,0,0.06)',
+            border: open === i ? '1px solid rgba(255,144,57,0.4)' : '1px solid transparent',
+          }}
+        >
           <button
-            className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+            className="w-full flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 text-left"
             onClick={() => setOpen(open === i ? null : i)}
           >
-            <span className="text-sm font-semibold text-neutral-900">{item.question}</span>
-            {open === i
-              ? <ChevronUp size={16} className="text-[#F5821F] flex-shrink-0" />
-              : <ChevronDown size={16} className="text-neutral-400 flex-shrink-0" />
-            }
+            <span className="font-semibold text-sm sm:text-base" style={{ color: '#200E00' }}>{item.question}</span>
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: open === i ? '#FF9039' : '#F6F4F0' }}
+            >
+              {open === i
+                ? <ChevronUp size={16} color="#fff" />
+                : <ChevronDown size={16} style={{ color: '#613717' }} />
+              }
+            </div>
           </button>
           {open === i && (
-            <div className="px-5 pb-4 text-sm text-neutral-600 leading-relaxed border-t border-neutral-100 pt-3">
+            <div
+              className="px-5 sm:px-6 pb-5 text-sm leading-relaxed"
+              style={{ color: '#613717', borderTop: '1px solid rgba(255,144,57,0.15)', paddingTop: 12 }}
+            >
               {item.answer}
             </div>
           )}
@@ -73,84 +89,147 @@ export default function SupportPage() {
   }
 
   return (
-    <div>
-      {/* Hero */}
-      <section className="pt-6 pb-20 bg-white border-b border-neutral-200 relative overflow-hidden">
-        <PageBackground variant="dots" />
-        <div className="max-w-[1280px] mx-auto px-6 relative z-10">
-          <FadeIn className="text-center max-w-2xl mx-auto">
-            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-[#F5821F] mb-4 px-3 py-1 bg-[#FEF0E3] rounded-full">{t('supportPage.hero.eyebrow')}</span>
-            <h1 className="text-[40px] font-bold text-neutral-900 mb-4 leading-tight">{t('supportPage.hero.heading')} <span className="text-[#F5821F]">{t('supportPage.hero.headingOrange')}</span></h1>
-            <p className="text-base text-neutral-600 leading-relaxed">{t('supportPage.hero.sub')}</p>
-          </FadeIn>
+    <div style={{ background: '#FFFBF6', fontFamily: 'Inter, sans-serif' }}>
+
+      {/* ══════════════════════════════════
+          HERO — orange gradient
+      ══════════════════════════════════ */}
+      <section
+        className="relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(180deg, #FF9039 0%, #E36909 100%)',
+          marginTop: -83,
+          paddingTop: 'calc(83px + 60px)',
+          paddingBottom: 60,
+        }}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='48.5'%3E%3Cpolygon points='28,0 14,24.25 -14,24.25 -28,0 -14,-24.25 14,-24.25' fill='none' stroke='rgba(255,255,255,0.08)' stroke-width='1'/%3E%3Cpolygon points='70,24.25 56,48.5 28,48.5 14,24.25 28,0 56,0' fill='none' stroke='rgba(255,255,255,0.08)' stroke-width='1'/%3E%3C/svg%3E\")",
+            backgroundRepeat: 'repeat',
+            backgroundSize: '84px 48.5px',
+          }}
+        />
+        <div className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-8 text-center">
+          <span
+            className="inline-block px-5 py-1.5 rounded-full text-sm font-semibold mb-6"
+            style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}
+          >
+            SUPPORT
+          </span>
+          <h1 className="font-bold text-white mb-4 text-3xl sm:text-4xl xl:text-[52px]" style={{ lineHeight: '98%' }}>
+            How can we help?
+          </h1>
+          <p className="text-white/80 text-base sm:text-lg font-light mx-auto" style={{ maxWidth: 480 }}>
+            Browse our FAQ or get in touch with our team directly — we're here to help your agency succeed.
+          </p>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="py-20 bg-neutral-50 relative overflow-hidden" id="faq">
-        <div className="max-w-[1280px] mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            <FadeIn className="lg:col-span-1">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-[#FEF0E3] flex items-center justify-center">
-                  <HelpCircle size={20} className="text-[#F5821F]" />
+      {/* ══════════════════════════════════
+          FAQ — cream bg, full-width accordion
+      ══════════════════════════════════ */}
+      <section style={{ background: '#F6F4F0', padding: '60px 0' }} id="faq">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8">
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
+
+            {/* Left: label + search + info */}
+            <div className="w-full lg:w-[320px] lg:flex-shrink-0">
+              <p className="font-semibold uppercase tracking-widest text-sm mb-3" style={{ color: '#613717' }}>FAQ</p>
+              <h2 className="font-bold mb-3 text-2xl sm:text-3xl" style={{ color: '#613717', lineHeight: '98%' }}>
+                Frequently Asked Questions
+              </h2>
+              <p className="text-sm mb-6" style={{ color: '#613717', fontWeight: 300, lineHeight: '1.6' }}>
+                Can't find your answer? Contact us directly and our team will get back to you within 24 hours.
+              </p>
+
+              {/* Search */}
+              <div className="relative mb-6">
+                <input
+                  type="text"
+                  placeholder="Search questions..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full rounded-[14px] text-sm outline-none transition-all"
+                  style={{
+                    background: '#fff',
+                    border: '1.5px solid rgba(255,144,57,0.3)',
+                    padding: '12px 16px',
+                    color: '#200E00',
+                    boxShadow: '2px 3px 6px rgba(0,0,0,0.06)',
+                  }}
+                />
+              </div>
+
+              {/* Quick contact card */}
+              <div
+                className="rounded-[21px] p-6"
+                style={{ background: 'linear-gradient(180deg, #E07F34 0%, #EC7E29 100%)' }}
+              >
+                <p className="font-bold text-white mb-4 text-base">Still need help?</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Mail size={15} style={{ color: 'rgba(255,255,255,0.7)', flexShrink: 0 }} />
+                    <a href="mailto:info@edubee.co" className="text-sm text-white hover:underline">info@edubee.co</a>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <MapPin size={15} style={{ color: 'rgba(255,255,255,0.7)', flexShrink: 0, marginTop: 2 }} />
+                    <p className="text-sm text-white/80 leading-relaxed">Melbourne VIC 3000, Australia</p>
+                  </div>
                 </div>
-                <span className="text-xs font-semibold uppercase tracking-widest text-[#F5821F]">FAQ</span>
+                <a
+                  href="#contact"
+                  className="block w-full text-center mt-5 py-2.5 rounded-[28px] text-sm font-semibold transition-all hover:opacity-90"
+                  style={{ background: '#fff', color: '#D76811' }}
+                >
+                  Contact Us →
+                </a>
               </div>
-              <h2 className="text-2xl font-bold text-neutral-900 mb-3">{t('supportPage.faq.heading')}</h2>
-              <p className="text-sm text-neutral-500 mb-6">{t('supportPage.faq.sub')}</p>
-              <Input
-                placeholder={t('supportPage.faq.searchPlaceholder')}
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              <div className="mt-8 bg-[#FEF0E3] rounded-[14px] p-6 relative overflow-hidden">
-                <svg viewBox="0 0 200 140" className="w-full" fill="none">
-                  <rect x="20" y="20" width="160" height="100" rx="10" fill="white" stroke="#F5821F" strokeWidth="1.5"/>
-                  <rect x="35" y="35" width="80" height="8" rx="4" fill="#F5821F" opacity="0.3"/>
-                  <rect x="35" y="50" width="130" height="6" rx="3" fill="#E5E7EB"/>
-                  <rect x="35" y="62" width="110" height="6" rx="3" fill="#E5E7EB"/>
-                  <rect x="35" y="80" width="80" height="8" rx="4" fill="#F5821F" opacity="0.3"/>
-                  <rect x="35" y="95" width="130" height="6" rx="3" fill="#E5E7EB"/>
-                  <rect x="35" y="107" width="90" height="6" rx="3" fill="#E5E7EB"/>
-                  <circle cx="172" cy="35" r="6" fill="#F5821F" opacity="0.4"/>
-                  <line x1="169" y1="35" x2="175" y2="35" stroke="white" strokeWidth="1.5"/>
-                  <line x1="172" y1="32" x2="172" y2="38" stroke="white" strokeWidth="1.5"/>
-                </svg>
-              </div>
-            </FadeIn>
-            <FadeIn delay={100} className="lg:col-span-2">
+            </div>
+
+            {/* Right: accordion */}
+            <div className="flex-1 min-w-0">
               {filtered.length > 0
                 ? <FaqAccordion items={filtered} />
-                : <p className="text-center text-sm text-neutral-500 py-8">{t('common.error')}</p>
+                : <p className="text-center text-sm py-8" style={{ color: '#613717' }}>No results found.</p>
               }
-            </FadeIn>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Contact */}
-      <section className="py-20 bg-white relative overflow-hidden" id="contact">
-        <PageBackground variant="wave" />
-        <div className="max-w-[1280px] mx-auto px-6 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            <FadeIn className="lg:col-span-2">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-[#FEF0E3] flex items-center justify-center">
-                  <Mail size={20} className="text-[#F5821F]" />
-                </div>
-                <span className="text-xs font-semibold uppercase tracking-widest text-[#F5821F]">{t('supportPage.contact.eyebrow')}</span>
-              </div>
-              <h2 className="text-2xl font-bold text-neutral-900 mb-2">{t('contact.heading')}</h2>
-              <p className="text-sm text-neutral-600 mb-8">{t('contact.sub')}</p>
+      {/* ══════════════════════════════════
+          CONTACT FORM — white bg
+      ══════════════════════════════════ */}
+      <section style={{ background: '#FFFBF6', padding: '60px 0' }} id="contact">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8">
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
+
+            {/* Left: form */}
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold uppercase tracking-widest text-sm mb-3" style={{ color: '#613717' }}>CONTACT US</p>
+              <h2 className="font-bold mb-2 text-2xl sm:text-3xl" style={{ color: '#613717', lineHeight: '98%' }}>
+                Get in touch with us.
+              </h2>
+              <p className="text-sm mb-8" style={{ color: '#613717', fontWeight: 300, lineHeight: '1.6' }}>
+                Fill out the form below and our team will get back to you within 1 business day.
+              </p>
+
               {submitted ? (
-                <div className="bg-green-50 border border-green-200 rounded-[12px] p-12 text-center">
-                  <CheckCircle size={48} className="text-green-500 mx-auto mb-4" />
-                  <h2 className="text-xl font-bold text-neutral-900 mb-2">{t('contact.successHeading')}</h2>
-                  <p className="text-sm text-neutral-600">{t('contact.successBody')}</p>
+                <div
+                  className="rounded-[21px] p-10 sm:p-14 text-center"
+                  style={{ background: '#fff', boxShadow: '3px 4px 6.1px rgba(0,0,0,0.08)' }}
+                >
+                  <div className="text-5xl mb-4">✅</div>
+                  <h3 className="font-bold text-xl mb-2" style={{ color: '#613717' }}>Message sent!</h3>
+                  <p className="text-sm" style={{ color: '#613717', fontWeight: 300 }}>We'll get back to you within 1 business day.</p>
                 </div>
               ) : (
-                <div className="bg-neutral-50 border border-neutral-200 rounded-[16px] p-6 sm:p-8 space-y-5">
+                <div
+                  className="rounded-[21px] p-6 sm:p-8 space-y-5"
+                  style={{ background: '#fff', boxShadow: '3px 4px 6.1px rgba(0,0,0,0.08)' }}
+                >
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <Input label={t('contact.agencyName')} required placeholder="My Study Agency" value={form.agencyName} onChange={update('agencyName')} />
                     <Input label={t('contact.yourName')} required placeholder="Jason KIM" value={form.yourName} onChange={update('yourName')} />
@@ -170,53 +249,133 @@ export default function SupportPage() {
                       { value: 'refund',   label: t('contact.enquiryRefund') },
                     ]}
                   />
-                  <Input label={t('contact.message')} multiline rows={5} placeholder="..." value={form.message} onChange={update('message')} />
-                  <Button variant="primary" fullWidth onClick={handleSubmit}>{t('contact.submit')}</Button>
-                  <p className="text-xs text-neutral-400 text-center">{t('contact.betaNote')}</p>
+                  <Input label={t('contact.message')} multiline rows={5} placeholder="Tell us about your agency..." value={form.message} onChange={update('message')} />
+                  <button
+                    onClick={handleSubmit}
+                    className="w-full py-4 rounded-[28px] font-semibold text-white text-base transition-all hover:opacity-90 hover:scale-[1.01]"
+                    style={{ background: '#FF9039' }}
+                  >
+                    {t('contact.submit')}
+                  </button>
+                  <p className="text-xs text-center" style={{ color: '#9CA3AF' }}>
+                    {t('contact.betaNote')}
+                  </p>
                 </div>
               )}
-            </FadeIn>
+            </div>
 
-            <FadeIn delay={200}>
-              <div className="space-y-5 pt-2">
-                <div className="bg-neutral-50 border border-neutral-200 rounded-[14px] p-6">
-                  <h3 className="text-sm font-semibold text-neutral-900 mb-5">{t('supportPage.contact.detailsHeading')}</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <Mail size={15} className="text-[#F5821F] flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs text-neutral-500 mb-0.5">{t('supportPage.contact.emailLabel')}</p>
-                        <a href="mailto:info@edubee.co" className="text-sm font-medium text-neutral-900 hover:text-[#F5821F] transition-colors">info@edubee.co</a>
-                      </div>
+            {/* Right: contact info + response time */}
+            <div className="w-full lg:w-[320px] lg:flex-shrink-0 space-y-5">
+              <div
+                className="rounded-[21px] p-6"
+                style={{ background: '#fff', boxShadow: '3px 4px 6.1px rgba(0,0,0,0.08)' }}
+              >
+                <p className="font-bold text-sm mb-5" style={{ color: '#613717' }}>Contact Details</p>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,144,57,0.12)' }}>
+                      <Mail size={14} style={{ color: '#FF9039' }} />
                     </div>
-                    <div className="flex items-start gap-3">
-                      <MapPin size={15} className="text-[#F5821F] flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs text-neutral-500 mb-0.5">{t('supportPage.contact.addressLabel')}</p>
-                        <p className="text-sm text-neutral-700 leading-relaxed">Suite 804, 343 Little Collins Street<br />Melbourne VIC 3000, Australia</p>
-                      </div>
+                    <div>
+                      <p className="text-xs mb-0.5" style={{ color: '#9CA3AF' }}>Email</p>
+                      <a href="mailto:info@edubee.co" className="text-sm font-medium hover:underline" style={{ color: '#613717' }}>info@edubee.co</a>
                     </div>
                   </div>
-                </div>
-                <div className="bg-[#FEF0E3] border border-[#F5821F]/20 rounded-[14px] p-6">
-                  <h3 className="text-sm font-semibold text-neutral-900 mb-3">{t('supportPage.contact.responseHeading')}</h3>
-                  <p className="text-sm text-neutral-600 leading-relaxed mb-4">{t('supportPage.contact.responseBody')}</p>
-                  <div className="space-y-2">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="flex items-center gap-2 text-xs text-neutral-700">
-                        <CheckCircle size={12} className="text-green-500 flex-shrink-0" />
-                        {t(`supportPage.contact.r${i}`)}
-                      </div>
-                    ))}
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,144,57,0.12)' }}>
+                      <MapPin size={14} style={{ color: '#FF9039' }} />
+                    </div>
+                    <div>
+                      <p className="text-xs mb-0.5" style={{ color: '#9CA3AF' }}>Address</p>
+                      <p className="text-sm leading-relaxed" style={{ color: '#613717' }}>Suite 804, 343 Little Collins Street<br />Melbourne VIC 3000, Australia</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </FadeIn>
+
+              <div
+                className="rounded-[21px] p-6"
+                style={{ background: 'linear-gradient(180deg, #E07F34 0%, #EC7E29 100%)' }}
+              >
+                <p className="font-bold text-white mb-3 text-base">Response Time</p>
+                <p className="text-sm text-white/80 mb-4" style={{ lineHeight: '1.6' }}>
+                  We aim to respond to all enquiries within 1 business day.
+                </p>
+                <div className="space-y-2.5">
+                  {[
+                    'General enquiries — within 24 hours',
+                    'Technical issues — same business day',
+                    'Billing questions — within 24 hours',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-white/90">
+                      <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.25)' }}>
+                        <Check size={10} color="white" strokeWidth={3} />
+                      </div>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick links */}
+              <div
+                className="rounded-[21px] p-6"
+                style={{ background: '#fff', boxShadow: '3px 4px 6.1px rgba(0,0,0,0.08)' }}
+              >
+                <p className="font-bold text-sm mb-4" style={{ color: '#613717' }}>Quick Links</p>
+                <div className="space-y-2">
+                  {[
+                    { label: 'FAQ', href: '#faq' },
+                    { label: 'View Pricing', href: link('/pricing') },
+                    { label: 'Book a Demo', href: link('/support/consulting') },
+                    { label: 'Get Started Free', href: link('/admin/register') },
+                  ].map(item => (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      className="flex items-center justify-between py-2 text-sm font-medium transition-colors hover:text-[#FF9039]"
+                      style={{ color: '#613717', borderBottom: '1px solid #F0EDE8' }}
+                    >
+                      {item.label}
+                      <span style={{ color: '#FF9039' }}>→</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <CtaBanner />
+      {/* ══════════════════════════════════
+          CTA BANNER
+      ══════════════════════════════════ */}
+      <section style={{ background: '#FF9039', padding: '60px 0' }}>
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8 text-center">
+          <h2 className="text-white font-bold mb-3 text-2xl sm:text-3xl xl:text-[40px]" style={{ lineHeight: '98%' }}>
+            Ready to streamline your agency?
+          </h2>
+          <p className="text-white/80 mb-8 text-sm sm:text-base font-light">
+            Start with our free LITE plan today — no credit card required.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href={link('/admin/register')}
+              className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-4 font-semibold rounded-[28px] transition-all hover:scale-105 text-base sm:text-lg"
+              style={{ background: 'white', color: '#E7873C' }}
+            >
+              Start for Free
+            </a>
+            <a
+              href="#contact"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-4 font-semibold rounded-[28px] border-2 border-white text-white transition-all hover:bg-white/10 text-base sm:text-lg"
+            >
+              Contact Us
+            </a>
+          </div>
+        </div>
+      </section>
+
     </div>
   )
 }
