@@ -714,9 +714,9 @@ router.post("/crm/contracts/:id/generate-schedule", authenticate, async (req, re
     }
 
     return res.json({ ok: true, created });
-  } catch (err) {
+  } catch (err: any) {
     console.error("POST /crm/contracts/:id/generate-schedule error:", err);
-    return res.status(500).json({ error: "Generate failed" });
+    return res.status(500).json({ error: err?.message ?? "Generate failed", detail: err?.detail ?? null });
   }
 });
 
