@@ -15,8 +15,8 @@
       "tuition": "学费管理",
       "branch": "分支机构管理",
       "aiChatbot": "AI 聊天机器人",
-      "aiForm": "AI Form & Quotation",
-      "aiStudy": "AI Study Plan"
+      "aiForm": "AI表单与报价",
+      "aiStudy": "AI学习计划"
     },
     "platform_sub": {
       "overview": "项目概览",
@@ -104,9 +104,9 @@
       "subheadline": "Edubee 的 AI 工具自动化日常任务，让您的团队专注于建立学生关系。",
       "chatbotTitle": "AI 聊天机器人",
       "chatbotBody": "全天候多语言在线聊天。自动获取潜在客户并保存到您的 CRM。",
-      "formTitle": "AI Form & Quotation",
+      "formTitle": "AI表单与报价",
       "formBody": "智能接收表单，自动生成潜在客户文件并即时提供定制报价。",
-      "studyTitle": "AI Study Plan",
+      "studyTitle": "AI学习计划",
       "studyBody": "生成个性化学习计划。自动填充签证检查清单和学校要求列表。"
     },
     "automation": {

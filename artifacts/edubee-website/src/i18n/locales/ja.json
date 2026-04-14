@@ -15,8 +15,8 @@
       "tuition": "学費管理",
       "branch": "支店・コンサルタント管理",
       "aiChatbot": "AI チャットボット",
-      "aiForm": "AI Form & Quotation",
-      "aiStudy": "AI Study Plan"
+      "aiForm": "AIフォーム & 見積書",
+      "aiStudy": "AI学習プラン"
     },
     "platform_sub": {
       "overview": "プログラム概要",
@@ -104,9 +104,9 @@
       "subheadline": "Edubee の AI ツールは定型業務を自動化し、チームが学生との関係構築に集中できるようにします。",
       "chatbotTitle": "AI チャットボット",
       "chatbotBody": "24/7 多言語ライブチャット。リードを自動で取得し CRM に保存します。",
-      "formTitle": "AI Form & Quotation",
+      "formTitle": "AIフォーム & 見積書",
       "formBody": "リードファイルを自動生成し、即座にカスタマイズされた見積書を作成するスマートフォーム。",
-      "studyTitle": "AI Study Plan",
+      "studyTitle": "AI学習プラン",
       "studyBody": "個別スタディプランを生成。ビザチェックリストと学校要件リストを自動入力します。"
     },
     "automation": {

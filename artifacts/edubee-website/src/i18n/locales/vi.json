@@ -15,8 +15,8 @@
       "tuition": "Quản lý học phí",
       "branch": "Quản lý chi nhánh",
       "aiChatbot": "AI Chatbot",
-      "aiForm": "AI Form & Quotation",
-      "aiStudy": "AI Study Plan"
+      "aiForm": "AI Biểu mẫu & Báo giá",
+      "aiStudy": "AI Kế hoạch học tập"
     },
     "platform_sub": {
       "overview": "Tổng quan chương trình",
@@ -104,9 +104,9 @@
       "subheadline": "Bộ công cụ AI của Edubee tự động hóa các tác vụ thường xuyên để nhóm của bạn tập trung vào xây dựng mối quan hệ với học sinh.",
       "chatbotTitle": "AI Chatbot",
       "chatbotBody": "Chat trực tiếp đa ngôn ngữ hoạt động 24/7. Tự động thu thập khách hàng tiềm năng và lưu vào CRM.",
-      "formTitle": "AI Form & Quotation",
+      "formTitle": "AI Biểu mẫu & Báo giá",
       "formBody": "Biểu mẫu tiếp nhận thông minh tự động tạo hồ sơ khách hàng tiềm năng và tạo báo giá phù hợp ngay lập tức.",
-      "studyTitle": "AI Study Plan",
+      "studyTitle": "AI Kế hoạch học tập",
       "studyBody": "Tạo kế hoạch học tập cá nhân hóa. Tự động điền danh sách kiểm tra visa và yêu cầu của trường."
     },
     "automation": {
@@ -231,7 +231,7 @@
       "f5": "Chuyển cho nhân viên"
     },
     "aiForm": {
-      "title": "AI Smart Form",
+      "title": "AI Biểu mẫu Thông minh",
       "desc": "Biểu mẫu nộp đơn thông minh tự động hoàn thành từ dữ liệu học sinh hiện có. Giảm lỗi, tiết kiệm thời gian và làm hài lòng học sinh.",
       "f1": "Tự động điền từ hồ sơ học sinh",
       "f2": "Xác thực trường thông minh",
@@ -240,7 +240,7 @@
       "f5": "Thông báo nộp đơn"
     },
     "aiStudy": {
-      "title": "AI Study Advisor",
+      "title": "AI Cố vấn Học tập",
       "desc": "Đề xuất khóa học và trường học cá nhân hóa được hỗ trợ bởi AI. Ghép nối từng học sinh với chương trình hoàn hảo dựa trên mục tiêu và hồ sơ của họ.",
       "f1": "Ghép nối dựa trên hồ sơ",
       "f2": "Phân tích xếp hạng trường",

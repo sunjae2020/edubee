@@ -15,8 +15,8 @@
       "tuition": "학비 관리",
       "branch": "지사 및 상담원 관리",
       "aiChatbot": "AI 챗봇",
-      "aiForm": "AI Form & Quotation",
-      "aiStudy": "AI Study Plan"
+      "aiForm": "AI 폼 & 견적",
+      "aiStudy": "AI 학습 플랜"
     },
     "platform_sub": {
       "overview": "프로그램 개요",
@@ -104,9 +104,9 @@
       "subheadline": "에듀비의 AI 도구는 반복 업무를 자동화하여 팀이 학생 관계에 집중할 수 있게 합니다.",
       "chatbotTitle": "AI 챗봇",
       "chatbotBody": "24/7 다국어 라이브 채팅. 자동으로 리드를 수집하고 CRM에 저장합니다.",
-      "formTitle": "AI Form & Quotation",
+      "formTitle": "AI 폼 & 견적",
       "formBody": "자동으로 리드 파일을 생성하고 즉시 맞춤형 견적서를 발행하는 스마트 접수 양식.",
-      "studyTitle": "AI Study Plan",
+      "studyTitle": "AI 학습 플랜",
       "studyBody": "개인화된 스터디 플랜 생성. 비자 체크리스트와 학교 요구사항 목록을 자동으로 채웁니다."
     },
     "automation": {
