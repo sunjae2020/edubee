@@ -62,7 +62,7 @@ export function Header() {
             ))}
           </nav>
 
-          <div className="hidden lg:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             {/* Divider */}
             <div className="w-px h-6 bg-[#D5CFC7] mx-1" />
 

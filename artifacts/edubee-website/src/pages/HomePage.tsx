@@ -83,7 +83,6 @@ export default function HomePage() {
 
   return (
     <div style={{ background: '#FFFBF6', fontFamily: 'Inter, sans-serif' }}>
-
       {/* ═══════════════════════════════════════════
           1. HERO
       ═══════════════════════════════════════════ */}
@@ -138,13 +137,12 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* ═══════════════════════════════════════════
           2. TRUST BAR
       ═══════════════════════════════════════════ */}
       <section style={{ background: '#E36909' }} className="py-5 md:py-0 md:h-[98px] flex items-center">
         <div className="max-w-[1440px] mx-auto px-5 sm:px-8 w-full">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-center">
             <span className="font-extrabold text-white text-sm sm:text-base lg:text-[20px]" style={{ lineHeight: '118.83%' }}>
               TRUSTED BY STUDY ABROAD AGENCIES IN
             </span>
@@ -159,7 +157,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* ═══════════════════════════════════════════
           3. CHALLENGE
       ═══════════════════════════════════════════ */}
@@ -209,7 +206,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* ═══════════════════════════════════════════
           4. FEATURES — dark bg, 6 white cards
       ═══════════════════════════════════════════ */}
@@ -249,7 +245,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* ═══════════════════════════════════════════
           5. HOW IT WORKS — numbered steps
       ═══════════════════════════════════════════ */}
@@ -287,7 +282,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* ═══════════════════════════════════════════
           6. AI FEATURES
       ═══════════════════════════════════════════ */}
@@ -333,7 +327,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* ═══════════════════════════════════════════
           7. STOP RE-ENTERING DATA
       ═══════════════════════════════════════════ */}
@@ -390,7 +383,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* ═══════════════════════════════════════════
           8. PRICING TABLE
       ═══════════════════════════════════════════ */}
@@ -496,7 +488,6 @@ export default function HomePage() {
           <p className="text-center text-sm text-gray-400 mt-5">All plans include a 14-day free trial. No credit card required.</p>
         </div>
       </section>
-
       {/* ═══════════════════════════════════════════
           9. SECURITY
       ═══════════════════════════════════════════ */}
@@ -535,7 +526,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* ═══════════════════════════════════════════
           10. CTA BANNER
       ═══════════════════════════════════════════ */}
@@ -564,7 +554,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
     </div>
-  )
+  );
 }
