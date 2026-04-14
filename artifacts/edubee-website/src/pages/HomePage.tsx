@@ -85,54 +85,51 @@ export default function HomePage() {
     <div style={{ background: '#FFFBF6', fontFamily: 'Inter, sans-serif' }}>
 
       {/* ═══════════════════════════════════════════
-          1. HERO  —  786px photo, left-aligned text
+          1. HERO
       ═══════════════════════════════════════════ */}
       <section
         className="relative overflow-hidden"
         style={{
-          height: 786,
           marginTop: -83,
           backgroundImage: 'url(/hero-bg.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center 25%',
+          minHeight: 480,
         }}
       >
-        {/* Gradient overlay — darkens left side for legibility */}
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.68) 0%, rgba(0,0,0,0.38) 55%, rgba(0,0,0,0.05) 100%)' }}
+          style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.42) 55%, rgba(0,0,0,0.08) 100%)' }}
         />
 
-        <div className="relative z-10 h-full flex flex-col">
-          {/* Hero content — vertically centred, left-aligned */}
-          <div className="flex-1 flex items-center">
-            <div className="max-w-[1440px] mx-auto px-[122px] w-full">
+        <div className="relative z-10 flex flex-col" style={{ minHeight: 480 }}>
+          <div className="flex-1 flex items-center py-28 md:py-0 md:h-[786px]">
+            <div className="w-full px-5 sm:px-10 xl:px-[122px]">
               <h1
                 className="font-bold text-white mb-5"
-                style={{ fontSize: 56, lineHeight: '98%', maxWidth: 702, textShadow: '3px 2px 2px rgba(0,0,0,0.25)' }}
+                style={{ lineHeight: '98%', textShadow: '3px 2px 2px rgba(0,0,0,0.25)', maxWidth: 702 }}
               >
-                Focus on Consulting,<br />Leave the rest to Edubee
+                <span className="block text-4xl sm:text-5xl xl:text-[56px]">Focus on Consulting,</span>
+                <span className="block text-4xl sm:text-5xl xl:text-[56px]">Leave the rest to Edubee</span>
               </h1>
               <p
-                className="text-white mb-8"
-                style={{ fontSize: 19, fontWeight: 300, lineHeight: '23px', textShadow: '0px 4px 4px rgba(0,0,0,0.25)', maxWidth: 476 }}
+                className="text-white mb-8 text-base sm:text-lg"
+                style={{ fontWeight: 300, lineHeight: '1.4', textShadow: '0px 4px 4px rgba(0,0,0,0.25)', maxWidth: 476 }}
               >
                 The all-in-one CRM built exclusively for international education agencies. Manage students, schools, visas, tuition, and branch staff — from one platform, anywhere in the world.
               </p>
-              <div className="flex items-center gap-6 flex-wrap">
-                {/* Primary: white pill, orange text */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 <a
                   href={link('/admin/register')}
-                  className="inline-flex items-center justify-center px-8 py-3.5 font-medium rounded-[49px] transition-opacity hover:opacity-90"
-                  style={{ background: '#FDFCFC', color: '#D76811', fontSize: 24, minWidth: 233, height: 57 }}
+                  className="inline-flex items-center justify-center px-8 font-medium rounded-[49px] transition-opacity hover:opacity-90 text-lg sm:text-2xl"
+                  style={{ background: '#FDFCFC', color: '#D76811', height: 57 }}
                 >
                   Start for Free
                 </a>
-                {/* Secondary: outlined white */}
                 <a
                   href={link('/support/consulting')}
-                  className="inline-flex items-center justify-center px-8 py-3.5 font-medium rounded-[49px] border border-white text-white transition-all hover:bg-white/10"
-                  style={{ fontSize: 24, minWidth: 212, height: 57 }}
+                  className="inline-flex items-center justify-center px-8 font-medium rounded-[49px] border border-white text-white transition-all hover:bg-white/10 text-lg sm:text-2xl"
+                  style={{ height: 57 }}
                 >
                   Book a Demo
                 </a>
@@ -143,30 +140,28 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          2. TRUST BAR  —  #E36909, h=98px
+          2. TRUST BAR
       ═══════════════════════════════════════════ */}
-      <section style={{ background: '#E36909', height: 98, display: 'flex', alignItems: 'center' }}>
-        <div className="max-w-[1440px] mx-auto px-8 w-full flex items-center gap-6 flex-wrap">
-          <span className="font-extrabold text-white whitespace-nowrap" style={{ fontSize: 20, lineHeight: '118.83%' }}>
-            TRUSTED BY STUDY ABROAD AGENCIES IN
-          </span>
-          {[
-            { name: 'Australia' },
-            { name: 'Canada' },
-            { name: 'USA' },
-            { name: 'Philippines' },
-            { name: 'Korea' },
-          ].map((c, i) => (
-            <div key={c.name} className="flex items-center gap-6">
-              {i > 0 && <div style={{ width: 0, height: 27, borderLeft: '2px solid #FFFFFF' }} />}
-              <span className="text-white" style={{ fontSize: 20, fontWeight: 300, lineHeight: '118.83%' }}>{c.name}</span>
+      <section style={{ background: '#E36909' }} className="py-5 md:py-0 md:h-[98px] flex items-center">
+        <div className="max-w-[1440px] mx-auto px-5 sm:px-8 w-full">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <span className="font-extrabold text-white text-sm sm:text-base lg:text-[20px]" style={{ lineHeight: '118.83%' }}>
+              TRUSTED BY STUDY ABROAD AGENCIES IN
+            </span>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              {['Australia', 'Canada', 'USA', 'Philippines', 'Korea'].map((c, i) => (
+                <div key={c} className="flex items-center gap-4">
+                  {i > 0 && <div className="hidden sm:block" style={{ width: 0, height: 27, borderLeft: '2px solid #FFFFFF' }} />}
+                  <span className="text-white text-sm sm:text-base lg:text-[20px]" style={{ fontWeight: 300, lineHeight: '118.83%' }}>{c}</span>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════════
-          3. CHALLENGE  —  soft-light photo + orange gradient card
+          3. CHALLENGE
       ═══════════════════════════════════════════ */}
       <section
         className="relative overflow-hidden"
@@ -176,49 +171,36 @@ export default function HomePage() {
           backgroundPosition: 'center',
           backgroundBlendMode: 'soft-light',
           backgroundColor: '#F0C090',
-          padding: '80px 0',
+          padding: '60px 0',
         }}
       >
-        <div className="max-w-[1440px] mx-auto px-[80px]">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-8 xl:px-[80px]">
           <div
-            className="rounded-[26px] px-14 py-12"
+            className="rounded-[26px] px-5 sm:px-10 xl:px-14 py-10"
             style={{ background: 'linear-gradient(180deg, #E07F34 0%, #EC7E29 100%)' }}
           >
-            <div className="flex flex-col lg:flex-row gap-12 items-start">
-              {/* LEFT: text */}
+            <div className="flex flex-col lg:flex-row gap-10 items-start">
               <div className="flex-1 min-w-0">
-                <p
-                  className="uppercase font-semibold text-white/80 mb-6"
-                  style={{ fontSize: 16, letterSpacing: '0.05em' }}
-                >
-                  THE CHALLENGE
-                </p>
-                <h2
-                  className="font-bold text-white mb-5"
-                  style={{ fontSize: 40, lineHeight: '98%', maxWidth: 496 }}
-                >
+                <p className="uppercase font-semibold text-white/80 mb-6 text-sm tracking-wider">THE CHALLENGE</p>
+                <h2 className="font-bold text-white mb-5 text-2xl sm:text-3xl xl:text-[40px]" style={{ lineHeight: '98%', maxWidth: 496 }}>
                   Running an agency shouldn't mean drowning in spreadsheets.
                 </h2>
-                <p
-                  className="text-white"
-                  style={{ fontSize: 17, fontWeight: 300, lineHeight: '21px', maxWidth: 496 }}
-                >
+                <p className="text-white text-sm sm:text-base" style={{ fontWeight: 300, lineHeight: '1.4', maxWidth: 496 }}>
                   Most study abroad agencies manage students in Excel, track commissions in separate files, and report to branch staff by email. As your agency grows, this breaks down fast.
                 </p>
               </div>
 
-              {/* RIGHT: three bordered feature cards */}
-              <div className="flex-shrink-0 flex flex-col gap-4" style={{ width: 496 }}>
+              <div className="flex-shrink-0 flex flex-col gap-4 w-full lg:w-[496px]">
                 {CHALLENGE_FEATURES.map((f, i) => (
                   <div
                     key={i}
-                    className="rounded-[26px] p-6 flex items-center gap-5"
-                    style={{ border: '1px solid rgba(255,255,255,0.7)', minHeight: 122 }}
+                    className="rounded-[26px] p-5 sm:p-6 flex items-center gap-4 sm:gap-5"
+                    style={{ border: '1px solid rgba(255,255,255,0.7)', minHeight: 100 }}
                   >
-                    <div className="text-4xl flex-shrink-0">{f.icon}</div>
+                    <div className="text-3xl sm:text-4xl flex-shrink-0">{f.icon}</div>
                     <div>
-                      <h4 className="font-bold text-white mb-1" style={{ fontSize: 18 }}>{f.title}</h4>
-                      <p className="text-white/80" style={{ fontSize: 14, lineHeight: '17px' }}>{f.desc}</p>
+                      <h4 className="font-bold text-white mb-1 text-sm sm:text-[18px]">{f.title}</h4>
+                      <p className="text-white/80 text-xs sm:text-sm" style={{ lineHeight: '1.4' }}>{f.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -229,7 +211,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          4. FEATURES  —  dark photo bg, 6 white cards
+          4. FEATURES — dark bg, 6 white cards
       ═══════════════════════════════════════════ */}
       <section
         className="relative overflow-hidden"
@@ -237,22 +219,14 @@ export default function HomePage() {
           backgroundImage: 'url(https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1440&auto=format&fit=crop&q=80)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          padding: '80px 0',
+          padding: '60px 0',
         }}
       >
         <div className="absolute inset-0" style={{ background: 'rgba(12,8,4,0.84)' }} />
-        <div className="relative z-10 max-w-[1280px] mx-auto px-8">
-          <div className="text-center mb-12">
-            <p
-              className="font-semibold uppercase tracking-widest text-white/50 mb-3"
-              style={{ fontSize: 16, textShadow: '2px 4px 4px rgba(0,0,0,0.25)' }}
-            >
-              WHAT EDUBEE DOES
-            </p>
-            <h2
-              className="font-bold text-white"
-              style={{ fontSize: 48, lineHeight: '98%', textShadow: '2px 4px 4px rgba(0,0,0,0.25)' }}
-            >
+        <div className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-8">
+          <div className="text-center mb-10">
+            <p className="font-semibold uppercase tracking-widest text-white/50 mb-3 text-sm">WHAT EDUBEE DOES</p>
+            <h2 className="font-bold text-white text-2xl sm:text-3xl xl:text-[48px]" style={{ lineHeight: '98%' }}>
               Everything your agency needs, in one place.
             </h2>
           </div>
@@ -260,17 +234,14 @@ export default function HomePage() {
             {SERVICES.map((s, i) => (
               <div
                 key={i}
-                className="bg-white rounded-[21px] p-7 hover:shadow-2xl transition-all cursor-pointer group"
+                className="bg-white rounded-[21px] p-6 sm:p-7 hover:shadow-2xl transition-all cursor-pointer group"
                 style={{ boxShadow: '3px 4px 6.1px rgba(0,0,0,0.15)' }}
                 onClick={() => { window.location.href = link(s.href) }}
               >
                 <div className="text-3xl mb-4">{s.icon}</div>
-                <h3 className="font-bold mb-2" style={{ fontSize: 18, color: '#613717' }}>{s.title}</h3>
+                <h3 className="font-bold mb-2 text-base sm:text-[18px]" style={{ color: '#613717' }}>{s.title}</h3>
                 <p className="text-sm leading-relaxed text-gray-600 mb-4">{s.desc}</p>
-                <span
-                  className="font-semibold italic underline group-hover:text-[#E7873C] transition-colors"
-                  style={{ color: '#432208', fontSize: 15 }}
-                >
+                <span className="font-semibold italic underline group-hover:text-[#E7873C] transition-colors text-sm sm:text-[15px]" style={{ color: '#432208' }}>
                   Get started
                 </span>
               </div>
@@ -280,50 +251,35 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          5. HOW IT WORKS  —  #F6F4F0 bg, numbered steps
+          5. HOW IT WORKS — numbered steps
       ═══════════════════════════════════════════ */}
-      <section style={{ background: '#F6F4F0', padding: '80px 0' }}>
-        <div className="max-w-[1280px] mx-auto px-8">
+      <section style={{ background: '#F6F4F0', padding: '60px 0' }}>
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8">
           <div className="text-center mb-10">
-            <p className="font-semibold uppercase tracking-widest mb-3" style={{ color: '#613717', fontSize: 16 }}>
-              HOW IT WORKS
-            </p>
-            <h2 className="font-bold" style={{ fontSize: 40, color: '#613717', lineHeight: '98%' }}>
+            <p className="font-semibold uppercase tracking-widest mb-3 text-sm" style={{ color: '#613717' }}>HOW IT WORKS</p>
+            <h2 className="font-bold text-xl sm:text-2xl xl:text-[40px]" style={{ color: '#613717', lineHeight: '98%' }}>
               A structured workflow for every student journey.
             </h2>
           </div>
 
-          {/* White card with step dots + line + steps */}
-          <div
-            className="rounded-[23px] bg-white pt-10 pb-12 px-8"
-            style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
-          >
-            {/* Step dot + line connector */}
-            <div className="flex items-center justify-between mb-2 px-6">
+          <div className="rounded-[23px] bg-white pt-8 pb-10 px-5 sm:px-8" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+            {/* Dot + line — hidden on mobile */}
+            <div className="hidden md:flex items-center justify-between mb-2 px-4">
               {WORKFLOW_STEPS.map((_, i) => (
                 <div key={i} className="flex items-center flex-1">
-                  <div
-                    className="w-5 h-5 rounded-full flex-shrink-0"
-                    style={{ background: '#F8984D' }}
-                  />
-                  {i < WORKFLOW_STEPS.length - 1 && (
-                    <div className="flex-1 h-px" style={{ background: '#F8984D' }} />
-                  )}
+                  <div className="w-5 h-5 rounded-full flex-shrink-0" style={{ background: '#F8984D' }} />
+                  {i < WORKFLOW_STEPS.length - 1 && <div className="flex-1 h-px" style={{ background: '#F8984D' }} />}
                 </div>
               ))}
             </div>
 
-            {/* Step numbers + labels */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-2">
               {WORKFLOW_STEPS.map((step, i) => (
-                <div key={i} className="text-center">
-                  <span
-                    className="block font-bold"
-                    style={{ fontSize: 52, color: '#B54F00', lineHeight: '63px' }}
-                  >
+                <div key={i} className="text-center py-3 md:py-0">
+                  <span className="block font-bold text-4xl sm:text-5xl lg:text-[52px]" style={{ color: '#B54F00', lineHeight: '63px' }}>
                     {step.num}
                   </span>
-                  <h4 className="font-bold text-sm mb-1" style={{ color: '#613717' }}>{step.title}</h4>
+                  <h4 className="font-bold text-xs sm:text-sm mb-1" style={{ color: '#613717' }}>{step.title}</h4>
                   <p className="text-xs text-gray-500">{step.sub}</p>
                 </div>
               ))}
@@ -333,42 +289,34 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          6. AI FEATURES  —  cream bg, left headline + 3 AI cards
+          6. AI FEATURES
       ═══════════════════════════════════════════ */}
-      <section style={{ padding: '80px 0', background: '#FFFBF6' }}>
-        <div className="max-w-[1280px] mx-auto px-8">
-          <div className="flex flex-col lg:flex-row gap-16 items-start">
-            <div className="lg:w-[340px] flex-shrink-0">
-              <p className="font-semibold uppercase tracking-widest mb-4" style={{ color: '#613717', fontSize: 16 }}>
-                NEW — AI-POWERED
-              </p>
-              <h2 className="font-bold mb-4" style={{ fontSize: 40, color: '#613717', lineHeight: '98%' }}>
+      <section style={{ padding: '60px 0', background: '#FFFBF6' }}>
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8">
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
+            <div className="w-full lg:w-[340px] lg:flex-shrink-0">
+              <p className="font-semibold uppercase tracking-widest mb-4 text-sm" style={{ color: '#613717' }}>NEW — AI-POWERED</p>
+              <h2 className="font-bold mb-4 text-2xl sm:text-3xl xl:text-[40px]" style={{ color: '#613717', lineHeight: '98%' }}>
                 Smarter consulting, powered by AI.
               </h2>
-              <p style={{ fontSize: 14, color: '#613717', lineHeight: '17px', letterSpacing: '-0.03em' }}>
+              <p className="text-sm" style={{ color: '#613717', lineHeight: '17px', letterSpacing: '-0.03em' }}>
                 Edubee's AI suite automates routine tasks so your team can focus on building student relationships.
               </p>
             </div>
 
-            {/* AI Feature cards — warm cream bg, orange-brown text */}
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-5">
               {AI_FEATURES.map((f, i) => (
                 <div
                   key={i}
-                  className="rounded-[26px] p-7 flex flex-col"
-                  style={{
-                    background: '#FFFBF6',
-                    boxShadow: '4px 4px 9.5px -3px rgba(0,0,0,0.15)',
-                  }}
+                  className="rounded-[26px] p-6 sm:p-7 flex flex-col"
+                  style={{ background: '#FFFBF6', boxShadow: '4px 4px 9.5px -3px rgba(0,0,0,0.15)' }}
                 >
                   <div className="text-3xl mb-4">{f.icon}</div>
-                  <h3 className="font-bold mb-2" style={{ fontSize: 22, color: '#B54F00' }}>{f.title}</h3>
-                  <p className="text-sm mb-4 leading-relaxed" style={{ color: '#000', fontWeight: 300, lineHeight: '16px', fontSize: 14 }}>
-                    {f.desc}
-                  </p>
+                  <h3 className="font-bold mb-2 text-lg sm:text-[22px]" style={{ color: '#B54F00' }}>{f.title}</h3>
+                  <p className="text-sm mb-4 leading-relaxed" style={{ color: '#000', fontWeight: 300, lineHeight: '16px' }}>{f.desc}</p>
                   <ul className="space-y-1 mb-5 flex-1">
                     {f.features.map((feat, j) => (
-                      <li key={j} className="font-semibold" style={{ fontSize: 13, color: '#B54F00', lineHeight: '14px' }}>
+                      <li key={j} className="font-semibold text-xs sm:text-[13px]" style={{ color: '#B54F00', lineHeight: '14px' }}>
                         • {feat}
                       </li>
                     ))}
@@ -387,20 +335,19 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          7. STOP RE-ENTERING DATA  —  #FAFAF9, code block left
+          7. STOP RE-ENTERING DATA
       ═══════════════════════════════════════════ */}
-      <section style={{ background: '#FAFAF9', padding: '80px 0' }}>
-        <div className="max-w-[1280px] mx-auto px-8">
-          <div className="flex flex-col lg:flex-row gap-16 items-center">
-            {/* Code block */}
-            <div className="flex-1">
+      <section style={{ background: '#FAFAF9', padding: '60px 0' }}>
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8">
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-center">
+            <div className="flex-1 w-full">
               <div
-                className="rounded-2xl"
+                className="rounded-2xl overflow-x-auto"
                 style={{
                   background: '#1E1E2E',
-                  padding: '32px',
+                  padding: '24px',
                   fontFamily: 'monospace',
-                  fontSize: 13,
+                  fontSize: 12,
                   lineHeight: '1.7',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
                 }}
@@ -422,30 +369,20 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Text block */}
-            <div className="flex-1 lg:max-w-[450px]">
-              <h2
-                className="font-bold mb-4"
-                style={{ fontSize: 40, color: '#613717', lineHeight: '98%' }}
-              >
+            <div className="flex-1 w-full lg:max-w-[450px]">
+              <h2 className="font-bold mb-4 text-2xl sm:text-3xl xl:text-[40px]" style={{ color: '#613717', lineHeight: '98%' }}>
                 Stop re-entering data. Start running your agency.
               </h2>
-              <p
-                className="mb-6"
-                style={{ fontSize: 17, color: '#613717', fontWeight: 300, lineHeight: '21px', letterSpacing: '-0.03em' }}
-              >
+              <p className="mb-6 text-sm sm:text-base" style={{ color: '#613717', fontWeight: 300, lineHeight: '1.4', letterSpacing: '-0.03em' }}>
                 One input. Every report. Edubee eliminates duplicate data entry — everything flows automatically into your reports, dashboards, and staff KPIs.
               </p>
               <div className="space-y-3">
                 {['Auto-sync across CRM, finance & docs', 'Real-time dashboards for every branch', 'Staff KPIs updated automatically'].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: '#FF9039' }}
-                    >
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#FF9039' }}>
                       <Check size={12} color="white" strokeWidth={3} />
                     </div>
-                    <span style={{ color: '#613717', fontSize: 15 }}>{item}</span>
+                    <span className="text-sm" style={{ color: '#613717' }}>{item}</span>
                   </div>
                 ))}
               </div>
@@ -455,22 +392,62 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          8. PRICING  —  #FFFBF6 bg, table layout
+          8. PRICING TABLE
       ═══════════════════════════════════════════ */}
-      <section style={{ background: '#FFFBF6', padding: '80px 0' }}>
-        <div className="max-w-[1280px] mx-auto px-8">
-          <div className="text-center mb-12">
-            <p className="font-semibold uppercase tracking-widest mb-2" style={{ color: '#613717', fontSize: 16 }}>PRICING</p>
-            <h2 className="font-bold mb-2" style={{ fontSize: 40, color: '#613717', lineHeight: '98%' }}>
+      <section style={{ background: '#FFFBF6', padding: '60px 0' }}>
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8">
+          <div className="text-center mb-10">
+            <p className="font-semibold uppercase tracking-widest mb-2 text-sm" style={{ color: '#613717' }}>PRICING</p>
+            <h2 className="font-bold mb-2 text-2xl sm:text-3xl xl:text-[40px]" style={{ color: '#613717', lineHeight: '98%' }}>
               Transparent pricing. No surprises.
             </h2>
           </div>
-          <div className="overflow-x-auto rounded-xl" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+
+          {/* Mobile: card layout */}
+          <div className="sm:hidden space-y-4">
+            {pricingTable.map((row, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-xl p-5"
+                style={{
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+                  borderLeft: row.highlighted ? '3px solid #FF9039' : '3px solid transparent',
+                  background: row.highlighted ? 'rgba(255,144,57,0.04)' : 'white',
+                }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm" style={{ color: '#613717' }}>{row.plan}</span>
+                    {row.highlighted && <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{ background: '#FF9039' }}>Popular</span>}
+                  </div>
+                  <span className="font-semibold text-sm" style={{ color: '#200E00' }}>
+                    {row.contact ? 'Contact us' : row.price}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                  <span>{row.students} students</span>
+                  <span>{row.storage} storage</span>
+                  <span>{row.schoolDB ? '✓ School DB' : '— School DB'}</span>
+                  <span>{row.remote ? '✓ Multi-Branch' : '— Multi-Branch'}</span>
+                </div>
+                <a
+                  href={link(row.contact ? '/support/contact' : '/admin/register')}
+                  className="inline-flex items-center gap-1 text-sm font-semibold"
+                  style={{ color: '#E7873C' }}
+                >
+                  {row.contact ? 'Contact' : 'Get started'} <ArrowRight size={14} />
+                </a>
+              </div>
+            ))}
+          </div>
+
+          {/* Tablet+: table layout */}
+          <div className="hidden sm:block overflow-x-auto rounded-xl" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
             <table className="w-full bg-white">
               <thead>
                 <tr style={{ background: '#F6F4F0', borderBottom: '2px solid #E8E6E2' }}>
                   {['Plan', 'Monthly Price', 'Active Students', 'Storage', 'School DB', 'Multi-Branch', ''].map((h, i) => (
-                    <th key={i} className="px-6 py-4 text-left text-sm font-semibold" style={{ color: '#613717' }}>{h}</th>
+                    <th key={i} className="px-4 lg:px-6 py-4 text-left text-sm font-semibold" style={{ color: '#613717' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -485,26 +462,24 @@ export default function HomePage() {
                       borderLeft: row.highlighted ? '3px solid #FF9039' : '3px solid transparent',
                     }}
                   >
-                    <td className="px-6 py-4">
+                    <td className="px-4 lg:px-6 py-4">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-sm" style={{ color: '#613717' }}>{row.plan}</span>
-                        {row.highlighted && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{ background: '#FF9039' }}>Popular</span>
-                        )}
+                        {row.highlighted && <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{ background: '#FF9039' }}>Popular</span>}
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-semibold text-sm" style={{ color: '#200E00' }}>
+                    <td className="px-4 lg:px-6 py-4 font-semibold text-sm" style={{ color: '#200E00' }}>
                       {row.contact ? <span style={{ color: '#613717' }}>Contact us</span> : row.price}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{row.students}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{row.storage}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 lg:px-6 py-4 text-sm text-gray-600">{row.students}</td>
+                    <td className="px-4 lg:px-6 py-4 text-sm text-gray-600">{row.storage}</td>
+                    <td className="px-4 lg:px-6 py-4">
                       {row.schoolDB ? <Check size={16} color="#FF9039" strokeWidth={2.5} /> : <span className="text-gray-300 text-lg">—</span>}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 lg:px-6 py-4">
                       {row.remote ? <Check size={16} color="#FF9039" strokeWidth={2.5} /> : <span className="text-gray-300 text-lg">—</span>}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 lg:px-6 py-4">
                       <a
                         href={link(row.contact ? '/support/contact' : '/admin/register')}
                         className="inline-flex items-center gap-1 text-sm font-semibold hover:opacity-80 transition-opacity"
@@ -523,28 +498,22 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          9. SECURITY  —  photo right, text left
+          9. SECURITY
       ═══════════════════════════════════════════ */}
-      <section style={{ background: '#FFFBF6', padding: '80px 0' }}>
-        <div className="max-w-[1280px] mx-auto px-8">
-          <div className="flex flex-col lg:flex-row gap-16 items-center">
+      <section style={{ background: '#FFFBF6', padding: '60px 0' }}>
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8">
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-center">
             <div className="flex-1">
-              <h2
-                className="font-bold mb-4"
-                style={{ fontSize: 40, color: '#613717', lineHeight: '98%' }}
-              >
+              <h2 className="font-bold mb-4 text-2xl sm:text-3xl xl:text-[40px]" style={{ color: '#613717', lineHeight: '98%' }}>
                 Your data is safe with Edubee.
               </h2>
-              <p className="mb-8" style={{ fontSize: 17, fontWeight: 300, color: '#613717', lineHeight: '21px' }}>
+              <p className="mb-8 text-sm sm:text-base" style={{ fontWeight: 300, color: '#613717', lineHeight: '1.4' }}>
                 Enterprise-grade security built for agencies that handle sensitive student visa and financial data.
               </p>
               <div className="space-y-5">
                 {SECURITY_ITEMS.map((item, i) => (
                   <div key={i} className="flex items-start gap-4">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl"
-                      style={{ background: 'rgba(255,144,57,0.12)' }}
-                    >
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl" style={{ background: 'rgba(255,144,57,0.12)' }}>
                       {item.icon}
                     </div>
                     <div>
@@ -555,12 +524,12 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <img
                 src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop&q=80"
                 alt="Security"
                 className="w-full rounded-2xl object-cover"
-                style={{ height: 380, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}
+                style={{ height: 320, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}
               />
             </div>
           </div>
@@ -568,28 +537,27 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          10. CTA BANNER  —  #FF9039 orange
+          10. CTA BANNER
       ═══════════════════════════════════════════ */}
-      <section style={{ background: '#FF9039', padding: '80px 0' }}>
-        <div className="max-w-[1280px] mx-auto px-8 text-center">
-          <h2 className="text-white font-bold mb-3" style={{ fontSize: 40, lineHeight: '98%' }}>
+      <section style={{ background: '#FF9039', padding: '60px 0' }}>
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8 text-center">
+          <h2 className="text-white font-bold mb-3 text-2xl sm:text-3xl xl:text-[40px]" style={{ lineHeight: '98%' }}>
             Ready to streamline your agency?
           </h2>
-          <p className="text-white/80 mb-8" style={{ fontSize: 17, fontWeight: 300 }}>
+          <p className="text-white/80 mb-8 text-sm sm:text-base" style={{ fontWeight: 300 }}>
             Start with our free LITE plan today — no credit card required.
           </p>
-          <div className="flex items-center justify-center gap-5 flex-wrap">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href={link('/admin/register')}
-              className="inline-flex items-center justify-center px-10 py-4 font-semibold rounded-[28px] transition-all hover:scale-105"
-              style={{ background: 'white', color: '#E7873C', fontSize: 18 }}
+              className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-4 font-semibold rounded-[28px] transition-all hover:scale-105 text-base sm:text-lg"
+              style={{ background: 'white', color: '#E7873C' }}
             >
               Start for Free
             </a>
             <a
               href={link('/support/contact')}
-              className="inline-flex items-center justify-center px-10 py-4 font-semibold rounded-[28px] border-2 border-white text-white transition-all hover:bg-white/10"
-              style={{ fontSize: 18 }}
+              className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-4 font-semibold rounded-[28px] border-2 border-white text-white transition-all hover:bg-white/10 text-base sm:text-lg"
             >
               Contact Us
             </a>
