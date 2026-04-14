@@ -1,0 +1,1441 @@
+/* Service */
+
+position: relative;
+width: 1440px;
+height: 4012px;
+
+background: #FFFFFF;
+
+
+/* Rectangle 12 */
+
+position: absolute;
+width: 1440px;
+height: 1313px;
+left: 0px;
+top: 641px;
+
+background: #FF9039;
+
+
+/* Rectangle 56 */
+
+position: absolute;
+width: 375px;
+height: 453px;
+left: 128px;
+top: 884px;
+
+background: #FFFFFF;
+box-shadow: 3px 4px 6.1px rgba(0, 0, 0, 0.15);
+border-radius: 21px;
+
+
+/* Rectangle 57 */
+
+position: absolute;
+width: 375px;
+height: 453px;
+left: 128px;
+top: 1367px;
+
+background: #FFFFFF;
+box-shadow: 3px 4px 6.1px rgba(0, 0, 0, 0.15);
+border-radius: 21px;
+
+
+/* Rectangle 58 */
+
+position: absolute;
+width: 375px;
+height: 453px;
+left: 533px;
+top: 884px;
+
+background: #FFFFFF;
+box-shadow: 3px 4px 6.1px rgba(0, 0, 0, 0.15);
+border-radius: 21px;
+
+
+/* Rectangle 59 */
+
+position: absolute;
+width: 375px;
+height: 453px;
+left: 533px;
+top: 1367px;
+
+background: #FFFFFF;
+box-shadow: 3px 4px 6.1px rgba(0, 0, 0, 0.15);
+border-radius: 21px;
+
+
+/* Rectangle 60 */
+
+position: absolute;
+width: 375px;
+height: 453px;
+left: 938px;
+top: 884px;
+
+background: #FFFFFF;
+box-shadow: 3px 4px 6.1px rgba(0, 0, 0, 0.15);
+border-radius: 21px;
+
+
+/* Rectangle 61 */
+
+position: absolute;
+width: 375px;
+height: 453px;
+left: 938px;
+top: 1367px;
+
+background: #FFFFFF;
+box-shadow: 3px 4px 6.1px rgba(0, 0, 0, 0.15);
+border-radius: 21px;
+
+
+/* Rectangle 3 */
+
+position: absolute;
+width: 1440px;
+height: 83px;
+left: 0px;
+top: 0px;
+
+background: #FFFFFF;
+
+
+/* Rectangle 8 */
+
+position: absolute;
+width: 158px;
+height: 37px;
+left: 1216px;
+top: 21px;
+
+background: #E7873C;
+border-radius: 28px;
+
+
+/* Start for Free */
+
+position: absolute;
+width: 121px;
+height: 24px;
+left: 1235px;
+top: 30px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 18px;
+line-height: 118.83%;
+/* or 21px */
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* Login */
+
+position: absolute;
+width: 57px;
+height: 24px;
+left: 1147px;
+top: 28px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 18px;
+line-height: 118.83%;
+/* or 21px */
+text-align: center;
+
+color: #200E00;
+
+
+
+/* English */
+
+position: absolute;
+width: 67px;
+height: 24px;
+left: 1007px;
+top: 28px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 18px;
+line-height: 118.83%;
+/* or 21px */
+text-align: center;
+
+color: #200E00;
+
+
+
+/* image 25 */
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 1085px;
+top: 30px;
+
+background: url(image.png);
+
+
+/* image 4 */
+
+position: absolute;
+width: 120px;
+height: 47px;
+left: 55px;
+top: 17px;
+
+background: url(image.png);
+
+
+/* Rectangle 1 */
+
+position: absolute;
+width: 1440px;
+height: 575px;
+left: 0px;
+top: 83px;
+
+background: #FFFBF7;
+
+
+/* image 28 */
+
+position: absolute;
+width: 1439px;
+height: 604px;
+left: calc(50% - 1439px/2 + 0.5px);
+top: 54px;
+
+background: url(image.png);
+background-blend-mode: color-burn;
+
+
+/* Rectangle 17 */
+
+position: absolute;
+width: 1440px;
+height: 898px;
+left: 0px;
+top: 2251px;
+
+background: linear-gradient(115.49deg, #272727 15.14%, #0A0908 92.66%);
+
+
+/* image 27 */
+
+position: absolute;
+width: 1439px;
+height: 946px;
+left: calc(50% - 1439px/2 + 0.5px);
+top: 2259px;
+
+background: url(image.png);
+background-blend-mode: soft-light;
+
+
+/* The future of study abroad ,powered by AI */
+
+position: absolute;
+width: 799px;
+height: 94px;
+left: 322px;
+top: 2430px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 48px;
+line-height: 98%;
+/* or 47px */
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* New AI tools that automate the repetitive and enhance the human touch. */
+
+position: absolute;
+width: 767px;
+height: 21px;
+left: 338px;
+top: 2542px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 17px;
+line-height: 21px;
+/* identical to box height */
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* Core Services */
+
+position: absolute;
+width: 799px;
+height: 47px;
+left: calc(50% - 799px/2 - 192.5px);
+top: 759px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 48px;
+line-height: 98%;
+/* identical to box height, or 47px */
+
+color: #613717;
+
+
+
+/* Track every student from first enquiry to graduation. Consultation history, profiles, and 6-stage workflow all in one place. */
+
+position: absolute;
+width: 317px;
+height: 88px;
+left: 162px;
+top: 1002px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 18px;
+line-height: 22px;
+letter-spacing: -0.01em;
+
+color: #000000;
+
+
+
+/* Student Management */
+
+position: absolute;
+width: 317px;
+height: 25px;
+left: 162px;
+top: 968px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #613717;
+
+
+
+/* Consultation history & profiling Quotation & contract creation 6-stage workflow tracking Visa lodgement & approval Re-enrollment reminders */
+
+position: absolute;
+width: 317px;
+height: 90px;
+left: 162px;
+top: 1106px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 200;
+font-size: 15px;
+line-height: 18px;
+
+color: #613717;
+
+
+
+/* Get started */
+
+position: absolute;
+width: 119px;
+height: 23px;
+left: 162px;
+top: 1266px;
+
+font-family: 'Inter';
+font-style: italic;
+font-weight: 400;
+font-size: 19px;
+line-height: 23px;
+/* identical to box height */
+text-decoration-line: underline;
+
+color: #432208;
+
+
+
+/* Manage your entire school partner database — contracts, fees, commission rates, and application requirements in one searchable hub. */
+
+position: absolute;
+width: 296px;
+height: 88px;
+left: 574px;
+top: 1002px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 18px;
+line-height: 22px;
+
+color: #000000;
+
+
+
+/* School Management */
+
+position: absolute;
+width: 266px;
+height: 25px;
+left: 574px;
+top: 968px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #613717;
+
+
+
+/* School database & contracts Commission rate management Program & course catalog School application tracking Document management */
+
+position: absolute;
+width: 317px;
+height: 90px;
+left: 574px;
+top: 1106px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 200;
+font-size: 15px;
+line-height: 18px;
+
+color: #613717;
+
+
+
+/* Get started */
+
+position: absolute;
+width: 119px;
+height: 23px;
+left: 574px;
+top: 1266px;
+
+font-family: 'Inter';
+font-style: italic;
+font-weight: 400;
+font-size: 19px;
+line-height: 23px;
+/* identical to box height */
+text-decoration-line: underline;
+
+color: #432208;
+
+
+
+/* Track referral partners, agreements, and commission payouts. Manage every relationship with full transparency. */
+
+position: absolute;
+width: 301px;
+height: 88px;
+left: 986px;
+top: 1002px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 18px;
+line-height: 22px;
+letter-spacing: -0.02em;
+
+color: #000000;
+
+
+
+/* Partner Management */
+
+position: absolute;
+width: 266px;
+height: 25px;
+left: 986px;
+top: 968px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #613717;
+
+
+
+/* Partner agreement database Commission calculation Referral source tracking Performance analytics Payment records */
+
+position: absolute;
+width: 317px;
+height: 90px;
+left: 986px;
+top: 1106px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 200;
+font-size: 15px;
+line-height: 18px;
+
+color: #613717;
+
+
+
+/* Get started */
+
+position: absolute;
+width: 119px;
+height: 23px;
+left: 986px;
+top: 1266px;
+
+font-family: 'Inter';
+font-style: italic;
+font-weight: 400;
+font-size: 19px;
+line-height: 23px;
+/* identical to box height */
+text-decoration-line: underline;
+
+color: #432208;
+
+
+
+/* Manage multi-branch agency operations from a single dashboard. Staff access control, performance visibility, and branch-level data. */
+
+position: absolute;
+width: 335px;
+height: 88px;
+left: 162px;
+top: 1485px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 18px;
+line-height: 22px;
+
+color: #000000;
+
+
+
+/* Agency Management */
+
+position: absolute;
+width: 317px;
+height: 25px;
+left: 162px;
+top: 1451px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #613717;
+
+
+
+/* Multi-branch operations Staff account management Role-based access control Head office dashboard Branch performance reports */
+
+position: absolute;
+width: 317px;
+height: 90px;
+left: 162px;
+top: 1589px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 200;
+font-size: 15px;
+line-height: 18px;
+
+color: #613717;
+
+
+
+/* Get started */
+
+position: absolute;
+width: 119px;
+height: 23px;
+left: 162px;
+top: 1749px;
+
+font-family: 'Inter';
+font-style: italic;
+font-weight: 400;
+font-size: 19px;
+line-height: 23px;
+/* identical to box height */
+text-decoration-line: underline;
+
+color: #432208;
+
+
+
+/* Automated commission tracking and invoicing. Know exactly what you're owed — and what's been paid — at a glance. */
+
+position: absolute;
+width: 290px;
+height: 88px;
+left: 574px;
+top: 1485px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 18px;
+line-height: 22px;
+
+color: #000000;
+
+
+
+/* Tuition & Commission */
+
+position: absolute;
+width: 266px;
+height: 25px;
+left: 574px;
+top: 1451px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #613717;
+
+
+
+/* Commission auto-calculation Invoice generation Payment status tracking GST & tax management Financial reporting */
+
+position: absolute;
+width: 317px;
+height: 90px;
+left: 574px;
+top: 1589px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 200;
+font-size: 15px;
+line-height: 18px;
+
+color: #613717;
+
+
+
+/* Get started */
+
+position: absolute;
+width: 119px;
+height: 23px;
+left: 574px;
+top: 1749px;
+
+font-family: 'Inter';
+font-style: italic;
+font-weight: 400;
+font-size: 19px;
+line-height: 23px;
+/* identical to box height */
+text-decoration-line: underline;
+
+color: #432208;
+
+
+
+/* Connect head office and overseas branches with real-time sync. Same platform, same data, anywhere in the world. */
+
+position: absolute;
+width: 304px;
+height: 88px;
+left: 983px;
+top: 1485px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 18px;
+line-height: 22px;
+
+color: #000000;
+
+
+
+/* Branch Operations */
+
+position: absolute;
+width: 266px;
+height: 25px;
+left: 983px;
+top: 1451px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #613717;
+
+
+
+/* Real-time data sync Branch-level reporting Inter-branch student transfer Payroll management Operations dashboard */
+
+position: absolute;
+width: 317px;
+height: 90px;
+left: 983px;
+top: 1589px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 200;
+font-size: 15px;
+line-height: 18px;
+
+color: #613717;
+
+
+
+/* Get started */
+
+position: absolute;
+width: 119px;
+height: 23px;
+left: 983px;
+top: 1749px;
+
+font-family: 'Inter';
+font-style: italic;
+font-weight: 400;
+font-size: 19px;
+line-height: 23px;
+/* identical to box height */
+text-decoration-line: underline;
+
+color: #432208;
+
+
+
+/* The essential tools every study abroad agency needs to operate efficiently. */
+
+position: absolute;
+width: 767px;
+height: 19px;
+left: calc(50% - 767px/2 - 208.5px);
+top: 806px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 16px;
+line-height: 19px;
+
+color: #613717;
+
+
+
+/* Rectangle 53 */
+
+position: absolute;
+width: 351px;
+height: 435px;
+left: 164px;
+top: 2595px;
+
+background: #FF9039;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+border-radius: 21px;
+
+
+/* Group 17 */
+
+position: absolute;
+width: 211px;
+height: 37px;
+left: 616px;
+top: 2375px;
+
+
+
+/* Rectangle 52 */
+
+position: absolute;
+width: 211px;
+height: 37px;
+left: 616px;
+top: 2375px;
+
+background: #3C3C3C;
+border-radius: 34px;
+
+
+/* AI-Powered Features */
+
+position: absolute;
+width: 165px;
+height: 16px;
+left: calc(50% - 165px/2 + 1.5px);
+top: 2386px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 16px;
+line-height: 98%;
+/* identical to box height, or 16px */
+
+color: #F8984D;
+
+
+
+/* image 15 */
+
+position: absolute;
+width: 31px;
+height: 31px;
+left: 162px;
+top: 926px;
+
+background: url(image.png);
+
+
+/* image 16 */
+
+position: absolute;
+width: 36px;
+height: 36px;
+left: 574px;
+top: 921px;
+
+background: url(image.png);
+
+
+/* image 17 */
+
+position: absolute;
+width: 29px;
+height: 29px;
+left: 986px;
+top: 928px;
+
+background: url(image.png);
+
+
+/* image 18 */
+
+position: absolute;
+width: 30px;
+height: 30px;
+left: 162px;
+top: 1410px;
+
+background: url(image.png);
+
+
+/* image 19 */
+
+position: absolute;
+width: 28px;
+height: 28px;
+left: 574px;
+top: 1412px;
+
+background: url(image.png);
+
+
+/* image 20 */
+
+position: absolute;
+width: 30px;
+height: 30px;
+left: 988px;
+top: 1410px;
+
+background: url(image.png);
+
+
+/* Deploy a 24/7 AI student support assistant. Instantly answer common enquiries, qualify leads, and book consultations — without lifting a finger. */
+
+position: absolute;
+width: 282px;
+height: 110px;
+left: 195px;
+top: 2692px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 18px;
+line-height: 22px;
+letter-spacing: -0.02em;
+
+color: #3A1900;
+
+
+
+/* AI Chatbot */
+
+position: absolute;
+width: 145px;
+height: 25px;
+left: 195px;
+top: 2656px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #3A1900;
+
+
+
+/* 24/7 automated responses Lead qualification Appointment booking Multi-language support Handoff to human agent */
+
+position: absolute;
+width: 262px;
+height: 90px;
+left: 195px;
+top: 2821px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 200;
+font-size: 15px;
+line-height: 18px;
+
+color: #3A1900;
+
+
+
+/* Rectangle 54 */
+
+position: absolute;
+width: 348px;
+height: 435px;
+left: 550px;
+top: 2595px;
+
+background: #FF9039;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+border-radius: 21px;
+
+
+/* Intelligent application forms that auto-complete from existing student data. Reduce errors, save time, and delight students. */
+
+position: absolute;
+width: 277px;
+height: 88px;
+left: 597px;
+top: 2692px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 18px;
+line-height: 22px;
+
+color: #3A1900;
+
+
+
+/* AI Smart Form */
+
+position: absolute;
+width: 169px;
+height: 25px;
+left: 597px;
+top: 2656px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #3A1900;
+
+
+
+/* Auto-fill from student profile Smart field validation Document upload prompts Progress saving Submission notifications */
+
+position: absolute;
+width: 277px;
+height: 90px;
+left: 597px;
+top: 2821px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 200;
+font-size: 15px;
+line-height: 18px;
+
+color: #3A1900;
+
+
+
+/* Rectangle 55 */
+
+position: absolute;
+width: 347px;
+height: 435px;
+left: 933px;
+top: 2595px;
+
+background: #FF9039;
+box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+border-radius: 21px;
+
+
+/* Personalised course and school recommendations powered by AI. Match each student to the perfect program based on their goals and profile. */
+
+position: absolute;
+width: 296px;
+height: 110px;
+left: 974px;
+top: 2692px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 18px;
+line-height: 22px;
+letter-spacing: -0.02em;
+
+color: #3A1900;
+
+
+
+/* AI Study Advisor */
+
+position: absolute;
+width: 185px;
+height: 25px;
+left: 974px;
+top: 2656px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #3A1900;
+
+
+
+/* Profile-based matching School ranking analysis Budget optimisation Visa success prediction Personalised report export */
+
+position: absolute;
+width: 250px;
+height: 90px;
+left: 974px;
+top: 2821px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 200;
+font-size: 15px;
+line-height: 18px;
+
+color: #3A1900;
+
+
+
+/* Rectangle 49 */
+
+position: absolute;
+width: 1453px;
+height: 686px;
+left: calc(50% - 1453px/2 - 0.5px);
+top: 3149px;
+
+background: #FF9039;
+
+
+/* Ready to streamline your agency? */
+
+position: absolute;
+width: 878px;
+height: 47px;
+left: calc(50% - 878px/2);
+top: 3279px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 48px;
+line-height: 98%;
+/* identical to box height, or 47px */
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* Screenshot 2569-04-01 at 14.08.26 1 */
+
+position: absolute;
+width: 1456px;
+height: 373px;
+left: -7px;
+top: 3639px;
+
+background: url(Screenshot 2569-04-01 at 14.08.26.png);
+
+
+/* Start with our free LITE plan today — no credit card required. */
+
+position: absolute;
+width: 767px;
+height: 29px;
+left: 336px;
+top: 3345px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 24px;
+line-height: 29px;
+/* identical to box height */
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* Rectangle 50 */
+
+position: absolute;
+width: 233px;
+height: 57px;
+left: 483px;
+top: 3452px;
+
+background: #FDFCFC;
+border-radius: 8px;
+
+
+/* Rectangle 51 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 212px;
+height: 57px;
+left: 745px;
+top: 3452px;
+
+border: 1px solid #FFFFFF;
+border-radius: 8px;
+
+
+/* Start for Free */
+
+position: absolute;
+width: 188px;
+height: 29px;
+left: 505px;
+top: 3467px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 24px;
+line-height: 29px;
+/* identical to box height */
+text-align: center;
+
+color: #D76811;
+
+
+
+/* Contact Us */
+
+position: absolute;
+width: 188px;
+height: 29px;
+left: 757px;
+top: 3467px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 24px;
+line-height: 29px;
+/* identical to box height */
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* image 24 */
+
+position: absolute;
+width: 1493px;
+height: 341px;
+left: calc(50% - 1493px/2 + 0.5px);
+top: 1947px;
+
+background: url(image.png);
+
+
+/* Group 25 */
+
+position: absolute;
+width: 202px;
+height: 33px;
+left: 195px;
+top: 2947px;
+
+
+
+/* Rectangle 64 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 192px;
+height: 33px;
+left: 200px;
+top: 2947px;
+
+border: 1px solid #000000;
+border-radius: 24px;
+
+
+/* Request Early Access */
+
+position: absolute;
+width: 202px;
+height: 19px;
+left: 195px;
+top: 2954px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 16px;
+line-height: 19px;
+text-align: center;
+
+color: #3A1900;
+
+
+
+/* Group 26 */
+
+position: absolute;
+width: 202px;
+height: 33px;
+left: 597px;
+top: 2947px;
+
+
+
+/* Rectangle 65 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 192px;
+height: 33px;
+left: 602px;
+top: 2947px;
+
+border: 1px solid #000000;
+border-radius: 24px;
+
+
+/* Request Early Access */
+
+position: absolute;
+width: 202px;
+height: 19px;
+left: 597px;
+top: 2954px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 16px;
+line-height: 19px;
+text-align: center;
+
+color: #3A1900;
+
+
+
+/* Group 27 */
+
+position: absolute;
+width: 202px;
+height: 33px;
+left: 974px;
+top: 2947px;
+
+
+
+/* Rectangle 66 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 192px;
+height: 33px;
+left: 979px;
+top: 2947px;
+
+border: 1px solid #000000;
+border-radius: 24px;
+
+
+/* Request Early Access */
+
+position: absolute;
+width: 202px;
+height: 19px;
+left: 974px;
+top: 2954px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 16px;
+line-height: 19px;
+text-align: center;
+
+color: #3A1900;
+
+
+
+/* Rectangle 67 */
+
+position: absolute;
+width: 899px;
+height: 273px;
+left: calc(50% - 899px/2 + 1.5px);
+top: 234px;
+
+background: #FFFFFF;
+border-radius: 19px;
+
+
+/* Everything your agency needs, in one platform. */
+
+position: absolute;
+width: 915px;
+height: 78px;
+left: calc(50% - 915px/2 + 1.5px);
+top: 329px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 40px;
+line-height: 98%;
+/* or 39px */
+text-align: center;
+
+color: #613717;
+
+
+
+/* From student management to AI automation — Edubee gives international education agencies the tools to operate at their best. */
+
+position: absolute;
+width: 500px;
+height: 36px;
+left: calc(50% - 500px/2 + 1px);
+top: 428px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 15px;
+line-height: 18px;
+text-align: center;
+
+color: #613717;
+
+
+
+/* Group 28 */
+
+position: absolute;
+width: 169px;
+height: 37px;
+left: calc(50% - 169px/2 + 1.5px);
+top: 281px;
+
+
+
+/* Rectangle 52 */
+
+position: absolute;
+width: 169px;
+height: 37px;
+left: 637px;
+top: 281px;
+
+background: #3C3C3C;
+border-radius: 34px;
+
+
+/* All Services */
+
+position: absolute;
+width: 132.38px;
+height: 15px;
+left: calc(50% - 132.38px/2 + 1.19px);
+top: 292px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 15px;
+line-height: 98%;
+/* identical to box height, or 15px */
+text-align: center;
+
+color: #F8984D;
+

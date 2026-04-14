@@ -1,143 +1,249 @@
 import { useTranslation } from 'react-i18next'
-import { GraduationCap, School, Handshake, Building2, CreditCard, BarChart3, Bot, FileText, BookOpen, CheckCircle, ArrowRight, Sparkles } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
-import { FadeIn } from '@/components/ui/FadeIn'
-import { CtaBanner } from '@/components/sections/CtaBanner'
-import { PageBackground } from '@/components/ui/PageBackground'
+import { ArrowRight } from 'lucide-react'
 
-const SERVICE_CONFIGS = [
-  { key: 'student', icon: GraduationCap, color: '#F5821F', bg: '#FEF0E3', featureCount: 5 },
-  { key: 'school',  icon: School,        color: '#3B82F6', bg: '#EFF6FF', featureCount: 5 },
-  { key: 'partner', icon: Handshake,     color: '#10B981', bg: '#ECFDF5', featureCount: 5 },
-  { key: 'agency',  icon: Building2,     color: '#8B5CF6', bg: '#F5F3FF', featureCount: 5 },
-  { key: 'tuition', icon: CreditCard,    color: '#EF4444', bg: '#FEF2F2', featureCount: 5 },
-  { key: 'branch',  icon: BarChart3,     color: '#F59E0B', bg: '#FFFBEB', featureCount: 5 },
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+function link(path: string) { return `${BASE}${path}` }
+
+const CORE_SERVICES = [
+  {
+    icon: '🎓',
+    title: 'Student Management',
+    desc: 'Track every student from first enquiry to graduation. Consultation history, profiles, and 6-stage workflow all in one place.',
+    features: ['Consultation history & profiling', 'Quotation & contract creation', '6-stage workflow tracking', 'Visa lodgement & approval', 'Re-enrollment reminders'],
+    href: '/services/student',
+  },
+  {
+    icon: '🏫',
+    title: 'School Management',
+    desc: 'Manage your entire school partner database — contracts, fees, commission rates, and application requirements in one searchable hub.',
+    features: ['School database & contracts', 'Commission rate management', 'Program & course catalog', 'School application tracking', 'Document management'],
+    href: '/services/school',
+  },
+  {
+    icon: '🤝',
+    title: 'Partner Management',
+    desc: 'Track referral partners, agreements, and commission payouts. Manage every relationship with full transparency.',
+    features: ['Partner agreement database', 'Commission calculation', 'Referral source tracking', 'Performance analytics', 'Payment records'],
+    href: '/services/partner',
+  },
+  {
+    icon: '🏢',
+    title: 'Agency Management',
+    desc: 'Manage multi-branch agency operations from a single dashboard. Staff access controls, performance visibility, and branch-level data.',
+    features: ['Multi-branch operations', 'Staff access control', 'Performance visibility', 'Head office dashboard', 'Branch management'],
+    href: '/services/agency',
+  },
+  {
+    icon: '💳',
+    title: 'Tuition & Commission',
+    desc: "Automated commission tracking and invoicing. Know exactly what you're owed — and what's been paid — at a glance.",
+    features: ['Commission auto-calculation', 'Invoice generation', 'Payment status tracking', 'GST & tax management', 'Multi-currency support'],
+    href: '/services/tuition',
+  },
+  {
+    icon: '📊',
+    title: 'Branch Operations',
+    desc: 'Connect head office and overseas branches with real-time sync. Same platform, same data, anywhere in the world.',
+    features: ['Real-time data sync', 'Branch performance reports', 'Staff management', 'Payroll management', 'Franchise dashboard'],
+    href: '/services/branch',
+  },
 ]
 
-const AI_CONFIGS = [
-  { key: 'aiChatbot', icon: Bot,       featureCount: 5 },
-  { key: 'aiForm',    icon: FileText,  featureCount: 5 },
-  { key: 'aiStudy',   icon: BookOpen,  featureCount: 5 },
+const AI_FEATURES = [
+  {
+    icon: '🤖',
+    title: 'AI Chatbot',
+    desc: 'Deploy a 24/7 AI student support assistant. Instantly answer common enquiries, qualify leads, and book consultations without lifting a finger.',
+    features: ['24/7 automated support', 'Lead qualification', 'Appointment booking', 'FAQ automation', 'Handoff to human agents'],
+  },
+  {
+    icon: '📝',
+    title: 'AI Smart Form',
+    desc: 'Intelligent application forms that auto-complete from existing student data. Reduce errors, save time, and delight students.',
+    features: ['Auto-complete from student data', 'Smart field validation', 'Document uploads', 'Progress tracking', 'Error prevention'],
+  },
+  {
+    icon: '📚',
+    title: 'AI Study Advisor',
+    desc: 'Intelligent course and school recommendations powered by AI. Match each student to the perfect program based on their goals and profile.',
+    features: ['Profile-based matching', 'Budget optimization', 'School comparison', 'Career path guidance', 'Real-time availability'],
+  },
 ]
 
 export default function ServicesPage() {
   const { t } = useTranslation()
 
-  const services = SERVICE_CONFIGS.map(s => ({
-    ...s,
-    title: t(`servicesPage.${s.key}.title`),
-    desc:  t(`servicesPage.${s.key}.desc`),
-    features: Array.from({ length: s.featureCount }, (_, i) => t(`servicesPage.${s.key}.f${i + 1}`)),
-  }))
-
-  const aiServices = AI_CONFIGS.map(s => ({
-    ...s,
-    title: t(`servicesPage.${s.key}.title`),
-    desc:  t(`servicesPage.${s.key}.desc`),
-    features: Array.from({ length: s.featureCount }, (_, i) => t(`servicesPage.${s.key}.f${i + 1}`)),
-  }))
-
   return (
-    <div>
-      {/* Hero */}
-      <section className="pt-6 pb-20 bg-white border-b border-neutral-200 relative overflow-hidden">
-        <PageBackground variant="hexagons" />
-        <div className="max-w-[1280px] mx-auto px-6 relative z-10">
-          <FadeIn className="text-center max-w-2xl mx-auto">
-            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-[#F5821F] mb-4 px-3 py-1 bg-[#FEF0E3] rounded-full">{t('servicesPage.hero.eyebrow')}</span>
-            <h1 className="text-[40px] font-bold text-neutral-900 mb-4 leading-tight">{t('servicesPage.hero.heading')}<br /><span className="text-[#F5821F]">{t('servicesPage.hero.headingOrange')}</span></h1>
-            <p className="text-base text-neutral-600 leading-relaxed">{t('servicesPage.hero.sub')}</p>
-          </FadeIn>
+    <div style={{ background: '#FFFFFF', fontFamily: 'Inter, sans-serif' }}>
+
+      {/* ───────── HERO ───────── */}
+      <section
+        className="relative overflow-hidden"
+        style={{
+          background: '#FFFBF7',
+          paddingTop: 80,
+          paddingBottom: 80,
+          backgroundImage: 'url(https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1440&auto=format&fit=crop&q=60)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 40%',
+        }}
+      >
+        <div className="absolute inset-0" style={{ background: 'rgba(255,251,247,0.88)' }} />
+        <div className="relative z-10 max-w-[1280px] mx-auto px-8 text-center">
+          <span
+            className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-5"
+            style={{ background: 'rgba(231,135,60,0.15)', color: '#E7873C' }}
+          >
+            All Services
+          </span>
+          <h1
+            className="font-bold mb-5"
+            style={{ fontSize: 'clamp(32px, 4vw, 56px)', color: '#200E00', lineHeight: '98%' }}
+          >
+            Everything your agency needs,<br />in one platform.
+          </h1>
+          <p className="mx-auto" style={{ fontSize: 18, fontWeight: 300, color: '#613717', lineHeight: '22px', maxWidth: 560 }}>
+            From Student Management to AI automation — Edubee gives international education agencies the tools to operate at their best.
+          </p>
         </div>
       </section>
 
-      {/* Core Services */}
-      <section className="py-20 bg-neutral-50">
-        <div className="max-w-[1280px] mx-auto px-6">
-          <FadeIn className="mb-12">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">{t('servicesPage.core.heading')}</h2>
-            <p className="text-sm text-neutral-500">{t('servicesPage.core.sub')}</p>
-          </FadeIn>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map(({ key, icon: Icon, color, bg, title, desc, features }, i) => (
-              <FadeIn key={key} delay={i * 70}>
-                <div className="bg-white border border-neutral-200 rounded-[16px] overflow-hidden hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-300 h-full flex flex-col group">
-                  <div className="p-6 pb-4 relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${bg} 0%, #ffffff 60%)` }}>
-                    <div className="absolute right-0 top-0 w-32 h-32 opacity-10" style={{ color }}>
-                      <svg viewBox="0 0 128 128" fill="currentColor"><circle cx="64" cy="64" r="60"/><circle cx="64" cy="64" r="40"/><circle cx="64" cy="64" r="20"/></svg>
-                    </div>
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 relative z-10" style={{ backgroundColor: bg }}>
-                      <Icon size={24} style={{ color }} />
-                    </div>
-                    <h3 className="text-lg font-bold text-neutral-900 relative z-10">{title}</h3>
-                  </div>
-                  <div className="p-6 flex flex-col flex-1">
-                    <p className="text-sm text-neutral-600 leading-relaxed mb-5">{desc}</p>
-                    <ul className="space-y-2 flex-1 mb-5">
-                      {features.map(f => (
-                        <li key={f} className="flex items-center gap-2 text-sm text-neutral-700">
-                          <CheckCircle size={13} className="flex-shrink-0" style={{ color }} />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                    <a href="/register" className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors" style={{ color }}>
-                      {t('servicesPage.ai.getStarted')} <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                    </a>
-                  </div>
-                </div>
-              </FadeIn>
+      {/* ───────── CORE SERVICES ───────── */}
+      <section style={{ background: '#FF9039', padding: '80px 0' }}>
+        <div className="max-w-[1280px] mx-auto px-8">
+          <div className="mb-10">
+            <h2 className="font-bold" style={{ fontSize: 'clamp(28px, 3vw, 48px)', color: '#613717', lineHeight: '98%' }}>
+              Core Services
+            </h2>
+            <p className="mt-3" style={{ fontSize: 16, color: '#7A3F0E', fontWeight: 400 }}>
+              The tools that every study abroad agency needs to operate efficiently.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {CORE_SERVICES.map((s, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-[21px] p-8 flex flex-col hover:shadow-2xl transition-all cursor-pointer"
+                style={{ boxShadow: '3px 4px 6.1px rgba(0,0,0,0.15)' }}
+                onClick={() => window.location.href = link(s.href)}
+              >
+                <div className="text-4xl mb-4">{s.icon}</div>
+                <h3 className="font-bold mb-3" style={{ fontSize: 21, color: '#613717' }}>{s.title}</h3>
+                <p className="text-sm leading-relaxed mb-5" style={{ color: '#000000', fontWeight: 300, lineHeight: '22px' }}>{s.desc}</p>
+                <ul className="space-y-1.5 mb-6 flex-1">
+                  {s.features.map((f, j) => (
+                    <li key={j} className="text-sm" style={{ color: '#613717', fontWeight: 200, lineHeight: '18px' }}>• {f}</li>
+                  ))}
+                </ul>
+                <a
+                  href={link(s.href)}
+                  className="inline-flex items-center gap-1 font-semibold italic underline"
+                  style={{ color: '#432208', fontSize: 19 }}
+                >
+                  Get started
+                </a>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* AI Features */}
-      <section className="py-20 bg-[#111110] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66 L0 50 L0 16 L28 0 L56 16 L56 50 Z' fill='none' stroke='white' stroke-width='1'/%3E%3Cpath d='M28 66 L28 100' fill='none' stroke='white' stroke-width='1'/%3E%3C/svg%3E\")",
-          backgroundSize: '56px 100px',
-        }} />
-        <div className="max-w-[1280px] mx-auto px-6 relative z-10">
-          <FadeIn className="mb-12 text-center">
-            <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#F5821F] mb-4 px-3 py-1 bg-[#F5821F]/10 rounded-full border border-[#F5821F]/20">
-              <Sparkles size={12} /> {t('servicesPage.ai.eyebrow')}
+      {/* ───────── OFFICE PHOTO BREAK ───────── */}
+      <section className="relative overflow-hidden" style={{ height: 400 }}>
+        <img
+          src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1440&auto=format&fit=crop&q=80"
+          alt="Modern office"
+          className="w-full h-full object-cover object-center"
+        />
+        <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.35)' }} />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <p className="text-white font-bold text-center" style={{ fontSize: 'clamp(24px, 3vw, 36px)', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+            Built for agencies that think globally.
+          </p>
+        </div>
+      </section>
+
+      {/* ───────── AI-POWERED FEATURES ───────── */}
+      <section
+        className="relative overflow-hidden"
+        style={{
+          backgroundImage: 'url(https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1440&auto=format&fit=crop&q=80)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          padding: '80px 0',
+        }}
+      >
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(115.49deg, rgba(39,39,39,0.95) 15.14%, rgba(10,9,8,0.95) 92.66%)' }} />
+        <div className="relative z-10 max-w-[1280px] mx-auto px-8">
+          <div className="text-center mb-12">
+            <span
+              className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-5"
+              style={{ background: 'rgba(255,144,57,0.25)', color: '#FF9039' }}
+            >
+              AI Powered Features
             </span>
-            <h2 className="text-2xl font-bold text-white mb-2">{t('servicesPage.ai.heading')}</h2>
-            <p className="text-sm text-neutral-400">{t('servicesPage.ai.sub')}</p>
-          </FadeIn>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {aiServices.map(({ key, icon: Icon, title, desc, features }, i) => (
-              <FadeIn key={key} delay={i * 100}>
-                <div className="bg-white/5 border border-white/10 rounded-[16px] p-6 hover:bg-white/10 transition-all duration-300 h-full flex flex-col">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-11 h-11 rounded-xl bg-[#F5821F]/20 flex items-center justify-center">
-                      <Icon size={22} className="text-[#F5821F]" />
-                    </div>
-                    <div>
-                      <Badge variant="new" className="text-[10px] mb-0.5">{t('common.newBadge')}</Badge>
-                      <h3 className="text-base font-bold text-white">{title}</h3>
-                    </div>
-                  </div>
-                  <p className="text-sm text-neutral-400 leading-relaxed mb-5">{desc}</p>
-                  <ul className="space-y-2 flex-1 mb-6">
-                    {features.map(f => (
-                      <li key={f} className="flex items-center gap-2 text-sm text-neutral-300">
-                        <CheckCircle size={13} className="text-[#F5821F] flex-shrink-0" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button variant="secondary" href="/register" size="sm">{t('servicesPage.ai.earlyAccess')}</Button>
-                </div>
-              </FadeIn>
+            <h2 className="text-white font-bold mb-3" style={{ fontSize: 'clamp(28px, 3.5vw, 48px)', lineHeight: '98%' }}>
+              The future of study abroad,<br />powered by AI
+            </h2>
+            <p className="text-white/60 mx-auto" style={{ fontSize: 17, fontWeight: 300, maxWidth: 600 }}>
+              New AI tools that automate the repetitive and enhance the human touch.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {AI_FEATURES.map((f, i) => (
+              <div
+                key={i}
+                className="rounded-[21px] p-7"
+                style={{ background: 'rgba(255,144,57,0.15)', border: '1px solid rgba(255,144,57,0.3)' }}
+              >
+                <div className="text-4xl mb-4">{f.icon}</div>
+                <h3 className="font-bold text-white text-xl mb-3">{f.title}</h3>
+                <p className="text-white/70 text-sm leading-relaxed mb-5">{f.desc}</p>
+                <ul className="space-y-1.5 mb-6">
+                  {f.features.map((feat, j) => (
+                    <li key={j} className="text-sm text-white/60">• {feat}</li>
+                  ))}
+                </ul>
+                <button
+                  className="px-5 py-2.5 rounded-[28px] font-semibold text-sm transition-all hover:opacity-90"
+                  style={{ background: '#FF9039', color: 'white' }}
+                >
+                  Request Early Access
+                </button>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <CtaBanner />
+      {/* ───────── CTA BANNER ───────── */}
+      <section style={{ background: '#FF9039', padding: '80px 0' }}>
+        <div className="max-w-[1280px] mx-auto px-8 text-center">
+          <h2 className="text-white font-bold mb-3" style={{ fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: '98%' }}>
+            Ready to streamline your agency?
+          </h2>
+          <p className="text-white/80 mb-8" style={{ fontSize: 17, fontWeight: 300 }}>
+            Start with our free LITE plan today — no credit card required.
+          </p>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <a
+              href={link('/admin/register')}
+              className="inline-flex items-center gap-2 px-8 py-4 font-semibold rounded-[28px] transition-all hover:scale-105"
+              style={{ background: 'white', color: '#E7873C', fontSize: 17 }}
+            >
+              Start for Free
+            </a>
+            <a
+              href={link('/support/contact')}
+              className="inline-flex items-center gap-2 px-8 py-4 font-semibold rounded-[28px] border-2 border-white text-white transition-all hover:bg-white/10"
+              style={{ fontSize: 17 }}
+            >
+              Contact Us
+            </a>
+          </div>
+        </div>
+      </section>
+
     </div>
   )
 }

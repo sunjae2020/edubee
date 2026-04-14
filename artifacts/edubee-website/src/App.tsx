@@ -77,7 +77,7 @@ function SiteLayout({ children }: { children: React.ReactNode }) {
       <JsonLd type="WebSite" />
       <AnnouncementBanner />
       <Header />
-      <main className="pt-14">{children}</main>
+      <main className="pt-[83px]">{children}</main>
       <Footer />
     </>
   );

@@ -1,0 +1,2162 @@
+/* Platform */
+
+position: relative;
+width: 1440px;
+height: 4366px;
+
+background: #FFFFFF;
+
+
+/* Rectangle 1 */
+
+position: absolute;
+width: 1440px;
+height: 743px;
+left: 0px;
+top: 83px;
+
+background: #FFFBF7;
+
+
+/* image 27 */
+
+position: absolute;
+width: 1439px;
+height: 807px;
+left: calc(50% - 1439px/2 + 0.5px);
+top: 19px;
+
+background: url(image.png);
+background-blend-mode: color-burn;
+
+
+/* Rectangle 17 */
+
+position: absolute;
+width: 1440px;
+height: 761px;
+left: 0px;
+top: 1457px;
+
+background: #FFFBF7;
+
+
+/* Rectangle 72 */
+
+position: absolute;
+width: 1440px;
+height: 614px;
+left: 0px;
+top: 2215px;
+
+background: #FF9039;
+
+
+/* image 28 */
+
+position: absolute;
+width: 1439px;
+height: 666px;
+left: calc(50% - 1439px/2 + 0.5px);
+top: 2165px;
+
+background: url(image.png);
+background-blend-mode: color-burn;
+
+
+/* Rectangle 71 */
+
+position: absolute;
+width: 1228px;
+height: 568px;
+left: calc(50% - 1228px/2);
+top: 1552px;
+
+background: #FF9039;
+box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.1);
+border-radius: 20px;
+
+
+/* Rectangle 67 */
+
+position: absolute;
+width: 899px;
+height: 425px;
+left: calc(50% - 899px/2 + 1.5px);
+top: 234px;
+
+background: #FFFFFF;
+border-radius: 19px;
+
+
+/* Rectangle 12 */
+
+position: absolute;
+width: 1520px;
+height: 631px;
+left: -40px;
+top: 826px;
+
+background: url(image.png);
+
+
+/* Group 36 */
+
+position: absolute;
+width: 211px;
+height: 37px;
+left: calc(50% - 211px/2 - 501.5px);
+top: 938px;
+
+
+
+/* Rectangle 52 */
+
+position: absolute;
+width: 211px;
+height: 37px;
+left: 113px;
+top: 938px;
+
+background: #3C3C3C;
+border-radius: 34px;
+
+
+/* Program Overview */
+
+position: absolute;
+width: 192px;
+height: 16px;
+left: calc(50% - 192px/2 - 501px);
+top: 949px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 16px;
+line-height: 98%;
+/* identical to box height, or 16px */
+text-align: center;
+
+color: #F8984D;
+
+
+
+/* Rectangle 68 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 1215px;
+height: 215px;
+left: calc(50% - 1215px/2 + 0.5px);
+top: 1117px;
+
+background: rgba(249, 245, 239, 0.8);
+box-shadow: 4px 4px 14.4px rgba(0, 0, 0, 0.1);
+border-radius: 19px;
+
+
+/* Group 30 */
+
+position: absolute;
+width: 1084px;
+height: 76.68px;
+left: 178px;
+top: 1217px;
+
+
+
+/* Consultation */
+
+position: absolute;
+width: 182.5px;
+height: 27.45px;
+left: 202.64px;
+top: 1225.52px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 18px;
+line-height: 22px;
+
+color: #613717;
+
+
+
+/* 1 */
+
+position: absolute;
+width: 28.29px;
+height: 71px;
+left: 178px;
+top: 1217px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 52px;
+line-height: 63px;
+
+color: #B54F00;
+
+
+
+/* Profiling & estimates */
+
+position: absolute;
+width: 135.97px;
+height: 30.29px;
+left: 202.64px;
+top: 1248.24px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 17px;
+
+color: #000000;
+
+
+
+/* School Application */
+
+position: absolute;
+width: 132.32px;
+height: 27.45px;
+left: 402.48px;
+top: 1225.52px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 18px;
+line-height: 100%;
+/* or 18px */
+
+color: #613717;
+
+
+
+/* 2 */
+
+position: absolute;
+width: 28.29px;
+height: 71px;
+left: 366.89px;
+top: 1217px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 52px;
+line-height: 63px;
+
+color: #B54F00;
+
+
+
+/* Documents & fees */
+
+position: absolute;
+width: 124.1px;
+height: 30.29px;
+left: 402.48px;
+top: 1263.38px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 111%;
+/* or 16px */
+
+color: #000000;
+
+
+
+/* Visa Processing */
+
+position: absolute;
+width: 122.28px;
+height: 27.45px;
+left: 588.63px;
+top: 1225.52px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 18px;
+line-height: 100%;
+/* or 18px */
+
+color: #613717;
+
+
+
+/* 3 */
+
+position: absolute;
+width: 28.29px;
+height: 71px;
+left: 552.13px;
+top: 1217px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 52px;
+line-height: 63px;
+
+color: #B54F00;
+
+
+
+/* Lodgement & approval */
+
+position: absolute;
+width: 122.28px;
+height: 30.29px;
+left: 588.63px;
+top: 1263.38px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 111%;
+/* or 16px */
+
+color: #000000;
+
+
+
+/* Payment Management */
+
+position: absolute;
+width: 146.92px;
+height: 27.45px;
+left: 764.75px;
+top: 1225.52px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 18px;
+line-height: 100%;
+/* or 18px */
+
+color: #613717;
+
+
+
+/* 4 */
+
+position: absolute;
+width: 28.29px;
+height: 71px;
+left: 728.25px;
+top: 1217px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 52px;
+line-height: 63px;
+
+color: #B54F00;
+
+
+
+/* Batch processing */
+
+position: absolute;
+width: 131.4px;
+height: 30.29px;
+left: 764.75px;
+top: 1263.38px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 111%;
+/* or 16px */
+
+color: #000000;
+
+
+
+/* Post-Enrollment */
+
+position: absolute;
+width: 120.45px;
+height: 27.45px;
+left: 965.51px;
+top: 1225.52px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 18px;
+line-height: 100%;
+/* or 18px */
+
+color: #613717;
+
+
+
+/* 5 */
+
+position: absolute;
+width: 28.29px;
+height: 71px;
+left: 929px;
+top: 1217px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 52px;
+line-height: 63px;
+
+color: #B54F00;
+
+
+
+/* Tuition & changes */
+
+position: absolute;
+width: 131.4px;
+height: 30.29px;
+left: 965.51px;
+top: 1263.38px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 111%;
+/* or 16px */
+
+color: #000000;
+
+
+
+/* Re-enrollment */
+
+position: absolute;
+width: 98px;
+height: 28px;
+left: 1151px;
+top: 1225.19px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 18px;
+line-height: 100%;
+/* or 18px */
+
+color: #613717;
+
+
+
+/* 6 */
+
+position: absolute;
+width: 28.29px;
+height: 71px;
+left: 1114.25px;
+top: 1217px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 52px;
+line-height: 63px;
+
+color: #B54F00;
+
+
+
+/* Auto reminders */
+
+position: absolute;
+width: 111px;
+height: 30px;
+left: 1151px;
+top: 1263.19px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 111%;
+/* or 16px */
+
+color: #000000;
+
+
+
+/* Rectangle 3 */
+
+position: absolute;
+width: 1440px;
+height: 83px;
+left: 0px;
+top: 0px;
+
+background: #FFFFFF;
+
+
+/* Rectangle 8 */
+
+position: absolute;
+width: 158px;
+height: 37px;
+left: 1216px;
+top: 21px;
+
+background: #E7873C;
+border-radius: 28px;
+
+
+/* Start for Free */
+
+position: absolute;
+width: 121px;
+height: 24px;
+left: 1235px;
+top: 30px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 18px;
+line-height: 118.83%;
+/* or 21px */
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* Login */
+
+position: absolute;
+width: 57px;
+height: 24px;
+left: 1147px;
+top: 28px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 18px;
+line-height: 118.83%;
+/* or 21px */
+text-align: center;
+
+color: #200E00;
+
+
+
+/* English */
+
+position: absolute;
+width: 67px;
+height: 24px;
+left: 1007px;
+top: 28px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 18px;
+line-height: 118.83%;
+/* or 21px */
+text-align: center;
+
+color: #200E00;
+
+
+
+/* image 25 */
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 1085px;
+top: 30px;
+
+background: url(image.png);
+
+
+/* image 4 */
+
+position: absolute;
+width: 120px;
+height: 47px;
+left: 55px;
+top: 17px;
+
+background: url(image.png);
+
+
+/* Group 29 */
+
+position: absolute;
+width: 443px;
+height: 44px;
+left: calc(50% - 443px/2 + 0.5px);
+top: 538px;
+
+
+
+/* Rectangle 5 */
+
+position: absolute;
+width: 220px;
+height: 44px;
+left: 499px;
+top: 538px;
+
+background: #FF9039;
+border-radius: 21px;
+
+
+/* Rectangle 6 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 200px;
+height: 44px;
+left: 742px;
+top: 538px;
+
+border: 1px solid #432208;
+border-radius: 21px;
+
+
+/* Start for Free */
+
+position: absolute;
+width: 188px;
+height: 29px;
+left: 515px;
+top: 549px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 20px;
+line-height: 24px;
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* Book a Demo */
+
+position: absolute;
+width: 188px;
+height: 29px;
+left: 748px;
+top: 549px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 20px;
+line-height: 24px;
+text-align: center;
+
+color: #432208;
+
+
+
+/* The 6-Stage Student Workflow */
+
+position: absolute;
+width: 799px;
+height: 39px;
+left: calc(50% - 799px/2 - 197.5px);
+top: 989px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 40px;
+line-height: 98%;
+/* or 39px */
+
+color: #FFFFFF;
+
+
+
+/* Every student follows a structured journey. Edubee tracks every step — ensuring nothing falls through the cracks. */
+
+position: absolute;
+width: 520px;
+height: 38px;
+left: calc(50% - 520px/2 - 337px);
+top: 1036px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 16px;
+line-height: 19px;
+
+color: #FFFFFF;
+
+
+
+/* Rectangle 49 */
+
+position: absolute;
+width: 1453px;
+height: 686px;
+left: calc(50% - 1453px/2 - 5.5px);
+top: 3503px;
+
+background: #FF9039;
+
+
+/* Ready to streamline your agency? */
+
+position: absolute;
+width: 878px;
+height: 47px;
+left: calc(50% - 878px/2 - 5px);
+top: 3633px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 48px;
+line-height: 98%;
+/* identical to box height, or 47px */
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* Screenshot 2569-04-01 at 14.08.26 1 */
+
+position: absolute;
+width: 1456px;
+height: 373px;
+left: -12px;
+top: 3993px;
+
+background: url(Screenshot 2569-04-01 at 14.08.26.png);
+
+
+/* Start with our free LITE plan today — no credit card required. */
+
+position: absolute;
+width: 767px;
+height: 29px;
+left: 331px;
+top: 3699px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 24px;
+line-height: 29px;
+/* identical to box height */
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* Rectangle 50 */
+
+position: absolute;
+width: 233px;
+height: 57px;
+left: 478px;
+top: 3806px;
+
+background: #FDFCFC;
+border-radius: 8px;
+
+
+/* Rectangle 51 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 212px;
+height: 57px;
+left: 740px;
+top: 3806px;
+
+border: 1px solid #FFFFFF;
+border-radius: 8px;
+
+
+/* Start for Free */
+
+position: absolute;
+width: 188px;
+height: 29px;
+left: 500px;
+top: 3821px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 24px;
+line-height: 29px;
+/* identical to box height */
+text-align: center;
+
+color: #D76811;
+
+
+
+/* Contact Us */
+
+position: absolute;
+width: 188px;
+height: 29px;
+left: 752px;
+top: 3821px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 24px;
+line-height: 29px;
+/* identical to box height */
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* Built for how study abroad agencies actually work. */
+
+position: absolute;
+width: 915px;
+height: 78px;
+left: calc(50% - 915px/2 + 1.5px);
+top: 363px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 40px;
+line-height: 98%;
+/* or 39px */
+text-align: center;
+
+color: #613717;
+
+
+
+/* Edubee's platform covers every stage of the student journey — from first contact to post-enrollment — with automation that saves hours every week. */
+
+position: absolute;
+width: 561px;
+height: 36px;
+left: calc(50% - 561px/2 + 0.5px);
+top: 456px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 15px;
+line-height: 18px;
+text-align: center;
+
+color: #613717;
+
+
+
+/* Group 28 */
+
+position: absolute;
+width: 113px;
+height: 37px;
+left: calc(50% - 113px/2 + 0.5px);
+top: 311px;
+
+
+
+/* Rectangle 52 */
+
+position: absolute;
+width: 113px;
+height: 37px;
+left: 664px;
+top: 311px;
+
+background: #3C3C3C;
+border-radius: 34px;
+
+
+/* Platform */
+
+position: absolute;
+width: 89px;
+height: 15px;
+left: calc(50% - 89px/2 + 0.5px);
+top: 322px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 15px;
+line-height: 98%;
+/* identical to box height, or 15px */
+text-align: center;
+
+color: #F8984D;
+
+
+
+/* Ellipse 8 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 32px;
+height: 32px;
+left: 176px;
+top: 1171px;
+
+background: #3A1900;
+border: 1px solid #3A1900;
+
+
+/* Ellipse 9 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 32px;
+height: 32px;
+left: 370px;
+top: 1171px;
+
+background: #3A1900;
+border: 1px solid #3A1900;
+
+
+/* Ellipse 10 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 32px;
+height: 32px;
+left: 554px;
+top: 1171px;
+
+background: #3A1900;
+border: 1px solid #3A1900;
+
+
+/* Ellipse 11 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 32px;
+height: 32px;
+left: 738px;
+top: 1171px;
+
+background: #3A1900;
+border: 1px solid #3A1900;
+
+
+/* Ellipse 12 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 32px;
+height: 32px;
+left: 925px;
+top: 1171px;
+
+background: #3A1900;
+border: 1px solid #3A1900;
+
+
+/* Ellipse 13 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 32px;
+height: 32px;
+left: 1111px;
+top: 1171px;
+
+background: #3A1900;
+border: 1px solid #3A1900;
+
+
+/* Vector 10 */
+
+position: absolute;
+width: 941px;
+height: 0px;
+left: 192px;
+top: 1187px;
+
+background: #3A1900;
+border: 1px solid #3A1900;
+
+
+/* Automate the routine. Focus on students. */
+
+position: absolute;
+width: 799px;
+height: 94px;
+left: calc(50% - 799px/2 + 0.5px);
+top: 1679px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 48px;
+line-height: 98%;
+/* or 47px */
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* Edubee automatically generates daily, weekly, and monthly reports so your team can focus on consulting, not admin. */
+
+position: absolute;
+width: 513px;
+height: 42px;
+left: calc(50% - 513px/2 + 0.5px);
+top: 1784px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 17px;
+line-height: 21px;
+text-align: center;
+
+color: #FFFFFF;
+
+
+
+/* Rectangle 53 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 281px;
+height: 177px;
+left: 263px;
+top: 1863px;
+
+background: rgba(255, 255, 255, 0.25);
+border: 1px solid #FFFFFF;
+border-radius: 21px;
+
+
+/* Rectangle 73 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 260px;
+height: 132px;
+left: 745px;
+top: 2398px;
+
+background: rgba(255, 255, 255, 0.8);
+border: 1px solid #FFFFFF;
+border-radius: 21px;
+
+
+/* Rectangle 74 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 247px;
+height: 132px;
+left: 1026px;
+top: 2398px;
+
+background: rgba(255, 255, 255, 0.8);
+border: 1px solid #FFFFFF;
+border-radius: 21px;
+
+
+/* Rectangle 75 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 223px;
+height: 132px;
+left: 745px;
+top: 2550px;
+
+background: rgba(255, 255, 255, 0.8);
+border: 1px solid #FFFFFF;
+border-radius: 21px;
+
+
+/* Rectangle 76 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 233px;
+height: 132px;
+left: 992px;
+top: 2550px;
+
+background: rgba(255, 255, 255, 0.8);
+border: 1px solid #FFFFFF;
+border-radius: 21px;
+
+
+/* Group 17 */
+
+position: absolute;
+width: 211px;
+height: 37px;
+left: calc(50% - 211px/2 + 0.5px);
+top: 1631px;
+
+
+
+/* Rectangle 52 */
+
+position: absolute;
+width: 211px;
+height: 37px;
+left: 615px;
+top: 1631px;
+
+background: #3C3C3C;
+border-radius: 34px;
+
+
+/* Operations Automation */
+
+position: absolute;
+width: 192px;
+height: 16px;
+left: calc(50% - 192px/2 + 1px);
+top: 1642px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 16px;
+line-height: 98%;
+/* identical to box height, or 16px */
+text-align: center;
+
+color: #F8984D;
+
+
+
+/* Automate the routine. Focus on students. */
+
+position: absolute;
+width: 525px;
+height: 94px;
+left: calc(50% - 525px/2 - 275.5px);
+top: 2457px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 48px;
+line-height: 98%;
+/* or 47px */
+
+color: #432208;
+
+
+
+/* Edubee automatically generates daily, weekly, and monthly reports so your team can focus on consulting, not admin. */
+
+position: absolute;
+width: 469px;
+height: 42px;
+left: calc(50% - 469px/2 - 303.5px);
+top: 2562px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 17px;
+line-height: 21px;
+
+color: #432208;
+
+
+
+/* Group 34 */
+
+position: absolute;
+width: 211px;
+height: 37px;
+left: calc(50% - 211px/2 - 448.5px);
+top: 2408px;
+
+
+
+/* Rectangle 52 */
+
+position: absolute;
+width: 211px;
+height: 37px;
+left: 166px;
+top: 2408px;
+
+background: #3C3C3C;
+border-radius: 34px;
+
+
+/* Marketing Reports */
+
+position: absolute;
+width: 192px;
+height: 16px;
+left: calc(50% - 192px/2 - 448px);
+top: 2419px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 16px;
+line-height: 98%;
+/* identical to box height, or 16px */
+text-align: center;
+
+color: #F8984D;
+
+
+
+/* New enquiry notifications Task & follow-up reminders Visa expiry alerts Daily student status updates */
+
+position: absolute;
+width: 187px;
+height: 68px;
+left: 330px;
+top: 1938px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 17px;
+letter-spacing: -0.02em;
+
+color: #3A1900;
+
+
+
+/* Daily */
+
+position: absolute;
+width: 145px;
+height: 25px;
+left: 298px;
+top: 1902px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #3A1900;
+
+
+
+/* Group 31 */
+
+position: absolute;
+width: 20px;
+height: 50px;
+left: 298px;
+top: 1949px;
+
+
+
+/* Arrow 3 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 298px;
+top: 1949px;
+
+border: 1px solid #000000;
+
+
+/* Arrow 4 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 298px;
+top: 1966px;
+
+border: 1px solid #000000;
+
+
+/* Arrow 5 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 298px;
+top: 1982px;
+
+border: 1px solid #000000;
+
+
+/* Arrow 6 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 298px;
+top: 1999px;
+
+border: 1px solid #000000;
+
+
+/* Rectangle 69 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 281px;
+height: 177px;
+left: 579px;
+top: 1863px;
+
+background: rgba(255, 255, 255, 0.25);
+border: 1px solid #FFFFFF;
+border-radius: 21px;
+
+
+/* Weekly pipeline summary Staff performance overview Commission reconciliation Branch sync reports */
+
+position: absolute;
+width: 193px;
+height: 68px;
+left: 644px;
+top: 1938px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 17px;
+letter-spacing: -0.02em;
+
+color: #3A1900;
+
+
+
+/* Weekly */
+
+position: absolute;
+width: 145px;
+height: 25px;
+left: 612px;
+top: 1902px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #3A1900;
+
+
+
+/* Rectangle 70 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 281px;
+height: 177px;
+left: 895px;
+top: 1863px;
+
+background: rgba(255, 255, 255, 0.25);
+border: 1px solid #FFFFFF;
+border-radius: 21px;
+
+
+/* Monthly revenue report Conversion rate analysis School commission statement Marketing ROI summary */
+
+position: absolute;
+width: 201px;
+height: 68px;
+left: 966px;
+top: 1938px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 17px;
+letter-spacing: -0.02em;
+
+color: #3A1900;
+
+
+
+/* Monthly */
+
+position: absolute;
+width: 145px;
+height: 25px;
+left: 934px;
+top: 1902px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 21px;
+line-height: 25px;
+
+color: #3A1900;
+
+
+
+/* Group 32 */
+
+position: absolute;
+width: 20px;
+height: 50px;
+left: 612px;
+top: 1947px;
+
+
+
+/* Arrow 3 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 612px;
+top: 1947px;
+
+border: 1px solid #000000;
+
+
+/* Arrow 4 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 612px;
+top: 1964px;
+
+border: 1px solid #000000;
+
+
+/* Arrow 5 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 612px;
+top: 1980px;
+
+border: 1px solid #000000;
+
+
+/* Arrow 6 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 612px;
+top: 1997px;
+
+border: 1px solid #000000;
+
+
+/* Group 33 */
+
+position: absolute;
+width: 20px;
+height: 50px;
+left: 934px;
+top: 1947px;
+
+
+
+/* Arrow 3 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 934px;
+top: 1947px;
+
+border: 1px solid #000000;
+
+
+/* Arrow 4 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 934px;
+top: 1964px;
+
+border: 1px solid #000000;
+
+
+/* Arrow 5 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 934px;
+top: 1980px;
+
+border: 1px solid #000000;
+
+
+/* Arrow 6 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 20px;
+height: 0px;
+left: 934px;
+top: 1997px;
+
+border: 1px solid #000000;
+
+
+/* Track where students come from — web, referrals, social, events */
+
+position: absolute;
+width: 153px;
+height: 42px;
+left: 819px;
+top: 2447px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 98%;
+/* or 14px */
+
+color: #613717;
+
+
+
+/* Lead Sources */
+
+position: absolute;
+width: 153px;
+height: 20px;
+left: 819px;
+top: 2422px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 20px;
+line-height: 98%;
+/* identical to box height, or 20px */
+
+color: #613717;
+
+
+
+/* 12+ */
+
+position: absolute;
+width: 55px;
+height: 31px;
+left: 758px;
+top: 2420px;
+
+font-family: 'Istok Web';
+font-style: normal;
+font-weight: 700;
+font-size: 32px;
+line-height: 98%;
+/* or 31px */
+text-align: right;
+letter-spacing: -0.18em;
+
+color: #613717;
+
+
+
+/* $ */
+
+position: absolute;
+width: 29px;
+height: 31px;
+left: 760px;
+top: 2572px;
+
+font-family: 'Istok Web';
+font-style: normal;
+font-weight: 700;
+font-size: 32px;
+line-height: 98%;
+/* or 31px */
+text-align: right;
+letter-spacing: -0.18em;
+
+color: #613717;
+
+
+
+/* % */
+
+position: absolute;
+width: 29px;
+height: 31px;
+left: 1013px;
+top: 2572px;
+
+font-family: 'Iosevka Charon Mono';
+font-style: normal;
+font-weight: 700;
+font-size: 32px;
+line-height: 98%;
+/* or 31px */
+text-align: right;
+letter-spacing: -0.18em;
+
+color: #613717;
+
+
+
+/* Monitor enquiry-to-enrollment conversion at every funnel stage */
+
+position: absolute;
+width: 161px;
+height: 42px;
+left: 1078px;
+top: 2447px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 98%;
+/* or 14px */
+
+color: #613717;
+
+
+
+/* Conversion Rate */
+
+position: absolute;
+width: 184px;
+height: 20px;
+left: 1078px;
+top: 2422px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 20px;
+line-height: 98%;
+/* identical to box height, or 20px */
+
+color: #613717;
+
+
+
+/* Know which marketing channels generate the most revenue */
+
+position: absolute;
+width: 186px;
+height: 42px;
+left: 795px;
+top: 2618px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 98%;
+/* or 14px */
+
+color: #613717;
+
+
+
+/* Revenue by Channel */
+
+position: absolute;
+width: 126px;
+height: 40px;
+left: 795px;
+top: 2574px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 20px;
+line-height: 98%;
+/* or 20px */
+
+color: #613717;
+
+
+
+/* Compare campaign spend against student enrollments attributed */
+
+position: absolute;
+width: 159px;
+height: 42px;
+left: 1044px;
+top: 2599px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 98%;
+/* or 14px */
+
+color: #613717;
+
+
+
+/* Campaign ROI */
+
+position: absolute;
+width: 172px;
+height: 20px;
+left: 1044px;
+top: 2574px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 20px;
+line-height: 98%;
+/* identical to box height, or 20px */
+
+color: #613717;
+
+
+
+/* Arrow 7 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 29px;
+height: 0px;
+left: 1065px;
+top: 2420px;
+
+border: 3px solid #613717;
+transform: rotate(-90deg);
+
+
+/* Rectangle 77 */
+
+position: absolute;
+width: 1440px;
+height: 669px;
+left: 0px;
+top: 2829px;
+
+background: #F2F2F2;
+
+
+/* Rectangle 78 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 501px;
+height: 107px;
+left: 210px;
+top: 3129px;
+
+background: rgba(255, 255, 255, 0.8);
+border: 1px solid #CECBCB;
+border-radius: 21px;
+
+
+/* Rectangle 79 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 497px;
+height: 108px;
+left: 210px;
+top: 3256px;
+
+background: rgba(255, 255, 255, 0.8);
+border: 1px solid #CECBCB;
+border-radius: 21px;
+
+
+/* Use Edubee from anywhere in the world. */
+
+position: absolute;
+width: 1013px;
+height: 47px;
+left: calc(50% - 1013px/2 + 0.5px);
+top: 3007px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 48px;
+line-height: 98%;
+/* identical to box height, or 47px */
+text-align: center;
+
+color: #432208;
+
+
+
+/* Your office PC, home laptop, overseas branch, or mobile — same experience, same data, always in sync. */
+
+position: absolute;
+width: 857px;
+height: 21px;
+left: calc(50% - 857px/2 + 0.5px);
+top: 3067px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 17px;
+line-height: 21px;
+/* identical to box height */
+text-align: center;
+
+color: #432208;
+
+
+
+/* Group 35 */
+
+position: absolute;
+width: 211px;
+height: 37px;
+left: calc(50% - 211px/2 + 0.5px);
+top: 2950px;
+
+
+
+/* Rectangle 52 */
+
+position: absolute;
+width: 211px;
+height: 37px;
+left: 615px;
+top: 2950px;
+
+background: #3C3C3C;
+border-radius: 34px;
+
+
+/* Access & Environment */
+
+position: absolute;
+width: 192px;
+height: 16px;
+left: calc(50% - 192px/2 + 1px);
+top: 2961px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 16px;
+line-height: 98%;
+/* identical to box height, or 16px */
+text-align: center;
+
+color: #F8984D;
+
+
+
+/* Access Edubee from any browser — Chrome, Safari, Edge. No installation, no updates to manage. */
+
+position: absolute;
+width: 341px;
+height: 28px;
+left: 321px;
+top: 3182px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 98%;
+/* or 14px */
+
+color: #613717;
+
+
+
+/* Web-Based, No Install */
+
+position: absolute;
+width: 216px;
+height: 20px;
+left: 321px;
+top: 3157px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 20px;
+line-height: 98%;
+/* identical to box height, or 20px */
+
+color: #613717;
+
+
+
+/* Switch between English, Korean, Japanese, Chinese, Thai, and Vietnamese instantly from any device. */
+
+position: absolute;
+width: 354px;
+height: 28px;
+left: 321px;
+top: 3308px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 98%;
+/* or 14px */
+
+color: #613717;
+
+
+
+/* 6-Language Interface */
+
+position: absolute;
+width: 405px;
+height: 20px;
+left: 321px;
+top: 3283px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 20px;
+line-height: 98%;
+/* identical to box height, or 20px */
+
+color: #613717;
+
+
+
+/* image 29 */
+
+position: absolute;
+width: 45px;
+height: 45px;
+left: 257px;
+top: 3160px;
+
+background: url(image.png);
+
+
+/* Rectangle 80 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 501px;
+height: 107px;
+left: 752px;
+top: 3129px;
+
+background: rgba(255, 255, 255, 0.8);
+border: 1px solid #CECBCB;
+border-radius: 21px;
+
+
+/* Rectangle 81 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 497px;
+height: 108px;
+left: 752px;
+top: 3256px;
+
+background: rgba(255, 255, 255, 0.8);
+border: 1px solid #CECBCB;
+border-radius: 21px;
+
+
+/* Head office, overseas branches, and remote staff all share the same live data. No syncing needed. */
+
+position: absolute;
+width: 335px;
+height: 28px;
+left: 863px;
+top: 3181px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 98%;
+/* or 14px */
+
+color: #613717;
+
+
+
+/* Global Multi-Branch */
+
+position: absolute;
+width: 216px;
+height: 20px;
+left: 863px;
+top: 3156px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 20px;
+line-height: 98%;
+/* identical to box height, or 20px */
+
+color: #613717;
+
+
+
+/* Hosted on enterprise-grade infrastructure with 99.9% uptime SLA and automatic failover. */
+
+position: absolute;
+width: 316px;
+height: 28px;
+left: 863px;
+top: 3307px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 300;
+font-size: 14px;
+line-height: 98%;
+/* or 14px */
+
+color: #613717;
+
+
+
+/* Fast & Reliable */
+
+position: absolute;
+width: 405px;
+height: 20px;
+left: 863px;
+top: 3282px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 20px;
+line-height: 98%;
+/* identical to box height, or 20px */
+
+color: #613717;
+
+
+
+/* image 30 */
+
+position: absolute;
+width: 38px;
+height: 38px;
+left: 807px;
+top: 3164px;
+
+background: url(image.png);
+
+
+/* image 31 */
+
+position: absolute;
+width: 38px;
+height: 38px;
+left: 261px;
+top: 3284px;
+
+background: url(image.png);
+
+
+/* image 32 */
+
+position: absolute;
+width: 42px;
+height: 42px;
+left: 807px;
+top: 3284px;
+
+background: url(image.png);
