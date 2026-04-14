@@ -121,8 +121,8 @@ export default function Landing() {
       {/* ── NAVBAR (two-tier) ── */}
       <header className={`fixed top-0 inset-x-0 z-30 transition-all duration-300 ${scrolled ? "bg-white shadow-sm" : "bg-white/0 backdrop-blur-[2px]"}`}>
 
-        {/* ── Top utility bar ── */}
-        <div className={`border-b transition-colors duration-300 ${scrolled ? "border-border bg-gray-50/90" : "border-white/10 bg-white/10"}`}>
+        {/* ── Top utility bar (hidden on mobile — items already in hamburger menu) ── */}
+        <div className={`hidden md:block border-b transition-colors duration-300 ${scrolled ? "border-border bg-gray-50/90" : "border-white/10 bg-white/10"}`}>
           <div className="max-w-6xl mx-auto px-5 h-8 flex items-center justify-end gap-1">
             {/* Currency + Language always visible */}
             <div className="flex items-center gap-1">
