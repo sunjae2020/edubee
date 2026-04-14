@@ -11,7 +11,7 @@ import {
   Car, Building2, Briefcase, Shield, CheckCircle2, Clock,
   AlertCircle, ChevronRight, Star, TrendingUp, TrendingDown,
   UploadCloud, MessageSquare, Send, Download, Pencil, Plus, X, Wrench, Stamp, Trash2,
-  ChevronDown, ChevronUp, Search, Map as MapIcon,
+  ChevronDown, ChevronUp, Search, Map as MapIcon, Wand2,
 } from "lucide-react";
 import { format } from "date-fns";
 import PaymentStatementModal from "../../../components/finance/PaymentStatementModal";
@@ -1012,6 +1012,212 @@ function ContractCatalogModal({
   );
 }
 
+// ─── Generate Schedule Modal ──────────────────────────────────────────────────
+type GenItem = {
+  key: string;
+  name: string;
+  serviceModuleType: string | null;
+  isInitialPayment: boolean;
+  arAmount: string;
+  apAmount: string;
+  arStatus: string;
+  apStatus: string;
+  arDueDate: string;
+  apDueDate: string;
+  side: "ar" | "ap";
+  enabled: boolean;
+  sortIndex: number;
+};
+
+function GenerateScheduleModal({ contract, onClose }: { contract: any; onClose: () => void }) {
+  const [items, setItems] = useState<GenItem[]>([]);
+  const [clearExisting, setClearExisting] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [errMsg, setErrMsg] = useState("");
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    const totalAmount = contract.contractAmount ?? 0;
+    const depositAmt  = 1000;
+    const balanceAmt  = Math.max(0, totalAmount - depositAmt);
+    const comm        = contract.commissionSummary ?? {};
+    const agentComm   = (comm.subAgent ?? 0) + (comm.superAgent ?? 0) + (comm.referral ?? 0);
+    const staffKpi    = comm.staffIncentive ?? 0;
+    const hasSA       = (contract.services?.studyAbroad?.length ?? 0) > 0;
+    const hasAC       = (contract.services?.accommodation?.length ?? 0) > 0;
+    const hasPK       = (contract.services?.pickup?.length ?? 0) > 0;
+
+    setItems([
+      { key:"deposit",     name:"계약금 (Deposit)",           serviceModuleType:null,                isInitialPayment:true,  arAmount:String(depositAmt),   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ar", enabled:true,         sortIndex:0 },
+      { key:"balance",     name:"잔금 (Balance)",             serviceModuleType:null,                isInitialPayment:false, arAmount:String(balanceAmt),   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ar", enabled:true,         sortIndex:1 },
+      { key:"study",       name:"Study Abroad Service Fee",   serviceModuleType:"study_abroad",      isInitialPayment:false, arAmount:"",                   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ap", enabled:hasSA,        sortIndex:2 },
+      { key:"accom",       name:"Accommodation",              serviceModuleType:"accommodation",     isInitialPayment:false, arAmount:"",                   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ap", enabled:hasAC,        sortIndex:3 },
+      { key:"pickup",      name:"Pickup / Transfer",          serviceModuleType:"pickup",            isInitialPayment:false, arAmount:"",                   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ap", enabled:hasPK,        sortIndex:4 },
+      { key:"tour",        name:"Tour Management",            serviceModuleType:"tour",              isInitialPayment:false, arAmount:"",                   apAmount:"", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ap", enabled:false,        sortIndex:5 },
+      { key:"agent_comm",  name:"Agent Commission",           serviceModuleType:"agent_commission",  isInitialPayment:false, arAmount:"",                   apAmount:agentComm > 0 ? String(agentComm) : "", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ap", enabled:agentComm>0,   sortIndex:6 },
+      { key:"staff_kpi",   name:"Staff KPI",                  serviceModuleType:"staff_kpi",         isInitialPayment:false, arAmount:"",                   apAmount:staffKpi  > 0 ? String(staffKpi)  : "", arStatus:"scheduled", apStatus:"pending", arDueDate:"", apDueDate:"", side:"ap", enabled:staffKpi>0,    sortIndex:7 },
+    ]);
+  }, [contract]);
+
+  const updateDeposit = (val: string) => {
+    setItems(prev => {
+      const dep = parseFloat(val) || 0;
+      const bal = Math.max(0, (contract.contractAmount ?? 0) - dep);
+      return prev.map(it =>
+        it.key === "deposit" ? { ...it, arAmount: val }
+        : it.key === "balance" ? { ...it, arAmount: String(bal) }
+        : it
+      );
+    });
+  };
+
+  const toggleItem  = (key: string) => setItems(prev => prev.map(it => it.key === key ? { ...it, enabled: !it.enabled } : it));
+  const updateItem  = (key: string, field: keyof GenItem, val: string) => setItems(prev => prev.map(it => it.key === key ? { ...it, [field]: val } : it));
+
+  const totalArGen  = items.filter(i => i.enabled && i.side === "ar").reduce((s, i) => s + (parseFloat(i.arAmount) || 0), 0);
+  const totalApGen  = items.filter(i => i.enabled && i.side === "ap").reduce((s, i) => s + (parseFloat(i.apAmount) || 0), 0);
+  const enabledCnt  = items.filter(i => i.enabled).length;
+
+  const handleGenerate = async () => {
+    setSaving(true); setErrMsg("");
+    try {
+      await axios.post(`${BASE}/api/crm/contracts/${contract.id}/generate-schedule`, {
+        clearExisting,
+        items: items.filter(i => i.enabled).map((i, idx) => ({
+          name:             i.name,
+          serviceModuleType:i.serviceModuleType,
+          isInitialPayment: i.isInitialPayment,
+          sortIndex:        idx,
+          arAmount:         i.arAmount !== "" ? i.arAmount : null,
+          apAmount:         i.apAmount !== "" ? i.apAmount : null,
+          arStatus:         i.arStatus,
+          apStatus:         i.apStatus,
+          arDueDate:        i.arDueDate || null,
+          apDueDate:        i.apDueDate || null,
+        })),
+      });
+      qc.invalidateQueries({ queryKey: ["crm-contract", contract.id] });
+      onClose();
+    } catch (e: any) {
+      setErrMsg(e?.response?.data?.error ?? "Generate failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inp = "h-7 border border-[#E8E6E2] rounded px-2 text-sm focus:outline-none focus:border-(--e-orange)";
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E2]">
+          <div>
+            <h2 className="text-base font-bold text-[#1C1917] flex items-center gap-2">
+              <Wand2 size={16} style={{ color:"var(--e-orange)" }} /> Payment Schedule 자동 생성
+            </h2>
+            <p className="text-xs text-[#A8A29E] mt-0.5">서비스 연동 정보를 기반으로 항목을 생성합니다</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#F4F3F1] text-[#57534E]"><X size={16}/></button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Clear existing */}
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <input type="checkbox" checked={clearExisting} onChange={e => setClearExisting(e.target.checked)}
+              className="w-4 h-4 rounded accent-[var(--e-orange)]" />
+            <span className="text-sm text-[#57534E]">
+              기존 Schedule 항목 삭제 후 생성
+              <span className="ml-1 text-[#A8A29E] text-xs">(결제 연동 항목은 보존됨)</span>
+            </span>
+          </label>
+
+          {/* AR Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[11px] font-bold text-[#1C1917] uppercase tracking-widest">AR — 수금 (Client 납부)</span>
+              <span className="text-[11px] text-[#A8A29E]">계약 총액: {fmtMoney(contract.contractAmount)}</span>
+            </div>
+            <div className="space-y-1.5">
+              {items.filter(i => i.side === "ar").map(item => (
+                <div key={item.key} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm ${item.enabled ? "border-[#E8E6E2] bg-white" : "border-[#F4F3F1] bg-[#FAFAF9] opacity-50"}`}>
+                  <input type="checkbox" checked={item.enabled} onChange={() => toggleItem(item.key)} className="w-4 h-4 shrink-0 accent-[var(--e-orange)]" />
+                  <span className="font-medium text-[#1C1917] w-40 shrink-0 flex items-center gap-1.5">
+                    {item.key === "deposit" ? "💰 계약금" : "💳 잔금"}
+                    {item.isInitialPayment && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{background:"var(--e-orange-lt)", color:"var(--e-orange)"}}>Initial</span>}
+                  </span>
+                  <div className="flex items-center gap-1 flex-1">
+                    <span className="text-xs text-[#A8A29E]">AUD</span>
+                    <input type="number" min="0" value={item.arAmount}
+                      onChange={e => item.key === "deposit" ? updateDeposit(e.target.value) : undefined}
+                      readOnly={item.key === "balance"}
+                      className={`w-28 text-right ${inp} ${item.key === "balance" ? "bg-[#F4F3F1] text-[#A8A29E] cursor-not-allowed" : ""}`} />
+                  </div>
+                  <input type="date" value={item.arDueDate} onChange={e => updateItem(item.key, "arDueDate", e.target.value)}
+                    className={`w-36 text-xs ${inp}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* AP Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[11px] font-bold text-[#1C1917] uppercase tracking-widest">AP — 지급 (서비스 제공자)</span>
+            </div>
+            <div className="space-y-1.5">
+              {items.filter(i => i.side === "ap").map(item => (
+                <div key={item.key} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm ${item.enabled ? "border-[#E8E6E2] bg-white" : "border-[#F4F3F1] bg-[#FAFAF9] opacity-40"}`}>
+                  <input type="checkbox" checked={item.enabled} onChange={() => toggleItem(item.key)} className="w-4 h-4 shrink-0 accent-[var(--e-orange)]" />
+                  <input type="text" value={item.name} onChange={e => updateItem(item.key, "name", e.target.value)}
+                    className="font-medium text-[#1C1917] w-44 shrink-0 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-[var(--e-orange)] rounded px-1 text-sm" />
+                  <div className="flex items-center gap-1 flex-1">
+                    <span className="text-xs text-[#A8A29E]">AUD</span>
+                    <input type="number" min="0" value={item.apAmount} onChange={e => updateItem(item.key, "apAmount", e.target.value)}
+                      placeholder="0" className={`w-28 text-right ${inp}`} />
+                  </div>
+                  <input type="date" value={item.apDueDate} onChange={e => updateItem(item.key, "apDueDate", e.target.value)}
+                    className={`w-36 text-xs ${inp}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="bg-[#FAFAF9] rounded-xl p-4 space-y-1.5 border border-[#F4F3F1]">
+            <div className="flex justify-between text-sm">
+              <span className="text-[#57534E]">Total AR (수금 예정)</span>
+              <span className="font-semibold text-[#1C1917]">{fmtMoney(totalArGen)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-[#57534E]">Total AP (지급 예정)</span>
+              <span className="font-semibold text-red-500">{fmtMoney(totalApGen)}</span>
+            </div>
+            <div className="flex justify-between text-sm pt-1.5 border-t border-[#E8E6E2]">
+              <span className="font-semibold text-[#1C1917]">Net Revenue (예상)</span>
+              <span className="font-bold" style={{ color:"var(--e-orange)" }}>{fmtMoney(totalArGen - totalApGen)}</span>
+            </div>
+          </div>
+
+          {errMsg && <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{errMsg}</p>}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E8E6E2]">
+          <button onClick={onClose} className="h-9 px-4 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]">취소</button>
+          <button onClick={handleGenerate} disabled={saving || enabledCnt === 0}
+            className="h-9 px-5 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-50"
+            style={{ background:"var(--e-orange)" }}>
+            <Wand2 size={14} />
+            {saving ? "생성 중…" : `${enabledCnt}개 항목 생성`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function PaymentScheduleTab({ contract }: { contract: any }) {
@@ -1032,6 +1238,9 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
   // Catalog modal state
   const [showCatalog, setShowCatalog]   = useState(false);
   const [replaceTarget, setReplaceTarget] = useState<{ id: string; name: string } | null>(null);
+
+  // Generate schedule modal state
+  const [showGenerate, setShowGenerate] = useState(false);
 
   const makeDraft = (cp: any): CpDraft => ({
     id: cp.id,
@@ -1140,9 +1349,15 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
           <h3 className="text-sm font-semibold text-[#1C1917]">Payment Schedule ({products.length})</h3>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { setShowCatalog(true); setReplaceTarget(null); setAddingNew(false); setNewDraft(null); }}
+              onClick={() => setShowGenerate(true)}
               className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange)"
               style={{ color:"var(--e-orange)", borderColor:"var(--e-orange)", background:"var(--e-orange-lt)" }}>
+              <Wand2 size={12} /> Generate from Services
+            </button>
+            <button
+              onClick={() => { setShowCatalog(true); setReplaceTarget(null); setAddingNew(false); setNewDraft(null); }}
+              className="h-8 px-3 rounded-lg border border-[#E8E6E2] text-xs font-medium flex items-center gap-1.5 transition-colors hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange)"
+              style={{ color:"#57534E" }}>
               <Search size={12} /> From Catalog
             </button>
             {!addingNew && (
@@ -1282,6 +1497,14 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
         contractId={contract.id}
         onGenerate={() => setShowStatementModal(true)}
       />
+
+      {/* Generate Schedule Modal */}
+      {showGenerate && (
+        <GenerateScheduleModal
+          contract={contract}
+          onClose={() => setShowGenerate(false)}
+        />
+      )}
 
       {showStatementModal && (
         <PaymentStatementModal

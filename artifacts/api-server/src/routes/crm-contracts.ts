@@ -669,6 +669,57 @@ router.patch("/crm/contract-products/:id", authenticate, async (req, res) => {
   }
 });
 
+// ─── POST /crm/contracts/:id/generate-schedule  (bulk generate schedule) ────
+router.post("/crm/contracts/:id/generate-schedule", authenticate, async (req, res) => {
+  try {
+    const { clearExisting, items } = req.body;
+    if (!Array.isArray(items)) return res.status(400).json({ error: "items array required" });
+
+    const r = (x: any) => x.rows ?? (x as any[]);
+
+    if (clearExisting) {
+      // Only delete rows that have no linked payment_lines
+      await db.execute(sql`
+        DELETE FROM contract_products
+        WHERE contract_id = ${req.params.id}::uuid
+          AND id NOT IN (
+            SELECT DISTINCT contract_product_id FROM payment_lines
+            WHERE contract_product_id IS NOT NULL
+          )
+      `);
+    }
+
+    let created = 0;
+    for (const item of items) {
+      await db.execute(sql`
+        INSERT INTO contract_products
+          (contract_id, name, sort_index, is_initial_payment,
+           ar_due_date, ar_amount, ar_status,
+           ap_due_date, ap_amount, ap_status,
+           service_module_type)
+        VALUES
+          (${req.params.id}::uuid,
+           ${item.name ?? null},
+           ${item.sortIndex ?? created},
+           ${item.isInitialPayment ?? false},
+           ${item.arDueDate || null},
+           ${item.arAmount != null && item.arAmount !== "" ? Number(item.arAmount) : null},
+           ${item.arStatus ?? "scheduled"},
+           ${item.apDueDate || null},
+           ${item.apAmount != null && item.apAmount !== "" ? Number(item.apAmount) : null},
+           ${item.apStatus ?? "pending"},
+           ${item.serviceModuleType ?? null})
+      `);
+      created++;
+    }
+
+    return res.json({ ok: true, created });
+  } catch (err) {
+    console.error("POST /crm/contracts/:id/generate-schedule error:", err);
+    return res.status(500).json({ error: "Generate failed" });
+  }
+});
+
 // ─── DELETE /crm/contract-products/:id  (remove instalment) ─────────────────
 router.delete("/crm/contract-products/:id", authenticate, async (req, res) => {
   try {
