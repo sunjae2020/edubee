@@ -51,11 +51,33 @@ const SOCIAL_ICONS = [
   )},
 ]
 
+/* SVG honeycomb tile — flat-top hexagons, circumradius R=28 */
+const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='84' height='48.5'>
+  <polygon points='28,0 14,24.25 -14,24.25 -28,0 -14,-24.25 14,-24.25'
+    fill='none' stroke='rgba(255,255,255,0.055)' stroke-width='1'/>
+  <polygon points='70,24.25 56,48.5 28,48.5 14,24.25 28,0 56,0'
+    fill='none' stroke='rgba(255,255,255,0.055)' stroke-width='1'/>
+</svg>`
+const HEX_URL = `url("data:image/svg+xml,${encodeURIComponent(HEX_SVG)}")`
+
 export function Footer() {
   const { t } = useTranslation()
 
   return (
-    <footer style={{ background: '#111110', fontFamily: 'Inter, sans-serif' }}>
+    <footer style={{ background: '#111110', fontFamily: 'Inter, sans-serif', position: 'relative', overflow: 'hidden' }}>
+      {/* Honeycomb pattern overlay */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: HEX_URL,
+          backgroundRepeat: 'repeat',
+          backgroundSize: '84px 48.5px',
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      />
+      <div className="relative" style={{ zIndex: 1 }}>
       <div className="max-w-[1280px] mx-auto px-8 pt-14 pb-8">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-10">
 
@@ -139,6 +161,7 @@ export function Footer() {
             ))}
           </div>
         </div>
+      </div>
       </div>
     </footer>
   )
