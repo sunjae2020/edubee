@@ -101,7 +101,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Link href="/students">
-          <a className="block">
+          <div className="block">
             <Card className="border-card-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -118,11 +118,11 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
             </Card>
-          </a>
+          </div>
         </Link>
 
         <Link href="/commissions">
-          <a className="block">
+          <div className="block">
             <Card className="border-card-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
             </Card>
-          </a>
+          </div>
         </Link>
       </div>
     </div>

@@ -115,7 +115,7 @@ export default function StudentsPage() {
         <div className="space-y-2">
           {filtered.map((student) => (
             <Link key={student.id} href={`/students/${student.id}`}>
-              <a className="block">
+              <div className="block">
                 <Card className="border-card-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all cursor-pointer">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-4">
@@ -152,7 +152,7 @@ export default function StudentsPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </a>
+              </div>
             </Link>
           ))}
         </div>
