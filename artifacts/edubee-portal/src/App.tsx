@@ -7,37 +7,45 @@ import { PortalLayout } from "@/components/portal-layout";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 
-// Agent (Phase 1)
-import DashboardPage from "@/pages/dashboard";
-import StudentsPage from "@/pages/students";
-import StudentDetailPage from "@/pages/student-detail";
-import CommissionsPage from "@/pages/commissions";
-import ProfilePage from "@/pages/profile";
+// ── Agent ──────────────────────────────────────────────────────────────────
+import DashboardPage        from "@/pages/dashboard";
+import StudentsPage         from "@/pages/students";
+import StudentDetailPage    from "@/pages/student-detail";
+import CommissionsPage      from "@/pages/commissions";
+import ProfilePage          from "@/pages/profile";
+import AgentQuotesPage      from "@/pages/agent-quotes";
+import AgentServicesPage    from "@/pages/agent-services";
+import AgentDocumentsPage   from "@/pages/agent-documents";
 
-// Partner (Phase 2)
-import PartnerDashboardPage from "@/pages/partner-dashboard";
-import PartnerBookingsPage from "@/pages/partner-bookings";
+// ── Partner ────────────────────────────────────────────────────────────────
+import PartnerDashboardPage      from "@/pages/partner-dashboard";
+import PartnerBookingsPage       from "@/pages/partner-bookings";
+import PartnerConsultationsPage  from "@/pages/partner-consultations";
+import PartnerServicesPage       from "@/pages/partner-services";
+import PartnerFinancePage        from "@/pages/partner-finance";
+import PartnerDocumentsPage      from "@/pages/partner-documents";
 
-// Student (Phase 3)
-import StudentDashboardPage from "@/pages/student-dashboard";
-import StudentQuotesPage from "@/pages/student-quotes";
-import StudentProgramsPage from "@/pages/student-programs";
+// ── Student ────────────────────────────────────────────────────────────────
+import StudentDashboardPage      from "@/pages/student-dashboard";
+import StudentQuotesPage         from "@/pages/student-quotes";
+import StudentProgramsPage       from "@/pages/student-programs";
+import StudentConsultationsPage  from "@/pages/student-consultations";
+import StudentFinancePage        from "@/pages/student-finance";
+import StudentDocumentsPage      from "@/pages/student-documents";
 
 const PARTNER_ROLES = ["hotel", "pickup", "institute", "tour"];
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 30_000,
-    },
-  },
+  defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
 
 function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center min-h-screen" style={{ background: "#FAFAF9" }}>
-      <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent" style={{ borderColor: "#F5821F", borderTopColor: "transparent" }} />
+      <div
+        className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent"
+        style={{ borderColor: "#F5821F", borderTopColor: "transparent" }}
+      />
     </div>
   );
 }
@@ -68,52 +76,95 @@ function Router() {
     <Switch>
       <Route path="/login" component={LoginPage} />
 
-      {/* ── Agent Routes ── */}
+      {/* ── Agent ── */}
       <Route path="/dashboard">
         {() => <ProtectedRoute component={DashboardPage} />}
       </Route>
-      <Route path="/students/:id">
-        {() => <ProtectedRoute component={StudentDetailPage} />}
-      </Route>
-      <Route path="/students">
+      <Route path="/consultations">
         {() => <ProtectedRoute component={StudentsPage} />}
       </Route>
-      <Route path="/commissions">
+      <Route path="/quotes">
+        {() => <ProtectedRoute component={AgentQuotesPage} />}
+      </Route>
+      <Route path="/services">
+        {() => <ProtectedRoute component={AgentServicesPage} />}
+      </Route>
+      <Route path="/finance">
         {() => <ProtectedRoute component={CommissionsPage} />}
+      </Route>
+      <Route path="/documents">
+        {() => <ProtectedRoute component={AgentDocumentsPage} />}
       </Route>
       <Route path="/profile">
         {() => <ProtectedRoute component={ProfilePage} />}
       </Route>
+      {/* legacy paths */}
+      <Route path="/students/:id">
+        {() => <ProtectedRoute component={StudentDetailPage} />}
+      </Route>
+      <Route path="/students">
+        {() => <Redirect to="/consultations" />}
+      </Route>
+      <Route path="/commissions">
+        {() => <Redirect to="/finance" />}
+      </Route>
 
-      {/* ── Partner Routes ── */}
+      {/* ── Partner ── */}
       <Route path="/partner/dashboard">
         {() => <ProtectedRoute component={PartnerDashboardPage} />}
       </Route>
-      <Route path="/partner/bookings">
+      <Route path="/partner/consultations">
+        {() => <ProtectedRoute component={PartnerConsultationsPage} />}
+      </Route>
+      <Route path="/partner/quotes">
         {() => <ProtectedRoute component={PartnerBookingsPage} />}
+      </Route>
+      <Route path="/partner/services">
+        {() => <ProtectedRoute component={PartnerServicesPage} />}
+      </Route>
+      <Route path="/partner/finance">
+        {() => <ProtectedRoute component={PartnerFinancePage} />}
+      </Route>
+      <Route path="/partner/documents">
+        {() => <ProtectedRoute component={PartnerDocumentsPage} />}
       </Route>
       <Route path="/partner/profile">
         {() => <ProtectedRoute component={ProfilePage} />}
       </Route>
+      {/* legacy */}
+      <Route path="/partner/bookings">
+        {() => <Redirect to="/partner/quotes" />}
+      </Route>
 
-      {/* ── Student Routes ── */}
+      {/* ── Student ── */}
       <Route path="/student/dashboard">
         {() => <ProtectedRoute component={StudentDashboardPage} />}
+      </Route>
+      <Route path="/student/consultations">
+        {() => <ProtectedRoute component={StudentConsultationsPage} />}
       </Route>
       <Route path="/student/quotes">
         {() => <ProtectedRoute component={StudentQuotesPage} />}
       </Route>
-      <Route path="/student/programs">
+      <Route path="/student/services">
         {() => <ProtectedRoute component={StudentProgramsPage} />}
+      </Route>
+      <Route path="/student/finance">
+        {() => <ProtectedRoute component={StudentFinancePage} />}
+      </Route>
+      <Route path="/student/documents">
+        {() => <ProtectedRoute component={StudentDocumentsPage} />}
       </Route>
       <Route path="/student/profile">
         {() => <ProtectedRoute component={ProfilePage} />}
       </Route>
-
-      {/* ── Root redirect ── */}
-      <Route path="/">
-        {() => <RootRedirect />}
+      {/* legacy */}
+      <Route path="/student/programs">
+        {() => <Redirect to="/student/services" />}
       </Route>
+
+      {/* Root */}
+      <Route path="/">{() => <RootRedirect />}</Route>
 
       <Route component={NotFound} />
     </Switch>
