@@ -618,4 +618,108 @@ router.get("/portal/student/programs", authenticatePortal, requireStudentRole, a
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENT EXTENDED ROUTES — services & contracts for agent's students
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── GET /api/portal/agent/services ────────────────────────────────────────
+router.get("/portal/agent/services", authenticatePortal, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+
+    const agentQuotes = await db
+      .select({ studentAccountId: quotes.studentAccountId })
+      .from(quotes)
+      .where(and(eq(quotes.agentAccountId, accountId), sql`${quotes.studentAccountId} IS NOT NULL`));
+
+    const studentIds = [...new Set(agentQuotes.map(q => q.studentAccountId!))];
+    if (!studentIds.length) return res.json({ data: [] });
+
+    const studentContracts = await db
+      .select({ id: contracts.id })
+      .from(contracts)
+      .where(inArray(contracts.accountId, studentIds));
+
+    const contractIds = studentContracts.map(c => c.id);
+    if (!contractIds.length) return res.json({ data: [] });
+
+    const data = await db
+      .select({
+        id: contractProducts.id,
+        contractId: contractProducts.contractId,
+        name: contractProducts.name,
+        serviceModuleType: contractProducts.serviceModuleType,
+        quantity: contractProducts.quantity,
+        unitPrice: contractProducts.unitPrice,
+        totalPrice: contractProducts.totalPrice,
+        apAmount: contractProducts.apAmount,
+        arAmount: contractProducts.arAmount,
+        status: contractProducts.status,
+        apStatus: contractProducts.apStatus,
+        arStatus: contractProducts.arStatus,
+        apDueDate: contractProducts.apDueDate,
+        arDueDate: contractProducts.arDueDate,
+        createdAt: contractProducts.createdAt,
+        contractNumber: contracts.contractNumber,
+        studentName: contracts.studentName,
+        courseStartDate: contracts.courseStartDate,
+        courseEndDate: contracts.courseEndDate,
+        contractStatus: contracts.status,
+        packageName: contracts.packageName,
+      })
+      .from(contractProducts)
+      .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
+      .where(inArray(contractProducts.contractId, contractIds))
+      .orderBy(desc(contractProducts.createdAt));
+
+    return res.json({ data });
+  } catch (err) {
+    console.error("[portal/agent/services]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/agent/contracts ───────────────────────────────────────
+router.get("/portal/agent/contracts", authenticatePortal, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+
+    const agentQuotes = await db
+      .select({ studentAccountId: quotes.studentAccountId })
+      .from(quotes)
+      .where(and(eq(quotes.agentAccountId, accountId), sql`${quotes.studentAccountId} IS NOT NULL`));
+
+    const studentIds = [...new Set(agentQuotes.map(q => q.studentAccountId!))];
+    if (!studentIds.length) return res.json({ data: [] });
+
+    const data = await db
+      .select({
+        id: contracts.id,
+        contractNumber: contracts.contractNumber,
+        status: contracts.status,
+        totalAmount: contracts.totalAmount,
+        paidAmount: contracts.paidAmount,
+        balanceAmount: contracts.balanceAmount,
+        courseStartDate: contracts.courseStartDate,
+        courseEndDate: contracts.courseEndDate,
+        packageName: contracts.packageName,
+        packageGroupName: contracts.packageGroupName,
+        studentName: contracts.studentName,
+        clientEmail: contracts.clientEmail,
+        agentName: contracts.agentName,
+        signedAt: contracts.signedAt,
+        createdAt: contracts.createdAt,
+      })
+      .from(contracts)
+      .where(inArray(contracts.accountId, studentIds))
+      .orderBy(desc(contracts.createdAt));
+
+    return res.json({ data });
+  } catch (err) {
+    console.error("[portal/agent/contracts]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 export default router;
+
