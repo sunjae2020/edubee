@@ -1,24 +1,46 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+
+const ORANGE = "#F5821F";
+const ORANGE_DK = "#d26a10";
+const ORANGE_LT = "#fef0e3";
+const ORANGE_SHADOW_40 = "rgba(245,130,31,0.40)";
+const BG_PAGE = "#FAFAF9";
+const BG_SURFACE = "#FFFFFF";
+const BG_MUTED = "#F4F3F1";
+const BORDER = "#E8E6E2";
+const TEXT_2 = "#57534E";
+const TEXT_3 = "#A8A29E";
+
+const DEMO_ACCOUNTS = [
+  { emoji: "🤝", label: "Agent", email: "agent@testagency.com", password: "Agent1234!" },
+];
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
+  const [filledEmail, setFilledEmail] = useState<string | null>(null);
   const { login, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
 
   if (isAuthenticated) {
     navigate("/dashboard");
     return null;
+  }
+
+  function fillDemo(acc: (typeof DEMO_ACCOUNTS)[0]) {
+    setEmail(acc.email);
+    setPassword(acc.password);
+    setSelectedEmail(acc.email);
+    setFilledEmail(acc.email);
+    setTimeout(() => setFilledEmail(null), 2500);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -40,77 +62,187 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary shadow-md">
-              <span className="text-primary-foreground font-bold text-lg">E</span>
-            </div>
-            <div>
-              <p className="font-bold text-xl text-foreground leading-tight">Edubee</p>
-              <p className="text-xs text-muted-foreground tracking-wide uppercase">Portal</p>
-            </div>
-          </div>
+    <div
+      className="min-h-screen w-full flex items-center justify-center px-4"
+      style={{ background: BG_PAGE }}
+    >
+      <div className="w-full max-w-sm space-y-6">
+        <div className="flex flex-col items-center gap-2">
+          <img
+            src={`${import.meta.env.BASE_URL}edubee-logo.png`}
+            alt="Edubee"
+            className="h-9 w-auto object-contain"
+          />
+          <p className="text-sm font-medium" style={{ color: TEXT_2 }}>
+            Portal
+          </p>
         </div>
 
-        <Card className="shadow-md border-border">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="text-xl">Sign in to your account</CardTitle>
-            <CardDescription>
-              Use your portal email and password
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
-                <Input
+        <div
+          className="rounded-xl p-6 space-y-5"
+          style={{
+            background: BG_SURFACE,
+            border: `1px solid ${BORDER}`,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+          }}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="email"
+                className="text-xs font-medium uppercase tracking-[0.05em]"
+                style={{ color: TEXT_2 }}
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                className="w-full h-10 px-3 rounded-md text-sm outline-none transition-colors"
+                style={{
+                  background: BG_SURFACE,
+                  border: `1px solid ${BORDER}`,
+                  color: "#1C1917",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = ORANGE)}
+                onBlur={(e) => (e.target.style.borderColor = BORDER)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="password"
+                className="text-xs font-medium uppercase tracking-[0.05em]"
+                style={{ color: TEXT_2 }}
+              >
+                Password
+              </label>
+              <div className="relative">
+                <input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  placeholder="Enter your password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
+                  className="w-full h-10 px-3 pr-10 rounded-md text-sm outline-none transition-colors"
+                  style={{
+                    background: BG_SURFACE,
+                    border: `1px solid ${BORDER}`,
+                    color: "#1C1917",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = ORANGE)}
+                  onBlur={(e) => (e.target.style.borderColor = BORDER)}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: TEXT_3 }}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign in"
-                )}
-              </Button>
-            </form>
-            <p className="mt-6 text-center text-xs text-muted-foreground">
-              Need access? Contact your Edubee administrator.
-            </p>
-          </CardContent>
-        </Card>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              style={{
+                width: "100%",
+                height: "40px",
+                backgroundColor: isLoading ? ORANGE_DK : ORANGE,
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: isLoading ? "not-allowed" : "pointer",
+                opacity: isLoading ? 0.8 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                transition: "background-color 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoading) (e.currentTarget.style.backgroundColor = ORANGE_DK);
+              }}
+              onMouseLeave={(e) => {
+                if (!isLoading) (e.currentTarget.style.backgroundColor = ORANGE);
+              }}
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  Sign In <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div>
+            <div className="relative mb-3">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t" style={{ borderColor: BORDER }} />
+              </div>
+              <div className="relative flex justify-center">
+                <span
+                  className="px-2 text-xs"
+                  style={{ background: BG_SURFACE, color: TEXT_3 }}
+                >
+                  Demo accounts — click to fill
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5">
+              {DEMO_ACCOUNTS.map((acc) => (
+                <button
+                  key={acc.email}
+                  type="button"
+                  title={acc.email}
+                  onClick={() => fillDemo(acc)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                  style={{
+                    background: selectedEmail === acc.email ? ORANGE_LT : BG_MUTED,
+                    color: selectedEmail === acc.email ? ORANGE : TEXT_2,
+                    border: `1px solid ${selectedEmail === acc.email ? ORANGE_SHADOW_40 : BORDER}`,
+                  }}
+                >
+                  <span>{acc.emoji}</span>
+                  <span>{acc.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {filledEmail && (
+              <p className="mt-2 text-xs font-medium" style={{ color: "#16A34A" }}>
+                ✓ Filled: {filledEmail}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <p className="text-center text-xs" style={{ color: TEXT_3 }}>
+          Need access? Contact your Edubee administrator.
+        </p>
       </div>
     </div>
   );
