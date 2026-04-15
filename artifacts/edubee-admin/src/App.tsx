@@ -112,6 +112,7 @@ import PromotionsPage from "@/pages/admin/promotions";
 import PromotionDetail from "@/pages/admin/promotion-detail";
 import CommissionsPage from "@/pages/admin/commissions";
 import CommissionDetail from "@/pages/admin/commission-detail";
+import AdminCommunityPage from "@/pages/admin/community";
 
 // CRM
 import ContactsPage from "@/pages/admin/crm/ContactsPage";
@@ -288,6 +289,10 @@ function Router() {
       </Route>
       <Route path="/admin/commissions">
         <AdminRoute title="Commissions"><CommissionsPage /></AdminRoute>
+      </Route>
+
+      <Route path="/admin/community">
+        <AdminRoute title="Community"><AdminCommunityPage /></AdminRoute>
       </Route>
 
       {/* Service Pages */}

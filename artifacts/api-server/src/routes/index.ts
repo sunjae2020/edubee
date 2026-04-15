@@ -67,6 +67,7 @@ import platformCrmRouter from "./platform-crm.js";
 import adminDataImportRouter from "./admin-data-import.js";
 import platformIntegrationsRouter from "./platform-integrations.js";
 import portalRouter from "./portal.js";
+import communityRouter from "./community.js";
 import { tenantResolver } from "../middleware/tenantResolver.js";
 import { runWithTenantSchema, tenantSchemaExists, pool } from "@workspace/db";
 import type { Request, Response, NextFunction } from "express";
@@ -99,6 +100,7 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
 router.use("/settings", tenantSettingsRouter);
 router.use("/auth", authRouter);
 router.use(portalRouter);
+router.use(communityRouter);
 router.use("/users", usersRouter);
 router.use(packagesRouter);
 router.use(applicationsRouter);

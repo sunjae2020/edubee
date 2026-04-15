@@ -19,3 +19,4 @@ export * from "./teams";
 export * from "./kpi";
 export * from "./application-forms";
 export * from "./platform-crm";
+export * from "./community";

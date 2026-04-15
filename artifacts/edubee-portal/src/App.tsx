@@ -25,6 +25,9 @@ import PartnerServicesPage       from "@/pages/partner-services";
 import PartnerFinancePage        from "@/pages/partner-finance";
 import PartnerDocumentsPage      from "@/pages/partner-documents";
 
+// ── Community (shared across all roles) ────────────────────────────────────
+import CommunityPage             from "@/pages/community";
+
 // ── Student ────────────────────────────────────────────────────────────────
 import StudentDashboardPage      from "@/pages/student-dashboard";
 import StudentQuotesPage         from "@/pages/student-quotes";
@@ -161,6 +164,11 @@ function Router() {
       {/* legacy */}
       <Route path="/student/programs">
         {() => <Redirect to="/student/services" />}
+      </Route>
+
+      {/* ── Community (all roles share this route) ── */}
+      <Route path="/community">
+        {() => <ProtectedRoute component={CommunityPage} />}
       </Route>
 
       {/* Root */}

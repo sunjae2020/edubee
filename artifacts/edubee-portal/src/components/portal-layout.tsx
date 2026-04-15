@@ -5,6 +5,7 @@ import {
   LayoutDashboard, Users, FileText, Package, Wallet,
   FolderOpen, User, LogOut,
   Menu, ChevronLeft, ChevronRight, ChevronDown, Globe,
+  MessageCircle,
   LucideIcon,
 } from "lucide-react";
 import {
@@ -24,6 +25,7 @@ function buildAgentNav(): NavItem[] {
     { icon: Package,         label: "Services",           href: "/services"       },
     { icon: Wallet,          label: "Finance",            href: "/finance"        },
     { icon: FolderOpen,      label: "Documents",          href: "/documents"      },
+    { icon: MessageCircle,   label: "Community",          href: "/community"      },
     { icon: User,            label: "My Profile",         href: "/profile"        },
   ];
 }
@@ -36,6 +38,7 @@ function buildPartnerNav(): NavItem[] {
     { icon: Package,         label: "Services",           href: "/partner/services"       },
     { icon: Wallet,          label: "Finance",            href: "/partner/finance"        },
     { icon: FolderOpen,      label: "Documents",          href: "/partner/documents"      },
+    { icon: MessageCircle,   label: "Community",          href: "/community"              },
     { icon: User,            label: "My Profile",         href: "/partner/profile"        },
   ];
 }
@@ -48,6 +51,7 @@ function buildStudentNav(): NavItem[] {
     { icon: Package,         label: "Services",           href: "/student/services"       },
     { icon: Wallet,          label: "Finance",            href: "/student/finance"        },
     { icon: FolderOpen,      label: "Documents",          href: "/student/documents"      },
+    { icon: MessageCircle,   label: "Community",          href: "/community"              },
     { icon: User,            label: "My Profile",         href: "/student/profile"        },
   ];
 }
@@ -69,6 +73,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/finance":                 "Finance",
   "/documents":               "Documents",
   "/profile":                 "My Profile",
+  "/community":               "Community",
   "/partner/dashboard":       "Dashboard",
   "/partner/consultations":   "Consultations",
   "/partner/quotes":          "Quotes & Contracts",
