@@ -7,8 +7,10 @@ import {
   quote_products,
   agentCommissionConfigs,
   taxInvoices,
+  contracts,
+  contractProducts,
 } from "@workspace/db/schema";
-import { eq, and, inArray, desc, sql, ne } from "drizzle-orm";
+import { eq, and, inArray, desc, sql, count, sum } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { authenticatePortal } from "../middleware/authenticatePortal.js";
 
@@ -388,6 +390,230 @@ router.post("/portal/change-password", authenticatePortal, async (req, res) => {
     return res.json({ success: true });
   } catch (err) {
     console.error("[portal/change-password]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 2 — PARTNER PORTAL (institute / hotel / pickup / tour)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const PARTNER_ROLES = ["institute", "hotel", "pickup", "tour"];
+
+function requirePartnerRole(req: any, res: any, next: any) {
+  const role = req.portalUser?.portalRole;
+  if (!PARTNER_ROLES.includes(role)) {
+    return res.status(403).json({ error: "Forbidden", message: "Partner role required" });
+  }
+  next();
+}
+
+// ── GET /api/portal/partner/summary ───────────────────────────────────────
+router.get("/portal/partner/summary", authenticatePortal, requirePartnerRole, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+
+    // Contract products where this partner is the provider
+    const myProducts = await db
+      .select({
+        id: contractProducts.id,
+        status: contractProducts.status,
+        arAmount: contractProducts.arAmount,
+        apAmount: contractProducts.apAmount,
+        arStatus: contractProducts.arStatus,
+        apStatus: contractProducts.apStatus,
+        serviceModuleType: contractProducts.serviceModuleType,
+        contractId: contractProducts.contractId,
+        name: contractProducts.name,
+      })
+      .from(contractProducts)
+      .where(eq(contractProducts.providerAccountId, accountId));
+
+    const totalBookings = myProducts.length;
+    const activeBookings = myProducts.filter(p => !["cancelled", "rejected"].includes(p.status ?? "")).length;
+    const totalRevenue = myProducts.reduce((s, p) => s + Number(p.apAmount ?? 0), 0);
+    const pendingRevenue = myProducts.filter(p => p.apStatus === "pending" || p.apStatus === "scheduled").reduce((s, p) => s + Number(p.apAmount ?? 0), 0);
+    const paidRevenue = myProducts.filter(p => p.apStatus === "paid").reduce((s, p) => s + Number(p.apAmount ?? 0), 0);
+
+    return res.json({
+      data: { totalBookings, activeBookings, totalRevenue, pendingRevenue, paidRevenue },
+    });
+  } catch (err) {
+    console.error("[portal/partner/summary]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/partner/bookings ──────────────────────────────────────
+router.get("/portal/partner/bookings", authenticatePortal, requirePartnerRole, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+
+    const myProducts = await db
+      .select({
+        id: contractProducts.id,
+        contractId: contractProducts.contractId,
+        name: contractProducts.name,
+        serviceModuleType: contractProducts.serviceModuleType,
+        quantity: contractProducts.quantity,
+        unitPrice: contractProducts.unitPrice,
+        totalPrice: contractProducts.totalPrice,
+        apAmount: contractProducts.apAmount,
+        arAmount: contractProducts.arAmount,
+        status: contractProducts.status,
+        apStatus: contractProducts.apStatus,
+        arStatus: contractProducts.arStatus,
+        arDueDate: contractProducts.arDueDate,
+        apDueDate: contractProducts.apDueDate,
+        createdAt: contractProducts.createdAt,
+        // Contract info via join
+        contractNumber: contracts.contractNumber,
+        studentName: contracts.studentName,
+        clientEmail: contracts.clientEmail,
+        courseStartDate: contracts.courseStartDate,
+        courseEndDate: contracts.courseEndDate,
+        contractStatus: contracts.status,
+        agentName: contracts.agentName,
+        packageName: contracts.packageName,
+      })
+      .from(contractProducts)
+      .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
+      .where(eq(contractProducts.providerAccountId, accountId))
+      .orderBy(desc(contractProducts.createdAt));
+
+    return res.json({ data: myProducts });
+  } catch (err) {
+    console.error("[portal/partner/bookings]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 3 — STUDENT PORTAL
+// ═══════════════════════════════════════════════════════════════════════════
+
+function requireStudentRole(req: any, res: any, next: any) {
+  if (req.portalUser?.portalRole !== "student") {
+    return res.status(403).json({ error: "Forbidden", message: "Student role required" });
+  }
+  next();
+}
+
+// ── GET /api/portal/student/summary ───────────────────────────────────────
+router.get("/portal/student/summary", authenticatePortal, requireStudentRole, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+
+    const myQuotes = await db
+      .select({ id: quotes.id, quoteStatus: quotes.quoteStatus, createdOn: quotes.createdOn })
+      .from(quotes)
+      .where(eq(quotes.studentAccountId, accountId));
+
+    const myContracts = await db
+      .select({
+        id: contracts.id,
+        status: contracts.status,
+        totalAmount: contracts.totalAmount,
+        paidAmount: contracts.paidAmount,
+        balanceAmount: contracts.balanceAmount,
+        courseStartDate: contracts.courseStartDate,
+        courseEndDate: contracts.courseEndDate,
+        packageName: contracts.packageName,
+      })
+      .from(contracts)
+      .where(eq(contracts.accountId, accountId));
+
+    const activeContracts = myContracts.filter(c => !["cancelled", "expired"].includes(c.status ?? ""));
+    const totalPaid = myContracts.reduce((s, c) => s + Number(c.paidAmount ?? 0), 0);
+    const totalBalance = myContracts.reduce((s, c) => s + Number(c.balanceAmount ?? 0), 0);
+
+    return res.json({
+      data: {
+        totalQuotes: myQuotes.length,
+        activeQuotes: myQuotes.filter(q => !["Cancelled", "Rejected", "Expired"].includes(q.quoteStatus)).length,
+        acceptedQuotes: myQuotes.filter(q => q.quoteStatus === "Accepted").length,
+        totalPrograms: myContracts.length,
+        activePrograms: activeContracts.length,
+        totalPaid,
+        totalBalance,
+      },
+    });
+  } catch (err) {
+    console.error("[portal/student/summary]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/student/quotes ────────────────────────────────────────
+router.get("/portal/student/quotes", authenticatePortal, requireStudentRole, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+    const data = await db
+      .select({
+        id: quotes.id,
+        quoteRefNumber: quotes.quoteRefNumber,
+        quoteStatus: quotes.quoteStatus,
+        accountName: quotes.accountName,
+        expiryDate: quotes.expiryDate,
+        createdOn: quotes.createdOn,
+      })
+      .from(quotes)
+      .where(eq(quotes.studentAccountId, accountId))
+      .orderBy(desc(quotes.createdOn));
+
+    // For each quote, also get product summary
+    const qIds = data.map(q => q.id);
+    const products = qIds.length
+      ? await db
+          .select({
+            quoteId: quote_products.quoteId,
+            productName: quote_products.productName,
+            total: quote_products.total,
+          })
+          .from(quote_products)
+          .where(inArray(quote_products.quoteId, qIds))
+      : [];
+
+    const result = data.map(q => {
+      const qProds = products.filter(p => p.quoteId === q.id);
+      const totalValue = qProds.reduce((s, p) => s + Number(p.total ?? 0), 0);
+      return { ...q, productCount: qProds.length, totalValue };
+    });
+
+    return res.json({ data: result });
+  } catch (err) {
+    console.error("[portal/student/quotes]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/student/programs ──────────────────────────────────────
+router.get("/portal/student/programs", authenticatePortal, requireStudentRole, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+    const data = await db
+      .select({
+        id: contracts.id,
+        contractNumber: contracts.contractNumber,
+        status: contracts.status,
+        totalAmount: contracts.totalAmount,
+        paidAmount: contracts.paidAmount,
+        balanceAmount: contracts.balanceAmount,
+        courseStartDate: contracts.courseStartDate,
+        courseEndDate: contracts.courseEndDate,
+        packageName: contracts.packageName,
+        packageGroupName: contracts.packageGroupName,
+        agentName: contracts.agentName,
+        studentName: contracts.studentName,
+        signedAt: contracts.signedAt,
+        createdAt: contracts.createdAt,
+      })
+      .from(contracts)
+      .where(eq(contracts.accountId, accountId))
+      .orderBy(desc(contracts.createdAt));
+    return res.json({ data });
+  } catch (err) {
+    console.error("[portal/student/programs]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

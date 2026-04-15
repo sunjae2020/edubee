@@ -6,11 +6,24 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { PortalLayout } from "@/components/portal-layout";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
+
+// Agent (Phase 1)
 import DashboardPage from "@/pages/dashboard";
 import StudentsPage from "@/pages/students";
 import StudentDetailPage from "@/pages/student-detail";
 import CommissionsPage from "@/pages/commissions";
 import ProfilePage from "@/pages/profile";
+
+// Partner (Phase 2)
+import PartnerDashboardPage from "@/pages/partner-dashboard";
+import PartnerBookingsPage from "@/pages/partner-bookings";
+
+// Student (Phase 3)
+import StudentDashboardPage from "@/pages/student-dashboard";
+import StudentQuotesPage from "@/pages/student-quotes";
+import StudentProgramsPage from "@/pages/student-programs";
+
+const PARTNER_ROLES = ["hotel", "pickup", "institute", "tour"];
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,15 +34,17 @@ const queryClient = new QueryClient({
   },
 });
 
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-screen" style={{ background: "#FAFAF9" }}>
+      <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent" style={{ borderColor: "#F5821F", borderTopColor: "transparent" }} />
+    </div>
+  );
+}
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
+  if (isLoading) return <LoadingSpinner />;
   if (!isAuthenticated) return <Redirect to="/login" />;
   return (
     <PortalLayout>
@@ -38,11 +53,22 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   );
 }
 
+function RootRedirect() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <LoadingSpinner />;
+  if (!isAuthenticated) return <Redirect to="/login" />;
+  const role = user?.portalRole;
+  if (role === "student") return <Redirect to="/student/dashboard" />;
+  if (PARTNER_ROLES.includes(role ?? "")) return <Redirect to="/partner/dashboard" />;
+  return <Redirect to="/dashboard" />;
+}
+
 function Router() {
-  const { isAuthenticated } = useAuth();
   return (
     <Switch>
       <Route path="/login" component={LoginPage} />
+
+      {/* ── Agent Routes ── */}
       <Route path="/dashboard">
         {() => <ProtectedRoute component={DashboardPage} />}
       </Route>
@@ -58,11 +84,37 @@ function Router() {
       <Route path="/profile">
         {() => <ProtectedRoute component={ProfilePage} />}
       </Route>
-      <Route path="/">
-        {() =>
-          isAuthenticated ? <Redirect to="/dashboard" /> : <Redirect to="/login" />
-        }
+
+      {/* ── Partner Routes ── */}
+      <Route path="/partner/dashboard">
+        {() => <ProtectedRoute component={PartnerDashboardPage} />}
       </Route>
+      <Route path="/partner/bookings">
+        {() => <ProtectedRoute component={PartnerBookingsPage} />}
+      </Route>
+      <Route path="/partner/profile">
+        {() => <ProtectedRoute component={ProfilePage} />}
+      </Route>
+
+      {/* ── Student Routes ── */}
+      <Route path="/student/dashboard">
+        {() => <ProtectedRoute component={StudentDashboardPage} />}
+      </Route>
+      <Route path="/student/quotes">
+        {() => <ProtectedRoute component={StudentQuotesPage} />}
+      </Route>
+      <Route path="/student/programs">
+        {() => <ProtectedRoute component={StudentProgramsPage} />}
+      </Route>
+      <Route path="/student/profile">
+        {() => <ProtectedRoute component={ProfilePage} />}
+      </Route>
+
+      {/* ── Root redirect ── */}
+      <Route path="/">
+        {() => <RootRedirect />}
+      </Route>
+
       <Route component={NotFound} />
     </Switch>
   );

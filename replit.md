@@ -361,24 +361,44 @@ Unified stakeholder portal for agents, partners, and students. Single login → 
 - **Middleware**: `authenticatePortal.ts` sets `req.portalUser` (not `req.user`) — separate from staff auth
 
 ### Portal Roles (portalRole field in accounts table)
-- `consultant` / `agent` → Phase 1: Agent Dashboard (DONE)
-- `hotel` / `pickup` / `institute` / `tour` → Phase 2: Partner Dashboard (TODO)
-- `student` → Phase 3: Student Dashboard (TODO)
+- `consultant` / `agent` → Phase 1: Agent Dashboard (COMPLETE)
+- `hotel` / `pickup` / `institute` / `tour` → Phase 2: Partner Dashboard (COMPLETE)
+- `student` → Phase 3: Student Dashboard (COMPLETE)
+
+### Login → Role Redirect
+- `auth.tsx` `login()` returns `{ mustChangePassword, portalRole }`
+- `login.tsx` calls `getHomePath(role)` → `/dashboard` | `/partner/dashboard` | `/student/dashboard`
+- `App.tsx` `<RootRedirect />` handles `/` redirect based on `user.portalRole`
+- `portal-layout.tsx` renders role-adaptive sidebar nav (AGENT_NAV / PARTNER_NAV / STUDENT_NAV)
 
 ### Phase 1 — Agent Dashboard (COMPLETE)
 **Pages**: Login, Dashboard (6 stat cards), Students (searchable list), Student Detail (quotes), Commissions (invoice table + summary), Profile (edit + change password)
 **API Routes** (`/api/portal/*`): `GET /me`, `GET /dashboard/summary`, `GET /students`, `GET /students/:id`, `GET /commissions`, `GET /quotes`, `PUT /profile`, `POST /change-password`
 **Features**: `mustChangePassword` flow (redirects to Profile with amber warning banner after first login)
 
-### Key Files
-- `artifacts/api-server/src/routes/portal.ts` — all portal API routes
-- `artifacts/api-server/src/middleware/authenticatePortal.ts` — portal JWT middleware
-- `artifacts/edubee-portal/src/lib/auth.tsx` — AuthProvider + useAuth hook (mustChangePassword state)
-- `artifacts/edubee-portal/src/lib/api.ts` — fetch wrapper with Bearer token
-- `artifacts/edubee-portal/src/components/portal-layout.tsx` — sidebar layout
-- `artifacts/edubee-portal/src/pages/` — login, dashboard, students, student-detail, commissions, profile
+### Phase 2 — Partner Dashboard (COMPLETE)
+**Pages**: `/partner/dashboard` (booking + revenue summary), `/partner/bookings` (booking table with student info + AP payment status), `/partner/profile` (shared Profile page)
+**API Routes**: `GET /portal/partner/summary`, `GET /portal/partner/bookings`
+**Data source**: `contract_products.providerAccountId` = partner accountId (leftJoin contracts for student info)
+**Role guard**: `requirePartnerRole` middleware checks `PARTNER_ROLES = ["institute","hotel","pickup","tour"]`
 
-### Test Credentials
-- Email: `agent@testagency.com` / Password: `Agent1234!`
-- Account: "Test Agent Co" (portalRole: consultant)
-- Public schema account ID: `b78f9499-7371-437d-b5ff-c294f557d13e`
+### Phase 3 — Student Dashboard (COMPLETE)
+**Pages**: `/student/dashboard` (quote + program summary), `/student/quotes` (quote list), `/student/programs` (contract list with payment details), `/student/profile`
+**API Routes**: `GET /portal/student/summary`, `GET /portal/student/quotes`, `GET /portal/student/programs`
+**Data source**: `quotes.studentAccountId` (student quotes), `contracts.accountId` (enrolled programs)
+**Role guard**: `requireStudentRole` middleware checks `portalRole === "student"`
+
+### Key Files
+- `artifacts/api-server/src/routes/portal.ts` — all portal API routes (Phase 1+2+3)
+- `artifacts/api-server/src/middleware/authenticatePortal.ts` — portal JWT middleware
+- `artifacts/edubee-portal/src/lib/auth.tsx` — AuthProvider + useAuth hook (login returns portalRole)
+- `artifacts/edubee-portal/src/lib/api.ts` — fetch wrapper with Bearer token
+- `artifacts/edubee-portal/src/components/portal-layout.tsx` — role-adaptive sidebar (agent/partner/student nav)
+- `artifacts/edubee-portal/src/App.tsx` — all routes + RootRedirect for role-based home
+- `artifacts/edubee-portal/src/pages/` — login, dashboard, students, student-detail, commissions, profile, partner-dashboard, partner-bookings, student-dashboard, student-quotes, student-programs
+
+### Test Credentials (all use mustChangePassword on first login)
+- `agent@testagency.com` / `Agent1234!` — portalRole: consultant → `/dashboard`
+- `partner@browns.com.au` / `Partner1234!` — portalRole: institute (BROWNS) → `/partner/dashboard`
+- `partner@bradyhotel.com` / `Partner1234!` — portalRole: hotel (Brady Hotel HQ) → `/partner/dashboard`
+- `student@example.com` / `Student1234!` — portalRole: student (Ji Young CHOI) → `/student/dashboard`

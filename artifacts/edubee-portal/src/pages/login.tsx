@@ -15,8 +15,19 @@ const BORDER = "#E8E6E2";
 const TEXT_2 = "#57534E";
 const TEXT_3 = "#A8A29E";
 
+const PARTNER_ROLES = ["hotel", "pickup", "institute", "tour"];
+
+function getHomePath(role: string | null | undefined) {
+  if (role === "student") return "/student/dashboard";
+  if (PARTNER_ROLES.includes(role ?? "")) return "/partner/dashboard";
+  return "/dashboard";
+}
+
 const DEMO_ACCOUNTS = [
   { emoji: "🤝", label: "Agent", email: "agent@testagency.com", password: "Agent1234!" },
+  { emoji: "🏫", label: "Institute", email: "partner@browns.com.au", password: "Partner1234!" },
+  { emoji: "🏨", label: "Hotel", email: "partner@bradyhotel.com", password: "Partner1234!" },
+  { emoji: "🎓", label: "Student", email: "student@example.com", password: "Student1234!" },
 ];
 
 export default function LoginPage() {
@@ -31,7 +42,7 @@ export default function LoginPage() {
   const [, navigate] = useLocation();
 
   if (isAuthenticated) {
-    navigate("/dashboard");
+    navigate("/");
     return null;
   }
 
@@ -49,10 +60,16 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const result = await login(email.trim(), password);
+      const role = result.portalRole;
+      const homePath = getHomePath(role);
       if (result.mustChangePassword) {
-        navigate("/profile?force=1");
+        const profilePath =
+          role === "student" ? "/student/profile" :
+          PARTNER_ROLES.includes(role ?? "") ? "/partner/profile" :
+          "/profile";
+        navigate(`${profilePath}?force=1`);
       } else {
-        navigate("/dashboard");
+        navigate(homePath);
       }
     } catch (err: any) {
       setError(err?.message ?? "Login failed. Please check your credentials.");

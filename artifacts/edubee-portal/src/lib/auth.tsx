@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (res.refreshToken) localStorage.setItem("portal_refresh_token", res.refreshToken);
     const mustChangePassword = !!res.mustChangePassword;
     setState({ token: res.accessToken, user, isLoading: false, mustChangePassword });
-    return { mustChangePassword };
+    return { mustChangePassword, portalRole: user.portalRole };
   }, []);
 
   const logout = useCallback(() => {
