@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, DollarSign, User, LogOut,
   Menu, ChevronLeft, ChevronRight, ChevronDown,
   CalendarRange, BookOpen, FileText, Wallet,
-  GraduationCap, Building2, Globe,
+  GraduationCap, Globe,
   LucideIcon,
 } from "lucide-react";
 import {
@@ -129,22 +129,12 @@ function useLang() {
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 const SIDEBAR_KEY = "portal_sidebar_collapsed";
-const NAV_OPEN_KEY = "portal_nav_open_groups";
 
 function readCollapsedSidebar(): boolean {
   try { return localStorage.getItem(SIDEBAR_KEY) === "1"; } catch { return false; }
 }
 function saveCollapsedSidebar(v: boolean) {
   try { localStorage.setItem(SIDEBAR_KEY, v ? "1" : "0"); } catch {}
-}
-function readOpenGroups(): Set<string> {
-  try {
-    const raw = localStorage.getItem(NAV_OPEN_KEY);
-    return raw ? new Set(JSON.parse(raw)) : new Set(["dashboard", "my"]);
-  } catch { return new Set(["dashboard", "my"]); }
-}
-function saveOpenGroups(keys: Set<string>) {
-  try { localStorage.setItem(NAV_OPEN_KEY, JSON.stringify([...keys])); } catch {}
 }
 function initials(name: string) {
   return name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
@@ -160,45 +150,6 @@ function useMediaQuery(query: string) {
     return () => mq.removeEventListener("change", h);
   }, [query]);
   return matches;
-}
-
-// ── CategoryHeader ────────────────────────────────────────────────────────
-function CategoryHeader({ group, hasActive, open, onToggle }: {
-  group: NavGroup; hasActive: boolean; open: boolean; onToggle: () => void;
-}) {
-  const [hov, setHov] = useState(false);
-  const CatIcon = group.catIcon;
-  return (
-    <button
-      onClick={onToggle}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      className="w-full flex items-center gap-1.5 px-2 pt-3 pb-1.5 rounded-md transition-all duration-150"
-      style={{ background: hov && !hasActive ? "var(--e-orange-lt)" : "transparent" }}
-    >
-      <CatIcon
-        size={13}
-        strokeWidth={hasActive || hov ? 2.2 : 1.8}
-        style={{ color: hasActive || hov ? "var(--e-orange)" : "var(--e-text-3)", flexShrink: 0 }}
-      />
-      <span
-        className="flex-1 text-left text-[11px] font-semibold uppercase tracking-[0.08em] truncate"
-        style={{ color: hasActive ? "var(--e-orange)" : hov ? "var(--e-orange-dk)" : "var(--e-text-3)" }}
-      >
-        {group.label}
-      </span>
-      <ChevronDown
-        size={11}
-        strokeWidth={1.8}
-        style={{
-          color: hov ? "var(--e-orange)" : "var(--e-text-3)",
-          flexShrink: 0,
-          transform: open ? "rotate(0deg)" : "rotate(-90deg)",
-          transition: "transform 150ms ease",
-        }}
-      />
-    </button>
-  );
 }
 
 // ── NavRow ────────────────────────────────────────────────────────────────
@@ -356,6 +307,18 @@ function CollapsedGroupFlyout({ group, location, onNavClick }: {
   );
 }
 
+// ── NavSectionLabel ───────────────────────────────────────────────────────
+function NavSectionLabel({ label }: { label: string }) {
+  return (
+    <div
+      className="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-[0.09em] select-none"
+      style={{ color: "var(--e-text-3)" }}
+    >
+      {label}
+    </div>
+  );
+}
+
 // ── AppSidebar ────────────────────────────────────────────────────────────
 function AppSidebar({ collapsed, onToggle, onNavClick }: {
   collapsed: boolean; onToggle: () => void; onNavClick?: () => void;
@@ -363,27 +326,6 @@ function AppSidebar({ collapsed, onToggle, onNavClick }: {
   const [location] = useLocation();
   const { user } = useAuth();
   const navGroups = getNavForRole(user?.portalRole);
-
-  const [openGroups, setOpenGroups] = useState<Set<string>>(readOpenGroups);
-
-  const isGroupOpen = (group: NavGroup): boolean => {
-    if (collapsed) return true;
-    const hasActive = group.items.some(
-      i => location === i.href || location.startsWith(i.href + "/")
-    );
-    if (hasActive) return true;
-    return openGroups.has(group.key);
-  };
-
-  const toggleGroup = (key: string) => {
-    setOpenGroups(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      saveOpenGroups(next);
-      return next;
-    });
-  };
 
   return (
     <aside
@@ -430,11 +372,12 @@ function AppSidebar({ collapsed, onToggle, onNavClick }: {
         </button>
       </div>
 
-      {/* Nav */}
+      {/* Nav — flat list */}
       <nav
-        className="flex-1 overflow-y-auto py-3 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="flex-1 overflow-y-auto py-2 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {collapsed ? (
+          /* 접힌 상태: 아이콘 + flyout */
           navGroups.map(group => (
             <CollapsedGroupFlyout
               key={group.key}
@@ -444,38 +387,31 @@ function AppSidebar({ collapsed, onToggle, onNavClick }: {
             />
           ))
         ) : (
-          navGroups.map(group => {
-            const hasActive = group.items.some(
-              i => location === i.href || location.startsWith(i.href + "/")
-            );
-            const open = isGroupOpen(group);
-            return (
-              <div key={group.key} className="mb-0.5">
-                <CategoryHeader
-                  group={group}
-                  hasActive={hasActive}
-                  open={open}
-                  onToggle={() => toggleGroup(group.key)}
+          /* 펼친 상태: 플랫 리스트 — 섹션 라벨 + 아이템 */
+          navGroups.map((group, gi) => (
+            <div key={group.key}>
+              {/* 첫 번째 그룹은 상단 여백 없음, 이후 그룹은 구분선으로 분리 */}
+              {gi > 0 && (
+                <div
+                  className="mx-2 my-2"
+                  style={{ height: 1, background: "var(--e-border-sub)" }}
                 />
-                {open && (
-                  <div className="pb-1">
-                    {group.items.map(item => (
-                      <NavRow
-                        key={item.href}
-                        item={item}
-                        location={location}
-                        onNavClick={onNavClick}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })
+              )}
+              <NavSectionLabel label={group.label} />
+              {group.items.map(item => (
+                <NavRow
+                  key={item.href}
+                  item={item}
+                  location={location}
+                  onNavClick={onNavClick}
+                />
+              ))}
+            </div>
+          ))
         )}
       </nav>
 
-      {/* Bottom user row — only when not collapsed */}
+      {/* Bottom user row — 펼친 상태만 */}
       {!collapsed && user && (
         <div
           className="px-3 py-3 border-t shrink-0"
