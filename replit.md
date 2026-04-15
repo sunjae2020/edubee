@@ -345,3 +345,40 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 ### Updated Navigation
 - `app-sidebar.tsx`: 5 Settings items (Company Profile, Branding, Domain, Users & Teams, Plan & Billing)
 - `App.tsx`: Routes for `/admin/settings/{company,branding,domain,users-teams,plan}` and guarded `/superadmin`, `/superadmin/tenants`, `/superadmin/tenants/:id`, `/superadmin/plans`
+
+---
+
+## Edubee Portal (`artifacts/edubee-portal` at `/portal/`)
+
+Unified stakeholder portal for agents, partners, and students. Single login → role-based redirect.
+
+### Architecture
+- **Auth**: Shared `/api/auth/login` returns `userType:"portal"` JWT with `portalRole`, `accountId`, `accountName`
+- **JWT Payload**: `{ userType:"portal", accountId, email, portalRole, accountName }`
+- **Schema routing**: Portal account identity in PUBLIC schema (`staticDb`); business data in tenant schema (`db`)
+- **Tenant resolution**: All `/portal/*` paths use myagency schema via `PLATFORM_SUBDOMAIN=myagency` fallback
+- **Portal router**: Registered BEFORE global-middleware routers (settings-lookups, data-manager) to avoid auth interception
+- **Middleware**: `authenticatePortal.ts` sets `req.portalUser` (not `req.user`) — separate from staff auth
+
+### Portal Roles (portalRole field in accounts table)
+- `consultant` / `agent` → Phase 1: Agent Dashboard (DONE)
+- `hotel` / `pickup` / `institute` / `tour` → Phase 2: Partner Dashboard (TODO)
+- `student` → Phase 3: Student Dashboard (TODO)
+
+### Phase 1 — Agent Dashboard (COMPLETE)
+**Pages**: Login, Dashboard (6 stat cards), Students (searchable list), Student Detail (quotes), Commissions (invoice table + summary), Profile (edit + change password)
+**API Routes** (`/api/portal/*`): `GET /me`, `GET /dashboard/summary`, `GET /students`, `GET /students/:id`, `GET /commissions`, `GET /quotes`, `PUT /profile`, `POST /change-password`
+**Features**: `mustChangePassword` flow (redirects to Profile with amber warning banner after first login)
+
+### Key Files
+- `artifacts/api-server/src/routes/portal.ts` — all portal API routes
+- `artifacts/api-server/src/middleware/authenticatePortal.ts` — portal JWT middleware
+- `artifacts/edubee-portal/src/lib/auth.tsx` — AuthProvider + useAuth hook (mustChangePassword state)
+- `artifacts/edubee-portal/src/lib/api.ts` — fetch wrapper with Bearer token
+- `artifacts/edubee-portal/src/components/portal-layout.tsx` — sidebar layout
+- `artifacts/edubee-portal/src/pages/` — login, dashboard, students, student-detail, commissions, profile
+
+### Test Credentials
+- Email: `agent@testagency.com` / Password: `Agent1234!`
+- Account: "Test Agent Co" (portalRole: consultant)
+- Public schema account ID: `b78f9499-7371-437d-b5ff-c294f557d13e`
