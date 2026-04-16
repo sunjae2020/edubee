@@ -179,16 +179,6 @@ export function PortalAccessPanel({ accountId, accountType }: Props) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  if (accountType === "Student") {
-    return (
-      <div className="bg-white rounded-xl border border-[#E8E6E2] p-8 text-center text-stone-400">
-        <Shield size={32} strokeWidth={1.5} className="mx-auto mb-3" />
-        <p className="text-sm font-medium text-stone-600 mb-1">Portal Access</p>
-        <p className="text-sm">Student accounts do not have portal access.</p>
-      </div>
-    );
-  }
-
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-[#E8E6E2] p-8 text-center text-stone-400 text-sm">
@@ -208,7 +198,7 @@ export function PortalAccessPanel({ accountId, accountType }: Props) {
         </div>
         <div className="flex-1">
           <h2 className="text-sm font-semibold text-stone-800">Portal Access</h2>
-          <p className="text-xs text-stone-400">Manage external partner login credentials</p>
+          <p className="text-xs text-stone-400">Manage external portal login credentials</p>
         </div>
         <span
           className="text-xs font-semibold px-2.5 py-1 rounded-full"
