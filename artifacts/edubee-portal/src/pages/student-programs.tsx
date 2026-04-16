@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookOpen } from "lucide-react";
+import { BookOpen, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
 const ORANGE = "#F5821F";
@@ -37,6 +38,7 @@ interface Program {
 }
 
 export default function StudentProgramsPage() {
+  const [, navigate] = useLocation();
   const { data: programs = [], isLoading, error } = useQuery({
     queryKey: ["portal-student-programs"],
     queryFn: () => api.get<{ data: Program[] }>("/portal/student/programs").then(r => r.data),
@@ -80,8 +82,11 @@ export default function StudentProgramsPage() {
       ) : (
         <div className="space-y-4">
           {programs.map(p => (
-            <div key={p.id} className="rounded-xl p-6 border"
-              style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+            <div key={p.id} className="rounded-xl p-6 border transition-all"
+              style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", cursor: "pointer" }}
+              onClick={() => navigate(`/student/services/${p.id}`)}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#F5821F40"; (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 8px rgba(245,130,31,0.08)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#E8E6E2"; (e.currentTarget as HTMLElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)"; }}>
               <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -97,6 +102,7 @@ export default function StudentProgramsPage() {
                     <p className="text-xs" style={{ color: "#A8A29E" }}>Contract: {p.contractNumber}</p>
                   )}
                 </div>
+                <ChevronRight size={18} style={{ color: "#A8A29E" }} />
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -33,13 +33,15 @@ import PartnerDocumentsPage      from "@/pages/partner-documents";
 import CommunityPage             from "@/pages/community";
 
 // ── Student ────────────────────────────────────────────────────────────────
-import StudentDashboardPage      from "@/pages/student-dashboard";
-import StudentQuotesPage         from "@/pages/student-quotes";
-import StudentQuoteDetailPage    from "@/pages/student-quote-detail";
-import StudentProgramsPage       from "@/pages/student-programs";
-import StudentConsultationsPage  from "@/pages/student-consultations";
-import StudentFinancePage        from "@/pages/student-finance";
-import StudentDocumentsPage      from "@/pages/student-documents";
+import StudentDashboardPage            from "@/pages/student-dashboard";
+import StudentQuotesPage               from "@/pages/student-quotes";
+import StudentQuoteDetailPage          from "@/pages/student-quote-detail";
+import StudentProgramsPage             from "@/pages/student-programs";
+import StudentConsultationsPage        from "@/pages/student-consultations";
+import StudentConsultationDetailPage   from "@/pages/student-consultation-detail";
+import StudentServiceDetailPage        from "@/pages/student-service-detail";
+import StudentFinancePage              from "@/pages/student-finance";
+import StudentDocumentsPage            from "@/pages/student-documents";
 
 const PARTNER_ROLES = ["hotel", "pickup", "institute", "tour"];
 
@@ -157,6 +159,9 @@ function Router() {
       <Route path="/student/dashboard">
         {() => <ProtectedRoute component={StudentDashboardPage} />}
       </Route>
+      <Route path="/student/consultations/:id">
+        {() => <ProtectedRoute component={StudentConsultationDetailPage} />}
+      </Route>
       <Route path="/student/consultations">
         {() => <ProtectedRoute component={StudentConsultationsPage} />}
       </Route>
@@ -165,6 +170,9 @@ function Router() {
       </Route>
       <Route path="/student/quotes">
         {() => <ProtectedRoute component={StudentQuotesPage} />}
+      </Route>
+      <Route path="/student/services/:id">
+        {() => <ProtectedRoute component={StudentServiceDetailPage} />}
       </Route>
       <Route path="/student/services">
         {() => <ProtectedRoute component={StudentProgramsPage} />}
