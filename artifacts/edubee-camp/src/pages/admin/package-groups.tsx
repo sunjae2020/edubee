@@ -9,10 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Globe, MapPin, Edit, Loader2, Trash2, Package, ImageIcon, CheckCircle2, Clock, X } from "lucide-react";
+import { Plus, Globe, MapPin, Edit, Loader2, Trash2, Package, ImageIcon, CheckCircle2, Clock, X, Building2 } from "lucide-react";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { format } from "date-fns";
@@ -137,11 +137,16 @@ export default function PackageGroups() {
   });
 
   // Camp coordinators list for selector
-  const { data: coordinators = [] } = useQuery<{ id: string; name: string; email: string; companyName?: string | null }[]>({
+  const { data: coordinators = [] } = useQuery<{ id: string; name: string; email: string; companyName?: string | null; organisationId?: string | null; orgName?: string | null }[]>({
     queryKey: ["camp-coordinators"],
     queryFn: () => axios.get(`${BASE}/api/crm/coordinators`).then(r => r.data),
     staleTime: 300000,
   });
+  const coordinatorsByOrg = coordinators.reduce<Record<string, typeof coordinators>>((acc, c) => {
+    const key = c.orgName ?? "Independent";
+    (acc[key] ??= []).push(c);
+    return acc;
+  }, {});
 
   const { data: pkgData } = useQuery<{ data: Pkg[] }>({
     queryKey: ["packages", editing?.id],
@@ -600,10 +605,17 @@ export default function PackageGroups() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">— No coordinator assigned —</SelectItem>
-                    {coordinators.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name} · {c.email}{c.companyName ? ` · ${c.companyName}` : ""}
-                      </SelectItem>
+                    {Object.entries(coordinatorsByOrg).map(([orgName, members]) => (
+                      <SelectGroup key={orgName}>
+                        <SelectLabel className="flex items-center gap-1 text-xs font-semibold text-(--e-text-3) px-2 py-1">
+                          <Building2 className="w-3 h-3" /> {orgName}
+                        </SelectLabel>
+                        {members.map(c => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name} · {c.email}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     ))}
                   </SelectContent>
                 </Select>

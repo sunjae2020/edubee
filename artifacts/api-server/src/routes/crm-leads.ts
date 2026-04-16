@@ -38,11 +38,18 @@ router.get("/crm/staff", authenticate, requireRole(...ADMIN_ROLES), async (_req,
 router.get("/crm/coordinators", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (_req, res) => {
   try {
     const result = await db.execute(sql`
-      SELECT id, full_name AS name, email, company_name AS "companyName"
-      FROM users
-      WHERE role = 'camp_coordinator'
-      AND full_name IS NOT NULL
-      ORDER BY full_name
+      SELECT
+        u.id,
+        u.full_name         AS name,
+        u.email,
+        u.company_name      AS "companyName",
+        u.organisation_id   AS "organisationId",
+        o.name              AS "orgName"
+      FROM users u
+      LEFT JOIN organisations o ON o.id = u.organisation_id
+      WHERE u.role = 'camp_coordinator'
+        AND u.full_name IS NOT NULL
+      ORDER BY o.name NULLS LAST, u.full_name
     `);
     return res.json(result.rows);
   } catch (err) {
