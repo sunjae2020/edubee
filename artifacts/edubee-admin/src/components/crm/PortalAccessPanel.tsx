@@ -46,11 +46,12 @@ function getUserRole() {
 }
 
 const PORTAL_ROLES = [
-  { value: "institute",     label: "Institute"      },
-  { value: "hotel",         label: "Hotel"          },
-  { value: "pickup",        label: "Pickup"         },
-  { value: "tour",          label: "Tour"           },
-  { value: "consultant", label: "Consultant (Account Portal)" },
+  { value: "institute",  label: "Institute"                   },
+  { value: "hotel",      label: "Hotel"                       },
+  { value: "pickup",     label: "Pickup"                      },
+  { value: "tour",       label: "Tour"                        },
+  { value: "consultant", label: "Consultant (Agent Portal)"   },
+  { value: "student",    label: "Student"                     },
 ];
 
 interface Props {
