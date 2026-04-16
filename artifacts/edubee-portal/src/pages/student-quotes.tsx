@@ -24,7 +24,8 @@ interface Quote {
   id: string;
   quoteRefNumber: string | null;
   quoteStatus: string;
-  accountName: string | null;
+  customerName: string | null;
+  agentName: string | null;
   expiryDate: string | null;
   createdOn: string;
   productCount: number;
@@ -95,7 +96,7 @@ export default function StudentQuotesPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mt-1 flex-wrap text-xs" style={{ color: "#A8A29E" }}>
-                    {q.accountName && <span>{q.accountName}</span>}
+                    {q.agentName && <span>Agent: {q.agentName}</span>}
                     <span>Created {format(new Date(q.createdOn), "dd MMM yyyy")}</span>
                     {q.expiryDate && <span>Expires {format(new Date(q.expiryDate), "dd MMM yyyy")}</span>}
                   </div>

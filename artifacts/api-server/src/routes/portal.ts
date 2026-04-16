@@ -646,7 +646,8 @@ router.get("/portal/student/quotes", authenticatePortal, requireStudentRole, asy
         id: quotes.id,
         quoteRefNumber: quotes.quoteRefNumber,
         quoteStatus: quotes.quoteStatus,
-        accountName: quotes.accountName,
+        customerName: quotes.accountName,
+        agentName: sql<string>`(SELECT name FROM public.accounts WHERE id = ${quotes.agentAccountId})`,
         expiryDate: quotes.expiryDate,
         createdOn: quotes.createdOn,
       })

@@ -29,7 +29,8 @@ interface Quote {
   id: string;
   quoteRefNumber: string | null;
   quoteStatus: string;
-  accountName: string | null;
+  customerName: string | null;
+  agentName: string | null;
   expiryDate: string | null;
   createdOn: string;
   productCount: number;
@@ -96,7 +97,7 @@ export default function StudentConsultationsPage() {
                     </div>
                     <p className="text-xs mb-1" style={{ color: "#57534E" }}>{stepLabel(q.quoteStatus)}</p>
                     <div className="flex gap-3 text-xs flex-wrap" style={{ color: "#A8A29E" }}>
-                      {q.accountName && <span>Agent: {q.accountName}</span>}
+                      {q.agentName && <span>Agent: {q.agentName}</span>}
                       <span>Started {format(new Date(q.createdOn), "dd MMM yyyy")}</span>
                       {q.expiryDate && <span>· Expires {format(new Date(q.expiryDate), "dd MMM yyyy")}</span>}
                     </div>
