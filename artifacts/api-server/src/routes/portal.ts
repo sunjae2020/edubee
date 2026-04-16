@@ -9,6 +9,7 @@ import {
   taxInvoices,
   contracts,
   contractProducts,
+  leads,
 } from "@workspace/db/schema";
 import { eq, and, inArray, desc, sql, count, sum } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -221,6 +222,98 @@ router.get("/portal/students/:id", authenticatePortal, async (req, res) => {
     return res.json({ data: { account: safe, quotes: studentQuotes } });
   } catch (err) {
     console.error("[portal/students/:id]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/leads — Agent's leads list ────────────────────────────
+router.get("/portal/leads", authenticatePortal, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+    const rows = await db
+      .select({
+        id:              leads.id,
+        leadRefNumber:   leads.leadRefNumber,
+        status:          leads.status,
+        fullName:        leads.fullName,
+        firstName:       leads.firstName,
+        lastName:        leads.lastName,
+        email:           leads.email,
+        phone:           leads.phone,
+        nationality:     leads.nationality,
+        source:          leads.source,
+        inquiryType:     leads.inquiryType,
+        budget:          leads.budget,
+        expectedStartDate: leads.expectedStartDate,
+        notes:           leads.notes,
+        createdAt:       leads.createdAt,
+        updatedAt:       leads.updatedAt,
+      })
+      .from(leads)
+      .where(eq(leads.accountId, accountId))
+      .orderBy(desc(leads.createdAt));
+
+    return res.json({ data: rows });
+  } catch (err) {
+    console.error("[portal/leads]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/leads/:id — Agent lead detail ─────────────────────────
+router.get("/portal/leads/:id", authenticatePortal, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+    const leadId = req.params.id;
+
+    const [lead] = await db
+      .select({
+        id:               leads.id,
+        leadRefNumber:    leads.leadRefNumber,
+        status:           leads.status,
+        fullName:         leads.fullName,
+        firstName:        leads.firstName,
+        lastName:         leads.lastName,
+        email:            leads.email,
+        phone:            leads.phone,
+        nationality:      leads.nationality,
+        source:           leads.source,
+        inquiryType:      leads.inquiryType,
+        budget:           leads.budget,
+        expectedStartDate: leads.expectedStartDate,
+        notes:            leads.notes,
+        isActive:         leads.isActive,
+        createdAt:        leads.createdAt,
+        updatedAt:        leads.updatedAt,
+      })
+      .from(leads)
+      .where(and(eq(leads.id, leadId), eq(leads.accountId, accountId)));
+
+    if (!lead) return res.status(404).json({ error: "Lead not found" });
+
+    // Find linked quotes for this agent (most recent 10)
+    const linkedQuotes = await db
+      .select({
+        id:             quotes.id,
+        quoteRefNumber: quotes.quoteRefNumber,
+        quoteStatus:    quotes.quoteStatus,
+        createdOn:      quotes.createdOn,
+        expiryDate:     quotes.expiryDate,
+        accountName:    quotes.accountName,
+        totalAmount: sql<string>`(
+          SELECT COALESCE(SUM(qp.total), 0)
+          FROM quote_products qp
+          WHERE qp.quote_id = ${quotes.id} AND qp.status = 'Active'
+        )`,
+      })
+      .from(quotes)
+      .where(eq(quotes.agentAccountId, accountId))
+      .orderBy(desc(quotes.createdOn))
+      .limit(10);
+
+    return res.json({ ...lead, linkedQuotes });
+  } catch (err) {
+    console.error("[portal/leads/:id]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

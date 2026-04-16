@@ -8,9 +8,11 @@ import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 
 // ── Agent ──────────────────────────────────────────────────────────────────
-import DashboardPage           from "@/pages/dashboard";
-import StudentsPage            from "@/pages/students";
-import StudentDetailPage       from "@/pages/student-detail";
+import DashboardPage              from "@/pages/dashboard";
+import AgentConsultationsPage     from "@/pages/agent-consultations";
+import AgentLeadDetailPage        from "@/pages/agent-lead-detail";
+import StudentsPage               from "@/pages/students";
+import StudentDetailPage          from "@/pages/student-detail";
 import CommissionsPage         from "@/pages/commissions";
 import ProfilePage             from "@/pages/profile";
 import AgentQuotesPage         from "@/pages/agent-quotes";
@@ -87,7 +89,10 @@ function Router() {
         {() => <ProtectedRoute component={DashboardPage} />}
       </Route>
       <Route path="/consultations">
-        {() => <ProtectedRoute component={StudentsPage} />}
+        {() => <ProtectedRoute component={AgentConsultationsPage} />}
+      </Route>
+      <Route path="/leads/:id">
+        {() => <ProtectedRoute component={AgentLeadDetailPage} />}
       </Route>
       <Route path="/quotes/:id">
         {() => <ProtectedRoute component={AgentQuoteDetailPage} />}
