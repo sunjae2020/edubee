@@ -17,6 +17,7 @@ import CommissionsPage         from "@/pages/commissions";
 import ProfilePage             from "@/pages/profile";
 import AgentQuotesPage         from "@/pages/agent-quotes";
 import AgentQuoteDetailPage    from "@/pages/agent-quote-detail";
+import AgentContractsPage      from "@/pages/agent-contracts";
 import AgentServicesPage       from "@/pages/agent-services";
 import AgentDocumentsPage      from "@/pages/agent-documents";
 
@@ -28,6 +29,7 @@ import PartnerConsultationsPage  from "@/pages/partner-consultations";
 import PartnerServicesPage       from "@/pages/partner-services";
 import PartnerFinancePage        from "@/pages/partner-finance";
 import PartnerDocumentsPage      from "@/pages/partner-documents";
+import PartnerContractsPage     from "@/pages/partner-contracts";
 
 // ── Community (shared across all roles) ────────────────────────────────────
 import CommunityPage             from "@/pages/community";
@@ -36,6 +38,7 @@ import CommunityPage             from "@/pages/community";
 import StudentDashboardPage            from "@/pages/student-dashboard";
 import StudentQuotesPage               from "@/pages/student-quotes";
 import StudentQuoteDetailPage          from "@/pages/student-quote-detail";
+import StudentContractsPage            from "@/pages/student-contracts";
 import StudentProgramsPage             from "@/pages/student-programs";
 import StudentConsultationsPage        from "@/pages/student-consultations";
 import StudentConsultationDetailPage   from "@/pages/student-consultation-detail";
@@ -102,6 +105,9 @@ function Router() {
       <Route path="/quotes">
         {() => <ProtectedRoute component={AgentQuotesPage} />}
       </Route>
+      <Route path="/contracts">
+        {() => <ProtectedRoute component={AgentContractsPage} />}
+      </Route>
       <Route path="/services">
         {() => <ProtectedRoute component={AgentServicesPage} />}
       </Route>
@@ -138,6 +144,9 @@ function Router() {
       <Route path="/partner/quotes">
         {() => <ProtectedRoute component={PartnerBookingsPage} />}
       </Route>
+      <Route path="/partner/contracts">
+        {() => <ProtectedRoute component={PartnerContractsPage} />}
+      </Route>
       <Route path="/partner/services">
         {() => <ProtectedRoute component={PartnerServicesPage} />}
       </Route>
@@ -170,6 +179,9 @@ function Router() {
       </Route>
       <Route path="/student/quotes">
         {() => <ProtectedRoute component={StudentQuotesPage} />}
+      </Route>
+      <Route path="/student/contracts">
+        {() => <ProtectedRoute component={StudentContractsPage} />}
       </Route>
       <Route path="/student/services/:id">
         {() => <ProtectedRoute component={StudentServiceDetailPage} />}

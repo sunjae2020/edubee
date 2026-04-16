@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, FileText, Package, Wallet,
   FolderOpen, User, LogOut,
   Menu, ChevronLeft, ChevronRight, ChevronDown, Globe,
-  MessageCircle,
+  MessageCircle, BookOpen, CalendarDays,
   LucideIcon,
 } from "lucide-react";
 import {
@@ -19,40 +19,43 @@ type NavItem = { icon: LucideIcon; label: string; href: string };
 // ── Nav builders (flat, English) ──────────────────────────────────────────
 function buildAgentNav(): NavItem[] {
   return [
-    { icon: LayoutDashboard, label: "Dashboard",          href: "/dashboard"      },
-    { icon: Users,           label: "Consultations",      href: "/consultations"  },
-    { icon: FileText,        label: "Quotes & Contracts", href: "/quotes"         },
-    { icon: Package,         label: "Services",           href: "/services"       },
-    { icon: Wallet,          label: "Finance",            href: "/finance"        },
-    { icon: FolderOpen,      label: "Documents",          href: "/documents"      },
-    { icon: MessageCircle,   label: "Community",          href: "/community"      },
-    { icon: User,            label: "My Profile",         href: "/profile"        },
+    { icon: LayoutDashboard, label: "Dashboard",     href: "/dashboard"      },
+    { icon: Users,           label: "Consultations", href: "/consultations"  },
+    { icon: FileText,        label: "Quotes",        href: "/quotes"         },
+    { icon: BookOpen,        label: "Contracts",     href: "/contracts"      },
+    { icon: Package,         label: "Services",      href: "/services"       },
+    { icon: Wallet,          label: "Finance",       href: "/finance"        },
+    { icon: FolderOpen,      label: "Documents",     href: "/documents"      },
+    { icon: MessageCircle,   label: "Community",     href: "/community"      },
+    { icon: User,            label: "My Profile",    href: "/profile"        },
   ];
 }
 
 function buildPartnerNav(): NavItem[] {
   return [
-    { icon: LayoutDashboard, label: "Dashboard",          href: "/partner/dashboard"      },
-    { icon: Users,           label: "Consultations",      href: "/partner/consultations"  },
-    { icon: FileText,        label: "Quotes & Contracts", href: "/partner/quotes"         },
-    { icon: Package,         label: "Services",           href: "/partner/services"       },
-    { icon: Wallet,          label: "Finance",            href: "/partner/finance"        },
-    { icon: FolderOpen,      label: "Documents",          href: "/partner/documents"      },
-    { icon: MessageCircle,   label: "Community",          href: "/community"              },
-    { icon: User,            label: "My Profile",         href: "/partner/profile"        },
+    { icon: LayoutDashboard, label: "Dashboard",     href: "/partner/dashboard"      },
+    { icon: Users,           label: "Consultations", href: "/partner/consultations"  },
+    { icon: CalendarDays,    label: "Bookings",      href: "/partner/quotes"         },
+    { icon: BookOpen,        label: "Contracts",     href: "/partner/contracts"      },
+    { icon: Package,         label: "Services",      href: "/partner/services"       },
+    { icon: Wallet,          label: "Finance",       href: "/partner/finance"        },
+    { icon: FolderOpen,      label: "Documents",     href: "/partner/documents"      },
+    { icon: MessageCircle,   label: "Community",     href: "/community"              },
+    { icon: User,            label: "My Profile",    href: "/partner/profile"        },
   ];
 }
 
 function buildStudentNav(): NavItem[] {
   return [
-    { icon: LayoutDashboard, label: "Dashboard",          href: "/student/dashboard"      },
-    { icon: Users,           label: "Consultations",      href: "/student/consultations"  },
-    { icon: FileText,        label: "Quotes & Contracts", href: "/student/quotes"         },
-    { icon: Package,         label: "Services",           href: "/student/services"       },
-    { icon: Wallet,          label: "Finance",            href: "/student/finance"        },
-    { icon: FolderOpen,      label: "Documents",          href: "/student/documents"      },
-    { icon: MessageCircle,   label: "Community",          href: "/community"              },
-    { icon: User,            label: "My Profile",         href: "/student/profile"        },
+    { icon: LayoutDashboard, label: "Dashboard",     href: "/student/dashboard"      },
+    { icon: Users,           label: "Consultations", href: "/student/consultations"  },
+    { icon: FileText,        label: "Quotes",        href: "/student/quotes"         },
+    { icon: BookOpen,        label: "Contracts",     href: "/student/contracts"      },
+    { icon: Package,         label: "Services",      href: "/student/services"       },
+    { icon: Wallet,          label: "Finance",       href: "/student/finance"        },
+    { icon: FolderOpen,      label: "Documents",     href: "/student/documents"      },
+    { icon: MessageCircle,   label: "Community",     href: "/community"              },
+    { icon: User,            label: "My Profile",    href: "/student/profile"        },
   ];
 }
 
@@ -68,7 +71,8 @@ function getNavForRole(role: string | null | undefined): NavItem[] {
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard":               "Dashboard",
   "/consultations":           "Consultations",
-  "/quotes":                  "Quotes & Contracts",
+  "/quotes":                  "Quotes",
+  "/contracts":               "Contracts",
   "/services":                "Services",
   "/finance":                 "Finance",
   "/documents":               "Documents",
@@ -76,14 +80,16 @@ const PAGE_TITLES: Record<string, string> = {
   "/community":               "Community",
   "/partner/dashboard":       "Dashboard",
   "/partner/consultations":   "Consultations",
-  "/partner/quotes":          "Quotes & Contracts",
+  "/partner/quotes":          "Bookings",
+  "/partner/contracts":       "Contracts",
   "/partner/services":        "Services",
   "/partner/finance":         "Finance",
   "/partner/documents":       "Documents",
   "/partner/profile":         "My Profile",
   "/student/dashboard":       "Dashboard",
   "/student/consultations":   "Consultations",
-  "/student/quotes":          "Quotes & Contracts",
+  "/student/quotes":          "Quotes",
+  "/student/contracts":       "Contracts",
   "/student/services":        "Services",
   "/student/finance":         "Finance",
   "/student/documents":       "Documents",
