@@ -26,6 +26,13 @@ function canManage(role: string) {
   return isAdminish(role) || role === "camp_coordinator";
 }
 
+/** For camp_coordinator, use organisationId as the tenant filter key */
+function campUid(user: any): string {
+  return user.role === "camp_coordinator"
+    ? (user.organisationId ?? user.id)
+    : user.id;
+}
+
 /** Return the contract IDs visible to this user based on their role */
 async function visibleContractIds(role: string, uid: string): Promise<string[] | null> {
   if (isAdminish(role)) return null; // null = no filter
@@ -34,7 +41,7 @@ async function visibleContractIds(role: string, uid: string): Promise<string[] |
     const rows = await db
       .select({ id: contracts.id })
       .from(contracts)
-      .where(eq(contracts.campProviderId, uid));
+      .where(eq(contracts.campProviderId, uid)); // uid = organisationId for camp_coordinator
     return rows.map((r) => r.id);
   }
 
@@ -134,7 +141,7 @@ async function fetchReportList(
 router.get("/reports", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    const uid = req.user!.id;
+    const uid = campUid(req.user!);
     const page = parseInt(String(req.query.page ?? "1"), 10);
     const limit = parseInt(String(req.query.limit ?? "20"), 10);
 
@@ -163,7 +170,7 @@ router.get("/reports", authenticate, async (req, res) => {
 router.get("/reports/:id", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    const uid = req.user!.id;
+    const uid = campUid(req.user!);
 
     if (!canManage(role)) {
       return res.status(403).json({ error: "Forbidden" });
@@ -262,7 +269,7 @@ router.get("/reports/:id", authenticate, async (req, res) => {
 router.post("/reports", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    const uid = req.user!.id;
+    const uid = campUid(req.user!);
 
     if (!canManage(role)) return res.status(403).json({ error: "Forbidden" });
 
@@ -343,7 +350,7 @@ router.post("/reports", authenticate, async (req, res) => {
 router.put("/reports/:id", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    const uid = req.user!.id;
+    const uid = campUid(req.user!);
 
     if (!canManage(role)) return res.status(403).json({ error: "Forbidden" });
 
@@ -388,7 +395,7 @@ router.put("/reports/:id", authenticate, async (req, res) => {
 router.patch("/reports/:id/publish", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    const uid = req.user!.id;
+    const uid = campUid(req.user!);
 
     if (!canManage(role)) return res.status(403).json({ error: "Forbidden" });
 
@@ -696,7 +703,7 @@ router.post("/reports/:id/sync", authenticate, async (req, res) => {
 router.get("/reports/:id/pdf", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    const uid = req.user!.id;
+    const uid = campUid(req.user!);
 
     if (!canManage(role)) {
       return res.status(403).json({ error: "Forbidden" });

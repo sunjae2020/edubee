@@ -14,10 +14,11 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { accounts } from "./crm";
+import { organisations } from "./settings";
 
 export const packageGroups = pgTable("package_groups", {
   id: uuid("id").primaryKey().defaultRandom(),
-  campProviderId: uuid("camp_provider_id").references(() => accounts.id, { onDelete: "set null" }),
+  campProviderId: uuid("camp_provider_id").references(() => organisations.id, { onDelete: "set null" }),
   nameEn: varchar("name_en", { length: 255 }).notNull(),
   nameKo: varchar("name_ko", { length: 255 }),
   nameJa: varchar("name_ja", { length: 255 }),

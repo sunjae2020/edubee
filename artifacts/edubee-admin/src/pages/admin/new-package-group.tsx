@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ThumbnailUploader } from "@/components/shared/ThumbnailUploader";
-import { Loader2, Sparkles, Plus, X, ChevronRight } from "lucide-react";
+import { Loader2, Sparkles, Plus, X, ChevronRight, Search, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -176,11 +176,17 @@ export default function NewPackageGroup() {
   const log = (m: string, t = "i") =>
     setAiLogs(p => [...p, { m, t, ts: new Date().toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) }]);
 
-  /* Coordinators list */
-  const { data: coordinators = [] } = useQuery<any[]>({
-    queryKey: ["coordinators-list"],
-    queryFn: () => axios.get(`${BASE}/api/users?role=camp_coordinator&limit=100`).then(r => r.data?.data ?? []),
+  /* Organisation (tenant) search for camp provider */
+  const [orgSearchInput, setOrgSearchInput] = useState("");
+  const [orgSearchOpen, setOrgSearchOpen] = useState(false);
+  const [selectedOrg, setSelectedOrg] = useState<{ id: string; name: string; subdomain?: string } | null>(null);
+
+  const { data: orgSearchData } = useQuery<{ data: any[] }>({
+    queryKey: ["org-search-new", orgSearchInput],
+    queryFn: () => axios.get(`${BASE}/api/settings/organisations?q=${encodeURIComponent(orgSearchInput)}&limit=20`).then(r => r.data),
+    staleTime: 10000,
   });
+  const orgResults: any[] = orgSearchData?.data ?? [];
 
   /* AI Extract */
   const doExtract = async () => {
@@ -552,15 +558,53 @@ export default function NewPackageGroup() {
                     placeholder="Leave blank = not shown" className="h-8 text-sm" min={1} />
                 </Row>
                 <Row label="Camp Provider">
-                  <Select value={form.campProviderId || "none"} onValueChange={v => upd("campProviderId", v === "none" ? "" : v)}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="— Select —" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">— No coordinator —</SelectItem>
-                      {coordinators.map((c: any) => (
-                        <SelectItem key={c.id} value={c.id}>{c.fullName} · {c.email}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {selectedOrg ? (
+                    <div className="flex items-center gap-2 h-8 px-2 rounded-md border border-border bg-muted/40 flex-1">
+                      <Building2 className="w-3.5 h-3.5 text-(--e-orange) shrink-0" />
+                      <span className="text-sm font-medium truncate flex-1">{selectedOrg.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedOrg(null); setOrgSearchInput(""); upd("campProviderId", ""); }}
+                        className="p-0.5 rounded hover:bg-muted text-muted-foreground"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative flex-1">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                      <Input
+                        value={orgSearchInput}
+                        onChange={e => { setOrgSearchInput(e.target.value); setOrgSearchOpen(true); }}
+                        onFocus={() => setOrgSearchOpen(true)}
+                        placeholder="Search tenant…"
+                        className="h-8 text-sm pl-6"
+                      />
+                      {orgSearchOpen && orgResults.length > 0 && (
+                        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-background shadow-lg max-h-40 overflow-y-auto">
+                          {orgResults.map((o: any) => (
+                            <button
+                              key={o.id}
+                              type="button"
+                              className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-muted text-left"
+                              onClick={() => {
+                                setSelectedOrg({ id: o.id, name: o.name, subdomain: o.subdomain });
+                                setOrgSearchInput(o.trading_name ?? o.name);
+                                upd("campProviderId", o.id);
+                                setOrgSearchOpen(false);
+                              }}
+                            >
+                              <Building2 className="w-3 h-3 text-(--e-orange) shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium truncate">{o.name}</p>
+                                {o.subdomain && <p className="text-[10px] text-muted-foreground">{o.subdomain}.edubee.co</p>}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </Row>
                 {/* Thumbnail */}
                 <div className="mt-3">

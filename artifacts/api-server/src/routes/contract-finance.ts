@@ -19,7 +19,10 @@ const EDIT_ACCESS   = [...FULL_ACCESS, "camp_coordinator"];
 
 function canViewContract(user: any, contract: { campProviderId?: string | null }): boolean {
   if (FULL_ACCESS.includes(user.role)) return true;
-  if (user.role === "camp_coordinator") return contract.campProviderId === user.id;
+  if (user.role === "camp_coordinator") {
+    const orgId = user.organisationId ?? user.id;
+    return contract.campProviderId === orgId;
+  }
   if (user.role === "education_agent") return true; // own contracts via finance item later
   return false;
 }

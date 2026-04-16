@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts, packageGroupImages } from "@workspace/db/schema";
+import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts, packageGroupImages, organisations } from "@workspace/db/schema";
 import { eq, and, count, asc, SQL, ilike, desc, sql, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate } from "../middleware/authenticate.js";
@@ -21,26 +21,27 @@ router.get("/package-groups", authenticate, async (req, res) => {
     if (status) conditions.push(ilike(packageGroups.status, status));
     if (countryCode) conditions.push(eq(packageGroups.countryCode, countryCode));
 
-    // Camp coordinators see only their own
+    // Camp coordinators see only their own (keyed by organisationId)
     if (req.user!.role === "camp_coordinator") {
-      conditions.push(eq(packageGroups.campProviderId, req.user!.id));
+      const orgId = req.user!.organisationId ?? req.user!.id;
+      conditions.push(eq(packageGroups.campProviderId, orgId));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(packageGroups).where(whereClause);
 
-    // JOIN coordinator info + type info
+    // JOIN organisation (tenant) info + type info
     const rows = await db
       .select({
         group: packageGroups,
-        coordinatorId: users.id,
-        coordinatorName: users.fullName,
-        coordinatorEmail: users.email,
-        coordinatorPhone: users.phone,
+        orgId: organisations.id,
+        orgName: organisations.name,
+        orgTradingName: organisations.tradingName,
+        orgSubdomain: organisations.subdomain,
         typeName: productTypes.name,
       })
       .from(packageGroups)
-      .leftJoin(users, eq(packageGroups.campProviderId, users.id))
+      .leftJoin(organisations, eq(packageGroups.campProviderId, organisations.id))
       .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
       .where(whereClause)
       .limit(limitNum)
@@ -64,11 +65,11 @@ router.get("/package-groups", authenticate, async (req, res) => {
       ...r.group,
       packageCount: pkgCounts[r.group.id] ?? 0,
       typeName: r.typeName ?? null,
-      coordinator: r.coordinatorId ? {
-        id: r.coordinatorId,
-        fullName: r.coordinatorName,
-        email: r.coordinatorEmail,
-        phone: r.coordinatorPhone,
+      campProvider: r.orgId ? {
+        id: r.orgId,
+        name: r.orgName,
+        tradingName: r.orgTradingName,
+        subdomain: r.orgSubdomain,
       } : null,
     }));
     const total = Number(totalResult.count);

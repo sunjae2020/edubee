@@ -25,7 +25,7 @@ export const contracts = pgTable("contracts", {
     .references(() => applications.id)
     .unique(),
   campApplicationId: uuid("camp_application_id"), // FK to camp_applications (no circular ref)
-  campProviderId: uuid("camp_provider_id").references(() => users.id),
+  campProviderId: uuid("camp_provider_id").references(() => organisations.id, { onDelete: "set null" }),
   agentAccountId: uuid("agent_account_id").references(() => accounts.id, { onDelete: "set null" }),
   totalAmount: decimal("total_amount", { precision: 12, scale: 2 }),
   paidAmount: decimal("paid_amount", { precision: 12, scale: 2 }),

@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { Resend } from "resend";
 import { db } from "@workspace/db";
-import { platformSettings } from "@workspace/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { platformSettings, organisations } from "@workspace/db/schema";
+import { eq, inArray, ilike, or, asc, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { getResendConfig } from "../mailer.js";
@@ -209,6 +209,26 @@ router.put("/branding", authenticate, requireRole(...SUPER_ADMIN), async (req, r
     return res.json({ success: true, updated: upserts.map(u => u.key) });
   } catch (err) {
     console.error("PUT /settings/branding error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ─── GET /settings/organisations — search tenants for package group assignment ─
+router.get("/organisations", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
+  try {
+    const q = String(req.query.q ?? "").trim();
+    const limit = Math.min(50, parseInt(String(req.query.limit ?? "20"), 10));
+    const r = (x: any) => x.rows ?? (x as any[]);
+    const rows = await db.execute(sql`
+      SELECT id, name, trading_name, subdomain, status, logo_url
+      FROM organisations
+      ${q ? sql`WHERE (name ILIKE ${"%" + q + "%"} OR trading_name ILIKE ${"%" + q + "%"} OR subdomain ILIKE ${"%" + q + "%"})` : sql``}
+      ORDER BY name ASC
+      LIMIT ${limit}
+    `);
+    return res.json({ data: r(rows) });
+  } catch (err) {
+    console.error("GET /settings/organisations error:", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

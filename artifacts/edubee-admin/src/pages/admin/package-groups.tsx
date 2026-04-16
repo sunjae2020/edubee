@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Globe, MapPin, Edit, Loader2, Trash2, Package, ImageIcon, CheckCircle2, Clock, X } from "lucide-react";
+import { Plus, Globe, MapPin, Edit, Loader2, Trash2, Package, ImageIcon, CheckCircle2, Clock, X, Search, Building2 } from "lucide-react";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { format } from "date-fns";
@@ -36,6 +36,7 @@ interface PackageGroup {
   status?: string | null;
   sortOrder?: number | null;
   campProviderId?: string | null;
+  campProvider?: { id: string; name: string; tradingName?: string | null; subdomain?: string | null } | null;
   packageCount?: number;
   typeId?: string | null;
   typeName?: string | null;
@@ -143,13 +144,18 @@ export default function PackageGroups() {
     queryFn: () => axios.get(`${BASE}/api/package-groups`).then(r => r.data?.data ?? r.data),
   });
 
-  // Camp coordinators list for selector
-  const { data: coordinatorsData } = useQuery<{ data: any[] }>({
-    queryKey: ["users-coordinators"],
-    queryFn: () => axios.get(`${BASE}/api/users?role=camp_coordinator&limit=100`).then(r => r.data),
+  // Organisation (tenant) search for camp provider assignment
+  const [orgSearchInput, setOrgSearchInput] = useState("");
+  const [orgSearchOpen, setOrgSearchOpen] = useState(false);
+  const [selectedOrg, setSelectedOrg] = useState<{ id: string; name: string; subdomain?: string } | null>(null);
+
+  const { data: orgSearchData } = useQuery<{ data: any[] }>({
+    queryKey: ["org-search", orgSearchInput],
+    queryFn: () => axios.get(`${BASE}/api/settings/organisations?q=${encodeURIComponent(orgSearchInput)}&limit=20`).then(r => r.data),
     enabled: showModal,
+    staleTime: 10000,
   });
-  const coordinators: any[] = coordinatorsData?.data ?? [];
+  const orgResults: any[] = orgSearchData?.data ?? [];
 
   const { data: pkgData } = useQuery<{ data: Pkg[] }>({
     queryKey: ["packages", editing?.id],
@@ -253,6 +259,14 @@ export default function PackageGroups() {
       sortOrder: g.sortOrder?.toString() ?? "0",
       campProviderId: g.campProviderId ?? "",
     });
+    if (g.campProvider) {
+      setSelectedOrg({ id: g.campProvider.id, name: g.campProvider.name, subdomain: g.campProvider.subdomain ?? undefined });
+      setOrgSearchInput(g.campProvider.tradingName ?? g.campProvider.name);
+    } else {
+      setSelectedOrg(null);
+      setOrgSearchInput("");
+    }
+    setOrgSearchOpen(false);
     setModalTab("info");
     setLangTab("en");
     setShowModal(true);
@@ -622,34 +636,73 @@ export default function PackageGroups() {
 
             {/* Tab 2: Image & Settings */}
             <TabsContent value="media" className="m-0 space-y-5">
-              {/* Coordinator selector */}
+              {/* Camp Provider (Tenant) selector */}
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-2 font-semibold">
                   <span className="w-5 h-5 rounded-full bg-(--e-orange)/15 flex items-center justify-center text-(--e-orange) text-[11px] font-bold">C</span>
-                  Camp Coordinator
+                  Camp Provider (Tenant)
                 </Label>
-                <Select
-                  value={form.campProviderId || "none"}
-                  onValueChange={v => setForm(f => ({ ...f, campProviderId: v === "none" ? "" : v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="— Select a coordinator —" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">— No coordinator assigned —</SelectItem>
-                    {coordinators.map((c: any) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        <span className="flex items-center gap-2">
-                          <span className="font-medium">{c.fullName}</span>
-                          <span className="text-xs text-muted-foreground">{c.email}</span>
-                          {c.companyName && <span className="text-xs text-muted-foreground">· {c.companyName}</span>}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {selectedOrg ? (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted/40">
+                    <Building2 className="w-4 h-4 text-(--e-orange) shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{selectedOrg.name}</p>
+                      {selectedOrg.subdomain && (
+                        <p className="text-xs text-muted-foreground">{selectedOrg.subdomain}.edubee.co</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedOrg(null); setOrgSearchInput(""); setForm(f => ({ ...f, campProviderId: "" })); }}
+                      className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                      <Input
+                        value={orgSearchInput}
+                        onChange={e => { setOrgSearchInput(e.target.value); setOrgSearchOpen(true); }}
+                        onFocus={() => setOrgSearchOpen(true)}
+                        placeholder="Search tenant by name or subdomain…"
+                        className="pl-8 text-sm"
+                      />
+                    </div>
+                    {orgSearchOpen && orgResults.length > 0 && (
+                      <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-background shadow-lg max-h-48 overflow-y-auto">
+                        {orgResults.map((o: any) => (
+                          <button
+                            key={o.id}
+                            type="button"
+                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted text-left"
+                            onClick={() => {
+                              setSelectedOrg({ id: o.id, name: o.name, subdomain: o.subdomain });
+                              setOrgSearchInput(o.trading_name ?? o.name);
+                              setForm(f => ({ ...f, campProviderId: o.id }));
+                              setOrgSearchOpen(false);
+                            }}
+                          >
+                            <Building2 className="w-3.5 h-3.5 text-(--e-orange) shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{o.name}</p>
+                              {o.subdomain && <p className="text-xs text-muted-foreground">{o.subdomain}.edubee.co</p>}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {orgSearchOpen && orgSearchInput && orgResults.length === 0 && (
+                      <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-background shadow-lg px-3 py-2 text-sm text-muted-foreground">
+                        No tenants found
+                      </div>
+                    )}
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground">
-                  The camp coordinator responsible for this program. Must have coordinator role.
+                  Assign a tenant organisation as the camp provider. They will see contracts linked to this package group in their own account.
                 </p>
               </div>
 
