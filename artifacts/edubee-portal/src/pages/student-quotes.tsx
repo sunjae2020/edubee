@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText } from "lucide-react";
+import { FileText, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
 const ORANGE = "#F5821F";
@@ -31,6 +32,7 @@ interface Quote {
 }
 
 export default function StudentQuotesPage() {
+  const [, navigate] = useLocation();
   const { data: quotes = [], isLoading, error } = useQuery({
     queryKey: ["portal-student-quotes"],
     queryFn: () => api.get<{ data: Quote[] }>("/portal/student/quotes").then(r => r.data),
@@ -77,7 +79,10 @@ export default function StudentQuotesPage() {
         <div className="space-y-3">
           {quotes.map(q => (
             <div key={q.id} className="rounded-xl p-5 border transition-all"
-              style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", cursor: "pointer" }}
+              onClick={() => navigate(`/student/quotes/${q.id}`)}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#F5821F40"; (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 8px rgba(245,130,31,0.08)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#E8E6E2"; (e.currentTarget as HTMLElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)"; }}>
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -95,13 +100,16 @@ export default function StudentQuotesPage() {
                     {q.expiryDate && <span>Expires {format(new Date(q.expiryDate), "dd MMM yyyy")}</span>}
                   </div>
                 </div>
-                <div className="text-right shrink-0">
-                  {q.productCount > 0 && (
-                    <p className="text-xs" style={{ color: "#A8A29E" }}>{q.productCount} item{q.productCount !== 1 ? "s" : ""}</p>
-                  )}
-                  {q.totalValue > 0 && (
-                    <p className="text-lg font-bold mt-0.5" style={{ color: "#1C1917" }}>{fmt(q.totalValue)}</p>
-                  )}
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    {q.productCount > 0 && (
+                      <p className="text-xs" style={{ color: "#A8A29E" }}>{q.productCount} item{q.productCount !== 1 ? "s" : ""}</p>
+                    )}
+                    {q.totalValue > 0 && (
+                      <p className="text-lg font-bold mt-0.5" style={{ color: "#1C1917" }}>{fmt(q.totalValue)}</p>
+                    )}
+                  </div>
+                  <ChevronRight size={16} style={{ color: "#A8A29E" }} />
                 </div>
               </div>
             </div>

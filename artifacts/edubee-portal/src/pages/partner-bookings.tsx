@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarRange } from "lucide-react";
+import { CalendarRange, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
 const ORANGE = "#F5821F";
@@ -51,6 +52,7 @@ interface Booking {
 }
 
 export default function PartnerBookingsPage() {
+  const [, navigate] = useLocation();
   const { data: bookings = [], isLoading, error } = useQuery({
     queryKey: ["portal-partner-bookings"],
     queryFn: () => api.get<{ data: Booking[] }>("/portal/partner/bookings").then(r => r.data),
@@ -111,7 +113,8 @@ export default function PartnerBookingsPage() {
               </thead>
               <tbody>
                 {bookings.map((b) => (
-                  <tr key={b.id} style={{ borderBottom: "1px solid #F4F3F1" }}
+                  <tr key={b.id} style={{ borderBottom: "1px solid #F4F3F1", cursor: "pointer" }}
+                    onClick={() => navigate(`/partner/quotes/${b.id}`)}
                     onMouseEnter={e => (e.currentTarget.style.background = "#FAFAF9")}
                     onMouseLeave={e => (e.currentTarget.style.background = "")}>
                     <td className="px-5 py-4">

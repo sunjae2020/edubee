@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Search } from "lucide-react";
+import { Users, Search, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
 function statusStyle(s: string | null | undefined) {
@@ -29,6 +30,7 @@ interface Booking {
 
 export default function PartnerConsultationsPage() {
   const [search, setSearch] = useState("");
+  const [, navigate] = useLocation();
 
   const { data: bookings = [], isLoading, error } = useQuery({
     queryKey: ["portal-partner-bookings"],
@@ -118,7 +120,10 @@ export default function PartnerConsultationsPage() {
               <div className="space-y-2">
                 {e.bookings.map(b => (
                   <div key={b.id} className="flex items-center justify-between text-xs rounded-lg px-3 py-2"
-                    style={{ background: "#FAFAF9" }}>
+                    style={{ background: "#FAFAF9", cursor: "pointer" }}
+                    onClick={() => navigate(`/partner/quotes/${b.id}`)}
+                    onMouseEnter={ev => (ev.currentTarget.style.background = "#F4F3F1")}
+                    onMouseLeave={ev => (ev.currentTarget.style.background = "#FAFAF9")}>
                     <div className="flex items-center gap-2">
                       <span style={{ color: "#57534E" }}>{b.name ?? "Service"}</span>
                       {b.contractNumber && <span style={{ color: "#A8A29E" }}>· {b.contractNumber}</span>}
@@ -130,6 +135,7 @@ export default function PartnerConsultationsPage() {
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full font-medium capitalize" style={statusStyle(b.contractStatus)}>
                         {b.contractStatus ?? "pending"}
                       </span>
+                      <ChevronRight size={12} style={{ color: "#A8A29E" }} />
                     </div>
                   </div>
                 ))}

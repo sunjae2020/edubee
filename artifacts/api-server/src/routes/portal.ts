@@ -679,6 +679,194 @@ router.get("/portal/agent/services", authenticatePortal, async (req, res) => {
   }
 });
 
+// ── GET /api/portal/quotes/:id — Agent quote detail (full) ─────────────────
+router.get("/portal/quotes/:id", authenticatePortal, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+    const quoteId   = req.params.id;
+
+    const [quote] = await db
+      .select()
+      .from(quotes)
+      .where(and(eq(quotes.id, quoteId), eq(quotes.agentAccountId, accountId)))
+      .limit(1);
+
+    if (!quote) return res.status(404).json({ error: "Quote not found" });
+
+    const products = await db
+      .select()
+      .from(quote_products)
+      .where(eq(quote_products.quoteId, quoteId))
+      .orderBy(sql`${quote_products.sortOrder} asc`);
+
+    // Linked contract (if any)
+    const [contract] = await db
+      .select({
+        id:           contracts.id,
+        contractNumber: contracts.contractNumber,
+        status:       contracts.status,
+        totalAmount:  contracts.totalAmount,
+        paidAmount:   contracts.paidAmount,
+        balanceAmount:contracts.balanceAmount,
+        courseStartDate: contracts.courseStartDate,
+        courseEndDate:   contracts.courseEndDate,
+        packageName:  contracts.packageName,
+        studentName:  contracts.studentName,
+        clientEmail:  contracts.clientEmail,
+        clientCountry:contracts.clientCountry,
+        agentName:    contracts.agentName,
+        signedAt:     contracts.signedAt,
+        adminNote:    contracts.adminNote,
+        partnerNote:  contracts.partnerNote,
+        notes:        contracts.notes,
+      })
+      .from(contracts)
+      .where(eq(contracts.quoteId, quoteId))
+      .limit(1);
+
+    // Student account info
+    let student = null;
+    if (quote.studentAccountId) {
+      const [s] = await db
+        .select({ id: accounts.id, name: accounts.name, email: accounts.email, country: accounts.country, phoneNumber: accounts.phoneNumber })
+        .from(accounts)
+        .where(eq(accounts.id, quote.studentAccountId))
+        .limit(1);
+      student = s ?? null;
+    }
+
+    return res.json({ data: { quote, products, contract: contract ?? null, student } });
+  } catch (err) {
+    console.error("[portal/quotes/:id]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/student/quotes/:id — Student quote detail (limited) ────
+router.get("/portal/student/quotes/:id", authenticatePortal, requireStudentRole, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+    const quoteId   = req.params.id;
+
+    const [quote] = await db
+      .select({
+        id:             quotes.id,
+        quoteRefNumber: quotes.quoteRefNumber,
+        quoteStatus:    quotes.quoteStatus,
+        accountName:    quotes.accountName,
+        customerName:   quotes.customerName,
+        expiryDate:     quotes.expiryDate,
+        notes:          quotes.notes,
+        createdOn:      quotes.createdOn,
+        modifiedOn:     quotes.modifiedOn,
+        agentAccountId: quotes.agentAccountId,
+      })
+      .from(quotes)
+      .where(and(eq(quotes.id, quoteId), eq(quotes.studentAccountId, accountId)))
+      .limit(1);
+
+    if (!quote) return res.status(404).json({ error: "Quote not found" });
+
+    const products = await db
+      .select({
+        id:                 quote_products.id,
+        productName:        quote_products.productName,
+        name:               quote_products.name,
+        description:        quote_products.description,
+        qty:                quote_products.qty,
+        unitPrice:          quote_products.unitPrice,
+        total:              quote_products.total,
+        serviceModuleType:  quote_products.serviceModuleType,
+        sortOrder:          quote_products.sortOrder,
+      })
+      .from(quote_products)
+      .where(eq(quote_products.quoteId, quoteId))
+      .orderBy(sql`${quote_products.sortOrder} asc`);
+
+    // Agent info
+    let agent = null;
+    if (quote.agentAccountId) {
+      const [a] = await db
+        .select({ id: accounts.id, name: accounts.name, email: accounts.email, phoneNumber: accounts.phoneNumber })
+        .from(accounts)
+        .where(eq(accounts.id, quote.agentAccountId))
+        .limit(1);
+      agent = a ?? null;
+    }
+
+    return res.json({ data: { quote, products, agent } });
+  } catch (err) {
+    console.error("[portal/student/quotes/:id]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/partner/bookings/:id — Partner booking detail ───────────
+router.get("/portal/partner/bookings/:id", authenticatePortal, requirePartnerRole, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+    const productId = req.params.id;
+
+    const [product] = await db
+      .select({
+        id:               contractProducts.id,
+        contractId:       contractProducts.contractId,
+        name:             contractProducts.name,
+        serviceModuleType:contractProducts.serviceModuleType,
+        quantity:         contractProducts.quantity,
+        unitPrice:        contractProducts.unitPrice,
+        totalPrice:       contractProducts.totalPrice,
+        apAmount:         contractProducts.apAmount,
+        apStatus:         contractProducts.apStatus,
+        apDueDate:        contractProducts.apDueDate,
+        status:           contractProducts.status,
+        createdAt:        contractProducts.createdAt,
+        // Contract info
+        contractNumber:   contracts.contractNumber,
+        contractStatus:   contracts.status,
+        studentName:      contracts.studentName,
+        clientEmail:      contracts.clientEmail,
+        clientCountry:    contracts.clientCountry,
+        agentName:        contracts.agentName,
+        packageName:      contracts.packageName,
+        courseStartDate:  contracts.courseStartDate,
+        courseEndDate:    contracts.courseEndDate,
+        partnerNote:      contracts.partnerNote,
+        notes:            contracts.notes,
+        paidAmount:       contracts.paidAmount,
+        balanceAmount:    contracts.balanceAmount,
+      })
+      .from(contractProducts)
+      .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
+      .where(and(eq(contractProducts.id, productId), eq(contractProducts.providerAccountId, accountId)))
+      .limit(1);
+
+    if (!product) return res.status(404).json({ error: "Booking not found" });
+
+    // Other services in the same contract for context
+    const siblings = await db
+      .select({
+        id:               contractProducts.id,
+        name:             contractProducts.name,
+        serviceModuleType:contractProducts.serviceModuleType,
+        apAmount:         contractProducts.apAmount,
+        apStatus:         contractProducts.apStatus,
+        status:           contractProducts.status,
+      })
+      .from(contractProducts)
+      .where(and(
+        eq(contractProducts.contractId, product.contractId!),
+        eq(contractProducts.providerAccountId, accountId),
+        sql`${contractProducts.id} != ${productId}`,
+      ));
+
+    return res.json({ data: { ...product, siblingServices: siblings } });
+  } catch (err) {
+    console.error("[portal/partner/bookings/:id]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // ── GET /api/portal/agent/contracts ───────────────────────────────────────
 router.get("/portal/agent/contracts", authenticatePortal, async (req, res) => {
   try {

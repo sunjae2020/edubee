@@ -8,18 +8,20 @@ import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 
 // ── Agent ──────────────────────────────────────────────────────────────────
-import DashboardPage        from "@/pages/dashboard";
-import StudentsPage         from "@/pages/students";
-import StudentDetailPage    from "@/pages/student-detail";
-import CommissionsPage      from "@/pages/commissions";
-import ProfilePage          from "@/pages/profile";
-import AgentQuotesPage      from "@/pages/agent-quotes";
-import AgentServicesPage    from "@/pages/agent-services";
-import AgentDocumentsPage   from "@/pages/agent-documents";
+import DashboardPage           from "@/pages/dashboard";
+import StudentsPage            from "@/pages/students";
+import StudentDetailPage       from "@/pages/student-detail";
+import CommissionsPage         from "@/pages/commissions";
+import ProfilePage             from "@/pages/profile";
+import AgentQuotesPage         from "@/pages/agent-quotes";
+import AgentQuoteDetailPage    from "@/pages/agent-quote-detail";
+import AgentServicesPage       from "@/pages/agent-services";
+import AgentDocumentsPage      from "@/pages/agent-documents";
 
 // ── Partner ────────────────────────────────────────────────────────────────
 import PartnerDashboardPage      from "@/pages/partner-dashboard";
 import PartnerBookingsPage       from "@/pages/partner-bookings";
+import PartnerBookingDetailPage  from "@/pages/partner-booking-detail";
 import PartnerConsultationsPage  from "@/pages/partner-consultations";
 import PartnerServicesPage       from "@/pages/partner-services";
 import PartnerFinancePage        from "@/pages/partner-finance";
@@ -31,6 +33,7 @@ import CommunityPage             from "@/pages/community";
 // ── Student ────────────────────────────────────────────────────────────────
 import StudentDashboardPage      from "@/pages/student-dashboard";
 import StudentQuotesPage         from "@/pages/student-quotes";
+import StudentQuoteDetailPage    from "@/pages/student-quote-detail";
 import StudentProgramsPage       from "@/pages/student-programs";
 import StudentConsultationsPage  from "@/pages/student-consultations";
 import StudentFinancePage        from "@/pages/student-finance";
@@ -86,6 +89,9 @@ function Router() {
       <Route path="/consultations">
         {() => <ProtectedRoute component={StudentsPage} />}
       </Route>
+      <Route path="/quotes/:id">
+        {() => <ProtectedRoute component={AgentQuoteDetailPage} />}
+      </Route>
       <Route path="/quotes">
         {() => <ProtectedRoute component={AgentQuotesPage} />}
       </Route>
@@ -119,6 +125,9 @@ function Router() {
       <Route path="/partner/consultations">
         {() => <ProtectedRoute component={PartnerConsultationsPage} />}
       </Route>
+      <Route path="/partner/quotes/:id">
+        {() => <ProtectedRoute component={PartnerBookingDetailPage} />}
+      </Route>
       <Route path="/partner/quotes">
         {() => <ProtectedRoute component={PartnerBookingsPage} />}
       </Route>
@@ -145,6 +154,9 @@ function Router() {
       </Route>
       <Route path="/student/consultations">
         {() => <ProtectedRoute component={StudentConsultationsPage} />}
+      </Route>
+      <Route path="/student/quotes/:id">
+        {() => <ProtectedRoute component={StudentQuoteDetailPage} />}
       </Route>
       <Route path="/student/quotes">
         {() => <ProtectedRoute component={StudentQuotesPage} />}

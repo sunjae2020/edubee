@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText, Search, TrendingUp, Clock, CheckCircle } from "lucide-react";
+import { FileText, Search, TrendingUp, Clock, CheckCircle, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
 function fmt(n: number) {
@@ -31,6 +32,7 @@ interface Quote {
 export default function AgentQuotesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [, navigate] = useLocation();
 
   const { data: quotes = [], isLoading, error } = useQuery({
     queryKey: ["portal-agent-quotes"],
@@ -134,7 +136,8 @@ export default function AgentQuotesPage() {
               </thead>
               <tbody>
                 {filtered.map(q => (
-                  <tr key={q.id} style={{ borderBottom: "1px solid #F4F3F1" }}
+                  <tr key={q.id} style={{ borderBottom: "1px solid #F4F3F1", cursor: "pointer" }}
+                    onClick={() => navigate(`/quotes/${q.id}`)}
                     onMouseEnter={e => (e.currentTarget.style.background = "#FAFAF9")}
                     onMouseLeave={e => (e.currentTarget.style.background = "")}>
                     <td className="px-5 py-4 font-medium" style={{ color: "#1C1917" }}>
@@ -153,6 +156,9 @@ export default function AgentQuotesPage() {
                     </td>
                     <td className="px-5 py-4 text-sm" style={{ color: "#A8A29E" }}>
                       {format(new Date(q.createdOn), "dd MMM yyyy")}
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <ChevronRight size={14} style={{ color: "#A8A29E" }} />
                     </td>
                   </tr>
                 ))}

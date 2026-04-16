@@ -55,6 +55,7 @@ export const contracts = pgTable("contracts", {
   totalApAmount: decimal("total_ap_amount", { precision: 12, scale: 2 }),
   serviceModulesActivated: jsonb("service_modules_activated"),
   accountId: uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
+  quoteId: uuid("quote_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   isActive:  boolean("is_active").notNull().default(true),
