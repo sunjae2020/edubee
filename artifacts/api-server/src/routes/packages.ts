@@ -104,15 +104,15 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
     const acTour    = alias(accounts, "acTour");
     const acPickup  = alias(accounts, "acPickup");
 
+    const coordOrg = alias(organisations, "coordOrg");
     const [row] = await db
       .select({
         group: packageGroups,
-        coordinatorId: users.id,
-        coordinatorName: users.fullName,
-        coordinatorEmail: users.email,
-        coordinatorPhone: users.phone,
-        coordinatorCompany: users.companyName,
-        coordinatorCountry: users.countryOfOps,
+        coordinatorOrgId: coordOrg.id,
+        coordinatorOrgName: coordOrg.name,
+        coordinatorOrgSubdomain: coordOrg.subdomain,
+        coordinatorOrgEmail: coordOrg.email,
+        coordinatorOrgWebsite: coordOrg.websiteUrl,
         typeName: productTypes.name,
         instituteName2: acInstit.name,
         accommodationName: acAccom.name,
@@ -120,7 +120,7 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
         pickupDriverName: acPickup.name,
       })
       .from(packageGroups)
-      .leftJoin(users, eq(packageGroups.coordinatorId, users.id))
+      .leftJoin(coordOrg, eq(packageGroups.coordinatorId, coordOrg.id))
       .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
       .leftJoin(acInstit,  eq(packageGroups.instituteId,      acInstit.id))
       .leftJoin(acAccom,   eq(packageGroups.accommodationId,  acAccom.id))
@@ -132,13 +132,12 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
     return res.json({
       ...row.group,
       typeName: row.typeName ?? null,
-      coordinator: row.coordinatorId ? {
-        id: row.coordinatorId,
-        fullName: row.coordinatorName,
-        email: row.coordinatorEmail,
-        phone: row.coordinatorPhone,
-        companyName: row.coordinatorCompany,
-        countryOfOps: row.coordinatorCountry,
+      coordinator: row.coordinatorOrgId ? {
+        id: row.coordinatorOrgId,
+        name: row.coordinatorOrgName,
+        subdomain: row.coordinatorOrgSubdomain,
+        email: row.coordinatorOrgEmail,
+        websiteUrl: row.coordinatorOrgWebsite,
       } : null,
       instituteAccountName:     row.instituteName2 ?? null,
       accommodationAccountName: row.accommodationName ?? null,

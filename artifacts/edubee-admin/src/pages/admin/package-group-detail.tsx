@@ -253,13 +253,13 @@ export default function PackageGroupDetail() {
     onSave: async (data) => { await updateGroup.mutateAsync(data); },
   });
 
-  // Coordinator list — only fetched when editing (isEditing is now defined above)
-  const { data: coordinatorsData } = useQuery({
-    queryKey: ["users-coordinators"],
-    queryFn: () => axios.get(`${BASE}/api/users?role=camp_coordinator&limit=100`).then(r => r.data),
+  // Coordinator organisations list — only fetched when editing
+  const { data: coordinators = [] } = useQuery<{ id: string; name: string; subdomain?: string | null; email?: string | null; websiteUrl?: string | null; status?: string | null }[]>({
+    queryKey: ["camp-coordinator-orgs"],
+    queryFn: () => axios.get(`${BASE}/api/crm/coordinators`).then(r => r.data),
     enabled: isEditing,
+    staleTime: 300000,
   });
-  const coordinators: any[] = coordinatorsData?.data ?? [];
 
   // Accounts lookup — for partner account linking
   const { data: accountsLookupData } = useQuery({
@@ -850,48 +850,44 @@ export default function PackageGroupDetail() {
               {isEditing ? (
                 <div className="space-y-2">
                   <Select
-                    value={getValue("campProviderId") || "none"}
-                    onValueChange={v => setField("campProviderId", v === "none" ? null : v)}
+                    value={getValue("coordinatorId") || "none"}
+                    onValueChange={v => setField("coordinatorId", v === "none" ? null : v)}
                   >
                     <SelectTrigger className="h-9 text-sm border-(--e-orange)">
-                      <SelectValue placeholder="— Select coordinator —" />
+                      <SelectValue placeholder="— Select coordinator organisation —" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">— No coordinator assigned —</SelectItem>
-                      {coordinators.map((c: any) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.fullName} · {c.email}
-                          {c.companyName ? ` · ${c.companyName}` : ""}
+                      {coordinators.map(org => (
+                        <SelectItem key={org.id} value={org.id}>
+                          <span className="flex items-center gap-2">
+                            <Building2 className="w-3 h-3 shrink-0 text-(--e-text-3)" />
+                            <span>{org.name}</span>
+                            {org.subdomain && (
+                              <span className="text-xs text-muted-foreground">{org.subdomain}.edubee.co</span>
+                            )}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               ) : group.coordinator ? (
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-(--e-orange)/10 flex items-center justify-center shrink-0">
-                      <UserRound className="w-5 h-5 text-(--e-orange)" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm">{group.coordinator.fullName}</p>
-                      {group.coordinator.companyName && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <Building2 className="w-3 h-3" /> {group.coordinator.companyName}
-                        </p>
-                      )}
-                    </div>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-(--e-orange)/10 flex items-center justify-center shrink-0">
+                    <Building2 className="w-5 h-5 text-(--e-orange)" />
                   </div>
-                  <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                    {group.coordinator.email && (
-                      <a href={`mailto:${group.coordinator.email}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
-                        <Mail className="w-3.5 h-3.5" /> {group.coordinator.email}
-                      </a>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm">{(group.coordinator as any).name}</p>
+                    {(group.coordinator as any).subdomain && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {(group.coordinator as any).subdomain}.edubee.co
+                      </p>
                     )}
-                    {group.coordinator.phone && (
-                      <span className="flex items-center gap-1.5">
-                        <Phone className="w-3.5 h-3.5" /> {group.coordinator.phone}
-                      </span>
+                    {(group.coordinator as any).email && (
+                      <a href={`mailto:${(group.coordinator as any).email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-0.5">
+                        <Mail className="w-3 h-3" /> {(group.coordinator as any).email}
+                      </a>
                     )}
                   </div>
                 </div>
