@@ -37,6 +37,9 @@ async function writeAuthLog(
 }
 
 function generateStaffTokens(user: { id: string; email: string; role: string; fullName: string; staffRole?: string | null; organisationId?: string | null }) {
+  // Platform super admins must NOT have an organisationId in their JWT
+  // so that superAdminOnly middleware can identify them correctly.
+  const orgId = user.role === "super_admin" ? null : (user.organisationId ?? null);
   const accessToken = jwt.sign(
     {
       userType: "staff",
@@ -45,7 +48,7 @@ function generateStaffTokens(user: { id: string; email: string; role: string; fu
       role: user.role,
       staffRole: user.staffRole ?? user.role,
       fullName: user.fullName,
-      organisationId: user.organisationId ?? null,
+      organisationId: orgId,
     },
     JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_EXPIRY }
