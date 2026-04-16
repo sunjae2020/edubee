@@ -223,7 +223,7 @@ function PostCard({ post, isOwn }: { post: Post; isOwn: boolean }) {
   });
 
   const { mutate: deletePost } = useMutation({
-    mutationFn: () => api.delete(`/portal/community/${post.id}`),
+    mutationFn: () => api.del(`/portal/community/${post.id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["portal-community"] }),
   });
 

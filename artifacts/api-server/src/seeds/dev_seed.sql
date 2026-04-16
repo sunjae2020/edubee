@@ -390,9 +390,9 @@ Package Group: 2026 Jul-Melbourne_Collingwood Schooling
 Package: 2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child
 Institute: Collingwood College
 Accommodation: Brady Hotel Hardware', '110-1502, 50, Arisu-ro 50-gil', NULL, 'Gangdong-gu', 'Seoul', '5229', 'South Korea', 'Melbourne');
-INSERT INTO myagency.camp_applications VALUES ('f1c14431-49ce-47d9-ad44-52f9c87a43a4', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child-Uiji JO', '85e2c9ba-190f-44fc-9083-8a1ed9a1e57d', '9f59733a-d10b-453c-9291-e4a6a250236d', 'Uiji JO', '112jo@naver.com', '1047171504', NULL, NULL, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'a3e30696-0225-483e-a287-752aeeb9a200', NULL, NULL, 'confirmed', 'Active', '2026-04-11 08:55:16.847319', '2026-04-11 08:55:16.847319', NULL, NULL, 'Uiji', 'JO', '조의지', NULL, NULL, NULL, '1 Adult & 1 Child	3 Weeks	$9,900	1	$9,900
-Grade 2 to Grade 10_Weekly	1 Weeks	$1,000	3	$3,000
-Extra Night - 1  Bedroom	Per Night	$175	21	$3,675
+INSERT INTO myagency.camp_applications VALUES ('f1c14431-49ce-47d9-ad44-52f9c87a43a4', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child-Uiji JO', '85e2c9ba-190f-44fc-9083-8a1ed9a1e57d', '9f59733a-d10b-453c-9291-e4a6a250236d', 'Uiji JO', '112jo@naver.com', '1047171504', NULL, NULL, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'a3e30696-0225-483e-a287-752aeeb9a200', NULL, NULL, 'confirmed', 'Active', '2026-04-11 08:55:16.847319', '2026-04-11 08:55:16.847319', NULL, NULL, 'Uiji', 'JO', '조의지', NULL, NULL, NULL, '1 Adult & 1 Child     3 Weeks $9,900  1       $9,900
+Grade 2 to Grade 10_Weekly      1 Weeks $1,000  3       $3,000
+Extra Night - 1  Bedroom        Per Night       $175    21      $3,675
 2026 July Melbourne Schooling Total Fee_AUD $16,575
 $1,400 + $300 = $1,700
 Package Group: 2026 Jul-Melbourne_Collingwood Schooling
@@ -675,9 +675,9 @@ INSERT INTO myagency.contract_products VALUES ('731a5406-07d8-45de-b8e0-4ad2fa1d
 
 INSERT INTO myagency.contracts VALUES ('eed783de-f7e2-4c03-8329-4499ccc5d534', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child_Jia CHA', NULL, NULL, 9800.00, 'AUD', 'cancelled', NULL, NULL, NULL, '2026-04-11 09:20:50.020353', '2026-04-11 09:20:50.020353', NULL, 9800.00, NULL, 'Soyul KANG', 'sk2cha@naver.com', 'South Korea', '2026 Jul-Melbourne_Collingwood Schooling', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child', 'MomWith', NULL, NULL, NULL, 3439.00, 1400.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '887aeb90-8f28-4908-98ad-d1b73a9a5014', 'MW', NULL, NULL, '26Jul콜링우드A2_차지아-MW', '26Jul콜링우드A2_차지아-MW-Jia CHA(Soyul KANG)');
 INSERT INTO myagency.contracts VALUES ('d440f5c0-aa75-4c7b-afab-673a3168f07e', '2026 Aug-Melbourne_Oakleigh Schooling-C Package 2 Adult / 1 Child_Aejin CHOI', NULL, NULL, 7300.00, 'AUD', 'active', NULL, NULL, NULL, '2026-04-11 09:19:46.145327', '2026-04-11 09:19:46.145327', NULL, 0.00, NULL, 'Jimin LEE', 'choiaejin@hotmail.com', '한국', '2026 Aug-Melbourne_Oakleigh Schooling', '2026 Aug-Melbourne_Oakleigh Schooling-C Package 2 Adult / 1 Child', 'RED Uhak', NULL, NULL, NULL, 7300.00, 1200.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '7c1001ee-2823-4b7a-aa4f-724debacfe1e', 'RD', NULL, NULL, '26Aug오클리C3_최애진-RD', '26Aug오클리C3_최애진-RD-Aejin CHOI(Jimin LEE)');
-INSERT INTO myagency.contracts VALUES ('a3e30696-0225-483e-a287-752aeeb9a200', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child_Uiji JO', NULL, NULL, 9800.00, 'AUD', 'active', NULL, NULL, '1 Adult & 1 Child	3 Weeks	$9,900	1	$9,900
-Grade 2 to Grade 10_Weekly	1 Weeks	$1,000	3	$3,000
-Extra Night - 1  Bedroom	Per Night	$175	21	$3,675
+INSERT INTO myagency.contracts VALUES ('a3e30696-0225-483e-a287-752aeeb9a200', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child_Uiji JO', NULL, NULL, 9800.00, 'AUD', 'active', NULL, NULL, '1 Adult & 1 Child     3 Weeks $9,900  1       $9,900
+Grade 2 to Grade 10_Weekly      1 Weeks $1,000  3       $3,000
+Extra Night - 1  Bedroom        Per Night       $175    21      $3,675
 2026 July Melbourne Schooling Total Fee_AUD $16,575
 $1,400 + $300 = $1,700', '2026-04-11 09:20:45.986144', '2026-04-11 09:20:45.986144', 937.00, 8863.00, NULL, 'Suho YOO', '112jo@naver.com', 'South Korea', '2026 Jul-Melbourne_Collingwood Schooling', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child', 'MomWith', NULL, NULL, NULL, 9800.00, 1400.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'f1c14431-49ce-47d9-ad44-52f9c87a43a4', 'MW', NULL, NULL, '26Jul콜링우드A2_조의지-MW', '26Jul콜링우드A2_조의지-MW-Uiji JO(Suho YOO)');
 INSERT INTO myagency.contracts VALUES ('a93da133-21f8-4958-8cd5-9993048fb1b8', '2026 Jul-Melbourne_Oakleigh Schooling-A Package 1 Adult / 1 Child_Won Kyeong KIM', NULL, NULL, 9900.00, 'AUD', 'active', NULL, NULL, NULL, '2026-04-11 09:20:54.256793', '2026-04-11 09:20:54.256793', NULL, 9900.00, NULL, 'Sehyun PARK', 'haneulsom@naver.com', 'South Korea', '2026 Jul-Melbourne_Oakleigh Schooling', '2026 Jul-Melbourne_Oakleigh Schooling-A Package 1 Adult / 1 Child', 'RED Uhak', NULL, NULL, NULL, 9900.00, 1400.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '59e46538-3b62-4850-93c4-4e94273d4e7d', 'RD', NULL, NULL, '26Jul오클리A2_김원경-RD', '26Jul오클리A2_김원경-RD-Won Kyeong KIM(Sehyun PARK)');
@@ -2082,9 +2082,9 @@ INSERT INTO public.packages VALUES ('fdcdf3c3-7425-4a1e-818a-6cb83c3f65f4', '835
 --
 
 INSERT INTO public.contracts VALUES ('d440f5c0-aa75-4c7b-afab-673a3168f07e', '2026 Aug-Melbourne_Oakleigh Schooling-C Package 2 Adult / 1 Child_Aejin CHOI', NULL, NULL, 7300.00, 'AUD', 'active', NULL, NULL, NULL, '2026-04-11 09:19:46.145327', '2026-04-11 09:19:46.145327', NULL, 0.00, NULL, 'Jimin LEE', 'choiaejin@hotmail.com', '한국', '2026 Aug-Melbourne_Oakleigh Schooling', '2026 Aug-Melbourne_Oakleigh Schooling-C Package 2 Adult / 1 Child', 'RED Uhak', NULL, NULL, NULL, 2844.00, 1200.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '7c1001ee-2823-4b7a-aa4f-724debacfe1e', 'RD', NULL, NULL, '26Aug오클리C3_최애진-RD', '26Aug오클리C3_최애진-RD-Aejin CHOI(Jimin LEE)');
-INSERT INTO public.contracts VALUES ('a3e30696-0225-483e-a287-752aeeb9a200', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child_Uiji JO', NULL, NULL, 9800.00, 'AUD', 'active', NULL, NULL, '1 Adult & 1 Child	3 Weeks	$9,900	1	$9,900
-Grade 2 to Grade 10_Weekly	1 Weeks	$1,000	3	$3,000
-Extra Night - 1  Bedroom	Per Night	$175	21	$3,675
+INSERT INTO public.contracts VALUES ('a3e30696-0225-483e-a287-752aeeb9a200', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child_Uiji JO', NULL, NULL, 9800.00, 'AUD', 'active', NULL, NULL, '1 Adult & 1 Child       3 Weeks $9,900  1       $9,900
+Grade 2 to Grade 10_Weekly      1 Weeks $1,000  3       $3,000
+Extra Night - 1  Bedroom        Per Night       $175    21      $3,675
 2026 July Melbourne Schooling Total Fee_AUD $16,575
 $1,400 + $300 = $1,700', '2026-04-11 09:20:45.986144', '2026-04-11 09:20:45.986144', 937.00, 8863.00, NULL, 'Suho YOO', '112jo@naver.com', 'South Korea', '2026 Jul-Melbourne_Collingwood Schooling', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child', 'MomWith', NULL, NULL, NULL, 3439.00, 1400.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'f1c14431-49ce-47d9-ad44-52f9c87a43a4', 'MW', NULL, NULL, '26Jul콜링우드A2_조의지-MW', '26Jul콜링우드A2_조의지-MW-Uiji JO(Suho YOO)');
 INSERT INTO public.contracts VALUES ('eed783de-f7e2-4c03-8329-4499ccc5d534', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child_Jia CHA', NULL, NULL, 9800.00, 'AUD', 'cancelled', NULL, NULL, NULL, '2026-04-11 09:20:50.020353', '2026-04-11 09:20:50.020353', NULL, 9800.00, NULL, 'Soyul KANG', 'sk2cha@naver.com', 'South Korea', '2026 Jul-Melbourne_Collingwood Schooling', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child', 'MomWith', NULL, NULL, NULL, 3439.00, 1400.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', '887aeb90-8f28-4908-98ad-d1b73a9a5014', 'MW', NULL, NULL, '26Jul콜링우드A2_차지아-MW', '26Jul콜링우드A2_차지아-MW-Jia CHA(Soyul KANG)');
@@ -2308,9 +2308,9 @@ INSERT INTO public.camp_applications VALUES ('eb36728e-ef92-4e3a-974a-d7163ea438
 Package: 2026 Jul-Melbourne_Oakleigh Schooling-A Package 1 Adult / 1 Child
 Institute: Oakleigh Grammar
 Accommodation: Punthill Oakleigh', '118dong 1202ho, 55, Sangil-ro, Gangdong-gu', NULL, 'SEOUL', NULL, '5275', 'South Korea', 'Melbourne');
-INSERT INTO public.camp_applications VALUES ('f1c14431-49ce-47d9-ad44-52f9c87a43a4', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child-Uiji JO', NULL, NULL, 'Uiji JO', '112jo@naver.com', '1047171504', NULL, NULL, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'a3e30696-0225-483e-a287-752aeeb9a200', NULL, NULL, 'confirmed', 'Active', '2026-04-11 08:55:16.847319', '2026-04-11 08:55:16.847319', NULL, NULL, 'Uiji', 'JO', '조의지', NULL, NULL, NULL, '1 Adult & 1 Child	3 Weeks	$9,900	1	$9,900
-Grade 2 to Grade 10_Weekly	1 Weeks	$1,000	3	$3,000
-Extra Night - 1  Bedroom	Per Night	$175	21	$3,675
+INSERT INTO public.camp_applications VALUES ('f1c14431-49ce-47d9-ad44-52f9c87a43a4', '2026 Jul-Melbourne_Collingwood Schooling-A Package 1 Adult / 1 Child-Uiji JO', NULL, NULL, 'Uiji JO', '112jo@naver.com', '1047171504', NULL, NULL, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'a3e30696-0225-483e-a287-752aeeb9a200', NULL, NULL, 'confirmed', 'Active', '2026-04-11 08:55:16.847319', '2026-04-11 08:55:16.847319', NULL, NULL, 'Uiji', 'JO', '조의지', NULL, NULL, NULL, '1 Adult & 1 Child   3 Weeks $9,900  1       $9,900
+Grade 2 to Grade 10_Weekly      1 Weeks $1,000  3       $3,000
+Extra Night - 1  Bedroom        Per Night       $175    21      $3,675
 2026 July Melbourne Schooling Total Fee_AUD $16,575
 $1,400 + $300 = $1,700
 Package Group: 2026 Jul-Melbourne_Collingwood Schooling
@@ -3710,6 +3710,30 @@ INSERT INTO public.tour_mgt VALUES ('7d17fe4a-94bf-46bd-8635-a49301db391d', '505
 
 \unrestrict UJNwvf18FHJHZx85mh3Fb6YNC5ynAOgXYyqqcIghDppasCA5R0v69R1cYdEtRPe
 
+
+-- ── Portal test account credentials (dev only) ────────────────────────────
+-- Agent: agent@testagency.com / Portal123!
+-- Partner: partner@browns.com.au / Portal123!
+-- Student: student@example.com / Portal123!
+UPDATE public.accounts SET
+  portal_temp_password  = 'Portal123!',
+  portal_temp_pw_expires = '2099-12-31 00:00:00',
+  portal_must_change_pw  = false
+WHERE id IN (
+  'b78f9499-7371-437d-b5ff-c294f557d13e',
+  '632d62d0-ec97-41f9-93b7-eb1e8df595e4',
+  '1605af17-0000-0000-0000-000000000099'
+);
+UPDATE myagency.accounts SET
+  portal_temp_password  = 'Portal123!',
+  portal_temp_pw_expires = '2099-12-31 00:00:00',
+  portal_must_change_pw  = false
+WHERE id IN (
+  '18c1a739-86a0-404d-80e1-a7012eb128e1',
+  '632d62d0-ec97-41f9-93b7-eb1e8df595e4',
+  '1605af17-0000-0000-0000-000000000099',
+  '1605af17-a158-4315-827c-472d33656a5f'
+);
 
 -- FK 재활성화
 SET session_replication_role = 'origin';

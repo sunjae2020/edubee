@@ -17,7 +17,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (email: string, password: string) => Promise<{ mustChangePassword: boolean }>;
+  login: (email: string, password: string) => Promise<{ mustChangePassword: boolean; portalRole: string | null }>;
   logout: () => void;
   clearMustChangePassword: () => void;
   isAuthenticated: boolean;

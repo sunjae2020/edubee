@@ -58,7 +58,7 @@ export default function AgentContractsPage() {
 
   const totalValue = contracts.reduce((sum, c) => sum + Number(c.totalAmount ?? 0), 0);
 
-  const statuses = [...new Set(contracts.map(c => c.status).filter(Boolean))];
+  const statuses = [...new Set(contracts.map(c => c.status).filter((s): s is string => !!s))];
 
   const filtered = contracts.filter(c => {
     const q = search.toLowerCase();

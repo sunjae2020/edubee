@@ -1283,6 +1283,41 @@ router.get("/portal/partner/bookings/:id", authenticatePortal, requirePartnerRol
   }
 });
 
+// ── GET /api/portal/partner/contracts ─────────────────────────────────────
+router.get("/portal/partner/contracts", authenticatePortal, requirePartnerRole, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+
+    const rows = await db
+      .selectDistinct({
+        id: contracts.id,
+        contractNumber: contracts.contractNumber,
+        status: contracts.status,
+        studentName: contracts.studentName,
+        clientEmail: contracts.clientEmail,
+        clientCountry: contracts.clientCountry,
+        agentName: contracts.agentName,
+        packageName: contracts.packageName,
+        courseStartDate: contracts.courseStartDate,
+        courseEndDate: contracts.courseEndDate,
+        signedAt: contracts.signedAt,
+        createdAt: contracts.createdAt,
+        totalAmount: contracts.totalAmount,
+        paidAmount: contracts.paidAmount,
+        balanceAmount: contracts.balanceAmount,
+      })
+      .from(contractProducts)
+      .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
+      .where(eq(contractProducts.providerAccountId, accountId))
+      .orderBy(desc(contracts.createdAt));
+
+    return res.json({ data: rows });
+  } catch (err) {
+    console.error("[portal/partner/contracts]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // ── GET /api/portal/agent/contracts ───────────────────────────────────────
 router.get("/portal/agent/contracts", authenticatePortal, async (req, res) => {
   try {

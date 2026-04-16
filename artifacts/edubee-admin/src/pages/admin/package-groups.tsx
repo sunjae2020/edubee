@@ -149,13 +149,19 @@ export default function PackageGroups() {
   const [orgSearchOpen, setOrgSearchOpen] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<{ id: string; name: string; subdomain?: string } | null>(null);
 
-  const { data: orgSearchData } = useQuery<{ data: any[] }>({
-    queryKey: ["org-search", orgSearchInput],
-    queryFn: () => axios.get(`${BASE}/api/settings/organisations?q=${encodeURIComponent(orgSearchInput)}&limit=20`).then(r => r.data),
-    enabled: showModal,
-    staleTime: 10000,
+  const { data: allOrgsData } = useQuery<{ data: any[] }>({
+    queryKey: ["all-organisations"],
+    queryFn: () => axios.get(`${BASE}/api/settings/organisations?limit=100`).then(r => r.data),
+    staleTime: 60000,
   });
-  const orgResults: any[] = orgSearchData?.data ?? [];
+  const allOrgs: any[] = allOrgsData?.data ?? [];
+  const orgResults = orgSearchInput.trim()
+    ? allOrgs.filter(o =>
+        o.name?.toLowerCase().includes(orgSearchInput.toLowerCase()) ||
+        (o.trading_name ?? "").toLowerCase().includes(orgSearchInput.toLowerCase()) ||
+        (o.subdomain ?? "").toLowerCase().includes(orgSearchInput.toLowerCase())
+      )
+    : allOrgs;
 
   const { data: pkgData } = useQuery<{ data: Pkg[] }>({
     queryKey: ["packages", editing?.id],
