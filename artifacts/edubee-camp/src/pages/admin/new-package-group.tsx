@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ThumbnailUploader } from "@/components/shared/ThumbnailUploader";
 import { Loader2, Sparkles, Plus, X, ChevronRight, Building2 } from "lucide-react";
@@ -177,16 +177,11 @@ export default function NewPackageGroup() {
     setAiLogs(p => [...p, { m, t, ts: new Date().toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) }]);
 
   /* Coordinators list */
-  const { data: coordinators = [] } = useQuery<{ id: string; name: string; email: string; companyName?: string | null; organisationId?: string | null; orgName?: string | null }[]>({
+  const { data: coordinators = [] } = useQuery<{ id: string; name: string; subdomain?: string | null; email?: string | null; websiteUrl?: string | null; status?: string | null }[]>({
     queryKey: ["camp-coordinators"],
     queryFn: () => axios.get(`${BASE}/api/crm/coordinators`).then(r => r.data),
     staleTime: 300000,
   });
-  const coordinatorsByOrg = coordinators.reduce<Record<string, typeof coordinators>>((acc, c) => {
-    const key = c.orgName ?? "Independent";
-    (acc[key] ??= []).push(c);
-    return acc;
-  }, {});
 
   /* AI Extract */
   const doExtract = async () => {
@@ -562,17 +557,16 @@ export default function NewPackageGroup() {
                     <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="— No coordinator —" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">— No coordinator assigned —</SelectItem>
-                      {Object.entries(coordinatorsByOrg).map(([orgName, members]) => (
-                        <SelectGroup key={orgName}>
-                          <SelectLabel className="flex items-center gap-1 text-xs font-semibold text-(--e-text-3) px-2 py-1">
-                            <Building2 className="w-3 h-3" /> {orgName}
-                          </SelectLabel>
-                          {members.map(c => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.name} · {c.email}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
+                      {coordinators.map(org => (
+                        <SelectItem key={org.id} value={org.id}>
+                          <span className="flex items-center gap-2">
+                            <Building2 className="w-3 h-3 shrink-0 text-(--e-text-3)" />
+                            <span>{org.name}</span>
+                            {org.subdomain && (
+                              <span className="text-xs text-(--e-text-3)">{org.subdomain}.edubee.co</span>
+                            )}
+                          </span>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
