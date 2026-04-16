@@ -10,8 +10,11 @@ import {
   contracts,
   contractProducts,
   leads,
+  documents,
 } from "@workspace/db/schema";
-import { eq, and, inArray, desc, sql, count, sum } from "drizzle-orm";
+import { eq, and, inArray, desc, sql, count, sum, isNull } from "drizzle-orm";
+import fs from "fs";
+import path from "path";
 import bcrypt from "bcryptjs";
 import { authenticatePortal } from "../middleware/authenticatePortal.js";
 
@@ -840,6 +843,193 @@ router.get("/portal/student/programs/:id", authenticatePortal, requireStudentRol
     return res.json({ data: { contract, products } });
   } catch (err) {
     console.error("[portal/student/programs/:id]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/student/documents — Student documents list ────────────
+router.get("/portal/student/documents", authenticatePortal, requireStudentRole, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+
+    // Get student's contracts
+    const studentContracts = await db
+      .select({ id: contracts.id, contractNumber: contracts.contractNumber, packageName: contracts.packageName, status: contracts.status, courseStartDate: contracts.courseStartDate, courseEndDate: contracts.courseEndDate, agentName: contracts.agentName, signedAt: contracts.signedAt })
+      .from(contracts)
+      .where(eq(contracts.accountId, accountId))
+      .orderBy(desc(contracts.createdAt));
+
+    const contractIds = studentContracts.map(c => c.id);
+
+    // Get actual uploaded documents linked to these contracts
+    const uploadedDocs = contractIds.length
+      ? await db
+          .select({
+            id: documents.id,
+            documentName: documents.documentName,
+            originalFilename: documents.originalFilename,
+            filePath: documents.filePath,
+            fileType: documents.fileType,
+            fileExtension: documents.fileExtension,
+            documentCategory: documents.documentCategory,
+            status: documents.status,
+            expiryDate: documents.expiryDate,
+            createdAt: documents.createdAt,
+            referenceId: documents.referenceId,
+          })
+          .from(documents)
+          .where(and(
+            inArray(documents.referenceId, contractIds),
+            isNull(documents.deletedAt),
+          ))
+          .orderBy(desc(documents.createdAt))
+      : [];
+
+    // Build response — uploaded docs first, then contracts as "documents"
+    const uploadedItems = uploadedDocs.map(d => {
+      const contract = studentContracts.find(c => c.id === d.referenceId);
+      const isUrl = d.filePath.startsWith("http");
+      return {
+        id: d.id,
+        type: "document" as const,
+        name: d.documentName,
+        originalFilename: d.originalFilename,
+        fileType: d.fileType,
+        fileExtension: d.fileExtension,
+        documentCategory: d.documentCategory,
+        status: d.status,
+        expiryDate: d.expiryDate,
+        createdAt: d.createdAt,
+        contractNumber: contract?.contractNumber ?? null,
+        packageName: contract?.packageName ?? null,
+        agentName: contract?.agentName ?? null,
+        viewUrl: isUrl ? d.filePath : `/api/portal/documents/${d.id}/view`,
+        downloadUrl: isUrl ? d.filePath : `/api/portal/documents/${d.id}/download`,
+      };
+    });
+
+    const contractItems = studentContracts.map(c => ({
+      id: c.id,
+      type: "contract" as const,
+      name: c.packageName ?? "Enrolment Contract",
+      originalFilename: null,
+      fileType: null,
+      fileExtension: null,
+      documentCategory: "CONTRACT_DOC",
+      status: c.status,
+      expiryDate: null,
+      createdAt: null,
+      contractNumber: c.contractNumber,
+      packageName: c.packageName,
+      agentName: c.agentName,
+      courseStartDate: c.courseStartDate,
+      courseEndDate: c.courseEndDate,
+      signedAt: c.signedAt,
+      viewUrl: null,
+      serviceId: c.id,
+    }));
+
+    return res.json({ data: [...uploadedItems, ...contractItems] });
+  } catch (err) {
+    console.error("[portal/student/documents]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/documents/:id/view — Portal document view ─────────────
+// Supports ?token=JWT for browser window.open() usage
+router.get("/portal/documents/:id/view", async (req, res) => {
+  try {
+    // Support token from query param (for browser window.open) or header
+    const queryToken = req.query.token as string | undefined;
+    if (queryToken && !req.headers.authorization) {
+      req.headers.authorization = `Bearer ${queryToken}`;
+    }
+
+    // Manually verify portal token
+    const jwt = await import("jsonwebtoken");
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const decoded = jwt.default.verify(authHeader.split(" ")[1], process.env.JWT_SECRET || "edubee-camp-secret-key-change-in-production") as any;
+    if (!decoded?.accountId) return res.status(401).json({ error: "Unauthorized" });
+    const accountId = decoded.accountId as string;
+    const docId = req.params.id;
+
+    const [doc] = await db
+      .select({ id: documents.id, filePath: documents.filePath, fileType: documents.fileType, documentName: documents.documentName, originalFilename: documents.originalFilename, referenceId: documents.referenceId })
+      .from(documents)
+      .where(and(eq(documents.id, docId), isNull(documents.deletedAt)))
+      .limit(1);
+
+    if (!doc) return res.status(404).json({ error: "Document not found" });
+
+    // Validate student owns a contract linked to this document
+    const [contract] = await db
+      .select({ id: contracts.id })
+      .from(contracts)
+      .where(and(eq(contracts.id, doc.referenceId), eq(contracts.accountId, accountId)))
+      .limit(1);
+
+    if (!contract) return res.status(403).json({ error: "Forbidden" });
+
+    // If it's a URL, redirect
+    if (doc.filePath.startsWith("http")) {
+      return res.redirect(doc.filePath);
+    }
+
+    // Serve from disk
+    const absPath = path.resolve(doc.filePath);
+    if (!fs.existsSync(absPath)) return res.status(404).json({ error: "File not found on server" });
+
+    const ct = doc.fileType ?? "application/octet-stream";
+    res.setHeader("Content-Type", ct);
+    res.setHeader("Content-Disposition", `inline; filename="${doc.originalFilename ?? doc.documentName}"`);
+    return res.sendFile(absPath);
+  } catch (err) {
+    console.error("[portal/documents/:id/view]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/documents/:id/download — Portal document download ─────
+router.get("/portal/documents/:id/download", async (req, res) => {
+  try {
+    const queryToken = req.query.token as string | undefined;
+    if (queryToken && !req.headers.authorization) {
+      req.headers.authorization = `Bearer ${queryToken}`;
+    }
+    const jwt = await import("jsonwebtoken");
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const decoded = jwt.default.verify(authHeader.split(" ")[1], process.env.JWT_SECRET || "edubee-camp-secret-key-change-in-production") as any;
+    if (!decoded?.accountId) return res.status(401).json({ error: "Unauthorized" });
+    const accountId = decoded.accountId as string;
+    const docId = req.params.id;
+
+    const [doc] = await db
+      .select({ id: documents.id, filePath: documents.filePath, fileType: documents.fileType, documentName: documents.documentName, originalFilename: documents.originalFilename, referenceId: documents.referenceId })
+      .from(documents)
+      .where(and(eq(documents.id, docId), isNull(documents.deletedAt)))
+      .limit(1);
+
+    if (!doc) return res.status(404).json({ error: "Document not found" });
+
+    const [contract] = await db
+      .select({ id: contracts.id })
+      .from(contracts)
+      .where(and(eq(contracts.id, doc.referenceId), eq(contracts.accountId, accountId)))
+      .limit(1);
+
+    if (!contract) return res.status(403).json({ error: "Forbidden" });
+
+    if (doc.filePath.startsWith("http")) return res.redirect(doc.filePath);
+
+    const absPath = path.resolve(doc.filePath);
+    if (!fs.existsSync(absPath)) return res.status(404).json({ error: "File not found on server" });
+
+    return res.download(absPath, doc.originalFilename ?? doc.documentName);
+  } catch (err) {
+    console.error("[portal/documents/:id/download]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

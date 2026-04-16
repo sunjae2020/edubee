@@ -1,58 +1,140 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FolderOpen, FileText, Search, ExternalLink } from "lucide-react";
+import {
+  FolderOpen, FileText, Search, ExternalLink, Download,
+  BookOpen, File, FileImage, FileSpreadsheet, Eye,
+} from "lucide-react";
 import { format } from "date-fns";
 
-function statusStyle(s: string | null | undefined) {
+const ORANGE = "#F5821F";
+
+function getToken() {
+  return localStorage.getItem("portal_token");
+}
+
+function docStatusStyle(s: string | null | undefined) {
+  const v = (s ?? "").toLowerCase();
+  if (v === "approved" || v === "active" || v === "confirmed") return { background: "#F0FDF4", color: "#16A34A", border: "1px solid #BBF7D0" };
+  if (v === "rejected") return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
+  if (v === "pending_review") return { background: "#FFFBEB", color: "#D97706", border: "1px solid #FDE68A" };
+  if (v === "draft") return { background: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE" };
+  if (v === "expired" || v === "cancelled") return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
+  return { background: "#F4F3F1", color: "#57534E", border: "1px solid #E8E6E2" };
+}
+
+function contractStatusStyle(s: string | null | undefined) {
   const v = (s ?? "").toLowerCase();
   if (v === "active" || v === "confirmed") return { background: "#F0FDF4", color: "#16A34A", border: "1px solid #BBF7D0" };
-  if (v === "draft") return { background: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE" };
-  if (v === "cancelled" || v === "expired") return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
+  if (v === "cancelled") return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
+  if (v === "completed") return { background: "#F4F3F1", color: "#57534E", border: "1px solid #E8E6E2" };
   return { background: "#FFFBEB", color: "#D97706", border: "1px solid #FDE68A" };
 }
 
-interface Program {
+function FileIcon({ ext, type }: { ext: string | null | undefined; type: string | null | undefined }) {
+  const e = (ext ?? type ?? "").toLowerCase();
+  const style = { color: ORANGE, flexShrink: 0 };
+  if (e.includes("image") || ["jpg", "jpeg", "png", "gif", "webp"].includes(e)) return <FileImage size={18} style={style} />;
+  if (e.includes("sheet") || ["xls", "xlsx", "csv"].includes(e)) return <FileSpreadsheet size={18} style={style} />;
+  if (e.includes("pdf") || e === "pdf") return <File size={18} style={{ ...style, color: "#DC2626" }} />;
+  return <FileText size={18} style={style} />;
+}
+
+function categoryLabel(cat: string | null | undefined) {
+  const map: Record<string, string> = {
+    CONTRACT_DOC: "Contract", PASSPORT: "Passport", PHOTO_ID: "Photo ID",
+    ACADEMIC: "Academic", ENGLISH_TEST: "English Test", FINANCIAL: "Financial",
+    VISA_DOC: "Visa", COE: "COE", OFFER_LETTER: "Offer Letter",
+    INSURANCE: "Insurance", QUOTATION: "Quotation", CONSULTATION: "Consultation",
+    CORRESPONDENCE: "Correspondence", SCHOOL_INFO: "School Info", OTHER: "Other",
+  };
+  return cat ? (map[cat] ?? cat) : null;
+}
+
+function fmt(v: string | null | undefined) {
+  if (!v) return null;
+  try { return format(new Date(v), "dd MMM yyyy"); } catch { return null; }
+}
+
+interface DocItem {
   id: string;
-  contractNumber: string | null;
+  type: "document" | "contract";
+  name: string;
+  originalFilename: string | null;
+  fileType: string | null;
+  fileExtension: string | null;
+  documentCategory: string | null;
   status: string | null;
-  totalAmount: string | null;
-  paidAmount: string | null;
-  balanceAmount: string | null;
-  courseStartDate: string | null;
-  courseEndDate: string | null;
-  packageName: string | null;
-  packageGroupName: string | null;
-  agentName: string | null;
-  studentName: string | null;
-  signedAt: string | null;
+  expiryDate: string | null;
   createdAt: string | null;
+  contractNumber: string | null;
+  packageName: string | null;
+  agentName: string | null;
+  courseStartDate?: string | null;
+  courseEndDate?: string | null;
+  signedAt?: string | null;
+  viewUrl: string | null;
+  downloadUrl?: string | null;
+  serviceId?: string;
 }
 
 export default function StudentDocumentsPage() {
   const [search, setSearch] = useState("");
+  const [, navigate] = useLocation();
 
-  const { data: programs = [], isLoading, error } = useQuery({
-    queryKey: ["portal-student-programs"],
-    queryFn: () => api.get<{ data: Program[] }>("/portal/student/programs").then(r => r.data),
+  const { data: items = [], isLoading, error } = useQuery({
+    queryKey: ["portal-student-documents"],
+    queryFn: () => api.get<{ data: DocItem[] }>("/portal/student/documents").then(r => r.data),
   });
 
-  const signed   = programs.filter(p => p.signedAt);
-  const filtered = programs.filter(p => {
+  const filtered = items.filter(d => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return p.packageName?.toLowerCase().includes(q) || p.contractNumber?.toLowerCase().includes(q);
+    return (
+      d.name?.toLowerCase().includes(q) ||
+      d.contractNumber?.toLowerCase().includes(q) ||
+      d.originalFilename?.toLowerCase().includes(q) ||
+      categoryLabel(d.documentCategory)?.toLowerCase().includes(q)
+    );
   });
+
+  const uploadedCount  = items.filter(d => d.type === "document").length;
+  const contractCount  = items.filter(d => d.type === "contract").length;
+
+  function handleView(item: DocItem) {
+    if (item.type === "contract") {
+      navigate(`/student/services/${item.serviceId ?? item.id}`);
+      return;
+    }
+    if (!item.viewUrl) return;
+    const url = item.viewUrl.startsWith("http")
+      ? item.viewUrl
+      : `${item.viewUrl}?token=${encodeURIComponent(getToken() ?? "")}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function handleDownload(item: DocItem) {
+    if (!item.downloadUrl) return;
+    const url = item.downloadUrl.startsWith("http")
+      ? item.downloadUrl
+      : `${item.downloadUrl}?token=${encodeURIComponent(getToken() ?? "")}`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = item.originalFilename ?? item.name;
+    a.target = "_blank";
+    a.click();
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* KPI + search */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex gap-4 text-sm" style={{ color: "#A8A29E" }}>
-          <span>{programs.length} document{programs.length !== 1 ? "s" : ""}</span>
-          <span>·</span>
-          <span style={{ color: "#16A34A" }}>{signed.length} signed</span>
+          <span>{items.length} document{items.length !== 1 ? "s" : ""}</span>
+          {uploadedCount > 0 && <span style={{ color: "#16A34A" }}>· {uploadedCount} file{uploadedCount !== 1 ? "s" : ""}</span>}
+          {contractCount > 0 && <span style={{ color: ORANGE }}>· {contractCount} contract{contractCount !== 1 ? "s" : ""}</span>}
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#A8A29E" }} />
@@ -84,60 +166,105 @@ export default function StudentDocumentsPage() {
         <div className="text-center py-16 rounded-xl border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
           <FolderOpen className="w-10 h-10 mx-auto mb-3" style={{ color: "#D1CFC8" }} />
           <p className="text-sm font-medium" style={{ color: "#1C1917" }}>No documents yet</p>
-          <p className="text-xs mt-1" style={{ color: "#A8A29E" }}>Your enrolment contracts and agreements will appear here once confirmed.</p>
+          <p className="text-xs mt-1" style={{ color: "#A8A29E" }}>Your enrolment contracts and uploaded files will appear here.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map(p => (
-            <div key={p.id} className="rounded-xl border p-5 transition-all"
+          {filtered.map(item => (
+            <div key={`${item.type}-${item.id}`}
+              className="rounded-xl border p-5 transition-all"
               style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <div className="flex items-start gap-4 justify-between flex-wrap">
+
+                {/* Icon + info */}
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: "#FEF0E3" }}>
-                    <FileText size={18} style={{ color: "#F5821F" }} />
+                    style={{ background: item.type === "contract" ? "#FEF0E3" : "#F0F9FF" }}>
+                    {item.type === "contract"
+                      ? <BookOpen size={18} style={{ color: ORANGE }} />
+                      : <FileIcon ext={item.fileExtension} type={item.fileType} />
+                    }
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <p className="font-semibold" style={{ color: "#1C1917" }}>
-                        {p.packageName ?? p.packageGroupName ?? "Enrolment Contract"}
+                      <p className="font-semibold truncate" style={{ color: "#1C1917" }}>
+                        {item.originalFilename ?? item.name}
                       </p>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize" style={statusStyle(p.status)}>
-                        {p.status ?? "pending"}
+                      {item.type === "document" && item.documentCategory && (
+                        <span className="text-xs px-1.5 py-0.5 rounded shrink-0"
+                          style={{ background: "#FEF0E3", color: ORANGE }}>
+                          {categoryLabel(item.documentCategory)}
+                        </span>
+                      )}
+                      {item.type === "contract" && (
+                        <span className="text-xs px-1.5 py-0.5 rounded shrink-0"
+                          style={{ background: "#FEF0E3", color: ORANGE }}>
+                          Contract
+                        </span>
+                      )}
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize shrink-0"
+                        style={item.type === "contract" ? contractStatusStyle(item.status) : docStatusStyle(item.status)}>
+                        {item.status ?? "pending"}
                       </span>
                     </div>
+
                     <div className="flex gap-2 text-xs flex-wrap" style={{ color: "#A8A29E" }}>
-                      {p.contractNumber && <span>{p.contractNumber}</span>}
-                      {p.agentName && <span>· Agent: {p.agentName}</span>}
+                      {item.contractNumber && <span>{item.contractNumber}</span>}
+                      {item.agentName && <span>· Agent: {item.agentName}</span>}
+                      {item.type === "contract" && item.courseStartDate && (
+                        <span>· {fmt(item.courseStartDate)}{item.courseEndDate ? ` – ${fmt(item.courseEndDate)}` : ""}</span>
+                      )}
+                      {item.type === "document" && item.createdAt && (
+                        <span>· Uploaded {fmt(item.createdAt)}</span>
+                      )}
+                      {item.expiryDate && (
+                        <span style={{ color: "#D97706" }}>· Expires {fmt(item.expiryDate)}</span>
+                      )}
                     </div>
-                    {(p.courseStartDate || p.courseEndDate) && (
-                      <p className="text-xs mt-1" style={{ color: "#57534E" }}>
-                        {p.courseStartDate && format(new Date(p.courseStartDate), "dd MMM yyyy")}
-                        {p.courseEndDate && ` – ${format(new Date(p.courseEndDate), "dd MMM yyyy")}`}
-                      </p>
-                    )}
                   </div>
                 </div>
 
+                {/* Actions */}
                 <div className="flex flex-col items-end gap-2 shrink-0">
-                  {p.signedAt ? (
+                  {item.type === "contract" && item.signedAt ? (
                     <p className="text-xs font-medium" style={{ color: "#16A34A" }}>
-                      ✓ Signed {format(new Date(p.signedAt), "dd MMM yyyy")}
+                      ✓ Signed {fmt(item.signedAt)}
                     </p>
-                  ) : (
+                  ) : item.type === "contract" ? (
                     <p className="text-xs" style={{ color: "#A8A29E" }}>Awaiting signature</p>
-                  )}
-                  <button
-                    className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                    style={{ background: "#FEF0E3", color: "#F5821F" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#FDE0C5")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "#FEF0E3")}
-                    title="Document download coming soon"
-                    disabled
-                  >
-                    <ExternalLink size={12} />
-                    View
-                  </button>
+                  ) : null}
+
+                  <div className="flex items-center gap-2">
+                    {/* Download button (only for actual uploaded files) */}
+                    {item.type === "document" && item.downloadUrl && (
+                      <button
+                        className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors"
+                        style={{ borderColor: "#E8E6E2", color: "#57534E", background: "#FFFFFF" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "#FAFAF9")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "#FFFFFF")}
+                        onClick={() => handleDownload(item)}
+                        title="Download file"
+                      >
+                        <Download size={12} />
+                        Download
+                      </button>
+                    )}
+
+                    {/* View button */}
+                    <button
+                      className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                      style={{ background: "#FEF0E3", color: ORANGE }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "#FDE0C5")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "#FEF0E3")}
+                      onClick={() => handleView(item)}
+                      title={item.type === "contract" ? "View contract details" : "View file"}
+                    >
+                      {item.type === "contract"
+                        ? <><Eye size={12} /> View</>
+                        : <><ExternalLink size={12} /> View</>
+                      }
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
