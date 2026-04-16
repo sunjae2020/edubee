@@ -6,11 +6,8 @@ import { AlertCircle, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 
 const ORANGE = "#F5821F";
 const ORANGE_DK = "#d26a10";
-const ORANGE_LT = "#fef0e3";
-const ORANGE_SHADOW_40 = "rgba(245,130,31,0.40)";
 const BG_PAGE = "#FAFAF9";
 const BG_SURFACE = "#FFFFFF";
-const BG_MUTED = "#F4F3F1";
 const BORDER = "#E8E6E2";
 const TEXT_2 = "#57534E";
 const TEXT_3 = "#A8A29E";
@@ -23,35 +20,18 @@ function getHomePath(role: string | null | undefined) {
   return "/dashboard";
 }
 
-const DEMO_ACCOUNTS = [
-  { emoji: "🤝", label: "Agent", email: "agent@testagency.com", password: "Agent1234!" },
-  { emoji: "🏫", label: "Institute", email: "partner@browns.com.au", password: "Partner1234!" },
-  { emoji: "🏨", label: "Hotel", email: "partner@bradyhotel.com", password: "Partner1234!" },
-  { emoji: "🎓", label: "Student", email: "student@example.com", password: "Student1234!" },
-];
-
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
-  const [filledEmail, setFilledEmail] = useState<string | null>(null);
   const { login, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
 
   if (isAuthenticated) {
     navigate("/");
     return null;
-  }
-
-  function fillDemo(acc: (typeof DEMO_ACCOUNTS)[0]) {
-    setEmail(acc.email);
-    setPassword(acc.password);
-    setSelectedEmail(acc.email);
-    setFilledEmail(acc.email);
-    setTimeout(() => setFilledEmail(null), 2500);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -214,47 +194,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div>
-            <div className="relative mb-3">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t" style={{ borderColor: BORDER }} />
-              </div>
-              <div className="relative flex justify-center">
-                <span
-                  className="px-2 text-xs"
-                  style={{ background: BG_SURFACE, color: TEXT_3 }}
-                >
-                  Demo accounts — click to fill
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5">
-              {DEMO_ACCOUNTS.map((acc) => (
-                <button
-                  key={acc.email}
-                  type="button"
-                  title={acc.email}
-                  onClick={() => fillDemo(acc)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all"
-                  style={{
-                    background: selectedEmail === acc.email ? ORANGE_LT : BG_MUTED,
-                    color: selectedEmail === acc.email ? ORANGE : TEXT_2,
-                    border: `1px solid ${selectedEmail === acc.email ? ORANGE_SHADOW_40 : BORDER}`,
-                  }}
-                >
-                  <span>{acc.emoji}</span>
-                  <span>{acc.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {filledEmail && (
-              <p className="mt-2 text-xs font-medium" style={{ color: "#16A34A" }}>
-                ✓ Filled: {filledEmail}
-              </p>
-            )}
-          </div>
         </div>
 
         <p className="text-center text-xs" style={{ color: TEXT_3 }}>

@@ -18,20 +18,11 @@ const loginSchema = z.object({
 });
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-const DEMO_ACCOUNTS = [
-  { emoji: "👑", label: "Super Admin",  email: "superadmin@edubee.co", password: "Admin123!" },
-  { emoji: "🛡️", label: "Admin",        email: "admin@edubee.co",       password: "Admin123!" },
-  { emoji: "📋", label: "Coordinator", email: "coordinator@edubee.co", password: "Admin123!" },
-  { emoji: "💼", label: "Consultant",  email: "agent@edubee.co",       password: "Admin123!" },
-];
-
 export default function Login() {
   const { login, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
-  const [filledEmail, setFilledEmail] = useState<string | null>(null);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -40,14 +31,6 @@ export default function Login() {
 
   if (isAuthenticated) {
     return <Redirect to={(user as any)?.role === "super_admin" ? "/superadmin" : "/admin/dashboard"} />;
-  }
-
-  function fillDemo(acc: typeof DEMO_ACCOUNTS[0]) {
-    form.setValue("email", acc.email);
-    form.setValue("password", acc.password);
-    setSelectedEmail(acc.email);
-    setFilledEmail(acc.email);
-    setTimeout(() => setFilledEmail(null), 2500);
   }
 
   const onSubmit = async (data: LoginFormValues) => {
@@ -128,40 +111,6 @@ export default function Login() {
             </form>
           </Form>
 
-          <div>
-            <div className="relative mb-3">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t" style={{ borderColor: "var(--e-border)" }} />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="px-2 text-xs" style={{ background: "var(--e-bg-surface)", color: "var(--e-text-3)" }}>Demo accounts — click to fill</span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5">
-              {DEMO_ACCOUNTS.map((acc) => (
-                <button
-                  key={acc.email}
-                  type="button"
-                  title={acc.email}
-                  onClick={() => fillDemo(acc)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all"
-                  style={{
-                    background: selectedEmail === acc.email ? "var(--e-orange-lt)" : "var(--e-bg-muted)",
-                    color: selectedEmail === acc.email ? "var(--e-orange)" : "var(--e-text-2)",
-                    border: `1px solid ${selectedEmail === acc.email ? "var(--e-orange-shadow-40)" : "var(--e-border)"}`,
-                  }}
-                >
-                  <span>{acc.emoji}</span>
-                  <span>{acc.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {filledEmail && (
-              <p className="mt-2 text-xs font-medium" style={{ color: "#16A34A" }}>✓ Filled: {filledEmail}</p>
-            )}
-          </div>
         </div>
 
         <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#57534E' }}>
