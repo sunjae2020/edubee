@@ -60,7 +60,7 @@ const EMPTY_FORM = {
   durationText: "",
   inclusions: [] as string[],
   exclusions: [] as string[],
-  campProviderId: "",
+  coordinatorId: "",
   status: "draft",
   sortOrder: "0",
   landingOrder: "",
@@ -177,9 +177,10 @@ export default function NewPackageGroup() {
     setAiLogs(p => [...p, { m, t, ts: new Date().toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) }]);
 
   /* Coordinators list */
-  const { data: coordinators = [] } = useQuery<any[]>({
-    queryKey: ["coordinators-list"],
-    queryFn: () => axios.get(`${BASE}/api/users?role=camp_coordinator&limit=100`).then(r => r.data?.data ?? []),
+  const { data: coordinators = [] } = useQuery<{ id: string; name: string; email: string; companyName?: string | null }[]>({
+    queryKey: ["camp-coordinators"],
+    queryFn: () => axios.get(`${BASE}/api/crm/coordinators`).then(r => r.data),
+    staleTime: 300000,
   });
 
   /* AI Extract */
@@ -282,7 +283,7 @@ export default function NewPackageGroup() {
         durationText: form.durationText || null,
         inclusionsEn: form.inclusions.length > 0 ? form.inclusions.join("\n") : null,
         exclusionsEn: form.exclusions.length > 0 ? form.exclusions.join("\n") : null,
-        campProviderId: form.campProviderId || null,
+        coordinatorId: form.coordinatorId || null,
         status: form.status,
         sortOrder: toInt(form.sortOrder) ?? 0,
         landingOrder: toInt(form.landingOrder),
@@ -551,13 +552,13 @@ export default function NewPackageGroup() {
                   <Input type="number" value={form.landingOrder} onChange={e => upd("landingOrder", e.target.value)}
                     placeholder="Leave blank = not shown" className="h-8 text-sm" min={1} />
                 </Row>
-                <Row label="Camp Provider">
-                  <Select value={form.campProviderId || "none"} onValueChange={v => upd("campProviderId", v === "none" ? "" : v)}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="— Select —" /></SelectTrigger>
+                <Row label="Camp Coordinator">
+                  <Select value={form.coordinatorId || "none"} onValueChange={v => upd("coordinatorId", v === "none" ? "" : v)}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="— No coordinator —" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">— No coordinator —</SelectItem>
-                      {coordinators.map((c: any) => (
-                        <SelectItem key={c.id} value={c.id}>{c.fullName} · {c.email}</SelectItem>
+                      <SelectItem value="none">— No coordinator assigned —</SelectItem>
+                      {coordinators.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name} · {c.email}{c.companyName ? ` · ${c.companyName}` : ""}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

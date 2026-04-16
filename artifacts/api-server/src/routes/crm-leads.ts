@@ -34,6 +34,23 @@ router.get("/crm/staff", authenticate, requireRole(...ADMIN_ROLES), async (_req,
   }
 });
 
+// ── Camp Coordinator list (for package group selector) ──────────────────────
+router.get("/crm/coordinators", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (_req, res) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT id, full_name AS name, email, company_name AS "companyName"
+      FROM users
+      WHERE role = 'camp_coordinator'
+      AND full_name IS NOT NULL
+      ORDER BY full_name
+    `);
+    return res.json(result.rows);
+  } catch (err) {
+    console.error("[GET /api/crm/coordinators]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { leadStatus, assignedStaffId, search, page = "1", limit = String(PAGE_SIZE) } =

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Globe, MapPin, Edit, Loader2, Trash2, Package, ImageIcon, CheckCircle2, Clock, X, Search, Building2 } from "lucide-react";
+import { Plus, Globe, MapPin, Edit, Loader2, Trash2, Package, ImageIcon, CheckCircle2, Clock, X, Search, Building2, UserCheck } from "lucide-react";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { format } from "date-fns";
@@ -91,6 +91,7 @@ type GroupForm = {
   descriptionEn: string; descriptionKo: string; descriptionJa: string; descriptionTh: string;
   thumbnailUrl: string; location: string; countryCode: string; status: string; sortOrder: string;
   campProviderId: string;
+  coordinatorId: string;
 };
 
 type PkgForm = {
@@ -104,6 +105,7 @@ const emptyGroupForm: GroupForm = {
   descriptionEn: "", descriptionKo: "", descriptionJa: "", descriptionTh: "",
   thumbnailUrl: "", location: "", countryCode: "", status: "draft", sortOrder: "0",
   campProviderId: "",
+  coordinatorId: "",
 };
 
 const emptyPkgForm: PkgForm = {
@@ -162,6 +164,13 @@ export default function PackageGroups() {
         (o.subdomain ?? "").toLowerCase().includes(orgSearchInput.toLowerCase())
       )
     : allOrgs;
+
+  // Camp Coordinator selector state
+  const { data: allCoordinators = [] } = useQuery<{ id: string; name: string; email: string; companyName?: string | null }[]>({
+    queryKey: ["camp-coordinators"],
+    queryFn: () => axios.get(`${BASE}/api/crm/coordinators`).then(r => r.data),
+    staleTime: 300000,
+  });
 
   const { data: pkgData } = useQuery<{ data: Pkg[] }>({
     queryKey: ["packages", editing?.id],
@@ -264,6 +273,7 @@ export default function PackageGroups() {
       status: g.status ?? "draft",
       sortOrder: g.sortOrder?.toString() ?? "0",
       campProviderId: g.campProviderId ?? "",
+      coordinatorId: (g as any).coordinatorId ?? "",
     });
     if (g.campProvider) {
       setSelectedOrg({ id: g.campProvider.id, name: g.campProvider.name, subdomain: g.campProvider.subdomain ?? undefined });
@@ -297,6 +307,7 @@ export default function PackageGroups() {
       status: form.status,
       sortOrder: form.sortOrder ? parseInt(form.sortOrder) : 0,
       campProviderId: form.campProviderId || null,
+      coordinatorId: form.coordinatorId || null,
     };
     if (editing) updateGroup.mutate({ id: editing.id, data: payload });
     else createGroup.mutate(payload);
@@ -710,6 +721,33 @@ export default function PackageGroups() {
                 <p className="text-xs text-muted-foreground">
                   Assign a tenant organisation as the camp provider. They will see contracts linked to this package group in their own account.
                 </p>
+              </div>
+
+              {/* Camp Coordinator selector */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-2 font-semibold">
+                  <span className="w-5 h-5 rounded-full bg-(--e-orange)/15 flex items-center justify-center text-(--e-orange) text-[11px] font-bold">
+                    <UserCheck className="w-3 h-3" />
+                  </span>
+                  Camp Coordinator
+                </Label>
+                <Select
+                  value={form.coordinatorId || "__none__"}
+                  onValueChange={v => setForm(f => ({ ...f, coordinatorId: v === "__none__" ? "" : v }))}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="— No coordinator assigned —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— No coordinator assigned —</SelectItem>
+                    {allCoordinators.map(c => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name} · {c.email}{c.companyName ? ` · ${c.companyName}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Assign a staff member responsible for managing this program.</p>
               </div>
 
               <div className="space-y-1.5">

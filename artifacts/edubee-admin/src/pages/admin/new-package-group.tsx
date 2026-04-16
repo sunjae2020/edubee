@@ -61,6 +61,7 @@ const EMPTY_FORM = {
   inclusions: [] as string[],
   exclusions: [] as string[],
   campProviderId: "",
+  coordinatorId: "",
   status: "draft",
   sortOrder: "0",
   landingOrder: "",
@@ -195,6 +196,12 @@ export default function NewPackageGroup() {
       )
     : allOrgs;
 
+  const { data: allCoordinators = [] } = useQuery<{ id: string; name: string; email: string; companyName?: string | null }[]>({
+    queryKey: ["camp-coordinators"],
+    queryFn: () => axios.get(`${BASE}/api/crm/coordinators`).then(r => r.data),
+    staleTime: 300000,
+  });
+
   /* AI Extract */
   const doExtract = async () => {
     if (!aiUrl.trim() || aiStatus === "loading") return;
@@ -296,6 +303,7 @@ export default function NewPackageGroup() {
         inclusionsEn: form.inclusions.length > 0 ? form.inclusions.join("\n") : null,
         exclusionsEn: form.exclusions.length > 0 ? form.exclusions.join("\n") : null,
         campProviderId: form.campProviderId || null,
+        coordinatorId: form.coordinatorId || null,
         status: form.status,
         sortOrder: toInt(form.sortOrder) ?? 0,
         landingOrder: toInt(form.landingOrder),
@@ -612,6 +620,24 @@ export default function NewPackageGroup() {
                       )}
                     </div>
                   )}
+                </Row>
+                <Row label="Camp Coordinator">
+                  <Select
+                    value={form.coordinatorId || "__none__"}
+                    onValueChange={v => upd("coordinatorId", v === "__none__" ? "" : v)}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="— No coordinator —" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— No coordinator assigned —</SelectItem>
+                      {allCoordinators.map(c => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name} · {c.email}{c.companyName ? ` · ${c.companyName}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Row>
                 {/* Thumbnail */}
                 <div className="mt-3">

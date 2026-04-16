@@ -82,7 +82,7 @@ type GroupForm = {
   nameEn: string; nameKo: string; nameJa: string; nameTh: string;
   descriptionEn: string; descriptionKo: string; descriptionJa: string; descriptionTh: string;
   thumbnailUrl: string; location: string; countryCode: string; status: string; sortOrder: string;
-  campProviderId: string;
+  coordinatorId: string;
 };
 
 type PkgForm = {
@@ -95,7 +95,7 @@ const emptyGroupForm: GroupForm = {
   nameEn: "", nameKo: "", nameJa: "", nameTh: "",
   descriptionEn: "", descriptionKo: "", descriptionJa: "", descriptionTh: "",
   thumbnailUrl: "", location: "", countryCode: "", status: "draft", sortOrder: "0",
-  campProviderId: "",
+  coordinatorId: "",
 };
 
 const emptyPkgForm: PkgForm = {
@@ -137,12 +137,11 @@ export default function PackageGroups() {
   });
 
   // Camp coordinators list for selector
-  const { data: coordinatorsData } = useQuery<{ data: any[] }>({
-    queryKey: ["users-coordinators"],
-    queryFn: () => axios.get(`${BASE}/api/users?role=camp_coordinator&limit=100`).then(r => r.data),
-    enabled: showModal,
+  const { data: coordinators = [] } = useQuery<{ id: string; name: string; email: string; companyName?: string | null }[]>({
+    queryKey: ["camp-coordinators"],
+    queryFn: () => axios.get(`${BASE}/api/crm/coordinators`).then(r => r.data),
+    staleTime: 300000,
   });
-  const coordinators: any[] = coordinatorsData?.data ?? [];
 
   const { data: pkgData } = useQuery<{ data: Pkg[] }>({
     queryKey: ["packages", editing?.id],
@@ -244,7 +243,7 @@ export default function PackageGroups() {
       countryCode: g.countryCode ?? "",
       status: g.status ?? "draft",
       sortOrder: g.sortOrder?.toString() ?? "0",
-      campProviderId: g.campProviderId ?? "",
+      coordinatorId: (g as any).coordinatorId ?? "",
     });
     setModalTab("info");
     setLangTab("en");
@@ -269,7 +268,7 @@ export default function PackageGroups() {
       countryCode: form.countryCode || null,
       status: form.status,
       sortOrder: form.sortOrder ? parseInt(form.sortOrder) : 0,
-      campProviderId: form.campProviderId || null,
+      coordinatorId: form.coordinatorId || null,
     };
     if (editing) updateGroup.mutate({ id: editing.id, data: payload });
     else createGroup.mutate(payload);
@@ -593,21 +592,17 @@ export default function PackageGroups() {
                   Camp Coordinator
                 </Label>
                 <Select
-                  value={form.campProviderId || "none"}
-                  onValueChange={v => setForm(f => ({ ...f, campProviderId: v === "none" ? "" : v }))}
+                  value={form.coordinatorId || "none"}
+                  onValueChange={v => setForm(f => ({ ...f, coordinatorId: v === "none" ? "" : v }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="— Select a coordinator —" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">— No coordinator assigned —</SelectItem>
-                    {coordinators.map((c: any) => (
+                    {coordinators.map(c => (
                       <SelectItem key={c.id} value={c.id}>
-                        <span className="flex items-center gap-2">
-                          <span className="font-medium">{c.fullName}</span>
-                          <span className="text-xs text-muted-foreground">{c.email}</span>
-                          {c.companyName && <span className="text-xs text-muted-foreground">· {c.companyName}</span>}
-                        </span>
+                        {c.name} · {c.email}{c.companyName ? ` · ${c.companyName}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>

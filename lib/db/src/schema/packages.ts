@@ -61,6 +61,7 @@ export const packageGroups = pgTable("package_groups", {
   localManual:        text("local_manual"),
   departureOt:        text("departure_ot"),
   enrollmentSpots:    integer("enrollment_spots"),
+  coordinatorId:      uuid("coordinator_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
