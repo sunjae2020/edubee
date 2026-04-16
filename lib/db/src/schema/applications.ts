@@ -32,6 +32,7 @@ export const leads = pgTable("leads", {
   interestedIn: uuid("interested_in").references(() => packageGroups.id),
   status:            varchar("status",              { length: 50  }).default("new"),
   notes:             text("notes"),
+  staffNote:         text("staff_note"),
   leadRefNumber:     varchar("lead_ref_number",     { length: 30  }).unique(),
   assignedStaffId:   uuid("assigned_staff_id").references(() => users.id),
   inquiryType:       varchar("inquiry_type",        { length: 100 }),

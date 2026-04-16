@@ -93,6 +93,7 @@ interface Lead {
   status?: string | null;
   source?: string | null;
   notes?: string | null;
+  staffNote?: string | null;
   accountId?: string | null;
   accountName?: string | null;
   accountType?: string | null;
@@ -403,7 +404,7 @@ export default function LeadDetailPage() {
     firstName: "", lastName: "", englishName: "", originalName: "",
     email: "", phone: "", nationality: "", source: "", inquiryType: "",
     budget: "", expectedStartDate: "", status: "new", notes: "",
-    assignedStaffId: "",
+    staffNote: "", assignedStaffId: "",
   });
   const [isDirty, setIsDirty] = useState(false);
 
@@ -441,6 +442,7 @@ export default function LeadDetailPage() {
       expectedStartDate: lead.expectedStartDate  ?? "",
       status:            lead.status            ?? "new",
       notes:             lead.notes             ?? "",
+      staffNote:         lead.staffNote          ?? "",
       assignedStaffId:   lead.assignedStaffId    ?? "",
     });
     setIsDirty(false);
@@ -462,6 +464,7 @@ export default function LeadDetailPage() {
       expectedStartDate: lead.expectedStartDate  ?? "",
       status:            lead.status            ?? "new",
       notes:             lead.notes             ?? "",
+      staffNote:         lead.staffNote          ?? "",
       assignedStaffId:   lead.assignedStaffId    ?? "",
     });
     setIsDirty(false);
@@ -498,6 +501,7 @@ export default function LeadDetailPage() {
         expectedStartDate: form.expectedStartDate  || null,
         status:            form.status,
         notes:             form.notes             || null,
+        staffNote:         form.staffNote          || null,
         assignedStaffId:   form.assignedStaffId    || null,
       }).then(r => r.data);
     },
@@ -848,9 +852,31 @@ export default function LeadDetailPage() {
                 <Textarea value={form.notes}
                   onChange={e => set("notes", e.target.value)}
                   placeholder="Additional notes…"
-                  rows={8}
+                  rows={5}
                   className="text-sm border-[#E8E6E2] focus:border-(--e-orange) focus-visible:ring-0 resize-y" />
               </FieldGroup>
+
+              {/* Staff Only note */}
+              <div className="rounded-xl border border-[#F97316]/30 bg-[#FFF7ED] p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C2410C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#C2410C]">
+                    Staff Only
+                  </span>
+                  <span className="ml-auto text-[10px] font-medium text-[#EA580C] bg-[#FFEDD5] px-2 py-0.5 rounded-full border border-[#F97316]/20">
+                    Not visible to clients or portal users
+                  </span>
+                </div>
+                <Textarea
+                  value={form.staffNote}
+                  onChange={e => set("staffNote", e.target.value)}
+                  placeholder="Internal staff notes — not visible to agents, partners, or students…"
+                  rows={4}
+                  className="text-sm bg-white border-[#F97316]/30 focus:border-[#F97316] focus-visible:ring-0 focus-visible:ring-offset-0 resize-y placeholder:text-[#D1CFC8]"
+                />
+              </div>
             </div>
           </div>
 
