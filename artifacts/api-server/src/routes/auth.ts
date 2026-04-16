@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { users, refreshTokens, accounts, authLogs, tenantInvitations, organisations } from "@workspace/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -136,7 +136,19 @@ router.post("/login", async (req, res) => {
   }
 
   // ── STEP 2: External portal partner
-  const [portalAccount] = await db.select().from(accounts).where(eq(accounts.portalEmail as any, normalizedEmail)).limit(1);
+  // Try portal_email first, fall back to email column for accounts where portal_email was not set
+  let portalAccount = await db.select().from(accounts)
+    .where(eq(accounts.portalEmail as any, normalizedEmail))
+    .limit(1)
+    .then(r => r[0] ?? null);
+
+  if (!portalAccount) {
+    // Fallback: match by email column, but only for accounts that have portal_role set
+    const [fallback] = await db.select().from(accounts)
+      .where(and(eq(accounts.email as any, normalizedEmail), sql`portal_role IS NOT NULL`))
+      .limit(1);
+    portalAccount = fallback ?? null;
+  }
 
   if (!portalAccount) {
     return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
@@ -155,21 +167,21 @@ router.post("/login", async (req, res) => {
     return res.status(429).json({ error: "Locked", message: `Account locked. Try again in ${remaining} minute(s).` });
   }
 
-  if (!portalAccount.portalPasswordHash) {
-    return res.status(401).json({ error: "Unauthorized", message: "Portal password not set. Contact your administrator." });
-  }
-
-  // Check temp password (plaintext, one-time)
+  // Check temp password FIRST (before requiring a permanent hash)
   let isTemp = false;
   if (portalAccount.portalTempPassword) {
-    if (portalAccount.portalTempPwExpires && new Date(portalAccount.portalTempPwExpires) < new Date()) {
-      // Temp expired — fall through to regular check
-    } else if (password === portalAccount.portalTempPassword) {
+    const tempExpired = portalAccount.portalTempPwExpires && new Date(portalAccount.portalTempPwExpires) < new Date();
+    if (!tempExpired && password === portalAccount.portalTempPassword) {
       isTemp = true;
     }
   }
 
-  const valid = isTemp || await bcrypt.compare(password, portalAccount.portalPasswordHash);
+  // If no temp match, require a permanent password hash
+  if (!isTemp && !portalAccount.portalPasswordHash) {
+    return res.status(401).json({ error: "Unauthorized", message: "Portal password not set. Contact your administrator." });
+  }
+
+  const valid = isTemp || await bcrypt.compare(password, portalAccount.portalPasswordHash!);
   if (!valid) {
     const attempts = (portalAccount.portalFailedAttempts ?? 0) + 1;
     const lockData = attempts >= MAX_FAILED ? { portalLockedUntil: new Date(Date.now() + LOCK_MINUTES * 60_000) } : {};
