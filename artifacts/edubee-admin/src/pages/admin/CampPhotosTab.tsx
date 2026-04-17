@@ -141,34 +141,36 @@ function PhotoTile({ photo, onDelete }: { photo: Photo; onDelete: () => void }) 
 
   return (
     <>
-      <div
-        className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted cursor-pointer"
-        onClick={() => blobUrl && setLightbox(true)}
-      >
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 text-muted-foreground/40 animate-spin" />
-          </div>
-        )}
-        {blobUrl && (
-          <img
-            src={blobUrl}
-            alt={photo.fileName ?? "photo"}
-            className="w-full h-full object-cover transition-opacity duration-200"
-          />
-        )}
-        {/* Always-visible bottom action bar */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 px-1.5 py-1.5"
-          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%)" }}>
-          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-white hover:bg-white/20 hover:text-white"
+      <div className="group flex flex-col gap-0">
+        {/* Image tile */}
+        <div
+          className="relative aspect-square rounded-lg overflow-hidden border border-border bg-muted cursor-pointer"
+          onClick={() => blobUrl && setLightbox(true)}
+        >
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Loader2 className="w-6 h-6 text-muted-foreground/40 animate-spin" />
+            </div>
+          )}
+          {blobUrl && (
+            <img
+              src={blobUrl}
+              alt={photo.fileName ?? "photo"}
+              className="w-full h-full object-cover"
+            />
+          )}
+        </div>
+        {/* Action bar — only visible on hover, sits below the image so nothing is clipped */}
+        <div className="hidden group-hover:flex items-center justify-center gap-1 pt-1.5">
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs"
             onClick={e => { e.stopPropagation(); blobUrl && setLightbox(true); }}>
             <ZoomIn className="w-3 h-3 mr-1" /> View
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-white hover:bg-white/20 hover:text-white"
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs"
             onClick={e => { e.stopPropagation(); handleDownload(); }}>
             <Download className="w-3 h-3 mr-1" /> Save
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-white hover:bg-red-500/70 hover:text-white"
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={e => { e.stopPropagation(); onDelete(); }}>
             <Trash2 className="w-3 h-3" />
           </Button>
