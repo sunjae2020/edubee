@@ -200,6 +200,7 @@ export const enrollmentSettings = pgTable("enrollment_settings", {
 export const enrollmentSpots = pgTable("enrollment_spots", {
   id: uuid("id").primaryKey().defaultRandom(),
   packageGroupId: uuid("package_group_id").references(() => packageGroups.id),
+  enrollName: varchar("enroll_name", { length: 500 }),
   gradeLabel: varchar("grade_label", { length: 100 }).notNull(),
   gradeOrder: integer("grade_order").default(0),
   totalSpots: integer("total_spots").notNull(),
@@ -210,6 +211,7 @@ export const enrollmentSpots = pgTable("enrollment_spots", {
   endDate: timestamp("end_date"),
   dobRangeStart: timestamp("dob_range_start"),
   dobRangeEnd: timestamp("dob_range_end"),
+  note: text("note"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

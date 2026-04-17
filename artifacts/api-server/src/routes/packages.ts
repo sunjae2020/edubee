@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts, packageGroupImages, organisations } from "@workspace/db/schema";
+import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts, packageGroupImages, organisations, applicationGrade, applicationParticipants } from "@workspace/db/schema";
 import { eq, and, count, asc, SQL, ilike, desc, sql, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate } from "../middleware/authenticate.js";
@@ -1117,6 +1117,7 @@ router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_
         id: enrollmentSpots.id,
         packageGroupId: enrollmentSpots.packageGroupId,
         packageGroupName: packageGroups.nameEn,
+        enrollName: enrollmentSpots.enrollName,
         gradeLabel: enrollmentSpots.gradeLabel,
         gradeOrder: enrollmentSpots.gradeOrder,
         totalSpots: enrollmentSpots.totalSpots,
@@ -1127,6 +1128,7 @@ router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_
         endDate: enrollmentSpots.endDate,
         dobRangeStart: enrollmentSpots.dobRangeStart,
         dobRangeEnd: enrollmentSpots.dobRangeEnd,
+        note: enrollmentSpots.note,
         updatedAt: enrollmentSpots.updatedAt,
       })
       .from(enrollmentSpots)
@@ -1134,10 +1136,55 @@ router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_
       .where(whereClause)
       .orderBy(asc(enrollmentSpots.gradeOrder), asc(enrollmentSpots.gradeLabel));
 
-    const data = rows.map(r => ({
-      ...r,
-      available: (r.totalSpots ?? 0) - (r.reservedSpots ?? 0) - (r.manualReserved ?? 0),
-    }));
+    // Compute enrollCount + instituteMgt per spot from applicationGrade + applicationParticipants
+    const spotIds = rows.map(r => r.id);
+    let gradeRows: { spotId: string; schoolName: string | null; fullName: string; fullNameNative: string | null }[] = [];
+    if (spotIds.length > 0) {
+      gradeRows = await db
+        .select({
+          spotId: applicationGrade.enrollmentSpotId,
+          schoolName: applicationParticipants.schoolName,
+          fullName: applicationParticipants.fullName,
+          fullNameNative: applicationParticipants.fullNameNative,
+        })
+        .from(applicationGrade)
+        .innerJoin(applicationParticipants, eq(applicationGrade.participantId, applicationParticipants.id))
+        .where(
+          sql`${applicationGrade.enrollmentSpotId} = ANY(${sql.raw(`ARRAY[${spotIds.map(id => `'${id}'`).join(",")}]::uuid[]`)})`,
+        );
+    }
+
+    // Group gradeRows by spotId
+    const gradeBySpot = new Map<string, typeof gradeRows>();
+    for (const g of gradeRows) {
+      if (!g.spotId) continue;
+      if (!gradeBySpot.has(g.spotId)) gradeBySpot.set(g.spotId, []);
+      gradeBySpot.get(g.spotId)!.push(g);
+    }
+
+    const data = rows.map(r => {
+      const entries = gradeBySpot.get(r.id) ?? [];
+      const enrollCount = entries.length;
+      const instituteMgt = entries
+        .map(e => {
+          const school = e.schoolName ?? "";
+          const name = e.fullName ?? "";
+          const native = e.fullNameNative ?? "";
+          if (!school && !name) return null;
+          if (school && native) return `${school}_${name} | ${native}`;
+          if (school) return `${school}_${name}`;
+          return name;
+        })
+        .filter(Boolean)
+        .join(", ");
+
+      return {
+        ...r,
+        enrollCount,
+        instituteMgt: instituteMgt || null,
+        available: (r.totalSpots ?? 0) - enrollCount,
+      };
+    });
 
     return res.json({ data });
   } catch (err) {
@@ -1148,7 +1195,7 @@ router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_
 
 router.post("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const { packageGroupId, gradeLabel, gradeOrder, totalSpots, manualReserved, status, startDate, endDate, dobRangeStart, dobRangeEnd } = req.body;
+    const { packageGroupId, enrollName, gradeLabel, gradeOrder, totalSpots, manualReserved, status, startDate, endDate, dobRangeStart, dobRangeEnd, note } = req.body;
     if (!packageGroupId || !gradeLabel || totalSpots == null) {
       return res.status(400).json({ error: "packageGroupId, gradeLabel, totalSpots are required" });
     }
@@ -1162,6 +1209,7 @@ router.post("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp
     }
     const [spot] = await db.insert(enrollmentSpots).values({
       packageGroupId,
+      enrollName: enrollName ?? null,
       gradeLabel,
       gradeOrder: gradeOrder ?? 0,
       totalSpots: Number(totalSpots),
@@ -1171,6 +1219,7 @@ router.post("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp
       endDate: endDate ? new Date(endDate) : null,
       dobRangeStart: dobRangeStart ? new Date(dobRangeStart) : null,
       dobRangeEnd: dobRangeEnd ? new Date(dobRangeEnd) : null,
+      note: note ?? null,
     }).returning();
     return res.status(201).json(spot);
   } catch (err) {
@@ -1181,7 +1230,7 @@ router.post("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp
 
 router.put("/enrollment-spots/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const allowed = ["gradeLabel", "gradeOrder", "totalSpots", "manualReserved", "status", "startDate", "endDate", "dobRangeStart", "dobRangeEnd"] as const;
+    const allowed = ["enrollName", "gradeLabel", "gradeOrder", "totalSpots", "manualReserved", "status", "startDate", "endDate", "dobRangeStart", "dobRangeEnd", "note"] as const;
     const patch: Record<string, unknown> = { updatedAt: new Date() };
     for (const key of allowed) {
       if (key in req.body) {

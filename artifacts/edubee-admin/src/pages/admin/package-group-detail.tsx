@@ -120,7 +120,7 @@ export default function PackageGroupDetail() {
   const [autoConvert, setAutoConvert] = useState(false);
 
   // Enrollment Spots state
-  const EMPTY_SPOT = { gradeLabel: "", gradeOrder: "0", totalSpots: "", manualReserved: "0", status: "available", startDate: "", endDate: "", dobRangeStart: "", dobRangeEnd: "" };
+  const EMPTY_SPOT = { enrollName: "", gradeLabel: "", gradeOrder: "0", totalSpots: "", manualReserved: "0", status: "available", startDate: "", endDate: "", dobRangeStart: "", dobRangeEnd: "", note: "" };
   const [showSpotDialog, setShowSpotDialog] = useState(false);
   const [editingSpot, setEditingSpot] = useState<any>(null);
   const [spotForm, setSpotForm] = useState<Record<string, string>>(EMPTY_SPOT);
@@ -268,6 +268,7 @@ export default function PackageGroupDetail() {
   const openEditSpot = (s: any) => {
     setEditingSpot(s);
     setSpotForm({
+      enrollName: s.enrollName ?? "",
       gradeLabel: s.gradeLabel ?? "",
       gradeOrder: String(s.gradeOrder ?? 0),
       totalSpots: String(s.totalSpots ?? ""),
@@ -277,12 +278,14 @@ export default function PackageGroupDetail() {
       endDate: s.endDate ? s.endDate.slice(0, 10) : "",
       dobRangeStart: s.dobRangeStart ? s.dobRangeStart.slice(0, 10) : "",
       dobRangeEnd: s.dobRangeEnd ? s.dobRangeEnd.slice(0, 10) : "",
+      note: s.note ?? "",
     });
     setShowSpotDialog(true);
   };
   const handleSpotSave = () => {
     const payload = {
       packageGroupId: id,
+      enrollName: spotForm.enrollName || null,
       gradeLabel: spotForm.gradeLabel,
       gradeOrder: Number(spotForm.gradeOrder || 0),
       totalSpots: Number(spotForm.totalSpots),
@@ -292,6 +295,7 @@ export default function PackageGroupDetail() {
       endDate: spotForm.endDate || null,
       dobRangeStart: spotForm.dobRangeStart || null,
       dobRangeEnd: spotForm.dobRangeEnd || null,
+      note: spotForm.note || null,
     };
     if (editingSpot) {
       updateSpot.mutate({ spotId: editingSpot.id, data: payload });
@@ -956,21 +960,22 @@ export default function PackageGroupDetail() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/30 text-xs text-muted-foreground font-semibold">
-                    <th className="px-4 py-2.5 text-left">Grade / Label</th>
+                    <th className="px-4 py-2.5 text-left">Enroll Name / Grade</th>
                     <th className="px-4 py-2.5 text-center">Status</th>
                     <th className="px-4 py-2.5 text-right">Total</th>
-                    <th className="px-4 py-2.5 text-right">Reserved</th>
-                    <th className="px-4 py-2.5 text-right">Manual Hold</th>
+                    <th className="px-4 py-2.5 text-right text-orange-600">Enroll No.</th>
                     <th className="px-4 py-2.5 text-right text-green-700">Available</th>
                     <th className="px-4 py-2.5 text-left">Program Dates</th>
                     <th className="px-4 py-2.5 text-left">DOB Range</th>
+                    <th className="px-4 py-2.5 text-left">Institute MGT</th>
+                    <th className="px-4 py-2.5 text-left">Note</th>
                     {canEdit && <th className="px-4 py-2.5 w-20" />}
                   </tr>
                 </thead>
                 <tbody>
                   {spots.length === 0 ? (
                     <tr>
-                      <td colSpan={canEdit ? 9 : 8} className="px-4 py-12 text-center">
+                      <td colSpan={canEdit ? 11 : 10} className="px-4 py-12 text-center">
                         <div className="text-muted-foreground/40 text-3xl mb-2">🎫</div>
                         <p className="text-muted-foreground text-sm">No enrollment spots yet</p>
                         {canEdit && (
@@ -981,7 +986,8 @@ export default function PackageGroupDetail() {
                       </td>
                     </tr>
                   ) : spots.map((s: any) => {
-                    const available = (s.totalSpots ?? 0) - (s.reservedSpots ?? 0) - (s.manualReserved ?? 0);
+                    const enrollCount = s.enrollCount ?? 0;
+                    const available = (s.totalSpots ?? 0) - enrollCount;
                     const statusColors: Record<string, string> = {
                       available: "bg-green-100 text-green-700",
                       waitlist: "bg-amber-100 text-amber-700",
@@ -990,25 +996,35 @@ export default function PackageGroupDetail() {
                     const fmtDate = (d?: string | null) => formatDate(d);
                     return (
                       <tr key={s.id} className="border-b last:border-0 hover:bg-(--e-orange-lt)/50">
+                        {/* Enroll Name / Grade */}
                         <td className="px-4 py-3">
-                          <div className="font-semibold">{s.gradeLabel}</div>
-                          {s.gradeOrder != null && (
-                            <div className="text-[11px] text-muted-foreground">Order: {s.gradeOrder}</div>
+                          <div className="font-semibold text-[13px]">
+                            {s.enrollName ?? s.gradeLabel}
+                          </div>
+                          {s.enrollName && (
+                            <div className="text-[11px] text-muted-foreground">{s.gradeLabel}</div>
                           )}
                         </td>
+                        {/* Status */}
                         <td className="px-4 py-3 text-center">
                           <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColors[s.status ?? "available"] ?? "bg-gray-100 text-gray-600"}`}>
                             {s.status ?? "available"}
                           </span>
                         </td>
+                        {/* Total */}
                         <td className="px-4 py-3 text-right font-mono font-semibold">{s.totalSpots}</td>
-                        <td className="px-4 py-3 text-right font-mono text-orange-600">{s.reservedSpots ?? 0}</td>
-                        <td className="px-4 py-3 text-right font-mono text-blue-600">{s.manualReserved ?? 0}</td>
-                        <td className="px-4 py-3 text-right font-mono font-bold text-green-600">{Math.max(0, available)}</td>
+                        {/* Enroll No. */}
+                        <td className="px-4 py-3 text-right font-mono font-semibold text-orange-600">{enrollCount}</td>
+                        {/* Available */}
+                        <td className="px-4 py-3 text-right font-mono font-bold" style={{ color: available > 0 ? "#16a34a" : "#dc2626" }}>
+                          {Math.max(0, available)}
+                        </td>
+                        {/* Program Dates */}
                         <td className="px-4 py-3 text-xs text-muted-foreground">
                           <div>{fmtDate(s.startDate)}</div>
                           {s.endDate && <div className="text-muted-foreground/60">→ {fmtDate(s.endDate)}</div>}
                         </td>
+                        {/* DOB Range */}
                         <td className="px-4 py-3 text-xs text-muted-foreground">
                           {s.dobRangeStart || s.dobRangeEnd ? (
                             <div>
@@ -1016,6 +1032,20 @@ export default function PackageGroupDetail() {
                               {s.dobRangeEnd && <div className="text-muted-foreground/60">→ {fmtDate(s.dobRangeEnd)}</div>}
                             </div>
                           ) : "—"}
+                        </td>
+                        {/* Institute MGT */}
+                        <td className="px-4 py-3 max-w-[180px]">
+                          {s.instituteMgt ? (
+                            <div className="space-y-0.5">
+                              {s.instituteMgt.split(", ").map((entry: string, i: number) => (
+                                <div key={i} className="text-[11px] text-muted-foreground truncate" title={entry}>{entry}</div>
+                              ))}
+                            </div>
+                          ) : <span className="text-xs text-muted-foreground">—</span>}
+                        </td>
+                        {/* Note */}
+                        <td className="px-4 py-3 text-xs text-muted-foreground max-w-[130px]">
+                          <span className="truncate block" title={s.note ?? ""}>{s.note ?? "—"}</span>
                         </td>
                         {canEdit && (
                           <td className="px-4 py-3">
@@ -1049,9 +1079,8 @@ export default function PackageGroupDetail() {
               <div className="flex items-center gap-6 px-4 py-2.5 bg-muted/30 rounded-lg border text-sm">
                 <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Total</span>
                 <span className="font-mono"><span className="text-muted-foreground text-xs mr-1">Spots:</span><strong>{spots.reduce((a: number, s: any) => a + (s.totalSpots ?? 0), 0)}</strong></span>
-                <span className="font-mono"><span className="text-muted-foreground text-xs mr-1">Reserved:</span><strong className="text-orange-600">{spots.reduce((a: number, s: any) => a + (s.reservedSpots ?? 0), 0)}</strong></span>
-                <span className="font-mono"><span className="text-muted-foreground text-xs mr-1">Manual:</span><strong className="text-blue-600">{spots.reduce((a: number, s: any) => a + (s.manualReserved ?? 0), 0)}</strong></span>
-                <span className="font-mono"><span className="text-muted-foreground text-xs mr-1">Available:</span><strong className="text-green-600">{spots.reduce((a: number, s: any) => a + Math.max(0, (s.totalSpots ?? 0) - (s.reservedSpots ?? 0) - (s.manualReserved ?? 0)), 0)}</strong></span>
+                <span className="font-mono"><span className="text-muted-foreground text-xs mr-1">Enrolled:</span><strong className="text-orange-600">{spots.reduce((a: number, s: any) => a + (s.enrollCount ?? 0), 0)}</strong></span>
+                <span className="font-mono"><span className="text-muted-foreground text-xs mr-1">Available:</span><strong className="text-green-600">{spots.reduce((a: number, s: any) => a + Math.max(0, (s.totalSpots ?? 0) - (s.enrollCount ?? 0)), 0)}</strong></span>
               </div>
             )}
           </div>
@@ -1265,6 +1294,17 @@ export default function PackageGroupDetail() {
             <DialogTitle>{editingSpot ? "Edit Enrollment Spot" : "Add Enrollment Spot"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
+            {/* Enroll Name */}
+            <div className="space-y-1">
+              <Label className="text-xs">Enroll Name</Label>
+              <Input
+                value={spotForm.enrollName}
+                onChange={e => setSpotForm(f => ({ ...f, enrollName: e.target.value }))}
+                placeholder="e.g. 2025 Spring Elementary Camp"
+                className="h-8 text-sm"
+              />
+            </div>
+
             {/* Grade Label & Order */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="col-span-2 space-y-1">
@@ -1288,7 +1328,7 @@ export default function PackageGroupDetail() {
             </div>
 
             {/* Spots */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Total Spots <span className="text-red-500">*</span></Label>
                 <Input
@@ -1297,15 +1337,6 @@ export default function PackageGroupDetail() {
                   onChange={e => setSpotForm(f => ({ ...f, totalSpots: e.target.value }))}
                   className="h-8 text-sm"
                   placeholder="30"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Manual Hold</Label>
-                <Input
-                  type="number" min="0"
-                  value={spotForm.manualReserved}
-                  onChange={e => setSpotForm(f => ({ ...f, manualReserved: e.target.value }))}
-                  className="h-8 text-sm"
                 />
               </div>
               <div className="space-y-1">
@@ -1371,6 +1402,18 @@ export default function PackageGroupDetail() {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Note */}
+            <div className="space-y-1">
+              <Label className="text-xs">Note</Label>
+              <textarea
+                value={spotForm.note}
+                onChange={e => setSpotForm(f => ({ ...f, note: e.target.value }))}
+                placeholder="Additional notes or instructions..."
+                rows={2}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+              />
             </div>
 
             {/* Actions */}
