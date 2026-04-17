@@ -5,6 +5,11 @@ import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+function getTenantSlug(): string | null {
+  const m = window.location.hostname.match(/^([^.]+)\.edubee\.co$/);
+  return m && !["www", "app", "portal"].includes(m[1]) ? m[1] : null;
+}
+
 const INPUT_CLS = `w-full h-10 px-3 text-sm rounded-lg border border-[#E8E6E2] bg-white text-[#1C1917]
   placeholder:text-[#A8A29E] outline-none transition-all
   focus:border-(--e-orange) focus:shadow-[0_0_0_3px_var(--e-orange-ring)]`;
@@ -76,9 +81,12 @@ export default function ResetPassword() {
 
     setIsLoading(true);
     try {
+      const slug = getTenantSlug();
+      const hdrs: Record<string, string> = { "Content-Type": "application/json" };
+      if (slug) hdrs["X-Organisation-Id"] = slug;
       const res = await fetch(`${BASE}/api/auth/reset-password`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: hdrs,
         body: JSON.stringify({ token, password }),
       });
       const data = await res.json();

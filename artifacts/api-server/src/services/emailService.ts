@@ -1,15 +1,41 @@
 import { Resend } from 'resend';
+import { staticDb } from '@workspace/db';
+import { platformSettings } from '@workspace/db/schema';
+import { inArray } from 'drizzle-orm';
 
 const EMAIL_ENABLED = process.env.EMAIL_ENABLED !== 'false';
-const FROM_EMAIL    = process.env.FROM_EMAIL ?? 'noreply@edubee.co';
 
-function getResend(): Resend | null {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    console.warn('[EMAIL] RESEND_API_KEY not set — emails will be skipped.');
+async function getEmailConfig(): Promise<{ resend: Resend; fromEmail: string; fromName: string } | null> {
+  let apiKey  = process.env.RESEND_API_KEY ?? '';
+  let fromEmail = process.env.FROM_EMAIL ?? '';
+  let fromName  = process.env.FROM_NAME  ?? '';
+
+  if (!apiKey || !fromEmail) {
+    try {
+      const rows = await staticDb
+        .select()
+        .from(platformSettings)
+        .where(inArray(platformSettings.key, ['resend.apiKey', 'resend.from', 'resend.fromName']));
+      const cfg: Record<string, string> = {};
+      for (const r of rows) cfg[r.key] = r.value ?? '';
+      if (!apiKey)    apiKey    = cfg['resend.apiKey'] ?? '';
+      if (!fromEmail) fromEmail = cfg['resend.from']   ?? '';
+      if (!fromName)  fromName  = cfg['resend.fromName'] ?? '';
+    } catch (err) {
+      console.warn('[EMAIL] Could not read platform_settings for Resend config:', String(err));
+    }
+  }
+
+  if (!apiKey || !fromEmail) {
+    console.warn('[EMAIL] Resend not configured (no API key or FROM address). Email skipped.');
     return null;
   }
-  return new Resend(key);
+
+  return {
+    resend: new Resend(apiKey),
+    fromEmail,
+    fromName: fromName || 'Edubee CRM',
+  };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -33,8 +59,8 @@ export async function sendInvitationEmail(
     return { success: true, messageId: 'disabled' };
   }
 
-  const resend = getResend();
-  if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' };
+  const cfg = await getEmailConfig();
+  if (!cfg) return { success: false, error: 'Resend not configured' };
 
   const { toEmail, inviterName, companyName, role, inviteToken, subdomain, expiresAt } = params;
 
@@ -49,8 +75,8 @@ export async function sendInvitationEmail(
   });
 
   try {
-    const { data, error } = await resend.emails.send({
-      from:    FROM_EMAIL,
+    const { data, error } = await cfg.resend.emails.send({
+      from:    `${cfg.fromName} <${cfg.fromEmail}>`,
       to:      toEmail,
       subject: `[${companyName}] You've been invited to Edubee CRM`,
       html:    buildInvitationHtml({ companyName, inviterName, role, inviteUrl, expiryDate, logoUrl }),
@@ -84,15 +110,15 @@ export async function sendWelcomeEmail(
 ): Promise<{ success: boolean; error?: string }> {
   if (!EMAIL_ENABLED) return { success: true };
 
-  const resend = getResend();
-  if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' };
+  const cfg = await getEmailConfig();
+  if (!cfg) return { success: false, error: 'Resend not configured' };
 
   const { toEmail, userName, companyName, loginUrl } = params;
   const logoUrl = loginUrl.replace(/\/login$/, '/edubee-symbol.png');
 
   try {
-    const { error } = await resend.emails.send({
-      from:    FROM_EMAIL,
+    const { error } = await cfg.resend.emails.send({
+      from:    `${cfg.fromName} <${cfg.fromEmail}>`,
       to:      toEmail,
       subject: `[${companyName}] Your CRM account is ready`,
       html:    buildWelcomeHtml({ userName, companyName, loginUrl, logoUrl }),
@@ -116,16 +142,16 @@ export async function sendTenantCreatedEmail(params: {
 }): Promise<void> {
   if (!EMAIL_ENABLED) return;
 
-  const resend = getResend();
-  if (!resend) return;
+  const cfg = await getEmailConfig();
+  if (!cfg) return;
 
   const { toEmail, orgName, subdomain, planType } = params;
   const loginUrl = `https://${subdomain}.edubee.co/login`;
   const logoUrl  = `https://${subdomain}.edubee.co/edubee-symbol.png`;
 
   try {
-    await resend.emails.send({
-      from:    FROM_EMAIL,
+    await cfg.resend.emails.send({
+      from:    `${cfg.fromName} <${cfg.fromEmail}>`,
       to:      toEmail,
       subject: `Your Edubee CRM is ready — ${orgName}`,
       html:    buildTenantCreatedHtml({ orgName, subdomain, planType, loginUrl, logoUrl }),
@@ -418,14 +444,14 @@ export async function sendPasswordResetEmail(params: {
     return { success: true };
   }
 
-  const resend = getResend();
-  if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' };
+  const cfg = await getEmailConfig();
+  if (!cfg) return { success: false, error: 'Resend not configured' };
 
   const { toEmail, fullName, resetUrl, orgName } = params;
 
   try {
-    const { error } = await resend.emails.send({
-      from:    FROM_EMAIL,
+    const { error } = await cfg.resend.emails.send({
+      from:    `${cfg.fromName} <${cfg.fromEmail}>`,
       to:      toEmail,
       subject: `[${orgName}] Password reset request`,
       html:    buildPasswordResetHtml({ fullName, resetUrl, orgName }),
@@ -456,16 +482,16 @@ export async function sendCampOnboardWelcomeEmail(params: {
   trialDays: number;
 }): Promise<void> {
   if (!EMAIL_ENABLED) return;
-  const resend = getResend();
-  if (!resend) return;
+  const cfg = await getEmailConfig();
+  if (!cfg) return;
 
   const { toEmail, adminName, orgName, subdomain, loginUrl, trialDays } = params;
   const campUrl = `https://${subdomain}.edubee.co/camp/`;
   const logoUrl = `https://edubee.co/edubee-symbol.png`;
 
   try {
-    await resend.emails.send({
-      from:    FROM_EMAIL,
+    await cfg.resend.emails.send({
+      from:    `${cfg.fromName} <${cfg.fromEmail}>`,
       to:      toEmail,
       subject: `Welcome to Edubee CAMP — Your portal is ready!`,
       html: `<!DOCTYPE html>
