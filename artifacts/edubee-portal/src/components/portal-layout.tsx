@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, FileText, Package, Wallet,
   FolderOpen, User, LogOut,
   Menu, ChevronLeft, ChevronRight, ChevronDown, Globe,
-  MessageCircle, BookOpen, CalendarDays,
+  MessageCircle, BookOpen, CalendarDays, Image as ImageIcon,
   LucideIcon,
 } from "lucide-react";
 import {
@@ -54,6 +54,7 @@ function buildStudentNav(): NavItem[] {
     { icon: Package,         label: "Services",      href: "/student/services"       },
     { icon: Wallet,          label: "Finance",       href: "/student/finance"        },
     { icon: FolderOpen,      label: "Documents",     href: "/student/documents"      },
+    { icon: ImageIcon,       label: "Camp Photos",   href: "/student/photos"         },
     { icon: MessageCircle,   label: "Community",     href: "/community"              },
     { icon: User,            label: "My Profile",    href: "/student/profile"        },
   ];

@@ -13,8 +13,11 @@ import {
   documents,
   communityPosts,
   communityComments,
+  campPhotoFolders,
+  campPhotos,
+  applications,
 } from "@workspace/db/schema";
-import { eq, and, inArray, desc, sql, count, sum, isNull } from "drizzle-orm";
+import { eq, and, inArray, desc, sql, count, sum, isNull, asc } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
@@ -1527,6 +1530,106 @@ router.post("/portal/community/:id/comments", authenticatePortal, async (req, re
     return res.status(201).json({ data: comment });
   } catch (err) {
     console.error("[portal/community/:id/comments POST]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── STUDENT CAMP PHOTOS ─────────────────────────────────────────────────────
+
+const PHOTO_DIR_PORTAL = process.env.UPLOAD_DIR
+  ? path.join(process.env.UPLOAD_DIR, "camp-photos")
+  : path.join(process.cwd(), "uploads", "camp-photos");
+
+// Serve photo file for portal users
+router.get("/portal/student/camp-photos/file/:filename", authenticatePortal, requireStudentRole, (req, res) => {
+  const filename = path.basename(req.params.filename);
+  const filePath = path.join(PHOTO_DIR_PORTAL, filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File not found" });
+  return res.sendFile(path.resolve(filePath));
+});
+
+// Get participant-visible folders for the student's contracted package groups
+router.get("/portal/student/camp-photos/folders", authenticatePortal, requireStudentRole, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+
+    // Find this student's active contracts → applications → packageGroupIds
+    const contractRows = await db
+      .select({ applicationId: contracts.applicationId })
+      .from(contracts)
+      .where(eq(contracts.accountId, accountId));
+
+    const appIds = contractRows.map(r => r.applicationId).filter(Boolean) as string[];
+    if (appIds.length === 0) return res.json({ data: [] });
+
+    const appRows = await db
+      .select({ packageGroupId: applications.packageGroupId })
+      .from(applications)
+      .where(inArray(applications.id, appIds));
+
+    const pgIds = [...new Set(appRows.map(r => r.packageGroupId).filter(Boolean) as string[])];
+    if (pgIds.length === 0) return res.json({ data: [] });
+
+    // Get participant-visible folders for these package groups
+    const folders = await db
+      .select()
+      .from(campPhotoFolders)
+      .where(and(
+        inArray(campPhotoFolders.packageGroupId, pgIds),
+        eq(campPhotoFolders.visibility, "participants")
+      ))
+      .orderBy(asc(campPhotoFolders.packageGroupId), asc(campPhotoFolders.sortOrder), asc(campPhotoFolders.createdAt));
+
+    return res.json({ data: folders });
+  } catch (err) {
+    console.error("[portal/student/camp-photos/folders]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get photos in a specific folder (verify it belongs to the student's package group)
+router.get("/portal/student/camp-photos", authenticatePortal, requireStudentRole, async (req, res) => {
+  try {
+    const { folderId } = req.query as Record<string, string>;
+    if (!folderId) return res.status(400).json({ error: "folderId required" });
+
+    const accountId = req.portalUser!.accountId;
+
+    // Verify this folder belongs to a package group the student is contracted for
+    const [folder] = await db
+      .select()
+      .from(campPhotoFolders)
+      .where(and(eq(campPhotoFolders.id, folderId), eq(campPhotoFolders.visibility, "participants")))
+      .limit(1);
+
+    if (!folder) return res.status(404).json({ error: "Folder not found" });
+
+    // Check student has a contract for this package group
+    const contractRows = await db
+      .select({ applicationId: contracts.applicationId })
+      .from(contracts)
+      .where(eq(contracts.accountId, accountId));
+
+    const appIds = contractRows.map(r => r.applicationId).filter(Boolean) as string[];
+    if (appIds.length === 0) return res.status(403).json({ error: "Forbidden" });
+
+    const appRows = await db
+      .select({ packageGroupId: applications.packageGroupId })
+      .from(applications)
+      .where(inArray(applications.id, appIds));
+
+    const pgIds = appRows.map(r => r.packageGroupId).filter(Boolean) as string[];
+    if (!pgIds.includes(folder.packageGroupId)) return res.status(403).json({ error: "Forbidden" });
+
+    const photos = await db
+      .select()
+      .from(campPhotos)
+      .where(eq(campPhotos.folderId, folderId))
+      .orderBy(asc(campPhotos.sortOrder), asc(campPhotos.createdAt));
+
+    return res.json({ data: photos });
+  } catch (err) {
+    console.error("[portal/student/camp-photos]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

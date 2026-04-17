@@ -50,8 +50,8 @@ function formatSize(bytes: number | null): string {
 }
 
 function photoUrl(objectPath: string): string {
-  const normalized = objectPath.replace(/^\/objects\//, "");
-  return `${BASE}/api/storage/objects/${normalized}`;
+  const filename = objectPath.split("/").pop() ?? objectPath;
+  return `${BASE}/api/camp-photos/file/${encodeURIComponent(filename)}`;
 }
 
 // ── Folder Card ─────────────────────────────────────────────────────────────

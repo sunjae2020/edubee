@@ -1,22 +1,48 @@
 import { Router } from "express";
 import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { db } from "@workspace/db";
 import { campPhotoFolders, campPhotos } from "@workspace/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
-import { ObjectStorageService } from "../lib/objectStorage.js";
 
 const router = Router();
-const objectStorageService = new ObjectStorageService();
 
+const PHOTO_DIR = process.env.UPLOAD_DIR
+  ? path.join(process.env.UPLOAD_DIR, "camp-photos")
+  : path.join(process.cwd(), "uploads", "camp-photos");
+
+if (!fs.existsSync(PHOTO_DIR)) fs.mkdirSync(PHOTO_DIR, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, PHOTO_DIR),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
 
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage,
   limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("Only image files are allowed"));
+  },
 });
 
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"] as const;
+
+// ── Serve photo file ─────────────────────────────────────────────────────────
+
+router.get("/camp-photos/file/:filename", authenticate, (req, res) => {
+  const filename = path.basename(req.params.filename);
+  const filePath = path.join(PHOTO_DIR, filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File not found" });
+  return res.sendFile(path.resolve(filePath));
+});
 
 // ── Folders ─────────────────────────────────────────────────────────────────
 
@@ -82,7 +108,19 @@ router.put("/camp-photos/folders/:id", authenticate, requireRole(...ADMIN_ROLES)
 
 router.delete("/camp-photos/folders/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
+    const photos = await db
+      .select({ objectPath: campPhotos.objectPath })
+      .from(campPhotos)
+      .where(eq(campPhotos.folderId, req.params.id));
+
     await db.delete(campPhotoFolders).where(eq(campPhotoFolders.id, req.params.id));
+
+    for (const p of photos) {
+      try {
+        const filePath = path.join(PHOTO_DIR, path.basename(p.objectPath));
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } catch { /* ignore individual delete errors */ }
+    }
 
     return res.json({ ok: true });
   } catch (err) {
@@ -119,30 +157,30 @@ router.post(
   async (req, res) => {
     try {
       const { folderId, packageGroupId } = req.body as { folderId: string; packageGroupId: string };
-      if (!folderId || !packageGroupId) return res.status(400).json({ error: "folderId and packageGroupId required" });
+      if (!folderId || !packageGroupId) {
+        return res.status(400).json({ error: "folderId and packageGroupId required" });
+      }
 
       const files = req.files as Express.Multer.File[];
       if (!files || files.length === 0) return res.status(400).json({ error: "No files provided" });
 
-      const uploaded: (typeof campPhotos.$inferSelect)[] = [];
-
+      const inserted = [];
       for (const file of files) {
-        const objectPath = await objectStorageService.uploadBuffer(file.buffer, file.mimetype);
         const [photo] = await db
           .insert(campPhotos)
           .values({
             folderId,
             packageGroupId,
-            objectPath,
+            objectPath: file.filename,
             fileName: file.originalname,
             fileSize: file.size,
             uploadedBy: req.user!.id,
           })
           .returning();
-        uploaded.push(photo);
+        inserted.push(photo);
       }
 
-      return res.status(201).json(uploaded);
+      return res.status(201).json(inserted);
     } catch (err) {
       console.error("[POST /camp-photos/upload]", err);
       return res.status(500).json({ error: "Internal Server Error" });
@@ -158,6 +196,11 @@ router.delete("/camp-photos/:id", authenticate, requireRole(...ADMIN_ROLES), asy
       .returning();
 
     if (!photo) return res.status(404).json({ error: "Photo not found" });
+
+    try {
+      const filePath = path.join(PHOTO_DIR, path.basename(photo.objectPath));
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } catch { /* ignore */ }
 
     return res.json({ ok: true });
   } catch (err) {

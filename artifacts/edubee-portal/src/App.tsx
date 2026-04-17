@@ -46,6 +46,7 @@ import StudentConsultationDetailPage   from "@/pages/student-consultation-detail
 import StudentServiceDetailPage        from "@/pages/student-service-detail";
 import StudentFinancePage              from "@/pages/student-finance";
 import StudentDocumentsPage            from "@/pages/student-documents";
+import StudentPhotosPage               from "@/pages/student-photos";
 
 const PARTNER_ROLES = ["hotel", "pickup", "institute", "tour"];
 
@@ -195,6 +196,9 @@ function Router() {
       </Route>
       <Route path="/student/documents">
         {() => <ProtectedRoute component={StudentDocumentsPage} />}
+      </Route>
+      <Route path="/student/photos">
+        {() => <ProtectedRoute component={StudentPhotosPage} />}
       </Route>
       <Route path="/student/profile">
         {() => <ProtectedRoute component={ProfilePage} />}
