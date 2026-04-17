@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CampPhotosTab } from "./CampPhotosTab";
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -85,10 +86,11 @@ const CURRENCIES = [
 ];
 
 const TABS = [
-  { key: "general", label: "General" },
-  { key: "packages", label: "Packages" },
-  { key: "spots", label: "Enrollment Spots" },
-  { key: "interview", label: "Interview" },
+  { key: "general",      label: "General" },
+  { key: "packages",     label: "Packages" },
+  { key: "spots",        label: "Enrollment Spots" },
+  { key: "interview",    label: "Interview" },
+  { key: "camp-photos",  label: "Camp Photos" },
 ];
 
 interface Pkg {
@@ -1070,6 +1072,13 @@ export default function PackageGroupDetail() {
                 <DetailRow label="Instructions" value={interviewSetting.instructions} />
               </>
             )}
+          </DetailSection>
+        )}
+
+        {/* Camp Photos Tab */}
+        {activeTab === "camp-photos" && id && (
+          <DetailSection title="Camp Photos">
+            <CampPhotosTab packageGroupId={id} canEdit={canEdit} />
           </DetailSection>
         )}
       </DetailPageLayout>

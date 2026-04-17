@@ -40,6 +40,7 @@ import servicesVisaRouter from "./services-visa.js";
 import servicesTourRouter from "./services-tour.js";
 import campApplicationsRouter from "./camp-applications.js";
 import campServicesRouter from "./camp-services.js";
+import campPhotosRouter from "./camp-photos.js";
 import dashboardCrmRouter from "./dashboard-crm.js";
 import dashboardV2Router from "./dashboard-v2.js";
 import crmAccountsRouter from "./crm-accounts.js";
@@ -164,5 +165,6 @@ router.use(platformPlansRouter);
 router.use(platformCrmRouter);
 router.use(platformIntegrationsRouter);
 router.use("/admin", adminDataImportRouter);
+router.use(campPhotosRouter);
 
 export default router;

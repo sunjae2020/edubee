@@ -252,6 +252,33 @@ export const packageGroupImages = pgTable("package_group_images", {
   createdAt:      timestamp("created_at").defaultNow(),
 });
 
+// ── Camp Photo Folders ──────────────────────────────────────────────────────
+export const campPhotoFolders = pgTable("camp_photo_folders", {
+  id:             uuid("id").primaryKey().defaultRandom(),
+  packageGroupId: uuid("package_group_id").references(() => packageGroups.id, { onDelete: "cascade" }).notNull(),
+  name:           varchar("name", { length: 255 }).notNull(),
+  visibility:     varchar("visibility", { length: 50 }).notNull().default("admin_only"),
+  sortOrder:      integer("sort_order").default(0),
+  createdAt:      timestamp("created_at").defaultNow(),
+  updatedAt:      timestamp("updated_at").defaultNow(),
+});
+
+// ── Camp Photos ─────────────────────────────────────────────────────────────
+export const campPhotos = pgTable("camp_photos", {
+  id:             uuid("id").primaryKey().defaultRandom(),
+  folderId:       uuid("folder_id").references(() => campPhotoFolders.id, { onDelete: "cascade" }).notNull(),
+  packageGroupId: uuid("package_group_id").references(() => packageGroups.id, { onDelete: "cascade" }).notNull(),
+  objectPath:     varchar("object_path", { length: 500 }).notNull(),
+  fileName:       varchar("file_name", { length: 255 }),
+  fileSize:       integer("file_size"),
+  uploadedBy:     uuid("uploaded_by"),
+  sortOrder:      integer("sort_order").default(0),
+  createdAt:      timestamp("created_at").defaultNow(),
+});
+
+export type CampPhotoFolder = typeof campPhotoFolders.$inferSelect;
+export type CampPhoto = typeof campPhotos.$inferSelect;
+
 export type InsertPackageGroup = z.infer<typeof insertPackageGroupSchema>;
 export type PackageGroup = typeof packageGroups.$inferSelect;
 export type InsertPackage = z.infer<typeof insertPackageSchema>;
