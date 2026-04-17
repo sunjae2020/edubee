@@ -1,15 +1,23 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, runWithTenantSchema } from "@workspace/db";
 import { applications, campApplications, packageGroups, packages } from "@workspace/db/schema";
 import { quotes }    from "@workspace/db/schema";
 import { contracts } from "@workspace/db/schema";
 import { users }     from "@workspace/db/schema";
 import { sql, ilike, eq, or, desc, and } from "drizzle-orm";
+import { authenticate } from "../middleware/authenticate.js";
 
 const router = Router();
+const MASTER_TENANT = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 
 // GET /api/admin/all-applications
-router.get("/admin/all-applications", async (req, res) => {
+router.get("/admin/all-applications", authenticate, async (req, res) => {
+  const isCC   = (req.user as any)?.role === "camp_coordinator";
+  const ccOrgId = isCC
+    ? (req.tenant?.id ?? (req.user as any).organisationId ?? (req.user as any).id)
+    : null;
+
+  const handler = async () => {
   try {
     const search   = (req.query.search   as string) || "";
     const type     = (req.query.type     as string) || "all";
@@ -68,6 +76,15 @@ router.get("/admin/all-applications", async (req, res) => {
         ));
       }
       if (status !== "all") where.push(eq(campApplications.applicationStatus, status));
+
+      // Camp coordinators: only see applications whose package group they own or coordinate
+      if (isCC && ccOrgId) {
+        where.push(or(
+          eq(packageGroups.campProviderId, ccOrgId),
+          eq(packageGroups.coordinatorId,  ccOrgId),
+        )!);
+      }
+
       campRows = await (where.length ? q.where(and(...where)) : q);
     }
 
@@ -106,9 +123,10 @@ router.get("/admin/all-applications", async (req, res) => {
           assignedStaffName: users.fullName,
         })
         .from(applications)
-        .leftJoin(quotes,    eq(applications.quoteId,    quotes.id))
-        .leftJoin(contracts, eq(contracts.applicationId, applications.id))
-        .leftJoin(users,     eq(applications.assignedStaffId, users.id))
+        .leftJoin(quotes,        eq(applications.quoteId,    quotes.id))
+        .leftJoin(contracts,     eq(contracts.applicationId, applications.id))
+        .leftJoin(users,         eq(applications.assignedStaffId, users.id))
+        .leftJoin(packageGroups, eq(applications.packageGroupId, packageGroups.id))
         .orderBy(desc(applications.createdAt));
 
       const where: any[] = [];
@@ -122,6 +140,15 @@ router.get("/admin/all-applications", async (req, res) => {
         ));
       }
       if (status !== "all") where.push(eq(applications.applicationStatus, status));
+
+      // Camp coordinators: only see applications linked to their package groups
+      if (isCC && ccOrgId) {
+        where.push(or(
+          eq(packageGroups.campProviderId, ccOrgId),
+          eq(packageGroups.coordinatorId,  ccOrgId),
+        )!);
+      }
+
       serviceRows = await (where.length ? q.where(and(...where)) : q);
 
       // Remove rows already mirrored in camp_applications
@@ -140,6 +167,14 @@ router.get("/admin/all-applications", async (req, res) => {
   } catch (err) {
     console.error("[GET /api/admin/all-applications]", err);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+  }; // end handler
+
+  // CC users from partner orgs query master tenant schema where camp data lives
+  if (isCC) {
+    await runWithTenantSchema(MASTER_TENANT, handler);
+  } else {
+    await handler();
   }
 });
 

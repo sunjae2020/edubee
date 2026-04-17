@@ -6,7 +6,7 @@ import { requireRole } from "../middleware/requireRole.js";
 import { eq, asc, and, ne, sql } from "drizzle-orm";
 
 const router = Router();
-router.use(authenticate, requireRole("super_admin", "admin"));
+router.use(authenticate);
 
 // ── Lookup groups metadata ──────────────────────────────────────────────────
 export const LOOKUP_GROUPS: Record<string, { label: string; description: string }> = {
@@ -87,7 +87,7 @@ router.get("/settings/lookups", async (req, res) => {
 });
 
 // ── POST /api/settings/lookups ────────────────────────────────────────────────
-router.post("/settings/lookups", async (req, res) => {
+router.post("/settings/lookups", requireRole("super_admin", "admin"), async (req, res) => {
   try {
     const { group, label } = req.body as { group: string; label: string };
     if (!group || !label?.trim()) return res.status(400).json({ error: "group and label are required" });
@@ -127,7 +127,7 @@ router.post("/settings/lookups", async (req, res) => {
 });
 
 // ── PUT /api/settings/lookups/:id ─────────────────────────────────────────────
-router.put("/settings/lookups/:id", async (req, res) => {
+router.put("/settings/lookups/:id", requireRole("super_admin", "admin"), async (req, res) => {
   try {
     const { label, status } = req.body as { label?: string; status?: string };
     const updates: Record<string, any> = { modifiedOn: new Date() };
@@ -145,7 +145,7 @@ router.put("/settings/lookups/:id", async (req, res) => {
 });
 
 // ── DELETE /api/settings/lookups/:id (soft delete) ───────────────────────────
-router.delete("/settings/lookups/:id", async (req, res) => {
+router.delete("/settings/lookups/:id", requireRole("super_admin", "admin"), async (req, res) => {
   try {
     const [row] = await db.update(systemSettings).set({ status: "Deleted", modifiedOn: new Date() }).where(eq(systemSettings.id, req.params.id)).returning();
     if (!row) return res.status(404).json({ error: "Not found" });
@@ -157,7 +157,7 @@ router.delete("/settings/lookups/:id", async (req, res) => {
 });
 
 // ── POST /api/settings/lookups/reorder ───────────────────────────────────────
-router.post("/settings/lookups/reorder", async (req, res) => {
+router.post("/settings/lookups/reorder", requireRole("super_admin", "admin"), async (req, res) => {
   try {
     const { items } = req.body as { items: { id: string; sortOrder: number }[] };
     if (!Array.isArray(items)) return res.status(400).json({ error: "items array required" });
@@ -175,7 +175,7 @@ router.post("/settings/lookups/reorder", async (req, res) => {
 });
 
 // ── POST /api/settings/lookups/seed ──────────────────────────────────────────
-router.post("/settings/lookups/seed", async (req, res) => {
+router.post("/settings/lookups/seed", requireRole("super_admin", "admin"), async (req, res) => {
   try {
     const SEED_DATA: Record<string, string[]> = {
       // ── CRM ────────────────────────────────────────────────────────────────

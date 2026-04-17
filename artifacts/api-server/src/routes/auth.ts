@@ -54,7 +54,7 @@ function generateStaffTokens(user: { id: string; email: string; role: string; fu
     { expiresIn: ACCESS_TOKEN_EXPIRY }
   );
   const refreshToken = jwt.sign(
-    { id: user.id, userType: "staff" },
+    { id: user.id, userType: "staff", jti: crypto.randomUUID() },
     JWT_REFRESH_SECRET,
     { expiresIn: REFRESH_TOKEN_EXPIRY }
   );
@@ -74,7 +74,7 @@ function generatePortalTokens(account: { id: string; name: string; portalEmail: 
     { expiresIn: PORTAL_TOKEN_EXPIRY }
   );
   const refreshToken = jwt.sign(
-    { id: account.id, userType: "portal" },
+    { id: account.id, userType: "portal", jti: crypto.randomUUID() },
     JWT_REFRESH_SECRET,
     { expiresIn: REFRESH_TOKEN_EXPIRY }
   );
