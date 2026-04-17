@@ -1194,7 +1194,7 @@ export default function DashboardCrmPage() {
   const activeTab = (searchParams.get("tab") as TabId) ?? "overview";
 
   function setTab(tab: TabId) {
-    navigate(`/dashboard/crm?tab=${tab}`);
+    navigate(`/admin/dashboard/crm?tab=${tab}`);
   }
 
   // ── New V2 API queries ──
