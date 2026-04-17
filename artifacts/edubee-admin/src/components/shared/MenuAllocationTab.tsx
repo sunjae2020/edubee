@@ -45,7 +45,7 @@ async function saveOrder(categories: MenuCategory[]): Promise<void> {
   const itemPayload = categories.flatMap((c) =>
     c.items.map((item, i) => ({ id: item.id, category_id: c.id, sort_order: i + 1 }))
   );
-  const token = localStorage.getItem("accessToken") ?? sessionStorage.getItem("accessToken") ?? "";
+  const token = localStorage.getItem("edubee_token") ?? sessionStorage.getItem("edubee_token") ?? "";
   const res = await fetch(`${API_BASE}/order`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -140,32 +140,33 @@ function RenameModal({ open, title, initialValue, onConfirm, onClose }: RenameMo
 
 function iconEmoji(iconName: string | null): string {
   const map: Record<string, string> = {
-    // Core
-    LayoutDashboard: "🏠",
+    // Dashboard
+    LayoutDashboard: "📊",
     // CRM
-    Users: "👥", Building2: "🏢", Target: "🎯", FileText: "📝",
+    Users: "👥", Users2: "👫", Building2: "🏢", Target: "🎯", FileText: "📄",
     FileCheck: "✅", Ticket: "🎫",
-    // Sales
-    ClipboardList: "📋", FolderOpen: "📂",
+    // Sales / Forms
+    ClipboardList: "📋", FolderOpen: "📂", Globe: "🌐", MessageSquare: "💬",
+    CalendarCheck: "📅",
     // Camp
-    Layers: "🗂", Package: "📦", ListChecks: "☑️",
-    GraduationCap: "🎓", Hotel: "🏨", Car: "🚗", Map: "🗺", CalendarCheck: "📅",
+    Layers: "🗂️", Package: "📦", ListChecks: "✅",
+    GraduationCap: "🎓", Hotel: "🏨", Car: "🚗", Map: "🗺️",
     // Services
-    Briefcase: "💼", Shield: "🛡", Wrench: "🔧", Stamp: "🛂",
+    Briefcase: "💼", Shield: "🛡️", Wrench: "🔧", Stamp: "🛂",
     // Products
-    ShoppingBag: "🛍", Tag: "🏷", Percent: "％", BadgeDollarSign: "💲",
+    ShoppingBag: "🛍️", Tag: "🏷️", Tags: "🏷️", Percent: "💯", BadgeDollarSign: "💲",
     // Finance
-    Receipt: "🧾", CreditCard: "💳", ArrowLeftRight: "↔️",
-    BookMarked: "📑", BookOpen: "📖", RefreshCw: "🔄",
+    Receipt: "🧾", CreditCard: "💳", ArrowLeftRight: "↔️", Wallet: "👛",
+    BookMarked: "📑", BookOpen: "📖", RefreshCw: "🔄", Landmark: "🏦",
     // Reports
     BarChart2: "📊",
     // AI
     Bot: "🤖",
     // Admin
-    UserCog: "👤",
+    UserCog: "🧑‍💼", UserSearch: "🔍", Palette: "🎨", Cable: "🔌",
     // Settings
-    Settings: "⚙️", Lock: "🔐", Grid2x2: "⊞", FileSearch: "📜",
-    UserSearch: "🔍",
+    Settings: "⚙️", Lock: "🔐", Grid2x2: "🔲", FileSearch: "📜",
+    Database: "🗄️",
   };
   return iconName ? (map[iconName] ?? "📄") : "📄";
 }
