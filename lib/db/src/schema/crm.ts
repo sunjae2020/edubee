@@ -251,7 +251,66 @@ export type Quote           = typeof quotes.$inferSelect;
 export type NewQuote        = typeof quotes.$inferInsert;
 export type QuoteProduct    = typeof quote_products.$inferSelect;
 export type NewQuoteProduct = typeof quote_products.$inferInsert;
+export const studyAbroadConsultations = pgTable("study_abroad_consultations", {
+  id:               uuid("id").primaryKey().defaultRandom(),
+  refNumber:        varchar("ref_number",   { length: 30  }).unique(),
+  status:           varchar("status",       { length: 20  }).default("new"),
+  assignedTo:       varchar("assigned_to",  { length: 100 }),
+  adminNotes:       text("admin_notes"),
+  language:         varchar("language",     { length: 10  }).default("en"),
+
+  fullName:         varchar("full_name",    { length: 200 }),
+  firstName:        varchar("first_name",   { length: 100 }),
+  lastName:         varchar("last_name",    { length: 100 }),
+  dateOfBirth:      varchar("date_of_birth",{ length: 20  }),
+  gender:           varchar("gender",       { length: 30  }),
+  email:            varchar("email",        { length: 200 }),
+  phone:            varchar("phone",        { length: 50  }),
+  currentCity:      varchar("current_city", { length: 100 }),
+  currentCountry:   varchar("current_country",{ length: 100 }),
+  nationality:      varchar("nationality",  { length: 100 }),
+  kakaoId:          varchar("kakao_id",     { length: 100 }),
+  messengerId:      varchar("messenger_id", { length: 200 }),
+
+  destinationCountries: jsonb("destination_countries").default([]),
+  courseTypes:      jsonb("course_types").default([]),
+  fieldOfStudy:     varchar("field_of_study",{ length: 200 }),
+  studyLevel:       varchar("study_level",  { length: 100 }),
+  studyDuration:    varchar("study_duration",{ length: 50  }),
+  targetStartTerm:  varchar("target_start_term",{ length: 100 }),
+  preferredInstitutions: text("preferred_institutions"),
+
+  englishLevel:     varchar("english_level",    { length: 50  }),
+  englishTestType:  varchar("english_test_type",{ length: 50  }),
+  englishScore:     varchar("english_score",    { length: 50  }),
+  currentEducationLevel: varchar("current_education_level",{ length: 100 }),
+  currentInstitution:    varchar("current_institution",    { length: 200 }),
+  workExperience:   varchar("work_experience",  { length: 100 }),
+
+  annualBudget:     varchar("annual_budget",    { length: 50  }),
+  fundingSource:    varchar("funding_source",   { length: 100 }),
+  visaTypeInterest: varchar("visa_type_interest",{ length: 100 }),
+
+  accommodationPreference: varchar("accommodation_preference",{ length: 100 }),
+  airportPickup:    boolean("airport_pickup").default(false),
+  healthSpecialNeeds: text("health_special_needs"),
+  referralConsultant: varchar("referral_consultant",{ length: 200 }),
+  questionsNotes:   text("questions_notes"),
+  documentNotes:    text("document_notes"),
+
+  privacyConsent:   boolean("privacy_consent").notNull().default(false),
+  marketingConsent: boolean("marketing_consent").notNull().default(false),
+  referralSources:  jsonb("referral_sources").default([]),
+
+  isActive:         boolean("is_active").notNull().default(true),
+  organisationId:   uuid("organisation_id").references(() => organisations.id),
+  createdAt:        timestamp("created_at").defaultNow(),
+  updatedAt:        timestamp("updated_at").defaultNow(),
+});
+
 export type SchoolingConsultation         = typeof schoolingConsultations.$inferSelect;
 export type NewSchoolingConsultation      = typeof schoolingConsultations.$inferInsert;
 export type SchoolingConsultationStudent  = typeof schoolingConsultationStudents.$inferSelect;
 export type NewSchoolingConsultationStudent = typeof schoolingConsultationStudents.$inferInsert;
+export type StudyAbroadConsultation       = typeof studyAbroadConsultations.$inferSelect;
+export type NewStudyAbroadConsultation    = typeof studyAbroadConsultations.$inferInsert;

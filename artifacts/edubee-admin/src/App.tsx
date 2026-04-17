@@ -118,6 +118,8 @@ import AdminCommunityPage from "@/pages/admin/community";
 // Sales
 import SchoolingConsultationsPage from "@/pages/admin/sales/SchoolingConsultationsPage";
 import SchoolingConsultationFormPage from "@/pages/admin/sales/SchoolingConsultationFormPage";
+import StudyAbroadConsultationsPage from "@/pages/admin/sales/StudyAbroadConsultationsPage";
+import StudyAbroadConsultationFormPage from "@/pages/admin/sales/StudyAbroadConsultationFormPage";
 
 // CRM
 import ContactsPage from "@/pages/admin/crm/ContactsPage";
@@ -258,6 +260,15 @@ function Router() {
       </Route>
       <Route path="/admin/sales/schooling-consultations">
         <AdminRoute title="Schooling Consultation"><SchoolingConsultationsPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/sales/study-abroad-consultations/new">
+        <AdminRoute title="New Study Abroad Consultation"><StudyAbroadConsultationFormPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/sales/study-abroad-consultations/:id">
+        {(params) => <AdminRoute title="Study Abroad Consultation"><StudyAbroadConsultationFormPage /></AdminRoute>}
+      </Route>
+      <Route path="/admin/sales/study-abroad-consultations">
+        <AdminRoute title="Study Abroad Consultation"><StudyAbroadConsultationsPage /></AdminRoute>
       </Route>
       <Route path="/admin/all-applications">
         <AdminRoute title="All Applications"><AllApplications /></AdminRoute>
