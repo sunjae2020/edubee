@@ -2,6 +2,14 @@ import { Router } from "express";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { runDevSeedPsql } from "../seeds/import-dev-data.js";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+const execFileAsync = promisify(execFile);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const router = Router();
 
@@ -37,6 +45,100 @@ router.post(
       success: true,
       elapsed: result.elapsed,
       errors: result.errors,
+    });
+  }
+);
+
+/**
+ * POST /api/admin/export-dev-data
+ * 현재 개발 DB를 dev_seed.sql로 내보냅니다.
+ * super_admin JWT 필수.
+ */
+router.post(
+  "/export-dev-data",
+  authenticate,
+  requireRole("super_admin"),
+  async (_req, res) => {
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
+      return res.status(500).json({ error: "DATABASE_URL not set" });
+    }
+
+    // workspace 루트: src/routes/../../.. → api-server, ../../.. → workspace root
+    const workspaceRoot = path.resolve(__dirname, "../../../..");
+    const scriptPath = path.join(workspaceRoot, "scripts", "export-dev-data.sh");
+    if (!fs.existsSync(scriptPath)) {
+      return res.status(500).json({ error: "export-dev-data.sh 스크립트를 찾을 수 없습니다" });
+    }
+
+    console.log("[DataExport] Export requested by super_admin...");
+    const start = Date.now();
+
+    try {
+      const { stdout, stderr } = await execFileAsync("bash", [scriptPath], {
+        env: { ...process.env, DATABASE_URL: dbUrl },
+        cwd: workspaceRoot,
+        timeout: 120_000,
+      });
+
+      const elapsed = Date.now() - start;
+      const seedPath = path.join(workspaceRoot, "artifacts/api-server/src/seeds/dev_seed.sql");
+      const fileSize = fs.existsSync(seedPath)
+        ? Math.round(fs.statSync(seedPath).size / 1024) + " KB"
+        : "unknown";
+
+      console.log(`[DataExport] 완료 (${elapsed}ms): ${fileSize}`);
+
+      return res.json({
+        success: true,
+        elapsed,
+        fileSize,
+        stdout: stdout.slice(-2000),
+        stderr: stderr ? stderr.slice(-1000) : null,
+      });
+    } catch (err: any) {
+      const elapsed = Date.now() - start;
+      console.error("[DataExport] 실패:", err.message);
+      return res.status(500).json({
+        success: false,
+        elapsed,
+        error: err.message,
+        stdout: err.stdout?.slice(-2000) ?? null,
+        stderr: err.stderr?.slice(-1000) ?? null,
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/admin/db-sync-status
+ * dev_seed.sql 파일 정보 반환
+ */
+router.get(
+  "/db-sync-status",
+  authenticate,
+  requireRole("super_admin"),
+  async (_req, res) => {
+    const workspaceRoot = path.resolve(__dirname, "../../../..");
+    const seedPath = path.join(workspaceRoot, "artifacts/api-server/src/seeds/dev_seed.sql");
+    const exists = fs.existsSync(seedPath);
+
+    if (!exists) {
+      return res.json({ exists: false });
+    }
+
+    const stat = fs.statSync(seedPath);
+    const content = fs.readFileSync(seedPath, "utf8");
+    const generatedMatch = content.match(/생성일:\s*(.+)/);
+    const generatedAt = generatedMatch ? generatedMatch[1].trim() : null;
+    const lineCount = content.split("\n").length;
+
+    return res.json({
+      exists: true,
+      sizeKb: Math.round(stat.size / 1024),
+      lineCount,
+      generatedAt,
+      modifiedAt: stat.mtime.toISOString(),
     });
   }
 );

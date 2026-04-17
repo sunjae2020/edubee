@@ -17,7 +17,7 @@ import {
   Ticket, FolderOpen, Bot, Tags, Cable,
   BookOpen, CreditCard, BookMarked, Briefcase, Shield, Wrench, Stamp,
   Tag, Percent, BadgeDollarSign,
-  Palette, Globe, Landmark,
+  Palette, Globe, Landmark, Database,
   LucideIcon,
 } from "lucide-react";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
@@ -193,6 +193,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
         { icon: UserSearch, label: "Impersonation Logs", href: "/admin/settings/impersonation-logs" },
         { icon: FolderOpen, label: "Data Manager",       href: "/admin/settings/data-manager"       },
         { icon: Tags,       label: "Lookup Values",      href: "/admin/settings/lookup-values"      },
+        ...(isSA ? [{ icon: Database, label: "DB Sync",  href: "/admin/settings/db-sync"            }] : []),
       ],
     });
   }

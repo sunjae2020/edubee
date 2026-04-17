@@ -83,6 +83,7 @@ import DocPermissions from "@/pages/admin/settings/doc-permissions";
 import ImpersonationLogs from "@/pages/admin/settings/impersonation-logs";
 import DataManager from "@/pages/admin/settings/data-manager";
 import LookupValues from "@/pages/admin/settings/lookup-values";
+import DbSync from "@/pages/admin/settings/db-sync";
 // Multi-tenant Settings
 import CompanyProfile from "@/pages/admin/settings/company-profile";
 import Branding from "@/pages/admin/settings/branding";
@@ -531,6 +532,9 @@ function Router() {
       </Route>
       <Route path="/admin/settings/data-manager">
         <AdminRoute title="Data Manager"><DataManager /></AdminRoute>
+      </Route>
+      <Route path="/admin/settings/db-sync">
+        <AdminRoute title="DB Sync"><DbSync /></AdminRoute>
       </Route>
       <Route path="/admin/settings/lookup-values">
         <AdminRoute title="Lookup Values"><LookupValues /></AdminRoute>
