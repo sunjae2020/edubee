@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   FolderOpen, FolderPlus, Image, Trash2, Upload, X, ChevronLeft,
-  Lock, Users, Pencil, Loader2,
+  Lock, Users, Pencil, Loader2, ZoomIn, Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,33 +54,31 @@ function photoApiPath(objectPath: string): string {
   return `${BASE}/api/camp-photos/file/${encodeURIComponent(filename)}`;
 }
 
-// Authenticated image: uses axios (with auth interceptor) to fetch as blob → object URL
-function AuthImg({ src, alt, className, onLoad }: { src: string; alt: string; className?: string; onLoad?: () => void }) {
+// Hook: fetch image with axios auth interceptor → blob URL
+function useAuthBlob(src: string) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let revoked = false;
+    let active = true;
+    let created: string | null = null;
+    setLoading(true);
     setBlobUrl(null);
-    setFailed(false);
     axios.get(src, { responseType: "blob" })
       .then(r => {
-        if (revoked) return;
-        const url = URL.createObjectURL(r.data);
-        setBlobUrl(url);
-        onLoad?.();
+        if (!active) return;
+        created = URL.createObjectURL(r.data);
+        setBlobUrl(created);
       })
-      .catch(() => { if (!revoked) { setFailed(true); onLoad?.(); } });
+      .catch(() => { /* show nothing */ })
+      .finally(() => { if (active) setLoading(false); });
     return () => {
-      revoked = true;
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      active = false;
+      if (created) URL.revokeObjectURL(created);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src]);
 
-  if (failed) return <div className={className} />;
-  if (!blobUrl) return <div className={className} />;
-  return <img src={blobUrl} alt={alt} className={className} />;
+  return { blobUrl, loading };
 }
 
 // ── Folder Card ─────────────────────────────────────────────────────────────
@@ -130,41 +128,84 @@ function FolderCard({
 // ── Photo Thumbnail ──────────────────────────────────────────────────────────
 
 function PhotoTile({ photo, onDelete }: { photo: Photo; onDelete: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
+  const { blobUrl, loading } = useAuthBlob(photoApiPath(photo.objectPath));
+
+  function handleDownload() {
+    if (!blobUrl) return;
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = photo.fileName ?? "photo.jpg";
+    a.click();
+  }
 
   return (
-    <div
-      className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {!loaded && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Image className="w-8 h-8 text-muted-foreground/30" />
-        </div>
-      )}
-      <AuthImg
-        src={photoApiPath(photo.objectPath)}
-        alt={photo.fileName ?? "photo"}
-        className={`w-full h-full object-cover transition-opacity duration-200 ${loaded ? "opacity-100" : "opacity-0"}`}
-        onLoad={() => setLoaded(true)}
-      />
-      {hovered && (
-        <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1 p-2">
+    <>
+      <div
+        className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted cursor-pointer"
+        onClick={() => blobUrl && setLightbox(true)}
+      >
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="w-6 h-6 text-muted-foreground/40 animate-spin" />
+          </div>
+        )}
+        {blobUrl && (
+          <img
+            src={blobUrl}
+            alt={photo.fileName ?? "photo"}
+            className="w-full h-full object-cover transition-opacity duration-200"
+          />
+        )}
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex flex-col items-center justify-center gap-1.5 p-2 opacity-0 group-hover:opacity-100">
           <p className="text-white text-xs text-center line-clamp-2 font-medium">{photo.fileName}</p>
           {photo.fileSize && <p className="text-white/70 text-xs">{formatSize(photo.fileSize)}</p>}
-          <Button
-            size="sm"
-            variant="destructive"
-            className="h-7 text-xs mt-1"
-            onClick={onDelete}
-          >
-            <Trash2 className="w-3 h-3 mr-1" /> Delete
-          </Button>
+          <div className="flex gap-1.5 mt-1">
+            <Button size="sm" variant="secondary" className="h-7 text-xs"
+              onClick={e => { e.stopPropagation(); blobUrl && setLightbox(true); }}>
+              <ZoomIn className="w-3 h-3 mr-1" /> View
+            </Button>
+            <Button size="sm" variant="secondary" className="h-7 text-xs"
+              onClick={e => { e.stopPropagation(); handleDownload(); }}>
+              <Download className="w-3 h-3 mr-1" /> Save
+            </Button>
+            <Button size="sm" variant="destructive" className="h-7 text-xs"
+              onClick={e => { e.stopPropagation(); onDelete(); }}>
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Lightbox */}
+      {lightbox && blobUrl && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.9)" }}
+          onClick={() => setLightbox(false)}
+        >
+          <div className="absolute top-4 right-4 flex gap-2">
+            <Button size="sm" variant="secondary" onClick={e => { e.stopPropagation(); handleDownload(); }}>
+              <Download className="w-4 h-4 mr-1.5" /> Download
+            </Button>
+            <Button size="icon" variant="ghost" className="text-white hover:text-white hover:bg-white/20"
+              onClick={e => { e.stopPropagation(); setLightbox(false); }}>
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+          <img
+            src={blobUrl}
+            alt={photo.fileName ?? "photo"}
+            className="max-w-[90vw] max-h-[85vh] rounded-lg object-contain shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+          {photo.fileName && (
+            <p className="text-white/70 text-sm mt-3">{photo.fileName}</p>
+          )}
         </div>
       )}
-    </div>
+    </>
   );
 }
 

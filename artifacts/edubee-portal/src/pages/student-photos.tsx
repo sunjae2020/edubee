@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { FolderOpen, Image, ChevronLeft, Lock, Users, Loader2 } from "lucide-react";
+import { FolderOpen, Image, ChevronLeft, Users, Loader2, Download, X, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Folder = {
@@ -26,35 +26,34 @@ function photoApiPath(objectPath: string): string {
   return `/api/portal/student/camp-photos/file/${encodeURIComponent(filename)}`;
 }
 
-// Authenticated image: fetches with Bearer token → creates blob URL
-function AuthImg({ src, alt, className, onLoad }: { src: string; alt: string; className?: string; onLoad?: () => void }) {
+// Hook: fetch image with portal Bearer token → blob URL (shared between thumbnail + lightbox)
+function useAuthBlob(src: string) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let revoked = false;
+    let active = true;
+    let created: string | null = null;
+    setLoading(true);
     setBlobUrl(null);
-    setFailed(false);
     const token = localStorage.getItem("portal_token") ?? "";
     fetch(src, { headers: { Authorization: `Bearer ${token}` } })
       .then(async r => {
         if (!r.ok) throw new Error(`${r.status}`);
         const blob = await r.blob();
-        if (revoked) return;
-        const url = URL.createObjectURL(blob);
-        setBlobUrl(url);
-        onLoad?.();
+        if (!active) return;
+        created = URL.createObjectURL(blob);
+        setBlobUrl(created);
       })
-      .catch(() => { if (!revoked) { setFailed(true); onLoad?.(); } });
+      .catch(() => { /* silent fail */ })
+      .finally(() => { if (active) setLoading(false); });
     return () => {
-      revoked = true;
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      active = false;
+      if (created) URL.revokeObjectURL(created);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src]);
 
-  if (failed || !blobUrl) return <div className={className} />;
-  return <img src={blobUrl} alt={alt} className={className} />;
+  return { blobUrl, loading };
 }
 
 function FolderCard({ folder, onClick }: { folder: Folder; onClick: () => void }) {
@@ -125,48 +124,87 @@ function PhotoGrid({ folderId, folderName, onBack }: { folderId: string; folderN
 }
 
 function PhotoTile({ photo }: { photo: Photo }) {
-  const [loaded, setLoaded] = useState(false);
   const [lightbox, setLightbox] = useState(false);
+  const { blobUrl, loading } = useAuthBlob(photoApiPath(photo.objectPath));
+
+  function handleDownload() {
+    if (!blobUrl) return;
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = photo.fileName ?? "photo.jpg";
+    a.click();
+  }
 
   return (
     <>
       <div
-        className="relative aspect-square rounded-xl overflow-hidden cursor-pointer border"
+        className="relative group aspect-square rounded-xl overflow-hidden cursor-pointer border"
         style={{ borderColor: "#E8E4DC", background: "#F5F0E8" }}
-        onClick={() => setLightbox(true)}
+        onClick={() => blobUrl && setLightbox(true)}
       >
-        {!loaded && (
+        {loading && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Image className="w-8 h-8" style={{ color: "#D6CFC4" }} />
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#D6CFC4" }} />
           </div>
         )}
-        <AuthImg
-          src={photoApiPath(photo.objectPath)}
-          alt={photo.fileName ?? "photo"}
-          className={`w-full h-full object-cover transition-opacity duration-200 ${loaded ? "opacity-100" : "opacity-0"}`}
-          onLoad={() => setLoaded(true)}
-        />
+        {blobUrl && (
+          <img
+            src={blobUrl}
+            alt={photo.fileName ?? "photo"}
+            className="w-full h-full object-cover"
+          />
+        )}
+        {/* Hover overlay */}
+        {blobUrl && (
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3 gap-2"
+            style={{ background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)" }}>
+            <button
+              className="flex items-center gap-1 text-white text-xs px-2.5 py-1 rounded-full font-medium"
+              style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(4px)" }}
+              onClick={e => { e.stopPropagation(); setLightbox(true); }}
+            >
+              <ZoomIn className="w-3 h-3" /> View
+            </button>
+            <button
+              className="flex items-center gap-1 text-white text-xs px-2.5 py-1 rounded-full font-medium"
+              style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(4px)" }}
+              onClick={e => { e.stopPropagation(); handleDownload(); }}
+            >
+              <Download className="w-3 h-3" /> Save
+            </button>
+          </div>
+        )}
       </div>
 
-      {lightbox && (
+      {/* Lightbox */}
+      {lightbox && blobUrl && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.85)" }}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.9)" }}
           onClick={() => setLightbox(false)}
         >
-          <div onClick={e => e.stopPropagation()}>
-            <AuthImg
-              src={photoApiPath(photo.objectPath)}
-              alt={photo.fileName ?? "photo"}
-              className="max-w-full max-h-full rounded-xl object-contain shadow-2xl"
-            />
+          <div className="absolute top-4 right-4 flex gap-2">
+            <Button size="sm" onClick={e => { e.stopPropagation(); handleDownload(); }}
+              style={{ background: "#F5821F", color: "#fff", border: "none" }}>
+              <Download className="w-4 h-4 mr-1.5" /> Download
+            </Button>
+            <button
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
+              style={{ background: "rgba(255,255,255,0.15)" }}
+              onClick={e => { e.stopPropagation(); setLightbox(false); }}
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl font-bold leading-none"
-            onClick={() => setLightbox(false)}
-          >
-            ×
-          </button>
+          <img
+            src={blobUrl}
+            alt={photo.fileName ?? "photo"}
+            className="max-w-[90vw] max-h-[80vh] rounded-xl object-contain shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+          {photo.fileName && (
+            <p className="text-white/60 text-sm mt-3">{photo.fileName}</p>
+          )}
         </div>
       )}
     </>
