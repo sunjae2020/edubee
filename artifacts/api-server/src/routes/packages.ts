@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, runWithTenantSchema } from "@workspace/db";
 import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts, packageGroupImages, organisations, applicationGrade, applicationParticipants } from "@workspace/db/schema";
 import { eq, and, count, asc, SQL, ilike, desc, sql, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -8,9 +8,14 @@ import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
+// Master tenant slug — all package/camp data lives here (CC users from partner orgs read this)
+const MASTER_TENANT = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 
 // Package Groups
 router.get("/package-groups", authenticate, async (req, res) => {
+  const isCC = req.user!.role === "camp_coordinator";
+
+  const handler = async () => {
   try {
     const { status, countryCode, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
@@ -22,7 +27,7 @@ router.get("/package-groups", authenticate, async (req, res) => {
     if (countryCode) conditions.push(eq(packageGroups.countryCode, countryCode));
 
     // Camp coordinators see package groups where they are the camp provider OR assigned as coordinator
-    if (req.user!.role === "camp_coordinator") {
+    if (isCC) {
       const orgId = req.user!.organisationId ?? req.user!.id;
       conditions.push(
         or(
@@ -85,6 +90,14 @@ router.get("/package-groups", authenticate, async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+  }; // end handler
+
+  // CC users from partner orgs must query master schema (their org has no package data)
+  if (isCC) {
+    await runWithTenantSchema(MASTER_TENANT, handler);
+  } else {
+    await handler();
   }
 });
 
@@ -1099,6 +1112,9 @@ router.delete("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async 
 
 // Enrollment Spots
 router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
+  const isCC = req.user!.role === "camp_coordinator";
+
+  const handler = async () => {
   try {
     const { packageGroupId } = req.query as Record<string, string>;
     const conditions: SQL[] = [];
@@ -1106,7 +1122,7 @@ router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_
     if (packageGroupId) conditions.push(eq(enrollmentSpots.packageGroupId, packageGroupId));
 
     // Camp coordinators can only see spots for groups where they are campProvider OR coordinator
-    if (req.user!.role === "camp_coordinator") {
+    if (isCC) {
       const orgId = req.user!.organisationId ?? req.user!.id;
       conditions.push(
         or(
@@ -1196,6 +1212,14 @@ router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+  }; // end handler
+
+  // CC users from partner orgs must query master schema (their org schema has no data)
+  if (isCC) {
+    await runWithTenantSchema(MASTER_TENANT, handler);
+  } else {
+    await handler();
   }
 });
 

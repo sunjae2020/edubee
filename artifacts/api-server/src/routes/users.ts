@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, staticDb } from "@workspace/db";
 import { users, products, packageGroupProducts, packageGroups, accounts, contacts } from "@workspace/db/schema";
 import { eq, ilike, and, or, count, SQL, asc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -98,7 +98,8 @@ router.get("/switchable", authenticate, async (req, res) => {
   try {
     const myLevel = ROLE_HIERARCHY[req.user!.role] || 0;
     if (myLevel < 60) return res.json([]);
-    const allUsers = await db.select({
+    // Use staticDb to always query public.users (all tenants' users, not just current tenant schema)
+    const allUsers = await staticDb.select({
       id: users.id, email: users.email, fullName: users.fullName,
       role: users.role, avatarUrl: users.avatarUrl, status: users.status,
     }).from(users).where(eq(users.status, "active"));

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { db } from "@workspace/db";
+import { staticDb } from "@workspace/db";
 import { users } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -41,7 +41,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   const viewAsId = req.headers["x-view-as-user-id"] as string | undefined;
   if (viewAsId && (decoded.role === "super_admin" || decoded.role === "admin")) {
     try {
-      const [viewAsUser] = await db
+      const [viewAsUser] = await staticDb
         .select({
           id: users.id,
           email: users.email,
