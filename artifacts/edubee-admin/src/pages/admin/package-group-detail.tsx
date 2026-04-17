@@ -23,6 +23,56 @@ import { format } from "date-fns";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+// ── Reusable partner field (account link + manual text override) ──────────────
+function PartnerField({
+  label, isEditing,
+  accountId, accountName,
+  manualName, displayManualName,
+  accountsList,
+  onAccountChange, onManualChange,
+}: {
+  label: string; isEditing: boolean;
+  accountId?: string | null; accountName?: string | null;
+  manualName?: string | null; displayManualName?: string | null;
+  accountsList: any[];
+  onAccountChange: (v: string) => void;
+  onManualChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      {isEditing ? (
+        <>
+          <Select value={accountId ?? "none"} onValueChange={onAccountChange}>
+            <SelectTrigger className="h-8 text-sm border-(--e-orange)">
+              <SelectValue placeholder="— Link account —" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60 overflow-y-auto">
+              <SelectItem value="none">— No account linked —</SelectItem>
+              {accountsList.map((a: any) => (
+                <SelectItem key={a.id} value={a.id}>{a.name}{a.city ? ` · ${a.city}` : ""}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input value={manualName ?? ""} onChange={e => onManualChange(e.target.value)}
+            placeholder="Or enter name manually"
+            className="h-8 text-sm border-dashed border-muted-foreground/40 focus-visible:ring-(--e-orange)" />
+        </>
+      ) : (
+        <div className="space-y-0.5">
+          {accountName && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+              <Building2 className="w-3 h-3" /> {accountName}
+            </span>
+          )}
+          {displayManualName && <span className="text-sm block">{displayManualName}</span>}
+          {!accountName && !displayManualName && <span className="text-sm text-muted-foreground/60">—</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const CURRENCIES = [
   { ccy: "AUD", label: "AUD (Australia)", flag: "🇦🇺", field: "priceAud" },
   { ccy: "SGD", label: "SGD (Singapore)", flag: "🇸🇬", field: "priceSgd" },
@@ -426,41 +476,6 @@ export default function PackageGroupDetail() {
                 editValue={getValue("packageCode")} onEdit={v => setField("packageCode", v)}
                 placeholder="e.g. MEL26JulSC" />
 
-              {/* Institute — account link + text override */}
-              <DetailRow label="Institute">
-                {isEditing ? (
-                  <div className="space-y-1">
-                    <Select
-                      value={getValue("instituteId") ?? "none"}
-                      onValueChange={v => setField("instituteId", v === "none" ? null : v)}
-                    >
-                      <SelectTrigger className="h-8 text-sm border-(--e-orange)">
-                        <SelectValue placeholder="— Link account —" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60 overflow-y-auto">
-                        <SelectItem value="none">— No account linked —</SelectItem>
-                        {accountsList.map((a: any) => (
-                          <SelectItem key={a.id} value={a.id}>{a.name}{a.city ? ` · ${a.city}` : ""}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input value={getValue("instituteName") ?? ""} onChange={e => setField("instituteName", e.target.value)}
-                      placeholder="Or enter name manually"
-                      className="h-8 text-sm border-dashed border-muted-foreground/40 focus-visible:ring-(--e-orange)" />
-                  </div>
-                ) : (
-                  <div className="space-y-0.5">
-                    {group.instituteAccountName && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
-                        <Building2 className="w-3 h-3" /> {group.instituteAccountName}
-                      </span>
-                    )}
-                    {group.instituteName && <span className="text-sm block">{group.instituteName}</span>}
-                    {!group.instituteAccountName && !group.instituteName && <span className="text-sm text-muted-foreground/60">—</span>}
-                  </div>
-                )}
-              </DetailRow>
-
               {/* Type — Product Type dropdown */}
               <DetailRow label="Type">
                 {isEditing ? (
@@ -674,112 +689,60 @@ export default function PackageGroupDetail() {
 
             {/* Program Partners */}
             <DetailSection title="Program Partners" className="lg:col-span-2">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                {/* Institute */}
+                <PartnerField
+                  label="Institute"
+                  isEditing={isEditing}
+                  accountId={getValue("instituteId")}
+                  accountName={group.instituteAccountName}
+                  manualName={getValue("instituteName")}
+                  displayManualName={group.instituteName}
+                  accountsList={accountsList}
+                  onAccountChange={v => setField("instituteId", v === "none" ? null : v)}
+                  onManualChange={v => setField("instituteName", v)}
+                />
+
                 {/* Accommodation */}
-                <div className="space-y-1.5">
-                  <p className="text-xs font-medium text-muted-foreground">Accommodation</p>
-                  {isEditing ? (
-                    <>
-                      <Select
-                        value={getValue("accommodationId") ?? "none"}
-                        onValueChange={v => setField("accommodationId", v === "none" ? null : v)}
-                      >
-                        <SelectTrigger className="h-8 text-sm border-(--e-orange)">
-                          <SelectValue placeholder="— Link account —" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-60 overflow-y-auto">
-                          <SelectItem value="none">— No account linked —</SelectItem>
-                          {accountsList.map((a: any) => (
-                            <SelectItem key={a.id} value={a.id}>{a.name}{a.city ? ` · ${a.city}` : ""}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input value={getValue("accommodation") ?? ""} onChange={e => setField("accommodation", e.target.value)}
-                        placeholder="Or enter name manually"
-                        className="h-8 text-sm border-dashed border-muted-foreground/40 focus-visible:ring-(--e-orange)" />
-                    </>
-                  ) : (
-                    <div className="space-y-0.5">
-                      {group.accommodationAccountName && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
-                          <Building2 className="w-3 h-3" /> {group.accommodationAccountName}
-                        </span>
-                      )}
-                      {group.accommodation && <span className="text-sm block">{group.accommodation}</span>}
-                      {!group.accommodationAccountName && !group.accommodation && <span className="text-sm text-muted-foreground/60">—</span>}
-                    </div>
-                  )}
-                </div>
+                <PartnerField
+                  label="Accommodation"
+                  isEditing={isEditing}
+                  accountId={getValue("accommodationId")}
+                  accountName={group.accommodationAccountName}
+                  manualName={getValue("accommodation")}
+                  displayManualName={group.accommodation}
+                  accountsList={accountsList}
+                  onAccountChange={v => setField("accommodationId", v === "none" ? null : v)}
+                  onManualChange={v => setField("accommodation", v)}
+                />
+
                 {/* Tour Company */}
-                <div className="space-y-1.5">
-                  <p className="text-xs font-medium text-muted-foreground">Tour Company</p>
-                  {isEditing ? (
-                    <>
-                      <Select
-                        value={getValue("tourCompanyId") ?? "none"}
-                        onValueChange={v => setField("tourCompanyId", v === "none" ? null : v)}
-                      >
-                        <SelectTrigger className="h-8 text-sm border-(--e-orange)">
-                          <SelectValue placeholder="— Link account —" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-60 overflow-y-auto">
-                          <SelectItem value="none">— No account linked —</SelectItem>
-                          {accountsList.map((a: any) => (
-                            <SelectItem key={a.id} value={a.id}>{a.name}{a.city ? ` · ${a.city}` : ""}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input value={getValue("tourCompany") ?? ""} onChange={e => setField("tourCompany", e.target.value)}
-                        placeholder="Or enter name manually"
-                        className="h-8 text-sm border-dashed border-muted-foreground/40 focus-visible:ring-(--e-orange)" />
-                    </>
-                  ) : (
-                    <div className="space-y-0.5">
-                      {group.tourCompanyAccountName && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
-                          <Building2 className="w-3 h-3" /> {group.tourCompanyAccountName}
-                        </span>
-                      )}
-                      {group.tourCompany && <span className="text-sm block">{group.tourCompany}</span>}
-                      {!group.tourCompanyAccountName && !group.tourCompany && <span className="text-sm text-muted-foreground/60">—</span>}
-                    </div>
-                  )}
-                </div>
+                <PartnerField
+                  label="Tour Company"
+                  isEditing={isEditing}
+                  accountId={getValue("tourCompanyId")}
+                  accountName={group.tourCompanyAccountName}
+                  manualName={getValue("tourCompany")}
+                  displayManualName={group.tourCompany}
+                  accountsList={accountsList}
+                  onAccountChange={v => setField("tourCompanyId", v === "none" ? null : v)}
+                  onManualChange={v => setField("tourCompany", v)}
+                />
+
                 {/* Pickup Driver */}
-                <div className="space-y-1.5">
-                  <p className="text-xs font-medium text-muted-foreground">Pickup Driver</p>
-                  {isEditing ? (
-                    <>
-                      <Select
-                        value={getValue("pickupDriverId") ?? "none"}
-                        onValueChange={v => setField("pickupDriverId", v === "none" ? null : v)}
-                      >
-                        <SelectTrigger className="h-8 text-sm border-(--e-orange)">
-                          <SelectValue placeholder="— Link account —" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-60 overflow-y-auto">
-                          <SelectItem value="none">— No account linked —</SelectItem>
-                          {accountsList.map((a: any) => (
-                            <SelectItem key={a.id} value={a.id}>{a.name}{a.city ? ` · ${a.city}` : ""}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input value={getValue("pickupDriver") ?? ""} onChange={e => setField("pickupDriver", e.target.value)}
-                        placeholder="Or enter name manually"
-                        className="h-8 text-sm border-dashed border-muted-foreground/40 focus-visible:ring-(--e-orange)" />
-                    </>
-                  ) : (
-                    <div className="space-y-0.5">
-                      {group.pickupDriverAccountName && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
-                          <Building2 className="w-3 h-3" /> {group.pickupDriverAccountName}
-                        </span>
-                      )}
-                      {group.pickupDriver && <span className="text-sm block">{group.pickupDriver}</span>}
-                      {!group.pickupDriverAccountName && !group.pickupDriver && <span className="text-sm text-muted-foreground/60">—</span>}
-                    </div>
-                  )}
-                </div>
+                <PartnerField
+                  label="Pickup Driver"
+                  isEditing={isEditing}
+                  accountId={getValue("pickupDriverId")}
+                  accountName={group.pickupDriverAccountName}
+                  manualName={getValue("pickupDriver")}
+                  displayManualName={group.pickupDriver}
+                  accountsList={accountsList}
+                  onAccountChange={v => setField("pickupDriverId", v === "none" ? null : v)}
+                  onManualChange={v => setField("pickupDriver", v)}
+                />
+
               </div>
             </DetailSection>
 
