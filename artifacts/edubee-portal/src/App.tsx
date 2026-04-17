@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { PortalLayout } from "@/components/portal-layout";
+import { useTenantTheme } from "@/hooks/use-tenant-theme";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 
@@ -216,14 +217,21 @@ function Router() {
   );
 }
 
+function ThemeLoader({ children }: { children: React.ReactNode }) {
+  useTenantTheme();
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
+          <ThemeLoader>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+          </ThemeLoader>
         </AuthProvider>
         <Toaster />
       </TooltipProvider>
