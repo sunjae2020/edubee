@@ -751,17 +751,21 @@ router.post("/crm/contracts/:id/generate-schedule", authenticate, async (req, re
   }
 });
 
-// ─── DELETE /api/crm/contracts/bulk  (super_admin 영구 삭제) ────────────────
+// ─── DELETE /api/crm/contracts/bulk  (super_admin 임시/영구 삭제) ────────────
 router.delete("/crm/contracts/bulk", authenticate, async (req, res) => {
   if ((req.user as any)?.role !== "super_admin") {
     return res.status(403).json({ error: "Forbidden" });
   }
   try {
-    const { ids } = req.body;
+    const { ids, soft } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ error: "ids array required" });
     }
     const idList = ids.map((id: string) => `'${id.replace(/'/g, "''")}'`).join(",");
+    if (soft) {
+      await db.execute(sql.raw(`UPDATE contracts SET status = 'cancelled' WHERE id IN (${idList})`));
+      return res.json({ success: true, updated: ids.length });
+    }
     await db.execute(sql.raw(`DELETE FROM contracts WHERE id IN (${idList})`));
     return res.json({ success: true, deleted: ids.length });
   } catch (err: any) {

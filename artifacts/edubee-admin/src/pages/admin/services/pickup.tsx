@@ -1,6 +1,6 @@
 import { formatDate } from "@/lib/date-format";
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { format, parseISO, isToday } from "date-fns";
@@ -8,6 +8,10 @@ import { Car, Clock, MapPin, User, ChevronRight, GraduationCap, Briefcase } from
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { TableFooter } from "@/components/ui/table-footer";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 15;
@@ -175,6 +179,20 @@ export default function PickupManagement() {
   const sorted = useSorted(rows, sortBy, sortDir);
   const total: number          = resp?.meta?.total ?? rows.length;
 
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sortedIds = sorted.map((r: PickupRow) => r.id);
+
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/services/pickup/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["pickup"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = hardDelMutation.isPending;
+
   function handleSourceChange(s: Source) {
     setSource(s);
     setPage(1);
@@ -198,10 +216,19 @@ export default function PickupManagement() {
 
       <TodayBanner rows={todayRows} onNavigate={id => navigate(`/admin/services/pickup/${id}`)} />
 
+      {isSA && selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          isLoading={bulkLoading}
+          onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+        />
+      )}
+
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full min-w-[820px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
+              {isSA && <th className="px-3 py-3 w-10"><input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" /></th>}
               <>
               <SortableTh key="Contract #" col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contract #</SortableTh>
               <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Client</SortableTh>
@@ -221,14 +248,14 @@ export default function PickupManagement() {
             {isLoading ? (
               [...Array(PAGE_SIZE)].map((_, i) => (
                 <tr key={i}>
-                  {[...Array(11)].map((_, j) => (
+                  {[...Array(isSA ? 12 : 11)].map((_, j) => (
                     <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                   ))}
                 </tr>
               ))
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={11} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                <td colSpan={isSA ? 12 : 11} className="px-4 py-16 text-center text-muted-foreground text-sm">
                   <Car className="w-8 h-8 mx-auto mb-3 opacity-30" />
                   No pickup records found
                 </td>
@@ -242,6 +269,7 @@ export default function PickupManagement() {
                   className={`hover:bg-(--e-orange-lt) transition-colors cursor-pointer ${todayFlag ? "bg-[#FEF9F5]" : ""}`}
                   onClick={() => navigate(`/admin/services/pickup/${row.id}`)}
                 >
+                  {isSA && <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => toggleSelect(row.id)} className="rounded border-stone-300" /></td>}
                   <td className="px-4 py-3 font-mono text-xs font-semibold text-(--e-orange)">
                     {row.contractNumber ?? row.contractId?.slice(0, 8) ?? "—"}
                   </td>

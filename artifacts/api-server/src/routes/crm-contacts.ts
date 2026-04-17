@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { contacts, accounts } from "@workspace/db/schema";
-import { eq, ilike, and, or, count, asc, desc, SQL } from "drizzle-orm";
+import { eq, ilike, and, or, count, asc, desc, SQL, inArray } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -304,6 +304,24 @@ router.patch("/crm/contacts/:id/profile-image", authenticate, requireRole(...ADM
     return res.json(updated);
   } catch (err) {
     console.error("[PATCH /api/crm/contacts/:id/profile-image]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── DELETE /api/crm/contacts/bulk  (super_admin 임시/영구 삭제) ──────────────
+router.delete("/crm/contacts/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids, soft } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (soft) {
+      await db.update(contacts).set({ status: "Deleted", modifiedOn: new Date() }).where(inArray(contacts.id, ids));
+      return res.json({ success: true, updated: ids.length });
+    }
+    await db.delete(contacts).where(inArray(contacts.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/crm/contacts/bulk]", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });

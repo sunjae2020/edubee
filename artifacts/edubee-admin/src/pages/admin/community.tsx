@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Pin, PlusCircle, Megaphone, Bell, HelpCircle, Globe, Lock, Users,
@@ -215,7 +219,7 @@ function PostModal({ post, onClose }: { post?: Post; onClose: () => void }) {
 }
 
 // ── Post Row ──────────────────────────────────────────────────────────────
-function PostRow({ post }: { post: Post }) {
+function PostRow({ post, isSA, isSelected, onToggle }: { post: Post; isSA?: boolean; isSelected?: boolean; onToggle?: () => void }) {
   const qc = useQueryClient();
   const [expanded,    setExpanded]    = useState(false);
   const [editing,     setEditing]     = useState(false);
@@ -262,6 +266,7 @@ function PostRow({ post }: { post: Post }) {
   return (
     <>
       <tr className="hover:bg-muted/30 transition-colors">
+        {isSA && <td className="px-3 py-3.5 w-10" onClick={e => e.stopPropagation()}><input type="checkbox" checked={isSelected} onChange={onToggle} className="rounded border-stone-300" /></td>}
         <td className="px-4 py-3.5">
           <div className="flex items-start gap-2">
             {post.isPinned && <Pin size={11} className="text-orange-500 mt-0.5 shrink-0" />}
@@ -424,6 +429,10 @@ export default function AdminCommunityPage() {
   const [typeFilter,   setTypeFilter]   = useState("all");
   const [visFilter,    setVisFilter]    = useState("all");
 
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-community", typeFilter, visFilter],
     queryFn:  () =>
@@ -431,6 +440,17 @@ export default function AdminCommunityPage() {
   });
 
   const posts = data ?? [];
+
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const postIds = posts.map((p: Post) => p.id);
+
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/community/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["admin-community"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = hardDelMutation.isPending;
 
   return (
     <div className="p-6 space-y-5">
@@ -501,9 +521,19 @@ export default function AdminCommunityPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
+            {isSA && selectedIds.size > 0 && (
+              <div className="p-3">
+                <BulkActionBar
+                  count={selectedIds.size}
+                  isLoading={bulkLoading}
+                  onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+                />
+              </div>
+            )}
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
+                  {isSA && <th className="px-3 py-3 w-10"><input type="checkbox" checked={isAllSelected(postIds)} onChange={() => toggleAll(postIds)} className="rounded border-stone-300" /></th>}
                   {["Post", "Type", "Visibility", "Audience", "Author", "Replies", "Date", "Actions"].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       {h}
@@ -512,7 +542,15 @@ export default function AdminCommunityPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {posts.map(p => <PostRow key={p.id} post={p} />)}
+                {posts.map((p: Post) => (
+                  <PostRow
+                    key={p.id}
+                    post={p}
+                    isSA={isSA}
+                    isSelected={selectedIds.has(p.id)}
+                    onToggle={() => toggleSelect(p.id)}
+                  />
+                ))}
               </tbody>
             </table>
           </div>

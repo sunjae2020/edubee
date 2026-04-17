@@ -7,11 +7,13 @@ import {
   Search, Plus, Download, ChevronDown,
   Tent, GraduationCap, Plane, Building2, Briefcase,
   Shield, Stamp, Car, Globe, Bus, FileDown,
-  Trash2, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -251,6 +253,8 @@ export default function AllApplicationsPage() {
   const { user } = useAuth();
   const isSA = user?.role === "super_admin";
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
 
   const [tab,        setTab]        = useState("all");
   const [status,     setStatus]     = useState("all");
@@ -259,27 +263,27 @@ export default function AllApplicationsPage() {
   const [page,       setPage]       = useState(1);
   const pageSize = 20;
 
-  // Bulk selection
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const softDelMutation = useMutation({
+    mutationFn: (ids: string[]) =>
+      axios.delete(`${BASE}/api/applications/bulk`, { data: { ids, soft: true } }),
+    onSuccess: () => {
+      clearSelection();
+      queryClient.invalidateQueries({ queryKey: ["all-applications"] });
+      toast({ title: "지원서를 휴지통으로 이동했습니다." });
+    },
+  });
 
-  function toggleSelect(id: string) {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
-
-  const deleteMutation = useMutation({
+  const hardDelMutation = useMutation({
     mutationFn: (ids: string[]) =>
       axios.delete(`${BASE}/api/applications/bulk`, { data: { ids } }),
     onSuccess: () => {
-      setSelectedIds(new Set());
-      setConfirmDelete(false);
+      clearSelection();
       queryClient.invalidateQueries({ queryKey: ["all-applications"] });
+      toast({ title: "지원서를 영구 삭제했습니다." });
     },
   });
+
+  const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
 
   const queryKey = ["all-applications", { tab, status, search, page, pageSize }];
   const { data, isLoading } = useQuery({
@@ -326,18 +330,6 @@ export default function AllApplicationsPage() {
             <p className="text-sm text-muted-foreground mt-0.5">Manage all camp and service applications</p>
           </div>
           <div className="flex items-center gap-2">
-            {isSA && selectedIds.size > 0 && (
-              <>
-                <span className="text-sm text-muted-foreground">{selectedIds.size}개 선택됨</span>
-                <Button
-                  onClick={() => setConfirmDelete(true)}
-                  className="flex items-center gap-1.5 bg-[#DC2626] hover:bg-[#B91C1C] text-white h-8 px-3 text-sm"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  영구 삭제 ({selectedIds.size})
-                </Button>
-              </>
-            )}
             <Button variant="outline" size="sm" className="gap-1.5">
               <Download className="w-4 h-4" /> Export
             </Button>
@@ -393,35 +385,14 @@ export default function AllApplicationsPage() {
         </div>
       </div>
 
-      {/* Confirm Delete Dialog */}
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-[#FEF2F2] flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-[#DC2626]" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-[#1C1917]">영구 삭제 확인</h3>
-                <p className="text-sm text-[#57534E]">{selectedIds.size}개 지원서를 영구 삭제합니다</p>
-              </div>
-            </div>
-            <p className="text-sm text-[#57534E] mb-5">
-              선택한 지원서와 관련 데이터가 <strong>영구적으로 삭제</strong>되며 복구할 수 없습니다.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setConfirmDelete(false)} disabled={deleteMutation.isPending}>
-                취소
-              </Button>
-              <Button
-                onClick={() => deleteMutation.mutate([...selectedIds])}
-                disabled={deleteMutation.isPending}
-                className="bg-[#DC2626] hover:bg-[#B91C1C] text-white"
-              >
-                {deleteMutation.isPending ? "삭제 중…" : "영구 삭제"}
-              </Button>
-            </div>
-          </div>
+      {isSA && selectedIds.size > 0 && (
+        <div className="px-6 py-2">
+          <BulkActionBar
+            count={selectedIds.size}
+            isLoading={bulkLoading}
+            onSoftDelete={() => softDelMutation.mutate(Array.from(selectedIds))}
+            onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+          />
         </div>
       )}
 
@@ -432,15 +403,9 @@ export default function AllApplicationsPage() {
             <tr className="border-b border-[var(--e-border)]">
               {isSA && (
                 <th className="px-4 py-3 w-8">
-                  <input type="checkbox" className="rounded"
-                    checked={rows.length > 0 && selectedIds.size === rows.length}
-                    onChange={() => {
-                      if (selectedIds.size === rows.length) {
-                        setSelectedIds(new Set());
-                      } else {
-                        setSelectedIds(new Set(rows.map(r => r.id)));
-                      }
-                    }} />
+                  <input type="checkbox" className="rounded border-stone-300"
+                    checked={isAllSelected(rows.map(r => r.id))}
+                    onChange={() => toggleAll(rows.map(r => r.id))} />
                 </th>
               )}
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap min-w-[200px]">Ref No.</th>

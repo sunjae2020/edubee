@@ -3,6 +3,8 @@ import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,6 +140,17 @@ export default function TourManagement() {
     onError: () => toast({ title: "Save failed", variant: "destructive" }),
   });
 
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sortedIds = sorted.map((r: Rec) => r.id);
+
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/services/tour/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["services-tour"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = hardDelMutation.isPending;
+
   const fld = (k: keyof Rec) => (v: string) => setForm(f => ({ ...f, [k]: v }));
 
   return (
@@ -148,10 +161,19 @@ export default function TourManagement() {
         total={total} addLabel="Add Record" onAdd={() => toast({ title: "Coming soon" })}
       />
 
+      {isSA && selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          isLoading={bulkLoading}
+          onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+        />
+      )}
+
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full min-w-[820px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
+              {isSA && <th className="px-3 py-3 w-10"><input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" /></th>}
               <>
               <SortableTh key="Contract #" col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contract #</SortableTh>
               <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Client</SortableTh>
@@ -169,14 +191,15 @@ export default function TourManagement() {
           <tbody className="divide-y divide-border">
             {isLoading ? (
               [...Array(PAGE_SIZE)].map((_, i) => (
-                <tr key={i}>{[...Array(10)].map((_, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>)}</tr>
+                <tr key={i}>{[...Array(isSA ? 11 : 10)].map((_, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>)}</tr>
               ))
             ) : rows.length === 0 ? (
-              <tr><td colSpan={10} className="px-4 py-16 text-center text-muted-foreground text-sm">
+              <tr><td colSpan={isSA ? 11 : 10} className="px-4 py-16 text-center text-muted-foreground text-sm">
                 <MapIcon className="w-8 h-8 mx-auto mb-3 opacity-30" />No tour records found
               </td></tr>
             ) : sorted.map(r => (
               <tr key={r.id} className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer" onClick={() => navigate(`/admin/services/tour/${r.id}`)}>
+                {isSA && <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} className="rounded border-stone-300" /></td>}
                 <td className="px-4 py-3 font-mono text-xs font-semibold text-(--e-orange)">{r.contractNumber ?? r.contractId?.slice(0, 8) ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{r.clientName ?? r.studentName ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.tourName ?? "—"}</td>

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, runWithTenantSchema } from "@workspace/db";
 import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts, packageGroupImages, organisations, applicationGrade, applicationParticipants } from "@workspace/db/schema";
-import { eq, and, count, asc, SQL, ilike, desc, sql, or } from "drizzle-orm";
+import { eq, and, count, asc, SQL, ilike, desc, sql, or, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -1324,6 +1324,42 @@ router.get("/interview-settings/:packageGroupId", authenticate, async (req, res)
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ─── DELETE /api/package-groups/bulk  (super_admin 임시/영구 삭제) ────────────
+router.delete("/package-groups/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids, soft } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (soft) {
+      await db.update(packageGroups).set({ status: "archived" }).where(inArray(packageGroups.id, ids));
+      return res.json({ success: true, updated: ids.length });
+    }
+    await db.delete(packageGroups).where(inArray(packageGroups.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/package-groups/bulk]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── DELETE /api/packages/bulk  (super_admin 임시/영구 삭제) ─────────────────
+router.delete("/packages/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids, soft } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (soft) {
+      await db.update(packages).set({ status: "archived" }).where(inArray(packages.id, ids));
+      return res.json({ success: true, updated: ids.length });
+    }
+    await db.delete(packages).where(inArray(packages.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/packages/bulk]", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

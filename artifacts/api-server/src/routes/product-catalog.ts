@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { productGroups, productTypes, promotions, commissions } from "@workspace/db/schema";
 import { products } from "@workspace/db/schema";
 import { accounts } from "@workspace/db/schema";
-import { eq, ilike, and, count, SQL, gte, lte } from "drizzle-orm";
+import { eq, ilike, and, count, SQL, gte, lte, inArray } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -394,6 +394,78 @@ router.delete("/commissions/:id", authenticate, requireRole(...ADMIN_ROLES), asy
   } catch (err) {
     console.error("[DELETE /commissions/:id]", err);
     res.status(500).json({ error: "Failed to deactivate commission" });
+  }
+});
+
+// ─── DELETE /api/product-groups/bulk  (super_admin 임시/영구 삭제) ────────────
+router.delete("/product-groups/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids, soft } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (soft) {
+      await db.update(productGroups).set({ status: "Inactive" }).where(inArray(productGroups.id, ids));
+      return res.json({ success: true, updated: ids.length });
+    }
+    await db.delete(productGroups).where(inArray(productGroups.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/product-groups/bulk]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── DELETE /api/product-types/bulk  (super_admin 임시/영구 삭제) ────────────
+router.delete("/product-types/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids, soft } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (soft) {
+      await db.update(productTypes).set({ status: "Inactive" }).where(inArray(productTypes.id, ids));
+      return res.json({ success: true, updated: ids.length });
+    }
+    await db.delete(productTypes).where(inArray(productTypes.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/product-types/bulk]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── DELETE /api/promotions/bulk  (super_admin 임시/영구 삭제) ───────────────
+router.delete("/promotions/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids, soft } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (soft) {
+      await db.update(promotions).set({ status: "Inactive" }).where(inArray(promotions.id, ids));
+      return res.json({ success: true, updated: ids.length });
+    }
+    await db.delete(promotions).where(inArray(promotions.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/promotions/bulk]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── DELETE /api/commissions/bulk  (super_admin 임시/영구 삭제) ──────────────
+router.delete("/commissions/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids, soft } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (soft) {
+      await db.update(commissions).set({ status: "Inactive" }).where(inArray(commissions.id, ids));
+      return res.json({ success: true, updated: ids.length });
+    }
+    await db.delete(commissions).where(inArray(commissions.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/commissions/bulk]", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

@@ -3,7 +3,7 @@ import { db, runWithTenantSchema } from "@workspace/db";
 import { campApplications, applicationParticipants, applications } from "@workspace/db/schema";
 import { contacts, leads, contracts, quotes, quote_products, accounts, account_contacts } from "@workspace/db/schema";
 import { packageProducts, products, packageGroups, packages as pkgsTable } from "@workspace/db/schema";
-import { eq, ilike, or, count, and, desc, SQL, sql } from "drizzle-orm";
+import { eq, ilike, or, count, and, desc, SQL, sql, inArray } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { generateCampApplicationPdf, CampAppEmailData, fetchTermsForPackageGroup } from "../services/campApplicationEmailService.js";
@@ -691,6 +691,24 @@ router.post("/camp-applications/:id/convert-to-contract", authenticate, requireR
   } catch (err: any) {
     console.error("[POST /api/camp-applications/:id/convert-to-contract]", err);
     return res.status(500).json({ error: "Failed to convert to contract", detail: err.message });
+  }
+});
+
+// ─── DELETE /api/camp-applications/bulk  (super_admin 임시/영구 삭제) ─────────
+router.delete("/camp-applications/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids, soft } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (soft) {
+      await db.update(campApplications).set({ applicationStatus: "cancelled", updatedAt: new Date() }).where(inArray(campApplications.id, ids));
+      return res.json({ success: true, updated: ids.length });
+    }
+    await db.delete(campApplications).where(inArray(campApplications.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/camp-applications/bulk]", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

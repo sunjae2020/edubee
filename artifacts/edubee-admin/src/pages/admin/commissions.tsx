@@ -13,6 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { BadgeDollarSign, Plus, Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { useAuth } from "@/hooks/use-auth";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -118,6 +121,24 @@ export default function Commissions() {
     onError: () => toast({ variant: "destructive", title: "Failed to deactivate" }),
   });
 
+  const { user } = useAuth();
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sorted2 = useSorted(commissions, sortBy, sortDir);
+  const sortedIds = sorted2.map(r => r.id);
+
+  const softDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/commissions/bulk`, { data: { ids, soft: true } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["commissions"] }); clearSelection(); toast({ title: `${ids.length}개 임시 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/commissions/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["commissions"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -154,11 +175,21 @@ export default function Commissions() {
         </Select>
       </div>
 
+      {isSA && selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          isLoading={bulkLoading}
+          onSoftDelete={() => softDelMutation.mutate(Array.from(selectedIds))}
+          onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+        />
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-x-auto shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#F4F3F1] bg-[#FAFAF9]">
+              {isSA && <th className="px-3 py-3 w-10"><input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" /></th>}
               <>
               <SortableTh key="Name" col="name" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Name</SortableTh>
               <SortableTh key="Type" col="commissionType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Type</SortableTh>
@@ -173,18 +204,19 @@ export default function Commissions() {
           <tbody className="divide-y divide-[#F4F3F1]">
             {isLoading ? (
               [...Array(5)].map((_, i) => (
-                <tr key={i}>{[...Array(7)].map((_, j) => (
+                <tr key={i}>{[...Array(isSA ? 8 : 7)].map((_, j) => (
                   <td key={j} className="px-4 py-3"><div className="h-4 bg-[#F4F3F1] rounded animate-pulse" /></td>
                 ))}</tr>
               ))
             ) : commissions.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No commissions found</td></tr>
+              <tr><td colSpan={isSA ? 8 : 7} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No commissions found</td></tr>
             ) : commissions.map(c => (
               <tr
                 key={c.id}
                 className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors"
                 onClick={() => navigate(`/admin/commissions/${c.id}`)}
               >
+                {isSA && <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)} className="rounded border-stone-300" /></td>}
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <div className="flex items-center gap-2">
                     <BadgeDollarSign className="w-4 h-4 text-(--e-orange) shrink-0" strokeWidth={1.5} />

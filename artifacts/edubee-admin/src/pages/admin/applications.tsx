@@ -11,6 +11,9 @@ import { ChevronRight, FileSpreadsheet, Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { useAuth } from "@/hooks/use-auth";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
@@ -102,6 +105,23 @@ export default function Applications() {
   const apps: any[] = resp?.data ?? [];
   const total: number = resp?.meta?.total ?? 0;
 
+  const { user } = useAuth();
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sortedIds = apps.map(r => r.id);
+
+  const softDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/applications/bulk`, { data: { ids, soft: true } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["applications"] }); clearSelection(); toast({ title: `${ids.length}개 임시 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/applications/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["applications"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
+
   return (
     <div className="space-y-5">
       {/* ── KPI Cards ── */}
@@ -156,11 +176,21 @@ export default function Applications() {
         csvExportTable="applications"
       />
 
+      {isSA && selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          isLoading={bulkLoading}
+          onSoftDelete={() => softDelMutation.mutate(Array.from(selectedIds))}
+          onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+        />
+      )}
+
       {/* ── Table ── */}
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
+              {isSA && <th className="px-3 py-3 w-10"><input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" /></th>}
               <>
               <SortableTh key="Ref #" col="refNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ref #</SortableTh>
               <SortableTh key="Applicant" col="applicantName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Applicant</SortableTh>
@@ -174,13 +204,13 @@ export default function Applications() {
           <tbody className="divide-y divide-border">
             {isLoading ? (
               [...Array(PAGE_SIZE)].map((_, i) => (
-                <tr key={i}>{[...Array(6)].map((_, j) => (
+                <tr key={i}>{[...Array(isSA ? 7 : 6)].map((_, j) => (
                   <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                 ))}</tr>
               ))
             ) : apps.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                <td colSpan={isSA ? 7 : 6} className="px-4 py-16 text-center text-muted-foreground text-sm">
                   <FileSpreadsheet className="w-8 h-8 mx-auto mb-3 opacity-20" />
                   No applications found
                 </td>
@@ -192,6 +222,7 @@ export default function Applications() {
                   className="hover:bg-(--e-orange-lt) transition-colors cursor-pointer"
                   onClick={() => setLocation(`/admin/applications/${app.id}`)}
                 >
+                  {isSA && <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(app.id)} onChange={() => toggleSelect(app.id)} className="rounded border-stone-300" /></td>}
                   <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">{app.applicationNumber}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-foreground">

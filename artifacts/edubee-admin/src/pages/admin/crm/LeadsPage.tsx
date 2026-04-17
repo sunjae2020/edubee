@@ -3,6 +3,9 @@ import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
+import { useAuth } from "@/hooks/use-auth";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 import { Plus, Search, LayoutGrid, List, Pencil, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -250,6 +253,23 @@ export default function CrmLeadsPage() {
     saveMutation.mutate(form);
   }
 
+  const { user } = useAuth();
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sortedIds = sorted.map(r => r.id);
+
+  const softDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/leads/bulk`, { data: { ids, soft: true } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-leads-table"] }); clearSelection(); toast({ title: `${ids.length}개 임시 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/leads/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-leads-table"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between">
@@ -325,10 +345,24 @@ export default function CrmLeadsPage() {
             </div>
           </div>
 
+          {isSA && selectedIds.size > 0 && (
+            <BulkActionBar
+              count={selectedIds.size}
+              isLoading={bulkLoading}
+              onSoftDelete={() => softDelMutation.mutate(Array.from(selectedIds))}
+              onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+            />
+          )}
+
           <div className="rounded-xl border border-stone-200 overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
+                  {isSA && (
+                    <th className="px-3 py-3 w-10">
+                      <input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" />
+                    </th>
+                  )}
                   <SortableTh col="leadRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Lead Ref</SortableTh>
                   <SortableTh col="contactName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
                   <SortableTh col="inquiryType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Inquiry Type</SortableTh>
@@ -341,13 +375,18 @@ export default function CrmLeadsPage() {
               </thead>
               <tbody>
                 {tableLoading && (
-                  <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+                  <tr><td colSpan={isSA ? 9 : 8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
                 )}
                 {!tableLoading && rows.length === 0 && (
-                  <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No leads found</td></tr>
+                  <tr><td colSpan={isSA ? 9 : 8} className="text-center py-12 text-stone-400 text-sm">No leads found</td></tr>
                 )}
                 {sorted.map(l => (
                   <tr key={l.id} className="border-b last:border-0 hover:bg-(--e-orange-lt) transition-colors cursor-pointer">
+                    {isSA && (
+                      <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}>
+                        <input type="checkbox" checked={selectedIds.has(l.id)} onChange={() => toggleSelect(l.id)} className="rounded border-stone-300" />
+                      </td>
+                    )}
                     <td className="px-4 py-3 font-mono text-xs text-stone-500">{l.leadRefNumber ?? "—"}</td>
                     <td className="px-4 py-3">
                       <button onClick={() => navigate(`/admin/crm/leads/${l.id}`)} className="text-left w-full">

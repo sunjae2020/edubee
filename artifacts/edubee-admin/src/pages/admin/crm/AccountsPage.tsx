@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { formatDate, formatDateTime } from "@/lib/date-format";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
+import { useAuth } from "@/hooks/use-auth";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 import { buildFullName } from "@/lib/nameUtils";
 import { Plus, Search, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { TableFooter } from "@/components/ui/table-footer";
 import { useLookup } from "@/hooks/use-lookup";
+import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 20;
@@ -97,7 +101,26 @@ export default function AccountsPage() {
   const sorted = useSorted(rows, sortBy, sortDir);
   const total: number   = data?.total ?? 0;
 
-  const COLS = 6;
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sortedIds = sorted.map(r => r.id);
+
+  const softDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/accounts/bulk`, { data: { ids, soft: true } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-accounts"] }); clearSelection(); toast({ title: `${ids.length}개 임시 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/accounts/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-accounts"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
+
+  const COLS = isSA ? 7 : 6;
 
   return (
     <div className="space-y-4">
@@ -148,11 +171,25 @@ export default function AccountsPage() {
         </Select>
       </div>
 
+      {isSA && selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          isLoading={bulkLoading}
+          onSoftDelete={() => softDelMutation.mutate(Array.from(selectedIds))}
+          onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+        />
+      )}
+
       {/* ── Table ── */}
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/30">
+              {isSA && (
+                <th className="px-3 py-2.5 w-10">
+                  <input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" />
+                </th>
+              )}
               <SortableTh col="name" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Name</SortableTh>
               <SortableTh col="accountType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</SortableTh>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Original Name</th>
@@ -198,6 +235,11 @@ export default function AccountsPage() {
                   <tr key={row.id}
                     className="border-b last:border-0 hover:bg-(--e-orange-lt) transition-colors cursor-pointer"
                     onClick={() => navigate(`/admin/crm/accounts/${row.id}`)}>
+                    {isSA && (
+                      <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}>
+                        <input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => toggleSelect(row.id)} className="rounded border-stone-300" />
+                      </td>
+                    )}
                     <td className="px-4 py-3 font-medium text-[#1C1917]">
                       <div className="flex items-center gap-2.5">
                         {listImgSrc ? (

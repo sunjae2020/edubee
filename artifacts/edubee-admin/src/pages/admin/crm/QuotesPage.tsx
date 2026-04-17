@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import { formatDate, formatDateTime } from "@/lib/date-format";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
+import { useAuth } from "@/hooks/use-auth";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 import { Plus, FileText, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { useToast } from "@/hooks/use-toast";
 import { ClientNameCell } from "@/components/common/ClientNameCell";
 import { nameFromAccount } from "@/lib/nameUtils";
 import { TableFooter } from "@/components/ui/table-footer";
@@ -96,6 +100,25 @@ export default function QuotesPage() {
   const sorted = useSorted(rows, sortBy, sortDir);
   const total = resp?.meta?.total ?? 0;
 
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sortedIds = sorted.map(r => r.id);
+
+  const softDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/quotes/bulk`, { data: { ids, soft: true } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-quotes"] }); clearSelection(); toast({ title: `${ids.length}개 임시 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/quotes/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-quotes"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between">
@@ -162,10 +185,24 @@ export default function QuotesPage() {
         </Select>
       </div>
 
+      {isSA && selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          isLoading={bulkLoading}
+          onSoftDelete={() => softDelMutation.mutate(Array.from(selectedIds))}
+          onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+        />
+      )}
+
       <div className="rounded-xl border border-stone-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
+              {isSA && (
+                <th className="px-3 py-3 w-10">
+                  <input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" />
+                </th>
+              )}
               <SortableTh col="quoteRef" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Quote Ref</SortableTh>
               <SortableTh col="customerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Items</th>
@@ -178,13 +215,18 @@ export default function QuotesPage() {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={isSA ? 9 : 8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No quotes found</td></tr>
+              <tr><td colSpan={isSA ? 9 : 8} className="text-center py-12 text-stone-400 text-sm">No quotes found</td></tr>
             )}
             {sorted.map(q => (
               <tr key={q.id} className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors">
+                {isSA && (
+                  <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}>
+                    <input type="checkbox" checked={selectedIds.has(q.id)} onChange={() => toggleSelect(q.id)} className="rounded border-stone-300" />
+                  </td>
+                )}
                 <td className="px-4 py-3 font-mono text-xs text-stone-500">{q.quoteRefNumber ?? "—"}</td>
                 <td className="px-4 py-3">
                   <button onClick={() => navigate(`/admin/crm/quotes/${q.id}`)} className="text-left w-full">

@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 import {
   FolderOpen, Search, Eye, Download, Trash2, FileText, FileImage,
   File, Loader2, ExternalLink, X, HistoryIcon,
@@ -142,6 +144,22 @@ export default function DocumentsPage() {
   const sorted = useSorted(docs, sortBy, sortDir);
   const total = data?.meta?.total ?? docs.length;
 
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sortedIds = sorted.map((r: any) => r.id);
+
+  const softDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/documents/bulk`, { data: { ids, soft: true } }).then(r => r.data),
+    onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["documents"] }); clearSelection(); toast({ title: `${ids.length}개 임시 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/documents/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["documents"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
+
   const isAdmin = ["super_admin", "admin"].includes(user?.role ?? "");
   if (!isAdmin) {
     return (
@@ -216,6 +234,15 @@ export default function DocumentsPage() {
         )}
       </div>
 
+      {isSA && selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          isLoading={bulkLoading}
+          onSoftDelete={() => softDelMutation.mutate(Array.from(selectedIds))}
+          onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+        />
+      )}
+
       {/* Table */}
       <div className="rounded-xl border bg-white overflow-hidden">
         {isLoading ? (
@@ -232,6 +259,7 @@ export default function DocumentsPage() {
             <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr className="border-b bg-muted/30">
+                  {isSA && <th className="px-3 py-2.5 w-10"><input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" /></th>}
                   <SortableTh col="filename" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[220px]">Document</SortableTh>
                   <SortableTh col="entityType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[120px]">Entity</SortableTh>
                   <SortableTh col="category" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase min-w-[100px]">Category</SortableTh>
@@ -245,6 +273,7 @@ export default function DocumentsPage() {
               <tbody>
                 {sorted.map((doc: any) => (
                   <tr key={doc.id} className="border-t hover:bg-(--e-orange-lt) transition-colors cursor-pointer">
+                    {isSA && <td className="px-3 py-2.5 w-10" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(doc.id)} onChange={() => toggleSelect(doc.id)} className="rounded border-stone-300" /></td>}
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
                         <DocFileIcon ext={doc.fileExtension} />

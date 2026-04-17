@@ -77,6 +77,24 @@ router.put("/leads/:id", authenticate, async (req, res) => {
   }
 });
 
+// ─── DELETE /api/leads/bulk  (super_admin 임시/영구 삭제) ────────────────────
+router.delete("/leads/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids, soft } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (soft) {
+      await db.update(leads).set({ status: "deleted", updatedAt: new Date() }).where(inArray(leads.id, ids));
+      return res.json({ success: true, updated: ids.length });
+    }
+    await db.delete(leads).where(inArray(leads.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/leads/bulk]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.delete("/leads/:id", authenticate, async (req, res) => {
   try {
     await db.delete(leads).where(eq(leads.id, req.params.id));
@@ -477,12 +495,16 @@ router.patch("/applications/:id/toggle-active", authenticate, requireRole("super
   }
 });
 
-// ─── DELETE /api/applications/bulk  (super_admin 영구 삭제) ──────────────────
+// ─── DELETE /api/applications/bulk  (super_admin 임시/영구 삭제) ─────────────
 router.delete("/applications/bulk", authenticate, requireRole("super_admin"), async (req, res) => {
   try {
-    const { ids } = req.body;
+    const { ids, soft } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ error: "ids array required" });
+    }
+    if (soft) {
+      await db.update(applications).set({ applicationStatus: "cancelled", updatedAt: new Date() }).where(inArray(applications.id, ids));
+      return res.json({ success: true, updated: ids.length });
     }
     await db.delete(applications).where(inArray(applications.id, ids));
     return res.json({ success: true, deleted: ids.length });

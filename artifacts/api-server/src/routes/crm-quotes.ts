@@ -7,7 +7,7 @@ import {
   tourMgt, accounts, leads,
   visaServicesMgt, campTourMgt, otherServicesMgt,
 } from "@workspace/db/schema";
-import { eq, and, count, sql, SQL, or, ilike, asc, desc } from "drizzle-orm";
+import { eq, and, count, sql, SQL, or, ilike, asc, desc, inArray } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { sendMail } from "../mailer.js";
@@ -660,6 +660,24 @@ router.post("/crm/quotes/:id/send-email", authenticate, requireRole(...ADMIN_ROL
   } catch (err) {
     console.error("[POST /api/crm/quotes/:id/send-email]", err);
     return res.status(500).json({ error: String(err) });
+  }
+});
+
+// ─── DELETE /api/crm/quotes/bulk  (super_admin 임시/영구 삭제) ────────────────
+router.delete("/crm/quotes/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids, soft } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (soft) {
+      await db.update(quotes).set({ quoteStatus: "Cancelled", modifiedOn: new Date() }).where(inArray(quotes.id, ids));
+      return res.json({ success: true, updated: ids.length });
+    }
+    await db.delete(quotes).where(inArray(quotes.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/crm/quotes/bulk]", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

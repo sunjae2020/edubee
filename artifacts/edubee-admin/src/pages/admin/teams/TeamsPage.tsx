@@ -12,6 +12,8 @@ import { useLocation } from "wouter";
 import { Users, Plus, ChevronRight, Loader2, Trash2, Search } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ListPagination } from "@/components/ui/list-pagination";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -89,6 +91,17 @@ export default function TeamsPage() {
   const teams:      Team[] = data?.data       ?? [];
   const total:      number = data?.total      ?? 0;
   const totalPages: number = data?.totalPages ?? 1;
+
+  const isSA = currentUser?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sortedIds = teams.map(r => r.id);
+
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/teams/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["teams"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = hardDelMutation.isPending;
 
   const handleSearch = useCallback(() => { setSearch(searchInput); setPage(1); }, [searchInput]);
   const handleTypeChange   = (v: string) => { setTypeFilter(v);   setPage(1); };
@@ -183,11 +196,22 @@ export default function TeamsPage() {
         </div>
       </div>
 
+      {isSA && selectedIds.size > 0 && (
+        <div className="px-6 pb-2">
+          <BulkActionBar
+            count={selectedIds.size}
+            isLoading={bulkLoading}
+            onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+          />
+        </div>
+      )}
+
       {/* ── Table ──────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-auto">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10">
             <tr className="border-b border-[var(--e-border)] bg-[var(--e-bg-page)]">
+              {isSA && <th className="px-3 py-3 w-10"><input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" /></th>}
               <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Team</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Team Lead</th>
@@ -200,14 +224,14 @@ export default function TeamsPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={isAdmin ? 7 : 6} className="text-center py-12 text-muted-foreground text-sm">
+                <td colSpan={isSA ? 8 : isAdmin ? 7 : 6} className="text-center py-12 text-muted-foreground text-sm">
                   <Loader2 className="w-5 h-5 animate-spin mx-auto text-(--e-orange)" />
                 </td>
               </tr>
             )}
             {!isLoading && teams.length === 0 && (
               <tr>
-                <td colSpan={isAdmin ? 7 : 6} className="text-center py-16 text-muted-foreground text-sm">
+                <td colSpan={isSA ? 8 : isAdmin ? 7 : 6} className="text-center py-16 text-muted-foreground text-sm">
                   <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
                   No teams found
                 </td>
@@ -221,6 +245,7 @@ export default function TeamsPage() {
                   i % 2 === 0 ? "bg-white" : "bg-[#FAFAF9]"
                 }`}
               >
+                {isSA && <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(team.id)} onChange={() => toggleSelect(team.id)} className="rounded border-stone-300" /></td>}
                 {/* Team name + colour badge + description */}
                 <td className="px-6 py-3">
                   <div className="flex items-center gap-3">

@@ -14,6 +14,9 @@ import { Layers, Pencil, Plus, Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { ListPagination } from "@/components/ui/list-pagination";
+import { useAuth } from "@/hooks/use-auth";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const PAGE_SIZE = 10;
@@ -94,6 +97,23 @@ export default function ProductGroups() {
     onError: () => toast({ variant: "destructive", title: "Failed to deactivate" }),
   });
 
+  const { user } = useAuth();
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sortedIds = sorted.map(r => r.id);
+
+  const softDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/product-groups/bulk`, { data: { ids, soft: true } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["product-groups"] }); clearSelection(); toast({ title: `${ids.length}개 임시 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/product-groups/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["product-groups"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -128,11 +148,21 @@ export default function ProductGroups() {
         </Select>
       </div>
 
+      {isSA && selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          isLoading={bulkLoading}
+          onSoftDelete={() => softDelMutation.mutate(Array.from(selectedIds))}
+          onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+        />
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-x-auto shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#F4F3F1] bg-[#FAFAF9]">
+              {isSA && <th className="px-3 py-3 w-10"><input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" /></th>}
               <>
               <SortableTh key="Name" col="name" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Name</SortableTh>
               <SortableTh key="Description" col="description" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-medium text-[#57534E] uppercase tracking-wide">Description</SortableTh>
@@ -146,14 +176,15 @@ export default function ProductGroups() {
           <tbody className="divide-y divide-[#F4F3F1]">
             {isLoading ? (
               [...Array(5)].map((_, i) => (
-                <tr key={i}>{[...Array(6)].map((_, j) => (
+                <tr key={i}>{[...Array(isSA ? 7 : 6)].map((_, j) => (
                   <td key={j} className="px-4 py-3"><div className="h-4 bg-[#F4F3F1] rounded animate-pulse" /></td>
                 ))}</tr>
               ))
             ) : sorted.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No product groups found</td></tr>
+              <tr><td colSpan={isSA ? 7 : 6} className="px-4 py-16 text-center text-[#A8A29E] text-sm">No product groups found</td></tr>
             ) : paged.map(g => (
               <tr key={g.id} className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors">
+                {isSA && <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(g.id)} onChange={() => toggleSelect(g.id)} className="rounded border-stone-300" /></td>}
                 <td className="px-4 py-3 font-medium text-[#1C1917]">
                   <button
                     onClick={() => navigate(`/admin/product-groups/${g.id}`)}

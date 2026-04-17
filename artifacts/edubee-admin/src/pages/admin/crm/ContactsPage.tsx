@@ -4,6 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import { Plus, Search, Pencil, Eye } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -188,6 +191,23 @@ export default function ContactsPage() {
     saveMutation.mutate(form);
   }
 
+  const { user } = useAuth();
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+
+  const softDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/contacts/bulk`, { data: { ids, soft: true } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-contacts"] }); clearSelection(); toast({ title: `${ids.length}개 임시 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/contacts/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-contacts"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
+  const sortedIds = sorted.map(r => r.id);
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between">
@@ -237,10 +257,24 @@ export default function ContactsPage() {
         </Select>
       </div>
 
+      {isSA && selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          isLoading={bulkLoading}
+          onSoftDelete={() => softDelMutation.mutate(Array.from(selectedIds))}
+          onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+        />
+      )}
+
       <div className="rounded-xl border border-stone-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
+              {isSA && (
+                <th className="px-3 py-3 w-10">
+                  <input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" />
+                </th>
+              )}
               <SortableTh col="fullName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Full Name</SortableTh>
               <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Original Name</th>
               <SortableTh col="nationality" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Nationality</SortableTh>
@@ -253,10 +287,10 @@ export default function ContactsPage() {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={isSA ? 9 : 8} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={8} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
+              <tr><td colSpan={isSA ? 9 : 8} className="text-center py-12 text-stone-400 text-sm">No contacts found</td></tr>
             )}
             {sorted.map(c => {
               const displayName = c.fullName || `${c.firstName} ${c.lastName}`.trim();
@@ -265,6 +299,11 @@ export default function ContactsPage() {
               const imgSrc = c.profileImageUrl || null;
               return (
                 <tr key={c.id} className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors">
+                  {isSA && (
+                    <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}>
+                      <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)} className="rounded border-stone-300" />
+                    </td>
+                  )}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       {imgSrc ? (

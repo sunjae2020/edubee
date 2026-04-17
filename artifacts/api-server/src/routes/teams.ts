@@ -208,4 +208,18 @@ router.patch("/teams/:id/members", authenticate, requireRole(...ADMIN_ROLES), as
   }
 });
 
+// ─── DELETE /api/teams/bulk  (super_admin only) ──────────────────────────────
+router.delete("/teams/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    await db.delete(teams).where(inArray(teams.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/teams/bulk]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

@@ -3,6 +3,10 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -85,6 +89,19 @@ export default function OtherServicePage() {
     },
   });
 
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const isSA = user?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sortedIds = sorted.map((r: OtherServiceRow) => r.id);
+
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/services/other/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["other-services"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = hardDelMutation.isPending;
+
   return (
     <div className="p-6 space-y-5">
       {/* Header */}
@@ -125,11 +142,20 @@ export default function OtherServicePage() {
         </select>
       </div>
 
+      {isSA && selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          isLoading={bulkLoading}
+          onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+        />
+      )}
+
       {/* Table */}
       <div className="bg-white border border-stone-200 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
+              {isSA && <th className="px-3 py-3 w-10"><input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" /></th>}
               <>
               <SortableTh key="Contract" col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Contract</SortableTh>
               <SortableTh key="Client" col="clientName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Client</SortableTh>
@@ -146,10 +172,10 @@ export default function OtherServicePage() {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading && (
-              <tr><td colSpan={10} className="text-center py-10 text-stone-400">Loading…</td></tr>
+              <tr><td colSpan={isSA ? 11 : 10} className="text-center py-10 text-stone-400">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={10} className="text-center py-10 text-stone-400">No records found</td></tr>
+              <tr><td colSpan={isSA ? 11 : 10} className="text-center py-10 text-stone-400">No records found</td></tr>
             )}
             {sorted.map(row => {
               const badge = STATUS_STYLE[row.status] ?? { bg: "#F4F3F1", text: "#57534E" };
@@ -157,6 +183,7 @@ export default function OtherServicePage() {
                 <tr key={row.id}
                   onClick={() => navigate(`/admin/services/other/${row.id}`)}
                   className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors">
+                  {isSA && <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => toggleSelect(row.id)} className="rounded border-stone-300" /></td>}
                   <td className="px-4 py-3 font-mono text-xs text-(--e-orange) font-semibold">{row.contractNumber ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-700 font-medium">{row.clientName ?? row.studentName ?? "—"}</td>
                   <td className="px-4 py-3 text-stone-600">{row.serviceType ?? "—"}</td>

@@ -17,6 +17,8 @@ import { MoreVertical, Trash2, Eye, Loader2, ShieldOff, UserCheck } from "lucide
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { format } from "date-fns";
+import { useBulkSelect } from "@/hooks/use-bulk-select";
+import { BulkActionBar } from "@/components/common/BulkActionBar";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -98,6 +100,22 @@ export default function Users() {
     role, count: users.filter(u => u.role === role).length,
   })).filter(r => r.count > 0);
 
+  const isSA = currentUser?.role === "super_admin";
+  const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
+  const sortedIds = pagedUsers.map(r => r.id);
+
+  const softDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/users/bulk`, { data: { ids, soft: true } }).then(r => r.data),
+    onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["users"] }); clearSelection(); toast({ title: `${ids.length}개 임시 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const hardDelMutation = useMutation({
+    mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/users/bulk`, { data: { ids } }).then(r => r.data),
+    onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["users"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+  });
+  const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createUser.mutate(form);
@@ -174,6 +192,15 @@ export default function Users() {
         csvExportTable="users"
       />
 
+      {isSA && selectedIds.size > 0 && (
+        <BulkActionBar
+          count={selectedIds.size}
+          isLoading={bulkLoading}
+          onSoftDelete={() => softDelMutation.mutate(Array.from(selectedIds))}
+          onHardDelete={() => hardDelMutation.mutate(Array.from(selectedIds))}
+        />
+      )}
+
       {/* Table */}
       <div
         className="bg-white rounded-xl overflow-x-auto"
@@ -182,6 +209,7 @@ export default function Users() {
         <table className="w-full min-w-[820px] text-sm">
           <thead>
             <tr style={{ borderBottom: "1px solid #E8E6E2", background: "#FAFAF9" }}>
+              {isSA && <th className="px-3 py-3 w-10"><input type="checkbox" checked={isAllSelected(sortedIds)} onChange={() => toggleAll(sortedIds)} className="rounded border-stone-300" /></th>}
               {["User", "Role", "Status", "Last Login", "Created", ""].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-medium uppercase tracking-[0.05em]" style={{ color: "#57534E" }}>{h}</th>
               ))}
@@ -191,7 +219,7 @@ export default function Users() {
             {isLoading ? (
               [...Array(PAGE_SIZE)].map((_, i) => (
                 <tr key={i} style={{ borderBottom: "1px solid #F4F3F1" }}>
-                  {[...Array(6)].map((_, j) => (
+                  {[...Array(isSA ? 7 : 6)].map((_, j) => (
                     <td key={j} className="px-4 py-3">
                       <div className="h-4 rounded animate-pulse" style={{ background: "#F4F3F1" }} />
                     </td>
@@ -200,7 +228,7 @@ export default function Users() {
               ))
             ) : pagedUsers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-16 text-center text-sm" style={{ color: "#A8A29E" }}>No users found</td>
+                <td colSpan={isSA ? 7 : 6} className="px-4 py-16 text-center text-sm" style={{ color: "#A8A29E" }}>No users found</td>
               </tr>
             ) : (
               pagedUsers.map(user => (
@@ -212,6 +240,7 @@ export default function Users() {
                   onMouseLeave={e => (e.currentTarget.style.background = "")}
                   onClick={() => setLocation(`/admin/users/${user.id}`)}
                 >
+                  {isSA && <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(user.id)} onChange={() => toggleSelect(user.id)} className="rounded border-stone-300" /></td>}
                   <td className="px-4 py-3" style={{ height: 48 }}>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">

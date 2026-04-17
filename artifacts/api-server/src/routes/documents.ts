@@ -692,4 +692,18 @@ router.put("/documents/default-permissions", requireRole("super_admin"), async (
   }
 });
 
+// ─── DELETE /api/documents/bulk  (super_admin 영구 삭제) ─────────────────────
+router.delete("/documents/bulk", authenticate, async (req, res) => {
+  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    await db.delete(documents).where(inArray(documents.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/documents/bulk]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;
