@@ -4,10 +4,28 @@ function getToken(): string | null {
   return localStorage.getItem("portal_token");
 }
 
+/**
+ * Extract tenant slug from hostname.
+ * e.g. "ts.edubee.co"       → "ts"
+ *      "myagency.edubee.co" → "myagency"
+ *      "localhost"           → null  (dev: no restriction)
+ *      "edubee.co"           → null  (root domain: no restriction)
+ */
+function getTenantSlug(): string | null {
+  const hostname = window.location.hostname;
+  const match = hostname.match(/^([^.]+)\.edubee\.co$/);
+  if (match && !["www", "app", "portal"].includes(match[1])) {
+    return match[1];
+  }
+  return null;
+}
+
 function headers(): Record<string, string> {
   const token = getToken();
   const h: Record<string, string> = { "Content-Type": "application/json" };
   if (token) h["Authorization"] = `Bearer ${token}`;
+  const slug = getTenantSlug();
+  if (slug) h["X-Organisation-Id"] = slug;
   return h;
 }
 

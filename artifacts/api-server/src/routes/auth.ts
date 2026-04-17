@@ -139,16 +139,32 @@ router.post("/login", async (req, res) => {
   }
 
   // ── STEP 2: External portal partner
+  // The tenantResolver sets req.tenantId (org UUID) from X-Organisation-Id header.
+  // If a tenant is identified, scope portal accounts to that tenant only.
+  const requestingTenantId = (req as any).tenantId as string | undefined;
+
   // Try portal_email first, fall back to email column for accounts where portal_email was not set
   let portalAccount = await db.select().from(accounts)
-    .where(eq(accounts.portalEmail as any, normalizedEmail))
+    .where(
+      requestingTenantId
+        ? and(eq(accounts.portalEmail as any, normalizedEmail), eq(accounts.organisationId as any, requestingTenantId))
+        : eq(accounts.portalEmail as any, normalizedEmail)
+    )
     .limit(1)
     .then(r => r[0] ?? null);
 
   if (!portalAccount) {
     // Fallback: match by email column, but only for accounts that have portal_role set
     const [fallback] = await db.select().from(accounts)
-      .where(and(eq(accounts.email as any, normalizedEmail), sql`portal_role IS NOT NULL`))
+      .where(
+        requestingTenantId
+          ? and(
+              eq(accounts.email as any, normalizedEmail),
+              sql`portal_role IS NOT NULL`,
+              eq(accounts.organisationId as any, requestingTenantId)
+            )
+          : and(eq(accounts.email as any, normalizedEmail), sql`portal_role IS NOT NULL`)
+      )
       .limit(1);
     portalAccount = fallback ?? null;
   }
