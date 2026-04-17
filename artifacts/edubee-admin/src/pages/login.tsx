@@ -90,7 +90,7 @@ export default function Login() {
             className="h-9 w-auto object-contain"
           />
           <p className="text-sm font-medium" style={{ color: "var(--e-text-2)" }}>
-            {theme.organisationId ? theme.companyName : "Admin Portal"}
+            {theme.organisationId ? theme.companyName : "Edubee CRM"}
           </p>
         </div>
 
