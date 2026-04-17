@@ -269,7 +269,7 @@ export default function AllApplicationsPage() {
     onSuccess: () => {
       clearSelection();
       queryClient.invalidateQueries({ queryKey: ["all-applications"] });
-      toast({ title: "지원서를 휴지통으로 이동했습니다." });
+      toast({ title: "Moved to trash." });
     },
   });
 
@@ -279,7 +279,7 @@ export default function AllApplicationsPage() {
     onSuccess: () => {
       clearSelection();
       queryClient.invalidateQueries({ queryKey: ["all-applications"] });
-      toast({ title: "지원서를 영구 삭제했습니다." });
+      toast({ title: "Permanently deleted." });
     },
   });
 

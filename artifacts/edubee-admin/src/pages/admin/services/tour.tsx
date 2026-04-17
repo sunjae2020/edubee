@@ -146,7 +146,7 @@ export default function TourManagement() {
 
   const hardDelMutation = useMutation({
     mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/services/tour/bulk`, { data: { ids } }).then(r => r.data),
-    onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["services-tour"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["services-tour"] }); clearSelection(); toast({ title: `${ids.length} permanently deleted` }); },
     onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
   });
   const bulkLoading = hardDelMutation.isPending;

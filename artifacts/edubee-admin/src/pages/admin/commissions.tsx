@@ -129,12 +129,12 @@ export default function Commissions() {
 
   const softDelMutation = useMutation({
     mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/commissions/bulk`, { data: { ids, soft: true } }).then(r => r.data),
-    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["commissions"] }); clearSelection(); toast({ title: `${ids.length}개 임시 삭제됨` }); },
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["commissions"] }); clearSelection(); toast({ title: `${ids.length} moved to trash` }); },
     onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
   });
   const hardDelMutation = useMutation({
     mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/commissions/bulk`, { data: { ids } }).then(r => r.data),
-    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["commissions"] }); clearSelection(); toast({ title: `${ids.length}개 영구 삭제됨` }); },
+    onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["commissions"] }); clearSelection(); toast({ title: `${ids.length} permanently deleted` }); },
     onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
   });
   const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
