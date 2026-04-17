@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -49,10 +49,38 @@ function formatSize(bytes: number | null): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function photoUrl(objectPath: string): string {
+function photoApiPath(objectPath: string): string {
   const filename = objectPath.split("/").pop() ?? objectPath;
-  const token = localStorage.getItem("edubee_token") ?? "";
-  return `${BASE}/api/camp-photos/file/${encodeURIComponent(filename)}?token=${encodeURIComponent(token)}`;
+  return `${BASE}/api/camp-photos/file/${encodeURIComponent(filename)}`;
+}
+
+// Authenticated image: uses axios (with auth interceptor) to fetch as blob → object URL
+function AuthImg({ src, alt, className, onLoad }: { src: string; alt: string; className?: string; onLoad?: () => void }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let revoked = false;
+    setBlobUrl(null);
+    setFailed(false);
+    axios.get(src, { responseType: "blob" })
+      .then(r => {
+        if (revoked) return;
+        const url = URL.createObjectURL(r.data);
+        setBlobUrl(url);
+        onLoad?.();
+      })
+      .catch(() => { if (!revoked) { setFailed(true); onLoad?.(); } });
+    return () => {
+      revoked = true;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src]);
+
+  if (failed) return <div className={className} />;
+  if (!blobUrl) return <div className={className} />;
+  return <img src={blobUrl} alt={alt} className={className} />;
 }
 
 // ── Folder Card ─────────────────────────────────────────────────────────────
@@ -116,12 +144,11 @@ function PhotoTile({ photo, onDelete }: { photo: Photo; onDelete: () => void }) 
           <Image className="w-8 h-8 text-muted-foreground/30" />
         </div>
       )}
-      <img
-        src={photoUrl(photo.objectPath)}
+      <AuthImg
+        src={photoApiPath(photo.objectPath)}
         alt={photo.fileName ?? "photo"}
         className={`w-full h-full object-cover transition-opacity duration-200 ${loaded ? "opacity-100" : "opacity-0"}`}
         onLoad={() => setLoaded(true)}
-        onError={() => setLoaded(true)}
       />
       {hovered && (
         <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1 p-2">

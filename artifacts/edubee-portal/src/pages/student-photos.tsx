@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { FolderOpen, Image, ChevronLeft, Lock, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 type Folder = {
   id: string;
@@ -23,10 +21,40 @@ type Photo = {
   createdAt: string;
 };
 
-function photoUrl(objectPath: string): string {
+function photoApiPath(objectPath: string): string {
   const filename = objectPath.split("/").pop() ?? objectPath;
-  const token = localStorage.getItem("portal_token") ?? "";
-  return `${BASE_URL}/api/portal/student/camp-photos/file/${encodeURIComponent(filename)}?token=${encodeURIComponent(token)}`;
+  return `/api/portal/student/camp-photos/file/${encodeURIComponent(filename)}`;
+}
+
+// Authenticated image: fetches with Bearer token → creates blob URL
+function AuthImg({ src, alt, className, onLoad }: { src: string; alt: string; className?: string; onLoad?: () => void }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let revoked = false;
+    setBlobUrl(null);
+    setFailed(false);
+    const token = localStorage.getItem("portal_token") ?? "";
+    fetch(src, { headers: { Authorization: `Bearer ${token}` } })
+      .then(async r => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        const blob = await r.blob();
+        if (revoked) return;
+        const url = URL.createObjectURL(blob);
+        setBlobUrl(url);
+        onLoad?.();
+      })
+      .catch(() => { if (!revoked) { setFailed(true); onLoad?.(); } });
+    return () => {
+      revoked = true;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src]);
+
+  if (failed || !blobUrl) return <div className={className} />;
+  return <img src={blobUrl} alt={alt} className={className} />;
 }
 
 function FolderCard({ folder, onClick }: { folder: Folder; onClick: () => void }) {
@@ -112,12 +140,11 @@ function PhotoTile({ photo }: { photo: Photo }) {
             <Image className="w-8 h-8" style={{ color: "#D6CFC4" }} />
           </div>
         )}
-        <img
-          src={photoUrl(photo.objectPath)}
+        <AuthImg
+          src={photoApiPath(photo.objectPath)}
           alt={photo.fileName ?? "photo"}
           className={`w-full h-full object-cover transition-opacity duration-200 ${loaded ? "opacity-100" : "opacity-0"}`}
           onLoad={() => setLoaded(true)}
-          onError={() => setLoaded(true)}
         />
       </div>
 
@@ -127,12 +154,13 @@ function PhotoTile({ photo }: { photo: Photo }) {
           style={{ background: "rgba(0,0,0,0.85)" }}
           onClick={() => setLightbox(false)}
         >
-          <img
-            src={photoUrl(photo.objectPath)}
-            alt={photo.fileName ?? "photo"}
-            className="max-w-full max-h-full rounded-xl object-contain shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          />
+          <div onClick={e => e.stopPropagation()}>
+            <AuthImg
+              src={photoApiPath(photo.objectPath)}
+              alt={photo.fileName ?? "photo"}
+              className="max-w-full max-h-full rounded-xl object-contain shadow-2xl"
+            />
+          </div>
           <button
             className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl font-bold leading-none"
             onClick={() => setLightbox(false)}
