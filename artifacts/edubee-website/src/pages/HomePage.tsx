@@ -59,12 +59,10 @@ const WORKFLOW_STEPS = [
 ]
 
 const CHALLENGE_FEATURES = [
-  { icon: '🗂️', title: 'Scattered Student Data' },
+  { icon: '🎓', title: 'Centralised Student Data' },
+  { icon: '📊', title: 'Manual Reporting' },
   { icon: '💸', title: 'Lost Commissions' },
-  { icon: '⏰', title: 'Missed School Commission Deadlines' },
-  { icon: '📋', title: 'Manual Reporting' },
-  { icon: '🌐', title: 'Hours Consolidating Branch Reports' },
-  { icon: '📑', title: 'Consultations, Visas, Tuition & Docs' },
+  { icon: '✅', title: 'Live Student Status' },
 ]
 
 const SECURITY_ITEMS = [
@@ -147,10 +145,10 @@ export default function HomePage() {
         <div className="max-w-[1440px] mx-auto px-5 sm:px-8 w-full">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-center">
             <span className="font-extrabold text-white text-sm sm:text-base lg:text-[20px]" style={{ lineHeight: '118.83%' }}>
-              IT CREATED BY STUDY ABROAD AGENCIES IN
+              IT TRUSTED BY STUDY ABROAD AGENCIES IN
             </span>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              {['Australia', 'Canada', 'Philippines', 'Korea'].map((c, i) => (
+              {['Australia', 'Canada', 'USA', 'Philippines', 'Korea'].map((c, i) => (
                 <div key={c} className="flex items-center gap-4">
                   {i > 0 && <div className="hidden sm:block" style={{ width: 0, height: 27, borderLeft: '2px solid #FFFFFF' }} />}
                   <span className="text-white text-sm sm:text-base lg:text-[20px]" style={{ fontWeight: 300, lineHeight: '118.83%' }}>{c}</span>
@@ -182,7 +180,7 @@ export default function HomePage() {
             <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-center">
               {/* Left: heading text */}
               <div className="flex-1 min-w-0">
-                <p className="uppercase font-semibold text-white/80 mb-6 text-sm tracking-wider">THE CHALLENGE</p>
+                <p className="uppercase font-semibold text-white/80 mb-6 text-sm tracking-wider">THE ONE STOP</p>
                 <h2 className="font-bold text-white mb-5 text-2xl sm:text-3xl xl:text-[40px]" style={{ lineHeight: '110%', maxWidth: 460 }}>
                   Running an agency shouldn't mean drowning in spreadsheets.
                 </h2>
@@ -191,21 +189,17 @@ export default function HomePage() {
                 </p>
               </div>
 
-              {/* Right: 6 floating pain-point chips */}
-              <div className="flex-shrink-0 w-full lg:w-[480px]">
-                <div className="flex flex-wrap gap-3">
+              {/* Right: 2×2 grid of white cards */}
+              <div className="flex-shrink-0 w-full lg:w-[440px]">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   {CHALLENGE_FEATURES.map((f, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2.5 rounded-[14px] px-4 py-3"
-                      style={{
-                        background: 'rgba(255,255,255,0.15)',
-                        border: '1px solid rgba(255,255,255,0.55)',
-                        backdropFilter: 'blur(4px)',
-                      }}
+                      className="rounded-[18px] p-4 sm:p-5 flex flex-col gap-3"
+                      style={{ background: 'rgba(255,255,255,0.92)' }}
                     >
-                      <span className="text-xl flex-shrink-0">{f.icon}</span>
-                      <span className="text-white font-semibold text-sm sm:text-[15px]" style={{ lineHeight: '1.2' }}>
+                      <span className="text-2xl">{f.icon}</span>
+                      <span className="font-semibold text-sm sm:text-[15px] leading-tight" style={{ color: '#7A3B10' }}>
                         {f.title}
                       </span>
                     </div>
@@ -217,22 +211,22 @@ export default function HomePage() {
         </div>
       </section>
       {/* ═══════════════════════════════════════════
-          4. FEATURES — dark bg, 6 white cards
+          4. FEATURES — light bg, 6 white cards
       ═══════════════════════════════════════════ */}
       <section
         className="relative overflow-hidden"
         style={{
           backgroundImage: 'url(https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1440&auto=format&fit=crop&q=80)',
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          padding: '60px 0',
+          backgroundPosition: 'center top',
+          padding: '72px 0',
         }}
       >
-        <div className="absolute inset-0" style={{ background: 'rgba(12,8,4,0.84)' }} />
+        <div className="absolute inset-0" style={{ background: 'rgba(250,240,228,0.88)' }} />
         <div className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-8">
           <div className="text-center mb-10">
-            <p className="font-semibold uppercase tracking-widest text-white/50 mb-3 text-sm">WHAT EDUBEE DOES</p>
-            <h2 className="font-bold text-white text-2xl sm:text-3xl xl:text-[48px]" style={{ lineHeight: '98%' }}>
+            <p className="font-semibold uppercase tracking-widest mb-3 text-sm" style={{ color: '#E36909' }}>WHAT EDUBEE DOES</p>
+            <h2 className="font-bold text-2xl sm:text-3xl xl:text-[48px]" style={{ color: '#3B1A06', lineHeight: '98%' }}>
               Everything your agency needs, in one place.
             </h2>
           </div>
@@ -241,7 +235,7 @@ export default function HomePage() {
               <div
                 key={i}
                 className="bg-white rounded-[21px] p-6 sm:p-7 hover:shadow-2xl transition-all cursor-pointer group"
-                style={{ boxShadow: '3px 4px 6.1px rgba(0,0,0,0.15)' }}
+                style={{ boxShadow: '3px 4px 10px rgba(180,100,20,0.10)' }}
                 onClick={() => { window.location.href = link(s.href) }}
               >
                 <div className="text-3xl mb-4">{s.icon}</div>
