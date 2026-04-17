@@ -157,24 +157,21 @@ function PhotoTile({ photo, onDelete }: { photo: Photo; onDelete: () => void }) 
             className="w-full h-full object-cover transition-opacity duration-200"
           />
         )}
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex flex-col items-center justify-center gap-1.5 p-2 opacity-0 group-hover:opacity-100">
-          <p className="text-white text-xs text-center line-clamp-2 font-medium">{photo.fileName}</p>
-          {photo.fileSize && <p className="text-white/70 text-xs">{formatSize(photo.fileSize)}</p>}
-          <div className="flex gap-1.5 mt-1">
-            <Button size="sm" variant="secondary" className="h-7 text-xs"
-              onClick={e => { e.stopPropagation(); blobUrl && setLightbox(true); }}>
-              <ZoomIn className="w-3 h-3 mr-1" /> View
-            </Button>
-            <Button size="sm" variant="secondary" className="h-7 text-xs"
-              onClick={e => { e.stopPropagation(); handleDownload(); }}>
-              <Download className="w-3 h-3 mr-1" /> Save
-            </Button>
-            <Button size="sm" variant="destructive" className="h-7 text-xs"
-              onClick={e => { e.stopPropagation(); onDelete(); }}>
-              <Trash2 className="w-3 h-3" />
-            </Button>
-          </div>
+        {/* Always-visible bottom action bar */}
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 px-1.5 py-1.5"
+          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%)" }}>
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-white hover:bg-white/20 hover:text-white"
+            onClick={e => { e.stopPropagation(); blobUrl && setLightbox(true); }}>
+            <ZoomIn className="w-3 h-3 mr-1" /> View
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-white hover:bg-white/20 hover:text-white"
+            onClick={e => { e.stopPropagation(); handleDownload(); }}>
+            <Download className="w-3 h-3 mr-1" /> Save
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-white hover:bg-red-500/70 hover:text-white"
+            onClick={e => { e.stopPropagation(); onDelete(); }}>
+            <Trash2 className="w-3 h-3" />
+          </Button>
         </div>
       </div>
 
