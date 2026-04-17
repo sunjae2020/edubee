@@ -8,6 +8,7 @@ import {
   boolean,
   integer,
   decimal,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { leads } from "./applications";
@@ -171,29 +172,73 @@ export const account_contacts = pgTable("account_contacts", {
   createdOn: timestamp("created_on").notNull().defaultNow(),
 });
 
-export const consultations = pgTable("consultations", {
-  id:                uuid("id").primaryKey().defaultRandom(),
-  refNumber:         varchar("ref_number",          { length: 30  }).unique(),
-  contactId:         uuid("contact_id"),
-  accountId:         uuid("account_id"),
-  leadId:            uuid("lead_id"),
-  clientName:        varchar("client_name",         { length: 255 }),
-  clientEmail:       varchar("client_email",        { length: 255 }),
-  clientPhone:       varchar("client_phone",        { length: 50  }),
-  nationality:       varchar("nationality",         { length: 100 }),
-  consultationType:  varchar("consultation_type",   { length: 50  }).default("phone"),
-  consultationDate:  timestamp("consultation_date"),
-  subject:           varchar("subject",             { length: 255 }),
-  status:            varchar("status",              { length: 50  }).default("scheduled"),
-  assignedStaffId:   uuid("assigned_staff_id").references(() => users.id),
-  notes:             text("notes"),
-  outcome:           text("outcome"),
-  followUpDate:      date("follow_up_date"),
-  followUpAction:    text("follow_up_action"),
-  isActive:          boolean("is_active").notNull().default(true),
-  organisationId:    uuid("organisation_id").references(() => organisations.id),
-  createdAt:         timestamp("created_at").defaultNow(),
-  updatedAt:         timestamp("updated_at").defaultNow(),
+export const schoolingConsultations = pgTable("schooling_consultations", {
+  id:               uuid("id").primaryKey().defaultRandom(),
+  refNumber:        varchar("ref_number",   { length: 30  }).unique(),
+  status:           varchar("status",       { length: 20  }).default("new"),
+  assignedTo:       varchar("assigned_to",  { length: 100 }),
+  adminNotes:       text("admin_notes"),
+  language:         varchar("language",     { length: 10  }).default("en"),
+
+  guardianName:     varchar("guardian_name",  { length: 200 }),
+  relationship:     varchar("relationship",   { length: 50  }),
+  phone:            varchar("phone",          { length: 50  }),
+  email:            varchar("email",          { length: 200 }),
+  kakaoId:          varchar("kakao_id",       { length: 100 }),
+  messengerId:      varchar("messenger_id",   { length: 200 }),
+  accompaniment:    varchar("accompaniment",  { length: 50  }),
+  referralSources:  jsonb("referral_sources").default([]),
+
+  preferredStates:  jsonb("preferred_states").default([]),
+  urbanPreference:  integer("urban_preference"),
+  schoolTypes:      jsonb("school_types").default([]),
+  schoolPriorities: jsonb("school_priorities").default([]),
+  preferredSchools: text("preferred_schools"),
+  studyDuration:    varchar("study_duration", { length: 50 }),
+  targetTerm:       varchar("target_term",    { length: 50 }),
+  accommodation:    jsonb("accommodation").default([]),
+  annualBudget:     varchar("annual_budget",  { length: 50 }),
+  concerns:         jsonb("concerns").default([]),
+  specialNote:      text("special_note"),
+  consultMethod:    varchar("consult_method", { length: 50 }),
+  consultTimes:     jsonb("consult_times").default([]),
+  privacyConsent:   boolean("privacy_consent").notNull().default(false),
+
+  isActive:         boolean("is_active").notNull().default(true),
+  organisationId:   uuid("organisation_id").references(() => organisations.id),
+  createdAt:        timestamp("created_at").defaultNow(),
+  updatedAt:        timestamp("updated_at").defaultNow(),
+});
+
+export const schoolingConsultationStudents = pgTable("schooling_consultation_students", {
+  id:                 uuid("id").primaryKey().defaultRandom(),
+  consultationId:     uuid("consultation_id").notNull().references(() => schoolingConsultations.id, { onDelete: "cascade" }),
+
+  name:               varchar("name",           { length: 200 }),
+  gender:             varchar("gender",         { length: 30  }),
+  dateOfBirth:        varchar("date_of_birth",  { length: 20  }),
+  currentGrade:       varchar("current_grade",  { length: 50  }),
+  currentSchool:      varchar("current_school", { length: 200 }),
+  currentCity:        varchar("current_city",   { length: 100 }),
+  englishLevel:       varchar("english_level",  { length: 50  }),
+  englishScore:       varchar("english_score",  { length: 100 }),
+  targetAuGrade:      varchar("target_au_grade",{ length: 50  }),
+  specialNotes:       text("special_notes"),
+
+  learningStyle:      integer("learning_style"),
+  sociability:        integer("sociability"),
+  independence:       integer("independence"),
+  emotionalStability: integer("emotional_stability"),
+  interests:          jsonb("interests").default([]),
+  prevExperience:     jsonb("prev_experience").default([]),
+
+  postGradPlans:      jsonb("post_grad_plans").default([]),
+  prInterest:         integer("pr_interest"),
+  careerFields:       jsonb("career_fields").default([]),
+  targetUniversity:   text("target_university"),
+
+  createdAt:          timestamp("created_at").defaultNow(),
+  updatedAt:          timestamp("updated_at").defaultNow(),
 });
 
 export type Contact         = typeof contacts.$inferSelect;
@@ -206,5 +251,7 @@ export type Quote           = typeof quotes.$inferSelect;
 export type NewQuote        = typeof quotes.$inferInsert;
 export type QuoteProduct    = typeof quote_products.$inferSelect;
 export type NewQuoteProduct = typeof quote_products.$inferInsert;
-export type Consultation    = typeof consultations.$inferSelect;
-export type NewConsultation = typeof consultations.$inferInsert;
+export type SchoolingConsultation         = typeof schoolingConsultations.$inferSelect;
+export type NewSchoolingConsultation      = typeof schoolingConsultations.$inferInsert;
+export type SchoolingConsultationStudent  = typeof schoolingConsultationStudents.$inferSelect;
+export type NewSchoolingConsultationStudent = typeof schoolingConsultationStudents.$inferInsert;

@@ -64,7 +64,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
 
   {
     const salesItems: NavItem[] = [
-      { icon: CalendarCheck, label: "Consultations",   href: "/admin/sales/consultations" },
+      { icon: CalendarCheck, label: "Schooling Consultation", href: "/admin/sales/schooling-consultations" },
       { icon: ClipboardList, label: "All Applications", href: "/admin/all-applications" },
     ];
     if (isSenior || isOps)

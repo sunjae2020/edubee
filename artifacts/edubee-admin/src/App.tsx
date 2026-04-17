@@ -116,7 +116,8 @@ import CommissionDetail from "@/pages/admin/commission-detail";
 import AdminCommunityPage from "@/pages/admin/community";
 
 // Sales
-import ConsultationsPage from "@/pages/admin/sales/ConsultationsPage";
+import SchoolingConsultationsPage from "@/pages/admin/sales/SchoolingConsultationsPage";
+import SchoolingConsultationFormPage from "@/pages/admin/sales/SchoolingConsultationFormPage";
 
 // CRM
 import ContactsPage from "@/pages/admin/crm/ContactsPage";
@@ -249,8 +250,14 @@ function Router() {
       <Route path="/admin/leads">
         <AdminRoute title="Leads"><Leads /></AdminRoute>
       </Route>
-      <Route path="/admin/sales/consultations">
-        <AdminRoute title="Consultations"><ConsultationsPage /></AdminRoute>
+      <Route path="/admin/sales/schooling-consultations/new">
+        <AdminRoute title="New Schooling Consultation"><SchoolingConsultationFormPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/sales/schooling-consultations/:id">
+        {(params) => <AdminRoute title="Schooling Consultation"><SchoolingConsultationFormPage /></AdminRoute>}
+      </Route>
+      <Route path="/admin/sales/schooling-consultations">
+        <AdminRoute title="Schooling Consultation"><SchoolingConsultationsPage /></AdminRoute>
       </Route>
       <Route path="/admin/all-applications">
         <AdminRoute title="All Applications"><AllApplications /></AdminRoute>

@@ -1,0 +1,71 @@
+// ─── APPLICATION FORM MODULE ───────────────────────────────────────────────
+
+export const applicationForms = pgTable('application_forms', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  status: varchar('status', { length: 20 }).default('new'),
+  // new | in_progress | contacted | closed
+  assignedTo: varchar('assigned_to', { length: 100 }),
+  adminNotes: text('admin_notes'),
+  language: varchar('language', { length: 10 }).default('en'),
+
+  // Guardian
+  guardianName: varchar('guardian_name', { length: 200 }).notNull(),
+  relationship: varchar('relationship', { length: 50 }).notNull(),
+  phone: varchar('phone', { length: 50 }).notNull(),
+  email: varchar('email', { length: 200 }).notNull(),
+  kakaoId: varchar('kakao_id', { length: 100 }),
+  messengerId: varchar('messenger_id', { length: 200 }),
+  accompaniment: varchar('accompaniment', { length: 50 }),
+  referralSources: text('referral_sources').array(),
+
+  // Preferences
+  preferredStates: text('preferred_states').array(),
+  urbanPreference: integer('urban_preference'),
+  schoolTypes: text('school_types').array(),
+  schoolPriorities: text('school_priorities').array(),
+  preferredSchools: text('preferred_schools'),
+  studyDuration: varchar('study_duration', { length: 50 }),
+  targetTerm: varchar('target_term', { length: 50 }),
+  accommodation: text('accommodation').array(),
+  annualBudget: varchar('annual_budget', { length: 50 }),
+  concerns: text('concerns').array(),
+  specialNote: text('special_note'),
+  consultMethod: varchar('consult_method', { length: 50 }),
+  consultTimes: text('consult_times').array(),
+  privacyConsent: boolean('privacy_consent').notNull().default(false),
+});
+
+export const applicationStudents = pgTable('application_students', {
+  id: serial('id').primaryKey(),
+  formId: integer('form_id')
+    .notNull()
+    .references(() => applicationForms.id, { onDelete: 'cascade' }),
+
+  // Basic Info
+  name: varchar('name', { length: 200 }).notNull(),
+  gender: varchar('gender', { length: 30 }),
+  dateOfBirth: varchar('date_of_birth', { length: 20 }),
+  currentGrade: varchar('current_grade', { length: 50 }),
+  currentSchool: varchar('current_school', { length: 200 }),
+  currentCity: varchar('current_city', { length: 100 }),
+  englishLevel: varchar('english_level', { length: 50 }),
+  englishScore: varchar('english_score', { length: 100 }),
+  targetAuGrade: varchar('target_au_grade', { length: 50 }),
+  specialNotes: text('special_notes'),
+
+  // Profile
+  learningStyle: integer('learning_style'),
+  sociability: integer('sociability'),
+  independence: integer('independence'),
+  emotionalStability: integer('emotional_stability'),
+  interests: text('interests').array(),
+  prevExperience: text('prev_experience').array(),
+
+  // Goals
+  postGradPlans: text('post_grad_plans').array(),
+  prInterest: integer('pr_interest'),
+  careerFields: text('career_fields').array(),
+  targetUniversity: text('target_university'),
+});
