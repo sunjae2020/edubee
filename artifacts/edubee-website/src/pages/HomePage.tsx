@@ -174,55 +174,53 @@ export default function HomePage() {
       >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-8 xl:px-[80px]">
           <div
-            className="rounded-[26px] px-5 sm:px-10 xl:px-14 py-12 sm:py-14"
+            className="rounded-[26px] px-6 sm:px-10 xl:px-12 py-10 sm:py-12"
             style={{ background: 'linear-gradient(180deg, #E07F34 0%, #EC7E29 100%)' }}
           >
-            <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Left: heading text */}
-              <div className="flex-1 min-w-0">
-                <p className="uppercase font-semibold text-white/80 mb-6 text-sm tracking-wider">THE ONE STOP</p>
-                <h2 className="font-bold text-white mb-5 text-2xl sm:text-3xl xl:text-[40px]" style={{ lineHeight: '110%', maxWidth: 460 }}>
+              <div>
+                <p className="uppercase font-semibold text-white/80 mb-5 text-xs tracking-widest">THE ONE STOP</p>
+                <h2 className="font-bold text-white mb-4 text-2xl sm:text-3xl xl:text-[36px]" style={{ lineHeight: '112%' }}>
                   Running an agency shouldn't mean drowning in spreadsheets.
                 </h2>
-                <p className="text-white/90 text-sm sm:text-base" style={{ fontWeight: 300, lineHeight: '1.55', maxWidth: 440 }}>
+                <p className="text-white/85 text-sm sm:text-[15px]" style={{ fontWeight: 300, lineHeight: '1.6' }}>
                   Most study abroad agencies manage students in Excel, track commissions in separate files, and report to branch staff by email. As your agency grows, this breaks down fast.
                 </p>
               </div>
 
               {/* Right: 2×2 grid of white cards */}
-              <div className="flex-shrink-0 w-full lg:w-[440px]">
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  {CHALLENGE_FEATURES.map((f, i) => (
-                    <div
-                      key={i}
-                      className="rounded-[18px] p-4 sm:p-5 flex flex-col gap-3"
-                      style={{ background: 'rgba(255,255,255,0.92)' }}
-                    >
-                      <span className="text-2xl">{f.icon}</span>
-                      <span className="font-semibold text-sm sm:text-[15px] leading-tight" style={{ color: '#7A3B10' }}>
-                        {f.title}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                {CHALLENGE_FEATURES.map((f, i) => (
+                  <div
+                    key={i}
+                    className="rounded-[16px] p-5 sm:p-6 flex flex-col gap-3"
+                    style={{ background: 'rgba(255,255,255,0.93)', minHeight: 130 }}
+                  >
+                    <span className="text-3xl">{f.icon}</span>
+                    <span className="font-semibold text-sm sm:text-[15px] leading-snug" style={{ color: '#7A3B10' }}>
+                      {f.title}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
       {/* ═══════════════════════════════════════════
-          4. FEATURES — light bg, 6 white cards
+          4. FEATURES — warm photo bg, 6 white cards
       ═══════════════════════════════════════════ */}
       <section
         className="relative overflow-hidden"
         style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1440&auto=format&fit=crop&q=80)',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1440&auto=format&fit=crop&q=80)',
           backgroundSize: 'cover',
-          backgroundPosition: 'center top',
+          backgroundPosition: 'center',
           padding: '72px 0',
         }}
       >
-        <div className="absolute inset-0" style={{ background: 'rgba(250,240,228,0.88)' }} />
+        <div className="absolute inset-0" style={{ background: 'rgba(246,234,218,0.78)' }} />
         <div className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-8">
           <div className="text-center mb-10">
             <p className="font-semibold uppercase tracking-widest mb-3 text-sm" style={{ color: '#E36909' }}>WHAT EDUBEE DOES</p>
