@@ -120,6 +120,8 @@ import SchoolingConsultationsPage from "@/pages/admin/sales/SchoolingConsultatio
 import SchoolingConsultationFormPage from "@/pages/admin/sales/SchoolingConsultationFormPage";
 import StudyAbroadConsultationsPage from "@/pages/admin/sales/StudyAbroadConsultationsPage";
 import StudyAbroadConsultationFormPage from "@/pages/admin/sales/StudyAbroadConsultationFormPage";
+import GeneralConsultationsPage from "@/pages/admin/sales/GeneralConsultationsPage";
+import GeneralConsultationFormPage from "@/pages/admin/sales/GeneralConsultationFormPage";
 
 // CRM
 import ContactsPage from "@/pages/admin/crm/ContactsPage";
@@ -269,6 +271,15 @@ function Router() {
       </Route>
       <Route path="/admin/sales/study-abroad-consultations">
         <AdminRoute title="Study Abroad Consultation"><StudyAbroadConsultationsPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/sales/general-consultations/new">
+        <AdminRoute title="New General Consultation"><GeneralConsultationFormPage /></AdminRoute>
+      </Route>
+      <Route path="/admin/sales/general-consultations/:id">
+        {(params) => <AdminRoute title="General Consultation"><GeneralConsultationFormPage /></AdminRoute>}
+      </Route>
+      <Route path="/admin/sales/general-consultations">
+        <AdminRoute title="General Consultation"><GeneralConsultationsPage /></AdminRoute>
       </Route>
       <Route path="/admin/all-applications">
         <AdminRoute title="All Applications"><AllApplications /></AdminRoute>

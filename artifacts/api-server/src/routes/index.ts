@@ -71,6 +71,7 @@ import portalRouter from "./portal.js";
 import communityRouter from "./community.js";
 import schoolingConsultationsRouter from "./schooling-consultations.js";
 import studyAbroadConsultationsRouter from "./study-abroad-consultations.js";
+import generalConsultationsRouter from "./general-consultations.js";
 import { tenantResolver } from "../middleware/tenantResolver.js";
 import { runWithTenantSchema, tenantSchemaExists, pool } from "@workspace/db";
 import type { Request, Response, NextFunction } from "express";
@@ -170,5 +171,6 @@ router.use("/admin", adminDataImportRouter);
 router.use(campPhotosRouter);
 router.use(schoolingConsultationsRouter);
 router.use(studyAbroadConsultationsRouter);
+router.use(generalConsultationsRouter);
 
 export default router;

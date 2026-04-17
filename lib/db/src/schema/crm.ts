@@ -314,3 +314,51 @@ export type SchoolingConsultationStudent  = typeof schoolingConsultationStudents
 export type NewSchoolingConsultationStudent = typeof schoolingConsultationStudents.$inferInsert;
 export type StudyAbroadConsultation       = typeof studyAbroadConsultations.$inferSelect;
 export type NewStudyAbroadConsultation    = typeof studyAbroadConsultations.$inferInsert;
+
+export const generalConsultations = pgTable("general_consultations", {
+  id:               uuid("id").primaryKey().defaultRandom(),
+  refNumber:        varchar("ref_number",   { length: 30  }).unique(),
+  status:           varchar("status",       { length: 20  }).default("new"),
+  assignedTo:       varchar("assigned_to",  { length: 100 }),
+  adminNotes:       text("admin_notes"),
+  language:         varchar("language",     { length: 10  }).default("en"),
+
+  firstName:        varchar("first_name",   { length: 100 }),
+  lastName:         varchar("last_name",    { length: 100 }),
+  fullName:         varchar("full_name",    { length: 200 }),
+  dateOfBirth:      varchar("date_of_birth",{ length: 20  }),
+  gender:           varchar("gender",       { length: 30  }),
+  email:            varchar("email",        { length: 200 }),
+  phone:            varchar("phone",        { length: 50  }),
+  currentCity:      varchar("current_city", { length: 100 }),
+  currentCountry:   varchar("current_country",{ length: 100 }),
+  nationality:      varchar("nationality",  { length: 100 }),
+  kakaoId:          varchar("kakao_id",     { length: 100 }),
+  messengerId:      varchar("messenger_id", { length: 200 }),
+
+  topics:           jsonb("topics").default([]),
+  topicOther:       text("topic_other"),
+
+  inquirySummary:   text("inquiry_summary"),
+  targetTimeline:   varchar("target_timeline",{ length: 100 }),
+  budgetRange:      varchar("budget_range",   { length: 100 }),
+  preferredDestination: varchar("preferred_destination",{ length: 200 }),
+  questionsNotes:   text("questions_notes"),
+
+  referralSources:  jsonb("referral_sources").default([]),
+  preferredContactMethod: varchar("preferred_contact_method",{ length: 50 }),
+  preferredContactTime:   varchar("preferred_contact_time",  { length: 100 }),
+  consultantName:   varchar("consultant_name",{ length: 200 }),
+  documentNotes:    text("document_notes"),
+
+  privacyConsent:   boolean("privacy_consent").notNull().default(false),
+  marketingConsent: boolean("marketing_consent").notNull().default(false),
+
+  isActive:         boolean("is_active").notNull().default(true),
+  organisationId:   uuid("organisation_id").references(() => organisations.id),
+  createdAt:        timestamp("created_at").defaultNow(),
+  updatedAt:        timestamp("updated_at").defaultNow(),
+});
+
+export type GeneralConsultation           = typeof generalConsultations.$inferSelect;
+export type NewGeneralConsultation        = typeof generalConsultations.$inferInsert;

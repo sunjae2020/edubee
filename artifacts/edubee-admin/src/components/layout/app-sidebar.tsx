@@ -14,7 +14,7 @@ import {
   Receipt, FileCheck, ArrowLeftRight, RefreshCw,
   Wallet, BarChart2,
   Users, Users2, Settings, Lock, Grid2x2, FileSearch, UserSearch,
-  Ticket, FolderOpen, Bot, Tags, Cable,
+  Ticket, FolderOpen, Bot, Tags, Cable, MessageSquare,
   BookOpen, CreditCard, BookMarked, Briefcase, Shield, Wrench, Stamp,
   Tag, Percent, BadgeDollarSign,
   Palette, Globe, Landmark, Database,
@@ -66,6 +66,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
     const salesItems: NavItem[] = [
       { icon: CalendarCheck, label: "Schooling Consultation", href: "/admin/sales/schooling-consultations" },
       { icon: Globe, label: "Study Abroad Consultation", href: "/admin/sales/study-abroad-consultations" },
+      { icon: MessageSquare, label: "General Consultation", href: "/admin/sales/general-consultations" },
       { icon: ClipboardList, label: "All Applications", href: "/admin/all-applications" },
     ];
     if (isSenior || isOps)
