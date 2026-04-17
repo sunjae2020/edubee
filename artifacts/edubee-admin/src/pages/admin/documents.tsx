@@ -174,24 +174,19 @@ export default function DocumentsPage() {
     <div className="p-6 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-(--e-orange)/10 flex items-center justify-center">
-            <FolderOpen className="w-5 h-5 text-(--e-orange)" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold">Documents</h1>
-            <p className="text-xs text-muted-foreground">Central document management across all contracts and applications</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Central document management across all contracts and applications
+            {total > 0 && <> · {total.toLocaleString()} record{total !== 1 ? "s" : ""}</>}
+          </p>
         </div>
-        {docs.length > 0 && (
-          <Badge variant="secondary" className="text-xs">{docs.length} records</Badge>
-        )}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="flex flex-wrap gap-3 items-center">
         <Select value={entityType} onValueChange={v => { setEntityType(v); setPage(1); }}>
-          <SelectTrigger className="h-8 text-sm w-40">
+          <SelectTrigger className="w-40">
             <SelectValue placeholder="Entity Type" />
           </SelectTrigger>
           <SelectContent>
@@ -200,7 +195,7 @@ export default function DocumentsPage() {
         </Select>
 
         <Select value={categoryGroup} onValueChange={v => { setCategoryGroup(v); setPage(1); }}>
-          <SelectTrigger className="h-8 text-sm w-44">
+          <SelectTrigger className="w-44">
             <SelectValue placeholder="Category Group" />
           </SelectTrigger>
           <SelectContent>
@@ -209,7 +204,7 @@ export default function DocumentsPage() {
         </Select>
 
         <Select value={status} onValueChange={v => { setStatus(v); setPage(1); }}>
-          <SelectTrigger className="h-8 text-sm w-40">
+          <SelectTrigger className="w-40">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -217,19 +212,19 @@ export default function DocumentsPage() {
           </SelectContent>
         </Select>
 
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search documents…"
-            className="h-8 text-sm pl-8"
+            className="pl-9"
           />
         </div>
 
         {(entityType || categoryGroup || status || search) && (
-          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={resetFilters}>
-            <X className="w-3 h-3" /> Reset
+          <Button variant="ghost" size="sm" className="gap-1 text-gray-500" onClick={resetFilters}>
+            <X className="w-3.5 h-3.5" /> Reset
           </Button>
         )}
       </div>
@@ -244,7 +239,7 @@ export default function DocumentsPage() {
       )}
 
       {/* Table */}
-      <div className="rounded-xl border bg-white overflow-hidden">
+      <div className="rounded-lg border bg-white overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading documents…

@@ -326,8 +326,8 @@ export default function AllApplicationsPage() {
       <div className="px-6 pt-6 pb-4 border-b border-[var(--e-border)] bg-[var(--e-bg-page)]">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">All Applications</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Manage all camp and service applications</p>
+            <h1 className="text-2xl font-bold text-gray-900">All Applications</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Manage all camp and service applications</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5">
@@ -399,8 +399,8 @@ export default function AllApplicationsPage() {
       {/* ── Table ──────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-auto">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-[var(--e-bg-sidebar)] z-10">
-            <tr className="border-b border-[var(--e-border)]">
+          <thead className="sticky top-0 bg-gray-50 z-10">
+            <tr className="border-b border-gray-200">
               {isSA && (
                 <th className="px-4 py-3 w-8">
                   <input type="checkbox" className="rounded border-stone-300"
@@ -408,13 +408,13 @@ export default function AllApplicationsPage() {
                     onChange={() => toggleAll(rows.map(r => r.id))} />
                 </th>
               )}
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap min-w-[200px]">Ref No.</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Applicant</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Programme / Service</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Assigned Staff</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Date</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap min-w-[200px]">Ref No.</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Applicant</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Programme / Service</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">Assigned Staff</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">Date</th>
               <th className="px-4 py-3 w-10" />
             </tr>
           </thead>

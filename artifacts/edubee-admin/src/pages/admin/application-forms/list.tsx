@@ -151,31 +151,31 @@ export default function ApplicationFormList() {
   const selCls = "h-8 rounded-lg border border-[#E8E6E2] px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-(--e-orange)/40 focus:border-(--e-orange)";
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
+    <div className="p-6 space-y-4">
       {/* Header */}
-      <div className="bg-white border-b border-[#E8E6E2] px-6 py-4 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-[#1C1917]">Application Forms</h1>
-          <p className="text-xs text-[#A8A29E] mt-0.5">Manage custom application form links for partners</p>
+          <h1 className="text-2xl font-bold text-gray-900">Application Forms</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Manage custom application form links for partners</p>
         </div>
         <Button
-          className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white h-9 px-4 text-sm font-medium"
+          className="flex items-center gap-1.5"
           onClick={() => setLocation("/admin/application-forms/new")}
         >
-          <Plus className="w-4 h-4 mr-1.5" />
+          <Plus className="w-4 h-4" />
           New Form
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="px-6 py-4 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E]" />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="Search forms..."
+            placeholder="Search forms…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="pl-9 h-8 text-sm border-[#E8E6E2] focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange)"
+            className="pl-9"
           />
         </div>
         <select value={formTypeFilter} onChange={e => setFormTypeFilter(e.target.value)} className={selCls}>
@@ -196,8 +196,8 @@ export default function ApplicationFormList() {
       </div>
 
       {/* Table */}
-      <div className="px-6 pb-10">
-        <div className="bg-white rounded-xl border border-[#E8E6E2] overflow-hidden">
+      <div>
+        <div className="bg-white rounded-lg border overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center h-40">
               <Loader2 className="w-6 h-6 animate-spin text-(--e-orange)" />
@@ -210,19 +210,19 @@ export default function ApplicationFormList() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#E8E6E2] bg-[#F4F3F1]">
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Form Name</th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Type</th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Visibility</th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Partners</th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Source</th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Status</th>
-                  <th className="text-right px-4 py-3 text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Actions</th>
+                <tr className="border-b bg-gray-50">
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Form Name</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Visibility</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Partners</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Source</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {forms.map((form, i) => (
-                  <tr key={form.id} className={`border-b border-[#E8E6E2] hover:bg-[#FAFAF9] transition-colors ${i === forms.length - 1 ? "border-b-0" : ""}`}>
+                  <tr key={form.id} className={`border-t hover:bg-gray-50 transition-colors ${i === forms.length - 1 ? "border-b-0" : ""}`}>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => setLocation(`/admin/application-forms/${form.id}/partners`)}
@@ -309,3 +309,4 @@ export default function ApplicationFormList() {
     </div>
   );
 }
+
