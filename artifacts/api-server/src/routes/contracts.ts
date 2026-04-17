@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import {
-  contracts, applications,
+  contracts, applications, packageGroups,
   pickupMgt, tourMgt, settlementMgt,
   invoices, receipts, transactions, users,
 } from "@workspace/db/schema";
-import { eq, and, ilike, count, inArray, SQL, exists } from "drizzle-orm";
+import { eq, and, ilike, count, inArray, SQL, exists, or } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { reverseAllPendingForContract } from "../services/ledgerService.js";
@@ -31,6 +31,27 @@ router.get("/contracts", authenticate, async (req, res) => {
     const conditions: SQL[] = [];
     if (status) conditions.push(eq(contracts.status, status));
     if (search) conditions.push(ilike(contracts.contractNumber, `%${search}%`));
+
+    // Camp coordinators only see contracts for applications in their assigned package groups
+    if (req.user!.role === "camp_coordinator") {
+      const orgId = req.user!.organisationId ?? req.user!.id;
+      conditions.push(
+        exists(
+          db.select({ _: applications.id })
+            .from(applications)
+            .innerJoin(packageGroups, eq(applications.packageGroupId, packageGroups.id))
+            .where(
+              and(
+                eq(contracts.applicationId, applications.id),
+                or(
+                  eq(packageGroups.coordinatorId, orgId),
+                  eq(packageGroups.campProviderId, orgId)
+                )
+              )
+            )
+        )
+      );
+    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(contracts).where(whereClause);

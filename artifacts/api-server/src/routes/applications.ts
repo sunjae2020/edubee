@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leads, applications, applicationParticipants, contracts, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages, quote_products } from "@workspace/db/schema";
+import { leads, applications, applicationParticipants, contracts, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages, quote_products, packageGroups } from "@workspace/db/schema";
 import { packageProducts, products } from "@workspace/db/schema";
-import { eq, and, ilike, or, count, inArray, sql, asc, desc, SQL } from "drizzle-orm";
+import { eq, and, ilike, or, count, inArray, sql, asc, desc, SQL, exists } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { financeAutoGenerate } from "../services/contractFinanceService.js";
@@ -170,7 +170,26 @@ router.get("/applications", authenticate, async (req, res) => {
       ilike(applications.applicantName, `%${search}%`),
       ilike(applications.applicantEmail, `%${search}%`),
     )!);
-    // Internal staff see all applications
+
+    // Camp coordinators only see applications in their assigned package groups
+    if (req.user!.role === "camp_coordinator") {
+      const orgId = req.user!.organisationId ?? req.user!.id;
+      conditions.push(
+        exists(
+          db.select({ _: packageGroups.id })
+            .from(packageGroups)
+            .where(
+              and(
+                eq(applications.packageGroupId, packageGroups.id),
+                or(
+                  eq(packageGroups.coordinatorId, orgId),
+                  eq(packageGroups.campProviderId, orgId)
+                )
+              )
+            )
+        )
+      );
+    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(applications).where(whereClause);

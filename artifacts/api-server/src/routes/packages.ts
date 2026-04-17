@@ -21,10 +21,15 @@ router.get("/package-groups", authenticate, async (req, res) => {
     if (status) conditions.push(ilike(packageGroups.status, status));
     if (countryCode) conditions.push(eq(packageGroups.countryCode, countryCode));
 
-    // Camp coordinators see only their own (keyed by organisationId)
+    // Camp coordinators see package groups where they are the camp provider OR assigned as coordinator
     if (req.user!.role === "camp_coordinator") {
       const orgId = req.user!.organisationId ?? req.user!.id;
-      conditions.push(eq(packageGroups.campProviderId, orgId));
+      conditions.push(
+        or(
+          eq(packageGroups.campProviderId, orgId),
+          eq(packageGroups.coordinatorId, orgId)
+        )!
+      );
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

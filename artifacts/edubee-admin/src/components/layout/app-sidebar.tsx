@@ -112,6 +112,15 @@ function buildNav(effectiveRole: string): NavGroup[] {
     });
   }
 
+  if (isCC) {
+    nav.push({
+      key: "coordinator-programs", label: "Programs", catIcon: Package,
+      items: [
+        { icon: Package, label: "Package Groups", href: "/admin/package-groups" },
+      ],
+    });
+  }
+
   const financeItems: NavItem[] = [];
   if (isAdmin || isFinance) {
     financeItems.push(
