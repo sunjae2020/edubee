@@ -9,7 +9,7 @@ import { useTenantThemeCtx } from "@/hooks/use-tenant-theme";
 import {
   ChevronLeft, ChevronRight, ChevronDown,
   LayoutDashboard, Layers, Package, ShoppingBag, ListChecks,
-  Target, ClipboardList, FileText,
+  Target, ClipboardList, FileText, CalendarCheck,
   GraduationCap, Building2, Car, Map,
   Receipt, FileCheck, ArrowLeftRight, RefreshCw,
   Wallet, BarChart2,
@@ -64,6 +64,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
 
   {
     const salesItems: NavItem[] = [
+      { icon: CalendarCheck, label: "Consultations",   href: "/admin/sales/consultations" },
       { icon: ClipboardList, label: "All Applications", href: "/admin/all-applications" },
     ];
     if (isSenior || isOps)

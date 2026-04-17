@@ -69,6 +69,7 @@ import adminDataImportRouter from "./admin-data-import.js";
 import platformIntegrationsRouter from "./platform-integrations.js";
 import portalRouter from "./portal.js";
 import communityRouter from "./community.js";
+import consultationsRouter from "./consultations.js";
 import { tenantResolver } from "../middleware/tenantResolver.js";
 import { runWithTenantSchema, tenantSchemaExists, pool } from "@workspace/db";
 import type { Request, Response, NextFunction } from "express";
@@ -166,5 +167,6 @@ router.use(platformCrmRouter);
 router.use(platformIntegrationsRouter);
 router.use("/admin", adminDataImportRouter);
 router.use(campPhotosRouter);
+router.use(consultationsRouter);
 
 export default router;

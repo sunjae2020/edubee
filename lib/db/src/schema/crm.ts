@@ -171,6 +171,31 @@ export const account_contacts = pgTable("account_contacts", {
   createdOn: timestamp("created_on").notNull().defaultNow(),
 });
 
+export const consultations = pgTable("consultations", {
+  id:                uuid("id").primaryKey().defaultRandom(),
+  refNumber:         varchar("ref_number",          { length: 30  }).unique(),
+  contactId:         uuid("contact_id"),
+  accountId:         uuid("account_id"),
+  leadId:            uuid("lead_id"),
+  clientName:        varchar("client_name",         { length: 255 }),
+  clientEmail:       varchar("client_email",        { length: 255 }),
+  clientPhone:       varchar("client_phone",        { length: 50  }),
+  nationality:       varchar("nationality",         { length: 100 }),
+  consultationType:  varchar("consultation_type",   { length: 50  }).default("phone"),
+  consultationDate:  timestamp("consultation_date"),
+  subject:           varchar("subject",             { length: 255 }),
+  status:            varchar("status",              { length: 50  }).default("scheduled"),
+  assignedStaffId:   uuid("assigned_staff_id").references(() => users.id),
+  notes:             text("notes"),
+  outcome:           text("outcome"),
+  followUpDate:      date("follow_up_date"),
+  followUpAction:    text("follow_up_action"),
+  isActive:          boolean("is_active").notNull().default(true),
+  organisationId:    uuid("organisation_id").references(() => organisations.id),
+  createdAt:         timestamp("created_at").defaultNow(),
+  updatedAt:         timestamp("updated_at").defaultNow(),
+});
+
 export type Contact         = typeof contacts.$inferSelect;
 export type NewContact      = typeof contacts.$inferInsert;
 export type Account         = typeof accounts.$inferSelect;
@@ -181,3 +206,5 @@ export type Quote           = typeof quotes.$inferSelect;
 export type NewQuote        = typeof quotes.$inferInsert;
 export type QuoteProduct    = typeof quote_products.$inferSelect;
 export type NewQuoteProduct = typeof quote_products.$inferInsert;
+export type Consultation    = typeof consultations.$inferSelect;
+export type NewConsultation = typeof consultations.$inferInsert;

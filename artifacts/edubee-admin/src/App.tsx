@@ -115,6 +115,9 @@ import CommissionsPage from "@/pages/admin/commissions";
 import CommissionDetail from "@/pages/admin/commission-detail";
 import AdminCommunityPage from "@/pages/admin/community";
 
+// Sales
+import ConsultationsPage from "@/pages/admin/sales/ConsultationsPage";
+
 // CRM
 import ContactsPage from "@/pages/admin/crm/ContactsPage";
 import ContactDetailPage from "@/pages/admin/crm/ContactDetailPage";
@@ -245,6 +248,9 @@ function Router() {
       </Route>
       <Route path="/admin/leads">
         <AdminRoute title="Leads"><Leads /></AdminRoute>
+      </Route>
+      <Route path="/admin/sales/consultations">
+        <AdminRoute title="Consultations"><ConsultationsPage /></AdminRoute>
       </Route>
       <Route path="/admin/all-applications">
         <AdminRoute title="All Applications"><AllApplications /></AdminRoute>
