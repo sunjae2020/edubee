@@ -1,8 +1,8 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { differenceInDays } from "date-fns";
-import { ListChecks, Plus, Pencil, Trash2, X } from "lucide-react";
+import { ListChecks, Plus, Pencil, Trash2, X, Search, ChevronDown, ChevronUp } from "lucide-react";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { formatDate } from "@/lib/date-format";
 import { useToast } from "@/hooks/use-toast";
@@ -320,6 +320,18 @@ export default function EnrollmentSpots() {
   const [editRow, setEditRow] = useState<EnrollmentSpotRow | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Search / filter state
+  const [pgSearch, setPgSearch] = useState("");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("__all__");
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const toggleCollapse = (key: string) =>
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+
   const { data, isLoading } = useQuery<{ data: EnrollmentSpotRow[] }>({
     queryKey: ["enrollment-spots"],
     queryFn: () => axios.get(`${BASE}/api/enrollment-spots`).then(r => r.data),
@@ -378,22 +390,40 @@ export default function EnrollmentSpots() {
   const rows = data?.data ?? [];
   const sorted = useSorted(rows, sortBy, sortDir);
 
-  const grouped: GroupedData[] = [];
-  const groupMap = new Map<string, GroupedData>();
-  for (const row of sorted) {
-    const key = row.packageGroupId ?? "__ungrouped__";
-    const name = row.packageGroupName ?? "Ungrouped";
-    if (!groupMap.has(key)) {
-      const g: GroupedData = { groupName: name, groupId: row.packageGroupId, rows: [], totalSpots: 0, totalEnrolled: 0, totalAvailable: 0 };
-      groupMap.set(key, g);
-      grouped.push(g);
+  // Build all groups first
+  const allGrouped = useMemo(() => {
+    const grouped: GroupedData[] = [];
+    const groupMap = new Map<string, GroupedData>();
+    for (const row of sorted) {
+      const key = row.packageGroupId ?? "__ungrouped__";
+      const name = row.packageGroupName ?? "Ungrouped";
+      if (!groupMap.has(key)) {
+        const g: GroupedData = { groupName: name, groupId: row.packageGroupId, rows: [], totalSpots: 0, totalEnrolled: 0, totalAvailable: 0 };
+        groupMap.set(key, g);
+        grouped.push(g);
+      }
+      const g = groupMap.get(key)!;
+      g.rows.push(row);
+      g.totalSpots += row.totalSpots ?? 0;
+      g.totalEnrolled += row.enrollCount ?? 0;
+      g.totalAvailable += row.available ?? 0;
     }
-    const g = groupMap.get(key)!;
-    g.rows.push(row);
-    g.totalSpots += row.totalSpots ?? 0;
-    g.totalEnrolled += row.enrollCount ?? 0;
-    g.totalAvailable += row.available ?? 0;
-  }
+    return grouped;
+  }, [sorted]);
+
+  // Apply search / dropdown filter
+  const grouped = useMemo(() => {
+    let result = allGrouped;
+    if (selectedGroupId && selectedGroupId !== "__all__") {
+      result = result.filter(g => g.groupId === selectedGroupId);
+    } else if (pgSearch.trim()) {
+      const q = pgSearch.trim().toLowerCase();
+      result = result.filter(g => g.groupName.toLowerCase().includes(q));
+    }
+    return result;
+  }, [allGrouped, selectedGroupId, pgSearch]);
+
+  const isFiltered = selectedGroupId !== "__all__" || pgSearch.trim() !== "";
 
   return (
     <div className="space-y-5">
@@ -412,6 +442,70 @@ export default function EnrollmentSpots() {
         >
           <Plus className="w-3.5 h-3.5" /> Add Spot
         </Button>
+      </div>
+
+      {/* Search / Filter Bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Text search */}
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            value={pgSearch}
+            onChange={e => { setPgSearch(e.target.value); setSelectedGroupId("__all__"); }}
+            placeholder="Search Package Group…"
+            className="pl-8 h-9 text-sm"
+          />
+          {pgSearch && (
+            <button
+              onClick={() => setPgSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Package Group dropdown */}
+        <Select
+          value={selectedGroupId}
+          onValueChange={v => { setSelectedGroupId(v); setPgSearch(""); }}
+        >
+          <SelectTrigger className="h-9 text-sm w-[240px]">
+            <SelectValue placeholder="All Package Groups" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">All Package Groups</SelectItem>
+            {allGrouped.map(g => (
+              <SelectItem key={g.groupId ?? "__ungrouped__"} value={g.groupId ?? "__ungrouped__"}>
+                {g.groupName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Filter result badge + clear */}
+        {isFiltered && (
+          <div className="flex items-center gap-2 ml-1">
+            <span className="text-xs text-muted-foreground">
+              {grouped.length === 0
+                ? "No results"
+                : `${grouped.length} of ${allGrouped.length} group${allGrouped.length !== 1 ? "s" : ""}`}
+            </span>
+            <button
+              onClick={() => { setPgSearch(""); setSelectedGroupId("__all__"); }}
+              className="text-xs text-[#F5821F] hover:underline"
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
+
+        {/* Total summary (when not filtered) */}
+        {!isFiltered && allGrouped.length > 0 && (
+          <span className="text-xs text-muted-foreground ml-auto">
+            {allGrouped.length} group{allGrouped.length !== 1 ? "s" : ""} &middot; {rows.length} spot{rows.length !== 1 ? "s" : ""}
+          </span>
+        )}
       </div>
 
       {/* Table */}
@@ -455,12 +549,21 @@ export default function EnrollmentSpots() {
               </tr>
             </thead>
             <tbody>
-              {grouped.map((group) => (
-                <Fragment key={group.groupId ?? group.groupName}>
+              {grouped.map((group) => {
+                const gKey = group.groupId ?? group.groupName;
+                const isCollapsed = collapsedGroups.has(gKey);
+                return (
+                <Fragment key={gKey}>
                   {/* Group header row */}
-                  <tr className="bg-orange-50/70 border-b border-border">
+                  <tr
+                    className="bg-orange-50/70 border-b border-border cursor-pointer select-none hover:bg-orange-100/60 transition-colors"
+                    onClick={() => toggleCollapse(gKey)}
+                  >
                     <td className="px-4 py-2.5 font-semibold text-sm text-foreground" colSpan={4}>
                       <div className="flex items-center gap-2">
+                        {isCollapsed
+                          ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          : <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
                         <span>{group.groupName}</span>
                         <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-bold">
                           {group.rows.length}
@@ -477,8 +580,8 @@ export default function EnrollmentSpots() {
                     <td colSpan={4} className="px-4 py-2.5" />
                   </tr>
 
-                  {/* Spot rows */}
-                  {group.rows.map((row) => (
+                  {/* Spot rows (hidden when collapsed) */}
+                  {!isCollapsed && group.rows.map((row) => (
                     <tr
                       key={row.id}
                       className="border-b border-border last:border-b-0 hover:bg-orange-50/40 transition-colors"
@@ -575,7 +678,8 @@ export default function EnrollmentSpots() {
                     </tr>
                   ))}
                 </Fragment>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
