@@ -1,31 +1,35 @@
 kind = "web"
-previewPath = "/portal/"
-title = "Edubee Portal"
-version = "1.0.0"
-id = "artifacts/edubee-portal"
-router = "path"
+  previewPath = "/portal/"
+  title = "Edubee Portal"
+  version = "1.0.0"
+  id = "artifacts/edubee-portal"
+  router = "path"
 
-[[integratedSkills]]
-name = "react-vite"
-version = "1.0.0"
+  [[integratedSkills]]
+  name = "react-vite"
+  version = "1.0.0"
 
-[[services]]
-name = "web"
-paths = [ "/portal/" ]
-localPort = 23810
+  [[services]]
+  name = "web"
+  paths = [ "/portal/" ]
+  localPort = 23810
 
-[services.development]
-run = "pnpm --filter @workspace/edubee-portal run dev"
+  [services.development]
+  run = "pnpm --filter @workspace/edubee-portal run dev"
 
-[services.production]
-build = [ "pnpm", "--filter", "@workspace/edubee-portal", "run", "build" ]
-publicDir = "artifacts/edubee-portal/dist/public"
-serve = "static"
+  [services.env]
+  PORT = "23810"
+  BASE_PATH = "/portal/"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+  [services.production]
+  build = ["pnpm", "--filter", "@workspace/edubee-portal", "run", "build"]
+  run = ["pnpm", "--filter", "@workspace/edubee-portal", "run", "serve"]
 
-[services.env]
-PORT = "23810"
-BASE_PATH = "/portal/"
+  [services.production.env]
+  PORT = "23810"
+  BASE_PATH = "/portal/"
+
+  [[services.production.rewrites]]
+  from = "/*"
+  to = "/index.html"
+  
