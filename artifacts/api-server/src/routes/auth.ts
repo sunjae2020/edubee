@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, staticDb } from "@workspace/db";
 import { users, refreshTokens, accounts, authLogs, tenantInvitations, organisations } from "@workspace/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -143,8 +143,9 @@ router.post("/login", async (req, res) => {
   // If a tenant is identified, scope portal accounts to that tenant only.
   const requestingTenantId = (req as any).tenantId as string | undefined;
 
+  // Use staticDb (always public schema) — portal accounts live in public.accounts
   // Try portal_email first, fall back to email column for accounts where portal_email was not set
-  let portalAccount = await db.select().from(accounts)
+  let portalAccount = await staticDb.select().from(accounts)
     .where(
       requestingTenantId
         ? and(eq(accounts.portalEmail as any, normalizedEmail), eq(accounts.organisationId as any, requestingTenantId))
@@ -155,7 +156,7 @@ router.post("/login", async (req, res) => {
 
   if (!portalAccount) {
     // Fallback: match by email column, but only for accounts that have portal_role set
-    const [fallback] = await db.select().from(accounts)
+    const [fallback] = await staticDb.select().from(accounts)
       .where(
         requestingTenantId
           ? and(
@@ -204,13 +205,13 @@ router.post("/login", async (req, res) => {
   if (!valid) {
     const attempts = (portalAccount.portalFailedAttempts ?? 0) + 1;
     const lockData = attempts >= MAX_FAILED ? { portalLockedUntil: new Date(Date.now() + LOCK_MINUTES * 60_000) } : {};
-    await db.update(accounts).set({ portalFailedAttempts: attempts, ...lockData } as any).where(eq(accounts.id, portalAccount.id));
+    await staticDb.update(accounts).set({ portalFailedAttempts: attempts, ...lockData } as any).where(eq(accounts.id, portalAccount.id));
     await writeAuthLog("portal", portalAccount.id, normalizedEmail, "login_fail", ip, ua);
     return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
   }
 
   // Success
-  await db.update(accounts).set({
+  await staticDb.update(accounts).set({
     portalFailedAttempts: 0,
     portalLockedUntil: null,
     portalLastLoginAt: new Date(),

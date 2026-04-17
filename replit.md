@@ -2,7 +2,37 @@
 
 ## Overview
 
-Edubee is a multi-tenant SaaS CRM platform for international education agencies. It consists of three apps: **edubee-website** (marketing site, www.edubee.co), **edubee-admin** (CRM, crm.edubee.co), and **edubee-camp** (camp management, camp.edubee.co), backed by a shared Express + PostgreSQL API server.
+Edubee is a multi-tenant SaaS CRM platform for international education agencies. It consists of four apps: **edubee-website** (marketing site, www.edubee.co), **edubee-admin** (CRM, crm.edubee.co), **edubee-camp** (camp management, camp.edubee.co), and **edubee-portal** (stakeholder portal `/portal/`), backed by a shared Express + PostgreSQL API server.
+
+## Portal (edubee-portal) — `/portal/`
+Single unified portal for all external stakeholders, with role-based views:
+- **Phase 1 – Agent** (`portalRole: consultant`): Dashboard, Consultations (leads), Quotes, Contracts, Services, Finance (commissions), Documents, Community
+- **Phase 2 – Partner** (`portalRole: hotel|pickup|institute|tour`): Dashboard, Consultations, Bookings, Contracts, Services, Finance, Documents, Community
+- **Phase 3 – Student** (`portalRole: student`): Dashboard, Consultations, Quotes, Contracts, Programs (services), Finance, Documents, Community
+
+### Portal Authentication
+- All external users login at `/portal/login` — role-based routing after auth
+- Tenant scoping: `getTenantSlug()` extracts subdomain from hostname → sends `X-Organisation-Id` header → portal accounts scoped to that org
+- Accounts stored in `public.accounts` (not tenant schema) → always query via `staticDb`
+- `org.accounts.organisation_id` determines which tenant the portal user belongs to
+- Dev credentials: `Portal123!` for all portal accounts (see dev_seed.sql)
+
+### Portal Dev Accounts (myagency)
+| Email | Role | Account |
+|-------|------|---------|
+| `agent@testagency.com` | consultant | Test Agent Co |
+| `partner@bradyhotel.com` | hotel | Brady Hotel HQ |
+| `partner@browns.com.au` | institute | BROWNS English Language School |
+| `student@example.com` | student | Ji Young CHOI |
+
+### Portal API Routes (`/api/portal/*`)
+All routes in `artifacts/api-server/src/routes/portal.ts`, guarded by `authenticatePortal` middleware:
+- Common: `/me`, `/profile` (PUT), `/change-password` (POST)
+- Agent: `/dashboard/summary`, `/students`, `/students/:id`, `/leads`, `/leads/:id`, `/quotes`, `/quotes/:id`, `/commissions`, `/agent/contracts`, `/agent/services`
+- Partner: `/partner/summary`, `/partner/bookings`, `/partner/bookings/:id`, `/partner/contracts`
+- Student: `/student/summary`, `/student/quotes`, `/student/quotes/:id`, `/student/programs`, `/student/programs/:id`, `/student/consultations/:quoteId`, `/student/documents`
+- Shared: `/community` (GET/POST), `/community/:id` (GET/DELETE), `/community/:id/comments` (POST)
+- Documents: `/documents/:id/view`, `/documents/:id/download`
 
 ## Multi-tenancy Architecture (Phase 2 — Activated)
 - `users` table has `organisation_id` FK linking each user to their tenant org

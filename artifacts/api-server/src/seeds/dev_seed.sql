@@ -3712,28 +3712,22 @@ INSERT INTO public.tour_mgt VALUES ('7d17fe4a-94bf-46bd-8635-a49301db391d', '505
 
 
 -- ── Portal test account credentials (dev only) ────────────────────────────
--- Agent: agent@testagency.com / Portal123!
--- Partner: partner@browns.com.au / Portal123!
--- Student: student@example.com / Portal123!
+-- All portal accounts: Portal123!
+-- bcrypt hash of Portal123! (cost=10)
 UPDATE public.accounts SET
-  portal_temp_password  = 'Portal123!',
+  portal_password_hash  = '$2a$10$QKGJCQmYgan/JM83U4TnJ.Shd3L3O5r3TAhVHF9xiQxbDHkCAKEXO',
+  portal_temp_password  = NULL,
   portal_temp_pw_expires = '2099-12-31 00:00:00',
-  portal_must_change_pw  = false
-WHERE id IN (
-  'b78f9499-7371-437d-b5ff-c294f557d13e',
-  '632d62d0-ec97-41f9-93b7-eb1e8df595e4',
-  '1605af17-0000-0000-0000-000000000099'
-);
-UPDATE myagency.accounts SET
-  portal_temp_password  = 'Portal123!',
-  portal_temp_pw_expires = '2099-12-31 00:00:00',
-  portal_must_change_pw  = false
-WHERE id IN (
-  '18c1a739-86a0-404d-80e1-a7012eb128e1',
-  '632d62d0-ec97-41f9-93b7-eb1e8df595e4',
-  '1605af17-0000-0000-0000-000000000099',
-  '1605af17-a158-4315-827c-472d33656a5f'
-);
+  portal_must_change_pw  = false,
+  portal_failed_attempts = 0,
+  portal_locked_until    = NULL
+WHERE portal_role IS NOT NULL AND portal_email IS NOT NULL;
+
+-- Portal accounts organisation_id 수정 (tenant-scoped login 지원)
+UPDATE public.accounts
+SET organisation_id = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+WHERE portal_email IN ('agent@testagency.com', 'student@example.com')
+  AND organisation_id IS NULL;
 
 -- FK 재활성화
 SET session_replication_role = 'origin';

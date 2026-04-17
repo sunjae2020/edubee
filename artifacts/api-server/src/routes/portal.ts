@@ -11,6 +11,8 @@ import {
   contractProducts,
   leads,
   documents,
+  communityPosts,
+  communityComments,
 } from "@workspace/db/schema";
 import { eq, and, inArray, desc, sql, count, sum, isNull } from "drizzle-orm";
 import fs from "fs";
@@ -1356,6 +1358,175 @@ router.get("/portal/agent/contracts", authenticatePortal, async (req, res) => {
     return res.json({ data });
   } catch (err) {
     console.error("[portal/agent/contracts]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMMUNITY — All portal roles
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── GET /api/portal/community ──────────────────────────────────────────────
+// ?type=all|announcement|notice|question  (default: all)
+router.get("/portal/community", authenticatePortal, async (req, res) => {
+  try {
+    const typeFilter = (req.query.type as string) || "all";
+
+    const condition = typeFilter !== "all" ? eq(communityPosts.type, typeFilter) : sql`TRUE`;
+    const rows = await staticDb
+      .select()
+      .from(communityPosts)
+      .where(condition)
+      .orderBy(desc(communityPosts.isPinned), desc(communityPosts.createdAt));
+
+    return res.json({ data: rows });
+  } catch (err) {
+    console.error("[portal/community GET]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── POST /api/portal/community ─────────────────────────────────────────────
+router.post("/portal/community", authenticatePortal, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+    const { title, content, type = "question", visibility = "public" } = req.body;
+
+    if (!title?.trim() || !content?.trim()) {
+      return res.status(400).json({ error: "title and content are required" });
+    }
+
+    const [account] = await staticDb
+      .select({ name: accounts.name, portalRole: accounts.portalRole })
+      .from(accounts)
+      .where(eq(accounts.id, accountId))
+      .limit(1);
+
+    const authorName = account?.name ?? "Portal User";
+    const authorRole = account?.portalRole ?? "agent";
+
+    const [post] = await staticDb
+      .insert(communityPosts)
+      .values({
+        title: title.trim(),
+        content: content.trim(),
+        type,
+        visibility,
+        audience: "all",
+        authorAccountId: accountId,
+        authorRole,
+        authorName,
+        isPinned: false,
+        isResolved: false,
+        commentCount: 0,
+      })
+      .returning();
+
+    return res.status(201).json({ data: post });
+  } catch (err) {
+    console.error("[portal/community POST]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/community/:id ──────────────────────────────────────────
+router.get("/portal/community/:id", authenticatePortal, async (req, res) => {
+  try {
+    const [post] = await staticDb
+      .select()
+      .from(communityPosts)
+      .where(eq(communityPosts.id, req.params.id))
+      .limit(1);
+
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    const comments = await staticDb
+      .select()
+      .from(communityComments)
+      .where(eq(communityComments.postId, req.params.id))
+      .orderBy(communityComments.createdAt);
+
+    return res.json({ data: post, comments });
+  } catch (err) {
+    console.error("[portal/community/:id GET]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── DELETE /api/portal/community/:id ───────────────────────────────────────
+router.delete("/portal/community/:id", authenticatePortal, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+    const postId = req.params.id;
+
+    const [post] = await staticDb
+      .select({ id: communityPosts.id, authorAccountId: communityPosts.authorAccountId })
+      .from(communityPosts)
+      .where(eq(communityPosts.id, postId))
+      .limit(1);
+
+    if (!post) return res.status(404).json({ error: "Post not found" });
+    if (post.authorAccountId !== accountId) {
+      return res.status(403).json({ error: "Forbidden — you can only delete your own posts" });
+    }
+
+    await staticDb.delete(communityPosts).where(eq(communityPosts.id, postId));
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("[portal/community/:id DELETE]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── POST /api/portal/community/:id/comments ────────────────────────────────
+router.post("/portal/community/:id/comments", authenticatePortal, async (req, res) => {
+  try {
+    const accountId = req.portalUser!.accountId;
+    const postId = req.params.id;
+    const { content } = req.body;
+
+    if (!content?.trim()) {
+      return res.status(400).json({ error: "content is required" });
+    }
+
+    const [post] = await staticDb
+      .select({ id: communityPosts.id })
+      .from(communityPosts)
+      .where(eq(communityPosts.id, postId))
+      .limit(1);
+
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    const [account] = await staticDb
+      .select({ name: accounts.name, portalRole: accounts.portalRole })
+      .from(accounts)
+      .where(eq(accounts.id, accountId))
+      .limit(1);
+
+    const authorName = account?.name ?? "Portal User";
+    const authorRole = account?.portalRole ?? "agent";
+
+    const [comment] = await staticDb
+      .insert(communityComments)
+      .values({
+        postId,
+        content: content.trim(),
+        authorAccountId: accountId,
+        authorRole,
+        authorName,
+        isAdminReply: false,
+      })
+      .returning();
+
+    // Increment comment count
+    await staticDb
+      .update(communityPosts)
+      .set({ commentCount: sql`${communityPosts.commentCount} + 1`, updatedAt: new Date() })
+      .where(eq(communityPosts.id, postId));
+
+    return res.status(201).json({ data: comment });
+  } catch (err) {
+    console.error("[portal/community/:id/comments POST]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
