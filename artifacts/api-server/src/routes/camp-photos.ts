@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import jwt from "jsonwebtoken";
 import { db } from "@workspace/db";
 import { campPhotoFolders, campPhotos } from "@workspace/db/schema";
 import { eq, asc } from "drizzle-orm";
@@ -36,8 +37,28 @@ const upload = multer({
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"] as const;
 
 // ── Serve photo file ─────────────────────────────────────────────────────────
+// Accepts token from Authorization header OR ?token= query param (needed for <img src>)
 
-router.get("/camp-photos/file/:filename", authenticate, (req, res) => {
+const JWT_SECRET = process.env.JWT_SECRET || "edubee-camp-secret-key-change-in-production";
+
+function authenticateFlexible(req: any, res: any, next: any) {
+  let token: string | undefined;
+  const authHeader = req.headers.authorization as string | undefined;
+  if (authHeader?.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  } else if (typeof req.query.token === "string") {
+    token = req.query.token;
+  }
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+  try {
+    jwt.verify(token, JWT_SECRET);
+    return next();
+  } catch {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+router.get("/camp-photos/file/:filename", authenticateFlexible, (req, res) => {
   const filename = path.basename(req.params.filename);
   const filePath = path.join(PHOTO_DIR, filename);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File not found" });

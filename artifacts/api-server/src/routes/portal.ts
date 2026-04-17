@@ -1540,8 +1540,25 @@ const PHOTO_DIR_PORTAL = process.env.UPLOAD_DIR
   ? path.join(process.env.UPLOAD_DIR, "camp-photos")
   : path.join(process.cwd(), "uploads", "camp-photos");
 
-// Serve photo file for portal users
-router.get("/portal/student/camp-photos/file/:filename", authenticatePortal, requireStudentRole, (req, res) => {
+// Serve photo file for portal users — accepts Bearer header OR ?token= query param (for <img src>)
+router.get("/portal/student/camp-photos/file/:filename", (req: any, res: any, next: any) => {
+  const PORTAL_JWT_SECRET = process.env.JWT_SECRET || "edubee-camp-secret-key-change-in-production";
+  let token: string | undefined;
+  const authHeader = req.headers.authorization as string | undefined;
+  if (authHeader?.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  } else if (typeof req.query.token === "string") {
+    token = req.query.token;
+  }
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (jwt as any).default ? (jwt as any).default.verify(token, PORTAL_JWT_SECRET) : (jwt as any).verify(token, PORTAL_JWT_SECRET);
+    return next();
+  } catch {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+}, (req: any, res: any) => {
   const filename = path.basename(req.params.filename);
   const filePath = path.join(PHOTO_DIR_PORTAL, filename);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File not found" });

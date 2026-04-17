@@ -25,7 +25,8 @@ type Photo = {
 
 function photoUrl(objectPath: string): string {
   const filename = objectPath.split("/").pop() ?? objectPath;
-  return `${BASE_URL}/api/portal/student/camp-photos/file/${encodeURIComponent(filename)}`;
+  const token = localStorage.getItem("portal_token") ?? "";
+  return `${BASE_URL}/api/portal/student/camp-photos/file/${encodeURIComponent(filename)}?token=${encodeURIComponent(token)}`;
 }
 
 function FolderCard({ folder, onClick }: { folder: Folder; onClick: () => void }) {

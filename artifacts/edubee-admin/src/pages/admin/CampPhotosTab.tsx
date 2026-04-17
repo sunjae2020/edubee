@@ -51,7 +51,8 @@ function formatSize(bytes: number | null): string {
 
 function photoUrl(objectPath: string): string {
   const filename = objectPath.split("/").pop() ?? objectPath;
-  return `${BASE}/api/camp-photos/file/${encodeURIComponent(filename)}`;
+  const token = localStorage.getItem("edubee_token") ?? "";
+  return `${BASE}/api/camp-photos/file/${encodeURIComponent(filename)}?token=${encodeURIComponent(token)}`;
 }
 
 // ── Folder Card ─────────────────────────────────────────────────────────────
