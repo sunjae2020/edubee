@@ -1,6 +1,6 @@
 -- ============================================================
 -- 개발 DB → 프로덕션 DB 전체 동기화 스크립트
--- 생성일: 2026-04-17T11:56:55.000Z
+-- 생성일: 2026-04-17T12:04:17.000Z
 -- 주의: 기존 데이터를 모두 삭제 후 개발 데이터로 대체합니다.
 -- ============================================================
 
@@ -13,7 +13,7 @@ TRUNCATE TABLE public.accommodation_mgt, public.account_company_profiles, public
 -- PostgreSQL database dump
 --
 
-\restrict pLlHBeo6YjKbQkzdrnk252UBYYtLdR4kSzN5lW94GQopL1w2Nw1b9FhR28xcATT
+\restrict oekDbF1MIMMuiGoLLEunbptE2OcwvaxWLTLw78a1hsrhJl9JqqzQ2J7qh9CTETp
 
 -- Dumped from database version 16.10
 -- Dumped by pg_dump version 16.10
@@ -2386,8 +2386,8 @@ INSERT INTO public.users VALUES ('3aa0f8ef-e5dc-40e9-ad2a-492002fa0268', 'driver
 INSERT INTO public.users VALUES ('4fcd1396-459f-465c-8e79-253d78fe6d43', 'tsh-coordinator@thaistudyhub.com', '$2a$10$iJHRodVODhireyd1nweJE.CEKVrDFeAFIDec7hp.SpRd4edFdKNVK', 'camp_coordinator', 'TSH Coordinator', NULL, NULL, NULL, NULL, 'Asia/Seoul', 'en', NULL, NULL, NULL, NULL, 'active', '2026-04-17 11:29:43.33', '2026-04-17 11:28:30.579945', '2026-04-17 11:28:30.579945', 'education_agent', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '6176f3a0-f130-4a0d-9eca-f4af062eaaee');
 INSERT INTO public.users VALUES ('93634177-682d-49de-bfb0-431552bbd6e4', 'infothaistudyhub@gmail.com', '$2a$12$tcXwnciOe/YuSvTa3ffJm.REqJoefhvF/4PNN47DCKZPgv/s6rp6C', 'consultant', 'TSH Info', NULL, NULL, NULL, NULL, 'Asia/Seoul', 'en', NULL, NULL, NULL, NULL, 'active', NULL, '2026-04-17 02:24:26.884627', '2026-04-17 02:24:26.884627', 'education_agent', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO public.users VALUES ('19e967f0-622a-4c96-bef5-ec0145cc3058', 'guide@tours.com', '$2a$12$XnVp7/Y/hWc0U4z6AenM2eLx4bdZs6o6ASAAFh6nSsFceo5jlGUPS', 'consultant', 'Tour Guide', NULL, NULL, NULL, NULL, 'Asia/Seoul', 'en', NULL, NULL, NULL, NULL, 'active', NULL, '2026-04-11 06:27:35.254172', '2026-04-11 06:27:35.254172', 'education_agent', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
-INSERT INTO public.users VALUES ('58893164-afce-40ff-9233-3e229172498b', 'admin@edubee.co', '$2a$12$XnVp7/Y/hWc0U4z6AenM2eLx4bdZs6o6ASAAFh6nSsFceo5jlGUPS', 'admin', 'Admin User', NULL, NULL, NULL, NULL, 'Asia/Seoul', 'en', NULL, NULL, NULL, NULL, 'active', '2026-04-17 11:55:58.53', '2026-04-11 06:27:35.254172', '2026-04-11 06:27:35.254172', 'education_agent', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
-INSERT INTO public.users VALUES ('30063c30-90e9-40d4-9b07-420065659873', 'superadmin@edubee.co', '$2a$12$XnVp7/Y/hWc0U4z6AenM2eLx4bdZs6o6ASAAFh6nSsFceo5jlGUPS', 'super_admin', 'Super Admin', NULL, NULL, NULL, NULL, 'Asia/Seoul', 'en', NULL, NULL, NULL, NULL, 'active', '2026-04-17 11:56:55.397', '2026-04-11 06:27:35.254172', '2026-04-11 06:27:35.254172', 'education_agent', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
+INSERT INTO public.users VALUES ('30063c30-90e9-40d4-9b07-420065659873', 'superadmin@edubee.co', '$2a$12$XnVp7/Y/hWc0U4z6AenM2eLx4bdZs6o6ASAAFh6nSsFceo5jlGUPS', 'super_admin', 'Super Admin', NULL, NULL, NULL, NULL, 'Asia/Seoul', 'en', NULL, NULL, NULL, NULL, 'active', '2026-04-17 12:02:10.508', '2026-04-11 06:27:35.254172', '2026-04-11 06:27:35.254172', 'education_agent', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
+INSERT INTO public.users VALUES ('58893164-afce-40ff-9233-3e229172498b', 'admin@edubee.co', '$2a$12$XnVp7/Y/hWc0U4z6AenM2eLx4bdZs6o6ASAAFh6nSsFceo5jlGUPS', 'admin', 'Admin User', NULL, NULL, NULL, NULL, 'Asia/Seoul', 'en', NULL, NULL, NULL, NULL, 'active', '2026-04-17 12:02:10.997', '2026-04-11 06:27:35.254172', '2026-04-11 06:27:35.254172', 'education_agent', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
 
 
 --
@@ -3222,6 +3222,8 @@ INSERT INTO public.auth_logs VALUES ('32aa8716-a378-44f0-b46f-10ceff319c31', 'st
 INSERT INTO public.auth_logs VALUES ('d73b1016-1ee6-474e-92c1-857a32dfad55', 'staff', '30063c30-90e9-40d4-9b07-420065659873', 'superadmin@edubee.co', 'login_success', '::1', 'curl/8.14.1', '2026-04-17 11:56:10.384487');
 INSERT INTO public.auth_logs VALUES ('b13adda6-563d-4696-9582-24e988ae2482', 'staff', '30063c30-90e9-40d4-9b07-420065659873', 'superadmin@edubee.co', 'login_success', '::1', 'curl/8.14.1', '2026-04-17 11:56:17.545011');
 INSERT INTO public.auth_logs VALUES ('84377f6c-1467-4d5b-ac13-034ed1f5f808', 'staff', '30063c30-90e9-40d4-9b07-420065659873', 'superadmin@edubee.co', 'login_success', '::1', 'curl/8.14.1', '2026-04-17 11:56:55.450102');
+INSERT INTO public.auth_logs VALUES ('a4a4421a-3e42-473b-8ed4-6c66ff1dd951', 'staff', '30063c30-90e9-40d4-9b07-420065659873', 'superadmin@edubee.co', 'login_success', '::1', 'curl/8.14.1', '2026-04-17 12:02:10.552319');
+INSERT INTO public.auth_logs VALUES ('d37440b0-ebcd-4e80-b72e-2b88f824bcf7', 'staff', '58893164-afce-40ff-9233-3e229172498b', 'admin@edubee.co', 'login_success', '::1', 'curl/8.14.1', '2026-04-17 12:02:11.00113');
 
 
 --
@@ -4192,6 +4194,8 @@ INSERT INTO public.refresh_tokens VALUES ('0e833c2b-e91b-475c-9bea-c595ea6143a9'
 INSERT INTO public.refresh_tokens VALUES ('c968f913-00e3-4845-9754-e582126bcd74', '30063c30-90e9-40d4-9b07-420065659873', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMwMDYzYzMwLTkwZTktNDBkNC05YjA3LTQyMDA2NTY1OTg3MyIsInVzZXJUeXBlIjoic3RhZmYiLCJqdGkiOiI5ZmNhNjJiNC04NzAyLTQ0NjctOTNkMS01OTQ4NmQ0MDcxY2UiLCJpYXQiOjE3NzY0MjY5NzAsImV4cCI6MTc3NzAzMTc3MH0.jOcnyZqj_bR1ApPmdJfgyuIy_OFX3v7dW-Vv6DB3RP4', '2026-04-24 11:56:10.388', '2026-04-17 11:56:10.38894');
 INSERT INTO public.refresh_tokens VALUES ('e57b8e0a-8124-4451-92b0-5c3697511e08', '30063c30-90e9-40d4-9b07-420065659873', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMwMDYzYzMwLTkwZTktNDBkNC05YjA3LTQyMDA2NTY1OTg3MyIsInVzZXJUeXBlIjoic3RhZmYiLCJqdGkiOiI5NTI2YmFjZS0zNzgyLTRkZTUtYjAxMi05OWYxODIxZDhhNmMiLCJpYXQiOjE3NzY0MjY5NzcsImV4cCI6MTc3NzAzMTc3N30.yeMdN5pjCOB5tW07euBWnK4XfEsiGprsxBp6wL6Are0', '2026-04-24 11:56:17.547', '2026-04-17 11:56:17.548326');
 INSERT INTO public.refresh_tokens VALUES ('be136e95-f212-48bf-90cd-82b2975031a5', '30063c30-90e9-40d4-9b07-420065659873', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMwMDYzYzMwLTkwZTktNDBkNC05YjA3LTQyMDA2NTY1OTg3MyIsInVzZXJUeXBlIjoic3RhZmYiLCJqdGkiOiI1MTQxYTNjNC1iNWFmLTQ3ZTItOGUwZC02YTcxZjg5MjRmMTAiLCJpYXQiOjE3NzY0MjcwMTUsImV4cCI6MTc3NzAzMTgxNX0.6LKn23Wq_bueaaJDeh08LN0WjCBx2gWyDi6YIj9EBMA', '2026-04-24 11:56:55.457', '2026-04-17 11:56:55.460254');
+INSERT INTO public.refresh_tokens VALUES ('f8049b70-0a86-4073-b6a2-3ace1a287252', '30063c30-90e9-40d4-9b07-420065659873', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMwMDYzYzMwLTkwZTktNDBkNC05YjA3LTQyMDA2NTY1OTg3MyIsInVzZXJUeXBlIjoic3RhZmYiLCJqdGkiOiI2ZmYxMjNlZS1kNjE2LTRkOTYtOWFkNS05YTE2ODM1YmFmMGIiLCJpYXQiOjE3NzY0MjczMzAsImV4cCI6MTc3NzAzMjEzMH0.Xu63EoF6ent9aADAI9VtEHHejk9UjNdhSpj-p8i_I9k', '2026-04-24 12:02:10.557', '2026-04-17 12:02:10.557795');
+INSERT INTO public.refresh_tokens VALUES ('a80ccfee-5e5e-4ac8-b577-e96f8d1cde0a', '58893164-afce-40ff-9233-3e229172498b', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU4ODkzMTY0LWFmY2UtNDBmZi05MjMzLTNlMjI5MTcyNDk4YiIsInVzZXJUeXBlIjoic3RhZmYiLCJqdGkiOiIzMWU1ZmFkYi03MWQ2LTQ4M2UtOTBjYS1kODUwZjQ5ZDc4MjkiLCJpYXQiOjE3NzY0MjczMzEsImV4cCI6MTc3NzAzMjEzMX0.XhfbqrYTakoszgPH0XHak2JPGR0eE6putfbhcI_YQ9w', '2026-04-24 12:02:11.004', '2026-04-17 12:02:11.005069');
 
 
 --
@@ -6180,7 +6184,7 @@ INSERT INTO tsh.teams VALUES ('10037b58-6310-4d31-8186-ff8bc84e27c8', 'Admin Tea
 -- PostgreSQL database dump complete
 --
 
-\unrestrict pLlHBeo6YjKbQkzdrnk252UBYYtLdR4kSzN5lW94GQopL1w2Nw1b9FhR28xcATT
+\unrestrict oekDbF1MIMMuiGoLLEunbptE2OcwvaxWLTLw78a1hsrhJl9JqqzQ2J7qh9CTETp
 
 
 -- FK 재활성화

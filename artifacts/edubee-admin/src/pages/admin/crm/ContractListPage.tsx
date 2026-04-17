@@ -1,17 +1,20 @@
 import { useState, useMemo, useEffect } from "react";
 import { formatDate, formatDateTime } from "@/lib/date-format";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import axios from "axios";
 import {
   Search, Settings2, ChevronDown, X, ArrowRight,
   FileText, TrendingUp, TrendingDown, BadgeDollarSign,
   MoreHorizontal, ChevronLeft, ChevronRight as ChevronRightIcon,
+  Trash2, AlertTriangle,
 } from "lucide-react";
 import { format, differenceInWeeks } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { ClientNameCell } from "@/components/common/ClientNameCell";
 import { nameFromAccount } from "@/lib/nameUtils";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -126,6 +129,31 @@ function ActiveTag({ label, onRemove }: { label: string; onRemove: () => void })
 export default function ContractListPage() {
   const [, navigate] = useLocation();
   const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
+  const { user } = useAuth();
+  const isSA = user?.role === "super_admin";
+  const queryClient = useQueryClient();
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  const deleteMutation = useMutation({
+    mutationFn: (ids: string[]) =>
+      axios.delete(`${BASE}/api/crm/contracts/bulk`, { data: { ids } }),
+    onSuccess: () => {
+      setSelectedIds(new Set());
+      setConfirmDelete(false);
+      queryClient.invalidateQueries({ queryKey: ["crm-contracts"] });
+    },
+  });
 
   // Filter state
   const [search,    setSearch]    = useState("");
@@ -221,6 +249,15 @@ export default function ContractListPage() {
   const pagination: Pagination = resp?.pagination ?? { total: 0, page: 1, pageSize: 10, totalPages: 1 };
   const summary: Summary       = resp?.summary    ?? { activeCount: 0, arOutstanding: 0, apPayable: 0, commissionEstimate: 0 };
 
+  // toggleAll은 sorted 이후에 정의
+  function toggleAll() {
+    if (selectedIds.size === sorted.length && sorted.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(sorted.map(r => r.id)));
+    }
+  }
+
   const activeTags = useMemo(() => {
     const tags: { key: string; label: string }[] = [];
     if (status)   tags.push({ key: "status",   label: `Status: ${status}`   });
@@ -253,10 +290,56 @@ export default function ContractListPage() {
     <div className="min-h-screen bg-[#FAFAF9] p-6 space-y-5">
 
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-[#1C1917]">Contracts</h1>
-        <p className="text-sm text-[#57534E] mt-1">Manage student contracts and payment schedules</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-[#1C1917]">Contracts</h1>
+          <p className="text-sm text-[#57534E] mt-1">Manage student contracts and payment schedules</p>
+        </div>
+        {isSA && selectedIds.size > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-[#57534E]">{selectedIds.size}개 선택됨</span>
+            <Button
+              onClick={() => setConfirmDelete(true)}
+              className="flex items-center gap-1.5 bg-[#DC2626] hover:bg-[#B91C1C] text-white h-9 px-4 text-sm"
+            >
+              <Trash2 size={14} />
+              영구 삭제 ({selectedIds.size})
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Confirm Delete Dialog */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-[#FEF2F2] flex items-center justify-center">
+                <AlertTriangle size={20} className="text-[#DC2626]" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-[#1C1917]">영구 삭제 확인</h3>
+                <p className="text-sm text-[#57534E]">{selectedIds.size}개 계약서를 영구 삭제합니다</p>
+              </div>
+            </div>
+            <p className="text-sm text-[#57534E] mb-5">
+              선택한 계약서와 관련 데이터(결제 내역, 서비스 정보 등)가 <strong>영구적으로 삭제</strong>되며 복구할 수 없습니다.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setConfirmDelete(false)} disabled={deleteMutation.isPending}>
+                취소
+              </Button>
+              <Button
+                onClick={() => deleteMutation.mutate([...selectedIds])}
+                disabled={deleteMutation.isPending}
+                className="bg-[#DC2626] hover:bg-[#B91C1C] text-white"
+              >
+                {deleteMutation.isPending ? "삭제 중…" : "영구 삭제"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -415,7 +498,13 @@ export default function ContractListPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#E8E6E2]" style={{ background: "#FAFAF9" }}>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] w-8"><input type="checkbox" /></th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] w-8">
+                  {isSA && (
+                    <input type="checkbox" className="rounded"
+                      checked={sorted.length > 0 && selectedIds.size === sorted.length}
+                      onChange={toggleAll} />
+                  )}
+                </th>
                 <SortableTh col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Contract Ref</SortableTh>
                 <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Student</SortableTh>
                 <SortableTh col="programName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">School / Program</SortableTh>
@@ -456,7 +545,13 @@ export default function ContractListPage() {
                   className="border-b border-[#E8E6E2] cursor-pointer hover:bg-(--e-orange-lt) transition-colors"
                   onClick={() => navigate(`/admin/crm/contracts/${row.id}`)}
                 >
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}><input type="checkbox" /></td>
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    {isSA && (
+                      <input type="checkbox" className="rounded"
+                        checked={selectedIds.has(row.id)}
+                        onChange={() => toggleSelect(row.id)} />
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <span className="font-mono text-xs font-semibold" style={{ color:"var(--e-orange)" }}>{row.contractRefDisplay ?? "—"}</span>
                   </td>

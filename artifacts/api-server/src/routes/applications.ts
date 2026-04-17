@@ -477,6 +477,21 @@ router.patch("/applications/:id/toggle-active", authenticate, requireRole("super
   }
 });
 
+// ─── DELETE /api/applications/bulk  (super_admin 영구 삭제) ──────────────────
+router.delete("/applications/bulk", authenticate, requireRole("super_admin"), async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "ids array required" });
+    }
+    await db.delete(applications).where(inArray(applications.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/applications/bulk]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.delete("/applications/:id", authenticate, requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
   try {
     const [application] = await db.update(applications)
