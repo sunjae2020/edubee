@@ -59,9 +59,12 @@ const WORKFLOW_STEPS = [
 ]
 
 const CHALLENGE_FEATURES = [
-  { icon: '🎓', title: 'Centralised Student Data', desc: 'Every student record, document, and communication — in one searchable database.' },
-  { icon: '📊', title: 'Multiplatform Reporting', desc: 'Live dashboards that update across branches automatically as your team works.' },
-  { icon: '✅', title: 'Live Student Status', desc: 'Know where every student is in the pipeline — visa, payment, enrollment — at a glance.' },
+  { icon: '🗂️', title: 'Scattered Student Data' },
+  { icon: '💸', title: 'Lost Commissions' },
+  { icon: '⏰', title: 'Missed School Commission Deadlines' },
+  { icon: '📋', title: 'Manual Reporting' },
+  { icon: '🌐', title: 'Hours Consolidating Branch Reports' },
+  { icon: '📑', title: 'Consultations, Visas, Tuition & Docs' },
 ]
 
 const SECURITY_ITEMS = [
@@ -144,10 +147,10 @@ export default function HomePage() {
         <div className="max-w-[1440px] mx-auto px-5 sm:px-8 w-full">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-center">
             <span className="font-extrabold text-white text-sm sm:text-base lg:text-[20px]" style={{ lineHeight: '118.83%' }}>
-              TRUSTED BY STUDY ABROAD AGENCIES IN
+              IT CREATED BY STUDY ABROAD AGENCIES IN
             </span>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              {['Australia', 'Canada', 'USA', 'Philippines', 'Korea'].map((c, i) => (
+              {['Australia', 'Canada', 'Philippines', 'Korea'].map((c, i) => (
                 <div key={c} className="flex items-center gap-4">
                   {i > 0 && <div className="hidden sm:block" style={{ width: 0, height: 27, borderLeft: '2px solid #FFFFFF' }} />}
                   <span className="text-white text-sm sm:text-base lg:text-[20px]" style={{ fontWeight: 300, lineHeight: '118.83%' }}>{c}</span>
@@ -173,34 +176,41 @@ export default function HomePage() {
       >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-8 xl:px-[80px]">
           <div
-            className="rounded-[26px] px-5 sm:px-10 xl:px-14 py-10"
+            className="rounded-[26px] px-5 sm:px-10 xl:px-14 py-12 sm:py-14"
             style={{ background: 'linear-gradient(180deg, #E07F34 0%, #EC7E29 100%)' }}
           >
-            <div className="flex flex-col lg:flex-row gap-10 items-start">
+            <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-center">
+              {/* Left: heading text */}
               <div className="flex-1 min-w-0">
                 <p className="uppercase font-semibold text-white/80 mb-6 text-sm tracking-wider">THE CHALLENGE</p>
-                <h2 className="font-bold text-white mb-5 text-2xl sm:text-3xl xl:text-[40px]" style={{ lineHeight: '98%', maxWidth: 496 }}>
+                <h2 className="font-bold text-white mb-5 text-2xl sm:text-3xl xl:text-[40px]" style={{ lineHeight: '110%', maxWidth: 460 }}>
                   Running an agency shouldn't mean drowning in spreadsheets.
                 </h2>
-                <p className="text-white text-sm sm:text-base" style={{ fontWeight: 300, lineHeight: '1.4', maxWidth: 496 }}>
+                <p className="text-white/90 text-sm sm:text-base" style={{ fontWeight: 300, lineHeight: '1.55', maxWidth: 440 }}>
                   Most study abroad agencies manage students in Excel, track commissions in separate files, and report to branch staff by email. As your agency grows, this breaks down fast.
                 </p>
               </div>
 
-              <div className="flex-shrink-0 flex flex-col gap-4 w-full lg:w-[496px]">
-                {CHALLENGE_FEATURES.map((f, i) => (
-                  <div
-                    key={i}
-                    className="rounded-[26px] p-5 sm:p-6 flex items-center gap-4 sm:gap-5"
-                    style={{ border: '1px solid rgba(255,255,255,0.7)', minHeight: 100 }}
-                  >
-                    <div className="text-3xl sm:text-4xl flex-shrink-0">{f.icon}</div>
-                    <div>
-                      <h4 className="font-bold text-white mb-1 text-sm sm:text-[18px]">{f.title}</h4>
-                      <p className="text-white/80 text-xs sm:text-sm" style={{ lineHeight: '1.4' }}>{f.desc}</p>
+              {/* Right: 6 floating pain-point chips */}
+              <div className="flex-shrink-0 w-full lg:w-[480px]">
+                <div className="flex flex-wrap gap-3">
+                  {CHALLENGE_FEATURES.map((f, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2.5 rounded-[14px] px-4 py-3"
+                      style={{
+                        background: 'rgba(255,255,255,0.15)',
+                        border: '1px solid rgba(255,255,255,0.55)',
+                        backdropFilter: 'blur(4px)',
+                      }}
+                    >
+                      <span className="text-xl flex-shrink-0">{f.icon}</span>
+                      <span className="text-white font-semibold text-sm sm:text-[15px]" style={{ lineHeight: '1.2' }}>
+                        {f.title}
+                      </span>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
