@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, runWithTenantSchema } from "@workspace/db";
 import { campApplications, applicationParticipants, applications } from "@workspace/db/schema";
 import { contacts, leads, contracts, quotes, quote_products, accounts, account_contacts } from "@workspace/db/schema";
 import { packageProducts, products, packageGroups, packages as pkgsTable } from "@workspace/db/schema";
@@ -10,9 +10,13 @@ import { generateCampApplicationPdf, CampAppEmailData, fetchTermsForPackageGroup
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
+const MASTER_TENANT = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 const VALID_STATUSES = ["submitted", "reviewing", "quoted", "confirmed", "cancelled"] as const;
 
 router.get("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  const isCC = (req.user as any)?.role === "camp_coordinator";
+
+  const handler = async () => {
   try {
     const { applicationStatus, search, contractId, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum  = Math.max(1, parseInt(page));
@@ -31,6 +35,21 @@ router.get("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), asyn
         )!,
       );
     }
+
+    // Camp coordinators: only see applications linked to their package groups
+    // Priority: org impersonation (req.tenant) → user's own org → user's id
+    if (isCC) {
+      const ccOrgId = req.tenant?.id ?? (req.user as any).organisationId ?? (req.user as any).id;
+      conditions.push(sql`EXISTS (
+        SELECT 1 FROM package_groups pg_cc
+        WHERE pg_cc.id = ${campApplications.packageGroupId}
+        AND (
+          pg_cc.camp_provider_id = ${ccOrgId}::uuid
+          OR pg_cc.coordinator_id = ${ccOrgId}::uuid
+        )
+      )` as unknown as SQL);
+    }
+
     const where = conditions.length ? and(...conditions) : undefined;
 
     const [totalResult] = await db.select({ count: count() }).from(campApplications).where(where);
@@ -44,6 +63,13 @@ router.get("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), asyn
   } catch (err) {
     console.error("[GET /api/camp-applications]", err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+  };
+
+  if (isCC) {
+    await runWithTenantSchema(MASTER_TENANT, handler);
+  } else {
+    await handler();
   }
 });
 

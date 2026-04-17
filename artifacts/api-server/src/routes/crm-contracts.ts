@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, runWithTenantSchema } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 
 const router = Router();
+const MASTER_TENANT = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 
 // ─── GET /crm/contracts/filter-options ────────────────────────────────────
 // MUST be before /:id
@@ -45,6 +46,9 @@ router.get("/crm/contracts/filter-options", authenticate, async (_req, res) => {
 
 // ─── GET /crm/contracts ────────────────────────────────────────────────────
 router.get("/crm/contracts", authenticate, async (req, res) => {
+  const isCC = (req.user as any)?.role === "camp_coordinator";
+
+  const handler = async () => {
   try {
     const {
       search          = "",
@@ -65,7 +69,8 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
 
     // Build dynamic WHERE fragments
     const conds: ReturnType<typeof sql>[] = [sql`1=1`];
-    if (req.tenant)       conds.push(sql`c.organisation_id = ${req.tenant.id}::uuid`);
+    // CC users: skip tenant org filter (contracts are in master org; CC filter below handles scoping)
+    if (req.tenant && !isCC) conds.push(sql`c.organisation_id = ${req.tenant.id}::uuid`);
     if (search)           conds.push(sql`(c.contract_number ILIKE ${"%" + search + "%"} OR c.student_name ILIKE ${"%" + search + "%"})`);
     if (status)           conds.push(sql`c.status = ${status}`);
     if (dateFrom)         conds.push(sql`c.start_date >= ${dateFrom}::date`);
@@ -76,8 +81,9 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
     if (apStatus)         conds.push(sql`EXISTS (SELECT 1 FROM contract_products cp3 WHERE cp3.contract_id = c.id AND cp3.ap_status = ${apStatus})`);
 
     // Camp coordinators: only see contracts linked to their package groups
-    if ((req.user as any)?.role === "camp_coordinator") {
-      const ccOrgId = (req.user as any).organisationId ?? (req.user as any).id;
+    // Priority: org impersonation (req.tenant) → user's own org → user's id
+    if (isCC) {
+      const ccOrgId = req.tenant?.id ?? (req.user as any).organisationId ?? (req.user as any).id;
       conds.push(sql`EXISTS (
         SELECT 1
         FROM camp_applications ca_cc
@@ -226,6 +232,13 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
   } catch (err) {
     console.error("GET /crm/contracts error:", err);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+  };
+
+  if (isCC) {
+    await runWithTenantSchema(MASTER_TENANT, handler);
+  } else {
+    await handler();
   }
 });
 
