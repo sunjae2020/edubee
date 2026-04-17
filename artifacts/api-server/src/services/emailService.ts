@@ -335,6 +335,115 @@ function buildTenantCreatedHtml(p: {
 </html>`;
 }
 
+function buildPasswordResetHtml(p: {
+  fullName: string; resetUrl: string; orgName: string;
+}): string {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Password Reset</title>
+</head>
+<body style="margin:0;padding:0;background:#FAFAF9;font-family:Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table width="600" cellpadding="0" cellspacing="0"
+               style="background:#FFFFFF;border-radius:12px;border:1px solid #E8E6E2;overflow:hidden;">
+          <tr>
+            <td style="background:#F5821F;padding:32px;text-align:center;">
+              <div style="font-size:22px;font-weight:700;color:#FFFFFF;">Edubee CRM</div>
+              <div style="font-size:14px;color:rgba(255,255,255,0.85);margin-top:6px;">${p.orgName}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 48px;">
+              <h2 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#1C1917;">
+                Reset your password
+              </h2>
+              <p style="margin:0 0 24px;font-size:15px;color:#57534E;line-height:1.7;">
+                Hi <strong style="color:#1C1917;">${p.fullName}</strong>,<br>
+                We received a request to reset your password. Click the button below to create a new one.
+                This link will expire in <strong>1 hour</strong>.
+              </p>
+              <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+                <tr>
+                  <td style="border-radius:8px;background:#F5821F;">
+                    <a href="${p.resetUrl}"
+                       style="display:inline-block;padding:14px 32px;font-size:15px;
+                              font-weight:600;color:#FFFFFF;text-decoration:none;">
+                      Reset Password →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <div style="background:#FEF0E3;border-radius:8px;padding:16px 20px;border-left:4px solid #F5821F;">
+                <p style="margin:0;font-size:13px;color:#92400E;line-height:1.6;">
+                  If you didn't request a password reset, you can safely ignore this email.
+                  Your password will remain unchanged.
+                </p>
+              </div>
+              <p style="margin:24px 0 0;font-size:12px;color:#A8A29E;">
+                If the button doesn't work, copy this link:<br>
+                <span style="color:#F5821F;word-break:break-all;">${p.resetUrl}</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#F4F3F1;padding:20px 48px;border-top:1px solid #E8E6E2;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#A8A29E;">© 2026 Edubee CRM · This is an automated message</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Password Reset Email
+// ─────────────────────────────────────────────────────────────
+export async function sendPasswordResetEmail(params: {
+  toEmail:   string;
+  fullName:  string;
+  resetUrl:  string;
+  orgName:   string;
+}): Promise<{ success: boolean; error?: string }> {
+  if (!EMAIL_ENABLED) {
+    console.log('[EMAIL DISABLED] Skipping password reset email:', params.toEmail);
+    return { success: true };
+  }
+
+  const resend = getResend();
+  if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' };
+
+  const { toEmail, fullName, resetUrl, orgName } = params;
+
+  try {
+    const { error } = await resend.emails.send({
+      from:    FROM_EMAIL,
+      to:      toEmail,
+      subject: `[${orgName}] Password reset request`,
+      html:    buildPasswordResetHtml({ fullName, resetUrl, orgName }),
+    });
+
+    if (error) {
+      console.error('[RESEND ERROR] Password reset email:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('[EMAIL SENT] Password reset:', toEmail);
+    return { success: true };
+  } catch (err) {
+    console.error('[EMAIL EXCEPTION] Password reset:', err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 // Camp Onboard Welcome Email (sent when a new camp org signs up)
 // ─────────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { authenticate } from "../middleware/authenticate.js";
-import { sendWelcomeEmail } from "../services/emailService.js";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "../services/emailService.js";
 import { provisionTenantSchema, migrateTenantDataFromPublic } from "../seeds/provision-tenant.js";
 import { onboardTenant } from "../services/onboardingService.js";
 import { runWithTenantSchema } from "@workspace/db/tenant-context";
@@ -452,7 +452,49 @@ router.post("/forgot-password", async (req, res) => {
       await db.update(users)
         .set({ passwordResetToken: token, passwordResetExpires: expires })
         .where(eq(users.id, user.id));
-      console.log(`[PasswordReset] Reset link for ${normalizedEmail}: /reset-password?token=${token}`);
+
+      // Resolve reset URL: tenant subdomain → https://{subdomain}.edubee.co/admin/reset-password?token=...
+      // Fallback: APP_URL env or the request origin header
+      let baseUrl = process.env.APP_URL ?? "";
+      if (user.organisationId) {
+        const [org] = await db
+          .select({ subdomain: organisations.subdomain, name: organisations.name })
+          .from(organisations)
+          .where(eq(organisations.id, user.organisationId))
+          .limit(1);
+        if (org?.subdomain) {
+          baseUrl = `https://${org.subdomain}.edubee.co`;
+        }
+      }
+      // Fallback: derive from request origin
+      if (!baseUrl) {
+        const origin = req.get("origin") ?? req.get("referer") ?? "";
+        if (origin) {
+          try { baseUrl = new URL(origin).origin; } catch {}
+        }
+      }
+
+      const resetUrl = `${baseUrl}/admin/reset-password?token=${token}`;
+      console.log(`[PasswordReset] Reset link for ${normalizedEmail}: ${resetUrl}`);
+
+      // Look up org name for email subject
+      let orgName = "Edubee CRM";
+      if (user.organisationId) {
+        const [org] = await db
+          .select({ name: organisations.name })
+          .from(organisations)
+          .where(eq(organisations.id, user.organisationId))
+          .limit(1);
+        if (org?.name) orgName = org.name;
+      }
+
+      // Fire-and-forget: email send failure should not block the success response
+      sendPasswordResetEmail({
+        toEmail:  normalizedEmail,
+        fullName: user.fullName ?? normalizedEmail,
+        resetUrl,
+        orgName,
+      }).catch(err => console.error("[PasswordReset] Email send failed:", err));
     }
 
     return res.json({ success: true, message: "If this email is registered, you will receive a password reset link." });
