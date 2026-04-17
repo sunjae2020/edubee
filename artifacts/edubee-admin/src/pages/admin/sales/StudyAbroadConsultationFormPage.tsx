@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import axios from "axios";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Printer, ExternalLink } from "lucide-react";
+import { ConsultationPrintModal } from "@/components/common/ConsultationPrintModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,6 +95,7 @@ export default function StudyAbroadConsultationFormPage() {
   const qc = useQueryClient();
 
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [showPrint, setShowPrint] = useState(false);
 
   const { data: existingData, isLoading } = useQuery({
     queryKey: ["study-abroad-consultation", id],
@@ -194,13 +196,40 @@ export default function StudyAbroadConsultationFormPage() {
             {!isNew && <p className="text-xs text-gray-400">ID: {id}</p>}
           </div>
         </div>
-        <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="flex items-center gap-1.5">
-          <Save className="w-4 h-4" />
-          {saveMutation.isPending ? "Saving…" : "Save"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {!isNew && (
+            <Button variant="outline" size="sm" onClick={() => setShowPrint(true)} className="flex items-center gap-1.5 text-gray-600">
+              <Printer className="w-4 h-4" /> PDF
+            </Button>
+          )}
+          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="flex items-center gap-1.5">
+            <Save className="w-4 h-4" />
+            {saveMutation.isPending ? "Saving…" : "Save"}
+          </Button>
+        </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
+        {/* ─── Lead/Source badge ─── */}
+        {!isNew && existingData?.submittedVia && (
+          <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${existingData.submittedVia === "public" ? "bg-orange-50 text-orange-700 border border-orange-200" : "bg-gray-100 text-gray-600 border border-gray-200"}`}>
+              {existingData.submittedVia === "public" ? "Public Form Submission" : "Admin Created"}
+            </span>
+            {existingData.refNumber && (
+              <span className="text-xs text-gray-400">Ref: <span className="font-medium text-gray-600">{existingData.refNumber}</span></span>
+            )}
+            {existingData.leadId && (
+              <a
+                href={`/admin/crm/leads/${existingData.leadId}`}
+                className="ml-auto flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                View Linked Lead
+              </a>
+            )}
+          </div>
+        )}
 
         {/* ─── Admin ─── */}
         <SectionCard title="Admin">
@@ -524,6 +553,87 @@ export default function StudyAbroadConsultationFormPage() {
           </Button>
         </div>
       </div>
+
+      {showPrint && !isNew && (
+        <ConsultationPrintModal
+          title="Study Abroad Consultation"
+          refNumber={existingData?.refNumber}
+          status={form.status}
+          submittedVia={existingData?.submittedVia}
+          date={existingData?.createdAt}
+          onClose={() => setShowPrint(false)}
+          sections={[
+            {
+              title: "Consultation Details",
+              rows: [
+                { label: "Status", value: form.status },
+                { label: "Language", value: form.language },
+                { label: "Assigned To", value: form.assignedTo },
+                { label: "Privacy Consent", value: form.privacyConsent },
+                { label: "Marketing Consent", value: form.marketingConsent },
+              ],
+            },
+            {
+              title: "Personal Information",
+              rows: [
+                { label: "Full Name", value: form.fullName || `${form.firstName} ${form.lastName}`.trim() },
+                { label: "Date of Birth", value: form.dateOfBirth },
+                { label: "Gender", value: form.gender },
+                { label: "Nationality", value: form.nationality },
+                { label: "Email", value: form.email },
+                { label: "Phone", value: form.phone },
+                { label: "Current City", value: form.currentCity },
+                { label: "Current Country", value: form.currentCountry },
+                { label: "KakaoTalk ID", value: form.kakaoId },
+                { label: "Messenger ID", value: form.messengerId },
+                { label: "Referral Sources", value: form.referralSources },
+              ],
+            },
+            {
+              title: "Study Preferences",
+              rows: [
+                { label: "Destination Countries", value: form.destinationCountries },
+                { label: "Course Types", value: form.courseTypes },
+                { label: "Field of Study", value: form.fieldOfStudy },
+                { label: "Study Level", value: form.studyLevel },
+                { label: "Study Duration", value: form.studyDuration },
+                { label: "Target Start Term", value: form.targetStartTerm },
+                { label: "Preferred Institutions", value: form.preferredInstitutions },
+                { label: "Accommodation", value: form.accommodationPreference },
+                { label: "Airport Pickup", value: form.airportPickup },
+                { label: "Annual Budget", value: form.annualBudget },
+              ],
+            },
+            {
+              title: "Academic & Language Background",
+              rows: [
+                { label: "English Level", value: form.englishLevel },
+                { label: "English Test Type", value: form.englishTestType },
+                { label: "English Score", value: form.englishScore },
+                { label: "Current Education Level", value: form.currentEducationLevel },
+                { label: "Current Institution", value: form.currentInstitution },
+                { label: "Work Experience", value: form.workExperience },
+              ],
+            },
+            {
+              title: "Financial & Visa",
+              rows: [
+                { label: "Funding Source", value: form.fundingSource },
+                { label: "Visa Type Interest", value: form.visaTypeInterest },
+                { label: "Health / Special Needs", value: form.healthSpecialNeeds },
+                { label: "Questions / Notes", value: form.questionsNotes },
+              ],
+            },
+            {
+              title: "Admin Notes",
+              rows: [
+                { label: "Notes", value: form.adminNotes },
+                { label: "Document Notes", value: form.documentNotes },
+              ],
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

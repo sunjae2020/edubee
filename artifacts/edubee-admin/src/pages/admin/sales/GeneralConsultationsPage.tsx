@@ -5,8 +5,9 @@ import axios from "axios";
 import { useAuth } from "@/hooks/use-auth";
 import { useBulkSelect } from "@/hooks/use-bulk-select";
 import { BulkActionBar } from "@/components/common/BulkActionBar";
-import { Plus, Search, Pencil } from "lucide-react";
+import { Plus, Search, Pencil, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ShareLinkModal } from "@/components/common/ShareLinkModal";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,7 @@ export default function GeneralConsultationsPage() {
   const [page, setPage]     = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const sortState = useSortState("createdAt", "desc");
   const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
@@ -93,9 +95,14 @@ export default function GeneralConsultationsPage() {
           <h1 className="text-2xl font-bold text-gray-900">General Consultation</h1>
           <p className="text-sm text-gray-500 mt-0.5">{total} record{total !== 1 ? "s" : ""}</p>
         </div>
-        <Button onClick={() => navigate("/admin/sales/general-consultations/new")} className="flex items-center gap-1.5">
-          <Plus className="w-4 h-4" /> New Consultation
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowShareModal(true)} className="flex items-center gap-1.5 text-gray-600">
+            <Link2 className="w-4 h-4" /> Share Link
+          </Button>
+          <Button onClick={() => navigate("/admin/sales/general-consultations/new")} className="flex items-center gap-1.5">
+            <Plus className="w-4 h-4" /> New Consultation
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
@@ -206,6 +213,14 @@ export default function GeneralConsultationsPage() {
       </div>
 
       <TableFooter page={page} totalPages={totalPages} total={total} pageSize={20} onPageChange={setPage} />
+
+      {showShareModal && (
+        <ShareLinkModal
+          title="General Consultation Form"
+          publicUrl={`${window.location.origin}/website/forms/general-consultation`}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
     </div>
   );
 }

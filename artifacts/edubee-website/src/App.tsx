@@ -38,6 +38,9 @@ import MarketingPage from "@/pages/platform/MarketingPage";
 import AccessPage from "@/pages/platform/AccessPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
+import SchoolingConsultationForm from "@/pages/forms/SchoolingConsultationForm";
+import StudyAbroadConsultationForm from "@/pages/forms/StudyAbroadConsultationForm";
+import GeneralConsultationForm from "@/pages/forms/GeneralConsultationForm";
 import "@/i18n/config";
 
 const queryClient = new QueryClient();
@@ -208,6 +211,17 @@ function Router() {
       </Route>
       <Route path="/register">
         <SiteLayout><RegisterPage /></SiteLayout>
+      </Route>
+
+      {/* Public consultation forms */}
+      <Route path="/forms/schooling-consultation">
+        <SiteLayout><SchoolingConsultationForm /></SiteLayout>
+      </Route>
+      <Route path="/forms/study-abroad-consultation">
+        <SiteLayout><StudyAbroadConsultationForm /></SiteLayout>
+      </Route>
+      <Route path="/forms/general-consultation">
+        <SiteLayout><GeneralConsultationForm /></SiteLayout>
       </Route>
 
       {/* Public form / camp application slugs → show as popup over landing page */}

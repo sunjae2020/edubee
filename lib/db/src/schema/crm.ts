@@ -175,6 +175,8 @@ export const account_contacts = pgTable("account_contacts", {
 export const schoolingConsultations = pgTable("schooling_consultations", {
   id:               uuid("id").primaryKey().defaultRandom(),
   refNumber:        varchar("ref_number",   { length: 30  }).unique(),
+  leadId:           uuid("lead_id").references(() => leads.id),
+  submittedVia:     varchar("submitted_via",{ length: 20  }).default("admin"),
   status:           varchar("status",       { length: 20  }).default("new"),
   assignedTo:       varchar("assigned_to",  { length: 100 }),
   adminNotes:       text("admin_notes"),
@@ -254,6 +256,8 @@ export type NewQuoteProduct = typeof quote_products.$inferInsert;
 export const studyAbroadConsultations = pgTable("study_abroad_consultations", {
   id:               uuid("id").primaryKey().defaultRandom(),
   refNumber:        varchar("ref_number",   { length: 30  }).unique(),
+  leadId:           uuid("lead_id").references(() => leads.id),
+  submittedVia:     varchar("submitted_via",{ length: 20  }).default("admin"),
   status:           varchar("status",       { length: 20  }).default("new"),
   assignedTo:       varchar("assigned_to",  { length: 100 }),
   adminNotes:       text("admin_notes"),
@@ -318,6 +322,8 @@ export type NewStudyAbroadConsultation    = typeof studyAbroadConsultations.$inf
 export const generalConsultations = pgTable("general_consultations", {
   id:               uuid("id").primaryKey().defaultRandom(),
   refNumber:        varchar("ref_number",   { length: 30  }).unique(),
+  leadId:           uuid("lead_id").references(() => leads.id),
+  submittedVia:     varchar("submitted_via",{ length: 20  }).default("admin"),
   status:           varchar("status",       { length: 20  }).default("new"),
   assignedTo:       varchar("assigned_to",  { length: 100 }),
   adminNotes:       text("admin_notes"),

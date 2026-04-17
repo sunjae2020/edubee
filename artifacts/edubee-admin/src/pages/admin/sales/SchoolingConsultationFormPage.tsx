@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import axios from "axios";
-import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, Save } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, Save, Printer, ExternalLink } from "lucide-react";
+import { ConsultationPrintModal } from "@/components/common/ConsultationPrintModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -147,6 +148,7 @@ export default function SchoolingConsultationFormPage() {
 
   const [form, setForm]         = useState({ ...EMPTY_FORM });
   const [students, setStudents] = useState<StudentForm[]>([emptyStudent()]);
+  const [showPrint, setShowPrint] = useState(false);
 
   const { data: existingData, isLoading } = useQuery({
     queryKey: ["schooling-consultation", id],
@@ -262,13 +264,40 @@ export default function SchoolingConsultationFormPage() {
             {!isNew && <p className="text-xs text-gray-400">ID: {id}</p>}
           </div>
         </div>
-        <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="flex items-center gap-1.5">
-          <Save className="w-4 h-4" />
-          {saveMutation.isPending ? "Saving…" : "Save"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {!isNew && (
+            <Button variant="outline" size="sm" onClick={() => setShowPrint(true)} className="flex items-center gap-1.5 text-gray-600">
+              <Printer className="w-4 h-4" /> PDF
+            </Button>
+          )}
+          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="flex items-center gap-1.5">
+            <Save className="w-4 h-4" />
+            {saveMutation.isPending ? "Saving…" : "Save"}
+          </Button>
+        </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
+        {/* ─── Lead/Source badge ─── */}
+        {!isNew && existingData?.submittedVia && (
+          <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${existingData.submittedVia === "public" ? "bg-orange-50 text-orange-700 border border-orange-200" : "bg-gray-100 text-gray-600 border border-gray-200"}`}>
+              {existingData.submittedVia === "public" ? "Public Form Submission" : "Admin Created"}
+            </span>
+            {existingData.refNumber && (
+              <span className="text-xs text-gray-400">Ref: <span className="font-medium text-gray-600">{existingData.refNumber}</span></span>
+            )}
+            {existingData.leadId && (
+              <a
+                href={`/admin/crm/leads/${existingData.leadId}`}
+                className="ml-auto flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                View Linked Lead
+              </a>
+            )}
+          </div>
+        )}
         {/* ─── Section 1: Admin ─── */}
         <SectionCard title="Admin">
           <div className="grid grid-cols-2 gap-4">
@@ -611,6 +640,91 @@ export default function SchoolingConsultationFormPage() {
           </Button>
         </div>
       </div>
+
+      {showPrint && !isNew && (
+        <ConsultationPrintModal
+          title="Schooling Consultation"
+          refNumber={existingData?.refNumber}
+          status={form.status}
+          submittedVia={existingData?.submittedVia}
+          date={existingData?.createdAt}
+          onClose={() => setShowPrint(false)}
+          sections={[
+            {
+              title: "Consultation Details",
+              rows: [
+                { label: "Status", value: form.status },
+                { label: "Language", value: form.language },
+                { label: "Assigned To", value: form.assignedTo },
+                { label: "Privacy Consent", value: form.privacyConsent },
+              ],
+            },
+            {
+              title: "Guardian Information",
+              rows: [
+                { label: "Guardian Name", value: form.guardianName },
+                { label: "Relationship", value: form.relationship },
+                { label: "Phone", value: form.phone },
+                { label: "Email", value: form.email },
+                { label: "KakaoTalk ID", value: form.kakaoId },
+                { label: "Messenger ID", value: form.messengerId },
+                { label: "Accompanying Students", value: form.accompaniment },
+                { label: "Referral Sources", value: form.referralSources },
+              ],
+            },
+            {
+              title: "Study Preferences",
+              rows: [
+                { label: "Preferred AU States", value: form.preferredStates },
+                { label: "Urban Preference (1-5)", value: form.urbanPreference?.toString() },
+                { label: "School Types", value: form.schoolTypes },
+                { label: "School Priorities", value: form.schoolPriorities },
+                { label: "Preferred Schools", value: form.preferredSchools },
+                { label: "Study Duration", value: form.studyDuration },
+                { label: "Target Term", value: form.targetTerm },
+                { label: "Accommodation", value: form.accommodation },
+                { label: "Annual Budget", value: form.annualBudget },
+                { label: "Main Concerns", value: form.concerns },
+                { label: "Special Notes", value: form.specialNote },
+              ],
+            },
+            {
+              title: "Consultation Schedule",
+              rows: [
+                { label: "Preferred Method", value: form.consultMethod },
+                { label: "Available Times", value: form.consultTimes },
+              ],
+            },
+            ...students.map((s, i) => ({
+              title: `Student ${i + 1}${s.name ? ` — ${s.name}` : ""}`,
+              rows: [
+                { label: "Name", value: s.name },
+                { label: "Gender", value: s.gender },
+                { label: "Date of Birth", value: s.dateOfBirth },
+                { label: "Current Grade", value: s.currentGrade },
+                { label: "Current School", value: s.currentSchool },
+                { label: "Current City", value: s.currentCity },
+                { label: "English Level", value: s.englishLevel },
+                { label: "English Score", value: s.englishScore },
+                { label: "Target AU Grade", value: s.targetAuGrade },
+                { label: "Learning Style", value: s.learningStyle?.toString() },
+                { label: "Sociability", value: s.sociability?.toString() },
+                { label: "Independence", value: s.independence?.toString() },
+                { label: "Emotional Stability", value: s.emotionalStability?.toString() },
+                { label: "Interests", value: s.interests },
+                { label: "Post-Grad Plans", value: s.postGradPlans },
+                { label: "Target University", value: s.targetUniversity },
+              ],
+            })),
+            {
+              title: "Admin Notes",
+              rows: [
+                { label: "Notes", value: form.adminNotes },
+              ],
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }
