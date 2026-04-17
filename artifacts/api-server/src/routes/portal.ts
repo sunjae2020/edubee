@@ -1432,9 +1432,12 @@ router.post("/portal/community", authenticatePortal, async (req, res) => {
   }
 });
 
+const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // ── GET /api/portal/community/:id ──────────────────────────────────────────
 router.get("/portal/community/:id", authenticatePortal, async (req, res) => {
   try {
+    if (!_UUID_RE.test(req.params.id)) return res.status(400).json({ error: "Invalid ID" });
     const [post] = await staticDb
       .select()
       .from(communityPosts)
@@ -1461,6 +1464,7 @@ router.delete("/portal/community/:id", authenticatePortal, async (req, res) => {
   try {
     const accountId = req.portalUser!.accountId;
     const postId = req.params.id;
+    if (!_UUID_RE.test(postId)) return res.status(400).json({ error: "Invalid ID" });
 
     const [post] = await staticDb
       .select({ id: communityPosts.id, authorAccountId: communityPosts.authorAccountId })
@@ -1486,6 +1490,7 @@ router.post("/portal/community/:id/comments", authenticatePortal, async (req, re
   try {
     const accountId = req.portalUser!.accountId;
     const postId = req.params.id;
+    if (!_UUID_RE.test(postId)) return res.status(400).json({ error: "Invalid ID" });
     const { content } = req.body;
 
     if (!content?.trim()) {

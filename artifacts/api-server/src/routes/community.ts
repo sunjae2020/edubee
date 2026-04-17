@@ -15,6 +15,9 @@ const router = Router();
 // SHARED HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUUID(v: string) { return UUID_RE.test(v); }
+
 const PARTNER_ROLES = ["hotel", "pickup", "institute", "tour"];
 
 /**
@@ -87,6 +90,7 @@ router.get("/portal/community", authenticatePortal, async (req, res) => {
 router.get("/portal/community/:id", authenticatePortal, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isUUID(id)) return res.status(400).json({ error: "Invalid ID" });
     const { accountId } = req.portalUser!;
 
     const [post] = await db
@@ -163,6 +167,7 @@ router.post("/portal/community", authenticatePortal, async (req, res) => {
 router.post("/portal/community/:id/comments", authenticatePortal, async (req, res) => {
   try {
     const { id: postId } = req.params;
+    if (!isUUID(postId)) return res.status(400).json({ error: "Invalid ID" });
     const { accountId, portalRole, accountName } = req.portalUser!;
     const { content } = req.body;
 
@@ -209,6 +214,7 @@ router.post("/portal/community/:id/comments", authenticatePortal, async (req, re
 router.delete("/portal/community/:id", authenticatePortal, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isUUID(id)) return res.status(400).json({ error: "Invalid ID" });
     const { accountId } = req.portalUser!;
 
     const [post] = await db
@@ -291,6 +297,7 @@ router.post("/community", authenticate, async (req, res) => {
 router.get("/community/:id", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isUUID(id)) return res.status(400).json({ error: "Invalid ID" });
 
     const [post] = await db
       .select()
@@ -317,6 +324,7 @@ router.get("/community/:id", authenticate, async (req, res) => {
 router.put("/community/:id", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isUUID(id)) return res.status(400).json({ error: "Invalid ID" });
     const { title, content, type, visibility, audience, isPinned, isResolved } = req.body;
 
     const update: Partial<typeof communityPosts.$inferInsert> = { updatedAt: new Date() };
@@ -346,6 +354,7 @@ router.put("/community/:id", authenticate, async (req, res) => {
 router.delete("/community/:id", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isUUID(id)) return res.status(400).json({ error: "Invalid ID" });
     await db.delete(communityPosts).where(eq(communityPosts.id, id));
     return res.json({ success: true });
   } catch (err) {
@@ -358,6 +367,7 @@ router.delete("/community/:id", authenticate, async (req, res) => {
 router.post("/community/:id/comments", authenticate, async (req, res) => {
   try {
     const { id: postId } = req.params;
+    if (!isUUID(postId)) return res.status(400).json({ error: "Invalid ID" });
     const user = (req as any).user;
     const { content } = req.body;
 
