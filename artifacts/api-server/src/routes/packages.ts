@@ -1105,9 +1105,15 @@ router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_
 
     if (packageGroupId) conditions.push(eq(enrollmentSpots.packageGroupId, packageGroupId));
 
-    // Camp coordinators can only see spots for their own package groups
+    // Camp coordinators can only see spots for groups where they are campProvider OR coordinator
     if (req.user!.role === "camp_coordinator") {
-      conditions.push(eq(packageGroups.campProviderId, req.user!.id));
+      const orgId = req.user!.organisationId ?? req.user!.id;
+      conditions.push(
+        or(
+          eq(packageGroups.campProviderId, orgId),
+          eq(packageGroups.coordinatorId, orgId)
+        )!
+      );
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -1199,11 +1205,12 @@ router.post("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp
     if (!packageGroupId || !gradeLabel || totalSpots == null) {
       return res.status(400).json({ error: "packageGroupId, gradeLabel, totalSpots are required" });
     }
-    // Camp coordinators can only create for own groups
+    // Camp coordinators can only create for groups where they are campProvider OR coordinator
     if (req.user!.role === "camp_coordinator") {
-      const [grp] = await db.select({ campProviderId: packageGroups.campProviderId })
+      const orgId = req.user!.organisationId ?? req.user!.id;
+      const [grp] = await db.select({ campProviderId: packageGroups.campProviderId, coordinatorId: packageGroups.coordinatorId })
         .from(packageGroups).where(eq(packageGroups.id, packageGroupId)).limit(1);
-      if (!grp || grp.campProviderId !== req.user!.id) {
+      if (!grp || (grp.campProviderId !== orgId && grp.coordinatorId !== orgId)) {
         return res.status(403).json({ error: "Forbidden" });
       }
     }

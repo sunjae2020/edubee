@@ -85,7 +85,7 @@ const CC_PAGES = [
   "applications","documents",
   "package-groups","packages","enrollment-spots","camp-applications","camp-contracts",
   "services/institute","services/hotel","services/pickup","services/tour","services/interviews",
-  "services/study-abroad","services/accommodation","services/internship","services/guardian","services/settlement","services/other",
+  "services/study-abroad","services/accommodation","services/internship","services/guardian","services/settlement","services/other","services/visa",
   "my-accounting/settlements","my-accounting/invoices","my-accounting/revenue",
   "reports",
 ];

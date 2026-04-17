@@ -75,6 +75,24 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
     if (arStatus)         conds.push(sql`EXISTS (SELECT 1 FROM contract_products cp2 WHERE cp2.contract_id = c.id AND cp2.ar_status = ${arStatus})`);
     if (apStatus)         conds.push(sql`EXISTS (SELECT 1 FROM contract_products cp3 WHERE cp3.contract_id = c.id AND cp3.ap_status = ${apStatus})`);
 
+    // Camp coordinators: only see contracts linked to their package groups
+    if ((req.user as any)?.role === "camp_coordinator") {
+      const ccOrgId = (req.user as any).organisationId ?? (req.user as any).id;
+      conds.push(sql`EXISTS (
+        SELECT 1
+        FROM camp_applications ca_cc
+        INNER JOIN package_groups pg_cc ON pg_cc.id = ca_cc.package_group_id
+        WHERE ca_cc.id = COALESCE(
+          c.camp_application_id,
+          (SELECT q2.camp_application_id FROM quotes q2 WHERE q2.id = c.quote_id)
+        )
+        AND (
+          pg_cc.camp_provider_id = ${ccOrgId}::uuid
+          OR pg_cc.coordinator_id = ${ccOrgId}::uuid
+        )
+      )`);
+    }
+
     const where = sql.join(conds, sql` AND `);
 
     const r = (x: any) => x.rows ?? (x as any[]);
