@@ -14,7 +14,7 @@ function statusStyle(s: string | null | undefined) {
   if (v === "sent" || v === "revised") return { background: "#FFFBEB", color: "#D97706", border: "1px solid #FDE68A" };
   if (v === "draft" || v === "pending") return { background: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE" };
   if (v === "cancelled" || v === "rejected" || v === "expired") return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
-  return { background: "#F4F3F1", color: "#57534E", border: "1px solid #E8E6E2" };
+  return { background: "var(--e-bg-muted)", color: "var(--e-text-2)", border: "1px solid #E8E6E2" };
 }
 
 function serviceLabel(t: string | null | undefined) {
@@ -66,7 +66,7 @@ export default function AgentQuoteDetailPage() {
   if (error || !data) {
     return (
       <div className="max-w-4xl mx-auto">
-        <button onClick={() => navigate("/quotes")} className="flex items-center gap-1.5 text-sm mb-4" style={{ color: "#A8A29E" }}>
+        <button onClick={() => navigate("/quotes")} className="flex items-center gap-1.5 text-sm mb-4" style={{ color: "var(--e-text-3)" }}>
           <ArrowLeft size={14} /> Back to Quotes
         </button>
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 flex items-center gap-2">
@@ -82,17 +82,17 @@ export default function AgentQuoteDetailPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       {/* Back */}
-      <button onClick={() => navigate("/quotes")} className="flex items-center gap-1.5 text-sm" style={{ color: "#A8A29E" }}>
+      <button onClick={() => navigate("/quotes")} className="flex items-center gap-1.5 text-sm" style={{ color: "var(--e-text-3)" }}>
         <ArrowLeft size={14} /> Back to Quotes
       </button>
 
       {/* Header card */}
-      <div className="rounded-xl border p-6" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+      <div className="rounded-xl border p-6" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <FileText size={16} style={{ color: "#F5821F" }} />
-              <h1 className="text-lg font-bold" style={{ color: "#1C1917" }}>
+              <FileText size={16} style={{ color: "var(--e-orange)" }} />
+              <h1 className="text-lg font-bold" style={{ color: "var(--e-text-1)" }}>
                 {quote.quoteRefNumber ?? "Draft Quote"}
               </h1>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
@@ -100,74 +100,74 @@ export default function AgentQuoteDetailPage() {
                 {quote.quoteStatus}
               </span>
             </div>
-            <p className="text-sm" style={{ color: "#57534E" }}>
+            <p className="text-sm" style={{ color: "var(--e-text-2)" }}>
               {quote.accountName ?? quote.customerName ?? "—"}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold" style={{ color: "#1C1917" }}>{money(totalValue)}</p>
-            <p className="text-xs" style={{ color: "#A8A29E" }}>Total Quote Value</p>
+            <p className="text-2xl font-bold" style={{ color: "var(--e-text-1)" }}>{money(totalValue)}</p>
+            <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Total Quote Value</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
           <div>
-            <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: "#A8A29E" }}>Created</p>
-            <p style={{ color: "#57534E" }}>{fmt(quote.createdOn)}</p>
+            <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: "var(--e-text-3)" }}>Created</p>
+            <p style={{ color: "var(--e-text-2)" }}>{fmt(quote.createdOn)}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: "#A8A29E" }}>Expiry Date</p>
-            <p style={{ color: "#57534E" }}>{fmt(quote.expiryDate)}</p>
+            <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: "var(--e-text-3)" }}>Expiry Date</p>
+            <p style={{ color: "var(--e-text-2)" }}>{fmt(quote.expiryDate)}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: "#A8A29E" }}>Last Updated</p>
-            <p style={{ color: "#57534E" }}>{fmt(quote.modifiedOn)}</p>
+            <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: "var(--e-text-3)" }}>Last Updated</p>
+            <p style={{ color: "var(--e-text-2)" }}>{fmt(quote.modifiedOn)}</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {/* Student info */}
-        <div className="rounded-xl border p-5" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+        <div className="rounded-xl border p-5" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
           <div className="flex items-center gap-2 mb-3">
-            <User size={15} style={{ color: "#F5821F" }} />
-            <h2 className="font-semibold text-sm" style={{ color: "#1C1917" }}>Student</h2>
+            <User size={15} style={{ color: "var(--e-orange)" }} />
+            <h2 className="font-semibold text-sm" style={{ color: "var(--e-text-1)" }}>Student</h2>
           </div>
           {student ? (
             <div className="space-y-1.5 text-sm">
-              <p className="font-medium" style={{ color: "#1C1917" }}>{student.name}</p>
-              {student.email && <p style={{ color: "#57534E" }}>{student.email}</p>}
-              {student.phoneNumber && <p style={{ color: "#57534E" }}>{student.phoneNumber}</p>}
-              {student.country && <p style={{ color: "#A8A29E" }}>{student.country}</p>}
+              <p className="font-medium" style={{ color: "var(--e-text-1)" }}>{student.name}</p>
+              {student.email && <p style={{ color: "var(--e-text-2)" }}>{student.email}</p>}
+              {student.phoneNumber && <p style={{ color: "var(--e-text-2)" }}>{student.phoneNumber}</p>}
+              {student.country && <p style={{ color: "var(--e-text-3)" }}>{student.country}</p>}
             </div>
           ) : (
-            <p className="text-sm" style={{ color: "#A8A29E" }}>No student linked</p>
+            <p className="text-sm" style={{ color: "var(--e-text-3)" }}>No student linked</p>
           )}
         </div>
 
         {/* Contract info */}
         {contract && (
-          <div className="rounded-xl border p-5" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+          <div className="rounded-xl border p-5" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
             <div className="flex items-center gap-2 mb-3">
-              <Building2 size={15} style={{ color: "#F5821F" }} />
-              <h2 className="font-semibold text-sm" style={{ color: "#1C1917" }}>Linked Contract</h2>
+              <Building2 size={15} style={{ color: "var(--e-orange)" }} />
+              <h2 className="font-semibold text-sm" style={{ color: "var(--e-text-1)" }}>Linked Contract</h2>
             </div>
             <div className="space-y-1.5 text-sm">
               <div className="flex items-center gap-2">
-                <p className="font-medium" style={{ color: "#1C1917" }}>{contract.contractNumber}</p>
+                <p className="font-medium" style={{ color: "var(--e-text-1)" }}>{contract.contractNumber}</p>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize"
                   style={statusStyle(contract.status)}>{contract.status}</span>
               </div>
               {contract.courseStartDate && (
-                <p style={{ color: "#57534E" }}>{fmt(contract.courseStartDate)} → {fmt(contract.courseEndDate)}</p>
+                <p style={{ color: "var(--e-text-2)" }}>{fmt(contract.courseStartDate)} → {fmt(contract.courseEndDate)}</p>
               )}
               <div className="flex gap-4 pt-1">
                 <div>
-                  <p className="text-xs" style={{ color: "#A8A29E" }}>Paid</p>
+                  <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Paid</p>
                   <p className="font-semibold" style={{ color: "#16A34A" }}>{money(contract.paidAmount)}</p>
                 </div>
                 <div>
-                  <p className="text-xs" style={{ color: "#A8A29E" }}>Balance</p>
+                  <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Balance</p>
                   <p className="font-semibold" style={{ color: contract.balanceAmount > 0 ? "#D97706" : "#16A34A" }}>{money(contract.balanceAmount)}</p>
                 </div>
               </div>
@@ -177,21 +177,21 @@ export default function AgentQuoteDetailPage() {
       </div>
 
       {/* Products table */}
-      <div className="rounded-xl border overflow-hidden" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
-        <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "#E8E6E2" }}>
-          <Package size={15} style={{ color: "#F5821F" }} />
-          <h2 className="font-semibold text-sm" style={{ color: "#1C1917" }}>Quote Items</h2>
-          <span className="ml-auto text-xs" style={{ color: "#A8A29E" }}>{products.length} item{products.length !== 1 ? "s" : ""}</span>
+      <div className="rounded-xl border overflow-hidden" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
+        <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--e-border)" }}>
+          <Package size={15} style={{ color: "var(--e-orange)" }} />
+          <h2 className="font-semibold text-sm" style={{ color: "var(--e-text-1)" }}>Quote Items</h2>
+          <span className="ml-auto text-xs" style={{ color: "var(--e-text-3)" }}>{products.length} item{products.length !== 1 ? "s" : ""}</span>
         </div>
         {products.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-center" style={{ color: "#A8A29E" }}>No items in this quote</p>
+          <p className="px-5 py-8 text-sm text-center" style={{ color: "var(--e-text-3)" }}>No items in this quote</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: "#FAFAF9", borderBottom: "1px solid #E8E6E2" }}>
+                <tr style={{ background: "var(--e-bg-page)", borderBottom: "1px solid #E8E6E2" }}>
                   {["Service", "Type", "Qty", "Unit Price", "Total"].map(h => (
-                    <th key={h} className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#A8A29E" }}>{h}</th>
+                    <th key={h} className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -199,18 +199,18 @@ export default function AgentQuoteDetailPage() {
                 {products.map((p: any) => (
                   <tr key={p.id} style={{ borderBottom: "1px solid #F4F3F1" }}>
                     <td className="px-5 py-3">
-                      <p className="font-medium" style={{ color: "#1C1917" }}>{p.productName ?? p.name ?? "—"}</p>
-                      {p.description && <p className="text-xs mt-0.5" style={{ color: "#A8A29E" }}>{p.description}</p>}
+                      <p className="font-medium" style={{ color: "var(--e-text-1)" }}>{p.productName ?? p.name ?? "—"}</p>
+                      {p.description && <p className="text-xs mt-0.5" style={{ color: "var(--e-text-3)" }}>{p.description}</p>}
                     </td>
-                    <td className="px-5 py-3 text-xs" style={{ color: "#57534E" }}>{serviceLabel(p.serviceModuleType)}</td>
-                    <td className="px-5 py-3" style={{ color: "#57534E" }}>{p.qty ?? p.quantity ?? 1}</td>
-                    <td className="px-5 py-3" style={{ color: "#57534E" }}>{money(p.unitPrice ?? p.price)}</td>
-                    <td className="px-5 py-3 font-semibold" style={{ color: "#1C1917" }}>{money(p.total)}</td>
+                    <td className="px-5 py-3 text-xs" style={{ color: "var(--e-text-2)" }}>{serviceLabel(p.serviceModuleType)}</td>
+                    <td className="px-5 py-3" style={{ color: "var(--e-text-2)" }}>{p.qty ?? p.quantity ?? 1}</td>
+                    <td className="px-5 py-3" style={{ color: "var(--e-text-2)" }}>{money(p.unitPrice ?? p.price)}</td>
+                    <td className="px-5 py-3 font-semibold" style={{ color: "var(--e-text-1)" }}>{money(p.total)}</td>
                   </tr>
                 ))}
-                <tr style={{ background: "#FAFAF9", borderTop: "2px solid #E8E6E2" }}>
-                  <td colSpan={4} className="px-5 py-3 font-semibold text-right" style={{ color: "#57534E" }}>Total</td>
-                  <td className="px-5 py-3 font-bold text-base" style={{ color: "#1C1917" }}>{money(totalValue)}</td>
+                <tr style={{ background: "var(--e-bg-page)", borderTop: "2px solid #E8E6E2" }}>
+                  <td colSpan={4} className="px-5 py-3 font-semibold text-right" style={{ color: "var(--e-text-2)" }}>Total</td>
+                  <td className="px-5 py-3 font-bold text-base" style={{ color: "var(--e-text-1)" }}>{money(totalValue)}</td>
                 </tr>
               </tbody>
             </table>
@@ -227,7 +227,7 @@ export default function AgentQuoteDetailPage() {
                 <StickyNote size={14} style={{ color: "#D97706" }} />
                 <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#D97706" }}>Quote Notes</p>
               </div>
-              <p className="text-sm whitespace-pre-wrap" style={{ color: "#57534E" }}>{quote.notes}</p>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: "var(--e-text-2)" }}>{quote.notes}</p>
             </div>
           )}
           {contract?.adminNote && (
@@ -237,7 +237,7 @@ export default function AgentQuoteDetailPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#DC2626" }}>Admin Memo</p>
                 <span className="ml-1 text-xs px-1.5 py-0.5 rounded" style={{ background: "#FECACA", color: "#991B1B" }}>Agent only</span>
               </div>
-              <p className="text-sm whitespace-pre-wrap" style={{ color: "#57534E" }}>{contract.adminNote}</p>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: "var(--e-text-2)" }}>{contract.adminNote}</p>
             </div>
           )}
           {contract?.partnerNote && (
@@ -247,16 +247,16 @@ export default function AgentQuoteDetailPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#2563EB" }}>Partner Memo</p>
                 <span className="ml-1 text-xs px-1.5 py-0.5 rounded" style={{ background: "#BFDBFE", color: "#1D4ED8" }}>Agent & Partner</span>
               </div>
-              <p className="text-sm whitespace-pre-wrap" style={{ color: "#57534E" }}>{contract.partnerNote}</p>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: "var(--e-text-2)" }}>{contract.partnerNote}</p>
             </div>
           )}
           {contract?.notes && contract.notes !== contract.adminNote && (
-            <div className="rounded-xl border p-5" style={{ background: "#F4F3F1", borderColor: "#E8E6E2" }}>
+            <div className="rounded-xl border p-5" style={{ background: "var(--e-bg-muted)", borderColor: "var(--e-border)" }}>
               <div className="flex items-center gap-2 mb-2">
                 <StickyNote size={14} style={{ color: "#78716C" }} />
                 <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#78716C" }}>Contract Notes</p>
               </div>
-              <p className="text-sm whitespace-pre-wrap" style={{ color: "#57534E" }}>{contract.notes}</p>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: "var(--e-text-2)" }}>{contract.notes}</p>
             </div>
           )}
         </div>

@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarRange, DollarSign, Clock, CheckCircle, TrendingUp, Building2, MessageCircle, Pin, Megaphone, Bell, HelpCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-const ORANGE = "#F5821F";
+const ORANGE = "var(--e-orange)";
 
 function fmt(n: number) {
   return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(n);
@@ -40,14 +40,14 @@ interface Post {
 
 function StatCard({ label, value, sub, icon: Icon, iconBg }: { label: string; value: string | number; sub?: string; icon: React.ElementType; iconBg?: string }) {
   return (
-    <div className="rounded-xl p-5 border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+    <div className="rounded-xl p-5 border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "#A8A29E" }}>{label}</p>
-          <p className="mt-1 text-2xl font-bold" style={{ color: "#1C1917" }}>{value}</p>
-          {sub && <p className="mt-0.5 text-xs" style={{ color: "#A8A29E" }}>{sub}</p>}
+          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>{label}</p>
+          <p className="mt-1 text-2xl font-bold" style={{ color: "var(--e-text-1)" }}>{value}</p>
+          {sub && <p className="mt-0.5 text-xs" style={{ color: "var(--e-text-3)" }}>{sub}</p>}
         </div>
-        <div className="p-2.5 rounded-lg" style={{ background: iconBg ?? "#FEF0E3" }}>
+        <div className="p-2.5 rounded-lg" style={{ background: iconBg ?? "var(--e-orange-lt)" }}>
           <Icon className="h-5 w-5" style={{ color: ORANGE }} />
         </div>
       </div>
@@ -57,7 +57,7 @@ function StatCard({ label, value, sub, icon: Icon, iconBg }: { label: string; va
 
 const TYPE_META: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
   notice:       { icon: Bell,       color: "#2563EB", bg: "#EFF6FF" },
-  announcement: { icon: Megaphone,  color: ORANGE,    bg: "#FEF0E3" },
+  announcement: { icon: Megaphone,  color: ORANGE,    bg: "var(--e-orange-lt)" },
   question:     { icon: HelpCircle, color: "#7C3AED", bg: "#F5F3FF" },
 };
 
@@ -65,26 +65,26 @@ function PostRow({ post }: { post: Post }) {
   const meta = TYPE_META[post.type] ?? TYPE_META.notice;
   const Icon = meta.icon;
   return (
-    <div className="flex items-start gap-3 py-3 border-b last:border-0" style={{ borderColor: "#E8E6E2" }}>
+    <div className="flex items-start gap-3 py-3 border-b last:border-0" style={{ borderColor: "var(--e-border)" }}>
       <div className="p-1.5 rounded-md mt-0.5 flex-shrink-0" style={{ background: meta.bg }}>
         <Icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 flex-wrap">
           {post.isPinned && <Pin className="h-3 w-3 flex-shrink-0" style={{ color: ORANGE }} />}
-          <p className="text-sm font-medium truncate" style={{ color: "#1C1917" }}>{post.title}</p>
+          <p className="text-sm font-medium truncate" style={{ color: "var(--e-text-1)" }}>{post.title}</p>
         </div>
-        <p className="text-xs mt-0.5 line-clamp-1" style={{ color: "#A8A29E" }}>{post.content}</p>
+        <p className="text-xs mt-0.5 line-clamp-1" style={{ color: "var(--e-text-3)" }}>{post.content}</p>
         <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs" style={{ color: "#A8A29E" }}>{post.authorName}</span>
-          <span style={{ color: "#E8E6E2" }}>·</span>
-          <span className="text-xs" style={{ color: "#A8A29E" }}>
+          <span className="text-xs" style={{ color: "var(--e-text-3)" }}>{post.authorName}</span>
+          <span style={{ color: "var(--e-border)" }}>·</span>
+          <span className="text-xs" style={{ color: "var(--e-text-3)" }}>
             {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
           </span>
           {post.commentCount > 0 && (
             <>
-              <span style={{ color: "#E8E6E2" }}>·</span>
-              <span className="text-xs flex items-center gap-0.5" style={{ color: "#A8A29E" }}>
+              <span style={{ color: "var(--e-border)" }}>·</span>
+              <span className="text-xs flex items-center gap-0.5" style={{ color: "var(--e-text-3)" }}>
                 <MessageCircle className="h-3 w-3" />{post.commentCount}
               </span>
             </>
@@ -113,10 +113,10 @@ export default function PartnerDashboardPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: "#1C1917" }}>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--e-text-1)" }}>
           Welcome back, {user?.accountName?.split(" ")[0] ?? "Partner"}
         </h1>
-        <p className="text-sm mt-0.5" style={{ color: "#A8A29E" }}>
+        <p className="text-sm mt-0.5" style={{ color: "var(--e-text-3)" }}>
           {getRoleLabel(user?.portalRole)} portal — overview of your bookings and revenue.
         </p>
       </div>
@@ -130,7 +130,7 @@ export default function PartnerDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="rounded-xl p-5 border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+            <div key={i} className="rounded-xl p-5 border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
               <Skeleton className="h-3 w-24 mb-3" />
               <Skeleton className="h-8 w-20" />
             </div>
@@ -150,42 +150,42 @@ export default function PartnerDashboardPage() {
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
           <Link href="/partner/bookings">
             <a className="block rounded-xl p-5 border cursor-pointer transition-all hover:border-orange-300"
-              style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <div className="flex items-center gap-2 mb-2">
                 <CalendarRange className="h-4 w-4" style={{ color: ORANGE }} />
-                <span className="text-sm font-semibold" style={{ color: "#1C1917" }}>My Bookings</span>
+                <span className="text-sm font-semibold" style={{ color: "var(--e-text-1)" }}>My Bookings</span>
               </div>
-              <p className="text-xs" style={{ color: "#A8A29E" }}>View all student bookings linked to your account with payment status and program dates.</p>
+              <p className="text-xs" style={{ color: "var(--e-text-3)" }}>View all student bookings linked to your account with payment status and program dates.</p>
               <p className="mt-3 text-xs font-semibold" style={{ color: ORANGE }}>View all bookings →</p>
             </a>
           </Link>
 
           <Link href="/partner/profile">
             <a className="block rounded-xl p-5 border cursor-pointer transition-all hover:border-orange-300"
-              style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <div className="flex items-center gap-2 mb-2">
                 <Building2 className="h-4 w-4" style={{ color: ORANGE }} />
-                <span className="text-sm font-semibold" style={{ color: "#1C1917" }}>Organisation Profile</span>
+                <span className="text-sm font-semibold" style={{ color: "var(--e-text-1)" }}>Organisation Profile</span>
               </div>
-              <p className="text-xs" style={{ color: "#A8A29E" }}>Update your contact details, address, and account information.</p>
+              <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Update your contact details, address, and account information.</p>
               <p className="mt-3 text-xs font-semibold" style={{ color: ORANGE }}>Edit profile →</p>
             </a>
           </Link>
         </div>
 
         {/* Community highlights */}
-        <div className="rounded-xl border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b" style={{ borderColor: "#E8E6E2" }}>
+        <div className="rounded-xl border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b" style={{ borderColor: "var(--e-border)" }}>
             <div className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" style={{ color: ORANGE }} />
-              <span className="text-sm font-semibold" style={{ color: "#1C1917" }}>Community</span>
+              <span className="text-sm font-semibold" style={{ color: "var(--e-text-1)" }}>Community</span>
             </div>
             <Link href="/community" className="text-xs font-medium hover:underline" style={{ color: ORANGE }}>View all →</Link>
           </div>
           <div className="px-4">
             {communityLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="py-3 border-b last:border-0" style={{ borderColor: "#E8E6E2" }}>
+                <div key={i} className="py-3 border-b last:border-0" style={{ borderColor: "var(--e-border)" }}>
                   <Skeleton className="h-3.5 w-40 mb-2" />
                   <Skeleton className="h-3 w-24" />
                 </div>
@@ -194,8 +194,8 @@ export default function PartnerDashboardPage() {
               recentPosts.map(p => <PostRow key={p.id} post={p} />)
             ) : (
               <div className="py-8 text-center">
-                <MessageCircle className="h-6 w-6 mx-auto mb-2" style={{ color: "#E8E6E2" }} />
-                <p className="text-xs" style={{ color: "#A8A29E" }}>No posts yet. Be the first!</p>
+                <MessageCircle className="h-6 w-6 mx-auto mb-2" style={{ color: "var(--e-border)" }} />
+                <p className="text-xs" style={{ color: "var(--e-text-3)" }}>No posts yet. Be the first!</p>
               </div>
             )}
           </div>

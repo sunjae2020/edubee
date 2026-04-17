@@ -27,9 +27,9 @@ function statusStyle(status: string | null | undefined) {
   if (s === "qualified") return { background: "#F0FDF4", color: "#16A34A", border: "1px solid #BBF7D0" };
   if (s === "proposal")  return { background: "#FFFBEB", color: "#D97706", border: "1px solid #FDE68A" };
   if (s === "new")       return { background: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE" };
-  if (s === "converted") return { background: "var(--e-orange-lt)", color: "var(--e-orange)", border: "1px solid #F5821F44" };
+  if (s === "converted") return { background: "var(--e-orange-lt)", color: "var(--e-orange)", border: "1px solid color-mix(in srgb, var(--e-orange) 27%, transparent)" };
   if (s === "lost" || s === "inactive") return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
-  return { background: "#F4F3F1", color: "#57534E", border: "1px solid #E8E6E2" };
+  return { background: "var(--e-bg-muted)", color: "var(--e-text-2)", border: "1px solid #E8E6E2" };
 }
 
 function statusLabel(status: string | null | undefined) {
@@ -88,7 +88,7 @@ export default function AgentConsultationsPage() {
           { label: "Qualified",     value: qualifiedCount, icon: CheckCircle,   color: "#16A34A", bg: "#F0FDF4" },
           { label: "Proposal Sent", value: proposalCount,  icon: TrendingUp,    color: "#D97706", bg: "#FFFBEB" },
         ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="rounded-xl p-4 flex flex-col gap-1" style={{ background: "#FFFFFF", border: "1px solid var(--e-border)" }}>
+          <div key={label} className="rounded-xl p-4 flex flex-col gap-1" style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-1" style={{ background: bg }}>
               <Icon className="w-4 h-4" style={{ color }} />
             </div>
@@ -109,7 +109,7 @@ export default function AgentConsultationsPage() {
             placeholder="Search by name, email, or lead ref…"
             className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2"
             style={{
-              background: "#FFFFFF",
+              background: "var(--e-bg-surface)",
               border: "1px solid var(--e-border)",
               color: "var(--e-text-1)",
             }}
@@ -122,8 +122,8 @@ export default function AgentConsultationsPage() {
               onClick={() => setStatusFilter(s)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
               style={statusFilter === s
-                ? { background: "var(--e-orange)", color: "#FFFFFF" }
-                : { background: "#F4F3F1", color: "var(--e-text-2)", border: "1px solid var(--e-border)" }
+                ? { background: "var(--e-orange)", color: "var(--e-bg-surface)" }
+                : { background: "var(--e-bg-muted)", color: "var(--e-text-2)", border: "1px solid var(--e-border)" }
               }
             >
               {s === "all" ? `All (${leads.length})` : statusLabel(s)}
@@ -134,7 +134,7 @@ export default function AgentConsultationsPage() {
 
       {/* Lead list */}
       {filtered.length === 0 ? (
-        <div className="rounded-xl p-10 text-center" style={{ background: "#FFFFFF", border: "1px solid var(--e-border)" }}>
+        <div className="rounded-xl p-10 text-center" style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}>
           <Users className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--e-text-3)" }} />
           <p className="text-sm font-medium" style={{ color: "var(--e-text-1)" }}>
             {leads.length === 0 ? "No leads yet" : "No leads match your search"}
@@ -152,7 +152,7 @@ export default function AgentConsultationsPage() {
                 key={lead.id}
                 onClick={() => navigate(`/leads/${lead.id}`)}
                 className="rounded-xl p-4 cursor-pointer transition-all group"
-                style={{ background: "#FFFFFF", border: "1px solid var(--e-border)" }}
+                style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--e-orange)")}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--e-border)")}
               >
@@ -209,7 +209,7 @@ export default function AgentConsultationsPage() {
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right hidden sm:block">
                       {lead.source && (
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-md" style={{ background: "#F4F3F1", color: "var(--e-text-2)" }}>
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-md" style={{ background: "var(--e-bg-muted)", color: "var(--e-text-2)" }}>
                           {lead.source}
                         </span>
                       )}

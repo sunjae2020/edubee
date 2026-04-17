@@ -56,16 +56,16 @@ export default function AgentDocumentsPage() {
       {/* KPI */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Contracts", value: contracts.length, icon: FolderOpen,  color: "#F5821F", bg: "#FEF0E3" },
+          { label: "Total Contracts", value: contracts.length, icon: FolderOpen,  color: "var(--e-orange)", bg: "var(--e-orange-lt)" },
           { label: "Signed",          value: signed.length,    icon: FileCheck,   color: "#16A34A", bg: "#F0FDF4" },
           { label: "Unsigned",        value: contracts.length - signed.length, icon: FileText, color: "#D97706", bg: "#FFFBEB" },
         ].map(c => (
-          <div key={c.label} className="rounded-xl p-5 border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div key={c.label} className="rounded-xl p-5 border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "#A8A29E" }}>{c.label}</p>
+                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>{c.label}</p>
                 {isLoading ? <Skeleton className="h-7 w-12 mt-1" />
-                  : <p className="text-2xl font-bold mt-1" style={{ color: "#1C1917" }}>{c.value}</p>}
+                  : <p className="text-2xl font-bold mt-1" style={{ color: "var(--e-text-1)" }}>{c.value}</p>}
               </div>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: c.bg }}>
                 <c.icon size={18} style={{ color: c.color }} />
@@ -77,10 +77,10 @@ export default function AgentDocumentsPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#A8A29E" }} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--e-text-3)" }} />
         <input
           className="w-full h-9 pl-9 pr-3 rounded-lg border text-sm outline-none"
-          style={{ borderColor: "#E8E6E2", background: "#FFFFFF", color: "#1C1917" }}
+          style={{ borderColor: "var(--e-border)", background: "var(--e-bg-surface)", color: "var(--e-text-1)" }}
           placeholder="Search by contract #, student, or program..."
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -96,37 +96,37 @@ export default function AgentDocumentsPage() {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl p-5 border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+            <div key={i} className="rounded-xl p-5 border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
               <Skeleton className="h-4 w-48 mb-2" /><Skeleton className="h-3 w-64" />
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 rounded-xl border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+        <div className="text-center py-16 rounded-xl border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
           <FolderOpen className="w-10 h-10 mx-auto mb-3" style={{ color: "#D1CFC8" }} />
-          <p className="text-sm font-medium" style={{ color: "#1C1917" }}>No documents found</p>
-          <p className="text-xs mt-1" style={{ color: "#A8A29E" }}>Student contracts will appear here once created.</p>
+          <p className="text-sm font-medium" style={{ color: "var(--e-text-1)" }}>No documents found</p>
+          <p className="text-xs mt-1" style={{ color: "var(--e-text-3)" }}>Student contracts will appear here once created.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {filtered.map(c => (
             <div key={c.id} className="rounded-xl border p-5 transition-all"
-              style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#FEF0E3" }}>
-                    <FileText size={16} style={{ color: "#F5821F" }} />
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--e-orange-lt)" }}>
+                    <FileText size={16} style={{ color: "var(--e-orange)" }} />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <p className="font-semibold" style={{ color: "#1C1917" }}>
+                      <p className="font-semibold" style={{ color: "var(--e-text-1)" }}>
                         {c.packageName ?? c.packageGroupName ?? "Contract"}
                       </p>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize" style={statusStyle(c.status)}>
                         {c.status ?? "pending"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs flex-wrap" style={{ color: "#A8A29E" }}>
+                    <div className="flex items-center gap-3 text-xs flex-wrap" style={{ color: "var(--e-text-3)" }}>
                       {c.contractNumber && <span>{c.contractNumber}</span>}
                       {c.studentName && <span>· {c.studentName}</span>}
                       {c.courseStartDate && (
@@ -138,13 +138,13 @@ export default function AgentDocumentsPage() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-bold" style={{ color: "#1C1917" }}>{fmt(c.totalAmount)}</p>
+                  <p className="text-sm font-bold" style={{ color: "var(--e-text-1)" }}>{fmt(c.totalAmount)}</p>
                   {c.signedAt ? (
                     <p className="text-xs mt-0.5" style={{ color: "#16A34A" }}>
                       Signed {format(new Date(c.signedAt), "dd MMM yyyy")}
                     </p>
                   ) : (
-                    <p className="text-xs mt-0.5" style={{ color: "#A8A29E" }}>Not signed</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--e-text-3)" }}>Not signed</p>
                   )}
                 </div>
               </div>

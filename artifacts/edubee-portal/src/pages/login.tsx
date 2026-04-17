@@ -173,7 +173,7 @@ export default function LoginPage() {
                   placeholder:text-[#A8A29E] outline-none transition-all"
                 style={{ "--focus-color": primary } as React.CSSProperties}
                 onFocus={e => (e.target.style.borderColor = primary)}
-                onBlur={e => (e.target.style.borderColor = "#E8E6E2")}
+                onBlur={e => (e.target.style.borderColor = "var(--e-border)")}
               />
             </div>
 
@@ -192,7 +192,7 @@ export default function LoginPage() {
                   className="w-full h-10 px-3 pr-10 text-sm rounded-lg border border-[#E8E6E2] bg-white text-[#1C1917]
                     placeholder:text-[#A8A29E] outline-none transition-all"
                   onFocus={e => (e.target.style.borderColor = primary)}
-                  onBlur={e => (e.target.style.borderColor = "#E8E6E2")}
+                  onBlur={e => (e.target.style.borderColor = "var(--e-border)")}
                 />
                 <button
                   type="button"

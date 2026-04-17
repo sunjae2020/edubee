@@ -56,15 +56,15 @@ export default function PartnerConsultationsPage() {
       {/* Header count */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <p className="text-sm" style={{ color: "#A8A29E" }}>
+          <p className="text-sm" style={{ color: "var(--e-text-3)" }}>
             {Object.keys(byStudent).length} client{Object.keys(byStudent).length !== 1 ? "s" : ""} · {bookings.length} booking{bookings.length !== 1 ? "s" : ""}
           </p>
         </div>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#A8A29E" }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--e-text-3)" }} />
           <input
             className="h-9 pl-9 pr-3 rounded-lg border text-sm outline-none w-64"
-            style={{ borderColor: "#E8E6E2", background: "#FFFFFF", color: "#1C1917" }}
+            style={{ borderColor: "var(--e-border)", background: "var(--e-bg-surface)", color: "var(--e-text-1)" }}
             placeholder="Search student or agent..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -81,38 +81,38 @@ export default function PartnerConsultationsPage() {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl p-5 border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+            <div key={i} className="rounded-xl p-5 border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
               <Skeleton className="h-4 w-40 mb-2" /><Skeleton className="h-3 w-56" />
             </div>
           ))}
         </div>
       ) : entries.length === 0 ? (
-        <div className="text-center py-16 rounded-xl border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+        <div className="text-center py-16 rounded-xl border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
           <Users className="w-10 h-10 mx-auto mb-3" style={{ color: "#D1CFC8" }} />
-          <p className="text-sm font-medium" style={{ color: "#1C1917" }}>No clients yet</p>
-          <p className="text-xs mt-1" style={{ color: "#A8A29E" }}>Students booked into your services will appear here.</p>
+          <p className="text-sm font-medium" style={{ color: "var(--e-text-1)" }}>No clients yet</p>
+          <p className="text-xs mt-1" style={{ color: "var(--e-text-3)" }}>Students booked into your services will appear here.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {entries.map((e, idx) => (
             <div key={idx} className="rounded-xl border p-5 transition-all"
-              style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                    style={{ background: "#FEF0E3", color: "#F5821F" }}>
+                    style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
                     {e.student.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-semibold" style={{ color: "#1C1917" }}>{e.student}</p>
-                    <div className="flex gap-2 text-xs flex-wrap" style={{ color: "#A8A29E" }}>
+                    <p className="font-semibold" style={{ color: "var(--e-text-1)" }}>{e.student}</p>
+                    <div className="flex gap-2 text-xs flex-wrap" style={{ color: "var(--e-text-3)" }}>
                       {e.email && <span>{e.email}</span>}
                       {e.agent && <span>· Agent: {e.agent}</span>}
                     </div>
                   </div>
                 </div>
                 <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-                  style={{ background: "#FEF0E3", color: "#F5821F" }}>
+                  style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
                   {e.bookings.length} booking{e.bookings.length !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -120,22 +120,22 @@ export default function PartnerConsultationsPage() {
               <div className="space-y-2">
                 {e.bookings.map(b => (
                   <div key={b.id} className="flex items-center justify-between text-xs rounded-lg px-3 py-2"
-                    style={{ background: "#FAFAF9", cursor: "pointer" }}
+                    style={{ background: "var(--e-bg-page)", cursor: "pointer" }}
                     onClick={() => navigate(`/partner/quotes/${b.id}`)}
-                    onMouseEnter={ev => (ev.currentTarget.style.background = "#F4F3F1")}
-                    onMouseLeave={ev => (ev.currentTarget.style.background = "#FAFAF9")}>
+                    onMouseEnter={ev => (ev.currentTarget.style.background = "var(--e-bg-muted)")}
+                    onMouseLeave={ev => (ev.currentTarget.style.background = "var(--e-bg-page)")}>
                     <div className="flex items-center gap-2">
-                      <span style={{ color: "#57534E" }}>{b.name ?? "Service"}</span>
-                      {b.contractNumber && <span style={{ color: "#A8A29E" }}>· {b.contractNumber}</span>}
+                      <span style={{ color: "var(--e-text-2)" }}>{b.name ?? "Service"}</span>
+                      {b.contractNumber && <span style={{ color: "var(--e-text-3)" }}>· {b.contractNumber}</span>}
                     </div>
                     <div className="flex items-center gap-2">
                       {b.courseStartDate && (
-                        <span style={{ color: "#A8A29E" }}>{format(new Date(b.courseStartDate), "dd MMM yyyy")}</span>
+                        <span style={{ color: "var(--e-text-3)" }}>{format(new Date(b.courseStartDate), "dd MMM yyyy")}</span>
                       )}
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full font-medium capitalize" style={statusStyle(b.contractStatus)}>
                         {b.contractStatus ?? "pending"}
                       </span>
-                      <ChevronRight size={12} style={{ color: "#A8A29E" }} />
+                      <ChevronRight size={12} style={{ color: "var(--e-text-3)" }} />
                     </div>
                   </div>
                 ))}

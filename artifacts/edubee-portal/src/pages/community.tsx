@@ -67,7 +67,7 @@ function VisBadge({ vis }: { vis: string }) {
   const Icon = cfg.icon;
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-      style={{ background: "#F4F3F1", color: cfg.color }}>
+      style={{ background: "var(--e-bg-muted)", color: cfg.color }}>
       <Icon size={10} />
       {cfg.label}
     </span>
@@ -78,11 +78,11 @@ function RoleAvatar({ role, name }: { role: string; name: string }) {
   const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   const colors: Record<string, { bg: string; color: string }> = {
     admin:   { bg: "#FEE2E2", color: "#DC2626" },
-    agent:   { bg: "#FEF0E3", color: "#F5821F" },
+    agent:   { bg: "var(--e-orange-lt)", color: "var(--e-orange)" },
     partner: { bg: "#EFF6FF", color: "#2563EB" },
     student: { bg: "#F5F3FF", color: "#7C3AED" },
   };
-  const c = colors[role] ?? { bg: "#F4F3F1", color: "#57534E" };
+  const c = colors[role] ?? { bg: "var(--e-bg-muted)", color: "var(--e-text-2)" };
   return (
     <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
       style={{ background: c.bg, color: c.color }}>
@@ -112,11 +112,11 @@ function CreatePostModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden" style={{ background: "#FFFFFF" }}>
+      <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden" style={{ background: "var(--e-bg-surface)" }}>
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #E8E6E2" }}>
-          <h2 className="font-semibold text-base" style={{ color: "#1C1917" }}>New Post</h2>
+          <h2 className="font-semibold text-base" style={{ color: "var(--e-text-1)" }}>New Post</h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100">
-            <X size={16} style={{ color: "#A8A29E" }} />
+            <X size={16} style={{ color: "var(--e-text-3)" }} />
           </button>
         </div>
         <div className="p-5 space-y-4">
@@ -124,20 +124,20 @@ function CreatePostModal({ onClose }: { onClose: () => void }) {
             <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
           )}
           <div>
-            <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "#A8A29E" }}>Title</label>
+            <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>Title</label>
             <input
               className="w-full h-9 px-3 rounded-lg border text-sm outline-none"
-              style={{ borderColor: "#E8E6E2", color: "#1C1917" }}
+              style={{ borderColor: "var(--e-border)", color: "var(--e-text-1)" }}
               placeholder="What's this about?"
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "#A8A29E" }}>Message</label>
+            <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>Message</label>
             <textarea
               className="w-full px-3 py-2 rounded-lg border text-sm outline-none resize-none"
-              style={{ borderColor: "#E8E6E2", color: "#1C1917" }}
+              style={{ borderColor: "var(--e-border)", color: "var(--e-text-1)" }}
               rows={5}
               placeholder="Write your question or message..."
               value={content}
@@ -148,10 +148,10 @@ function CreatePostModal({ onClose }: { onClose: () => void }) {
             {isAgent && (
               <>
                 <div className="flex-1 min-w-28">
-                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "#A8A29E" }}>Type</label>
+                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>Type</label>
                   <select
                     className="w-full h-9 px-3 rounded-lg border text-sm outline-none"
-                    style={{ borderColor: "#E8E6E2", color: "#57534E" }}
+                    style={{ borderColor: "var(--e-border)", color: "var(--e-text-2)" }}
                     value={type}
                     onChange={e => setType(e.target.value)}
                   >
@@ -160,10 +160,10 @@ function CreatePostModal({ onClose }: { onClose: () => void }) {
                   </select>
                 </div>
                 <div className="flex-1 min-w-28">
-                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "#A8A29E" }}>Visibility</label>
+                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>Visibility</label>
                   <select
                     className="w-full h-9 px-3 rounded-lg border text-sm outline-none"
-                    style={{ borderColor: "#E8E6E2", color: "#57534E" }}
+                    style={{ borderColor: "var(--e-border)", color: "var(--e-text-2)" }}
                     value={vis}
                     onChange={e => setVis(e.target.value)}
                   >
@@ -179,7 +179,7 @@ function CreatePostModal({ onClose }: { onClose: () => void }) {
         <div className="px-5 py-4 flex justify-end gap-2" style={{ borderTop: "1px solid #E8E6E2" }}>
           <button onClick={onClose}
             className="h-8 px-4 rounded-lg text-sm font-medium"
-            style={{ background: "#F4F3F1", color: "#57534E" }}>
+            style={{ background: "var(--e-bg-muted)", color: "var(--e-text-2)" }}>
             Cancel
           </button>
           <button
@@ -191,7 +191,7 @@ function CreatePostModal({ onClose }: { onClose: () => void }) {
             }}
             disabled={isPending}
             className="h-8 px-4 rounded-lg text-sm font-medium text-white"
-            style={{ background: "#F5821F", opacity: isPending ? 0.7 : 1 }}
+            style={{ background: "var(--e-orange)", opacity: isPending ? 0.7 : 1 }}
           >
             {isPending ? "Posting..." : "Post"}
           </button>
@@ -232,8 +232,8 @@ function PostCard({ post, isOwn }: { post: Post; isOwn: boolean }) {
   return (
     <div className="rounded-xl border overflow-hidden transition-all"
       style={{
-        background:   "#FFFFFF",
-        borderColor:  post.isPinned ? "#F5821F" : "#E8E6E2",
+        background:   "var(--e-bg-surface)",
+        borderColor:  post.isPinned ? "var(--e-orange)" : "var(--e-border)",
         boxShadow:    "0 1px 3px rgba(0,0,0,0.04)",
         borderWidth:  post.isPinned ? 2 : 1,
       }}>
@@ -245,20 +245,20 @@ function PostCard({ post, isOwn }: { post: Post; isOwn: boolean }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-0.5">
                 {post.isPinned && (
-                  <Pin size={11} style={{ color: "#F5821F" }} className="shrink-0" />
+                  <Pin size={11} style={{ color: "var(--e-orange)" }} className="shrink-0" />
                 )}
-                <p className="font-semibold text-sm" style={{ color: "#1C1917" }}>{post.title}</p>
+                <p className="font-semibold text-sm" style={{ color: "var(--e-text-1)" }}>{post.title}</p>
                 {post.isResolved && (
                   <span className="text-xs px-1.5 py-0.5 rounded-full font-medium"
                     style={{ background: "#F0FDF4", color: "#16A34A" }}>Resolved</span>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs" style={{ color: "#A8A29E" }}>
+                <span className="text-xs" style={{ color: "var(--e-text-3)" }}>
                   {post.authorRole === "admin" ? "Admin" : post.authorName}
                 </span>
                 <span className="text-xs" style={{ color: "#D1CFC8" }}>·</span>
-                <span className="text-xs" style={{ color: "#A8A29E" }}>
+                <span className="text-xs" style={{ color: "var(--e-text-3)" }}>
                   {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                 </span>
               </div>
@@ -271,7 +271,7 @@ function PostCard({ post, isOwn }: { post: Post; isOwn: boolean }) {
         </div>
 
         {/* Preview content */}
-        <p className="text-sm leading-relaxed" style={{ color: "#57534E", whiteSpace: "pre-wrap" }}>
+        <p className="text-sm leading-relaxed" style={{ color: "var(--e-text-2)", whiteSpace: "pre-wrap" }}>
           {expanded ? "" : post.content.slice(0, 200)}
           {!expanded && post.content.length > 200 ? "..." : ""}
         </p>
@@ -281,12 +281,12 @@ function PostCard({ post, isOwn }: { post: Post; isOwn: boolean }) {
           <button
             onClick={() => setExpanded(e => !e)}
             className="flex items-center gap-1 text-xs font-medium"
-            style={{ color: "#F5821F" }}
+            style={{ color: "var(--e-orange)" }}
           >
             {expanded ? <><ChevronUp size={13} /> Collapse</> : <><ChevronDown size={13} /> Read more</>}
           </button>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 text-xs" style={{ color: "#A8A29E" }}>
+            <span className="flex items-center gap-1 text-xs" style={{ color: "var(--e-text-3)" }}>
               <MessageSquare size={12} /> {post.commentCount}
             </span>
             {isOwn && (
@@ -308,14 +308,14 @@ function PostCard({ post, isOwn }: { post: Post; isOwn: boolean }) {
       {expanded && (
         <div style={{ borderTop: "1px solid #F4F3F1" }}>
           <div className="px-5 py-4">
-            <p className="text-sm leading-relaxed" style={{ color: "#57534E", whiteSpace: "pre-wrap" }}>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--e-text-2)", whiteSpace: "pre-wrap" }}>
               {post.content}
             </p>
           </div>
 
           {/* Comments */}
           <div className="px-5 pb-4">
-            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#A8A29E" }}>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--e-text-3)" }}>
               Replies ({detail?.comments?.length ?? 0})
             </p>
 
@@ -329,18 +329,18 @@ function PostCard({ post, isOwn }: { post: Post; isOwn: boolean }) {
                   <div key={c.id} className="flex gap-3">
                     <RoleAvatar role={c.authorRole} name={c.authorName} />
                     <div className="flex-1 rounded-xl px-4 py-3" style={{
-                      background: c.isAdminReply ? "#FEF0E3" : "#FAFAF9",
+                      background: c.isAdminReply ? "var(--e-orange-lt)" : "var(--e-bg-page)",
                       border: c.isAdminReply ? "1px solid #FDE0C5" : "1px solid #F4F3F1",
                     }}>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-semibold" style={{ color: c.isAdminReply ? "#F5821F" : "#1C1917" }}>
+                        <span className="text-xs font-semibold" style={{ color: c.isAdminReply ? "var(--e-orange)" : "var(--e-text-1)" }}>
                           {c.isAdminReply ? "Admin" : c.authorName}
                         </span>
-                        <span className="text-xs" style={{ color: "#A8A29E" }}>
+                        <span className="text-xs" style={{ color: "var(--e-text-3)" }}>
                           {formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="text-sm" style={{ color: "#57534E", whiteSpace: "pre-wrap" }}>{c.content}</p>
+                      <p className="text-sm" style={{ color: "var(--e-text-2)", whiteSpace: "pre-wrap" }}>{c.content}</p>
                     </div>
                   </div>
                 ))}
@@ -349,7 +349,7 @@ function PostCard({ post, isOwn }: { post: Post; isOwn: boolean }) {
                 <div className="flex gap-2 mt-2">
                   <input
                     className="flex-1 h-9 px-3 rounded-lg border text-sm outline-none"
-                    style={{ borderColor: "#E8E6E2", color: "#1C1917" }}
+                    style={{ borderColor: "var(--e-border)", color: "var(--e-text-1)" }}
                     placeholder="Write a reply..."
                     value={commentText}
                     onChange={e => setCommentText(e.target.value)}
@@ -364,9 +364,9 @@ function PostCard({ post, isOwn }: { post: Post; isOwn: boolean }) {
                     onClick={() => { if (commentText.trim()) sendComment(); }}
                     disabled={isPending || !commentText.trim()}
                     className="w-9 h-9 rounded-lg flex items-center justify-center"
-                    style={{ background: "#F5821F", opacity: isPending || !commentText.trim() ? 0.5 : 1 }}
+                    style={{ background: "var(--e-orange)", opacity: isPending || !commentText.trim() ? 0.5 : 1 }}
                   >
-                    <Send size={14} style={{ color: "#FFFFFF" }} />
+                    <Send size={14} style={{ color: "var(--e-bg-surface)" }} />
                   </button>
                 </div>
               </div>
@@ -406,8 +406,8 @@ export default function CommunityPage() {
               onClick={() => setTypeFilter(t)}
               className="h-8 px-3 rounded-lg text-xs font-medium capitalize transition-all"
               style={{
-                background: typeFilter === t ? "#FEF0E3" : "#F4F3F1",
-                color:      typeFilter === t ? "#F5821F"  : "#57534E",
+                background: typeFilter === t ? "var(--e-orange-lt)" : "var(--e-bg-muted)",
+                color:      typeFilter === t ? "var(--e-orange)"  : "var(--e-text-2)",
                 fontWeight: typeFilter === t ? 600 : 400,
               }}
             >
@@ -419,7 +419,7 @@ export default function CommunityPage() {
           <button
             onClick={() => setShowCreate(true)}
             className="h-8 px-3 rounded-lg text-xs font-medium text-white flex items-center gap-1.5"
-            style={{ background: "#F5821F" }}
+            style={{ background: "var(--e-orange)" }}
           >
             <PlusCircle size={13} />
             New Post
@@ -436,7 +436,7 @@ export default function CommunityPage() {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-xl p-5 border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+            <div key={i} className="rounded-xl p-5 border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
               <div className="flex gap-3 mb-3">
                 <Skeleton className="w-8 h-8 rounded-full" />
                 <div className="flex-1"><Skeleton className="h-4 w-48 mb-1" /><Skeleton className="h-3 w-32" /></div>
@@ -447,17 +447,17 @@ export default function CommunityPage() {
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div className="text-center py-20 rounded-xl border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+        <div className="text-center py-20 rounded-xl border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
           <MessageSquare className="w-10 h-10 mx-auto mb-3" style={{ color: "#D1CFC8" }} />
-          <p className="text-sm font-medium" style={{ color: "#1C1917" }}>No posts yet</p>
-          <p className="text-xs mt-1" style={{ color: "#A8A29E" }}>Be the first to post a question or share information.</p>
+          <p className="text-sm font-medium" style={{ color: "var(--e-text-1)" }}>No posts yet</p>
+          <p className="text-xs mt-1" style={{ color: "var(--e-text-3)" }}>Be the first to post a question or share information.</p>
         </div>
       ) : (
         <>
           {pinned.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-                style={{ color: "#F5821F" }}>
+                style={{ color: "var(--e-orange)" }}>
                 <Pin size={11} /> Pinned
               </p>
               {pinned.map(p => (
@@ -472,7 +472,7 @@ export default function CommunityPage() {
           {regular.length > 0 && (
             <div className="space-y-3">
               {pinned.length > 0 && (
-                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#A8A29E" }}>
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>
                   Recent
                 </p>
               )}

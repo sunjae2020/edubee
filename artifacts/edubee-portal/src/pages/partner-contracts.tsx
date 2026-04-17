@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen, Search, CheckCircle, Clock, ChevronRight, Users } from "lucide-react";
 import { format } from "date-fns";
 
-const ORANGE = "#F5821F";
+const ORANGE = "var(--e-orange)";
 
 function fmt(n: number | string | null | undefined) {
   return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(Number(n ?? 0));
@@ -16,7 +16,7 @@ function statusStyle(s: string | null | undefined) {
   if (v === "active" || v === "confirmed") return { background: "#F0FDF4", color: "#16A34A", border: "1px solid #BBF7D0" };
   if (v === "draft")     return { background: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE" };
   if (v === "cancelled") return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
-  if (v === "completed") return { background: "#F4F3F1", color: "#57534E", border: "1px solid #E8E6E2" };
+  if (v === "completed") return { background: "var(--e-bg-muted)", color: "var(--e-text-2)", border: "1px solid #E8E6E2" };
   return { background: "#FFFBEB", color: "#D97706", border: "1px solid #FDE68A" };
 }
 
@@ -73,18 +73,18 @@ export default function PartnerContractsPage() {
       {/* KPI cards */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Contracts", value: contracts.length, icon: BookOpen,    color: ORANGE,    bg: "#FEF0E3" },
+          { label: "Total Contracts", value: contracts.length, icon: BookOpen,    color: ORANGE,    bg: "var(--e-orange-lt)" },
           { label: "Active",          value: active.length,    icon: CheckCircle, color: "#16A34A", bg: "#F0FDF4" },
-          { label: "Completed",       value: completed.length, icon: Clock,       color: "#57534E", bg: "#F4F3F1" },
+          { label: "Completed",       value: completed.length, icon: Clock,       color: "var(--e-text-2)", bg: "var(--e-bg-muted)" },
         ].map(c => (
           <div key={c.label} className="rounded-xl p-5 border"
-            style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+            style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "#A8A29E" }}>{c.label}</p>
+                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>{c.label}</p>
                 {isLoading
                   ? <Skeleton className="h-7 w-20 mt-1" />
-                  : <p className="text-2xl font-bold mt-1" style={{ color: "#1C1917" }}>{c.value}</p>
+                  : <p className="text-2xl font-bold mt-1" style={{ color: "var(--e-text-1)" }}>{c.value}</p>
                 }
               </div>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: c.bg }}>
@@ -98,10 +98,10 @@ export default function PartnerContractsPage() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#A8A29E" }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--e-text-3)" }} />
           <input
             className="h-9 pl-9 pr-3 rounded-lg border text-sm outline-none w-full"
-            style={{ borderColor: "#E8E6E2", background: "#FFFFFF", color: "#1C1917" }}
+            style={{ borderColor: "var(--e-border)", background: "var(--e-bg-surface)", color: "var(--e-text-1)" }}
             placeholder="Search by student, ref, package, agent…"
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -112,8 +112,8 @@ export default function PartnerContractsPage() {
             <button key={s}
               className="text-xs px-3 py-1.5 rounded-lg border font-medium capitalize transition-colors"
               style={statusFilter === s
-                ? { background: ORANGE, color: "#FFFFFF", borderColor: ORANGE }
-                : { background: "#FFFFFF", color: "#57534E", borderColor: "#E8E6E2" }
+                ? { background: ORANGE, color: "var(--e-bg-surface)", borderColor: ORANGE }
+                : { background: "var(--e-bg-surface)", color: "var(--e-text-2)", borderColor: "var(--e-border)" }
               }
               onClick={() => setStatusFilter(s)}>
               {s === "all" ? "All" : s}
@@ -131,17 +131,17 @@ export default function PartnerContractsPage() {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl p-5 border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+            <div key={i} className="rounded-xl p-5 border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
               <div className="flex justify-between mb-3"><Skeleton className="h-4 w-40" /><Skeleton className="h-4 w-20" /></div>
               <Skeleton className="h-3 w-56" />
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 rounded-xl border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+        <div className="text-center py-16 rounded-xl border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
           <Users className="w-10 h-10 mx-auto mb-3" style={{ color: "#D1CFC8" }} />
-          <p className="text-sm font-medium" style={{ color: "#1C1917" }}>No contracts found</p>
-          <p className="text-xs mt-1" style={{ color: "#A8A29E" }}>
+          <p className="text-sm font-medium" style={{ color: "var(--e-text-1)" }}>No contracts found</p>
+          <p className="text-xs mt-1" style={{ color: "var(--e-text-3)" }}>
             Student contracts that include your services will appear here.
           </p>
         </div>
@@ -150,16 +150,16 @@ export default function PartnerContractsPage() {
           {filtered.map(c => (
             <div key={c.id}
               className="rounded-xl p-5 border"
-              style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: "#FEF0E3" }}>
+                    style={{ background: "var(--e-orange-lt)" }}>
                     <BookOpen size={18} style={{ color: ORANGE }} />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p className="font-semibold" style={{ color: "#1C1917" }}>
+                      <p className="font-semibold" style={{ color: "var(--e-text-1)" }}>
                         {c.studentName ?? "Student"}
                       </p>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize"
@@ -170,14 +170,14 @@ export default function PartnerContractsPage() {
                         <span className="text-xs font-medium" style={{ color: "#16A34A" }}>✓ Signed</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs flex-wrap" style={{ color: "#A8A29E" }}>
+                    <div className="flex items-center gap-2 text-xs flex-wrap" style={{ color: "var(--e-text-3)" }}>
                       {c.contractNumber && (
-                        <span className="font-medium font-mono" style={{ color: "#57534E" }}>{c.contractNumber}</span>
+                        <span className="font-medium font-mono" style={{ color: "var(--e-text-2)" }}>{c.contractNumber}</span>
                       )}
                       {c.packageName && <span>· {c.packageName}</span>}
                       {c.agentName && <span>· Agent: {c.agentName}</span>}
                     </div>
-                    <div className="flex items-center gap-2 text-xs flex-wrap mt-1" style={{ color: "#A8A29E" }}>
+                    <div className="flex items-center gap-2 text-xs flex-wrap mt-1" style={{ color: "var(--e-text-3)" }}>
                       {c.courseStartDate && (
                         <span>{fmt_date(c.courseStartDate)}{c.courseEndDate ? ` → ${fmt_date(c.courseEndDate)}` : ""}</span>
                       )}
@@ -187,7 +187,7 @@ export default function PartnerContractsPage() {
                 </div>
                 <div className="text-right shrink-0 flex items-center gap-3">
                   <div>
-                    <p className="text-lg font-bold" style={{ color: "#1C1917" }}>{fmt(c.totalAmount)}</p>
+                    <p className="text-lg font-bold" style={{ color: "var(--e-text-1)" }}>{fmt(c.totalAmount)}</p>
                     {Number(c.paidAmount ?? 0) > 0 && (
                       <p className="text-xs" style={{ color: "#16A34A" }}>Paid: {fmt(c.paidAmount)}</p>
                     )}

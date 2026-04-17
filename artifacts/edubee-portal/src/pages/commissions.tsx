@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DollarSign, Clock, CheckCircle, FileText } from "lucide-react";
+import { DollarSign, Clock, CheckCircle, FileText, Percent, Info } from "lucide-react";
 import { format } from "date-fns";
 
 interface TaxInvoice {
@@ -23,6 +23,20 @@ interface CommissionSummary {
   total: number;
   pending: number;
   paid: number;
+}
+
+interface CommissionConfig {
+  id: string;
+  commissionType: string;
+  defaultRate: string | null;
+  defaultAmount: string | null;
+  defaultBase: string | null;
+  paymentMethod: string | null;
+  paymentTiming: string | null;
+  status: string;
+  validFrom: string | null;
+  validTo: string | null;
+  notes: string | null;
 }
 
 function fmt(n: number | string) {
@@ -47,12 +61,13 @@ export default function CommissionsPage() {
     queryKey: ["portal-commissions"],
     queryFn: () =>
       api
-        .get<{ data: TaxInvoice[]; summary: CommissionSummary }>("/portal/commissions")
+        .get<{ data: TaxInvoice[]; summary: CommissionSummary; configs: CommissionConfig[] }>("/portal/commissions")
         .then((r) => r),
   });
 
   const invoices = data?.data ?? [];
-  const summary = data?.summary ?? { total: 0, pending: 0, paid: 0 };
+  const summary  = data?.summary ?? { total: 0, pending: 0, paid: 0 };
+  const configs  = data?.configs ?? [];
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -123,6 +138,75 @@ export default function CommissionsPage() {
           </>
         )}
       </div>
+
+      {/* Commission rate configurations */}
+      {!isLoading && configs.length > 0 && (
+        <Card className="border-card-border shadow-sm mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Percent className="h-4 w-4 text-primary" />
+              Your Commission Rates
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-border">
+              {configs.map(cfg => (
+                <div key={cfg.id} className="flex items-start justify-between gap-4 px-5 py-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-1.5 rounded-md bg-primary/10 mt-0.5">
+                      <Percent className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground capitalize">
+                        {cfg.commissionType.replace(/_/g, " ")} Commission
+                      </p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5">
+                        {cfg.defaultRate && (
+                          <span className="text-xs text-muted-foreground">
+                            Rate: <span className="font-semibold text-foreground">{Number(cfg.defaultRate).toFixed(2)}%</span>
+                          </span>
+                        )}
+                        {cfg.defaultAmount && (
+                          <span className="text-xs text-muted-foreground">
+                            Fixed: <span className="font-semibold text-foreground">
+                              {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(cfg.defaultAmount))}
+                            </span>
+                          </span>
+                        )}
+                        {cfg.defaultBase && (
+                          <span className="text-xs text-muted-foreground capitalize">
+                            Base: <span className="text-foreground">{cfg.defaultBase.replace(/_/g, " ")}</span>
+                          </span>
+                        )}
+                        {cfg.paymentMethod && (
+                          <span className="text-xs text-muted-foreground capitalize">
+                            Method: <span className="text-foreground">{cfg.paymentMethod.replace(/_/g, " ")}</span>
+                          </span>
+                        )}
+                        {cfg.validFrom && (
+                          <span className="text-xs text-muted-foreground">
+                            From: <span className="text-foreground">{format(new Date(cfg.validFrom), "dd MMM yyyy")}</span>
+                          </span>
+                        )}
+                        {cfg.validTo && (
+                          <span className="text-xs text-muted-foreground">
+                            To: <span className="text-foreground">{format(new Date(cfg.validTo), "dd MMM yyyy")}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                    cfg.status === "Active" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-muted text-muted-foreground border border-border"
+                  }`}>
+                    {cfg.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-card-border shadow-sm">
         <CardHeader className="pb-3">

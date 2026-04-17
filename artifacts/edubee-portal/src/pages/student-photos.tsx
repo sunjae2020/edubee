@@ -63,9 +63,9 @@ function FolderCard({ folder, onClick }: { folder: Folder; onClick: () => void }
       className="flex flex-col gap-3 p-5 rounded-2xl border text-left transition-all hover:shadow-md active:scale-[0.98]"
       style={{ background: "#FFFDF9", borderColor: "#E8E4DC" }}
     >
-      <FolderOpen className="w-9 h-9" style={{ color: "#F5821F" }} />
+      <FolderOpen className="w-9 h-9" style={{ color: "var(--e-orange)" }} />
       <div>
-        <p className="font-semibold text-sm leading-snug" style={{ color: "#1C1917" }}>{folder.name}</p>
+        <p className="font-semibold text-sm leading-snug" style={{ color: "var(--e-text-1)" }}>{folder.name}</p>
         <span
           className="inline-flex items-center gap-1 text-xs mt-1.5 px-2 py-0.5 rounded-full font-medium"
           style={{ background: "#E0F2FE", color: "#0284C7" }}
@@ -98,19 +98,19 @@ function PhotoGrid({ folderId, folderName, onBack }: { folderId: string; folderN
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
         <div className="flex items-center gap-2">
-          <FolderOpen className="w-4 h-4" style={{ color: "#F5821F" }} />
-          <span className="font-semibold text-sm" style={{ color: "#1C1917" }}>{folderName}</span>
+          <FolderOpen className="w-4 h-4" style={{ color: "var(--e-orange)" }} />
+          <span className="font-semibold text-sm" style={{ color: "var(--e-text-1)" }}>{folderName}</span>
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#F5821F" }} />
+          <Loader2 className="w-6 h-6 animate-spin" style={{ color: "var(--e-orange)" }} />
         </div>
       ) : photos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-2 border-2 border-dashed rounded-2xl" style={{ borderColor: "#E8E4DC" }}>
           <Image className="w-10 h-10" style={{ color: "#D6CFC4" }} />
-          <p className="text-sm" style={{ color: "#A8A29E" }}>No photos in this folder yet</p>
+          <p className="text-sm" style={{ color: "var(--e-text-3)" }}>No photos in this folder yet</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -185,7 +185,7 @@ function PhotoTile({ photo }: { photo: Photo }) {
         >
           <div className="absolute top-4 right-4 flex gap-2">
             <Button size="sm" onClick={e => { e.stopPropagation(); handleDownload(); }}
-              style={{ background: "#F5821F", color: "#fff", border: "none" }}>
+              style={{ background: "var(--e-orange)", color: "#fff", border: "none" }}>
               <Download className="w-4 h-4 mr-1.5" /> Download
             </Button>
             <button
@@ -224,8 +224,8 @@ export default function StudentPhotosPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-xl font-bold" style={{ color: "#1C1917" }}>Camp Photos</h1>
-        <p className="text-sm mt-0.5" style={{ color: "#A8A29E" }}>Photos from your program</p>
+        <h1 className="text-xl font-bold" style={{ color: "var(--e-text-1)" }}>Camp Photos</h1>
+        <p className="text-sm mt-0.5" style={{ color: "var(--e-text-3)" }}>Photos from your program</p>
       </div>
 
       {selectedFolder ? (
@@ -236,13 +236,13 @@ export default function StudentPhotosPage() {
         />
       ) : isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#F5821F" }} />
+          <Loader2 className="w-6 h-6 animate-spin" style={{ color: "var(--e-orange)" }} />
         </div>
       ) : folders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-2 border-2 border-dashed rounded-2xl" style={{ borderColor: "#E8E4DC" }}>
           <FolderOpen className="w-10 h-10" style={{ color: "#D6CFC4" }} />
-          <p className="text-sm font-semibold" style={{ color: "#1C1917" }}>No photos yet</p>
-          <p className="text-xs mt-0.5" style={{ color: "#A8A29E" }}>
+          <p className="text-sm font-semibold" style={{ color: "var(--e-text-1)" }}>No photos yet</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--e-text-3)" }}>
             Program photos will appear here once your coordinator uploads them.
           </p>
         </div>

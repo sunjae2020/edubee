@@ -13,7 +13,7 @@ function statusStyle(s: string | null | undefined) {
   if (v === "active" || v === "completed" || v === "paid" || v === "confirmed") return { background: "#F0FDF4", color: "#16A34A", border: "1px solid #BBF7D0" };
   if (v === "pending" || v === "scheduled") return { background: "#FFFBEB", color: "#D97706", border: "1px solid #FDE68A" };
   if (v === "cancelled") return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
-  return { background: "#F4F3F1", color: "#57534E", border: "1px solid #E8E6E2" };
+  return { background: "var(--e-bg-muted)", color: "var(--e-text-2)", border: "1px solid #E8E6E2" };
 }
 
 function serviceLabel(t: string | null | undefined) {
@@ -99,7 +99,7 @@ export default function PartnerBookingDetailPage({ backPath = "/partner/quotes",
   if (error || !data) {
     return (
       <div className="max-w-3xl mx-auto">
-        <button onClick={() => navigate(backPath)} className="flex items-center gap-1.5 text-sm mb-4" style={{ color: "#A8A29E" }}>
+        <button onClick={() => navigate(backPath)} className="flex items-center gap-1.5 text-sm mb-4" style={{ color: "var(--e-text-3)" }}>
           <ArrowLeft size={14} /> {backLabel}
         </button>
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 flex items-center gap-2">
@@ -114,17 +114,17 @@ export default function PartnerBookingDetailPage({ backPath = "/partner/quotes",
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       {/* Back */}
-      <button onClick={() => navigate(backPath)} className="flex items-center gap-1.5 text-sm" style={{ color: "#A8A29E" }}>
+      <button onClick={() => navigate(backPath)} className="flex items-center gap-1.5 text-sm" style={{ color: "var(--e-text-3)" }}>
         <ArrowLeft size={14} /> {backLabel}
       </button>
 
       {/* Header */}
-      <div className="rounded-xl border p-6" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+      <div className="rounded-xl border p-6" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Package size={16} style={{ color: "#F5821F" }} />
-              <h1 className="text-lg font-bold" style={{ color: "#1C1917" }}>
+              <Package size={16} style={{ color: "var(--e-orange)" }} />
+              <h1 className="text-lg font-bold" style={{ color: "var(--e-text-1)" }}>
                 {b.name ?? "Booking"}
               </h1>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
@@ -132,56 +132,56 @@ export default function PartnerBookingDetailPage({ backPath = "/partner/quotes",
                 {b.status ?? "pending"}
               </span>
             </div>
-            <div className="flex items-center gap-2 flex-wrap text-sm" style={{ color: "#57534E" }}>
-              <span className="px-2 py-0.5 rounded text-xs" style={{ background: "#FEF0E3", color: "#F5821F" }}>
+            <div className="flex items-center gap-2 flex-wrap text-sm" style={{ color: "var(--e-text-2)" }}>
+              <span className="px-2 py-0.5 rounded text-xs" style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
                 {serviceLabel(b.serviceModuleType)}
               </span>
-              {b.contractNumber && <span style={{ color: "#A8A29E" }}>Contract: {b.contractNumber}</span>}
+              {b.contractNumber && <span style={{ color: "var(--e-text-3)" }}>Contract: {b.contractNumber}</span>}
             </div>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold" style={{ color: "#1C1917" }}>{money(b.apAmount)}</p>
-            <p className="text-xs" style={{ color: "#A8A29E" }}>Your Payable</p>
+            <p className="text-2xl font-bold" style={{ color: "var(--e-text-1)" }}>{money(b.apAmount)}</p>
+            <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Your Payable</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {/* Student info */}
-        <div className="rounded-xl border p-5" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+        <div className="rounded-xl border p-5" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
           <div className="flex items-center gap-2 mb-3">
-            <User size={15} style={{ color: "#F5821F" }} />
-            <h2 className="font-semibold text-sm" style={{ color: "#1C1917" }}>Student</h2>
+            <User size={15} style={{ color: "var(--e-orange)" }} />
+            <h2 className="font-semibold text-sm" style={{ color: "var(--e-text-1)" }}>Student</h2>
           </div>
           <div className="space-y-1.5 text-sm">
-            <p className="font-medium" style={{ color: "#1C1917" }}>{b.studentName ?? "—"}</p>
-            {b.clientEmail && <p style={{ color: "#57534E" }}>{b.clientEmail}</p>}
-            {b.clientCountry && <p style={{ color: "#A8A29E" }}>{b.clientCountry}</p>}
+            <p className="font-medium" style={{ color: "var(--e-text-1)" }}>{b.studentName ?? "—"}</p>
+            {b.clientEmail && <p style={{ color: "var(--e-text-2)" }}>{b.clientEmail}</p>}
+            {b.clientCountry && <p style={{ color: "var(--e-text-3)" }}>{b.clientCountry}</p>}
             {b.agentName && (
-              <p className="text-xs pt-1" style={{ color: "#A8A29E" }}>Agent: {b.agentName}</p>
+              <p className="text-xs pt-1" style={{ color: "var(--e-text-3)" }}>Agent: {b.agentName}</p>
             )}
           </div>
         </div>
 
         {/* Course dates */}
-        <div className="rounded-xl border p-5" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+        <div className="rounded-xl border p-5" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
           <div className="flex items-center gap-2 mb-3">
-            <Calendar size={15} style={{ color: "#F5821F" }} />
-            <h2 className="font-semibold text-sm" style={{ color: "#1C1917" }}>Course Period</h2>
+            <Calendar size={15} style={{ color: "var(--e-orange)" }} />
+            <h2 className="font-semibold text-sm" style={{ color: "var(--e-text-1)" }}>Course Period</h2>
           </div>
           <div className="space-y-2 text-sm">
             <div>
-              <p className="text-xs" style={{ color: "#A8A29E" }}>Start Date</p>
-              <p className="font-medium" style={{ color: "#1C1917" }}>{fmt(b.courseStartDate)}</p>
+              <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Start Date</p>
+              <p className="font-medium" style={{ color: "var(--e-text-1)" }}>{fmt(b.courseStartDate)}</p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: "#A8A29E" }}>End Date</p>
-              <p className="font-medium" style={{ color: "#1C1917" }}>{fmt(b.courseEndDate)}</p>
+              <p className="text-xs" style={{ color: "var(--e-text-3)" }}>End Date</p>
+              <p className="font-medium" style={{ color: "var(--e-text-1)" }}>{fmt(b.courseEndDate)}</p>
             </div>
             {b.packageName && (
               <div>
-                <p className="text-xs" style={{ color: "#A8A29E" }}>Package</p>
-                <p style={{ color: "#57534E" }}>{b.packageName}</p>
+                <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Package</p>
+                <p style={{ color: "var(--e-text-2)" }}>{b.packageName}</p>
               </div>
             )}
           </div>
@@ -189,18 +189,18 @@ export default function PartnerBookingDetailPage({ backPath = "/partner/quotes",
       </div>
 
       {/* Payment details — partner sees AP only */}
-      <div className="rounded-xl border p-5" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+      <div className="rounded-xl border p-5" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
         <div className="flex items-center gap-2 mb-4">
-          <DollarSign size={15} style={{ color: "#F5821F" }} />
-          <h2 className="font-semibold text-sm" style={{ color: "#1C1917" }}>Payment Details</h2>
+          <DollarSign size={15} style={{ color: "var(--e-orange)" }} />
+          <h2 className="font-semibold text-sm" style={{ color: "var(--e-text-1)" }}>Payment Details</h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
           <div>
-            <p className="text-xs" style={{ color: "#A8A29E" }}>Your Amount (AP)</p>
-            <p className="font-bold text-base" style={{ color: "#1C1917" }}>{money(b.apAmount)}</p>
+            <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Your Amount (AP)</p>
+            <p className="font-bold text-base" style={{ color: "var(--e-text-1)" }}>{money(b.apAmount)}</p>
           </div>
           <div>
-            <p className="text-xs" style={{ color: "#A8A29E" }}>Payment Status</p>
+            <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Payment Status</p>
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize mt-1"
               style={statusStyle(b.apStatus)}>
               {b.apStatus ?? "pending"}
@@ -208,8 +208,8 @@ export default function PartnerBookingDetailPage({ backPath = "/partner/quotes",
           </div>
           {b.apDueDate && (
             <div>
-              <p className="text-xs" style={{ color: "#A8A29E" }}>Due Date</p>
-              <p style={{ color: "#57534E" }}>{fmt(b.apDueDate)}</p>
+              <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Due Date</p>
+              <p style={{ color: "var(--e-text-2)" }}>{fmt(b.apDueDate)}</p>
             </div>
           )}
         </div>
@@ -217,23 +217,23 @@ export default function PartnerBookingDetailPage({ backPath = "/partner/quotes",
 
       {/* Other services in same contract */}
       {b.siblingServices && b.siblingServices.length > 0 && (
-        <div className="rounded-xl border p-5" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+        <div className="rounded-xl border p-5" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
           <div className="flex items-center gap-2 mb-3">
-            <Layers size={15} style={{ color: "#F5821F" }} />
-            <h2 className="font-semibold text-sm" style={{ color: "#1C1917" }}>Other Services in Contract</h2>
+            <Layers size={15} style={{ color: "var(--e-orange)" }} />
+            <h2 className="font-semibold text-sm" style={{ color: "var(--e-text-1)" }}>Other Services in Contract</h2>
           </div>
           <div className="space-y-2">
             {b.siblingServices.map(s => (
               <div key={s.id} className="flex items-center justify-between text-sm rounded-lg px-3 py-2.5"
-                style={{ background: "#FAFAF9" }}>
+                style={{ background: "var(--e-bg-page)" }}>
                 <div className="flex items-center gap-2">
-                  <span style={{ color: "#57534E" }}>{s.name ?? "Service"}</span>
-                  <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: "#FEF0E3", color: "#F5821F" }}>
+                  <span style={{ color: "var(--e-text-2)" }}>{s.name ?? "Service"}</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
                     {serviceLabel(s.serviceModuleType)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span style={{ color: "#57534E" }}>{money(s.apAmount)}</span>
+                  <span style={{ color: "var(--e-text-2)" }}>{money(s.apAmount)}</span>
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize"
                     style={statusStyle(s.apStatus)}>
                     {s.apStatus ?? "pending"}
@@ -252,17 +252,17 @@ export default function PartnerBookingDetailPage({ backPath = "/partner/quotes",
             <MessageSquare size={14} style={{ color: "#2563EB" }} />
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#2563EB" }}>Memo from Agency</p>
           </div>
-          <p className="text-sm whitespace-pre-wrap" style={{ color: "#57534E" }}>{b.partnerNote}</p>
+          <p className="text-sm whitespace-pre-wrap" style={{ color: "var(--e-text-2)" }}>{b.partnerNote}</p>
         </div>
       )}
 
       {b.notes && (
-        <div className="rounded-xl border p-5" style={{ background: "#F4F3F1", borderColor: "#E8E6E2" }}>
+        <div className="rounded-xl border p-5" style={{ background: "var(--e-bg-muted)", borderColor: "var(--e-border)" }}>
           <div className="flex items-center gap-2 mb-2">
             <MessageSquare size={14} style={{ color: "#78716C" }} />
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#78716C" }}>Notes</p>
           </div>
-          <p className="text-sm whitespace-pre-wrap" style={{ color: "#57534E" }}>{b.notes}</p>
+          <p className="text-sm whitespace-pre-wrap" style={{ color: "var(--e-text-2)" }}>{b.notes}</p>
         </div>
       )}
     </div>

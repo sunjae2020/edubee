@@ -13,7 +13,7 @@ function contractStatusStyle(s: string | null | undefined) {
   if (v === "active" || v === "confirmed") return { background: "#F0FDF4", color: "#16A34A", border: "1px solid #BBF7D0" };
   if (v === "draft") return { background: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE" };
   if (v === "cancelled") return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
-  if (v === "completed") return { background: "#F4F3F1", color: "#57534E", border: "1px solid #E8E6E2" };
+  if (v === "completed") return { background: "var(--e-bg-muted)", color: "var(--e-text-2)", border: "1px solid #E8E6E2" };
   return { background: "#FFFBEB", color: "#D97706", border: "1px solid #FDE68A" };
 }
 
@@ -21,7 +21,7 @@ function productStatusStyle(s: string | null | undefined) {
   const v = (s ?? "").toLowerCase();
   if (v === "confirmed" || v === "active") return { background: "#F0FDF4", color: "#16A34A", border: "1px solid #BBF7D0" };
   if (v === "cancelled") return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
-  if (v === "completed") return { background: "#F4F3F1", color: "#57534E", border: "1px solid #E8E6E2" };
+  if (v === "completed") return { background: "var(--e-bg-muted)", color: "var(--e-text-2)", border: "1px solid #E8E6E2" };
   return { background: "#FFFBEB", color: "#D97706", border: "1px solid #FDE68A" };
 }
 
@@ -79,7 +79,7 @@ export default function StudentServiceDetailPage() {
   if (error || !data) {
     return (
       <div className="max-w-3xl mx-auto">
-        <button onClick={() => navigate("/student/services")} className="flex items-center gap-1.5 text-sm mb-4" style={{ color: "#A8A29E" }}>
+        <button onClick={() => navigate("/student/services")} className="flex items-center gap-1.5 text-sm mb-4" style={{ color: "var(--e-text-3)" }}>
           <ArrowLeft size={14} /> Back to Services
         </button>
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 flex items-center gap-2">
@@ -94,17 +94,17 @@ export default function StudentServiceDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
-      <button onClick={() => navigate("/student/services")} className="flex items-center gap-1.5 text-sm" style={{ color: "#A8A29E" }}>
+      <button onClick={() => navigate("/student/services")} className="flex items-center gap-1.5 text-sm" style={{ color: "var(--e-text-3)" }}>
         <ArrowLeft size={14} /> Back to Services
       </button>
 
       {/* Header */}
-      <div className="rounded-xl border p-6" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+      <div className="rounded-xl border p-6" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
         <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <BookOpen size={16} style={{ color: "#F5821F" }} />
-              <h1 className="text-lg font-bold" style={{ color: "#1C1917" }}>
+              <BookOpen size={16} style={{ color: "var(--e-orange)" }} />
+              <h1 className="text-lg font-bold" style={{ color: "var(--e-text-1)" }}>
                 {c.packageName ?? c.packageGroupName ?? "Service"}
               </h1>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
@@ -114,12 +114,12 @@ export default function StudentServiceDetailPage() {
               </span>
             </div>
             {c.contractNumber && (
-              <p className="text-sm" style={{ color: "#A8A29E" }}>Contract: {c.contractNumber}</p>
+              <p className="text-sm" style={{ color: "var(--e-text-3)" }}>Contract: {c.contractNumber}</p>
             )}
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold" style={{ color: "#1C1917" }}>{money(c.totalAmount)}</p>
-            <p className="text-xs" style={{ color: "#A8A29E" }}>Total (AUD)</p>
+            <p className="text-2xl font-bold" style={{ color: "var(--e-text-1)" }}>{money(c.totalAmount)}</p>
+            <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Total (AUD)</p>
           </div>
         </div>
 
@@ -127,36 +127,36 @@ export default function StudentServiceDetailPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
             <div className="flex items-center gap-1 mb-0.5">
-              <CalendarDays size={11} style={{ color: "#A8A29E" }} />
-              <p className="text-xs uppercase tracking-wide" style={{ color: "#A8A29E" }}>Start Date</p>
+              <CalendarDays size={11} style={{ color: "var(--e-text-3)" }} />
+              <p className="text-xs uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>Start Date</p>
             </div>
-            <p className="text-sm font-medium" style={{ color: "#1C1917" }}>{fmt(c.courseStartDate)}</p>
+            <p className="text-sm font-medium" style={{ color: "var(--e-text-1)" }}>{fmt(c.courseStartDate)}</p>
           </div>
           <div>
             <div className="flex items-center gap-1 mb-0.5">
-              <CalendarDays size={11} style={{ color: "#A8A29E" }} />
-              <p className="text-xs uppercase tracking-wide" style={{ color: "#A8A29E" }}>End Date</p>
+              <CalendarDays size={11} style={{ color: "var(--e-text-3)" }} />
+              <p className="text-xs uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>End Date</p>
             </div>
-            <p className="text-sm font-medium" style={{ color: "#1C1917" }}>{fmt(c.courseEndDate)}</p>
+            <p className="text-sm font-medium" style={{ color: "var(--e-text-1)" }}>{fmt(c.courseEndDate)}</p>
           </div>
           <div>
             <div className="flex items-center gap-1 mb-0.5">
-              <CreditCard size={11} style={{ color: "#A8A29E" }} />
-              <p className="text-xs uppercase tracking-wide" style={{ color: "#A8A29E" }}>Paid</p>
+              <CreditCard size={11} style={{ color: "var(--e-text-3)" }} />
+              <p className="text-xs uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>Paid</p>
             </div>
             <p className="text-sm font-bold" style={{ color: "#16A34A" }}>{money(c.paidAmount)}</p>
           </div>
           <div>
             <div className="flex items-center gap-1 mb-0.5">
-              <CreditCard size={11} style={{ color: "#A8A29E" }} />
-              <p className="text-xs uppercase tracking-wide" style={{ color: "#A8A29E" }}>Balance Due</p>
+              <CreditCard size={11} style={{ color: "var(--e-text-3)" }} />
+              <p className="text-xs uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>Balance Due</p>
             </div>
             <p className="text-sm font-bold" style={{ color: balance > 0 ? "#D97706" : "#16A34A" }}>{money(c.balanceAmount)}</p>
           </div>
         </div>
 
         {(c.agentName || c.signedAt) && (
-          <div className="mt-4 pt-4 border-t flex items-center gap-4 text-xs" style={{ borderColor: "#F4F3F1", color: "#A8A29E" }}>
+          <div className="mt-4 pt-4 border-t flex items-center gap-4 text-xs" style={{ borderColor: "var(--e-bg-muted)", color: "var(--e-text-3)" }}>
             {c.agentName && <span>Agent: {c.agentName}</span>}
             {c.signedAt && <span>Signed: {fmt(c.signedAt)}</span>}
           </div>
@@ -165,16 +165,16 @@ export default function StudentServiceDetailPage() {
 
       {/* Payment progress bar */}
       {Number(c.totalAmount ?? 0) > 0 && (
-        <div className="rounded-xl border p-5" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
-          <p className="text-sm font-semibold mb-3" style={{ color: "#1C1917" }}>Payment Progress</p>
-          <div className="w-full rounded-full h-3 mb-2" style={{ background: "#F4F3F1" }}>
+        <div className="rounded-xl border p-5" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
+          <p className="text-sm font-semibold mb-3" style={{ color: "var(--e-text-1)" }}>Payment Progress</p>
+          <div className="w-full rounded-full h-3 mb-2" style={{ background: "var(--e-bg-muted)" }}>
             <div className="h-3 rounded-full transition-all"
               style={{
-                background: "#F5821F",
+                background: "var(--e-orange)",
                 width: `${Math.min(100, (Number(c.paidAmount ?? 0) / Number(c.totalAmount)) * 100).toFixed(1)}%`,
               }} />
           </div>
-          <div className="flex justify-between text-xs" style={{ color: "#A8A29E" }}>
+          <div className="flex justify-between text-xs" style={{ color: "var(--e-text-3)" }}>
             <span>Paid: {money(c.paidAmount)}</span>
             <span>Total: {money(c.totalAmount)}</span>
           </div>
@@ -182,45 +182,45 @@ export default function StudentServiceDetailPage() {
       )}
 
       {/* Services included */}
-      <div className="rounded-xl border overflow-hidden" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
-        <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "#E8E6E2" }}>
-          <Package size={15} style={{ color: "#F5821F" }} />
-          <h2 className="font-semibold text-sm" style={{ color: "#1C1917" }}>Services Included</h2>
+      <div className="rounded-xl border overflow-hidden" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
+        <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: "var(--e-border)" }}>
+          <Package size={15} style={{ color: "var(--e-orange)" }} />
+          <h2 className="font-semibold text-sm" style={{ color: "var(--e-text-1)" }}>Services Included</h2>
           <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-medium"
-            style={{ background: "#FEF0E3", color: "#F5821F" }}>
+            style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
             {products.length} item{products.length !== 1 ? "s" : ""}
           </span>
         </div>
 
         {products.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-center" style={{ color: "#A8A29E" }}>No service items found</p>
+          <p className="px-5 py-8 text-sm text-center" style={{ color: "var(--e-text-3)" }}>No service items found</p>
         ) : (
           <>
             <div className="hidden sm:grid grid-cols-[1fr_120px_90px_110px] px-5 py-2 text-xs font-medium uppercase tracking-wide"
-              style={{ background: "#FAFAF9", color: "#A8A29E", borderBottom: "1px solid #E8E6E2" }}>
+              style={{ background: "var(--e-bg-page)", color: "var(--e-text-3)", borderBottom: "1px solid #E8E6E2" }}>
               <span>Service</span>
               <span>Status</span>
               <span className="text-center">Qty</span>
               <span className="text-right">Amount</span>
             </div>
-            <div className="divide-y" style={{ borderColor: "#F4F3F1" }}>
+            <div className="divide-y" style={{ borderColor: "var(--e-bg-muted)" }}>
               {products.map((p: any, i: number) => (
                 <div key={p.id ?? i} className="px-5 py-4">
                   <div className="sm:grid sm:grid-cols-[1fr_120px_90px_110px] sm:gap-2 items-center">
                     <div className="mb-2 sm:mb-0">
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                        <p className="font-medium text-sm" style={{ color: "#1C1917" }}>
+                        <p className="font-medium text-sm" style={{ color: "var(--e-text-1)" }}>
                           {p.name ?? "Service"}
                         </p>
                         {p.serviceModuleType && (
                           <span className="text-xs px-1.5 py-0.5 rounded"
-                            style={{ background: "#FEF0E3", color: "#F5821F" }}>
+                            style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}>
                             {serviceLabel(p.serviceModuleType)}
                           </span>
                         )}
                       </div>
                       {p.arDueDate && (
-                        <p className="text-xs" style={{ color: "#A8A29E" }}>Due: {fmt(p.arDueDate)}</p>
+                        <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Due: {fmt(p.arDueDate)}</p>
                       )}
                     </div>
                     <div className="mb-2 sm:mb-0">
@@ -229,14 +229,14 @@ export default function StudentServiceDetailPage() {
                         {p.status ?? "pending"}
                       </span>
                     </div>
-                    <p className="text-sm text-center hidden sm:block" style={{ color: "#57534E" }}>{p.quantity ?? 1}</p>
-                    <p className="font-semibold text-sm sm:text-right" style={{ color: "#1C1917" }}>{money(p.arAmount ?? p.totalPrice)}</p>
+                    <p className="text-sm text-center hidden sm:block" style={{ color: "var(--e-text-2)" }}>{p.quantity ?? 1}</p>
+                    <p className="font-semibold text-sm sm:text-right" style={{ color: "var(--e-text-1)" }}>{money(p.arAmount ?? p.totalPrice)}</p>
                   </div>
                 </div>
               ))}
-              <div className="px-5 py-4 flex items-center justify-between" style={{ background: "#FAFAF9" }}>
-                <p className="font-semibold text-sm" style={{ color: "#57534E" }}>Contract Total</p>
-                <p className="font-bold text-base" style={{ color: "#1C1917" }}>{money(c.totalAmount)}</p>
+              <div className="px-5 py-4 flex items-center justify-between" style={{ background: "var(--e-bg-page)" }}>
+                <p className="font-semibold text-sm" style={{ color: "var(--e-text-2)" }}>Contract Total</p>
+                <p className="font-bold text-base" style={{ color: "var(--e-text-1)" }}>{money(c.totalAmount)}</p>
               </div>
             </div>
           </>
@@ -247,7 +247,7 @@ export default function StudentServiceDetailPage() {
       {c.notes && (
         <div className="rounded-xl border p-5" style={{ background: "#FFFBEB", borderColor: "#FDE68A" }}>
           <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "#D97706" }}>Notes</p>
-          <p className="text-sm whitespace-pre-wrap" style={{ color: "#57534E" }}>{c.notes}</p>
+          <p className="text-sm whitespace-pre-wrap" style={{ color: "var(--e-text-2)" }}>{c.notes}</p>
         </div>
       )}
     </div>

@@ -3,11 +3,11 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, FileText, DollarSign, CheckCircle, Clock, TrendingUp, MessageCircle, Pin, Megaphone, Bell, HelpCircle } from "lucide-react";
+import { Users, FileText, DollarSign, CheckCircle, Clock, TrendingUp, MessageCircle, Pin, Megaphone, Bell, HelpCircle, BookOpen } from "lucide-react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 
-const ORANGE = "#F5821F";
+const ORANGE = "var(--e-orange)";
 
 interface Summary {
   totalStudents: number;
@@ -63,7 +63,7 @@ function StatCard({
 
 const TYPE_META: Record<string, { icon: React.ElementType; label: string; color: string; bg: string }> = {
   notice:       { icon: Bell,      label: "Notice",       color: "#2563EB", bg: "#EFF6FF" },
-  announcement: { icon: Megaphone, label: "Announcement", color: ORANGE,    bg: "#FEF0E3" },
+  announcement: { icon: Megaphone, label: "Announcement", color: ORANGE,    bg: "var(--e-orange-lt)" },
   question:     { icon: HelpCircle,label: "Question",     color: "#7C3AED", bg: "#F5F3FF" },
 };
 
@@ -71,26 +71,26 @@ function PostRow({ post }: { post: Post }) {
   const meta = TYPE_META[post.type] ?? TYPE_META.notice;
   const Icon = meta.icon;
   return (
-    <div className="flex items-start gap-3 py-3 border-b last:border-0" style={{ borderColor: "#E8E6E2" }}>
+    <div className="flex items-start gap-3 py-3 border-b last:border-0" style={{ borderColor: "var(--e-border)" }}>
       <div className="p-1.5 rounded-md mt-0.5 flex-shrink-0" style={{ background: meta.bg }}>
         <Icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 flex-wrap">
           {post.isPinned && <Pin className="h-3 w-3 flex-shrink-0" style={{ color: ORANGE }} />}
-          <p className="text-sm font-medium truncate" style={{ color: "#1C1917" }}>{post.title}</p>
+          <p className="text-sm font-medium truncate" style={{ color: "var(--e-text-1)" }}>{post.title}</p>
         </div>
-        <p className="text-xs mt-0.5 line-clamp-1" style={{ color: "#A8A29E" }}>{post.content}</p>
+        <p className="text-xs mt-0.5 line-clamp-1" style={{ color: "var(--e-text-3)" }}>{post.content}</p>
         <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs" style={{ color: "#A8A29E" }}>{post.authorName}</span>
-          <span style={{ color: "#E8E6E2" }}>·</span>
-          <span className="text-xs" style={{ color: "#A8A29E" }}>
+          <span className="text-xs" style={{ color: "var(--e-text-3)" }}>{post.authorName}</span>
+          <span style={{ color: "var(--e-border)" }}>·</span>
+          <span className="text-xs" style={{ color: "var(--e-text-3)" }}>
             {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
           </span>
           {post.commentCount > 0 && (
             <>
-              <span style={{ color: "#E8E6E2" }}>·</span>
-              <span className="text-xs flex items-center gap-0.5" style={{ color: "#A8A29E" }}>
+              <span style={{ color: "var(--e-border)" }}>·</span>
+              <span className="text-xs flex items-center gap-0.5" style={{ color: "var(--e-text-3)" }}>
                 <MessageCircle className="h-3 w-3" />{post.commentCount}
               </span>
             </>
@@ -157,62 +157,68 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
-          <Link href="/students">
-            <div className="block">
-              <Card className="border-card-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    My Students
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    View all students linked to your agency account, their quotes, and enrolment status.
-                  </p>
-                  <p className="mt-3 text-xs font-medium text-primary group-hover:underline">
-                    View all students &rarr;
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </Link>
-
-          <Link href="/commissions">
-            <div className="block">
-              <Card className="border-card-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-primary" />
-                    Commission History
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Track your commission invoices, payment status, and earning history.
-                  </p>
-                  <p className="mt-3 text-xs font-medium text-primary group-hover:underline">
-                    View commissions &rarr;
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </Link>
+          {[
+            {
+              href: "/students",
+              icon: Users,
+              title: "My Students",
+              desc: "View all students linked to your agency account, their quotes, and enrolment status.",
+              cta: "View all students",
+            },
+            {
+              href: "/quotes",
+              icon: FileText,
+              title: "Quotes",
+              desc: "Browse and track all quotes submitted for your students across programs.",
+              cta: "View quotes",
+            },
+            {
+              href: "/contracts",
+              icon: BookOpen,
+              title: "Contracts",
+              desc: "Monitor active enrolment contracts, course dates, and payment progress.",
+              cta: "View contracts",
+            },
+            {
+              href: "/commissions",
+              icon: DollarSign,
+              title: "Commission History",
+              desc: "Track your commission invoices, payment status, and earning history.",
+              cta: "View commissions",
+            },
+          ].map(item => (
+            <Link key={item.href} href={item.href}>
+              <div className="block">
+                <Card className="border-card-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group h-full">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <item.icon className="h-4 w-4 text-primary" />
+                      {item.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                    <p className="mt-3 text-xs font-medium text-primary group-hover:underline">{item.cta} &rarr;</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </Link>
+          ))}
         </div>
 
         {/* Community highlights */}
-        <div className="rounded-xl border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b" style={{ borderColor: "#E8E6E2" }}>
+        <div className="rounded-xl border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b" style={{ borderColor: "var(--e-border)" }}>
             <div className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" style={{ color: ORANGE }} />
-              <span className="text-sm font-semibold" style={{ color: "#1C1917" }}>Community</span>
+              <span className="text-sm font-semibold" style={{ color: "var(--e-text-1)" }}>Community</span>
             </div>
             <Link href="/community" className="text-xs font-medium hover:underline" style={{ color: ORANGE }}>View all →</Link>
           </div>
           <div className="px-4">
             {communityLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="py-3 border-b last:border-0" style={{ borderColor: "#E8E6E2" }}>
+                <div key={i} className="py-3 border-b last:border-0" style={{ borderColor: "var(--e-border)" }}>
                   <Skeleton className="h-3.5 w-40 mb-2" />
                   <Skeleton className="h-3 w-24" />
                 </div>
@@ -221,8 +227,8 @@ export default function DashboardPage() {
               recentPosts.map(p => <PostRow key={p.id} post={p} />)
             ) : (
               <div className="py-8 text-center">
-                <MessageCircle className="h-6 w-6 mx-auto mb-2" style={{ color: "#E8E6E2" }} />
-                <p className="text-xs" style={{ color: "#A8A29E" }}>No posts yet. Be the first!</p>
+                <MessageCircle className="h-6 w-6 mx-auto mb-2" style={{ color: "var(--e-border)" }} />
+                <p className="text-xs" style={{ color: "var(--e-text-3)" }}>No posts yet. Be the first!</p>
               </div>
             )}
           </div>

@@ -16,7 +16,7 @@ function statusStyle(status: string | null | undefined) {
   if (s === "sent") return { background: "#FFFBEB", color: "#D97706", border: "1px solid #FDE68A" };
   if (s === "draft") return { background: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE" };
   if (s === "cancelled" || s === "rejected" || s === "expired") return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
-  return { background: "#F4F3F1", color: "#57534E", border: "1px solid #E8E6E2" };
+  return { background: "var(--e-bg-muted)", color: "var(--e-text-2)", border: "1px solid #E8E6E2" };
 }
 
 interface Quote {
@@ -57,17 +57,17 @@ export default function AgentQuotesPage() {
       {/* KPI cards */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Quotes", value: quotes.length, icon: FileText, color: "#F5821F", bg: "#FEF0E3" },
+          { label: "Total Quotes", value: quotes.length, icon: FileText, color: "var(--e-orange)", bg: "var(--e-orange-lt)" },
           { label: "Active",       value: active.length,   icon: Clock,      color: "#D97706", bg: "#FFFBEB" },
           { label: "Accepted",     value: accepted.length, icon: CheckCircle, color: "#16A34A", bg: "#F0FDF4" },
         ].map(c => (
-          <div key={c.label} className="rounded-xl p-5 border" style={{ background: "#FFFFFF", borderColor: "#E8E6E2", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div key={c.label} className="rounded-xl p-5 border" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "#A8A29E" }}>{c.label}</p>
+                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>{c.label}</p>
                 {isLoading
                   ? <Skeleton className="h-7 w-16 mt-1" />
-                  : <p className="text-2xl font-bold mt-1" style={{ color: "#1C1917" }}>{c.value}</p>
+                  : <p className="text-2xl font-bold mt-1" style={{ color: "var(--e-text-1)" }}>{c.value}</p>
                 }
               </div>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: c.bg }}>
@@ -81,10 +81,10 @@ export default function AgentQuotesPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#A8A29E" }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--e-text-3)" }} />
           <input
             className="w-full h-9 pl-9 pr-3 rounded-lg border text-sm outline-none"
-            style={{ borderColor: "#E8E6E2", background: "#FFFFFF", color: "#1C1917" }}
+            style={{ borderColor: "var(--e-border)", background: "var(--e-bg-surface)", color: "var(--e-text-1)" }}
             placeholder="Search by ref or student..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -92,7 +92,7 @@ export default function AgentQuotesPage() {
         </div>
         <select
           className="h-9 px-3 rounded-lg border text-sm outline-none"
-          style={{ borderColor: "#E8E6E2", background: "#FFFFFF", color: "#57534E" }}
+          style={{ borderColor: "var(--e-border)", background: "var(--e-bg-surface)", color: "var(--e-text-2)" }}
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
         >
@@ -108,7 +108,7 @@ export default function AgentQuotesPage() {
       )}
 
       {/* Table */}
-      <div className="rounded-xl border overflow-hidden" style={{ background: "#FFFFFF", borderColor: "#E8E6E2" }}>
+      <div className="rounded-xl border overflow-hidden" style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)" }}>
         {isLoading ? (
           <div className="p-6 space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -121,16 +121,16 @@ export default function AgentQuotesPage() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
             <FileText className="w-10 h-10 mx-auto mb-3" style={{ color: "#D1CFC8" }} />
-            <p className="text-sm font-medium" style={{ color: "#1C1917" }}>No quotes found</p>
-            <p className="text-xs mt-1" style={{ color: "#A8A29E" }}>Quotes you create for students will appear here.</p>
+            <p className="text-sm font-medium" style={{ color: "var(--e-text-1)" }}>No quotes found</p>
+            <p className="text-xs mt-1" style={{ color: "var(--e-text-3)" }}>Quotes you create for students will appear here.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: "1px solid #E8E6E2", background: "#FAFAF9" }}>
+                <tr style={{ borderBottom: "1px solid #E8E6E2", background: "var(--e-bg-page)" }}>
                   {["Quote Ref", "Student / Agency", "Status", "Expiry Date", "Created"].map(h => (
-                    <th key={h} className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#A8A29E" }}>{h}</th>
+                    <th key={h} className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--e-text-3)" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -138,27 +138,27 @@ export default function AgentQuotesPage() {
                 {filtered.map(q => (
                   <tr key={q.id} style={{ borderBottom: "1px solid #F4F3F1", cursor: "pointer" }}
                     onClick={() => navigate(`/quotes/${q.id}`)}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#FAFAF9")}
+                    onMouseEnter={e => (e.currentTarget.style.background = "var(--e-bg-page)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "")}>
-                    <td className="px-5 py-4 font-medium" style={{ color: "#1C1917" }}>
-                      {q.quoteRefNumber ?? <span style={{ color: "#A8A29E" }}>—</span>}
+                    <td className="px-5 py-4 font-medium" style={{ color: "var(--e-text-1)" }}>
+                      {q.quoteRefNumber ?? <span style={{ color: "var(--e-text-3)" }}>—</span>}
                     </td>
-                    <td className="px-5 py-4" style={{ color: "#57534E" }}>
-                      {q.accountName ?? <span style={{ color: "#A8A29E" }}>—</span>}
+                    <td className="px-5 py-4" style={{ color: "var(--e-text-2)" }}>
+                      {q.accountName ?? <span style={{ color: "var(--e-text-3)" }}>—</span>}
                     </td>
                     <td className="px-5 py-4">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize" style={statusStyle(q.quoteStatus)}>
                         {q.quoteStatus}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-sm" style={{ color: "#57534E" }}>
-                      {q.expiryDate ? format(new Date(q.expiryDate), "dd MMM yyyy") : <span style={{ color: "#A8A29E" }}>—</span>}
+                    <td className="px-5 py-4 text-sm" style={{ color: "var(--e-text-2)" }}>
+                      {q.expiryDate ? format(new Date(q.expiryDate), "dd MMM yyyy") : <span style={{ color: "var(--e-text-3)" }}>—</span>}
                     </td>
-                    <td className="px-5 py-4 text-sm" style={{ color: "#A8A29E" }}>
+                    <td className="px-5 py-4 text-sm" style={{ color: "var(--e-text-3)" }}>
                       {format(new Date(q.createdOn), "dd MMM yyyy")}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <ChevronRight size={14} style={{ color: "#A8A29E" }} />
+                      <ChevronRight size={14} style={{ color: "var(--e-text-3)" }} />
                     </td>
                   </tr>
                 ))}

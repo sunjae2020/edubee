@@ -43,9 +43,9 @@ function statusStyle(s: string | null | undefined) {
   if (v === "qualified") return { background: "#F0FDF4", color: "#16A34A", border: "1px solid #BBF7D0" };
   if (v === "proposal")  return { background: "#FFFBEB", color: "#D97706", border: "1px solid #FDE68A" };
   if (v === "new")       return { background: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE" };
-  if (v === "converted") return { background: "var(--e-orange-lt)", color: "var(--e-orange)", border: "1px solid #F5821F44" };
+  if (v === "converted") return { background: "var(--e-orange-lt)", color: "var(--e-orange)", border: "1px solid color-mix(in srgb, var(--e-orange) 27%, transparent)" };
   if (v === "lost")      return { background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
-  return { background: "#F4F3F1", color: "#57534E", border: "1px solid #E8E6E2" };
+  return { background: "var(--e-bg-muted)", color: "var(--e-text-2)", border: "1px solid #E8E6E2" };
 }
 
 function quoteStatusStyle(s: string) {
@@ -53,7 +53,7 @@ function quoteStatusStyle(s: string) {
   if (v === "accepted") return { background: "#F0FDF4", color: "#16A34A" };
   if (v === "sent")     return { background: "#FFFBEB", color: "#D97706" };
   if (v === "draft")    return { background: "#EFF6FF", color: "#2563EB" };
-  return { background: "#F4F3F1", color: "#57534E" };
+  return { background: "var(--e-bg-muted)", color: "var(--e-text-2)" };
 }
 
 function fmt(n: string | number | null) {
@@ -120,7 +120,7 @@ export default function AgentLeadDetailPage() {
       </button>
 
       {/* Header card */}
-      <div className="rounded-xl p-5" style={{ background: "#FFFFFF", border: "1px solid var(--e-border)" }}>
+      <div className="rounded-xl p-5" style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}>
         <div className="flex items-start gap-4">
           <div
             className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
@@ -154,7 +154,7 @@ export default function AgentLeadDetailPage() {
       {/* Info grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Contact info */}
-        <div className="rounded-xl p-5 space-y-4" style={{ background: "#FFFFFF", border: "1px solid var(--e-border)" }}>
+        <div className="rounded-xl p-5 space-y-4" style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}>
           <h2 className="text-sm font-semibold" style={{ color: "var(--e-text-1)" }}>Contact Information</h2>
           <InfoRow icon={Mail}  label="Email"       value={lead.email} />
           <InfoRow icon={Phone} label="Phone"       value={lead.phone} />
@@ -163,7 +163,7 @@ export default function AgentLeadDetailPage() {
         </div>
 
         {/* Enquiry details */}
-        <div className="rounded-xl p-5 space-y-4" style={{ background: "#FFFFFF", border: "1px solid var(--e-border)" }}>
+        <div className="rounded-xl p-5 space-y-4" style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}>
           <h2 className="text-sm font-semibold" style={{ color: "var(--e-text-1)" }}>Enquiry Details</h2>
           <InfoRow icon={FileText}  label="Inquiry Type"        value={lead.inquiryType} />
           <InfoRow icon={DollarSign} label="Budget"             value={lead.budget ? fmt(lead.budget) : null} />
@@ -174,7 +174,7 @@ export default function AgentLeadDetailPage() {
 
       {/* Notes */}
       {lead.notes && (
-        <div className="rounded-xl p-5" style={{ background: "#FFFFFF", border: "1px solid var(--e-border)" }}>
+        <div className="rounded-xl p-5" style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}>
           <div className="flex items-center gap-2 mb-3">
             <MessageSquare className="w-4 h-4" style={{ color: "var(--e-orange)" }} />
             <h2 className="text-sm font-semibold" style={{ color: "var(--e-text-1)" }}>Consultation Notes</h2>
@@ -187,7 +187,7 @@ export default function AgentLeadDetailPage() {
 
       {/* Linked Quotes */}
       {lead.linkedQuotes && lead.linkedQuotes.length > 0 && (
-        <div className="rounded-xl p-5" style={{ background: "#FFFFFF", border: "1px solid var(--e-border)" }}>
+        <div className="rounded-xl p-5" style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)" }}>
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-4 h-4" style={{ color: "var(--e-orange)" }} />
             <h2 className="text-sm font-semibold" style={{ color: "var(--e-text-1)" }}>Related Quotes</h2>
@@ -203,7 +203,7 @@ export default function AgentLeadDetailPage() {
                   key={q.id}
                   onClick={() => navigate(`/quotes/${q.id}`)}
                   className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors group"
-                  style={{ background: "#FAFAF9", border: "1px solid var(--e-border)" }}
+                  style={{ background: "var(--e-bg-page)", border: "1px solid var(--e-border)" }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--e-orange)")}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--e-border)")}
                 >
