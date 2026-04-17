@@ -94,7 +94,9 @@ router.post("/login", async (req, res) => {
   const normalizedEmail = email.toLowerCase().trim();
 
   // ── STEP 1: Internal staff
-  const [staffUser] = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
+  // Staff accounts always live in public.users — use staticDb so tenant schema
+  // context (runWithTenantSchema) does NOT redirect this query to a tenant schema.
+  const [staffUser] = await staticDb.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
 
   if (staffUser) {
     if (staffUser.status === "inactive" || staffUser.status === "Inactive") {
@@ -114,19 +116,19 @@ router.post("/login", async (req, res) => {
     if (!valid) {
       const attempts = (staffUser.failedLoginAttempts ?? 0) + 1;
       const lockData = attempts >= MAX_FAILED ? { lockedUntil: new Date(Date.now() + LOCK_MINUTES * 60_000) } : {};
-      await db.update(users).set({ failedLoginAttempts: attempts, ...lockData }).where(eq(users.id, staffUser.id));
+      await staticDb.update(users).set({ failedLoginAttempts: attempts, ...lockData }).where(eq(users.id, staffUser.id));
       await writeAuthLog("staff", staffUser.id, normalizedEmail, "login_fail", ip, ua);
       return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
     }
 
     // Success
-    await db.update(users).set({ failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() }).where(eq(users.id, staffUser.id));
+    await staticDb.update(users).set({ failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() }).where(eq(users.id, staffUser.id));
     await writeAuthLog("staff", staffUser.id, normalizedEmail, "login_success", ip, ua);
 
     const { accessToken, refreshToken } = generateStaffTokens(staffUser);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
-    await db.insert(refreshTokens).values({ userId: staffUser.id, token: refreshToken, expiresAt });
+    await staticDb.insert(refreshTokens).values({ userId: staffUser.id, token: refreshToken, expiresAt });
 
     const { passwordHash: _, ...userWithoutPw } = staffUser;
     return res.json({
@@ -461,12 +463,13 @@ router.post("/forgot-password", async (req, res) => {
   const normalizedEmail = email.toLowerCase().trim();
 
   try {
-    const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
+    // Staff users always live in public.users — use staticDb to bypass tenant schema context
+    const [user] = await staticDb.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
 
     if (user) {
       const token = crypto.randomBytes(32).toString("hex");
       const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-      await db.update(users)
+      await staticDb.update(users)
         .set({ passwordResetToken: token, passwordResetExpires: expires })
         .where(eq(users.id, user.id));
 
@@ -474,7 +477,7 @@ router.post("/forgot-password", async (req, res) => {
       // Fallback: APP_URL env or the request origin header
       let baseUrl = process.env.APP_URL ?? "";
       if (user.organisationId) {
-        const [org] = await db
+        const [org] = await staticDb
           .select({ subdomain: organisations.subdomain, name: organisations.name })
           .from(organisations)
           .where(eq(organisations.id, user.organisationId))
@@ -497,7 +500,7 @@ router.post("/forgot-password", async (req, res) => {
       // Look up org name for email subject
       let orgName = "Edubee CRM";
       if (user.organisationId) {
-        const [org] = await db
+        const [org] = await staticDb
           .select({ name: organisations.name })
           .from(organisations)
           .where(eq(organisations.id, user.organisationId))
@@ -533,14 +536,15 @@ router.post("/reset-password", async (req, res) => {
   }
 
   try {
-    const [user] = await db.select().from(users).where(eq(users.passwordResetToken, token)).limit(1);
+    // Staff users always live in public.users — use staticDb to bypass tenant schema context
+    const [user] = await staticDb.select().from(users).where(eq(users.passwordResetToken, token)).limit(1);
 
     if (!user || !user.passwordResetExpires || new Date(user.passwordResetExpires) < new Date()) {
       return res.status(400).json({ success: false, error: "INVALID_TOKEN", message: "Invalid or expired reset link. Please request a new one." });
     }
 
     const hash = await bcrypt.hash(password, 10);
-    await db.update(users)
+    await staticDb.update(users)
       .set({ passwordHash: hash, passwordResetToken: null, passwordResetExpires: null, failedLoginAttempts: 0, lockedUntil: null })
       .where(eq(users.id, user.id));
 
