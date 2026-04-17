@@ -26,9 +26,10 @@ router.get("/package-groups", authenticate, async (req, res) => {
     if (status) conditions.push(ilike(packageGroups.status, status));
     if (countryCode) conditions.push(eq(packageGroups.countryCode, countryCode));
 
-    // Camp coordinators see package groups where they are the camp provider OR assigned as coordinator
+    // Camp coordinators see package groups where they are the camp provider OR assigned as coordinator.
+    // Priority: org impersonation (req.tenant) → user's own org → user's id
     if (isCC) {
-      const orgId = req.user!.organisationId ?? req.user!.id;
+      const orgId = req.tenant?.id ?? req.user!.organisationId ?? req.user!.id;
       conditions.push(
         or(
           eq(packageGroups.campProviderId, orgId),
@@ -1122,8 +1123,9 @@ router.get("/enrollment-spots", authenticate, requireRole(...ADMIN_ROLES, "camp_
     if (packageGroupId) conditions.push(eq(enrollmentSpots.packageGroupId, packageGroupId));
 
     // Camp coordinators can only see spots for groups where they are campProvider OR coordinator
+    // Priority: org impersonation (req.tenant) → user's own org → user's id
     if (isCC) {
-      const orgId = req.user!.organisationId ?? req.user!.id;
+      const orgId = req.tenant?.id ?? req.user!.organisationId ?? req.user!.id;
       conditions.push(
         or(
           eq(packageGroups.campProviderId, orgId),
