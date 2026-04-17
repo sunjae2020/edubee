@@ -140,6 +140,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try { if (token) await logoutMutation.mutateAsync(); } finally {
       localStorage.removeItem("edubee_token");
       setToken(null);
+      // 테마 캐시 초기화 → 로그인 화면에서 Edubee CRM 기본 테마 표시
+      try {
+        Object.keys(localStorage)
+          .filter(k => k.startsWith("edubee_theme_"))
+          .forEach(k => localStorage.removeItem(k));
+      } catch {}
+      window.dispatchEvent(new Event("edubee:logout"));
       setLocation("/login");
     }
   };

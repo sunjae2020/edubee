@@ -94,18 +94,9 @@ export function useTenantTheme() {
       const subdomain   = getSubdomain();
       const cacheKey    = themeCacheKey(subdomain, previewOrg);
 
-      // ① 캐시 즉시 적용 → 깜빡임 방지
-      const cached = readCache(cacheKey);
-      if (cached) {
-        setTheme(cached);
-        applyThemeToDom(cached);
-      } else {
-        applyThemeToDom(DEFAULT_THEME);
-      }
-
-      // ② 공개 페이지 판별
+      // ① 공개 페이지 판별 — 캐시 읽기보다 먼저 처리
       //    - 서브도메인 있으면 공개 페이지도 테넌트 브랜딩 표시 (ts.edubee.co/login)
-      //    - 서브도메인 없고 공개 페이지면 API 생략, 기본 테마만 사용
+      //    - 서브도메인 없고 공개 페이지면 API 생략, 기본 테마 강제 적용
       const publicPaths = ["/register", "/login", "/forgot-password", "/reset-password", "/accept-invite"];
       const isPublicPage = publicPaths.some(p => window.location.pathname.endsWith(p));
 
@@ -115,6 +106,15 @@ export function useTenantTheme() {
         setIsLoading(false);
         inflight.current = false;
         return;
+      }
+
+      // ② 캐시 즉시 적용 → 깜빡임 방지 (테넌트 컨텍스트 있을 때만)
+      const cached = readCache(cacheKey);
+      if (cached) {
+        setTheme(cached);
+        applyThemeToDom(cached);
+      } else {
+        applyThemeToDom(DEFAULT_THEME);
       }
 
       // ③ API 호출
@@ -157,6 +157,12 @@ export function useTenantTheme() {
     window.addEventListener("edubee:impersonation-changed", loadTheme);
     // 플랜 변경 시 테마 재로드
     window.addEventListener("edubee:plan-changed", loadTheme);
+    // 로그아웃 시 테마 재로드 (SPA 내 라우트 변경 처리)
+    window.addEventListener("edubee:logout", loadTheme);
+
+    // SPA 라우트 변경 감지 (뒤로/앞으로 이동 포함)
+    const handlePopState = () => loadTheme();
+    window.addEventListener("popstate", handlePopState);
 
     // 탭 포커스 복귀 시 테마 재로드 (inflight 플래그로 중복 차단)
     const handleVisibility = () => {
@@ -167,6 +173,8 @@ export function useTenantTheme() {
     return () => {
       window.removeEventListener("edubee:impersonation-changed", loadTheme);
       window.removeEventListener("edubee:plan-changed", loadTheme);
+      window.removeEventListener("edubee:logout", loadTheme);
+      window.removeEventListener("popstate", handlePopState);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [loadTheme]);
