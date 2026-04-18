@@ -197,186 +197,87 @@ export default function PricingPage() {
       <section style={{ background: '#FAF5ED', padding: '0 0 72px' }}>
         <div className="max-w-[1280px] mx-auto px-4 sm:px-8 xl:px-[80px]">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+
+            {/* ── Standard plan cards from API ── */}
             {plans.map((plan) => (
-              <div
-                key={plan.planName}
-                className="flex flex-col relative"
-                style={{
-                  background: plan.highlighted ? '#FF9039' : '#FFFFFF',
-                  borderRadius: 21,
-                  padding: '32px 24px 28px',
-                  boxShadow: plan.highlighted
-                    ? '0 8px 32px rgba(255,144,57,0.30)'
-                    : '3px 4px 10px rgba(0,0,0,0.08)',
-                }}
-              >
-                {plan.badge && (
-                  <div
-                    className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold whitespace-nowrap"
-                    style={{ background: '#200E00', color: '#FF9039' }}
-                  >
-                    {plan.badge}
-                  </div>
-                )}
-
-                {/* Plan name */}
-                <p
-                  className="font-bold text-base mb-1 tracking-wide"
-                  style={{ color: plan.highlighted ? 'rgba(255,255,255,0.85)' : '#9C6A3A' }}
-                >
-                  {plan.planName}
-                </p>
-
-                {/* Price */}
-                <div className="mb-6 mt-1">
-                  {plan.isContact ? (
-                    <p className="font-bold text-2xl" style={{ color: plan.highlighted ? '#fff' : '#3B1A06' }}>
-                      Contact Us
-                    </p>
-                  ) : (
-                    <div className="flex items-baseline gap-1">
-                      <span
-                        className="font-bold text-4xl sm:text-[42px]"
-                        style={{ color: plan.highlighted ? '#fff' : '#3B1A06', lineHeight: '1' }}
-                      >
-                        {plan.price}
-                      </span>
-                      {!plan.isFree && (
-                        <span
-                          className="text-sm ml-1"
-                          style={{ color: plan.highlighted ? 'rgba(255,255,255,0.65)' : '#9C6A3A' }}
-                        >
-                          /mo
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Divider */}
-                <div
-                  className="mb-5 h-px"
-                  style={{ background: plan.highlighted ? 'rgba(255,255,255,0.25)' : '#F0E8DC' }}
-                />
-
-                {/* Features */}
-                <ul className="space-y-3 flex-1 mb-7">
-                  {FEATURES.map(f => {
-                    const val = (plan as any)[f.key]
-                    const active = f.bool ? !!val : true
-                    return (
-                      <li key={f.key} className="flex items-center gap-2.5 text-sm">
-                        {f.bool ? (
-                          active
-                            ? <Check size={15} strokeWidth={2.5} style={{ color: plan.highlighted ? '#fff' : '#FF9039', flexShrink: 0 }} />
-                            : <X    size={15} strokeWidth={2}   style={{ color: plan.highlighted ? 'rgba(255,255,255,0.35)' : '#D1D5DB', flexShrink: 0 }} />
-                        ) : (
-                          <Check size={15} strokeWidth={2.5} style={{ color: plan.highlighted ? '#fff' : '#FF9039', flexShrink: 0 }} />
-                        )}
-                        <span style={{
-                          color: plan.highlighted
-                            ? (f.bool && !active ? 'rgba(255,255,255,0.35)' : '#fff')
-                            : (f.bool && !active ? '#C4B5A5' : '#3B1A06'),
-                          fontWeight: 300,
-                        }}>
-                          {f.bool ? f.label : val}
-                        </span>
-                      </li>
-                    )
-                  })}
-                </ul>
-
-                {/* CTA */}
-                <a
-                  href={link(plan.ctaUrl)}
-                  className="block w-full text-center py-3 rounded-[28px] font-semibold text-sm transition-all hover:opacity-90"
-                  style={
-                    plan.highlighted
-                      ? { background: '#fff', color: '#D76811' }
-                      : { background: '#FF9039', color: '#fff' }
-                  }
-                >
-                  {plan.ctaLabel}
-                </a>
-              </div>
+              <PlanCard key={plan.planName} plan={plan} />
             ))}
-          </div>
-          {/* ── ENTERPRISE — full-width card ── */}
-          <div
-            className="mt-5 rounded-[21px] p-8 sm:p-10"
-            style={{
-              background: '#FFFFFF',
-              boxShadow: '3px 4px 10px rgba(0,0,0,0.08)',
-            }}
-          >
-            <div className="flex flex-col lg:flex-row lg:items-start lg:gap-12">
-              {/* Left: name + pricing + stats */}
-              <div className="lg:w-[340px] flex-shrink-0 mb-8 lg:mb-0">
-                <div className="flex items-center gap-3 mb-4">
-                  <p className="font-bold text-lg" style={{ color: '#3B1A06' }}>ENTERPRISE</p>
-                  <span
-                    className="px-3 py-0.5 rounded-full text-xs font-medium"
-                    style={{ background: '#F0EBE3', color: '#9C6A3A' }}
-                  >
-                    enterprise
+
+            {/* ── ENTERPRISE — always shown as 4th card ── */}
+            <div
+              className="flex flex-col relative"
+              style={{
+                background: '#FFFFFF',
+                borderRadius: 21,
+                padding: '32px 24px 28px',
+                boxShadow: '3px 4px 10px rgba(0,0,0,0.08)',
+              }}
+            >
+              {/* Plan name */}
+              <p className="font-bold text-base mb-1 tracking-wide" style={{ color: '#9C6A3A' }}>
+                ENTERPRISE
+              </p>
+
+              {/* Price */}
+              <div className="mb-6 mt-1">
+                <div className="flex items-baseline flex-wrap gap-x-2">
+                  <span className="font-bold text-3xl sm:text-[36px]" style={{ color: '#FF9039', lineHeight: '1' }}>
+                    Contact us
                   </span>
                 </div>
-                <div className="mb-6">
-                  <span className="font-bold text-3xl sm:text-4xl" style={{ color: '#FF9039' }}>Contact us</span>
-                  <span className="ml-2 text-base font-light" style={{ color: '#7A5535' }}>for pricing</span>
-                </div>
-                <div className="flex flex-wrap gap-x-5 gap-y-2 mb-8">
-                  {[
-                    { icon: '👥', label: 'Unlimited users' },
-                    { icon: '🎓', label: 'Unlimited students' },
-                    { icon: '🏢', label: 'Unlimited branches' },
-                  ].map((s, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <span className="text-base">{s.icon}</span>
-                      <span className="text-sm font-medium" style={{ color: '#3B1A06' }}>{s.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <a
-                  href={link('/support/contact')}
-                  className="inline-flex items-center justify-center font-bold transition-all hover:scale-105 text-sm"
-                  style={{
-                    background: '#FF9039',
-                    color: '#fff',
-                    height: 46,
-                    paddingLeft: 32,
-                    paddingRight: 32,
-                    borderRadius: 40,
-                  }}
-                >
-                  Contact Us
-                </a>
+                <p className="text-xs mt-1" style={{ color: '#9C6A3A', fontWeight: 300 }}>for pricing</p>
               </div>
 
-              {/* Divider (vertical on lg, horizontal on sm) */}
-              <div className="hidden lg:block w-px self-stretch" style={{ background: '#F0E8DC' }} />
-              <div className="lg:hidden h-px mb-8" style={{ background: '#F0E8DC' }} />
+              {/* Divider */}
+              <div className="mb-5 h-px" style={{ background: '#F0E8DC' }} />
 
-              {/* Right: feature tags */}
-              <div className="flex-1">
-                <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#9C6A3A' }}>
-                  All features included
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {ENTERPRISE_FEATURES.map((feat, i) => (
+              {/* Unlimited stats */}
+              <ul className="space-y-3 flex-1 mb-7">
+                {[
+                  { label: 'Unlimited students' },
+                  { label: 'Unlimited storage' },
+                  { label: 'School Database' },
+                  { label: 'Remote Support' },
+                  { label: 'Partner Supplier List' },
+                ].map((f, i) => (
+                  <li key={i} className="flex items-center gap-2.5 text-sm">
+                    <Check size={15} strokeWidth={2.5} style={{ color: '#FF9039', flexShrink: 0 }} />
+                    <span style={{ color: '#3B1A06', fontWeight: 300 }}>{f.label}</span>
+                  </li>
+                ))}
+                {/* Mini feature tags */}
+                <li className="pt-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {ENTERPRISE_FEATURES.slice(0, 6).map((feat, i) => (
+                      <span
+                        key={i}
+                        className="px-2.5 py-0.5 rounded-full text-[11px] font-medium"
+                        style={{ background: '#F5EEE6', color: '#7A5535' }}
+                      >
+                        {feat}
+                      </span>
+                    ))}
                     <span
-                      key={i}
-                      className="px-4 py-1.5 rounded-full text-sm font-medium"
-                      style={{ background: '#F5EEE6', color: '#3B1A06' }}
+                      className="px-2.5 py-0.5 rounded-full text-[11px] font-medium"
+                      style={{ background: '#F5EEE6', color: '#7A5535' }}
                     >
-                      {feat}
+                      +{ENTERPRISE_FEATURES.length - 6} more
                     </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+                  </div>
+                </li>
+              </ul>
 
+              {/* CTA */}
+              <a
+                href={link('/support/contact')}
+                className="block w-full text-center py-3 rounded-[28px] font-semibold text-sm transition-all hover:opacity-90"
+                style={{ background: '#FF9039', color: '#fff' }}
+              >
+                Contact Us
+              </a>
+            </div>
+
+          </div>
           <p className="text-center text-xs mt-5" style={{ color: '#B09070' }}>
             All prices exclude GST (AUD).
           </p>
@@ -534,6 +435,106 @@ export default function PricingPage() {
         </div>
       </section>
 
+    </div>
+  )
+}
+
+function PlanCard({ plan }: { plan: Plan }) {
+  return (
+    <div
+      className="flex flex-col relative"
+      style={{
+        background: plan.highlighted ? '#FF9039' : '#FFFFFF',
+        borderRadius: 21,
+        padding: '32px 24px 28px',
+        boxShadow: plan.highlighted
+          ? '0 8px 32px rgba(255,144,57,0.30)'
+          : '3px 4px 10px rgba(0,0,0,0.08)',
+      }}
+    >
+      {plan.badge && (
+        <div
+          className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold whitespace-nowrap"
+          style={{ background: '#200E00', color: '#FF9039' }}
+        >
+          {plan.badge}
+        </div>
+      )}
+
+      <p
+        className="font-bold text-base mb-1 tracking-wide"
+        style={{ color: plan.highlighted ? 'rgba(255,255,255,0.85)' : '#9C6A3A' }}
+      >
+        {plan.planName}
+      </p>
+
+      <div className="mb-6 mt-1">
+        {plan.isContact ? (
+          <p className="font-bold text-3xl" style={{ color: plan.highlighted ? '#fff' : '#FF9039' }}>
+            Contact us
+          </p>
+        ) : (
+          <div className="flex items-baseline gap-1">
+            <span
+              className="font-bold text-4xl sm:text-[42px]"
+              style={{ color: plan.highlighted ? '#fff' : '#3B1A06', lineHeight: '1' }}
+            >
+              {plan.price}
+            </span>
+            {!plan.isFree && (
+              <span
+                className="text-sm ml-1"
+                style={{ color: plan.highlighted ? 'rgba(255,255,255,0.65)' : '#9C6A3A' }}
+              >
+                /mo
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div
+        className="mb-5 h-px"
+        style={{ background: plan.highlighted ? 'rgba(255,255,255,0.25)' : '#F0E8DC' }}
+      />
+
+      <ul className="space-y-3 flex-1 mb-7">
+        {FEATURES.map(f => {
+          const val = (plan as any)[f.key]
+          const active = f.bool ? !!val : true
+          return (
+            <li key={f.key} className="flex items-center gap-2.5 text-sm">
+              {f.bool ? (
+                active
+                  ? <Check size={15} strokeWidth={2.5} style={{ color: plan.highlighted ? '#fff' : '#FF9039', flexShrink: 0 }} />
+                  : <X    size={15} strokeWidth={2}   style={{ color: plan.highlighted ? 'rgba(255,255,255,0.35)' : '#D1D5DB', flexShrink: 0 }} />
+              ) : (
+                <Check size={15} strokeWidth={2.5} style={{ color: plan.highlighted ? '#fff' : '#FF9039', flexShrink: 0 }} />
+              )}
+              <span style={{
+                color: plan.highlighted
+                  ? (f.bool && !active ? 'rgba(255,255,255,0.35)' : '#fff')
+                  : (f.bool && !active ? '#C4B5A5' : '#3B1A06'),
+                fontWeight: 300,
+              }}>
+                {f.bool ? f.label : val}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+
+      <a
+        href={link(plan.ctaUrl)}
+        className="block w-full text-center py-3 rounded-[28px] font-semibold text-sm transition-all hover:opacity-90"
+        style={
+          plan.highlighted
+            ? { background: '#fff', color: '#D76811' }
+            : { background: '#FF9039', color: '#fff' }
+        }
+      >
+        {plan.ctaLabel}
+      </a>
     </div>
   )
 }
