@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, X, ArrowRight } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
 function link(path: string) { return `${BASE}${path}` }
@@ -7,8 +7,10 @@ function link(path: string) { return `${BASE}${path}` }
 const STATIC_PLANS = [
   {
     planName: 'LITE',
+    badge: '',
     price: 'Free',
     isContact: false,
+    isFree: true,
     studentsPerMonth: '30/mo',
     storage: '5 GB',
     schoolDB: false,
@@ -20,8 +22,10 @@ const STATIC_PLANS = [
   },
   {
     planName: 'SOLO',
+    badge: '',
     price: '$79',
     isContact: false,
+    isFree: false,
     studentsPerMonth: '100/mo',
     storage: '10 GB',
     schoolDB: false,
@@ -33,8 +37,10 @@ const STATIC_PLANS = [
   },
   {
     planName: 'STARTER',
+    badge: 'Most Popular',
     price: '$199',
     isContact: false,
+    isFree: false,
     studentsPerMonth: '500/mo',
     storage: '50 GB',
     schoolDB: true,
@@ -46,8 +52,10 @@ const STATIC_PLANS = [
   },
   {
     planName: 'GROWTH',
+    badge: '',
     price: '$449',
     isContact: false,
+    isFree: false,
     studentsPerMonth: '2,000/mo',
     storage: '200 GB',
     schoolDB: true,
@@ -56,19 +64,6 @@ const STATIC_PLANS = [
     highlighted: false,
     ctaUrl: '/admin/register',
     ctaLabel: 'Get GROWTH',
-  },
-  {
-    planName: 'ENTERPRISE',
-    price: '',
-    isContact: true,
-    studentsPerMonth: 'Unlimited',
-    storage: 'Unlimited',
-    schoolDB: true,
-    remote: true,
-    partnerList: true,
-    highlighted: false,
-    ctaUrl: '/support/contact',
-    ctaLabel: 'Contact Us',
   },
 ]
 
@@ -82,8 +77,10 @@ function mapApiPlan(p: any): Plan {
   const isFree = monthly === 0 && !isContact
   return {
     planName: (p.name || p.code || '').toUpperCase(),
+    badge: p.isPopular ? 'Most Popular' : '',
     price: isFree ? 'Free' : isContact ? '' : `$${monthly % 1 === 0 ? monthly.toFixed(0) : monthly.toFixed(2)}`,
     isContact,
+    isFree,
     studentsPerMonth: isContact ? 'Unlimited' : `${maxStudents}/mo`,
     storage: storageGb >= 9999 ? 'Unlimited' : storageGb >= 1000 ? `${(storageGb / 1000).toFixed(0)} TB` : `${storageGb} GB`,
     schoolDB: !!(p.featureCommission || p.featureServiceModules || p.featureVisa),
@@ -96,11 +93,20 @@ function mapApiPlan(p: any): Plan {
 }
 
 const FEATURES = [
-  { key: 'studentsPerMonth', label: 'Active Students' },
-  { key: 'storage',         label: 'Storage' },
-  { key: 'schoolDB',        label: 'School Database', bool: true },
-  { key: 'remote',          label: 'Remote Support', bool: true },
-  { key: 'partnerList',     label: 'Partner Supplier List', bool: true },
+  { key: 'studentsPerMonth', label: 'Active Students', bool: false },
+  { key: 'storage',          label: 'Storage',         bool: false },
+  { key: 'schoolDB',         label: 'School Database', bool: true  },
+  { key: 'remote',           label: 'Remote Support',  bool: true  },
+  { key: 'partnerList',      label: 'Partner Supplier List', bool: true },
+]
+
+const ALL_INCLUDED = [
+  { icon: '🎓', title: 'Student Management', desc: 'Full student lifecycle from enquiry to graduation.' },
+  { icon: '🏫', title: 'School Database', desc: 'Manage school partners, commissions, and programs.' },
+  { icon: '💳', title: 'Commission Tracking', desc: 'Auto-calculate and invoice school commissions.' },
+  { icon: '📊', title: 'Reports & Analytics', desc: 'Live dashboards for performance and revenue.' },
+  { icon: '🌏', title: 'Multi-language', desc: 'Platform available in EN, KO, JA, ZH, TH.' },
+  { icon: '🔒', title: 'Enterprise Security', desc: 'AES-256 encryption, role-based access, daily backups.' },
 ]
 
 const REFUND_ITEMS = [
@@ -117,121 +123,149 @@ export default function PricingPage() {
     const B = import.meta.env.BASE_URL.replace(/\/$/, '')
     fetch(`${B}/api/public/platform-plans`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.success && Array.isArray(d.data) && d.data.length > 0) setPlans(d.data.map(mapApiPlan)) })
+      .then(d => {
+        if (d?.success && Array.isArray(d.data) && d.data.length > 0) {
+          const mapped = d.data.map(mapApiPlan).filter((p: Plan) => !p.isContact)
+          setPlans(mapped.slice(0, 4))
+        }
+      })
       .catch(() => {})
   }, [])
 
   return (
-    <div style={{ background: '#FFFBF6', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ background: '#FFFBF7', fontFamily: 'Inter, sans-serif' }}>
 
-      {/* ══════════════════════════════════
-          HERO — orange gradient bg
-      ══════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════
+          1. HERO — cream bg + dot pattern
+      ═══════════════════════════════════════════ */}
       <section
-        className="relative overflow-hidden"
+        className="relative overflow-hidden flex flex-col items-center justify-center text-center"
         style={{
-          background: 'linear-gradient(180deg, #FF9039 0%, #E36909 100%)',
-          padding: '100px 0 80px',
+          background: '#FFFBF7',
           marginTop: -83,
-          paddingTop: 'calc(83px + 60px)',
+          paddingTop: 150,
+          paddingBottom: 80,
         }}
       >
-        {/* Subtle hex overlay */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='48.5'%3E%3Cpolygon points='28,0 14,24.25 -14,24.25 -28,0 -14,-24.25 14,-24.25' fill='none' stroke='rgba(255,255,255,0.08)' stroke-width='1'/%3E%3Cpolygon points='70,24.25 56,48.5 28,48.5 14,24.25 28,0 56,0' fill='none' stroke='rgba(255,255,255,0.08)' stroke-width='1'/%3E%3C/svg%3E\")",
-            backgroundRepeat: 'repeat',
-            backgroundSize: '84px 48.5px',
+            backgroundImage: 'radial-gradient(circle, rgba(227,105,9,0.12) 1.5px, transparent 1.5px)',
+            backgroundSize: '28px 28px',
           }}
         />
-        <div className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-8 text-center">
-          <span
-            className="inline-block px-5 py-1.5 rounded-full font-semibold text-sm mb-6"
-            style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}
-          >
-            PRICING
-          </span>
+        <div className="relative z-10 max-w-[700px] mx-auto px-4 sm:px-8">
+          <div className="mb-5">
+            <span
+              className="inline-block px-5 py-1.5 rounded-full font-semibold text-sm"
+              style={{ background: '#3C3C3C', color: '#F8984D' }}
+            >
+              Pricing
+            </span>
+          </div>
           <h1
-            className="font-bold text-white mb-4 text-3xl sm:text-4xl xl:text-[52px]"
-            style={{ lineHeight: '98%' }}
+            className="font-bold mb-5 text-2xl sm:text-3xl xl:text-[46px]"
+            style={{ color: '#3B1A06', lineHeight: '108%' }}
           >
             Simple, transparent pricing<br className="hidden sm:block" /> for every agency.
           </h1>
-          <p className="text-white/80 text-base sm:text-lg font-light">
+          <p
+            className="text-sm sm:text-base"
+            style={{ fontWeight: 300, color: '#7A5535', lineHeight: '1.6' }}
+          >
             No setup fees. No lock-in contracts. Cancel anytime.
           </p>
         </div>
       </section>
 
-      {/* ══════════════════════════════════
-          PLAN CARDS
-      ══════════════════════════════════ */}
-      <section style={{ background: '#FFFBF6', padding: '60px 0' }}>
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-8">
-
-          {/* Card grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
-            {plans.map((plan, i) => (
+      {/* ═══════════════════════════════════════════
+          2. PLAN CARDS — cream bg
+      ═══════════════════════════════════════════ */}
+      <section style={{ background: '#FAF5ED', padding: '0 0 72px' }}>
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8 xl:px-[80px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+            {plans.map((plan) => (
               <div
                 key={plan.planName}
-                className="flex flex-col"
+                className="flex flex-col relative"
                 style={{
                   background: plan.highlighted ? '#FF9039' : '#FFFFFF',
                   borderRadius: 21,
-                  padding: '28px 24px',
+                  padding: '32px 24px 28px',
                   boxShadow: plan.highlighted
-                    ? '0 8px 32px rgba(255,144,57,0.35)'
-                    : '3px 4px 6.1px rgba(0,0,0,0.10)',
-                  position: 'relative',
+                    ? '0 8px 32px rgba(255,144,57,0.30)'
+                    : '3px 4px 10px rgba(0,0,0,0.08)',
                 }}
               >
-                {plan.highlighted && (
+                {plan.badge && (
                   <div
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold"
-                    style={{ background: '#200E00', color: '#FF9039', whiteSpace: 'nowrap' }}
+                    className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold whitespace-nowrap"
+                    style={{ background: '#200E00', color: '#FF9039' }}
                   >
-                    Most Popular
+                    {plan.badge}
                   </div>
                 )}
 
+                {/* Plan name */}
                 <p
-                  className="font-bold text-lg mb-1"
-                  style={{ color: plan.highlighted ? '#fff' : '#613717' }}
+                  className="font-bold text-base mb-1 tracking-wide"
+                  style={{ color: plan.highlighted ? 'rgba(255,255,255,0.85)' : '#9C6A3A' }}
                 >
                   {plan.planName}
                 </p>
 
-                <div className="mb-6">
+                {/* Price */}
+                <div className="mb-6 mt-1">
                   {plan.isContact ? (
-                    <p className="font-bold text-2xl sm:text-3xl" style={{ color: plan.highlighted ? '#fff' : '#200E00' }}>
+                    <p className="font-bold text-2xl" style={{ color: plan.highlighted ? '#fff' : '#3B1A06' }}>
                       Contact Us
                     </p>
                   ) : (
                     <div className="flex items-baseline gap-1">
-                      <span className="font-bold text-3xl sm:text-4xl" style={{ color: plan.highlighted ? '#fff' : '#200E00' }}>
+                      <span
+                        className="font-bold text-4xl sm:text-[42px]"
+                        style={{ color: plan.highlighted ? '#fff' : '#3B1A06', lineHeight: '1' }}
+                      >
                         {plan.price}
                       </span>
-                      {plan.price !== 'Free' && (
-                        <span className="text-sm" style={{ color: plan.highlighted ? 'rgba(255,255,255,0.7)' : '#613717' }}>/mo</span>
+                      {!plan.isFree && (
+                        <span
+                          className="text-sm ml-1"
+                          style={{ color: plan.highlighted ? 'rgba(255,255,255,0.65)' : '#9C6A3A' }}
+                        >
+                          /mo
+                        </span>
                       )}
                     </div>
                   )}
                 </div>
 
-                <ul className="space-y-2.5 flex-1 mb-6">
+                {/* Divider */}
+                <div
+                  className="mb-5 h-px"
+                  style={{ background: plan.highlighted ? 'rgba(255,255,255,0.25)' : '#F0E8DC' }}
+                />
+
+                {/* Features */}
+                <ul className="space-y-3 flex-1 mb-7">
                   {FEATURES.map(f => {
                     const val = (plan as any)[f.key]
+                    const active = f.bool ? !!val : true
                     return (
-                      <li key={f.key} className="flex items-center gap-2 text-sm">
+                      <li key={f.key} className="flex items-center gap-2.5 text-sm">
                         {f.bool ? (
-                          val
+                          active
                             ? <Check size={15} strokeWidth={2.5} style={{ color: plan.highlighted ? '#fff' : '#FF9039', flexShrink: 0 }} />
-                            : <X size={15} strokeWidth={2} style={{ color: plan.highlighted ? 'rgba(255,255,255,0.4)' : '#D1D5DB', flexShrink: 0 }} />
+                            : <X    size={15} strokeWidth={2}   style={{ color: plan.highlighted ? 'rgba(255,255,255,0.35)' : '#D1D5DB', flexShrink: 0 }} />
                         ) : (
                           <Check size={15} strokeWidth={2.5} style={{ color: plan.highlighted ? '#fff' : '#FF9039', flexShrink: 0 }} />
                         )}
-                        <span style={{ color: plan.highlighted ? (f.bool && !val ? 'rgba(255,255,255,0.4)' : '#fff') : (f.bool && !val ? '#9CA3AF' : '#613717') }}>
+                        <span style={{
+                          color: plan.highlighted
+                            ? (f.bool && !active ? 'rgba(255,255,255,0.35)' : '#fff')
+                            : (f.bool && !active ? '#C4B5A5' : '#3B1A06'),
+                          fontWeight: 300,
+                        }}>
                           {f.bool ? f.label : val}
                         </span>
                       </li>
@@ -239,6 +273,7 @@ export default function PricingPage() {
                   })}
                 </ul>
 
+                {/* CTA */}
                 <a
                   href={link(plan.ctaUrl)}
                   className="block w-full text-center py-3 rounded-[28px] font-semibold text-sm transition-all hover:opacity-90"
@@ -253,45 +288,48 @@ export default function PricingPage() {
               </div>
             ))}
           </div>
-          <p className="text-center text-sm mt-5" style={{ color: '#9CA3AF' }}>
+          <p className="text-center text-xs mt-5" style={{ color: '#B09070' }}>
             All prices exclude GST (AUD).
           </p>
         </div>
       </section>
 
-      {/* ══════════════════════════════════
-          FEATURE COMPARISON — dark bg table
-      ══════════════════════════════════ */}
-      <section
-        className="relative overflow-hidden"
-        style={{
-          background: '#200E00',
-          padding: '60px 0',
-        }}
-      >
+      {/* ═══════════════════════════════════════════
+          3. EVERYTHING INCLUDED — orange bg
+      ═══════════════════════════════════════════ */}
+      <section style={{ background: '#FF9039', padding: '72px 0' }}>
         <div className="max-w-[1280px] mx-auto px-4 sm:px-8">
-          <h2 className="font-bold text-white text-center mb-10 text-2xl sm:text-3xl" style={{ lineHeight: '98%' }}>
-            Everything included in every plan.
-          </h2>
-
+          <div className="text-center mb-10">
+            <span
+              className="inline-block px-4 py-1.5 rounded-full font-semibold text-xs mb-5"
+              style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}
+            >
+              Every Plan
+            </span>
+            <h2
+              className="font-bold text-white text-2xl sm:text-3xl xl:text-[40px] mb-3"
+              style={{ lineHeight: '108%' }}
+            >
+              Everything included in every plan.
+            </h2>
+            <p
+              className="text-sm sm:text-base mx-auto"
+              style={{ fontWeight: 300, color: 'rgba(255,255,255,0.82)', lineHeight: '1.5', maxWidth: 480 }}
+            >
+              Core features available to all users, regardless of plan size.
+            </p>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[
-              { icon: '🎓', title: 'Student Management', desc: 'Full student lifecycle from enquiry to graduation.' },
-              { icon: '🏫', title: 'School Database', desc: 'Manage school partners, commissions, and programs.' },
-              { icon: '💳', title: 'Commission Tracking', desc: 'Auto-calculate and invoice school commissions.' },
-              { icon: '📊', title: 'Reports & Analytics', desc: 'Live dashboards for performance and revenue.' },
-              { icon: '🌏', title: 'Multi-language', desc: 'Platform available in EN, KO, JA, ZH, TH.' },
-              { icon: '🔒', title: 'Enterprise Security', desc: 'AES-256 encryption, role-based access, daily backups.' },
-            ].map((item, i) => (
+            {ALL_INCLUDED.map((item, i) => (
               <div
                 key={i}
                 className="rounded-[18px] p-6 flex items-start gap-4"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                style={{ background: 'rgba(255,255,255,0.16)' }}
               >
-                <span className="text-3xl flex-shrink-0">{item.icon}</span>
+                <span className="text-2xl flex-shrink-0">{item.icon}</span>
                 <div>
                   <h4 className="font-bold text-white mb-1 text-sm sm:text-base">{item.title}</h4>
-                  <p className="text-sm" style={{ color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>{item.desc}</p>
+                  <p className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.75)', lineHeight: '1.5' }}>{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -299,16 +337,29 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════
-          REFUND POLICY — cream bg
-      ══════════════════════════════════ */}
-      <section style={{ background: '#F6F4F0', padding: '60px 0' }}>
-        <div className="max-w-[900px] mx-auto px-4 sm:px-8">
+      {/* ═══════════════════════════════════════════
+          4. REFUND POLICY — cream bg
+      ═══════════════════════════════════════════ */}
+      <section style={{ background: '#FAF5ED', padding: '72px 0' }}>
+        <div className="max-w-[860px] mx-auto px-4 sm:px-8">
           <div className="text-center mb-10">
-            <p className="font-semibold uppercase tracking-widest text-sm mb-2" style={{ color: '#613717' }}>REFUND POLICY</p>
-            <h2 className="font-bold text-2xl sm:text-3xl" style={{ color: '#613717', lineHeight: '98%' }}>Refund Policy</h2>
+            <span
+              className="inline-block px-4 py-1.5 rounded-full font-semibold text-xs mb-5"
+              style={{ background: '#3C3C3C', color: '#F8984D' }}
+            >
+              Refund Policy
+            </span>
+            <h2
+              className="font-bold text-2xl sm:text-3xl"
+              style={{ color: '#3B1A06', lineHeight: '108%' }}
+            >
+              Our refund policy
+            </h2>
           </div>
-          <div className="bg-white rounded-[21px] p-6 sm:p-8 space-y-4" style={{ boxShadow: '3px 4px 6.1px rgba(0,0,0,0.08)' }}>
+          <div
+            className="bg-white rounded-[21px] p-6 sm:p-8 space-y-4"
+            style={{ boxShadow: '3px 4px 10px rgba(0,0,0,0.06)' }}
+          >
             {REFUND_ITEMS.map((item, i) => (
               <div key={i} className="flex items-start gap-4">
                 <div
@@ -317,16 +368,26 @@ export default function PricingPage() {
                 >
                   <Check size={13} style={{ color: '#FF9039' }} strokeWidth={3} />
                 </div>
-                <p className="text-sm" style={{ color: '#613717', lineHeight: '1.6' }}>{item}</p>
+                <p className="text-sm" style={{ color: '#3B1A06', lineHeight: '1.6', fontWeight: 300 }}>{item}</p>
               </div>
             ))}
-            <div className="flex items-start gap-4 pt-2 border-t" style={{ borderColor: '#F0EDE8' }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(255,144,57,0.15)' }}>
-                <ArrowRight size={12} style={{ color: '#FF9039' }} strokeWidth={3} />
+            <div
+              className="flex items-start gap-4 pt-4 border-t"
+              style={{ borderColor: '#F0E8DC' }}
+            >
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{ background: 'rgba(255,144,57,0.15)' }}
+              >
+                <span style={{ color: '#FF9039', fontSize: 12, fontWeight: 700 }}>✉</span>
               </div>
-              <p className="text-sm" style={{ color: '#613717', lineHeight: '1.6' }}>
+              <p className="text-sm" style={{ color: '#3B1A06', lineHeight: '1.6', fontWeight: 300 }}>
                 Refund requests:{' '}
-                <a href="mailto:info@edubee.co" className="font-semibold underline" style={{ color: '#E7873C' }}>
+                <a
+                  href="mailto:info@edubee.co"
+                  className="font-semibold underline"
+                  style={{ color: '#E7873C' }}
+                >
                   info@edubee.co
                 </a>
               </p>
@@ -335,28 +396,48 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════
-          CTA BANNER
-      ══════════════════════════════════ */}
-      <section style={{ background: '#FF9039', padding: '60px 0' }}>
+      {/* ═══════════════════════════════════════════
+          5. CTA BANNER
+      ═══════════════════════════════════════════ */}
+      <section style={{ background: '#FF9039', padding: '80px 0' }}>
         <div className="max-w-[1280px] mx-auto px-4 sm:px-8 text-center">
-          <h2 className="text-white font-bold mb-3 text-2xl sm:text-3xl xl:text-[40px]" style={{ lineHeight: '98%' }}>
+          <h2
+            className="text-white font-bold mb-4 text-2xl sm:text-3xl xl:text-[44px]"
+            style={{ lineHeight: '106%' }}
+          >
             Ready to streamline your agency?
           </h2>
-          <p className="text-white/80 mb-8 text-sm sm:text-base font-light">
+          <p
+            className="text-white mb-10 text-sm sm:text-base"
+            style={{ fontWeight: 300, lineHeight: '1.5' }}
+          >
             Start with our free LITE plan today — no credit card required.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href={link('/admin/register')}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-4 font-semibold rounded-[28px] transition-all hover:scale-105 text-base sm:text-lg"
-              style={{ background: 'white', color: '#E7873C' }}
+              className="w-full sm:w-auto inline-flex items-center justify-center font-bold transition-all hover:scale-105 text-base sm:text-lg"
+              style={{
+                background: '#FDFCFC',
+                color: '#D76811',
+                height: 54,
+                paddingLeft: 40,
+                paddingRight: 40,
+                borderRadius: 40,
+              }}
             >
               Start for Free
             </a>
             <a
               href={link('/support/contact')}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-4 font-semibold rounded-[28px] border-2 border-white text-white transition-all hover:bg-white/10 text-base sm:text-lg"
+              className="w-full sm:w-auto inline-flex items-center justify-center font-bold text-white transition-all hover:bg-white/10 text-base sm:text-lg"
+              style={{
+                border: '2px solid #FFFFFF',
+                height: 54,
+                paddingLeft: 40,
+                paddingRight: 40,
+                borderRadius: 40,
+              }}
             >
               Contact Us
             </a>
