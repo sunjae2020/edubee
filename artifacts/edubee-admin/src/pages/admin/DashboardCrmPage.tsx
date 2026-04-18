@@ -1283,9 +1283,6 @@ export default function DashboardCrmPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 12, background: T.card, border: `1px solid ${T.border}`, borderRadius: 7, padding: "5px 12px", color: T.neutral600 }}>
-            {currentMonthLabel}
-          </span>
           <button onClick={() => navigate("/admin/leads/new")}
             style={{ fontSize: 12, background: T.orange, borderRadius: 7, padding: "5px 14px", color: "#FFFFFF", fontWeight: 600, border: "none", cursor: "pointer" }}>
             + New Lead

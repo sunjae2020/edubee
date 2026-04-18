@@ -144,7 +144,7 @@ export default function StudentDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
           <Link href="/student/quotes">
-            <a className="block rounded-xl p-5 border cursor-pointer transition-all hover:border-orange-300"
+            <div className="block rounded-xl p-5 border cursor-pointer transition-all hover:border-orange-300"
               style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="h-4 w-4" style={{ color: ORANGE }} />
@@ -152,11 +152,11 @@ export default function StudentDashboardPage() {
               </div>
               <p className="text-xs" style={{ color: "var(--e-text-3)" }}>View all quotes prepared by your agent — including status, program details, and pricing.</p>
               <p className="mt-3 text-xs font-semibold" style={{ color: ORANGE }}>View all quotes →</p>
-            </a>
+            </div>
           </Link>
 
           <Link href="/student/programs">
-            <a className="block rounded-xl p-5 border cursor-pointer transition-all hover:border-orange-300"
+            <div className="block rounded-xl p-5 border cursor-pointer transition-all hover:border-orange-300"
               style={{ background: "var(--e-bg-surface)", borderColor: "var(--e-border)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
               <div className="flex items-center gap-2 mb-2">
                 <BookOpen className="h-4 w-4" style={{ color: ORANGE }} />
@@ -164,7 +164,7 @@ export default function StudentDashboardPage() {
               </div>
               <p className="text-xs" style={{ color: "var(--e-text-3)" }}>Track your enrolled programs, course dates, payment schedule, and contract status.</p>
               <p className="mt-3 text-xs font-semibold" style={{ color: ORANGE }}>View programs →</p>
-            </a>
+            </div>
           </Link>
         </div>
 
