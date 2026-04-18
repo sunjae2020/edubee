@@ -46,6 +46,7 @@ interface Notification {
 
 const PAGE_TITLES: Record<string, string> = {
   "/admin/dashboard": "Dashboard",
+  "/admin/dashboard/crm": "Dashboard",
   "/admin/package-groups": "Package Groups",
   "/admin/packages": "Packages",
   "/admin/products": "Products",

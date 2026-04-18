@@ -48,7 +48,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
 
   nav.push({
     key: "dashboard", label: "Dashboard", catIcon: LayoutDashboard,
-    items: [{ icon: LayoutDashboard, label: "Dashboard", href: isSAorAD ? "/admin/dashboard/crm" : "/admin/dashboard" }],
+    items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard/crm" }],
   });
 
   const crmItems: NavItem[] = [];

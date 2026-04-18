@@ -16,7 +16,6 @@ import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import AcceptInvite from "@/pages/AcceptInvite";
-import Dashboard from "@/pages/dashboard";
 import DashboardCrmPage from "@/pages/admin/DashboardCrmPage";
 import Users from "@/pages/users";
 import Applications from "@/pages/admin/applications";
@@ -215,14 +214,14 @@ function Router() {
       <Route path="/accept-invite" component={AcceptInvite} />
 
       {/* /admin bare path → dashboard */}
-      <Route path="/admin"><Redirect to="/admin/dashboard" /></Route>
+      <Route path="/admin"><Redirect to="/admin/dashboard/crm" /></Route>
 
       {/* Legacy /admin/contracts → CRM contracts */}
       <Route path="/admin/contracts/:id">{(params) => <Redirect to={`/admin/crm/contracts/${params.id}`} />}</Route>
       <Route path="/admin/contracts"><Redirect to="/admin/crm/contracts" /></Route>
 
       <Route path="/admin/dashboard">
-        <AdminRoute title="Dashboard"><Dashboard /></AdminRoute>
+        <Redirect to="/admin/dashboard/crm" />
       </Route>
       <Route path="/admin/dashboard/crm">
         <AdminRoute title="CRM Dashboard"><DashboardCrmPage /></AdminRoute>
@@ -665,7 +664,7 @@ function Router() {
 
       {/* Legacy redirects */}
       <Route path="/dashboard">
-        <AdminRoute title="Dashboard"><Dashboard /></AdminRoute>
+        <Redirect to="/admin/dashboard/crm" />
       </Route>
       <Route path="/users">
         <AdminRoute title="Users"><Users /></AdminRoute>
