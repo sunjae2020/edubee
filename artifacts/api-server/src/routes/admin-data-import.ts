@@ -6,10 +6,14 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
 
 const execFileAsync = promisify(execFile);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// dist/index.cjs → dist/ → api-server → artifacts → workspace root
+function getWorkspaceRoot(): string {
+  const entry = path.resolve(process.argv[1] ?? process.cwd());
+  return path.resolve(path.dirname(entry), "../../..");
+}
 
 const router = Router();
 
@@ -64,8 +68,7 @@ router.post(
       return res.status(500).json({ error: "DATABASE_URL not set" });
     }
 
-    // workspace 루트: src/routes/../../.. → api-server, ../../.. → workspace root
-    const workspaceRoot = path.resolve(__dirname, "../../../..");
+    const workspaceRoot = getWorkspaceRoot();
     const scriptPath = path.join(workspaceRoot, "scripts", "export-dev-data.sh");
     if (!fs.existsSync(scriptPath)) {
       return res.status(500).json({ error: "export-dev-data.sh 스크립트를 찾을 수 없습니다" });
@@ -119,7 +122,7 @@ router.get(
   authenticate,
   requireRole("super_admin"),
   async (_req, res) => {
-    const workspaceRoot = path.resolve(__dirname, "../../../..");
+    const workspaceRoot = getWorkspaceRoot();
     const seedPath = path.join(workspaceRoot, "artifacts/api-server/src/seeds/dev_seed.sql");
     const exists = fs.existsSync(seedPath);
 
