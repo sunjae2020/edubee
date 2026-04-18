@@ -51,8 +51,9 @@ if (process.env.NODE_ENV === "production") {
     }
     // 정적 파일 서빙 (캐시 헤더 포함)
     app.use(prefix || "/", express.static(dir, { maxAge: "1d", etag: true }));
-    // SPA 폴백: 알 수 없는 경로는 index.html 반환
-    app.get(`${prefix}/*`, (_req: any, res: any) => {
+    // SPA 폴백: 알 수 없는 경로는 index.html 반환 (Express 5: 명명된 와일드카드 필요)
+    const fallbackPattern = prefix ? `${prefix}/*wildcard` : `/*wildcard`;
+    app.get(fallbackPattern, (_req: any, res: any) => {
       res.sendFile(path.join(dir, "index.html"));
     });
     console.log(`[StaticServe] ${prefix || "/"} → ${dir}`);
