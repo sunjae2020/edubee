@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import axios from "axios";
 import { useAuth } from "@/hooks/use-auth";
 import { useBulkSelect } from "@/hooks/use-bulk-select";
@@ -151,6 +151,7 @@ export default function CrmLeadsPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const urlSearch = useSearch();
   const inquiryTypes = useLookup("inquiry_type");
   const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
 
@@ -207,6 +208,12 @@ export default function CrmLeadsPage() {
     setForm(EMPTY_FORM);
     setSheetOpen(true);
   }
+
+  useEffect(() => {
+    if (new URLSearchParams(urlSearch).get("new") === "1") {
+      openCreate();
+    }
+  }, []);
 
   function openEdit(l: Lead) {
     setEditLead(l);

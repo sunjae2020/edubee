@@ -342,7 +342,7 @@ export default function Integrations() {
               <Field label="Webhook Endpoint" value={stripe?.webhookUrl ?? ""} />
             </>
           }
-          footerLink={{ href: "/admin/superadmin/stripe-settings", label: "Manage Stripe plan pricing →" }}
+          footerLink={{ href: "/superadmin/stripe-settings", label: "Manage Stripe plan pricing →" }}
           warning="Set STRIPE_SECRET_KEY and configure the webhook in the Stripe dashboard."
         />
 

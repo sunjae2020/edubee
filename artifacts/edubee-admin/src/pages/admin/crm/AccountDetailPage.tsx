@@ -91,7 +91,7 @@ function CreateTenantDialog({ account, onClose }: CreateTenantDialogProps) {
         description: `${form.name} — ${resp.data?.subdomain ?? form.subdomain}.edubee.co`,
       });
       onClose();
-      navigate("/admin/superadmin/tenants");
+      navigate("/superadmin/tenants");
     } catch (e: any) {
       toast({
         title: "Failed to create tenant",

@@ -385,7 +385,7 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
           <Card title="Quick Actions">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
               {[
-                { label: "New Lead", path: "/admin/leads/new", icon: Plus },
+                { label: "New Lead", path: "/admin/crm/leads?new=1", icon: Plus },
                 { label: "New Quote", path: "/admin/crm/quotes/new", icon: FileText },
                 { label: "Applications", path: "/admin/applications", icon: CheckSquare },
                 { label: "Contracts", path: "/admin/crm/contracts", icon: Briefcase },
@@ -398,7 +398,7 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
                 </button>
               ))}
             </div>
-            <button onClick={() => navigate("/admin/leads/new")}
+            <button onClick={() => navigate("/admin/crm/leads?new=1")}
               style={{ width: "100%", padding: "9px 14px", background: T.orange, color: "#FFFFFF", border: "none", borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
             >
               <Plus className="w-3.5 h-3.5" /> New Lead
@@ -1283,7 +1283,7 @@ export default function DashboardCrmPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button onClick={() => navigate("/admin/leads/new")}
+          <button onClick={() => navigate("/admin/crm/leads?new=1")}
             style={{ fontSize: 12, background: T.orange, borderRadius: 7, padding: "5px 14px", color: "#FFFFFF", fontWeight: 600, border: "none", cursor: "pointer" }}>
             + New Lead
           </button>
