@@ -67,6 +67,19 @@ const STATIC_PLANS = [
   },
 ]
 
+const ENTERPRISE_FEATURES = [
+  'Commission Auto-Calc',
+  'Visa Management',
+  'Services (Pickup/Homestay/Internship)',
+  'Multi-Branch',
+  'AI Assistant',
+  'Accounting (AR/AP)',
+  'Camp Management',
+  'Finance Module',
+  'REST API / Webhook',
+  'White-label',
+]
+
 type Plan = typeof STATIC_PLANS[0]
 
 function mapApiPlan(p: any): Plan {
@@ -288,6 +301,82 @@ export default function PricingPage() {
               </div>
             ))}
           </div>
+          {/* ── ENTERPRISE — full-width card ── */}
+          <div
+            className="mt-5 rounded-[21px] p-8 sm:p-10"
+            style={{
+              background: '#FFFFFF',
+              boxShadow: '3px 4px 10px rgba(0,0,0,0.08)',
+            }}
+          >
+            <div className="flex flex-col lg:flex-row lg:items-start lg:gap-12">
+              {/* Left: name + pricing + stats */}
+              <div className="lg:w-[340px] flex-shrink-0 mb-8 lg:mb-0">
+                <div className="flex items-center gap-3 mb-4">
+                  <p className="font-bold text-lg" style={{ color: '#3B1A06' }}>ENTERPRISE</p>
+                  <span
+                    className="px-3 py-0.5 rounded-full text-xs font-medium"
+                    style={{ background: '#F0EBE3', color: '#9C6A3A' }}
+                  >
+                    enterprise
+                  </span>
+                </div>
+                <div className="mb-6">
+                  <span className="font-bold text-3xl sm:text-4xl" style={{ color: '#FF9039' }}>Contact us</span>
+                  <span className="ml-2 text-base font-light" style={{ color: '#7A5535' }}>for pricing</span>
+                </div>
+                <div className="flex flex-wrap gap-x-5 gap-y-2 mb-8">
+                  {[
+                    { icon: '👥', label: 'Unlimited users' },
+                    { icon: '🎓', label: 'Unlimited students' },
+                    { icon: '🏢', label: 'Unlimited branches' },
+                  ].map((s, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-base">{s.icon}</span>
+                      <span className="text-sm font-medium" style={{ color: '#3B1A06' }}>{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <a
+                  href={link('/support/contact')}
+                  className="inline-flex items-center justify-center font-bold transition-all hover:scale-105 text-sm"
+                  style={{
+                    background: '#FF9039',
+                    color: '#fff',
+                    height: 46,
+                    paddingLeft: 32,
+                    paddingRight: 32,
+                    borderRadius: 40,
+                  }}
+                >
+                  Contact Us
+                </a>
+              </div>
+
+              {/* Divider (vertical on lg, horizontal on sm) */}
+              <div className="hidden lg:block w-px self-stretch" style={{ background: '#F0E8DC' }} />
+              <div className="lg:hidden h-px mb-8" style={{ background: '#F0E8DC' }} />
+
+              {/* Right: feature tags */}
+              <div className="flex-1">
+                <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#9C6A3A' }}>
+                  All features included
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ENTERPRISE_FEATURES.map((feat, i) => (
+                    <span
+                      key={i}
+                      className="px-4 py-1.5 rounded-full text-sm font-medium"
+                      style={{ background: '#F5EEE6', color: '#3B1A06' }}
+                    >
+                      {feat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <p className="text-center text-xs mt-5" style={{ color: '#B09070' }}>
             All prices exclude GST (AUD).
           </p>
