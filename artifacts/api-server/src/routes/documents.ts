@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -20,6 +20,7 @@ import {
 } from "@workspace/db/schema";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { logger } from "../lib/logger.js";
 import { eq, and, or, isNull, isNotNull, inArray, asc, desc, SQL, lte } from "drizzle-orm";
 
 const router = Router();
@@ -99,6 +100,53 @@ async function getPermissionsForRole(role: string, group: string): Promise<{ can
     canDownload: perm?.canDownload ?? false,
     canUploadExtra: perm?.canUploadExtra ?? false,
   };
+}
+
+/**
+ * Sprint 3-01: 문서 접근 검증 미들웨어
+ * - 테넌트 격리: 같은 테넌트 스키마의 문서만 접근 (DB 레벨에서도 격리됨)
+ * - portal_student: 본인 contact_id 문서만 접근
+ * - 미들웨어 통과 후 req.document에 doc 객체 저장
+ */
+async function verifyDocumentAccess(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { id } = req.params;
+    const requestingUser = req.user!;
+
+    const [doc] = await db
+      .select()
+      .from(documents)
+      .where(and(eq(documents.id, id), isNull(documents.deletedAt)))
+      .limit(1);
+
+    if (!doc) {
+      res.status(404).json({ success: false, code: "NOT_FOUND", message: "Document not found" });
+      return;
+    }
+
+    // 테넌트 격리: DB 스키마가 이미 테넌트별로 분리되어 있으므로
+    // 쿼리 결과가 이미 현재 테넌트의 문서임을 보장 (방어 심층화).
+
+    // portal_student: referenceType='contact' 문서는 본인 referenceId만 접근 가능
+    // (포털 유저는 authenticatePortal에서 contactId가 req.user에 주입됨)
+    if (
+      requestingUser.role === "portal_student" &&
+      doc.referenceType === "contact" &&
+      doc.referenceId !== (requestingUser as any).contactId
+    ) {
+      logger.warn(
+        { userId: requestingUser.id, docRefId: doc.referenceId, userContactId: (requestingUser as any).contactId },
+        "portal_student cross-contact document access blocked",
+      );
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: "You can only access your own documents" });
+      return;
+    }
+
+    (req as any).document = doc;
+    next();
+  } catch (err) {
+    next(err);
+  }
 }
 
 async function canViewDocument(role: string, doc: any): Promise<boolean> {
@@ -510,14 +558,16 @@ router.get("/documents/by-entity", async (req, res) => {
 });
 
 // GET /api/documents/:id/view
-router.get("/documents/:id/view", async (req, res) => {
+// verifyDocumentAccess: 테넌트 격리 + portal_student 본인 문서 체크 (S3-01)
+router.get("/documents/:id/view", verifyDocumentAccess, async (req, res) => {
   try {
     const role = req.user!.role;
-    const [doc] = await db.select().from(documents).where(and(eq(documents.id, req.params.id), isNull(documents.deletedAt))).limit(1);
-    if (!doc) return res.status(404).json({ error: "Not Found" });
+    const doc = (req as any).document;
 
     const canView = await canViewDocument(role, doc);
-    if (!canView && !["super_admin", "admin"].includes(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!canView && !["super_admin", "admin"].includes(role)) {
+      return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
+    }
 
     await db.insert(documentAccessLogs).values({
       documentId: doc.id,
@@ -527,22 +577,26 @@ router.get("/documents/:id/view", async (req, res) => {
       userAgent: req.headers["user-agent"]?.slice(0, 500) ?? null,
     }).catch(() => {});
 
-    if (!fs.existsSync(doc.filePath)) return res.status(404).json({ error: "File not found on server" });
+    if (!fs.existsSync(doc.filePath)) {
+      return res.status(404).json({ success: false, code: "NOT_FOUND", message: "File not found on server" });
+    }
     return res.sendFile(path.resolve(doc.filePath));
   } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ success: false, code: "INTERNAL_ERROR", message: "Internal Server Error" });
   }
 });
 
 // GET /api/documents/:id/download
-router.get("/documents/:id/download", async (req, res) => {
+// verifyDocumentAccess: 테넌트 격리 + portal_student 본인 문서 체크 (S3-01)
+router.get("/documents/:id/download", verifyDocumentAccess, async (req, res) => {
   try {
     const role = req.user!.role;
-    const [doc] = await db.select().from(documents).where(and(eq(documents.id, req.params.id), isNull(documents.deletedAt))).limit(1);
-    if (!doc) return res.status(404).json({ error: "Not Found" });
+    const doc = (req as any).document;
 
     const canView = await canViewDocument(role, doc);
-    if (!canView && !["super_admin", "admin"].includes(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!canView && !["super_admin", "admin"].includes(role)) {
+      return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
+    }
 
     await db.insert(documentAccessLogs).values({
       documentId: doc.id,
@@ -552,10 +606,12 @@ router.get("/documents/:id/download", async (req, res) => {
       userAgent: req.headers["user-agent"]?.slice(0, 500) ?? null,
     }).catch(() => {});
 
-    if (!fs.existsSync(doc.filePath)) return res.status(404).json({ error: "File not found on server" });
+    if (!fs.existsSync(doc.filePath)) {
+      return res.status(404).json({ success: false, code: "NOT_FOUND", message: "File not found on server" });
+    }
     return res.download(path.resolve(doc.filePath), doc.originalFilename ?? doc.documentName);
   } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ success: false, code: "INTERNAL_ERROR", message: "Internal Server Error" });
   }
 });
 

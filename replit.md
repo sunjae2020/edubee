@@ -137,6 +137,30 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `login.tsx` — Page bg, card bg, form labels, demo account buttons, divider
 - `product-detail.tsx` — All shared components (FL, TextInput, SearchSelect, AsyncSearchSelect, Section, Btn, RadioYesNo, ToggleSwitch, page header, admin info, sticky bottom bar)
 
+## Security & Compliance Audit — Sprint 3 완료 (2026-04-19)
+
+### S3-01: 문서 접근 RBAC 강화
+- `verifyDocumentAccess` 미들웨어 추가 (`artifacts/api-server/src/routes/documents.ts`)
+- `/documents/:id/view`, `/documents/:id/download` 라우트에 미들웨어 연결
+- DB 스키마 수준 테넌트 격리(기존) + `portal_student` 역할의 본인 `referenceId` 문서만 접근 허용
+
+### S3-02: 글로벌 에러 핸들러 표준화
+- `AppError` 클래스 계층 생성 (`artifacts/api-server/src/lib/errors.ts`): `NotFoundError`, `UnauthorizedError`, `ForbiddenError`, `ValidationError`, `ConflictError`, `TooManyRequestsError`
+- `errorHandler` 미들웨어 생성 (`artifacts/api-server/src/middleware/errorHandler.ts`): `AppError` + `ZodError` + HTTP 에러 + 미처리 에러 모두 표준 JSON 응답 처리
+- `app.ts` 마지막 미들웨어로 `errorHandler` 등록, 기존 인라인 에러 핸들러 교체
+
+### S3-03: DB 인덱스 추가
+- 5개 테넌트 스키마(myagency, psynergy, testabc, ts, tsh) 전체에 35개 신규 인덱스 추가
+- 대상 테이블: `contacts`(email, status, created_on), `users`(email, role), `applications`(status, created_at), `contracts`(created_at), `leads`(owner_id), `payment_headers`(status, created_at), `documents`(contact_id, created_at)
+
+### S3-04: 구조화 로깅 pino 도입
+- pino + pino-pretty 설치 (`@workspace/api-server`)
+- `logger` 싱글턴 생성 (`artifacts/api-server/src/lib/logger.ts`): redact 설정으로 `passport_number`, `visa_number`, `password`, `token` 등 자동 마스킹 (APP 11 준수)
+- `app.ts` HTTP 요청 구조화 로깅 추가
+- 보안 라우트 파일 `console.error/log` → `logger.error/info/warn` 일괄 교체: `incidentReporter.ts`, `my-data.ts`, `security-incidents.ts`
+
+---
+
 ## Recent Changes (2026-03-26)
 
 - **SystemInfoSection on All 26 Detail Pages**: Reusable `SystemInfoSection` component (`src/components/shared/SystemInfoSection.tsx`) added to every admin detail page app-wide. Shows Owner (UUID input-style box), Created On, and Modified On. Applied to: hotel-detail, tour-detail, institute-detail (service), pickup-detail, settlement-detail, camp-application-detail, camp-tour-detail, camp-institute-detail, application-detail, user-detail, package-detail, product-group-detail, product-type-detail, product-detail, package-group-detail, camp-contract-detail, crm/ContactDetailPage, crm/LeadDetailPage, crm/AccountDetailPage, crm/ContractDetailPage, services/StudyAbroadDetailPage, services/AccommodationDetailPage, services/GuardianDetailPage, services/InternshipDetailPage, services/OtherServiceDetailPage, services/VisaServiceDetailPage.

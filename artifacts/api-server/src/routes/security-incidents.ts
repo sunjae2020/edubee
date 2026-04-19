@@ -5,6 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { reportSecurityIncident } from "../lib/incidentReporter.js";
+import { logger } from "../lib/logger.js";
 import { z } from "zod";
 
 const router = Router();
@@ -29,7 +30,7 @@ router.get("/security-incidents", authenticate, requireRole(...SUPER_ADMIN_ROLES
       .limit(100);
     return res.json(rows);
   } catch (err) {
-    console.error("[GET /security-incidents]", err);
+    logger.error({ err }, "[GET /security-incidents] Internal error");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -59,7 +60,7 @@ router.post("/security-incidents", authenticate, requireRole(...SUPER_ADMIN_ROLE
         : "Incident recorded.",
     });
   } catch (err) {
-    console.error("[POST /security-incidents]", err);
+    logger.error({ err }, "[POST /security-incidents] Internal error");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -89,7 +90,7 @@ router.patch("/security-incidents/:id", authenticate, requireRole(...SUPER_ADMIN
     if (!updated) return res.status(404).json({ error: "Incident not found" });
     return res.json(updated);
   } catch (err) {
-    console.error("[PATCH /security-incidents/:id]", err);
+    logger.error({ err }, "[PATCH /security-incidents/:id] Internal error");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

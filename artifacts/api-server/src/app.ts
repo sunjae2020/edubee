@@ -6,11 +6,12 @@ import path from "path";
 import fs from "fs";
 import router from "./routes/index.js";
 import webhookRoutes from "./routes/webhook.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { logger } from "./lib/logger.js";
 
 const app: Express = express();
 
 // Cloudflare 및 Replit 리버스 프록시 신뢰 (1홉만 신뢰 — true보다 안전)
-// X-Forwarded-Host, X-Forwarded-For 등을 req.hostname / req.ip에 반영
 app.set("trust proxy", 1);
 
 // ── Helmet 보안 헤더 ─────────────────────────────────────────────────────────
@@ -55,29 +56,21 @@ const generalLimiter = rateLimit({
   skip: (req) => req.path === '/health',
 });
 
+// ── 구조화 HTTP 요청 로깅 (pino — Sprint 3-04) ───────────────────────────
+app.use((req: any, _res: any, next: any) => {
+  logger.info({ method: req.method, url: req.url, ip: req.ip }, "Request received");
+  next();
+});
+
 // ⚠️ Stripe webhook MUST be registered BEFORE express.json() to receive raw body
 app.use("/api/webhook", webhookRoutes);
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Request logger — logs method, path, and status code for debugging
-app.use((req: any, res: any, next: any) => {
-  const oldJson = res.json.bind(res);
-  res.json = function(body: any) {
-    if (res.statusCode >= 500) {
-      console.error(`[500] ${req.method} ${req.path}`, body);
-    }
-    return oldJson(body);
-  };
-  next();
-});
-
 app.use("/api", generalLimiter, router);
 
 // ── 프로덕션 정적 파일 서빙 ────────────────────────────────────────────────
-// esbuild CJS 번들 기준: __dirname = artifacts/api-server/dist/
-// 각 프론트엔드의 dist/public 디렉토리를 상대 경로로 서빙
 if (process.env.NODE_ENV === "production") {
   const frontends: Array<{ prefix: string; dir: string }> = [
     { prefix: "/admin",  dir: path.join(__dirname, "../../edubee-admin/dist/public")  },
@@ -88,35 +81,27 @@ if (process.env.NODE_ENV === "production") {
 
   for (const { prefix, dir } of frontends) {
     if (!fs.existsSync(dir)) {
-      console.warn(`[StaticServe] 빌드 디렉토리 없음: ${dir}`);
+      logger.warn({ dir }, "Static build directory not found");
       continue;
     }
-    // 정적 파일 서빙 (캐시 헤더 포함)
     app.use(prefix || "/", express.static(dir, { maxAge: "1d", etag: true }));
-    // SPA 폴백: 알 수 없는 경로는 index.html 반환 (Express 5: 명명된 와일드카드 필요)
     const fallbackPattern = prefix ? `${prefix}/*wildcard` : `/*wildcard`;
     app.get(fallbackPattern, (_req: any, res: any) => {
       res.sendFile(path.join(dir, "index.html"));
     });
-    console.log(`[StaticServe] ${prefix || "/"} → ${dir}`);
+    logger.info({ prefix: prefix || "/", dir }, "Static serving registered");
   }
 }
 
-// Global error handler — must be last middleware
-app.use((err: any, req: any, res: any, _next: any) => {
-  console.error(`[Unhandled Error] ${req.method} ${req.path}:`, err.message);
-  res.status(err.status ?? 500).json({
-    success: false,
-    error: err.message ?? 'Internal server error',
-  });
-});
+// ── 글로벌 에러 핸들러 — 반드시 마지막에 등록 (Sprint 3-02) ─────────────
+app.use(errorHandler);
 
 // Crash guard — keeps server alive on uncaught errors
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught exception:', err.message);
+  logger.error({ err }, 'Uncaught exception');
 });
 process.on('unhandledRejection', (reason: any) => {
-  console.error('Unhandled rejection:', reason?.message ?? reason);
+  logger.error({ reason }, 'Unhandled rejection');
 });
 
 export default app;

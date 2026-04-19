@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { authenticatePortal } from "../middleware/authenticatePortal.js";
 import { maskPassport } from "../lib/crypto.js";
+import { logger } from "../lib/logger.js";
 import { z } from "zod";
 
 const router = Router();
@@ -26,7 +27,6 @@ router.get("/my-data", authAny, async (req, res) => {
     const user = req.user as any;
     const email = user.email;
 
-    // 연락처 정보 조회 (이메일 기준)
     const [contact] = email
       ? await db.select({
           id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName,
@@ -65,7 +65,7 @@ router.get("/my-data", authAny, async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("[GET /my-data]", err);
+    logger.error({ err }, "[GET /my-data] Internal error");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -89,10 +89,10 @@ router.post("/my-data/correction-request", authAny, async (req, res) => {
     const requestId = `COR-${Date.now()}`;
 
     // 실제 운영에서는 correction_requests 테이블에 저장 + 이메일 발송
-    console.log(`[DATA CORRECTION REQUEST] ${requestId}`, {
-      requester: user.email,
-      fieldName, currentValue, requestedValue, reason,
-    });
+    logger.info(
+      { requestId, requester: user.email, fieldName, reason },
+      "[DATA CORRECTION REQUEST] received",
+    );
 
     return res.json({
       success: true,
@@ -101,7 +101,7 @@ router.post("/my-data/correction-request", authAny, async (req, res) => {
       submittedAt: new Date().toISOString(),
     });
   } catch (err) {
-    console.error("[POST /my-data/correction-request]", err);
+    logger.error({ err }, "[POST /my-data/correction-request] Internal error");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -132,7 +132,7 @@ router.get("/my-data/export", authAny, async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     return res.json(exportData);
   } catch (err) {
-    console.error("[GET /my-data/export]", err);
+    logger.error({ err }, "[GET /my-data/export] Internal error");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

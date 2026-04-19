@@ -1,6 +1,7 @@
 import { db } from "@workspace/db";
 import { securityIncidents } from "@workspace/db/schema";
 import { Resend } from "resend";
+import { logger } from "./logger.js";
 
 const SECURITY_ALERT_EMAIL = process.env.SECURITY_ALERT_EMAIL ?? "admin@edubee.co";
 const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
@@ -29,7 +30,11 @@ export async function reportSecurityIncident(payload: IncidentPayload): Promise<
     notes,
   } = payload;
 
-  console.error("[SECURITY INCIDENT]", JSON.stringify({ type, severity, description, affectedDataTypes, estimatedAffectedCount }));
+  // 구조화 로그 — passport_number 등은 pino redact로 자동 마스킹
+  logger.error(
+    { type, severity, affectedDataTypes, estimatedAffectedCount },
+    `[SECURITY INCIDENT] ${description}`,
+  );
 
   let incidentId: string | null = null;
 
@@ -47,7 +52,7 @@ export async function reportSecurityIncident(payload: IncidentPayload): Promise<
     }).returning({ id: securityIncidents.id });
     incidentId = inserted?.id ?? null;
   } catch (e) {
-    console.error("[incidentReporter] DB insert failed:", e);
+    logger.error({ err: e }, "[incidentReporter] DB insert failed");
   }
 
   // ── 즉시 이메일 알림 (high / critical) ──────────────────────────────────
@@ -78,10 +83,10 @@ export async function reportSecurityIncident(payload: IncidentPayload): Promise<
             <p>Report at: <a href="https://www.oaic.gov.au/privacy/notifiable-data-breaches/notify-the-oaic-of-a-data-breach">OAIC NDB Notification Portal</a></p>
           `,
         });
-        console.log("[incidentReporter] Alert email sent to", SECURITY_ALERT_EMAIL);
+        logger.info({ to: SECURITY_ALERT_EMAIL }, "[incidentReporter] Alert email sent");
       }
     } catch (e) {
-      console.error("[incidentReporter] Email send failed:", e);
+      logger.error({ err: e }, "[incidentReporter] Email send failed");
     }
   }
 
