@@ -9,9 +9,9 @@ import webhookRoutes from "./routes/webhook.js";
 
 const app: Express = express();
 
-// Cloudflare 및 Replit 리버스 프록시 신뢰
+// Cloudflare 및 Replit 리버스 프록시 신뢰 (1홉만 신뢰 — true보다 안전)
 // X-Forwarded-Host, X-Forwarded-For 등을 req.hostname / req.ip에 반영
-app.set("trust proxy", true);
+app.set("trust proxy", 1);
 
 // ── Helmet 보안 헤더 ─────────────────────────────────────────────────────────
 app.use(helmet({
