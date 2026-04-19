@@ -6,7 +6,9 @@
 #   1. 프론트엔드 4개 빌드 (website, admin, portal, camp)
 #   2. API 서버 TypeScript 컴파일
 #   3. DB 스키마 마이그레이션
-#   4. 현재 개발 DB → dev_seed.sql 자동 스냅샷
+#
+#   * dev_seed.sql 스냅샷은 배포 전 수동 실행:
+#     bash scripts/export-dev-data.sh && git commit -am 'chore: update dev seed'
 # ============================================================
 set -e
 
@@ -40,7 +42,7 @@ echo "OK API 서버 빌드 완료"
 echo ""
 
 # ── 3. DB 스키마 마이그레이션 ──────────────────────────────────
-echo "[3/4] DB 스키마 마이그레이션 중..."
+echo "[3/3] DB 스키마 마이그레이션 중..."
 if pnpm --filter db push --accept-data-loss 2>&1; then
   echo "OK 스키마 마이그레이션 완료"
 else
@@ -48,17 +50,10 @@ else
 fi
 echo ""
 
-# ── 4. 개발 DB → dev_seed.sql 스냅샷 ──────────────────────────
-echo "[4/4] 개발 DB 데이터 스냅샷 생성 중..."
-if [ -z "$DATABASE_URL" ]; then
-  echo "WARNING DATABASE_URL 없음 — 스냅샷 건너뜀 (기존 dev_seed.sql 유지)"
-elif bash scripts/export-dev-data.sh; then
-  echo "OK dev_seed.sql 스냅샷 완료"
-else
-  echo "WARNING 스냅샷 실패 — 기존 dev_seed.sql을 계속 사용합니다"
-fi
-
 echo ""
 echo "══════════════════════════════════════════"
 echo "OK 프로덕션 빌드 완료"
 echo "══════════════════════════════════════════"
+echo ""
+echo "NOTE: dev_seed.sql 스냅샷은 배포 전 수동으로 실행하세요:"
+echo "  bash scripts/export-dev-data.sh && git commit -am 'chore: update dev seed'"
