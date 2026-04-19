@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { tasks, taskComments, taskAttachments, notifications, users, contracts, applications } from "@workspace/db/schema";
-import { eq, and, ilike, count, desc, or, inArray, SQL } from "drizzle-orm";
+import { eq, and, ilike, count, desc, or, inArray, ne, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -79,14 +79,23 @@ router.post("/public/tasks", async (req, res) => {
 // ── LIST tasks ───────────────────────────────────────────────────────────────
 router.get("/tasks", authenticate, async (req, res) => {
   try {
-    const { status, taskType, priority, search, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const { status, taskType, priority, search, page = "1", limit = "20", showDeleted } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
     const role = req.user!.role;
     const uid = req.user!.id;
+    const isSuperAdmin = role === "super_admin";
 
     const conditions: SQL[] = [];
+
+    // Soft-delete filter: super_admin can view deleted, others cannot
+    if (showDeleted === "true" && isSuperAdmin) {
+      conditions.push(eq(tasks.isDeleted, true));
+    } else {
+      conditions.push(eq(tasks.isDeleted, false));
+    }
+
     if (status) conditions.push(eq(tasks.status, status));
     if (taskType) conditions.push(eq(tasks.taskType, taskType));
     if (priority) conditions.push(eq(tasks.priority, priority));
@@ -127,14 +136,8 @@ router.get("/tasks", authenticate, async (req, res) => {
 // ── GET task detail ──────────────────────────────────────────────────────────
 router.get("/tasks/:id", authenticate, async (req, res) => {
   try {
-    const role = req.user!.role;
-    const uid = req.user!.id;
     const [task] = await db.select().from(tasks).where(eq(tasks.id, req.params.id)).limit(1);
     if (!task) return res.status(404).json({ error: "Not Found" });
-
-    if (false) {
-      return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
-    }
 
     const isInternal = true;
     const commentsWhere = isInternal
@@ -216,15 +219,88 @@ router.patch("/tasks/:id/status", authenticate, async (req, res) => {
   }
 });
 
+// ── SOFT DELETE single task (admin+) ────────────────────────────────────────
+router.patch("/tasks/:id/soft-delete", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const [task] = await db.update(tasks)
+      .set({ isDeleted: true, deletedAt: new Date(), deletedBy: req.user!.id, updatedAt: new Date() })
+      .where(and(eq(tasks.id, req.params.id), eq(tasks.isDeleted, false)))
+      .returning();
+    if (!task) return res.status(404).json({ error: "Not found or already deleted" });
+    return res.json({ success: true, task });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── BULK SOFT DELETE (admin+) ────────────────────────────────────────────────
+router.patch("/tasks/bulk/soft-delete", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { ids } = req.body as { ids: string[] };
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    const updated = await db.update(tasks)
+      .set({ isDeleted: true, deletedAt: new Date(), deletedBy: req.user!.id, updatedAt: new Date() })
+      .where(and(inArray(tasks.id, ids), eq(tasks.isDeleted, false)))
+      .returning({ id: tasks.id });
+    return res.json({ success: true, count: updated.length });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── RESTORE soft-deleted task (admin+) ──────────────────────────────────────
+router.patch("/tasks/:id/restore", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const [task] = await db.update(tasks)
+      .set({ isDeleted: false, deletedAt: null, deletedBy: null, updatedAt: new Date() })
+      .where(and(eq(tasks.id, req.params.id), eq(tasks.isDeleted, true)))
+      .returning();
+    if (!task) return res.status(404).json({ error: "Not found or not deleted" });
+    return res.json({ success: true, task });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── PERMANENT DELETE single (super_admin only) ───────────────────────────────
+router.delete("/tasks/:id", authenticate, requireRole("super_admin"), async (req, res) => {
+  try {
+    await db.delete(taskComments).where(eq(taskComments.taskId, req.params.id));
+    await db.delete(taskAttachments).where(eq(taskAttachments.taskId, req.params.id));
+    const [deleted] = await db.delete(tasks).where(eq(tasks.id, req.params.id)).returning({ id: tasks.id });
+    if (!deleted) return res.status(404).json({ error: "Not Found" });
+    return res.json({ success: true, id: deleted.id });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── BULK PERMANENT DELETE (super_admin only) ─────────────────────────────────
+router.delete("/tasks/bulk/permanent", authenticate, requireRole("super_admin"), async (req, res) => {
+  try {
+    const { ids } = req.body as { ids: string[] };
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    await db.delete(taskComments).where(inArray(taskComments.taskId, ids));
+    await db.delete(taskAttachments).where(inArray(taskAttachments.taskId, ids));
+    const deleted = await db.delete(tasks).where(inArray(tasks.id, ids)).returning({ id: tasks.id });
+    return res.json({ success: true, count: deleted.length });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // ── ADD comment ──────────────────────────────────────────────────────────────
 router.post("/tasks/:id/comments", authenticate, async (req, res) => {
   try {
     const uid = req.user!.id;
-    const role = req.user!.role;
     const { content, isInternal = false } = req.body;
     if (!content) return res.status(400).json({ error: "content required" });
 
-    const forcePublic = false;
     const [u] = await db.select({ name: users.fullName }).from(users).where(eq(users.id, uid)).limit(1);
 
     const [comment] = await db.insert(taskComments).values({
@@ -232,7 +308,7 @@ router.post("/tasks/:id/comments", authenticate, async (req, res) => {
       authorId: uid,
       authorName: u?.name ?? "Unknown",
       content,
-      isInternal: forcePublic ? false : Boolean(isInternal),
+      isInternal: Boolean(isInternal),
     }).returning();
 
     if (!comment.isInternal) {
@@ -251,7 +327,7 @@ router.post("/tasks/:id/comments", authenticate, async (req, res) => {
 
     if (comment) {
       await db.update(tasks).set({ firstResponseAt: new Date(), updatedAt: new Date() })
-        .where(and(eq(tasks.id, req.params.id)));
+        .where(eq(tasks.id, req.params.id));
     }
     return res.status(201).json(comment);
   } catch (err) {

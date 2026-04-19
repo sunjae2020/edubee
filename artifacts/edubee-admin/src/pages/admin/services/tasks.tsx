@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { formatDate, formatDateTime } from "@/lib/date-format";
+import { useState } from "react";
+import { formatDate } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import axios from "axios";
@@ -7,19 +7,21 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Ticket, List, LayoutGrid, Plus, Search, Send, Lock, Globe,
   User, Mail, Phone, LinkIcon, Star, Clock, CheckCircle2, XCircle,
-  AlertCircle, Loader2,
+  AlertCircle, Loader2, Trash2, RotateCcw, ShieldAlert,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -33,7 +35,8 @@ type TaskRec = {
   title: string | null; description: string | null; priority: string; status: string;
   visibility: string; dueDate: string | null; firstResponseAt: string | null;
   resolvedAt: string | null; slaBreached: boolean; satisfactionRating: number | null;
-  satisfactionComment: string | null; createdAt: string; updatedAt: string;
+  satisfactionComment: string | null; isDeleted: boolean; deletedAt: string | null;
+  createdAt: string; updatedAt: string;
 };
 type Comment = { id: string; authorId: string | null; authorName: string | null; content: string; isInternal: boolean; createdAt: string };
 type TaskDetail = TaskRec & { comments: Comment[]; attachments: unknown[] };
@@ -82,16 +85,24 @@ export default function TasksPage() {
   const { sortBy, sortDir, onSort } = useSortState("createdOn", "desc");
   const qc = useQueryClient();
   const role = user?.role ?? "";
-  const isParent = false;
   const isAdmin = ["super_admin", "admin"].includes(role);
+  const isSuperAdmin = role === "super_admin";
 
   const [taskTypeTab, setTaskTypeTab] = useState<TaskTypeTab>("internal");
   const [view, setView] = useState<"list" | "kanban">("list");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [showDeleted, setShowDeleted] = useState(false);
   const [selected, setSelected] = useState<TaskDetail | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+
+  // ── Selection state ────────────────────────────────────────────────────────
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+
+  // ── Delete confirmation dialogs ────────────────────────────────────────────
+  const [softDeleteTarget, setSoftDeleteTarget] = useState<{ ids: string[]; single?: string } | null>(null);
+  const [hardDeleteTarget, setHardDeleteTarget] = useState<{ ids: string[]; single?: string } | null>(null);
 
   const [newComment, setNewComment] = useState("");
   const [commentInternal, setCommentInternal] = useState(false);
@@ -99,7 +110,7 @@ export default function TasksPage() {
   const [editingAssignee, setEditingAssignee] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["tasks", taskTypeTab, statusFilter, priorityFilter, search, sortBy, sortDir],
+    queryKey: ["tasks", taskTypeTab, statusFilter, priorityFilter, search, sortBy, sortDir, showDeleted],
     queryFn: () => {
       const params = new URLSearchParams();
       params.set("taskType", taskTypeTab);
@@ -107,8 +118,9 @@ export default function TasksPage() {
       if (priorityFilter !== "all") params.set("priority", priorityFilter);
       if (search) params.set("search", search);
       params.set("limit", "100");
-      params.set("sortBy",  sortBy);
+      params.set("sortBy", sortBy);
       params.set("sortDir", sortDir);
+      if (showDeleted && isSuperAdmin) params.set("showDeleted", "true");
       return axios.get(`${BASE}/api/tasks?${params}`).then(r => r.data);
     },
   });
@@ -122,6 +134,28 @@ export default function TasksPage() {
   const tasks: TaskRec[] = data?.data ?? [];
   const sorted = useSorted(tasks, sortBy, sortDir);
 
+  // ── Checkbox helpers ────────────────────────────────────────────────────────
+  const allIds = sorted.map(t => t.id);
+  const allChecked = allIds.length > 0 && allIds.every(id => checkedIds.has(id));
+  const someChecked = checkedIds.size > 0;
+
+  function toggleAll() {
+    if (allChecked) {
+      setCheckedIds(new Set());
+    } else {
+      setCheckedIds(new Set(allIds));
+    }
+  }
+
+  function toggleOne(id: string) {
+    setCheckedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   function openDetail(t: TaskRec) {
     axios.get(`${BASE}/api/tasks/${t.id}`).then(r => {
       setSelected(r.data);
@@ -130,6 +164,7 @@ export default function TasksPage() {
     });
   }
 
+  // ── Mutations ────────────────────────────────────────────────────────────────
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       axios.patch(`${BASE}/api/tasks/${id}/status`, { status }).then(r => r.data),
@@ -157,6 +192,43 @@ export default function TasksPage() {
     },
   });
 
+  // Soft delete — single or bulk
+  const softDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) =>
+      ids.length === 1
+        ? axios.patch(`${BASE}/api/tasks/${ids[0]}/soft-delete`).then(r => r.data)
+        : axios.patch(`${BASE}/api/tasks/bulk/soft-delete`, { ids }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      setCheckedIds(new Set());
+      setSelected(null);
+      setSoftDeleteTarget(null);
+    },
+  });
+
+  // Restore
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => axios.patch(`${BASE}/api/tasks/${id}/restore`).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      setSelected(null);
+    },
+  });
+
+  // Hard delete — single or bulk
+  const hardDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) =>
+      ids.length === 1
+        ? axios.delete(`${BASE}/api/tasks/${ids[0]}`).then(r => r.data)
+        : axios.delete(`${BASE}/api/tasks/bulk/permanent`, { data: { ids } }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      setCheckedIds(new Set());
+      setSelected(null);
+      setHardDeleteTarget(null);
+    },
+  });
+
   const [createForm, setCreateForm] = useState({
     title: "", description: "", taskType: taskTypeTab, category: "inquiry",
     priority: "normal", assignedTo: "", visibility: "internal",
@@ -172,11 +244,10 @@ export default function TasksPage() {
   });
 
   function fmtDate(d: string | null | undefined): string {
-  return formatDate(d);
+    return formatDate(d);
   }
 
   const allUsers: { id: string; fullName: string }[] = usersData ?? [];
-
   const kanbanCols = STATUSES.map(s => ({ key: s, label: STATUS_LABELS[s], tasks: tasks.filter(t => t.status === s) }));
 
   return (
@@ -201,25 +272,23 @@ export default function TasksPage() {
             onClick={() => setView("kanban")}
             className={`p-1.5 rounded-md ${view === "kanban" ? "bg-(--e-orange) text-white" : "text-[#78716C] hover:bg-[#F4F3F1]"}`}
           ><LayoutGrid className="w-4 h-4" /></button>
-          {!isParent && (
-            <Button className="h-8 gap-1.5 text-xs" onClick={() => {
-              setCreateForm(f => ({ ...f, taskType: taskTypeTab as TaskTypeTab }));
-              setShowCreate(true);
-            }}>
-              <Plus className="w-3.5 h-3.5" /> New {taskTypeTab === "cs" ? "CS Ticket" : "Task"}
-            </Button>
-          )}
+          <Button className="h-8 gap-1.5 text-xs" onClick={() => {
+            setCreateForm(f => ({ ...f, taskType: taskTypeTab as TaskTypeTab }));
+            setShowCreate(true);
+          }}>
+            <Plus className="w-3.5 h-3.5" /> New {taskTypeTab === "cs" ? "CS Ticket" : "Task"}
+          </Button>
         </div>
       </div>
 
-      {/* Tab bar: Tasks | CS */}
+      {/* Tab bar */}
       <div className="flex gap-0 border-b border-[#E8E6E2]">
         {([
           { key: "internal" as TaskTypeTab, label: "Tasks",      icon: List   },
           { key: "cs"       as TaskTypeTab, label: "CS Tickets", icon: Ticket },
         ]).map(({ key, label, icon: Icon }) => (
           <button key={key}
-            onClick={() => { setTaskTypeTab(key); setStatusFilter("all"); setSearch(""); }}
+            onClick={() => { setTaskTypeTab(key); setStatusFilter("all"); setSearch(""); setCheckedIds(new Set()); }}
             className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
             style={taskTypeTab === key
               ? { borderColor: "var(--e-orange)", color: "var(--e-orange)" }
@@ -254,61 +323,166 @@ export default function TasksPage() {
             {PRIORITIES.map(p => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
           </SelectContent>
         </Select>
+
+        {/* Super admin: show deleted toggle */}
+        {isSuperAdmin && (
+          <label className="flex items-center gap-1.5 text-xs text-[#57534E] cursor-pointer select-none ml-1">
+            <input
+              type="checkbox"
+              checked={showDeleted}
+              onChange={e => { setShowDeleted(e.target.checked); setCheckedIds(new Set()); }}
+              className="rounded accent-orange-500"
+            />
+            <Trash2 className="w-3 h-3 text-red-500" />
+            삭제됨 보기
+          </label>
+        )}
+
         <span className="text-xs text-[#A8A29E] ml-auto">{tasks.length} tasks</span>
       </div>
+
+      {/* ── BULK ACTION BAR ── */}
+      {someChecked && view === "list" && (
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-[#FEF0E3] border border-(--e-orange)/20 text-sm">
+          <span className="font-semibold text-(--e-orange)">{checkedIds.size}개 선택됨</span>
+          <div className="flex items-center gap-2 ml-auto">
+            {isAdmin && !showDeleted && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs gap-1.5 border-red-200 text-red-600 hover:bg-red-50"
+                onClick={() => setSoftDeleteTarget({ ids: Array.from(checkedIds) })}
+                disabled={softDeleteMutation.isPending}
+              >
+                <Trash2 className="w-3.5 h-3.5" /> 소프트 삭제
+              </Button>
+            )}
+            {isSuperAdmin && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs gap-1.5 border-red-400 text-red-700 hover:bg-red-50 font-semibold"
+                onClick={() => setHardDeleteTarget({ ids: Array.from(checkedIds) })}
+                disabled={hardDeleteMutation.isPending}
+              >
+                <ShieldAlert className="w-3.5 h-3.5" /> 영구 삭제
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setCheckedIds(new Set())}>
+              취소
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ── LIST VIEW ── */}
       {view === "list" && (
         <div className="rounded-lg border border-[#E7E5E4] overflow-x-auto bg-white">
-          <table className="w-full min-w-[860px] text-sm">
+          <table className="w-full min-w-[900px] text-sm">
             <thead>
               <tr className="border-b border-[#E7E5E4] bg-[#FAFAF9]">
-                <>
-              <SortableTh key="Task #" col="taskNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Task #</SortableTh>
-              <SortableTh key="Type" col="taskType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Type</SortableTh>
-              <SortableTh key="Category" col="category" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Category</SortableTh>
-              <SortableTh key="Subject" col="subject" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Subject</SortableTh>
-              <SortableTh key="Submitted by" col="submittedBy" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Submitted by</SortableTh>
-              <SortableTh key="Assigned" col="assignedName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Assigned</SortableTh>
-              <SortableTh key="Priority" col="priority" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Priority</SortableTh>
-              <SortableTh key="Status" col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Status</SortableTh>
-              <SortableTh key="Created" col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Created</SortableTh>
-            </>
+                {/* Checkbox column */}
+                <th className="pl-4 pr-2 py-2.5 w-10">
+                  <input
+                    type="checkbox"
+                    checked={allChecked}
+                    onChange={toggleAll}
+                    className="rounded accent-orange-500 cursor-pointer"
+                    title="전체 선택"
+                  />
+                </th>
+                <SortableTh col="taskNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Task #</SortableTh>
+                <SortableTh col="taskType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Type</SortableTh>
+                <SortableTh col="category" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Category</SortableTh>
+                <SortableTh col="subject" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Subject</SortableTh>
+                <SortableTh col="submittedBy" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Submitted by</SortableTh>
+                <SortableTh col="assignedName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Assigned</SortableTh>
+                <SortableTh col="priority" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Priority</SortableTh>
+                <SortableTh col="status" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Status</SortableTh>
+                <SortableTh col="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Created</SortableTh>
+                {/* Action column */}
+                {isAdmin && <th className="px-4 py-2.5 w-20" />}
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={9} className="py-16 text-center text-[#A8A29E]">
+                <tr><td colSpan={11} className="py-16 text-center text-[#A8A29E]">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto" />
                 </td></tr>
               ) : tasks.length === 0 ? (
-                <tr><td colSpan={9} className="py-16 text-center text-[#A8A29E]">
+                <tr><td colSpan={11} className="py-16 text-center text-[#A8A29E]">
                   <Ticket className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No tasks found</p>
+                  <p className="text-sm">{showDeleted ? "삭제된 Tasks 없음" : "No tasks found"}</p>
                 </td></tr>
-              ) : sorted.map(t => (
-                <tr
-                  key={t.id}
-                  onClick={() => openDetail(t)}
-                  className="border-b border-[#F4F3F1] hover:bg-(--e-orange-lt) cursor-pointer transition-colors"
-                >
-                  <td className="px-4 py-2.5 font-mono text-xs font-semibold text-(--e-orange) whitespace-nowrap">{t.taskNumber}</td>
-                  <td className="px-4 py-2.5"><TypeBadge type={t.taskType} /></td>
-                  <td className="px-4 py-2.5 text-xs text-[#57534E] capitalize whitespace-nowrap">{t.category}</td>
-                  <td className="px-4 py-2.5 max-w-[200px]">
-                    <p className="truncate text-xs font-medium text-[#1C1917]">{t.title ?? "—"}</p>
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-[#57534E] whitespace-nowrap">
-                    {t.submittedName ?? t.submittedEmail ?? "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-[#57534E] whitespace-nowrap">
-                    {t.assignedToName ?? "—"}
-                  </td>
-                  <td className="px-4 py-2.5"><PriorityBadge priority={t.priority} /></td>
-                  <td className="px-4 py-2.5"><StatusBadge status={t.status} /></td>
-                  <td className="px-4 py-2.5 text-xs text-[#A8A29E] whitespace-nowrap">{fmtDate(t.createdAt)}</td>
-                </tr>
-              ))}
+              ) : sorted.map(t => {
+                const isChecked = checkedIds.has(t.id);
+                return (
+                  <tr
+                    key={t.id}
+                    className={`border-b border-[#F4F3F1] hover:bg-(--e-orange-lt) transition-colors ${t.isDeleted ? "opacity-60 bg-red-50/30" : ""} ${isChecked ? "bg-(--e-orange-lt)" : ""}`}
+                  >
+                    {/* Checkbox */}
+                    <td className="pl-4 pr-2 py-2.5" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleOne(t.id)}
+                        className="rounded accent-orange-500 cursor-pointer"
+                      />
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-xs font-semibold text-(--e-orange) whitespace-nowrap cursor-pointer" onClick={() => openDetail(t)}>{t.taskNumber}</td>
+                    <td className="px-4 py-2.5 cursor-pointer" onClick={() => openDetail(t)}><TypeBadge type={t.taskType} /></td>
+                    <td className="px-4 py-2.5 text-xs text-[#57534E] capitalize whitespace-nowrap cursor-pointer" onClick={() => openDetail(t)}>{t.category}</td>
+                    <td className="px-4 py-2.5 max-w-[200px] cursor-pointer" onClick={() => openDetail(t)}>
+                      <p className="truncate text-xs font-medium text-[#1C1917]">{t.title ?? "—"}</p>
+                      {t.isDeleted && <span className="text-[10px] text-red-500 font-medium">삭제됨 {fmtDate(t.deletedAt)}</span>}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-[#57534E] whitespace-nowrap cursor-pointer" onClick={() => openDetail(t)}>
+                      {t.submittedName ?? t.submittedEmail ?? "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-[#57534E] whitespace-nowrap cursor-pointer" onClick={() => openDetail(t)}>
+                      {t.assignedToName ?? "—"}
+                    </td>
+                    <td className="px-4 py-2.5 cursor-pointer" onClick={() => openDetail(t)}><PriorityBadge priority={t.priority} /></td>
+                    <td className="px-4 py-2.5 cursor-pointer" onClick={() => openDetail(t)}><StatusBadge status={t.status} /></td>
+                    <td className="px-4 py-2.5 text-xs text-[#A8A29E] whitespace-nowrap cursor-pointer" onClick={() => openDetail(t)}>{fmtDate(t.createdAt)}</td>
+
+                    {/* Row-level action buttons */}
+                    {isAdmin && (
+                      <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-1">
+                          {t.isDeleted ? (
+                            <>
+                              {/* Restore (admin) */}
+                              <button
+                                title="복원"
+                                onClick={() => restoreMutation.mutate(t.id)}
+                                disabled={restoreMutation.isPending}
+                                className="p-1 rounded hover:bg-green-100 text-green-600 transition-colors"
+                              ><RotateCcw className="w-3.5 h-3.5" /></button>
+                              {/* Permanent delete (super_admin) */}
+                              {isSuperAdmin && (
+                                <button
+                                  title="영구 삭제"
+                                  onClick={() => setHardDeleteTarget({ ids: [t.id], single: t.taskNumber })}
+                                  className="p-1 rounded hover:bg-red-100 text-red-600 transition-colors"
+                                ><ShieldAlert className="w-3.5 h-3.5" /></button>
+                              )}
+                            </>
+                          ) : (
+                            /* Soft delete (admin) */
+                            <button
+                              title="삭제"
+                              onClick={() => setSoftDeleteTarget({ ids: [t.id], single: t.taskNumber })}
+                              className="p-1 rounded hover:bg-red-100 text-red-500 transition-colors"
+                            ><Trash2 className="w-3.5 h-3.5" /></button>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -373,16 +547,59 @@ export default function TasksPage() {
                       <AlertCircle className="w-3 h-3" /> SLA Breached
                     </span>
                   )}
+                  {selected.isDeleted && (
+                    <span className="bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Trash2 className="w-3 h-3" /> 삭제됨
+                    </span>
+                  )}
                 </div>
                 <SheetTitle className="text-base text-[#1C1917] mt-1">{selected.title ?? "—"}</SheetTitle>
                 <SheetDescription className="text-xs text-[#A8A29E]">
                   Created {fmtDate(selected.createdAt)} · Category: <span className="capitalize">{selected.category}</span> · Source: <span className="capitalize">{selected.source}</span>
                 </SheetDescription>
+
+                {/* Delete/Restore actions in drawer header */}
+                {isAdmin && (
+                  <div className="flex items-center gap-2 pt-2">
+                    {selected.isDeleted ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1.5 text-green-600 border-green-200 hover:bg-green-50"
+                          onClick={() => restoreMutation.mutate(selected.id)}
+                          disabled={restoreMutation.isPending}
+                        >
+                          <RotateCcw className="w-3 h-3" /> 복원
+                        </Button>
+                        {isSuperAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1.5 text-red-700 border-red-300 hover:bg-red-50 font-semibold"
+                            onClick={() => setHardDeleteTarget({ ids: [selected.id], single: selected.taskNumber })}
+                          >
+                            <ShieldAlert className="w-3 h-3" /> 영구 삭제
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1.5 text-red-500 border-red-200 hover:bg-red-50"
+                        onClick={() => setSoftDeleteTarget({ ids: [selected.id], single: selected.taskNumber })}
+                      >
+                        <Trash2 className="w-3 h-3" /> 삭제
+                      </Button>
+                    )}
+                  </div>
+                )}
               </SheetHeader>
 
               <div className="p-6 space-y-5">
                 {/* Status & Assignee Controls */}
-                {!isParent && (
+                {!selected.isDeleted && (
                   <div className="flex flex-wrap gap-3">
                     <div className="flex-1 min-w-[140px]">
                       <label className="text-xs font-medium text-[#78716C] mb-1 block">Status</label>
@@ -444,7 +661,7 @@ export default function TasksPage() {
                       </div>
                     )}
                   </dl>
-                  {(selected.contractId || selected.applicationId) && !isParent && (
+                  {(selected.contractId || selected.applicationId) && (
                     <div className="pt-2 border-t border-[#E7E5E4] flex flex-wrap gap-2">
                       {selected.contractId && (
                         <button
@@ -472,7 +689,7 @@ export default function TasksPage() {
                   </div>
                 )}
 
-                {/* Satisfaction Rating (if resolved/closed) */}
+                {/* Satisfaction Rating */}
                 {["resolved", "closed"].includes(selected.status) && (
                   <div className="rounded-lg border border-[#E7E5E4] p-4">
                     <h4 className="text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-2">Satisfaction Rating</h4>
@@ -518,15 +735,15 @@ export default function TasksPage() {
                   </div>
 
                   {/* Add comment */}
-                  <div className="mt-3 space-y-2">
-                    <Textarea
-                      className="text-sm min-h-[80px] resize-none"
-                      placeholder="Write a comment…"
-                      value={newComment}
-                      onChange={e => setNewComment(e.target.value)}
-                    />
-                    <div className="flex items-center justify-between gap-2">
-                      {!isParent && (
+                  {!selected.isDeleted && (
+                    <div className="mt-3 space-y-2">
+                      <Textarea
+                        className="text-sm min-h-[80px] resize-none"
+                        placeholder="Write a comment…"
+                        value={newComment}
+                        onChange={e => setNewComment(e.target.value)}
+                      />
+                      <div className="flex items-center justify-between gap-2">
                         <label className="flex items-center gap-1.5 text-xs text-[#57534E] cursor-pointer">
                           <input
                             type="checkbox"
@@ -537,17 +754,17 @@ export default function TasksPage() {
                           <Lock className="w-3 h-3 text-amber-600" />
                           Internal note only
                         </label>
-                      )}
-                      <Button
-                        size="sm"
-                        className="h-7 text-xs gap-1 ml-auto"
-                        disabled={!newComment.trim() || commentMutation.isPending}
-                        onClick={() => commentMutation.mutate({ content: newComment.trim(), isInternal: commentInternal })}
-                      >
-                        <Send className="w-3 h-3" /> Send
-                      </Button>
+                        <Button
+                          size="sm"
+                          className="h-7 text-xs gap-1 ml-auto"
+                          disabled={!newComment.trim() || commentMutation.isPending}
+                          onClick={() => commentMutation.mutate({ content: newComment.trim(), isInternal: commentInternal })}
+                        >
+                          <Send className="w-3 h-3" /> Send
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Timestamps */}
@@ -555,6 +772,9 @@ export default function TasksPage() {
                   <div className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> Created: {fmtDate(selected.createdAt)}</div>
                   {selected.firstResponseAt && <div className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-green-500" /> First response: {fmtDate(selected.firstResponseAt)}</div>}
                   {selected.resolvedAt && <div className="flex items-center gap-1.5"><XCircle className="w-3 h-3 text-green-600" /> Resolved: {fmtDate(selected.resolvedAt)}</div>}
+                  {selected.isDeleted && selected.deletedAt && (
+                    <div className="flex items-center gap-1.5 text-red-400"><Trash2 className="w-3 h-3" /> Deleted: {fmtDate(selected.deletedAt)}</div>
+                  )}
                 </div>
               </div>
             </>
@@ -652,6 +872,62 @@ export default function TasksPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* ── SOFT DELETE CONFIRM ── */}
+      <AlertDialog open={!!softDeleteTarget} onOpenChange={open => !open && setSoftDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-red-500" />
+              {softDeleteTarget?.ids.length === 1 ? "Task 삭제" : `${softDeleteTarget?.ids.length}개 Tasks 삭제`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {softDeleteTarget?.single
+                ? `"${softDeleteTarget.single}"을 삭제합니다.`
+                : `선택한 ${softDeleteTarget?.ids.length}개의 Tasks를 삭제합니다.`}
+              {" "}삭제된 항목은 슈퍼어드민이 복원하거나 영구 삭제할 수 있습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => softDeleteTarget && softDeleteMutation.mutate(softDeleteTarget.ids)}
+              disabled={softDeleteMutation.isPending}
+            >
+              {softDeleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "삭제"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── HARD DELETE CONFIRM ── */}
+      <AlertDialog open={!!hardDeleteTarget} onOpenChange={open => !open && setHardDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-700">
+              <ShieldAlert className="w-4 h-4" />
+              {hardDeleteTarget?.ids.length === 1 ? "영구 삭제 (복원 불가)" : `${hardDeleteTarget?.ids.length}개 영구 삭제 (복원 불가)`}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-red-600 font-medium">
+              {hardDeleteTarget?.single
+                ? `"${hardDeleteTarget.single}"을 DB에서 완전히 삭제합니다.`
+                : `선택한 ${hardDeleteTarget?.ids.length}개의 Tasks를 DB에서 완전히 삭제합니다.`}
+              {" "}이 작업은 되돌릴 수 없습니다. 댓글과 첨부파일도 함께 삭제됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-700 hover:bg-red-800"
+              onClick={() => hardDeleteTarget && hardDeleteMutation.mutate(hardDeleteTarget.ids)}
+              disabled={hardDeleteMutation.isPending}
+            >
+              {hardDeleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "영구 삭제"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
