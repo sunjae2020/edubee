@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { contacts } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { contacts, accounts } from "@workspace/db/schema";
+import { eq, or } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { authenticatePortal } from "../middleware/authenticatePortal.js";
 import { maskPassport } from "../lib/crypto.js";
@@ -30,11 +30,11 @@ router.get("/my-data", authAny, async (req, res) => {
     const [contact] = email
       ? await db.select({
           id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName,
-          fullName: contacts.fullName, email: contacts.email, phone: contacts.phone,
+          fullName: contacts.fullName, email: contacts.email, phone: contacts.mobile,
           dob: contacts.dob, nationality: contacts.nationality,
           passportNo: contacts.passportNo,
           privacyConsent: contacts.privacyConsent, marketingConsent: contacts.marketingConsent,
-          createdAt: contacts.createdAt,
+          createdAt: contacts.createdOn,
         }).from(contacts).where(eq(contacts.email, email)).limit(1)
       : [null];
 
@@ -102,6 +102,88 @@ router.post("/my-data/correction-request", authAny, async (req, res) => {
     });
   } catch (err) {
     logger.error({ err }, "[POST /my-data/correction-request] Internal error");
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── POST /api/my-data/withdraw-consent — APP 3/5: 동의 철회 ──────────────────
+const WithdrawConsentSchema = z.object({
+  consentType: z.enum(["marketing", "privacy", "all"]),
+  reason: z.string().optional(),
+});
+
+router.post("/my-data/withdraw-consent", authAny, async (req, res) => {
+  try {
+    const parsed = WithdrawConsentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
+    }
+    const { consentType, reason } = parsed.data;
+    const user = req.user as any;
+    const email = user.email;
+
+    if (!email) {
+      return res.status(400).json({ error: "Cannot identify user email from token" });
+    }
+
+    const consentUpdate = {
+      ...(consentType === "marketing" || consentType === "all" ? { marketingConsent: false } : {}),
+      ...(consentType === "privacy"   || consentType === "all" ? { privacyConsent:   false } : {}),
+    };
+
+    // Portal users (accountId in token) → update accounts table
+    // Staff / other users → update contacts table
+    const isPortalUser = Boolean(user.accountId || user.userType === "portal");
+
+    if (isPortalUser) {
+      const [acct] = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(or(eq(accounts.portalEmail, email), eq(accounts.email, email)))
+        .limit(1);
+
+      if (!acct) {
+        return res.status(404).json({ error: "No account record found" });
+      }
+      await db.update(accounts).set(consentUpdate).where(eq(accounts.id, acct.id));
+    } else {
+      const [contact] = await db
+        .select({ id: contacts.id })
+        .from(contacts)
+        .where(eq(contacts.email, email))
+        .limit(1);
+
+      if (!contact) {
+        return res.status(404).json({ error: "No contact record found for this account" });
+      }
+      await db.update(contacts).set(consentUpdate).where(eq(contacts.id, contact.id));
+    }
+
+    const withdrawalId = `WD-${Date.now()}`;
+    logger.info(
+      { withdrawalId, requester: email, consentType, reason: reason ?? "Not provided" },
+      "[CONSENT WITHDRAWAL] processed — APP 3/5 compliance",
+    );
+
+    return res.json({
+      success: true,
+      withdrawalId,
+      consentType,
+      updated: consentUpdate,
+      message:
+        consentType === "privacy"
+          ? "Your privacy consent has been withdrawn. Note: some data processing may continue as required by law (e.g. 7-year retention under Australian tax law)."
+          : consentType === "marketing"
+            ? "Your marketing consent has been withdrawn. You will no longer receive promotional communications."
+            : "All consents have been withdrawn. Note: some data processing may continue as required by law.",
+      processedAt: new Date().toISOString(),
+      rights: {
+        complaints: "Lodge a complaint with the OAIC at https://www.oaic.gov.au",
+        privacyPolicy: "GET /api/privacy-policy",
+      },
+    });
+  } catch (err) {
+    logger.error({ err }, "[POST /my-data/withdraw-consent] Internal error");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

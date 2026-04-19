@@ -44,6 +44,27 @@ server.timeout = 120000;
 server.keepAliveTimeout = 121000;
 console.log("[FIX APPLIED] server.timeout = 120000ms");
 
+// ─── Graceful Shutdown ────────────────────────────────────────────────────────
+function shutdown(signal: string) {
+  console.log(`[Shutdown] ${signal} received — closing HTTP server gracefully`);
+  server.close((err) => {
+    if (err) {
+      console.error("[Shutdown] Error during server close:", err);
+      process.exit(1);
+    }
+    console.log("[Shutdown] HTTP server closed. Exiting.");
+    process.exit(0);
+  });
+  // Force exit if graceful shutdown takes >10 seconds
+  setTimeout(() => {
+    console.error("[Shutdown] Forced exit after 10s timeout");
+    process.exit(1);
+  }, 10_000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
 // ─── Exchange Rate Auto-Sync ───────────────────────────────────────────────
 // Schedule: midnight every day in Australia/Sydney timezone (AEST UTC+10 / AEDT UTC+11)
 cron.schedule(

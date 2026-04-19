@@ -17,7 +17,8 @@ declare global {
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || "edubee-camp-secret-key-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error("JWT_SECRET environment variable is required but not set");
 
 export function authenticatePortal(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;

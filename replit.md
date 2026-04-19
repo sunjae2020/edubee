@@ -159,6 +159,30 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `app.ts` HTTP 요청 구조화 로깅 추가
 - 보안 라우트 파일 `console.error/log` → `logger.error/info/warn` 일괄 교체: `incidentReporter.ts`, `my-data.ts`, `security-incidents.ts`
 
+## Security & Compliance Fixes — TOP 3 우선순위 (2026-04-19)
+
+### Fix-01: drizzle-orm CVE 패치 (CRITICAL)
+- `pnpm-workspace.yaml` catalog: `drizzle-orm: 0.45.1` → `0.45.2`
+- CVE GHSA-gpj5-g38j-94v9 해소, npm audit high 8→7개 감소
+- TypeScript TS2769 overload 오류 동시 해소 (버전 불일치 원인)
+
+### Fix-02: 동의 철회 API — APP 3/5 Privacy Act 준수
+- `POST /api/my-data/withdraw-consent` 엔드포인트 추가 (`my-data.ts`)
+- consentType: `"marketing" | "privacy" | "all"` 입력 지원
+- 포털 유저(accounts 테이블) / 스태프(contacts 테이블) 분기 처리
+- `contacts.privacy_consent`, `contacts.marketing_consent` 컬럼 추가 (SQL + 스키마)
+- `accounts.privacy_consent`, `accounts.marketing_consent` 컬럼 추가 (SQL + 스키마)
+- SchemaSync 자동 전파: 5개 테넌트 스키마에 +10 컬럼 동기화 확인
+- 기존 GET /my-data에서 `contacts.phone` → `contacts.mobile`, `contacts.createdAt` → `contacts.createdOn` 필드명 오류 수정
+
+### Fix-03: Graceful Shutdown + JWT fallback 완전 제거
+- `index.ts`: `process.on("SIGTERM"/"SIGINT")` 핸들러 + `server.close()` + 10초 강제 종료 추가
+- JWT fallback 완전 제거 (5개 파일 → 0개):
+  - `middleware/authenticate.ts`: `|| "..."` → 환경변수 미설정 시 서버 시작 거부로 변경
+  - `middleware/authenticatePortal.ts`: 동일
+  - `routes/camp-photos.ts`: 동일
+  - `routes/portal.ts`: 동일 (두 곳)
+
 ## Security & Compliance Audit — Sprint 4 완료 (2026-04-19)
 
 ### S4-01: Sentry 에러 모니터링

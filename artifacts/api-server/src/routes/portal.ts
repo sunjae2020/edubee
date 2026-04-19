@@ -956,7 +956,7 @@ router.get("/portal/documents/:id/view", async (req, res) => {
     const jwt = await import("jsonwebtoken");
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
-    const decoded = jwt.default.verify(authHeader.split(" ")[1], process.env.JWT_SECRET || "edubee-camp-secret-key-change-in-production") as any;
+    const decoded = jwt.default.verify(authHeader.split(" ")[1], process.env.JWT_SECRET!) as any;
     if (!decoded?.accountId) return res.status(401).json({ error: "Unauthorized" });
     const accountId = decoded.accountId as string;
     const docId = req.params.id;
@@ -1007,7 +1007,7 @@ router.get("/portal/documents/:id/download", async (req, res) => {
     const jwt = await import("jsonwebtoken");
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
-    const decoded = jwt.default.verify(authHeader.split(" ")[1], process.env.JWT_SECRET || "edubee-camp-secret-key-change-in-production") as any;
+    const decoded = jwt.default.verify(authHeader.split(" ")[1], process.env.JWT_SECRET!) as any;
     if (!decoded?.accountId) return res.status(401).json({ error: "Unauthorized" });
     const accountId = decoded.accountId as string;
     const docId = req.params.id;
@@ -1548,7 +1548,7 @@ const PHOTO_DIR_PORTAL = process.env.UPLOAD_DIR
 
 // Serve photo file for portal users — accepts Bearer header OR ?token= query param (for <img src>)
 router.get("/portal/student/camp-photos/file/:filename", (req: any, res: any, next: any) => {
-  const PORTAL_JWT_SECRET = process.env.JWT_SECRET || "edubee-camp-secret-key-change-in-production";
+  const PORTAL_JWT_SECRET = process.env.JWT_SECRET!;
   let token: string | undefined;
   const authHeader = req.headers.authorization as string | undefined;
   if (authHeader?.startsWith("Bearer ")) {

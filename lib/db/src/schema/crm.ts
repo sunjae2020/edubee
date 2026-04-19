@@ -38,11 +38,13 @@ export const contacts = pgTable("contacts", {
   preferredName:   varchar("preferred_name", { length: 100 }),
   currentYear:     varchar("current_year",   { length: 50  }),
   passportNo:      varchar("passport_no",    { length: 50  }),
-  status:          varchar("status",       { length: 20 }).notNull().default("Active"),
-  accountType:     varchar("account_type", { length: 50 }).notNull().default("Student"),
-  createdOn:       timestamp("created_on").notNull().defaultNow(),
-  modifiedOn:      timestamp("modified_on").notNull().defaultNow(),
-  organisationId:  uuid("organisation_id").references(() => organisations.id),
+  status:           varchar("status",       { length: 20 }).notNull().default("Active"),
+  accountType:      varchar("account_type", { length: 50 }).notNull().default("Student"),
+  privacyConsent:   boolean("privacy_consent").notNull().default(false),
+  marketingConsent: boolean("marketing_consent").notNull().default(false),
+  createdOn:        timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:       timestamp("modified_on").notNull().defaultNow(),
+  organisationId:   uuid("organisation_id").references(() => organisations.id),
 });
 
 export const accounts = pgTable("accounts", {
@@ -98,6 +100,8 @@ export const accounts = pgTable("accounts", {
   englishName:                varchar("english_name",  { length: 100 }),
   originalName:               varchar("original_name", { length: 200 }),
   profileImageUrl:            text("profile_image_url"),
+  privacyConsent:             boolean("privacy_consent").notNull().default(false),
+  marketingConsent:           boolean("marketing_consent").notNull().default(false),
   organisationId:             uuid("organisation_id").references(() => organisations.id),
 });
 

@@ -39,7 +39,8 @@ const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"] as const;
 // ── Serve photo file ─────────────────────────────────────────────────────────
 // Accepts token from Authorization header OR ?token= query param (needed for <img src>)
 
-const JWT_SECRET = process.env.JWT_SECRET || "edubee-camp-secret-key-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error("JWT_SECRET environment variable is required but not set");
 
 function authenticateFlexible(req: any, res: any, next: any) {
   let token: string | undefined;
