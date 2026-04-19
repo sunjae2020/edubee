@@ -9,6 +9,7 @@ import { eq, and, ilike, count, inArray, SQL, exists, or } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { reverseAllPendingForContract } from "../services/ledgerService.js";
+import { logAudit, auditParamsFromReq } from "../lib/auditLogger.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
@@ -88,6 +89,7 @@ router.post("/contracts", authenticate, requireRole(...ADMIN_ROLES, "camp_coordi
     const body = req.body;
     body.contractNumber = generateContractNumber();
     const [contract] = await db.insert(contracts).values(body).returning();
+    logAudit({ tableName: "contracts", recordId: contract.id, action: "CREATE", newValues: contract, ...auditParamsFromReq(req) }).catch(() => {});
     return res.status(201).json(contract);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -127,6 +129,8 @@ router.put("/contracts/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coo
     const [contract] = await db.update(contracts).set({ ...body, updatedAt: new Date() })
       .where(eq(contracts.id, req.params.id)).returning();
     if (!contract) return res.status(404).json({ error: "Not Found" });
+
+    logAudit({ tableName: "contracts", recordId: contract.id, action: "UPDATE", newValues: body as Record<string, unknown>, changedFields: Object.keys(body), ...auditParamsFromReq(req) }).catch(() => {});
 
     // TRIGGER D: Contract cancelled → reverse all pending ledger entries
     if (body.status === 'cancelled') {

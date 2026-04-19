@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import express, { type Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -8,6 +9,26 @@ import router from "./routes/index.js";
 import webhookRoutes from "./routes/webhook.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { logger } from "./lib/logger.js";
+
+// ── Sentry 에러 모니터링 (S4-01) ─────────────────────────────────────────────
+// SENTRY_DSN 미설정 시 로컬 로깅만 동작 (DSN 없으면 Sentry로 전송 안 됨)
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV || "development",
+  integrations: [Sentry.httpIntegration()],
+  tracesSampleRate: 0.1,
+  enabled: !!process.env.SENTRY_DSN,
+  beforeSend(event) {
+    // 민감 정보 필터링 — APP 11 준수
+    if (event.request?.data) {
+      const data = event.request.data as Record<string, unknown>;
+      ["passport_number", "visa_number", "password", "medical_conditions", "token"].forEach((key) => {
+        if (data[key]) data[key] = "[REDACTED]";
+      });
+    }
+    return event;
+  },
+});
 
 const app: Express = express();
 
@@ -30,8 +51,8 @@ app.use(helmet({
 
 // ── CORS 도메인 제한 ─────────────────────────────────────────────────────────
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173'];
+  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+  : ["http://localhost:5173", "http://localhost:3000", "http://localhost:4173"];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -42,8 +63,8 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
 // ── 전체 API Rate Limit (15분 내 500회) ────────────────────────────────────
@@ -52,11 +73,11 @@ const generalLimiter = rateLimit({
   max: 500,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Rate limit exceeded. Please try again later.' },
-  skip: (req) => req.path === '/health',
+  message: { error: "Rate limit exceeded. Please try again later." },
+  skip: (req) => req.path === "/health",
 });
 
-// ── 구조화 HTTP 요청 로깅 (pino — Sprint 3-04) ───────────────────────────
+// ── 구조화 HTTP 요청 로깅 (pino — S3-04) ───────────────────────────────────
 app.use((req: any, _res: any, next: any) => {
   logger.info({ method: req.method, url: req.url, ip: req.ip }, "Request received");
   next();
@@ -93,15 +114,17 @@ if (process.env.NODE_ENV === "production") {
   }
 }
 
-// ── 글로벌 에러 핸들러 — 반드시 마지막에 등록 (Sprint 3-02) ─────────────
+// ── 글로벌 에러 핸들러 — 반드시 마지막에 등록 (S3-02) ─────────────────────
 app.use(errorHandler);
 
 // Crash guard — keeps server alive on uncaught errors
-process.on('uncaughtException', (err) => {
-  logger.error({ err }, 'Uncaught exception');
+process.on("uncaughtException", (err) => {
+  Sentry.captureException(err);
+  logger.error({ err }, "Uncaught exception");
 });
-process.on('unhandledRejection', (reason: any) => {
-  logger.error({ reason }, 'Unhandled rejection');
+process.on("unhandledRejection", (reason: any) => {
+  Sentry.captureException(reason);
+  logger.error({ reason }, "Unhandled rejection");
 });
 
 export default app;

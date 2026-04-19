@@ -6,6 +6,7 @@ import {
 import { eq, desc, and, ilike, count } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { logAudit, auditParamsFromReq } from "../lib/auditLogger.js";
 
 const router = Router();
 const STAFF = ["super_admin", "admin", "camp_coordinator"];
@@ -160,6 +161,7 @@ router.post(
         organisationId: req.tenant?.id ?? null,
       }).returning();
 
+      logAudit({ tableName: "invoices", recordId: newInvoice.id, action: "CREATE", newValues: newInvoice as unknown as Record<string, unknown>, ...auditParamsFromReq(req) }).catch(() => {});
       return res.status(201).json(newInvoice);
     } catch (err) {
       console.error("POST /invoices error:", err instanceof Error ? err.message : String(err));
@@ -188,6 +190,7 @@ router.put(
         .where(eq(invoices.id, req.params.id))
         .returning();
 
+      logAudit({ tableName: "invoices", recordId: updated.id, action: "UPDATE", newValues: req.body as Record<string, unknown>, changedFields: Object.keys(req.body), ...auditParamsFromReq(req) }).catch(() => {});
       return res.json(updated);
     } catch (err) {
       console.error("PUT /invoices/:id error:", err);
@@ -213,6 +216,7 @@ router.delete(
       await db.delete(invoices)
         .where(eq(invoices.id, req.params.id));
 
+      logAudit({ tableName: "invoices", recordId: existing.id, action: "DELETE", oldValues: existing as unknown as Record<string, unknown>, ...auditParamsFromReq(req) }).catch(() => {});
       return res.json({ message: "Invoice deleted" });
     } catch (err) {
       console.error("DELETE /invoices/:id error:", err);

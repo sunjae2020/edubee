@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import { AppError } from "../lib/errors.js";
@@ -5,7 +6,8 @@ import { logger } from "../lib/logger.js";
 
 /**
  * 글로벌 에러 핸들러 — 모든 라우터 이후, app.ts 마지막에 등록.
- * Sprint 3-02: 표준화된 JSON 에러 응답 보장.
+ * S3-02: 표준화된 JSON 에러 응답 보장.
+ * S4-01: 500 에러를 Sentry로 자동 전송.
  */
 export function errorHandler(
   err: unknown,
@@ -16,6 +18,7 @@ export function errorHandler(
   // ── 1. 애플리케이션 정의 에러 ────────────────────────────────────────────
   if (err instanceof AppError) {
     if (err.statusCode >= 500) {
+      Sentry.captureException(err, { extra: { method: req.method, url: req.url } });
       logger.error({ err, method: req.method, url: req.url }, err.message);
     } else {
       logger.warn({ code: err.code, method: req.method, url: req.url }, err.message);
@@ -52,7 +55,8 @@ export function errorHandler(
     });
   }
 
-  // ── 4. 예상치 못한 에러 ────────────────────────────────────────────────
+  // ── 4. 예상치 못한 에러 — Sentry 전송 + 구조화 로그 ──────────────────
+  Sentry.captureException(err, { extra: { method: req.method, url: req.url } });
   logger.error({ err, method: req.method, url: req.url }, "Unhandled server error");
   return res.status(500).json({
     success: false,

@@ -159,6 +159,29 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `app.ts` HTTP 요청 구조화 로깅 추가
 - 보안 라우트 파일 `console.error/log` → `logger.error/info/warn` 일괄 교체: `incidentReporter.ts`, `my-data.ts`, `security-incidents.ts`
 
+## Security & Compliance Audit — Sprint 4 완료 (2026-04-19)
+
+### S4-01: Sentry 에러 모니터링
+- `@sentry/node` 설치, `Sentry.init()` in `app.ts` (`enabled: !!process.env.SENTRY_DSN` — DSN 미설정 시 graceful no-op)
+- `beforeSend` 필터: `passport_no`, `password`, `visa_number`, `medical_conditions` 등 민감 필드 자동 마스킹
+- `errorHandler.ts`: 500-level 에러 → `Sentry.captureException()` 호출
+- `process.on('uncaughtException'/'unhandledRejection')` crash guard에서도 Sentry 전송
+- 사용자가 `SENTRY_DSN` secret 추가 시 즉시 활성화
+
+### S4-02: 감사 로그 (Audit Logs)
+- `audit_logs` 테이블: public 스키마 + 5개 테넌트 스키마 전체 생성 (id, tableName, recordId, action, oldValues, newValues, changedFields, userId, userEmail, userRole, ipAddress, userAgent, createdAt)
+- Drizzle 스키마 정의: `lib/db/src/schema/security.ts` → `auditLogs` 테이블 export
+- `auditLogger.ts` 유틸: `logAudit()` (비동기, 실패 시 서버 무중단), `auditParamsFromReq()` (req에서 userId/ip/userAgent 추출, sensitive fields 자동 redact)
+- logAudit 적용 범위:
+  - `contracts.ts`: POST (CREATE), PUT (UPDATE)
+  - `payment-headers.ts`: POST (CREATE), PUT (UPDATE), DELETE/void
+  - `invoices.ts`: POST (CREATE), PUT (UPDATE), DELETE
+
+### S4-03: Vitest 테스트 구조
+- vitest + supertest 설치, `vitest.config.ts` 생성
+- `src/__tests__/auth.test.ts`: 8개 테스트 전체 통과 (login 성공/실패, 필드 누락, 비인증 /my-data, 공개 privacy-policy, rate limit, security headers, error handler JSON)
+- `pnpm --filter @workspace/api-server test` 명령으로 실행
+
 ---
 
 ## Recent Changes (2026-03-26)
@@ -431,28 +454,28 @@ Unified stakeholder portal for agents, partners, and students. Single login → 
 **Features**: `mustChangePassword` flow (redirects to Profile with amber warning banner after first login)
 
 ### Phase 2 — Partner Dashboard (COMPLETE)
-**Pages**: `/partner/dashboard` (booking + revenue summary), `/partner/bookings` (booking table with student info + AP payment status), `/partner/profile` (shared Profile page)
-**API Routes**: `GET /portal/partner/summary`, `GET /portal/partner/bookings`
+**Pages**: Dashboard (revenue + booking summary), Consultations, Bookings (with detail), Contracts, Services, Finance, Documents, Profile (shared), Community (shared)
+**API Routes**: `GET /portal/partner/summary`, `GET /portal/partner/bookings`, `GET /portal/partner/bookings/:id`, `GET /portal/partner/contracts`
 **Data source**: `contract_products.providerAccountId` = partner accountId (leftJoin contracts for student info)
 **Role guard**: `requirePartnerRole` middleware checks `PARTNER_ROLES = ["institute","hotel","pickup","tour"]`
 
 ### Phase 3 — Student Dashboard (COMPLETE)
-**Pages**: `/student/dashboard` (quote + program summary), `/student/quotes` (quote list), `/student/programs` (contract list with payment details), `/student/profile`
-**API Routes**: `GET /portal/student/summary`, `GET /portal/student/quotes`, `GET /portal/student/programs`
+**Pages**: Dashboard (quote + program summary), Consultations (with detail), Quotes (with detail), Contracts, Programs/Services (with detail), Finance, Documents, Camp Photos (folder + gallery), Profile (shared), Community (shared)
+**API Routes**: `GET /portal/student/summary`, `GET /portal/student/quotes`, `GET /portal/student/quotes/:id`, `GET /portal/student/programs`, `GET /portal/student/programs/:id`, `GET /portal/student/consultations/:quoteId`, `GET /portal/student/documents`, `GET /portal/student/camp-photos`, `GET /portal/student/camp-photos/folders`
 **Data source**: `quotes.studentAccountId` (student quotes), `contracts.accountId` (enrolled programs)
 **Role guard**: `requireStudentRole` middleware checks `portalRole === "student"`
 
 ### Key Files
-- `artifacts/api-server/src/routes/portal.ts` — all portal API routes (Phase 1+2+3)
+- `artifacts/api-server/src/routes/portal.ts` — all portal API routes (Phase 1+2+3, ~1700 lines)
 - `artifacts/api-server/src/middleware/authenticatePortal.ts` — portal JWT middleware
 - `artifacts/edubee-portal/src/lib/auth.tsx` — AuthProvider + useAuth hook (login returns portalRole)
 - `artifacts/edubee-portal/src/lib/api.ts` — fetch wrapper with Bearer token
-- `artifacts/edubee-portal/src/components/portal-layout.tsx` — role-adaptive sidebar (agent/partner/student nav)
+- `artifacts/edubee-portal/src/components/portal-layout.tsx` — role-adaptive sidebar (agent/partner/student nav), responsive mobile, language switcher (EN/KO/JA/ZH/TH)
 - `artifacts/edubee-portal/src/App.tsx` — all routes + RootRedirect for role-based home
-- `artifacts/edubee-portal/src/pages/` — login, dashboard, students, student-detail, commissions, profile, partner-dashboard, partner-bookings, student-dashboard, student-quotes, student-programs
+- `artifacts/edubee-portal/src/pages/` — 30+ page files across all 3 portal types + community
 
-### Test Credentials (all use mustChangePassword on first login)
-- `agent@testagency.com` / `Agent1234!` — portalRole: consultant → `/dashboard`
-- `partner@browns.com.au` / `Partner1234!` — portalRole: institute (BROWNS) → `/partner/dashboard`
-- `partner@bradyhotel.com` / `Partner1234!` — portalRole: hotel (Brady Hotel HQ) → `/partner/dashboard`
-- `student@example.com` / `Student1234!` — portalRole: student (Ji Young CHOI) → `/student/dashboard`
+### Test Credentials
+- `agent@testagency.com` / `Portal123!` — portalRole: consultant → `/dashboard`
+- `partner@browns.com.au` / `Portal123!` — portalRole: institute (BROWNS) → `/partner/dashboard`
+- `partner@bradyhotel.com` / `Portal123!` — portalRole: hotel (Brady Hotel HQ) → `/partner/dashboard`
+- `student@example.com` / `Portal123!` — portalRole: student (Ji Young CHOI) → `/student/dashboard`

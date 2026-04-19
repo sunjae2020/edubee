@@ -7,6 +7,7 @@ import {
 import { eq, and, gte, lte, SQL, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { logAudit, auditParamsFromReq } from "../lib/auditLogger.js";
 
 const router = Router();
 const STAFF_ROLES = ["super_admin", "admin", "camp_coordinator"];
@@ -126,6 +127,7 @@ router.post(
         })
         .returning();
 
+      logAudit({ tableName: "payment_headers", recordId: header.id, action: "CREATE", newValues: header as unknown as Record<string, unknown>, ...auditParamsFromReq(req) }).catch(() => {});
       return res.status(201).json(header);
     } catch (err) {
       console.error("[POST /api/payment-headers]", err);
@@ -177,6 +179,7 @@ router.put(
         .where(eq(paymentHeaders.id, req.params.id))
         .returning();
 
+      logAudit({ tableName: "payment_headers", recordId: updated.id, action: "UPDATE", newValues: updatePayload, changedFields: Object.keys(updatePayload), ...auditParamsFromReq(req) }).catch(() => {});
       return res.json(updated);
     } catch (err) {
       console.error("[PUT /api/payment-headers/:id]", err);
@@ -207,6 +210,7 @@ router.delete(
         .where(eq(paymentHeaders.id, req.params.id))
         .returning();
 
+      logAudit({ tableName: "payment_headers", recordId: existing.id, action: "DELETE", oldValues: existing as unknown as Record<string, unknown>, ...auditParamsFromReq(req) }).catch(() => {});
       return res.json({ message: "Payment voided", data: updated });
     } catch (err) {
       console.error("[DELETE /api/payment-headers/:id]", err);
