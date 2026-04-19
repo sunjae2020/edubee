@@ -104,7 +104,7 @@ router.put("/my-accounting/banking/:id", authenticate, async (req, res) => {
     const uid = req.user!.id;
     const [rec] = await db.select().from(banking).where(eq(banking.id, req.params.id)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
-    if (rec.userId !== uid) return res.status(403).json({ error: "Forbidden" });
+    if (rec.userId !== uid) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     const [updated] = await db.update(banking).set({ ...req.body, updatedAt: new Date() })
       .where(eq(banking.id, req.params.id)).returning();
     return res.json(updated);

@@ -226,7 +226,7 @@ router.get("/services/settlement", authenticate, async (req, res) => {
 router.post("/services/settlement", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    if (!isAdminOrCC(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!isAdminOrCC(role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const [settlement] = await db.insert(settlementMgt).values({
       ...req.body,
@@ -244,7 +244,7 @@ router.put("/services/settlement/:id", authenticate, async (req, res) => {
     const uid = req.user!.id;
     const [rec] = await db.select().from(settlementMgt).where(eq(settlementMgt.id, req.params.id)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
-    if (role.startsWith("partner_") && rec.providerUserId !== uid) return res.status(403).json({ error: "Forbidden" });
+    if (role.startsWith("partner_") && rec.providerUserId !== uid) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const [updated] = await db.update(settlementMgt).set({ ...req.body, updatedAt: new Date() })
       .where(eq(settlementMgt.id, req.params.id)).returning();
@@ -281,7 +281,7 @@ router.get("/services/settlement/:id", authenticate, async (req, res) => {
       .where(eq(settlementMgt.id, req.params.id)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
     if (role.startsWith("partner_") && rec.providerUserId !== uid)
-      return res.status(403).json({ error: "Forbidden" });
+      return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     // Enrich with consultant name
     let consultantName: string | null = null;
@@ -303,7 +303,7 @@ router.get("/services/settlement/:id", authenticate, async (req, res) => {
 router.patch("/services/settlement/:id/checklist", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    if (!isAdminOrCC(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!isAdminOrCC(role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const { key, updates: itemUpdates } = req.body as { key: string; updates: Record<string, any> };
     const [rec] = await db.select({ checklist: settlementMgt.checklist })
@@ -338,7 +338,7 @@ router.get("/services/settlement-templates", authenticate, async (req, res) => {
 
 router.post("/services/settlement-templates", authenticate, async (req, res) => {
   try {
-    if (!isAdminOrCC(req.user!.role)) return res.status(403).json({ error: "Forbidden" });
+    if (!isAdminOrCC(req.user!.role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     const [tmpl] = await db.insert(settlementChecklistTemplates).values({
       ...req.body,
       createdBy: req.user!.id,
@@ -352,7 +352,7 @@ router.post("/services/settlement-templates", authenticate, async (req, res) => 
 
 router.put("/services/settlement-templates/:id", authenticate, async (req, res) => {
   try {
-    if (!isAdminOrCC(req.user!.role)) return res.status(403).json({ error: "Forbidden" });
+    if (!isAdminOrCC(req.user!.role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     const [updated] = await db.update(settlementChecklistTemplates)
       .set({ ...req.body, updatedAt: new Date() })
       .where(eq(settlementChecklistTemplates.id, req.params.id)).returning();
@@ -365,7 +365,7 @@ router.put("/services/settlement-templates/:id", authenticate, async (req, res) 
 
 router.delete("/services/settlement-templates/:id", authenticate, async (req, res) => {
   try {
-    if (!isAdminOrCC(req.user!.role)) return res.status(403).json({ error: "Forbidden" });
+    if (!isAdminOrCC(req.user!.role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     await db.delete(settlementChecklistTemplates).where(eq(settlementChecklistTemplates.id, req.params.id));
     return res.json({ ok: true });
   } catch (err) {

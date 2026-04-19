@@ -146,7 +146,7 @@ router.get("/reports", authenticate, async (req, res) => {
     const limit = parseInt(String(req.query.limit ?? "20"), 10);
 
     if (!canManage(role)) {
-      return res.status(403).json({ error: "Forbidden" });
+      return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     }
 
     const data = await fetchReportList({}, page, limit, role, uid);
@@ -173,7 +173,7 @@ router.get("/reports/:id", authenticate, async (req, res) => {
     const uid = campUid(req.user!);
 
     if (!canManage(role)) {
-      return res.status(403).json({ error: "Forbidden" });
+      return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     }
 
     const [report] = await db
@@ -222,7 +222,7 @@ router.get("/reports/:id", authenticate, async (req, res) => {
         .where(eq(contracts.id, report.contractId))
         .limit(1);
       if (c?.campProviderId !== uid) {
-        return res.status(403).json({ error: "Forbidden" });
+        return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
       }
     }
 
@@ -235,7 +235,7 @@ router.get("/reports/:id", authenticate, async (req, res) => {
         const [app] = await db
           .select({ agentId: applications.agentId })
           .from(applications).where(eq(applications.id, c.applicationId)).limit(1);
-        if (app?.agentId !== uid) return res.status(403).json({ error: "Forbidden" });
+        if (app?.agentId !== uid) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
       }
     }
 
@@ -248,7 +248,7 @@ router.get("/reports/:id", authenticate, async (req, res) => {
         const [app] = await db
           .select({ clientId: applications.clientId })
           .from(applications).where(eq(applications.id, c.applicationId)).limit(1);
-        if (app?.clientId !== uid) return res.status(403).json({ error: "Forbidden" });
+        if (app?.clientId !== uid) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
       }
     }
 
@@ -271,7 +271,7 @@ router.post("/reports", authenticate, async (req, res) => {
     const role = req.user!.role;
     const uid = campUid(req.user!);
 
-    if (!canManage(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!canManage(role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const { contractId, reportTitle } = req.body as {
       contractId: string;
@@ -290,7 +290,7 @@ router.post("/reports", authenticate, async (req, res) => {
 
     // CC: must own the contract
     if (role === "camp_coordinator" && contract.campProviderId !== uid) {
-      return res.status(403).json({ error: "Forbidden" });
+      return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     }
 
     // No duplicate reports per contract
@@ -352,7 +352,7 @@ router.put("/reports/:id", authenticate, async (req, res) => {
     const role = req.user!.role;
     const uid = campUid(req.user!);
 
-    if (!canManage(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!canManage(role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const [existing] = await db
       .select()
@@ -374,7 +374,7 @@ router.put("/reports/:id", authenticate, async (req, res) => {
         .from(contracts)
         .where(eq(contracts.id, existing.contractId))
         .limit(1);
-      if (c?.campProviderId !== uid) return res.status(403).json({ error: "Forbidden" });
+      if (c?.campProviderId !== uid) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     }
 
     const { reportTitle, summaryNotes } = req.body;
@@ -397,7 +397,7 @@ router.patch("/reports/:id/publish", authenticate, async (req, res) => {
     const role = req.user!.role;
     const uid = campUid(req.user!);
 
-    if (!canManage(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!canManage(role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const [report] = await db
       .select()
@@ -413,7 +413,7 @@ router.patch("/reports/:id/publish", authenticate, async (req, res) => {
         .from(contracts)
         .where(eq(contracts.id, report.contractId))
         .limit(1);
-      if (c?.campProviderId !== uid) return res.status(403).json({ error: "Forbidden" });
+      if (c?.campProviderId !== uid) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     }
 
     const publishedAt = new Date();
@@ -530,7 +530,7 @@ router.delete("/reports/:id", authenticate, async (req, res) => {
 router.patch("/reports/:id/sections/reorder", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    if (!canManage(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!canManage(role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const { orderedIds } = req.body as { orderedIds: string[] };
     if (!Array.isArray(orderedIds)) return res.status(400).json({ error: "orderedIds must be an array" });
@@ -561,7 +561,7 @@ router.patch("/reports/:id/sections/reorder", authenticate, async (req, res) => 
 router.patch("/reports/:id/sections/:sectionId", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    if (!canManage(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!canManage(role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const { sectionTitle, content, isVisible, displayOrder } = req.body;
     const updatePayload: Record<string, unknown> = { updatedAt: new Date() };
@@ -588,7 +588,7 @@ router.patch("/reports/:id/sections/:sectionId", authenticate, async (req, res) 
 router.post("/reports/:id/sections", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    if (!canManage(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!canManage(role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const { sectionType, sectionTitle, content } = req.body;
     if (sectionType !== "custom") {
@@ -628,7 +628,7 @@ router.post("/reports/:id/sections", authenticate, async (req, res) => {
 router.delete("/reports/:id/sections/:sectionId", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    if (!canManage(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!canManage(role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const [section] = await db
       .select()
@@ -653,7 +653,7 @@ router.delete("/reports/:id/sections/:sectionId", authenticate, async (req, res)
 router.post("/reports/:id/sync", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
-    if (!canManage(role)) return res.status(403).json({ error: "Forbidden" });
+    if (!canManage(role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const [report] = await db
       .select()
@@ -706,7 +706,7 @@ router.get("/reports/:id/pdf", authenticate, async (req, res) => {
     const uid = campUid(req.user!);
 
     if (!canManage(role)) {
-      return res.status(403).json({ error: "Forbidden" });
+      return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     }
 
     const [report] = await db
@@ -733,7 +733,7 @@ router.get("/reports/:id/pdf", authenticate, async (req, res) => {
         const [app] = await db
           .select({ agentId: applications.agentId })
           .from(applications).where(eq(applications.id, c.applicationId)).limit(1);
-        if (app?.agentId !== uid) return res.status(403).json({ error: "Forbidden" });
+        if (app?.agentId !== uid) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
       }
     }
 
@@ -746,7 +746,7 @@ router.get("/reports/:id/pdf", authenticate, async (req, res) => {
         const [app] = await db
           .select({ clientId: applications.clientId })
           .from(applications).where(eq(applications.id, c.applicationId)).limit(1);
-        if (app?.clientId !== uid) return res.status(403).json({ error: "Forbidden" });
+        if (app?.clientId !== uid) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
       }
     }
 

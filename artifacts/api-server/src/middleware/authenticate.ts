@@ -26,7 +26,7 @@ if (!JWT_SECRET) throw new Error("JWT_SECRET environment variable is required bu
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized", message: "No token provided" });
+    return res.status(401).json({ success: false, code: "UNAUTHORIZED", message: "No token provided" });
   }
 
   const token = authHeader.split(" ")[1];
@@ -34,7 +34,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   try {
     decoded = jwt.verify(token, JWT_SECRET) as AuthUser;
   } catch {
-    return res.status(401).json({ error: "Unauthorized", message: "Invalid or expired token" });
+    return res.status(401).json({ success: false, code: "INVALID_TOKEN", message: "Invalid or expired token" });
   }
 
   // View-As impersonation: admins can view-as another user

@@ -159,6 +159,21 @@ The Edubee Camp platform is built as a monorepo utilizing pnpm workspaces. It co
 - `app.ts` HTTP 요청 구조화 로깅 추가
 - 보안 라우트 파일 `console.error/log` → `logger.error/info/warn` 일괄 교체: `incidentReporter.ts`, `my-data.ts`, `security-incidents.ts`
 
+## v2.0 검증 수정 — Sprint 6 (2026-04-19)
+
+### Fix-S6-01: 에러 응답 표준화 (F-5 → PASS)
+- `middleware/authenticate.ts`: `{ error: "Unauthorized" }` → `{ success: false, code: "UNAUTHORIZED"/"INVALID_TOKEN", message: "..." }` 형식으로 통일
+- `middleware/authenticatePortal.ts`: 동일하게 표준화 (FORBIDDEN 코드 추가)
+- `routes/services.ts`, `reports.ts`, `my-accounting.ts`, `tasks.ts`, `statements.ts`: inline RBAC Forbidden/Unauthorized 응답도 동일 포맷으로 일괄 교체
+
+### Fix-S6-02: ALLOWED_ORIGINS 환경변수 등록 (A-4 → PASS)
+- Replit Secrets에 `ALLOWED_ORIGINS` 등록 (Replit 개발 도메인)
+- CORS allowedOrigins whitelist 정상 작동 확인
+
+### Fix-S6-03: UTC 타임존 명시 설정 (F-7 → PASS)
+- `artifacts/api-server/src/index.ts` 최상단: `process.env.TZ = "UTC"` 추가 (최초 import보다 앞서 실행)
+- 다국가 테넌트의 날짜/시간 일관성 보장
+
 ## Security & Compliance Fixes — TOP 3 우선순위 (2026-04-19)
 
 ### Fix-01: drizzle-orm CVE 패치 (CRITICAL)

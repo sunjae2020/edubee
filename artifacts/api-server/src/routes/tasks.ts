@@ -133,7 +133,7 @@ router.get("/tasks/:id", authenticate, async (req, res) => {
     if (!task) return res.status(404).json({ error: "Not Found" });
 
     if (false) {
-      return res.status(403).json({ error: "Forbidden" });
+      return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     }
 
     const isInternal = true;

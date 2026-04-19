@@ -36,7 +36,7 @@ router.post(
       }
 
       const issuedBy = (req as any).user?.id;
-      if (!issuedBy) return res.status(401).json({ error: "Unauthorized" });
+      if (!issuedBy) return res.status(401).json({ success: false, code: "UNAUTHORIZED", message: "Unauthorized" });
 
       const result = await generateStatement({
         scope,

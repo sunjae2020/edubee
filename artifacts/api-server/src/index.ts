@@ -1,3 +1,5 @@
+process.env.TZ = "UTC";
+
 import cron from "node-cron";
 import app from "./app";
 import { syncExchangeRates } from "./services/exchangeRateSync.js";
