@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "7JNVrMdnwpEgMUnpuXGv9"
+uri = "file://edubee_docs_2026-04-19.tar.gz"
+type = "unspecified"
+title = "Edubee 문서 패키지 (tar.gz) — 17개 폴더 구조 포함"
+
+[[outputs]]
+id = "h4C09zZW_Q6r6Od_q4eX0"
+uri = "file://edubee_docs_all_2026-04-19.md"
+type = "text"
+title = "Edubee 문서 통합본 (단일 MD 파일) — 107KB"
