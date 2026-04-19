@@ -334,7 +334,7 @@ export default function TasksPage() {
               className="rounded accent-orange-500"
             />
             <Trash2 className="w-3 h-3 text-red-500" />
-            삭제됨 보기
+            Show Deleted
           </label>
         )}
 
@@ -344,7 +344,7 @@ export default function TasksPage() {
       {/* ── BULK ACTION BAR ── */}
       {someChecked && view === "list" && (
         <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-[#FEF0E3] border border-(--e-orange)/20 text-sm">
-          <span className="font-semibold text-(--e-orange)">{checkedIds.size}개 선택됨</span>
+          <span className="font-semibold text-(--e-orange)">{checkedIds.size} selected</span>
           <div className="flex items-center gap-2 ml-auto">
             {isAdmin && !showDeleted && (
               <Button
@@ -354,7 +354,7 @@ export default function TasksPage() {
                 onClick={() => setSoftDeleteTarget({ ids: Array.from(checkedIds) })}
                 disabled={softDeleteMutation.isPending}
               >
-                <Trash2 className="w-3.5 h-3.5" /> 소프트 삭제
+                <Trash2 className="w-3.5 h-3.5" /> Soft Delete
               </Button>
             )}
             {isSuperAdmin && (
@@ -365,11 +365,11 @@ export default function TasksPage() {
                 onClick={() => setHardDeleteTarget({ ids: Array.from(checkedIds) })}
                 disabled={hardDeleteMutation.isPending}
               >
-                <ShieldAlert className="w-3.5 h-3.5" /> 영구 삭제
+                <ShieldAlert className="w-3.5 h-3.5" /> Permanent Delete
               </Button>
             )}
             <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setCheckedIds(new Set())}>
-              취소
+              Cancel
             </Button>
           </div>
         </div>
@@ -412,7 +412,7 @@ export default function TasksPage() {
               ) : tasks.length === 0 ? (
                 <tr><td colSpan={11} className="py-16 text-center text-[#A8A29E]">
                   <Ticket className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">{showDeleted ? "삭제된 Tasks 없음" : "No tasks found"}</p>
+                  <p className="text-sm">{showDeleted ? "No deleted tasks found" : "No tasks found"}</p>
                 </td></tr>
               ) : sorted.map(t => {
                 const isChecked = checkedIds.has(t.id);
@@ -435,7 +435,7 @@ export default function TasksPage() {
                     <td className="px-4 py-2.5 text-xs text-[#57534E] capitalize whitespace-nowrap cursor-pointer" onClick={() => openDetail(t)}>{t.category}</td>
                     <td className="px-4 py-2.5 max-w-[200px] cursor-pointer" onClick={() => openDetail(t)}>
                       <p className="truncate text-xs font-medium text-[#1C1917]">{t.title ?? "—"}</p>
-                      {t.isDeleted && <span className="text-[10px] text-red-500 font-medium">삭제됨 {fmtDate(t.deletedAt)}</span>}
+                      {t.isDeleted && <span className="text-[10px] text-red-500 font-medium">Deleted {fmtDate(t.deletedAt)}</span>}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-[#57534E] whitespace-nowrap cursor-pointer" onClick={() => openDetail(t)}>
                       {t.submittedName ?? t.submittedEmail ?? "—"}
@@ -455,7 +455,7 @@ export default function TasksPage() {
                             <>
                               {/* Restore (admin) */}
                               <button
-                                title="복원"
+                                title="Restore"
                                 onClick={() => restoreMutation.mutate(t.id)}
                                 disabled={restoreMutation.isPending}
                                 className="p-1 rounded hover:bg-green-100 text-green-600 transition-colors"
@@ -463,7 +463,7 @@ export default function TasksPage() {
                               {/* Permanent delete (super_admin) */}
                               {isSuperAdmin && (
                                 <button
-                                  title="영구 삭제"
+                                  title="Permanently Delete"
                                   onClick={() => setHardDeleteTarget({ ids: [t.id], single: t.taskNumber })}
                                   className="p-1 rounded hover:bg-red-100 text-red-600 transition-colors"
                                 ><ShieldAlert className="w-3.5 h-3.5" /></button>
@@ -472,7 +472,7 @@ export default function TasksPage() {
                           ) : (
                             /* Soft delete (admin) */
                             <button
-                              title="삭제"
+                              title="Delete"
                               onClick={() => setSoftDeleteTarget({ ids: [t.id], single: t.taskNumber })}
                               className="p-1 rounded hover:bg-red-100 text-red-500 transition-colors"
                             ><Trash2 className="w-3.5 h-3.5" /></button>
@@ -549,7 +549,7 @@ export default function TasksPage() {
                   )}
                   {selected.isDeleted && (
                     <span className="bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Trash2 className="w-3 h-3" /> 삭제됨
+                      <Trash2 className="w-3 h-3" /> Deleted
                     </span>
                   )}
                 </div>
@@ -570,7 +570,7 @@ export default function TasksPage() {
                           onClick={() => restoreMutation.mutate(selected.id)}
                           disabled={restoreMutation.isPending}
                         >
-                          <RotateCcw className="w-3 h-3" /> 복원
+                          <RotateCcw className="w-3 h-3" /> Restore
                         </Button>
                         {isSuperAdmin && (
                           <Button
@@ -579,7 +579,7 @@ export default function TasksPage() {
                             className="h-7 text-xs gap-1.5 text-red-700 border-red-300 hover:bg-red-50 font-semibold"
                             onClick={() => setHardDeleteTarget({ ids: [selected.id], single: selected.taskNumber })}
                           >
-                            <ShieldAlert className="w-3 h-3" /> 영구 삭제
+                            <ShieldAlert className="w-3 h-3" /> Permanent Delete
                           </Button>
                         )}
                       </>
@@ -590,7 +590,7 @@ export default function TasksPage() {
                         className="h-7 text-xs gap-1.5 text-red-500 border-red-200 hover:bg-red-50"
                         onClick={() => setSoftDeleteTarget({ ids: [selected.id], single: selected.taskNumber })}
                       >
-                        <Trash2 className="w-3 h-3" /> 삭제
+                        <Trash2 className="w-3 h-3" /> Delete
                       </Button>
                     )}
                   </div>
@@ -879,23 +879,23 @@ export default function TasksPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Trash2 className="w-4 h-4 text-red-500" />
-              {softDeleteTarget?.ids.length === 1 ? "Task 삭제" : `${softDeleteTarget?.ids.length}개 Tasks 삭제`}
+              {softDeleteTarget?.ids.length === 1 ? "Delete Task" : `Delete ${softDeleteTarget?.ids.length} Tasks`}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {softDeleteTarget?.single
-                ? `"${softDeleteTarget.single}"을 삭제합니다.`
-                : `선택한 ${softDeleteTarget?.ids.length}개의 Tasks를 삭제합니다.`}
-              {" "}삭제된 항목은 슈퍼어드민이 복원하거나 영구 삭제할 수 있습니다.
+                ? `"${softDeleteTarget.single}" will be soft deleted.`
+                : `${softDeleteTarget?.ids.length} selected tasks will be soft deleted.`}
+              {" "}Deleted items can be restored or permanently removed by a super admin.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() => softDeleteTarget && softDeleteMutation.mutate(softDeleteTarget.ids)}
               disabled={softDeleteMutation.isPending}
             >
-              {softDeleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "삭제"}
+              {softDeleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -907,23 +907,23 @@ export default function TasksPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-red-700">
               <ShieldAlert className="w-4 h-4" />
-              {hardDeleteTarget?.ids.length === 1 ? "영구 삭제 (복원 불가)" : `${hardDeleteTarget?.ids.length}개 영구 삭제 (복원 불가)`}
+              {hardDeleteTarget?.ids.length === 1 ? "Permanently Delete (Irreversible)" : `Permanently Delete ${hardDeleteTarget?.ids.length} Tasks (Irreversible)`}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-red-600 font-medium">
               {hardDeleteTarget?.single
-                ? `"${hardDeleteTarget.single}"을 DB에서 완전히 삭제합니다.`
-                : `선택한 ${hardDeleteTarget?.ids.length}개의 Tasks를 DB에서 완전히 삭제합니다.`}
-              {" "}이 작업은 되돌릴 수 없습니다. 댓글과 첨부파일도 함께 삭제됩니다.
+                ? `"${hardDeleteTarget.single}" will be permanently removed from the database.`
+                : `${hardDeleteTarget?.ids.length} selected tasks will be permanently removed from the database.`}
+              {" "}This action cannot be undone. All comments and attachments will also be deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-700 hover:bg-red-800"
               onClick={() => hardDeleteTarget && hardDeleteMutation.mutate(hardDeleteTarget.ids)}
               disabled={hardDeleteMutation.isPending}
             >
-              {hardDeleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "영구 삭제"}
+              {hardDeleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Permanently Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
