@@ -93,8 +93,19 @@ router.get(
         .limit(limitNum)
         .offset(offset);
 
+      // 목록에서 비자번호 마스킹 (앞 2자리 + **** + 뒤 2자리)
+      const maskedRows = rows.map((r) => ({
+        ...r,
+        visaNumber: r.visaNumber
+          ? (() => {
+              const plain = decryptField(r.visaNumber) ?? r.visaNumber;
+              return plain.length <= 4 ? "****" : plain.slice(0, 2) + "****" + plain.slice(-2);
+            })()
+          : null,
+      }));
+
       return res.json({
-        data: rows,
+        data: maskedRows,
         meta: {
           total: Number(total),
           page: pageNum,

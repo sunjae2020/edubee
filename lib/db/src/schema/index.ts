@@ -20,3 +20,4 @@ export * from "./kpi";
 export * from "./application-forms";
 export * from "./platform-crm";
 export * from "./community";
+export * from "./security";

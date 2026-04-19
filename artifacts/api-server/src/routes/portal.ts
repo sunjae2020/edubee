@@ -16,6 +16,7 @@ import {
   campPhotoFolders,
   campPhotos,
   applications,
+  organisations,
 } from "@workspace/db/schema";
 import { eq, and, inArray, desc, sql, count, sum, isNull, asc } from "drizzle-orm";
 import fs from "fs";
@@ -1652,6 +1653,26 @@ router.get("/portal/student/camp-photos", authenticatePortal, requireStudentRole
     return res.json({ data: photos });
   } catch (err) {
     console.error("[portal/student/camp-photos]", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ── GET /api/portal/public/tenants — 공개 테넌트 목록 (인증 불필요) ─────────
+// 포털 로그인 화면 개발/테스트 환경에서 테넌트 선택에 사용.
+router.get("/portal/public/tenants", async (_req, res) => {
+  try {
+    const rows = await staticDb
+      .select({
+        id: organisations.id,
+        name: organisations.name,
+        subdomain: (organisations as any).subdomain,
+      })
+      .from(organisations)
+      .where(eq((organisations as any).status, "Active"))
+      .orderBy(asc(organisations.name));
+    return res.json({ data: rows });
+  } catch (err) {
+    console.error("[portal/public/tenants]", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
