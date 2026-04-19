@@ -1,5 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import fs from "fs";
 import router from "./routes/index.js";
@@ -11,7 +13,47 @@ const app: Express = express();
 // X-Forwarded-Host, X-Forwarded-For 등을 req.hostname / req.ip에 반영
 app.set("trust proxy", true);
 
-app.use(cors());
+// ── Helmet 보안 헤더 ─────────────────────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https://storage.googleapis.com"],
+      connectSrc: ["'self'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
+// ── CORS 도메인 제한 ─────────────────────────────────────────────────────────
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.some((o) => origin.startsWith(o))) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: ${origin}`));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// ── 전체 API Rate Limit (15분 내 500회) ────────────────────────────────────
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Rate limit exceeded. Please try again later.' },
+  skip: (req) => req.path === '/health',
+});
 
 // ⚠️ Stripe webhook MUST be registered BEFORE express.json() to receive raw body
 app.use("/api/webhook", webhookRoutes);
@@ -31,7 +73,7 @@ app.use((req: any, res: any, next: any) => {
   next();
 });
 
-app.use("/api", router);
+app.use("/api", generalLimiter, router);
 
 // ── 프로덕션 정적 파일 서빙 ────────────────────────────────────────────────
 // esbuild CJS 번들 기준: __dirname = artifacts/api-server/dist/

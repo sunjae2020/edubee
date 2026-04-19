@@ -5,6 +5,7 @@ import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import rateLimit from "express-rate-limit";
 import { authenticate } from "../middleware/authenticate.js";
 import { sendWelcomeEmail, sendPasswordResetEmail } from "../services/emailService.js";
 import { provisionTenantSchema } from "../seeds/provision-tenant.js";
@@ -13,8 +14,35 @@ import { runWithTenantSchema } from "@workspace/db/tenant-context";
 
 const router = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || "edubee-camp-secret-key-change-in-production";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "edubee-camp-refresh-secret-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+
+if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
+  console.error("[FATAL] JWT_SECRET or JWT_REFRESH_SECRET is not set in environment variables. Server cannot start.");
+  process.exit(1);
+}
+
+// ── Rate Limiters ────────────────────────────────────────────────────────────
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts. Please try again after 15 minutes.' },
+  keyGenerator: (req) => {
+    const ip = req.ip ?? req.socket?.remoteAddress ?? 'unknown';
+    return ip.replace('::ffff:', '');
+  },
+});
+
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many refresh attempts. Please try again later.' },
+});
+
 const ACCESS_TOKEN_EXPIRY = "8h";
 const PORTAL_TOKEN_EXPIRY = "24h";
 const REFRESH_TOKEN_EXPIRY = "7d";
@@ -82,7 +110,7 @@ function generatePortalTokens(account: { id: string; name: string; portalEmail: 
 }
 
 // POST /api/auth/login — staff + portal unified login
-router.post("/login", async (req, res) => {
+router.post("/login", loginLimiter, async (req, res) => {
   const { email, password } = req.body as { email: string; password: string };
   const ip = (req.ip ?? req.socket?.remoteAddress ?? "").replace("::ffff:", "");
   const ua = req.headers["user-agent"] ?? "";
@@ -241,7 +269,7 @@ router.post("/login", async (req, res) => {
 });
 
 // POST /api/auth/refresh
-router.post("/refresh", async (req, res) => {
+router.post("/refresh", refreshLimiter, async (req, res) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {
