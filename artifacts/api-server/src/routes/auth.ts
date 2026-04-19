@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { authenticate } from "../middleware/authenticate.js";
 import { sendWelcomeEmail, sendPasswordResetEmail } from "../services/emailService.js";
-import { provisionTenantSchema, migrateTenantDataFromPublic } from "../seeds/provision-tenant.js";
+import { provisionTenantSchema } from "../seeds/provision-tenant.js";
 import { onboardTenant } from "../services/onboardingService.js";
 import { runWithTenantSchema } from "@workspace/db/tenant-context";
 
@@ -365,8 +365,8 @@ router.post("/register", async (req, res) => {
     const passwordHash = await bcrypt.hash(user.password, 10);
     const subdomain = generateSubdomain(organisation.name);
 
-    const result = await db.transaction(async (tx) => {
-      // 1. Create the tenant organisation record
+    // 1. Create org + user in public schema (platform tables)
+    const { newOrg, newUser } = await db.transaction(async (tx) => {
       const [newOrg] = await tx.insert(organisations).values({
         name: organisation.name,
         subdomain,
@@ -380,7 +380,6 @@ router.post("/register", async (req, res) => {
         planStatus: "trial",
       } as any).returning();
 
-      // 2. Create the admin user linked to this organisation
       const [newUser] = await tx.insert(users).values({
         email: normalizedEmail,
         passwordHash,
@@ -392,41 +391,42 @@ router.post("/register", async (req, res) => {
         organisationId: newOrg.id,
       } as any).returning();
 
-      // 3. Also create an accounts profile for CRM use (backward-compat)
-      const [newAccount] = await tx.insert(accounts).values({
-        name: organisation.name,
-        accountType: account?.account_type || "Agent",
-        ownerId: newUser.id,
-        email: normalizedEmail,
-        phoneNumber: organisation.phone_number || null,
-        website: organisation.organization_url || null,
-        address: organisation.address_line_1 || null,
-        status: "Active",
-        manualInput: false,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        organisationId: newOrg.id,
-      } as any).returning();
-
-      return { newUser, newOrg, newAccount };
+      return { newOrg, newUser };
     });
 
-    // Provision tenant schema + seed master data (non-fatal if fails)
-    const { newOrg } = result;
+    // 2. Provision tenant schema, seed master data, create initial CRM account (non-fatal)
     if (newOrg.subdomain) {
       try {
         await provisionTenantSchema(newOrg.subdomain);
         console.log(`[Register] Provisioned schema "${newOrg.subdomain}" for org ${newOrg.id}`);
 
-        await migrateTenantDataFromPublic(newOrg.subdomain, newOrg.id);
-        console.log(`[Register] Migrated initial data to schema "${newOrg.subdomain}"`);
+        await runWithTenantSchema(newOrg.subdomain, async () => {
+          // Create initial CRM accounts profile in tenant schema
+          await db.insert(accounts).values({
+            name: organisation.name,
+            accountType: account?.account_type || "Agent",
+            ownerId: newUser.id,
+            email: normalizedEmail,
+            phoneNumber: organisation.phone_number || null,
+            website: organisation.organization_url || null,
+            address: organisation.address_line_1 || null,
+            status: "Active",
+            manualInput: false,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            organisationId: newOrg.id,
+          } as any);
 
-        await runWithTenantSchema(newOrg.subdomain, () => onboardTenant(newOrg.id));
+          // Seed master data (tax rates, COA, product groups, etc.)
+          await onboardTenant(newOrg.id);
+        });
         console.log(`[Register] Onboarded tenant "${newOrg.subdomain}"`);
       } catch (provErr) {
         console.warn("[Register] Schema provision/onboard failed (non-fatal):", provErr);
       }
     }
+
+    const result = { newOrg, newUser };
 
     // Send welcome email (non-blocking)
     try {
