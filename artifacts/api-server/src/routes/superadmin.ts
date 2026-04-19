@@ -522,6 +522,63 @@ router.post("/superadmin/tenants/:slug/migrate", ...guard, async (req, res) => {
   }
 });
 
+// POST /api/superadmin/tenants/:slug/reset — 테넌트 운영 데이터 전체 삭제 후 마스터 데이터 재시드
+router.post("/superadmin/tenants/:slug/reset", ...guard, async (req, res) => {
+  const { slug } = req.params;
+  if (!slug || !/^[a-z0-9_-]+$/.test(slug)) {
+    return res.status(400).json({ error: "Invalid tenant slug" });
+  }
+
+  try {
+    const schemaExists = await checkTenantSchemaExists(slug);
+    if (!schemaExists) {
+      return res.status(404).json({ error: `Schema "${slug}" does not exist. Provision it first.` });
+    }
+
+    // 1. 해당 schema의 모든 테이블 목록 조회
+    const client = await (await import("@workspace/db")).pool.connect();
+    let tablesTruncated: string[] = [];
+    try {
+      const tablesResult = await client.query<{ tablename: string }>(
+        `SELECT tablename FROM pg_tables WHERE schemaname = $1 ORDER BY tablename`,
+        [slug]
+      );
+      const tables = tablesResult.rows.map(r => r.tablename);
+
+      if (tables.length > 0) {
+        // TRUNCATE … RESTART IDENTITY CASCADE — 모든 데이터 삭제 + 시퀀스 초기화
+        const qualified = tables.map(t => `"${slug}"."${t}"`).join(", ");
+        await client.query(`TRUNCATE ${qualified} RESTART IDENTITY CASCADE`);
+        tablesTruncated = tables;
+      }
+    } finally {
+      client.release();
+    }
+
+    // 2. 마스터 데이터(세금 코드, CoA, 결제 수단 등) 재시드
+    const [org] = await db
+      .select({ id: organisations.id })
+      .from(organisations)
+      .where(eq(organisations.subdomain as any, slug))
+      .limit(1);
+
+    if (org) {
+      await runWithTenantSchema(slug, () => onboardTenant(org.id));
+    }
+
+    return res.json({
+      success: true,
+      slug,
+      tablesCleared: tablesTruncated.length,
+      tables: tablesTruncated,
+      message: `Schema "${slug}" data cleared (${tablesTruncated.length} tables). Master data re-seeded.`,
+    });
+  } catch (err: any) {
+    console.error(`[POST /superadmin/tenants/${slug}/reset]`, err);
+    return res.status(500).json({ error: err.message ?? "Reset failed" });
+  }
+});
+
 // GET /api/superadmin/tenants/:slug/backup — pg_dump → SQL 파일 다운로드
 // 해당 테넌트 schema 전체를 SQL 파일로 스트리밍 다운로드
 router.get("/superadmin/tenants/:slug/backup", ...guard, async (req, res) => {

@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, ArrowLeft, Building2, Globe, Mail, Users, GraduationCap,
   CreditCard, Calendar, Save, ExternalLink, Clock, Check, Zap, Palette, Image,
-  Upload, Link, XCircle, Database, Download, ShieldCheck, AlertTriangle,
+  Upload, Link, XCircle, Database, Download, ShieldCheck, AlertTriangle, Trash2,
 } from "lucide-react";
 import { formatDate } from "@/lib/date-format";
 
@@ -419,6 +419,17 @@ export default function TenantDetail() {
     },
   });
 
+  const reset = useMutation({
+    mutationFn: (slug: string) =>
+      axios.post(`${BASE}/api/superadmin/tenants/${slug}/reset`).then(r => r.data),
+    onSuccess: (data) => {
+      toast({ title: "Reset complete", description: `${data.tablesCleared} tables cleared. Master data re-seeded.` });
+    },
+    onError: (e: any) => {
+      toast({ title: "Reset failed", description: e?.response?.data?.error ?? e.message, variant: "destructive" });
+    },
+  });
+
   if (orgLoading || plansLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -749,6 +760,31 @@ export default function TenantDetail() {
                   <Download size={14} />
                   DB 백업 다운로드
                 </a>
+              )}
+
+              {/* Reset Tenant Data */}
+              {hasSchema && (
+                <button
+                  onClick={() => {
+                    const typed = prompt(
+                      `⚠️ 이 작업은 되돌릴 수 없습니다.\n\n테넌트 "${org.subdomain}"의 모든 운영 데이터가 삭제됩니다.\n(세금 코드 · CoA 등 마스터 데이터는 자동 재시드됩니다)\n\n확인하려면 테넌트 슬러그를 정확히 입력하세요:`
+                    );
+                    if (typed !== org.subdomain) {
+                      if (typed !== null) alert("슬러그가 일치하지 않습니다. 취소되었습니다.");
+                      return;
+                    }
+                    reset.mutate(org.subdomain);
+                  }}
+                  disabled={reset.isPending}
+                  className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                  style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}
+                >
+                  {reset.isPending
+                    ? <Loader2 size={14} className="animate-spin" />
+                    : <Trash2 size={14} />
+                  }
+                  Reset Tenant Data
+                </button>
               )}
             </div>
 
