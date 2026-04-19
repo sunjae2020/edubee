@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { encryptField, decryptField } from "../lib/crypto.js";
 import { db } from "@workspace/db";
 import { visaServicesMgt, contracts, users, accounts } from "@workspace/db/schema";
 import { eq, and, ilike, or, count, asc, desc, SQL } from "drizzle-orm";
@@ -163,7 +164,7 @@ router.post(
           appointmentDate: appointmentDate || null,
           submissionDate:  submissionDate || null,
           decisionDate:    decisionDate || null,
-          visaNumber:      visaNumber || null,
+          visaNumber:      encryptField(visaNumber || null),
           startDate:       startDate || null,
           endDate:         endDate || null,
           status:          status || "pending",
@@ -173,6 +174,7 @@ router.post(
         })
         .returning();
 
+      if (created) created.visaNumber = decryptField(created.visaNumber);
       return res.status(201).json(created);
     } catch (err) {
       console.error("[POST /api/services/visa]", err);
@@ -213,7 +215,7 @@ router.patch(
           ...(appointmentDate !== undefined && { appointmentDate: appointmentDate || null }),
           ...(submissionDate  !== undefined && { submissionDate: submissionDate || null }),
           ...(decisionDate    !== undefined && { decisionDate: decisionDate || null }),
-          ...(visaNumber      !== undefined && { visaNumber }),
+          ...(visaNumber      !== undefined && { visaNumber: encryptField(visaNumber) }),
           ...(startDate       !== undefined && { startDate: startDate || null }),
           ...(endDate         !== undefined && { endDate: endDate || null }),
           ...(status          !== undefined && { status }),
@@ -225,6 +227,7 @@ router.patch(
         .where(eq(visaServicesMgt.id, req.params.id))
         .returning();
 
+      if (updated) updated.visaNumber = decryptField(updated.visaNumber);
       return res.json(updated);
     } catch (err) {
       console.error("[PATCH /api/services/visa/:id]", err);

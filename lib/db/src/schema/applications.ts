@@ -149,6 +149,11 @@ export const applicationParticipants = pgTable("application_participants", {
   phone: varchar("phone", { length: 50 }),
   whatsapp: varchar("whatsapp", { length: 50 }),
   lineId: varchar("line_id", { length: 100 }),
+  // ── 미성년자 보호자 동의 (Australian Privacy Act — APP 3.3) ────────────
+  guardianConsentGiven: boolean("guardian_consent_given").notNull().default(false),
+  guardianConsentAt:    timestamp("guardian_consent_at"),
+  guardianEmail:        varchar("guardian_email", { length: 255 }),
+  guardianPhone:        varchar("guardian_phone", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

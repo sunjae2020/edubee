@@ -68,6 +68,7 @@ import platformCrmRouter from "./platform-crm.js";
 import adminDataImportRouter from "./admin-data-import.js";
 import platformIntegrationsRouter from "./platform-integrations.js";
 import portalRouter from "./portal.js";
+import privacyRouter from "./privacy.js";
 import communityRouter from "./community.js";
 import schoolingConsultationsRouter from "./schooling-consultations.js";
 import studyAbroadConsultationsRouter from "./study-abroad-consultations.js";
@@ -106,6 +107,7 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
 router.use("/settings", tenantSettingsRouter);
 router.use("/auth", authRouter);
 router.use(portalRouter);
+router.use(privacyRouter);
 router.use(communityRouter);
 router.use("/users", usersRouter);
 router.use(packagesRouter);

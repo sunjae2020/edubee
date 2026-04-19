@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { encryptField, decryptField, maskPassport } from "../lib/crypto.js";
 import { db } from "@workspace/db";
 import { leads, applications, applicationParticipants, contracts, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages, quote_products, packageGroups } from "@workspace/db/schema";
 import { packageProducts, products } from "@workspace/db/schema";
@@ -303,13 +304,16 @@ router.post("/applications/participants", authenticate, async (req, res) => {
       englishName: englishName || null,
       dateOfBirth: dateOfBirth || null,
       gender: gender || null, nationality: nationality || null,
-      passportNumber: passportNumber || null, passportExpiry: passportExpiry || null,
+      passportNumber: encryptField(passportNumber || null), passportExpiry: passportExpiry || null,
       grade: grade || null, schoolName: schoolName || null, englishLevel: englishLevel || null,
       medicalConditions: medicalConditions || null, dietaryRequirements: dietaryRequirements || null,
       specialNeeds: specialNeeds || null, relationshipToStudent: relationshipToStudent || null,
       isEmergencyContact: isEmergencyContact ?? false,
       email: email || null, phone: phone || null, whatsapp: whatsapp || null, lineId: lineId || null,
     }).returning();
+    if (created) {
+      created.passportNumber = decryptField(created.passportNumber);
+    }
     return res.status(201).json(created);
   } catch (err) {
     console.error("POST participant error:", err);
@@ -342,7 +346,7 @@ router.patch("/applications/participants/:id", authenticate, async (req, res) =>
     if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth || null;
     if (gender !== undefined) updates.gender = gender;
     if (nationality !== undefined) updates.nationality = nationality;
-    if (passportNumber !== undefined) updates.passportNumber = passportNumber;
+    if (passportNumber !== undefined) updates.passportNumber = encryptField(passportNumber);
     if (passportExpiry !== undefined) updates.passportExpiry = passportExpiry || null;
     if (grade !== undefined) updates.grade = grade;
     if (schoolName !== undefined) updates.schoolName = schoolName;
@@ -359,6 +363,7 @@ router.patch("/applications/participants/:id", authenticate, async (req, res) =>
     const [updated] = await db.update(applicationParticipants).set(updates)
       .where(eq(applicationParticipants.id, req.params.id)).returning();
     if (!updated) return res.status(404).json({ error: "Not Found" });
+    if (updated.passportNumber) updated.passportNumber = decryptField(updated.passportNumber);
     return res.json(updated);
   } catch (err) {
     console.error("PATCH participant error:", err);

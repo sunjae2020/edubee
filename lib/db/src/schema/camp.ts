@@ -123,6 +123,11 @@ export const campApplications = pgTable("camp_applications", {
   signatureImage:        text("signature_image"),
   signatureDate:         date("signature_date"),
   notes:                 text("notes"),
+  // ── 미성년자 보호자 동의 (APP — Australian Privacy Act) ──────────────────
+  guardianConsentGiven:  boolean("guardian_consent_given").notNull().default(false),
+  guardianConsentAt:     timestamp("guardian_consent_at"),
+  guardianEmail:         varchar("guardian_email",  { length: 255 }),
+  guardianPhone:         varchar("guardian_phone",  { length: 50  }),
   createdAt:             timestamp("created_at").notNull().defaultNow(),
   updatedAt:             timestamp("updated_at").notNull().defaultNow(),
 });
