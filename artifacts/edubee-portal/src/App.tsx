@@ -122,12 +122,11 @@ function Router() {
       <Route path="/profile">
         {() => <ProtectedRoute component={ProfilePage} />}
       </Route>
-      {/* legacy paths */}
       <Route path="/students/:id">
         {() => <ProtectedRoute component={StudentDetailPage} />}
       </Route>
       <Route path="/students">
-        {() => <Redirect to="/consultations" />}
+        {() => <ProtectedRoute component={StudentsPage} />}
       </Route>
       <Route path="/commissions">
         {() => <Redirect to="/finance" />}

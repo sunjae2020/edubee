@@ -649,6 +649,13 @@ router.post("/crm/contract-products", authenticate, async (req, res) => {
       serviceModuleType,
     } = req.body;
     if (!contractId) return res.status(400).json({ error: "contractId required" });
+    if (arDueDate && apDueDate && apDueDate < arDueDate) {
+      return res.status(400).json({
+        success: false,
+        code: "INVALID_DATE_ORDER",
+        message: "AP (payment) due date cannot be earlier than AR (receivable) due date",
+      });
+    }
     const r = (x: any) => x.rows ?? (x as any[]);
     const rows = await db.execute(sql`
       INSERT INTO contract_products
@@ -679,6 +686,24 @@ router.patch("/crm/contract-products/:id", authenticate, async (req, res) => {
       apDueDate, apAmount, apStatus,
       serviceModuleType,
     } = req.body;
+    // C-9: AR→AP 날짜 순서 검증 (지급일이 수금일보다 앞서면 거부)
+    if (arDueDate !== undefined || apDueDate !== undefined) {
+      const [existing] = await db
+        .select({ arDueDate: contractProducts.arDueDate, apDueDate: contractProducts.apDueDate })
+        .from(contractProducts)
+        .where(eq(contractProducts.id, req.params.id));
+      if (existing) {
+        const effectiveAr = arDueDate !== undefined ? (arDueDate || null) : existing.arDueDate;
+        const effectiveAp = apDueDate !== undefined ? (apDueDate || null) : existing.apDueDate;
+        if (effectiveAr && effectiveAp && effectiveAp < effectiveAr) {
+          return res.status(400).json({
+            success: false,
+            code: "INVALID_DATE_ORDER",
+            message: "AP (payment) due date cannot be earlier than AR (receivable) due date",
+          });
+        }
+      }
+    }
     const parts: ReturnType<typeof sql>[] = [];
     if (name              !== undefined) parts.push(sql`name                 = ${name ?? null}`);
     if (sortIndex         !== undefined) parts.push(sql`sort_index           = ${Number(sortIndex)}`);

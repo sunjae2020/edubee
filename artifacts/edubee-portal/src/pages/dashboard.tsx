@@ -180,7 +180,7 @@ export default function DashboardPage() {
               cta: "View contracts",
             },
             {
-              href: "/commissions",
+              href: "/finance",
               icon: DollarSign,
               title: "Commission History",
               desc: "Track your commission invoices, payment status, and earning history.",

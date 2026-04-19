@@ -6,6 +6,7 @@ import {
   FolderOpen, User, LogOut,
   Menu, ChevronLeft, ChevronRight, ChevronDown, Globe,
   MessageCircle, BookOpen, CalendarDays, Image as ImageIcon,
+  GraduationCap,
   LucideIcon,
 } from "lucide-react";
 import {
@@ -21,6 +22,7 @@ function buildAgentNav(): NavItem[] {
   return [
     { icon: LayoutDashboard, label: "Dashboard",     href: "/dashboard"      },
     { icon: Users,           label: "Consultations", href: "/consultations"  },
+    { icon: GraduationCap,   label: "My Students",   href: "/students"       },
     { icon: FileText,        label: "Quotes",        href: "/quotes"         },
     { icon: BookOpen,        label: "Contracts",     href: "/contracts"      },
     { icon: Package,         label: "Services",      href: "/services"       },
@@ -72,6 +74,7 @@ function getNavForRole(role: string | null | undefined): NavItem[] {
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard":               "Dashboard",
   "/consultations":           "Consultations",
+  "/students":                "My Students",
   "/quotes":                  "Quotes",
   "/contracts":               "Contracts",
   "/services":                "Services",
