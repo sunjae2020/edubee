@@ -74,7 +74,7 @@ export default function StudyAbroadConsultationsPage() {
   const rows       = data?.data ?? [];
   const total      = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
-  const sorted     = useSorted(rows, sortState.key, sortState.dir);
+  const sorted     = useSorted(rows, sortState.sortBy, sortState.sortDir);
 
   const softDelMutation = useMutation({
     mutationFn: (ids: string[]) => axios.patch(`${BASE}/api/study-abroad-consultations/bulk/soft-delete`, { ids }),
@@ -213,12 +213,12 @@ export default function StudyAbroadConsultationsPage() {
         </table>
       </div>
 
-      <TableFooter page={page} totalPages={totalPages} total={total} pageSize={20} onPageChange={setPage} />
+      <TableFooter page={page} total={total} pageSize={20} onPageChange={setPage} />
 
       {showShareModal && (
         <ShareLinkModal
           title="Study Abroad Consultation Form"
-          publicUrl={`${window.location.origin}/website/forms/study-abroad-consultation`}
+          publicUrl="https://www.edubee.co/forms/study-abroad-consultation"
           onClose={() => setShowShareModal(false)}
         />
       )}
