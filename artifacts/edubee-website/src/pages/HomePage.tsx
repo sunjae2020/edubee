@@ -10,11 +10,10 @@ type PricingRow = {
 }
 
 const PRICING_TABLE_FALLBACK: PricingRow[] = [
-  { plan: 'LITE',       price: 'Free',    students: '30/mo',     storage: '5 GB',    schoolDB: false, remote: false, highlighted: false, contact: false },
-  { plan: 'SOLO',       price: '$79/mo',  students: '100/mo',    storage: '10 GB',   schoolDB: false, remote: false, highlighted: false, contact: false },
-  { plan: 'STARTER',    price: '$199/mo', students: '500/mo',    storage: '50 GB',   schoolDB: true,  remote: false, highlighted: true,  contact: false },
-  { plan: 'GROWTH',     price: '$449/mo', students: '2000/mo',   storage: '200 GB',  schoolDB: true,  remote: true,  highlighted: false, contact: false },
-  { plan: 'ENTERPRISE', price: '',        students: 'Unlimited',  storage: 'Unlimited', schoolDB: true, remote: true, highlighted: false, contact: true },
+  { plan: 'LITE',       price: 'Free',         students: '30/mo',     storage: '5 GB',      schoolDB: false, remote: false, highlighted: false, contact: false },
+  { plan: 'PLUS',       price: 'Coming Soon',  students: '200/mo',    storage: 'Unlimited', schoolDB: false, remote: false, highlighted: true,  contact: false },
+  { plan: 'BUSINESS',   price: 'Coming Soon',  students: '500 GB',    storage: '500 GB',    schoolDB: true,  remote: false, highlighted: false, contact: false },
+  { plan: 'ENTERPRISE', price: '',             students: 'Unlimited', storage: 'Unlimited', schoolDB: true,  remote: true,  highlighted: false, contact: true  },
 ]
 
 function mapApiToPricingRow(p: any): PricingRow {
@@ -59,16 +58,30 @@ const WORKFLOW_STEPS = [
 ]
 
 const CHALLENGE_FEATURES = [
-  { icon: '🎓', title: 'Centralised Student Data' },
-  { icon: '📊', title: 'Manual Reporting' },
-  { icon: '💸', title: 'Lost Commissions' },
-  { icon: '✅', title: 'Live Student Status' },
+  { icon: '🎓', title: 'Scattered Student Data', desc: 'Student files spread across email, Excel, and drives.' },
+  { icon: '📊', title: 'Manual Reporting', desc: 'Hours wasted copying data into reports every week.' },
+  { icon: '💸', title: 'Lost Commissions', desc: 'Missed invoices and untracked payouts cost you money.' },
 ]
 
 const SECURITY_ITEMS = [
-  { icon: '🔒', title: 'SOC 2-Style Access Control', desc: 'Role-based permissions down to field level.' },
-  { icon: '🛡️', title: 'Multi-Layer Encryption', desc: 'AES-256 at rest. TLS 1.3 in transit. Always.' },
-  { icon: '🏦', title: 'Redundant Backups', desc: 'Automated daily backups with point-in-time recovery.' },
+  { icon: '🏢', title: 'IOC Data Centre', desc: 'Your data is hosted in world-class, internationally certified data centres with 99.9% uptime SLA.' },
+  { icon: '🔒', title: 'Strict Access Control', desc: 'Role-based permissions down to field level. Only the right people see the right data.' },
+  { icon: '🛡️', title: 'Redundant Backups', desc: 'Automated daily backups with point-in-time recovery. Your data is never at risk.' },
+]
+
+const AUTOMATION_ITEMS = [
+  { label: 'Daily', desc: 'Student status updates & task reminders sent to staff automatically' },
+  { label: 'Weekly', desc: 'Consultant performance reports generated and distributed' },
+  { label: 'Monthly', desc: 'Agency commission summaries and invoice reconciliation' },
+  { label: 'Auto', desc: 'Real-time alerts & third-party integrations synced instantly' },
+]
+
+const NOTIFICATION_ITEMS = [
+  { text: '🎓 Branch income reconciled', time: '2m ago' },
+  { text: '⚡ Price expiry alert sent', time: '5m ago' },
+  { text: '💰 Commission complete', time: '12m ago' },
+  { text: '📊 Weekly API report ready', time: '1h ago' },
+  { text: '🔄 Monthly dashboard update', time: '2h ago' },
 ]
 
 export default function HomePage() {
@@ -145,7 +158,7 @@ export default function HomePage() {
         <div className="max-w-[1440px] mx-auto px-5 sm:px-8 w-full">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-center">
             <span className="font-extrabold text-white text-sm sm:text-base lg:text-[20px]" style={{ lineHeight: '118.83%' }}>
-              IT TRUSTED BY STUDY ABROAD AGENCIES IN
+              TRUSTED BY STUDY ABROAD AGENCIES IN
             </span>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               {['Australia', 'Canada', 'USA', 'Philippines', 'Korea'].map((c, i) => (
@@ -180,7 +193,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Left: heading text */}
               <div>
-                <p className="uppercase font-semibold text-white/80 mb-5 text-xs tracking-widest">THE ONE STOP</p>
+                <p className="uppercase font-semibold text-white/80 mb-5 text-xs tracking-widest">THE CHALLENGE</p>
                 <h2 className="font-bold text-white mb-4 text-2xl sm:text-3xl xl:text-[36px]" style={{ lineHeight: '112%' }}>
                   Running an agency shouldn't mean drowning in spreadsheets.
                 </h2>
@@ -189,18 +202,21 @@ export default function HomePage() {
                 </p>
               </div>
 
-              {/* Right: 2×2 grid of white cards */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {/* Right: 3 vertical white cards */}
+              <div className="flex flex-col gap-3">
                 {CHALLENGE_FEATURES.map((f, i) => (
                   <div
                     key={i}
-                    className="rounded-[16px] p-5 sm:p-6 flex flex-col gap-3"
-                    style={{ background: 'rgba(255,255,255,0.93)', minHeight: 130 }}
+                    className="rounded-[16px] p-5 sm:p-6 flex items-start gap-4"
+                    style={{ background: 'rgba(255,255,255,0.93)' }}
                   >
-                    <span className="text-3xl">{f.icon}</span>
-                    <span className="font-semibold text-sm sm:text-[15px] leading-snug" style={{ color: '#7A3B10' }}>
-                      {f.title}
-                    </span>
+                    <span className="text-2xl flex-shrink-0">{f.icon}</span>
+                    <div>
+                      <span className="font-bold text-sm sm:text-[15px] leading-snug block mb-1" style={{ color: '#7A3B10' }}>
+                        {f.title}
+                      </span>
+                      <span className="text-xs text-gray-500 leading-snug">{f.desc}</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -214,17 +230,17 @@ export default function HomePage() {
       <section
         className="relative overflow-hidden"
         style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1440&auto=format&fit=crop&q=80)',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?w=1440&auto=format&fit=crop&q=80)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           padding: '72px 0',
         }}
       >
-        <div className="absolute inset-0" style={{ background: 'rgba(246,234,218,0.78)' }} />
+        <div className="absolute inset-0" style={{ background: 'rgba(30,18,8,0.82)' }} />
         <div className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-8">
           <div className="text-center mb-10">
-            <p className="font-semibold uppercase tracking-widest mb-3 text-sm" style={{ color: '#E36909' }}>WHAT EDUBEE DOES</p>
-            <h2 className="font-bold text-2xl sm:text-3xl xl:text-[48px]" style={{ color: '#3B1A06', lineHeight: '98%' }}>
+            <p className="font-semibold uppercase tracking-widest mb-3 text-sm" style={{ color: '#FF9039' }}>WHAT EDUBEE DOES</p>
+            <h2 className="font-bold text-2xl sm:text-3xl xl:text-[48px] text-white" style={{ lineHeight: '98%' }}>
               Everything your agency needs, in one place.
             </h2>
           </div>
@@ -233,14 +249,14 @@ export default function HomePage() {
               <div
                 key={i}
                 className="bg-white rounded-[21px] p-6 sm:p-7 hover:shadow-2xl transition-all cursor-pointer group"
-                style={{ boxShadow: '3px 4px 10px rgba(180,100,20,0.10)' }}
+                style={{ boxShadow: '3px 4px 10px rgba(0,0,0,0.30)' }}
                 onClick={() => { window.location.href = link(s.href) }}
               >
                 <div className="text-3xl mb-4">{s.icon}</div>
                 <h3 className="font-bold mb-2 text-base sm:text-[18px]" style={{ color: '#613717' }}>{s.title}</h3>
                 <p className="text-sm leading-relaxed text-gray-600 mb-4">{s.desc}</p>
-                <span className="font-semibold italic underline group-hover:text-[#E7873C] transition-colors text-sm sm:text-[15px]" style={{ color: '#432208' }}>
-                  Get started
+                <span className="font-semibold group-hover:text-[#E7873C] transition-colors text-sm sm:text-[15px] flex items-center gap-1" style={{ color: '#E36909' }}>
+                  Read more <ArrowRight size={14} />
                 </span>
               </div>
             ))}
@@ -335,32 +351,42 @@ export default function HomePage() {
       <section style={{ background: '#FAFAF9', padding: '60px 0' }}>
         <div className="max-w-[1280px] mx-auto px-4 sm:px-8">
           <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-center">
+            {/* Left: Dashboard notification mockup */}
             <div className="flex-1 w-full">
               <div
-                className="rounded-2xl overflow-x-auto"
-                style={{
-                  background: '#1E1E2E',
-                  padding: '24px',
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                  lineHeight: '1.7',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                }}
+                className="rounded-2xl overflow-hidden"
+                style={{ background: '#1C1C28', padding: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}
               >
-                <div style={{ color: '#75715E', marginBottom: 12 }}># Student Data — Auto-synced across all modules</div>
-                <div style={{ color: '#A6E22E' }}>
-                  <span style={{ color: '#F92672' }}>student</span>
-                  <span style={{ color: '#A6E22E' }}> = </span>
-                  <span style={{ color: '#E6DB74' }}>create_student</span>
-                  <span style={{ color: '#F8F8F2' }}>(&#123;</span>
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#FF5F57' }} />
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#FEBC2E' }} />
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#28C840' }} />
+                  <span className="ml-2 text-xs text-gray-400">Edubee Dashboard — Live Notifications</span>
                 </div>
-                <div style={{ color: '#F8F8F2' }}>&nbsp;&nbsp;<span style={{ color: '#AE81FF' }}>name</span>: <span style={{ color: '#E6DB74' }}>"Kim Minjun"</span>,</div>
-                <div style={{ color: '#F8F8F2' }}>&nbsp;&nbsp;<span style={{ color: '#AE81FF' }}>visa_status</span>: <span style={{ color: '#E6DB74' }}>"approved"</span>,</div>
-                <div style={{ color: '#F8F8F2' }}>&nbsp;&nbsp;<span style={{ color: '#AE81FF' }}>commission_due</span>: <span style={{ color: '#AE81FF' }}>3200</span>,</div>
-                <div style={{ color: '#F8F8F2' }}>&nbsp;&nbsp;<span style={{ color: '#AE81FF' }}>school</span>: <span style={{ color: '#E6DB74' }}>"UNSW Sydney"</span></div>
-                <div style={{ color: '#F8F8F2' }}>&#125;)</div>
-                <div style={{ color: '#75715E', marginTop: 12 }}># ✓ CRM updated &nbsp; ✓ Invoice generated &nbsp; ✓ Commission tracked</div>
-                <div style={{ color: '#75715E' }}># ✓ Dashboard synced &nbsp; ✓ Staff notified</div>
+                <div className="space-y-3 mb-6">
+                  {NOTIFICATION_ITEMS.map((n, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between rounded-xl px-4 py-3"
+                      style={{ background: i === 0 ? 'rgba(255,144,57,0.18)' : 'rgba(255,255,255,0.06)' }}
+                    >
+                      <span className="text-white text-sm">{n.text}</span>
+                      <span className="text-xs ml-4 flex-shrink-0" style={{ color: '#FF9039' }}>{n.time}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Automation strips */}
+                <div className="grid grid-cols-4 gap-2">
+                  {AUTOMATION_ITEMS.map((a, i) => (
+                    <div
+                      key={i}
+                      className="rounded-xl py-3 px-2 text-center"
+                      style={{ background: '#FF9039' }}
+                    >
+                      <span className="block font-bold text-white text-xs">{a.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -371,13 +397,13 @@ export default function HomePage() {
               <p className="mb-6 text-sm sm:text-base" style={{ color: '#613717', fontWeight: 300, lineHeight: '1.4', letterSpacing: '-0.03em' }}>
                 One input. Every report. Edubee eliminates duplicate data entry — everything flows automatically into your reports, dashboards, and staff KPIs.
               </p>
-              <div className="space-y-3">
-                {['Auto-sync across CRM, finance & docs', 'Real-time dashboards for every branch', 'Staff KPIs updated automatically'].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#FF9039' }}>
-                      <Check size={12} color="white" strokeWidth={3} />
+              <div className="space-y-4">
+                {AUTOMATION_ITEMS.map((a, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-16 flex-shrink-0 rounded-lg py-1 text-center" style={{ background: '#FF9039' }}>
+                      <span className="text-white font-bold text-xs">{a.label}</span>
                     </div>
-                    <span className="text-sm" style={{ color: '#613717' }}>{item}</span>
+                    <span className="text-sm" style={{ color: '#613717', lineHeight: '1.5' }}>{a.desc}</span>
                   </div>
                 ))}
               </div>
@@ -493,7 +519,7 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════
           9. SECURITY
       ═══════════════════════════════════════════ */}
-      <section style={{ background: '#FFFBF6', padding: '60px 0' }}>
+      <section style={{ background: '#F6F4F0', padding: '60px 0' }}>
         <div className="max-w-[1280px] mx-auto px-4 sm:px-8">
           <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-center">
             <div className="flex-1">
