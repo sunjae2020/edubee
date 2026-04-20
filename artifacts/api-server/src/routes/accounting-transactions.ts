@@ -106,7 +106,7 @@ router.get("/transactions/:id", authenticate, async (req, res) => {
     const [row] = await db
       .select()
       .from(transactions)
-      .where(eq(transactions.id, req.params.id));
+      .where(eq(transactions.id, req.params.id as string));
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
   } catch (err) {
@@ -132,7 +132,7 @@ router.put("/transactions/:id", authenticate, requireRole(...ADMIN_ROLES), async
         amount: creditAmount, description, currency,
         transactionDate, bankReference, status,
       })
-      .where(eq(transactions.id, req.params.id))
+      .where(eq(transactions.id, req.params.id as string))
       .returning();
 
     if (!row) return res.status(404).json({ error: "Not found" });
@@ -150,7 +150,7 @@ router.delete("/transactions/:id", authenticate, requireRole(...ADMIN_ROLES), as
     const [row] = await db
       .update(transactions)
       .set({ status: "Inactive" })
-      .where(eq(transactions.id, req.params.id))
+      .where(eq(transactions.id, req.params.id as string))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
 

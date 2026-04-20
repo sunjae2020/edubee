@@ -32,7 +32,7 @@ router.get("/platform-crm/prospects/:id", ...guard, async (req, res) => {
     const [prospect] = await db
       .select()
       .from(platformProspects)
-      .where(eq(platformProspects.id, req.params.id))
+      .where(eq(platformProspects.id, req.params.id as string))
       .limit(1);
 
     if (!prospect) return res.status(404).json({ error: "Not Found" });
@@ -40,13 +40,13 @@ router.get("/platform-crm/prospects/:id", ...guard, async (req, res) => {
     const contacts = await db
       .select()
       .from(platformContacts)
-      .where(eq(platformContacts.prospectId, req.params.id))
+      .where(eq(platformContacts.prospectId, req.params.id as string))
       .orderBy(desc(platformContacts.isPrimary), asc(platformContacts.createdAt));
 
     const activities = await db
       .select()
       .from(platformActivities)
-      .where(eq(platformActivities.prospectId, req.params.id))
+      .where(eq(platformActivities.prospectId, req.params.id as string))
       .orderBy(desc(platformActivities.createdAt));
 
     return res.json({ ...prospect, contacts, activities });
@@ -92,7 +92,7 @@ router.patch("/platform-crm/prospects/:id", ...guard, async (req, res) => {
         ...(convertedOrgId !== undefined && { convertedOrgId }),
         updatedAt: new Date(),
       })
-      .where(eq(platformProspects.id, req.params.id))
+      .where(eq(platformProspects.id, req.params.id as string))
       .returning();
 
     if (!row) return res.status(404).json({ error: "Not Found" });
@@ -106,7 +106,7 @@ router.patch("/platform-crm/prospects/:id", ...guard, async (req, res) => {
 // DELETE /api/platform-crm/prospects/:id
 router.delete("/platform-crm/prospects/:id", ...guard, async (req, res) => {
   try {
-    await db.delete(platformProspects).where(eq(platformProspects.id, req.params.id));
+    await db.delete(platformProspects).where(eq(platformProspects.id, req.params.id as string));
     return res.json({ success: true });
   } catch (err) {
     console.error("[DELETE /platform-crm/prospects/:id]", err);
@@ -128,12 +128,12 @@ router.post("/platform-crm/prospects/:id/contacts", ...guard, async (req, res) =
       await db
         .update(platformContacts)
         .set({ isPrimary: false })
-        .where(eq(platformContacts.prospectId, req.params.id));
+        .where(eq(platformContacts.prospectId, req.params.id as string));
     }
 
     const [row] = await db
       .insert(platformContacts)
-      .values({ prospectId: req.params.id, fullName, email, phone, title, isPrimary: isPrimary ?? false })
+      .values({ prospectId: req.params.id as string, fullName, email, phone, title, isPrimary: isPrimary ?? false })
       .returning();
 
     return res.status(201).json(row);
@@ -156,7 +156,7 @@ router.patch("/platform-crm/contacts/:id", ...guard, async (req, res) => {
         ...(title      !== undefined && { title }),
         ...(isPrimary  !== undefined && { isPrimary }),
       })
-      .where(eq(platformContacts.id, req.params.id))
+      .where(eq(platformContacts.id, req.params.id as string))
       .returning();
 
     if (!row) return res.status(404).json({ error: "Not Found" });
@@ -170,7 +170,7 @@ router.patch("/platform-crm/contacts/:id", ...guard, async (req, res) => {
 // DELETE /api/platform-crm/contacts/:id
 router.delete("/platform-crm/contacts/:id", ...guard, async (req, res) => {
   try {
-    await db.delete(platformContacts).where(eq(platformContacts.id, req.params.id));
+    await db.delete(platformContacts).where(eq(platformContacts.id, req.params.id as string));
     return res.json({ success: true });
   } catch (err) {
     console.error("[DELETE /platform-crm/contacts/:id]", err);
@@ -191,7 +191,7 @@ router.post("/platform-crm/prospects/:id/activities", ...guard, async (req, res)
     const [row] = await db
       .insert(platformActivities)
       .values({
-        prospectId:   req.params.id,
+        prospectId:   req.params.id as string,
         activityType: activityType ?? "note",
         subject,
         body,
@@ -211,7 +211,7 @@ router.post("/platform-crm/prospects/:id/activities", ...guard, async (req, res)
 // DELETE /api/platform-crm/activities/:id
 router.delete("/platform-crm/activities/:id", ...guard, async (req, res) => {
   try {
-    await db.delete(platformActivities).where(eq(platformActivities.id, req.params.id));
+    await db.delete(platformActivities).where(eq(platformActivities.id, req.params.id as string));
     return res.json({ success: true });
   } catch (err) {
     console.error("[DELETE /platform-crm/activities/:id]", err);

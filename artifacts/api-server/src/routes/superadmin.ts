@@ -120,7 +120,7 @@ router.get("/superadmin/tenants/:id", ...guard, async (req, res) => {
     const rows = await db
       .select()
       .from(organisations)
-      .where(eq(organisations.id, req.params.id))
+      .where(eq(organisations.id, req.params.id as string))
       .limit(1);
 
     if (!rows.length) return res.status(404).json({ error: "Tenant not found" });
@@ -227,11 +227,11 @@ router.get("/superadmin/tenants/:id/seed-status", ...guard, async (req, res) => 
     const org = await db
       .select({ id: organisations.id })
       .from(organisations)
-      .where(eq(organisations.id, req.params.id))
+      .where(eq(organisations.id, req.params.id as string))
       .limit(1);
     if (!org.length) return res.status(404).json({ error: "Tenant not found" });
 
-    const status = await getSeedStatus(req.params.id);
+    const status = await getSeedStatus(req.params.id as string);
     return res.json(status);
   } catch (err) {
     console.error("GET /api/superadmin/tenants/:id/seed-status", err);
@@ -248,7 +248,7 @@ router.post("/superadmin/tenants/:id/re-seed", ...guard, async (req, res) => {
     const [org] = await db
       .select({ id: organisations.id, subdomain: organisations.subdomain })
       .from(organisations)
-      .where(eq(organisations.id, req.params.id))
+      .where(eq(organisations.id, req.params.id as string))
       .limit(1);
     if (!org) return res.status(404).json({ error: "Tenant not found" });
 
@@ -259,7 +259,7 @@ router.post("/superadmin/tenants/:id/re-seed", ...guard, async (req, res) => {
       await onboardTenant(org.id);
     }
 
-    const status = await getSeedStatus(req.params.id);
+    const status = await getSeedStatus(req.params.id as string);
     return res.json({ success: true, message: "Re-seed completed in tenant schema", ...status });
   } catch (err) {
     console.error("POST /api/superadmin/tenants/:id/re-seed", err);
@@ -282,7 +282,7 @@ router.put("/superadmin/tenants/:id", ...guard, async (req, res) => {
         .from(organisations)
         .where(eq(organisations.subdomain, subdomain.trim().toLowerCase()))
         .limit(1);
-      if (exists.length && exists[0].id !== req.params.id) {
+      if (exists.length && exists[0].id !== req.params.id as string) {
         return res.status(409).json({ error: "Subdomain already in use" });
       }
     }
@@ -313,7 +313,7 @@ router.put("/superadmin/tenants/:id", ...guard, async (req, res) => {
         ...(accentColor    !== undefined && { accentColor }),
         modifiedOn: new Date(),
       })
-      .where(eq(organisations.id, req.params.id))
+      .where(eq(organisations.id, req.params.id as string))
       .returning();
 
     if (!updated) return res.status(404).json({ error: "Tenant not found" });
@@ -379,7 +379,7 @@ router.put("/superadmin/plans/:id", ...guard, async (req, res) => {
         ...(status        !== undefined && { status }),
         modifiedOn: new Date(),
       })
-      .where(eq(platformPlans.id, req.params.id))
+      .where(eq(platformPlans.id, req.params.id as string))
       .returning();
 
     if (!updated) return res.status(404).json({ error: "Plan not found" });
@@ -469,7 +469,7 @@ router.get("/superadmin/tenant-schemas", ...guard, async (_req, res) => {
 
 // POST /api/superadmin/tenants/:slug/provision — 테넌트 schema 프로비저닝
 router.post("/superadmin/tenants/:slug/provision", ...guard, async (req, res) => {
-  const { slug } = req.params;
+  const { slug } = req.params as Record<string, string>;
   if (!slug || !/^[a-z0-9_-]+$/.test(slug)) {
     return res.status(400).json({ error: "Invalid tenant slug" });
   }
@@ -492,7 +492,7 @@ router.post("/superadmin/tenants/:slug/provision", ...guard, async (req, res) =>
 
 // POST /api/superadmin/tenants/:slug/migrate — public → tenant schema 데이터 이전
 router.post("/superadmin/tenants/:slug/migrate", ...guard, async (req, res) => {
-  const { slug } = req.params;
+  const { slug } = req.params as Record<string, string>;
   const { orgId } = req.body as { orgId?: string };
 
   if (!slug || !/^[a-z0-9_-]+$/.test(slug)) {
@@ -524,7 +524,7 @@ router.post("/superadmin/tenants/:slug/migrate", ...guard, async (req, res) => {
 
 // POST /api/superadmin/tenants/:slug/reset — 테넌트 운영 데이터 전체 삭제 후 마스터 데이터 재시드
 router.post("/superadmin/tenants/:slug/reset", ...guard, async (req, res) => {
-  const { slug } = req.params;
+  const { slug } = req.params as Record<string, string>;
   if (!slug || !/^[a-z0-9_-]+$/.test(slug)) {
     return res.status(400).json({ error: "Invalid tenant slug" });
   }
@@ -582,7 +582,7 @@ router.post("/superadmin/tenants/:slug/reset", ...guard, async (req, res) => {
 // GET /api/superadmin/tenants/:slug/backup — pg_dump → SQL 파일 다운로드
 // 해당 테넌트 schema 전체를 SQL 파일로 스트리밍 다운로드
 router.get("/superadmin/tenants/:slug/backup", ...guard, async (req, res) => {
-  const { slug } = req.params;
+  const { slug } = req.params as Record<string, string>;
 
   if (!slug || !/^[a-z0-9_-]+$/.test(slug)) {
     return res.status(400).json({ error: "Invalid tenant slug" });

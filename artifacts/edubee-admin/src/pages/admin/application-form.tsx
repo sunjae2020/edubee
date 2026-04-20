@@ -31,9 +31,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Field({ label, required, half, children }: { label: string; required?: boolean; half?: boolean; children: React.ReactNode }) {
+function Field({ label, required, half, children, className }: { label: string; required?: boolean; half?: boolean; children: React.ReactNode; className?: string }) {
   return (
-    <div className={half ? "col-span-1" : ""}>
+    <div className={className ?? (half ? "col-span-1" : "")}>
       <label className="block text-[11px] font-semibold text-[#57534E] uppercase tracking-wide mb-1">
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>

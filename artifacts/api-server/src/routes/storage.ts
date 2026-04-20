@@ -64,7 +64,7 @@ router.post(
 
 router.get("/storage/objects/*objectPath", authenticate, async (req: Request, res: Response) => {
   try {
-    const raw = req.params.objectPath;
+    const raw = req.params.objectPath as string;
     const objectPath = `/objects/${Array.isArray(raw) ? raw.join("/") : raw}`;
     const file = await objectStorageService.getObjectEntityFile(objectPath);
     const response = await objectStorageService.downloadObject(file);
@@ -99,7 +99,7 @@ router.get("/storage/objects/*objectPath", authenticate, async (req: Request, re
 
 router.get("/storage/public-objects/*filePath", async (req: Request, res: Response) => {
   try {
-    const raw = req.params.filePath;
+    const raw = req.params.filePath as string;
     const filePath = Array.isArray(raw) ? raw.join("/") : raw;
     const file = await objectStorageService.searchPublicObject(filePath);
     if (!file) {

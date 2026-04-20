@@ -21,3 +21,5 @@ export * from "./application-forms";
 export * from "./platform-crm";
 export * from "./community";
 export * from "./security";
+export * from "./correction-requests";
+export * from "./menu";

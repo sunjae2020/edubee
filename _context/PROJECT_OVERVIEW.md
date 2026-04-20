@@ -74,7 +74,7 @@
 | ORM / 마이그레이션 | Drizzle ORM + drizzle-kit (push/generate/migrate) |
 | 파일 스토리지 | Google Cloud Storage |
 | 패키지 관리 | pnpm workspace (모노레포) |
-| 배포 | Replit (Node.js) |
+| 배포 | Railway (API) + Vercel (프론트엔드 4개) |
 
 ### 외부 서비스 (환경변수 기준)
 | 서비스 | 환경변수 키 | 용도 |
@@ -123,7 +123,8 @@ workspace/                          ← pnpm 모노레포 루트
 │   └── integrations-gemini-ai/     ← AI 통합
 ├── scripts/                        ← 빌드 스크립트
 ├── _context/                       ← 프로젝트 문서 (이 파일)
-└── replit.md                       ← Replit 에이전트 메모리 파일
+├── CLAUDE.md                       ← Claude Code 프로젝트 설정
+└── DEPLOYMENT_April 2026.md        ← Blue-Green 배포 가이드
 ```
 
 ---
@@ -153,17 +154,24 @@ pnpm --filter @workspace/db run push
 
 ---
 
-## 5. Replit 환경 특이사항
+## 5. 프로덕션 배포 환경 (2026-04-21 전환 완료)
 
 | 항목 | 내용 |
 |------|------|
-| 포트 | `process.env.PORT` 환경변수 사용 (하드코딩 금지) |
-| 프록시 | Cloudflare + Replit 리버스 프록시 (`trust proxy: 1`) |
-| 경로 | 각 프론트엔드 `BASE_PATH` env로 경로 기반 라우팅 (`/admin`, `/portal`, `/camp`) |
-| 스키마 격리 | 테넌트별 PostgreSQL schema 사용 (`AsyncLocalStorage` 컨텍스트) |
-| 타임존 | `process.env.TZ = "UTC"` — `index.ts` 첫 줄에서 강제 설정 |
-| 패키지 관리 | pnpm only (package-lock.json 없음 → `npm audit` 대신 `pnpm audit` 사용) |
-| 시크릿 | `.env` 파일 없음 → Replit Secrets 패널에서 관리 |
+| API 서버 | Railway — `https://api.edubee.co` (Cloudflare 프록시 ON) |
+| Admin CRM | Vercel — `https://app.edubee.co` |
+| Portal | Vercel — `https://portal.edubee.co` |
+| Website | Vercel — `https://www.edubee.co` |
+| Camp | Vercel — `https://camp.edubee.co` |
+| DB | Supabase PostgreSQL — `aws-ap-northeast-1` pooler 6543 포트 |
+| DNS | Cloudflare (도메인: edubee.co / GoDaddy 등록) |
+| 빌드 | Dockerfile (Nixpacks 아님) → `node artifacts/api-server/dist/index.cjs` |
+| 프론트 API 연결 | `vercel.json` `/api/:path*` → Railway 프록시 |
+| 환경변수 | Railway Variables (API) + Vercel Env (프론트엔드) |
+| 포트 | `process.env.PORT` 환경변수 사용 (Railway 자동 할당) |
+| 프록시 | `trust proxy: 1` (Cloudflare + Railway 리버스 프록시) |
+| 타임존 | `TZ=UTC` Railway Variable 설정 |
+| 패키지 관리 | pnpm only — `pnpm audit` 사용 (`npm audit` 불가) |
 
 ---
 

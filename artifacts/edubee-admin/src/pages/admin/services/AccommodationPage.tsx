@@ -25,6 +25,8 @@ interface AccomRow {
   status?: string | null;
   staffFirstName?: string | null;
   staffLastName?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 function fmtDate(d: string | null | undefined): string {

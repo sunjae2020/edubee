@@ -4,26 +4,32 @@ import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 export type SortDir = "asc" | "desc";
 
 interface SortableTh {
-  col: string;
-  sortBy: string;
-  sortDir: SortDir;
-  onSort: (col: string) => void;
+  col?: string;
+  sortKey?: string;
+  sortBy?: string;
+  sortDir?: SortDir;
+  onSort?: (col: string) => void;
+  state?: { sortBy: string; sortDir: SortDir; onSort: (col: string) => void };
   children: React.ReactNode;
   className?: string;
 }
 
-export function SortableTh({ col, sortBy, sortDir, onSort, children, className = "" }: SortableTh) {
-  const active = sortBy === col;
+export function SortableTh({ col, sortKey, sortBy, sortDir, onSort, state, children, className = "" }: SortableTh) {
+  const effectiveCol = col ?? sortKey ?? "";
+  const effectiveSortBy = sortBy ?? state?.sortBy ?? "";
+  const effectiveSortDir = sortDir ?? state?.sortDir ?? "asc";
+  const effectiveOnSort = onSort ?? state?.onSort ?? (() => {});
+  const active = effectiveSortBy === effectiveCol;
   return (
     <th
       className={`cursor-pointer select-none group ${className}`}
-      onClick={() => onSort(col)}
+      onClick={() => effectiveOnSort(effectiveCol)}
     >
       <span className="inline-flex items-center gap-1">
         {children}
         <span className="opacity-50 group-hover:opacity-100 transition-opacity">
           {active ? (
-            sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+            effectiveSortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
           ) : (
             <ChevronsUpDown size={12} />
           )}

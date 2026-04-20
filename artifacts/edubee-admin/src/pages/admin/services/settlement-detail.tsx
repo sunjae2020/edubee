@@ -51,6 +51,7 @@ interface SettlementRec {
   providerAccountName?: string | null;
   grossAmount?: string | null;
   notes?: string | null;
+  clientId?: string | null;
   checklist?: ChecklistItem[] | null;
   checklistTemplateId?: string | null;
   createdAt?: string;

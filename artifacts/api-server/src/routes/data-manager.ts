@@ -366,7 +366,7 @@ async function exportTableToCsv(config: ExportConfig, filters?: Record<string, s
 }
 
 router.post("/export/:tableName", async (req, res) => {
-  const { tableName } = req.params;
+  const { tableName } = req.params as Record<string, string>;
   const config = EXPORT_CONFIGS[tableName];
   if (!config) {
     return res.status(400).json({ error: `Unknown table: ${tableName}` });
@@ -397,7 +397,7 @@ router.get("/row-counts", async (_req, res) => {
 });
 
 router.get("/template/:tableName", (req, res) => {
-  const { tableName } = req.params;
+  const { tableName } = req.params as Record<string, string>;
   const tmpl = TEMPLATES[tableName];
   if (!tmpl) {
     return res.status(400).json({ error: `No template for table: ${tableName}` });
@@ -513,6 +513,7 @@ async function importAccounts(rows: Record<string, string>[], _importedBy: strin
         for (const { data } of batch) {
           await tx.insert(accounts).values({
             name: data.name,
+            ownerId: _importedBy,
             accountType: data.account_type as any,
             accountCategory: (data.account_category || null) as any,
             phoneNumber: data.phone_number || null,
@@ -1117,7 +1118,7 @@ const IMPORTERS: Record<string, (rows: Record<string, string>[], importedBy: str
 };
 
 router.post("/import/:tableName", upload.single("file"), async (req, res) => {
-  const { tableName } = req.params;
+  const { tableName } = req.params as Record<string, string>;
   const importer = IMPORTERS[tableName];
   if (!importer) {
     return res.status(400).json({ error: `Import not supported for table: ${tableName}` });
@@ -1205,13 +1206,13 @@ router.get("/import-history", async (req, res) => {
 });
 
 router.get("/import-history/:id/errors", async (req, res) => {
-  const [row] = await db.select().from(importHistory).where(eq(importHistory.id, req.params.id));
+  const [row] = await db.select().from(importHistory).where(eq(importHistory.id, req.params.id as string));
   if (!row) return res.status(404).json({ error: "Not found" });
   return res.json({ errors: row.errorDetails ?? [] });
 });
 
 router.get("/import-history/:id/error-csv", async (req, res) => {
-  const [row] = await db.select().from(importHistory).where(eq(importHistory.id, req.params.id));
+  const [row] = await db.select().from(importHistory).where(eq(importHistory.id, req.params.id as string));
   if (!row) return res.status(404).json({ error: "Not found" });
   const errors = (row.errorDetails ?? []) as any[];
   let csv = "row,field,message\n";

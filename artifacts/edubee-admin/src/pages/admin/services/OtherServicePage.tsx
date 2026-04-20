@@ -31,6 +31,8 @@ interface OtherServiceRow {
   status: string;
   staffFullName?: string | null;
   serviceFee?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {

@@ -1,6 +1,20 @@
-# VALIDATION_REPORT.md — v2.0 통합 검증 보고서
+# VALIDATION_REPORT.md — v2.1 통합 검증 보고서
 
-> 생성일: 2026-04-19 | 검증 기준: v2.0 (Sprints 1-6 완료, 포털 34페이지)
+> 생성일: 2026-04-19 | 최종 업데이트: 2026-04-21 | 검증 기준: v2.1 (Production 배포 완료)
+
+## 프로덕션 Smoke Test 결과 (2026-04-21)
+
+| 항목 | 결과 |
+|------|------|
+| `api.edubee.co` 헬스체크 | ✅ HTTP 401 (정상) |
+| admin@edubee.co 로그인 | ✅ accessToken 발급 |
+| 멀티테넌트 데이터 격리 | ✅ myagency 데이터만 반환 |
+| `app.edubee.co` 접속 | ✅ HTTP 200 |
+| `portal.edubee.co` 접속 | ✅ HTTP 200 |
+| `www.edubee.co` 접속 | ✅ HTTP 200 |
+| `camp.edubee.co` 접속 | ✅ HTTP 200 |
+
+---
 
 ---
 

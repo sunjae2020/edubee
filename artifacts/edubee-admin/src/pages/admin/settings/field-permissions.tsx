@@ -23,8 +23,8 @@ type Permission = "view" | "edit" | "none";
 export default function FieldPermissions() {
   const { toast } = useToast();
   const [table, setTable] = useState("Applications");
-  const [perms, setPerms] = useState<Record<string, Record<string, Permission>>>(() => {
-    const initial: Record<string, Record<string, Permission>> = {};
+  const [perms, setPerms] = useState<Record<string, Record<string, Record<string, Permission>>>>(() => {
+    const initial: Record<string, Record<string, Record<string, Permission>>> = {};
     Object.entries(TABLES).forEach(([t, fields]) => {
       initial[t] = {};
       fields.forEach(f => {

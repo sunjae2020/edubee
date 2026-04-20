@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, runWithTenantSchema } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { contractProducts } from "@workspace/db/schema";
+import { sql, eq } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 
 const router = Router();
@@ -245,7 +246,7 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
 // ─── GET /crm/contracts/:id/activity ──────────────────────────────────────
 router.get("/crm/contracts/:id/activity", authenticate, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const r = (x: any) => x.rows ?? (x as any[]);
 
     const [txns, svcs] = await Promise.all([
@@ -297,7 +298,7 @@ router.get("/crm/contracts/:id/activity", authenticate, async (req, res) => {
 // ─── GET /crm/contracts/:id ───────────────────────────────────────────────
 router.get("/crm/contracts/:id", authenticate, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const r = (x: any) => x.rows ?? (x as any[]);
 
     const [cRes, cpRes, invRes, txnRes, saRes, pkRes, acRes, inRes, gdRes, otRes, clRes, trRes, stRes, vsRes, ctRes, phCountRes, actCountRes] = await Promise.all([
@@ -631,7 +632,7 @@ router.patch("/crm/contracts/:id", authenticate, async (req, res) => {
     }
     if (parts.length === 0) return res.status(400).json({ error: "No fields provided" });
     const setSql = sql.join(parts, sql.raw(", "));
-    await db.execute(sql`UPDATE contracts SET ${setSql} WHERE id = ${req.params.id}`);
+    await db.execute(sql`UPDATE contracts SET ${setSql} WHERE id = ${req.params.id as string}`);
     return res.json({ ok: true });
   } catch (err) {
     console.error("PATCH /crm/contracts/:id error:", err);
@@ -691,7 +692,7 @@ router.patch("/crm/contract-products/:id", authenticate, async (req, res) => {
       const [existing] = await db
         .select({ arDueDate: contractProducts.arDueDate, apDueDate: contractProducts.apDueDate })
         .from(contractProducts)
-        .where(eq(contractProducts.id, req.params.id));
+        .where(eq(contractProducts.id, req.params.id as string));
       if (existing) {
         const effectiveAr = arDueDate !== undefined ? (arDueDate || null) : existing.arDueDate;
         const effectiveAp = apDueDate !== undefined ? (apDueDate || null) : existing.apDueDate;
@@ -717,7 +718,7 @@ router.patch("/crm/contract-products/:id", authenticate, async (req, res) => {
     if (serviceModuleType !== undefined) parts.push(sql`service_module_type  = ${serviceModuleType ?? null}`);
     if (parts.length === 0) return res.status(400).json({ error: "No fields provided" });
     const setSql = sql.join(parts, sql.raw(", "));
-    await db.execute(sql`UPDATE contract_products SET ${setSql} WHERE id = ${req.params.id}::uuid`);
+    await db.execute(sql`UPDATE contract_products SET ${setSql} WHERE id = ${req.params.id as string}::uuid`);
     return res.json({ ok: true });
   } catch (err) {
     console.error("PATCH /crm/contract-products/:id error:", err);
@@ -737,7 +738,7 @@ router.post("/crm/contracts/:id/generate-schedule", authenticate, async (req, re
       // Only delete rows that have no linked payment_lines
       await db.execute(sql`
         DELETE FROM contract_products
-        WHERE contract_id = ${req.params.id}::uuid
+        WHERE contract_id = ${req.params.id as string}::uuid
           AND id NOT IN (
             SELECT DISTINCT contract_product_id FROM payment_lines
             WHERE contract_product_id IS NOT NULL
@@ -754,7 +755,7 @@ router.post("/crm/contracts/:id/generate-schedule", authenticate, async (req, re
            ap_due_date, ap_amount, ap_status,
            service_module_type)
         VALUES
-          (${req.params.id}::uuid,
+          (${req.params.id as string}::uuid,
            ${item.name ?? null},
            ${item.sortIndex ?? created},
            ${item.isInitialPayment ?? false},
@@ -805,13 +806,13 @@ router.delete("/crm/contract-products/:id", authenticate, async (req, res) => {
     const r = (x: any) => x.rows ?? (x as any[]);
     // Guard: do not delete if payment lines already reference this product
     const linked = await db.execute(sql`
-      SELECT COUNT(*) AS cnt FROM payment_lines WHERE contract_product_id = ${req.params.id}::uuid
+      SELECT COUNT(*) AS cnt FROM payment_lines WHERE contract_product_id = ${req.params.id as string}::uuid
     `);
     const cnt = Number(r(linked)[0]?.cnt ?? 0);
     if (cnt > 0) {
       return res.status(409).json({ error: `Cannot delete: ${cnt} payment line(s) already linked to this instalment.` });
     }
-    await db.execute(sql`DELETE FROM contract_products WHERE id = ${req.params.id}::uuid`);
+    await db.execute(sql`DELETE FROM contract_products WHERE id = ${req.params.id as string}::uuid`);
     return res.json({ ok: true });
   } catch (err) {
     console.error("DELETE /crm/contract-products/:id error:", err);

@@ -171,7 +171,7 @@ router.get(
       const rows = await db
         .select()
         .from(paymentLines)
-        .where(eq(paymentLines.paymentHeaderId, req.params.payment_header_id));
+        .where(eq(paymentLines.paymentHeaderId, req.params.payment_header_id as string));
 
       return res.json({ data: rows });
     } catch (err) {

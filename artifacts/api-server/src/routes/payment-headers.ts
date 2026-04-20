@@ -67,13 +67,13 @@ router.get(
       const [header] = await db
         .select()
         .from(paymentHeaders)
-        .where(eq(paymentHeaders.id, req.params.id));
+        .where(eq(paymentHeaders.id, req.params.id as string));
       if (!header) return res.status(404).json({ error: "Payment header not found" });
 
       const lines = await db
         .select()
         .from(paymentLines)
-        .where(eq(paymentLines.paymentHeaderId, req.params.id));
+        .where(eq(paymentLines.paymentHeaderId, req.params.id as string));
 
       return res.json({ ...header, lines });
     } catch (err) {
@@ -146,7 +146,7 @@ router.put(
       const [existing] = await db
         .select({ id: paymentHeaders.id, status: paymentHeaders.status })
         .from(paymentHeaders)
-        .where(eq(paymentHeaders.id, req.params.id));
+        .where(eq(paymentHeaders.id, req.params.id as string));
       if (!existing) return res.status(404).json({ error: "Payment header not found" });
       if (existing.status === "Void") {
         return res.status(400).json({ error: "Cannot modify a voided payment" });
@@ -176,7 +176,7 @@ router.put(
       const [updated] = await db
         .update(paymentHeaders)
         .set(updatePayload as any)
-        .where(eq(paymentHeaders.id, req.params.id))
+        .where(eq(paymentHeaders.id, req.params.id as string))
         .returning();
 
       logAudit({ tableName: "payment_headers", recordId: updated.id, action: "UPDATE", newValues: updatePayload, changedFields: Object.keys(updatePayload), ...auditParamsFromReq(req) }).catch(() => {});
@@ -198,7 +198,7 @@ router.delete(
       const [existing] = await db
         .select({ id: paymentHeaders.id, status: paymentHeaders.status })
         .from(paymentHeaders)
-        .where(eq(paymentHeaders.id, req.params.id));
+        .where(eq(paymentHeaders.id, req.params.id as string));
       if (!existing) return res.status(404).json({ error: "Payment header not found" });
       if (existing.status === "Void") {
         return res.status(400).json({ error: "Payment already voided" });
@@ -207,7 +207,7 @@ router.delete(
       const [updated] = await db
         .update(paymentHeaders)
         .set({ status: "Void", modifiedOn: new Date() })
-        .where(eq(paymentHeaders.id, req.params.id))
+        .where(eq(paymentHeaders.id, req.params.id as string))
         .returning();
 
       logAudit({ tableName: "payment_headers", recordId: existing.id, action: "DELETE", oldValues: existing as unknown as Record<string, unknown>, ...auditParamsFromReq(req) }).catch(() => {});

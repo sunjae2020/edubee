@@ -112,10 +112,10 @@ router.get("/crm/quotes/templates", authenticate, requireRole(...ADMIN_ROLES), a
 // ─── GET /api/crm/quotes/:id ────────────────────────────────────────
 router.get("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
+    const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id as string));
     if (!quote) return res.status(404).json({ error: "Quote not found" });
     const products = await db.select().from(quote_products)
-      .where(and(eq(quote_products.quoteId, req.params.id), eq(quote_products.status, "Active")))
+      .where(and(eq(quote_products.quoteId, req.params.id as string), eq(quote_products.status, "Active")))
       .orderBy(quote_products.sortIndex);
     const total = products.reduce((sum, p) => sum + Number(p.price ?? 0) * (p.quantity ?? 1), 0);
 
@@ -137,11 +137,11 @@ router.get("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (
     const contractRes = await db.execute(sql`
       SELECT id, contract_number AS contract_number
       FROM contracts
-      WHERE quote_id = ${req.params.id}::uuid
+      WHERE quote_id = ${req.params.id as string}::uuid
       ORDER BY created_at DESC
       LIMIT 1
     `);
-    const linkedContract = (contractRes.rows ?? (contractRes as any[]))[0] ?? null;
+    const linkedContract = (contractRes.rows ?? (contractRes as unknown as any[]))[0] ?? null;
 
     return res.json({
       ...quote,
@@ -205,7 +205,7 @@ router.post("/crm/quotes", authenticate, requireRole(...ADMIN_ROLES), async (req
 // ─── PUT /api/crm/quotes/:id ────────────────────────────────────────
 router.put("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [existing] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
+    const [existing] = await db.select().from(quotes).where(eq(quotes.id, req.params.id as string));
     if (!existing) return res.status(404).json({ error: "Quote not found" });
 
     const { leadId, contactId, accountName, customerName, originalName, studentAccountId,
@@ -220,15 +220,15 @@ router.put("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (
              ownerId:          ownerId !== undefined ? (ownerId || null) : existing.ownerId,
              quoteStatus, expiryDate, isTemplate, notes,
              modifiedOn: new Date() })
-      .where(eq(quotes.id, req.params.id))
+      .where(eq(quotes.id, req.params.id as string))
       .returning();
 
     if (Array.isArray(lineItems)) {
-      await db.delete(quote_products).where(eq(quote_products.quoteId, req.params.id));
+      await db.delete(quote_products).where(eq(quote_products.quoteId, req.params.id as string));
       if (lineItems.length > 0) {
         await db.insert(quote_products).values(
           lineItems.map((item: any, idx: number) => ({
-            quoteId:           req.params.id,
+            quoteId:           req.params.id as string,
             productName:       item.productName ?? "Item",
             description:       item.description ?? null,
             qty:               item.qty ?? 1,
@@ -242,7 +242,7 @@ router.put("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (
       }
     }
 
-    const products = await db.select().from(quote_products).where(eq(quote_products.quoteId, req.params.id));
+    const products = await db.select().from(quote_products).where(eq(quote_products.quoteId, req.params.id as string));
     return res.json({ ...updated, products });
   } catch (err) {
     console.error("[PUT /api/crm/quotes/:id]", err);
@@ -253,7 +253,7 @@ router.put("/crm/quotes/:id", authenticate, requireRole(...ADMIN_ROLES), async (
 // ─── POST /api/crm/quotes/:id/convert-to-contract ──────────────────
 router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
+    const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id as string));
     if (!quote) return res.status(404).json({ error: "Quote not found" });
 
     // Fetch quote products with resolved service_module_type:
@@ -273,10 +273,10 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
       FROM quote_products qp
       LEFT JOIN products     p  ON p.id  = qp.product_id
       LEFT JOIN product_types pt ON pt.id = p.product_type_id
-      WHERE qp.quote_id = ${req.params.id}::uuid
+      WHERE qp.quote_id = ${req.params.id as string}::uuid
         AND (qp.status IS NULL OR qp.status != 'Inactive')
     `);
-    const products: any[] = (rawProducts.rows ?? (rawProducts as any[]));
+    const products: any[] = (rawProducts.rows ?? (rawProducts as unknown as any[]));
 
     const contractNumber = genContractNumber();
 
@@ -304,7 +304,7 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
       // 1b. Set quote_id, account_id, and owner_id (not in Drizzle schema → raw SQL)
       await tx.execute(sql`
         UPDATE contracts
-        SET quote_id   = ${req.params.id}::uuid,
+        SET quote_id   = ${req.params.id as string}::uuid,
             account_id = ${quote.studentAccountId ?? null},
             owner_id   = ${quote.ownerId ?? null}
         WHERE id = ${contractId}::uuid
@@ -384,7 +384,7 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
           LEFT JOIN product_types pt ON pt.id = p.product_type_id
           WHERE pp.package_id = ${pkgItem.camp_package_id}::uuid
         `);
-        const subProducts: any[] = subRows.rows ?? (subRows as any[]);
+        const subProducts: any[] = subRows.rows ?? (subRows as unknown as any[]);
 
         const toInsert = subProducts.filter(
           (s: any) => !existingProductIds.has(s.product_id)
@@ -429,7 +429,7 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
         FROM contract_products
         WHERE contract_id = ${contractId}::uuid
       `);
-      const arApTotals = ((arApResult as any).rows ?? (arApResult as any[]))[0] ?? {};
+      const arApTotals = ((arApResult as any).rows ?? (arApResult as unknown as any[]))[0] ?? {};
       const computedAr = parseFloat(String((arApTotals as any).total_ar ?? "0"));
       const computedAp = parseFloat(String((arApTotals as any).total_ap ?? "0"));
       const computedTotal = parseFloat(String((arApTotals as any).total_val ?? "0"));
@@ -554,7 +554,7 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
       // 5. Mark quote as Accepted
       await tx.update(quotes)
         .set({ quoteStatus: "Accepted", modifiedOn: new Date() })
-        .where(eq(quotes.id, req.params.id));
+        .where(eq(quotes.id, req.params.id as string));
 
       // 6. If quote is linked to a camp application, update its contract_id
       //    (raw SQL to avoid circular import: camp.ts ← crm.ts)
@@ -582,10 +582,10 @@ router.post("/crm/quotes/:id/convert-to-contract", authenticate, requireRole(...
 // ─── GET /api/crm/quotes/:id/pdf ────────────────────────────────────
 router.get("/crm/quotes/:id/pdf", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
+    const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id as string));
     if (!quote) return res.status(404).json({ error: "Quote not found" });
     const products = await db.select().from(quote_products)
-      .where(eq(quote_products.quoteId, req.params.id)).orderBy(quote_products.sortOrder);
+      .where(eq(quote_products.quoteId, req.params.id as string)).orderBy(quote_products.sortOrder);
     // Return structured data; PDF rendering is client-side
     return res.json({ quote, products });
   } catch (err) {
@@ -600,13 +600,13 @@ router.post("/crm/quotes/:id/send-email", authenticate, requireRole(...ADMIN_ROL
     const { to, subject, message } = req.body;
     if (!to) return res.status(400).json({ error: "Recipient email is required" });
 
-    const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id));
+    const [quote] = await db.select().from(quotes).where(eq(quotes.id, req.params.id as string));
     if (!quote) return res.status(404).json({ error: "Quote not found" });
 
     const products = await db
       .select()
       .from(quote_products)
-      .where(and(eq(quote_products.quoteId, req.params.id), eq(quote_products.status, "Active")))
+      .where(and(eq(quote_products.quoteId, req.params.id as string), eq(quote_products.status, "Active")))
       .orderBy(quote_products.sortIndex);
 
     // Fetch client account name if available

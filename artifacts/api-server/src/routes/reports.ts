@@ -142,8 +142,8 @@ router.get("/reports", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
     const uid = campUid(req.user!);
-    const page = parseInt(String(req.query.page ?? "1"), 10);
-    const limit = parseInt(String(req.query.limit ?? "20"), 10);
+    const page = parseInt(String(req.query.page as string ?? "1"), 10);
+    const limit = parseInt(String(req.query.limit as string ?? "20"), 10);
 
     if (!canManage(role)) {
       return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
@@ -198,7 +198,7 @@ router.get("/reports/:id", authenticate, async (req, res) => {
       .leftJoin(users, eq(users.id, programReports.generatedBy))
       .where(
         and(
-          eq(programReports.id, req.params.id),
+          eq(programReports.id, req.params.id as string),
           isNull(programReports.deletedAt),
         ),
       )
@@ -255,7 +255,7 @@ router.get("/reports/:id", authenticate, async (req, res) => {
     const sections = await db
       .select()
       .from(reportSections)
-      .where(eq(reportSections.reportId, req.params.id))
+      .where(eq(reportSections.reportId, req.params.id as string))
       .orderBy(asc(reportSections.displayOrder));
 
     return res.json({ ...report, sections });
@@ -357,7 +357,7 @@ router.put("/reports/:id", authenticate, async (req, res) => {
     const [existing] = await db
       .select()
       .from(programReports)
-      .where(and(eq(programReports.id, req.params.id), isNull(programReports.deletedAt)))
+      .where(and(eq(programReports.id, req.params.id as string), isNull(programReports.deletedAt)))
       .limit(1);
     if (!existing) return res.status(404).json({ error: "Not Found" });
 
@@ -381,7 +381,7 @@ router.put("/reports/:id", authenticate, async (req, res) => {
     const [updated] = await db
       .update(programReports)
       .set({ reportTitle, summaryNotes, updatedAt: new Date() })
-      .where(eq(programReports.id, req.params.id))
+      .where(eq(programReports.id, req.params.id as string))
       .returning();
 
     return res.json(updated);
@@ -402,7 +402,7 @@ router.patch("/reports/:id/publish", authenticate, async (req, res) => {
     const [report] = await db
       .select()
       .from(programReports)
-      .where(and(eq(programReports.id, req.params.id), isNull(programReports.deletedAt)))
+      .where(and(eq(programReports.id, req.params.id as string), isNull(programReports.deletedAt)))
       .limit(1);
     if (!report) return res.status(404).json({ error: "Not Found" });
 
@@ -420,7 +420,7 @@ router.patch("/reports/:id/publish", authenticate, async (req, res) => {
     const [updated] = await db
       .update(programReports)
       .set({ status: "published", publishedAt, updatedAt: new Date() })
-      .where(eq(programReports.id, req.params.id))
+      .where(eq(programReports.id, req.params.id as string))
       .returning();
 
     // Send notifications to agent + parent
@@ -494,7 +494,7 @@ router.patch("/reports/:id/unpublish", authenticate, async (req, res) => {
     const [updated] = await db
       .update(programReports)
       .set({ status: "draft", publishedAt: null, updatedAt: new Date() })
-      .where(and(eq(programReports.id, req.params.id), isNull(programReports.deletedAt)))
+      .where(and(eq(programReports.id, req.params.id as string), isNull(programReports.deletedAt)))
       .returning();
 
     if (!updated) return res.status(404).json({ error: "Not Found" });
@@ -514,7 +514,7 @@ router.delete("/reports/:id", authenticate, async (req, res) => {
     const [updated] = await db
       .update(programReports)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
-      .where(and(eq(programReports.id, req.params.id), isNull(programReports.deletedAt)))
+      .where(and(eq(programReports.id, req.params.id as string), isNull(programReports.deletedAt)))
       .returning();
 
     if (!updated) return res.status(404).json({ error: "Not Found" });
@@ -547,7 +547,7 @@ router.patch("/reports/:id/sections/reorder", authenticate, async (req, res) => 
     const sections = await db
       .select()
       .from(reportSections)
-      .where(eq(reportSections.reportId, req.params.id))
+      .where(eq(reportSections.reportId, req.params.id as string))
       .orderBy(asc(reportSections.displayOrder));
 
     return res.json({ sections });
@@ -573,7 +573,7 @@ router.patch("/reports/:id/sections/:sectionId", authenticate, async (req, res) 
     const [updated] = await db
       .update(reportSections)
       .set(updatePayload)
-      .where(eq(reportSections.id, req.params.sectionId))
+      .where(eq(reportSections.id, req.params.sectionId as string))
       .returning();
 
     if (!updated) return res.status(404).json({ error: "Not Found" });
@@ -600,7 +600,7 @@ router.post("/reports/:id/sections", authenticate, async (req, res) => {
     const existing = await db
       .select({ displayOrder: reportSections.displayOrder })
       .from(reportSections)
-      .where(eq(reportSections.reportId, req.params.id))
+      .where(eq(reportSections.reportId, req.params.id as string))
       .orderBy(desc(reportSections.displayOrder))
       .limit(1);
     const nextOrder = (existing[0]?.displayOrder ?? -1) + 1;
@@ -608,7 +608,7 @@ router.post("/reports/:id/sections", authenticate, async (req, res) => {
     const [section] = await db
       .insert(reportSections)
       .values({
-        reportId: req.params.id,
+        reportId: req.params.id as string,
         sectionType: "custom",
         sectionTitle,
         displayOrder: nextOrder,
@@ -633,7 +633,7 @@ router.delete("/reports/:id/sections/:sectionId", authenticate, async (req, res)
     const [section] = await db
       .select()
       .from(reportSections)
-      .where(eq(reportSections.id, req.params.sectionId))
+      .where(eq(reportSections.id, req.params.sectionId as string))
       .limit(1);
 
     if (!section) return res.status(404).json({ error: "Not Found" });
@@ -641,7 +641,7 @@ router.delete("/reports/:id/sections/:sectionId", authenticate, async (req, res)
       return res.status(400).json({ error: "Default sections cannot be deleted." });
     }
 
-    await db.delete(reportSections).where(eq(reportSections.id, req.params.sectionId));
+    await db.delete(reportSections).where(eq(reportSections.id, req.params.sectionId as string));
     return res.json({ success: true });
   } catch (err: any) {
     console.error("DELETE /reports/:id/sections/:sectionId error:", err.message);
@@ -658,7 +658,7 @@ router.post("/reports/:id/sync", authenticate, async (req, res) => {
     const [report] = await db
       .select()
       .from(programReports)
-      .where(and(eq(programReports.id, req.params.id), isNull(programReports.deletedAt)))
+      .where(and(eq(programReports.id, req.params.id as string), isNull(programReports.deletedAt)))
       .limit(1);
     if (!report) return res.status(404).json({ error: "Not Found" });
     if (!report.contractId) return res.status(400).json({ error: "Report has no contract" });
@@ -667,7 +667,7 @@ router.post("/reports/:id/sync", authenticate, async (req, res) => {
     const existingSections = await db
       .select()
       .from(reportSections)
-      .where(eq(reportSections.reportId, req.params.id));
+      .where(eq(reportSections.reportId, req.params.id as string));
 
     const synced: string[] = [];
     const skipped: string[] = [];
@@ -712,7 +712,7 @@ router.get("/reports/:id/pdf", authenticate, async (req, res) => {
     const [report] = await db
       .select()
       .from(programReports)
-      .where(and(eq(programReports.id, req.params.id), isNull(programReports.deletedAt)))
+      .where(and(eq(programReports.id, req.params.id as string), isNull(programReports.deletedAt)))
       .limit(1);
 
     if (!report) return res.status(404).json({ error: "Not Found" });
@@ -753,7 +753,7 @@ router.get("/reports/:id/pdf", authenticate, async (req, res) => {
     const sections = await db
       .select()
       .from(reportSections)
-      .where(eq(reportSections.reportId, req.params.id))
+      .where(eq(reportSections.reportId, req.params.id as string))
       .orderBy(asc(reportSections.displayOrder));
 
     // Strip passport fields for EA / parent

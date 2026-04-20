@@ -183,7 +183,7 @@ router.get(
         .from(pickupMgt)
         .leftJoin(contracts, eq(pickupMgt.contractId, contracts.id))
         .leftJoin(sql`products p`, sql`p.id = ${pickupMgt.productId}`)
-        .where(eq(pickupMgt.id, req.params.id));
+        .where(eq(pickupMgt.id, req.params.id as string));
 
       if (!row) return res.status(404).json({ error: "Pickup record not found" });
       return res.json(row);
@@ -204,7 +204,7 @@ router.patch(
       const [existing] = await db
         .select({ id: pickupMgt.id })
         .from(pickupMgt)
-        .where(eq(pickupMgt.id, req.params.id));
+        .where(eq(pickupMgt.id, req.params.id as string));
 
       if (!existing) return res.status(404).json({ error: "Pickup record not found" });
 
@@ -238,7 +238,7 @@ router.patch(
           ...(pickupMessage  !== undefined && { pickupMessage: pickupMessage || null }),
           updatedAt: new Date(),
         })
-        .where(eq(pickupMgt.id, req.params.id))
+        .where(eq(pickupMgt.id, req.params.id as string))
         .returning();
 
       return res.json(updated);
@@ -259,7 +259,7 @@ router.patch(
       const [existing] = await db
         .select({ id: pickupMgt.id })
         .from(pickupMgt)
-        .where(eq(pickupMgt.id, req.params.id));
+        .where(eq(pickupMgt.id, req.params.id as string));
 
       if (!existing) return res.status(404).json({ error: "Pickup record not found" });
 
@@ -274,7 +274,7 @@ router.patch(
             vehicle_info   = ${vehicleInfo   ?? null},
             status         = 'driver_assigned',
             updated_at     = NOW()
-          WHERE id = ${req.params.id}
+          WHERE id = ${req.params.id as string}
           RETURNING *
         `
       ) as any;
@@ -295,12 +295,12 @@ router.patch(
       const [existing] = await db
         .select({ id: pickupMgt.id, isActive: pickupMgt.isActive })
         .from(pickupMgt)
-        .where(eq(pickupMgt.id, req.params.id));
+        .where(eq(pickupMgt.id, req.params.id as string));
       if (!existing) return res.status(404).json({ error: "Not found" });
       const [updated] = await db
         .update(pickupMgt)
         .set({ isActive: !existing.isActive, updatedAt: new Date() })
-        .where(eq(pickupMgt.id, req.params.id))
+        .where(eq(pickupMgt.id, req.params.id as string))
         .returning();
       return res.json(updated);
     } catch (err) {

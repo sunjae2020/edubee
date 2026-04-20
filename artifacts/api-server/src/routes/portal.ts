@@ -22,6 +22,7 @@ import { eq, and, inArray, desc, sql, count, sum, isNull, asc } from "drizzle-or
 import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { authenticatePortal } from "../middleware/authenticatePortal.js";
 
 const router = Router();
@@ -189,7 +190,7 @@ router.get("/portal/students", authenticatePortal, async (req, res) => {
 router.get("/portal/students/:id", authenticatePortal, async (req, res) => {
   try {
     const accountId = req.portalUser!.accountId;
-    const studentId = req.params.id;
+    const studentId = req.params.id as string;
 
     // Verify this student is linked to the agent
     const [linked] = await db
@@ -273,7 +274,7 @@ router.get("/portal/leads", authenticatePortal, async (req, res) => {
 router.get("/portal/leads/:id", authenticatePortal, async (req, res) => {
   try {
     const accountId = req.portalUser!.accountId;
-    const leadId = req.params.id;
+    const leadId = req.params.id as string;
 
     const [lead] = await db
       .select({
@@ -731,7 +732,7 @@ router.get("/portal/student/programs", authenticatePortal, requireStudentRole, a
 router.get("/portal/student/consultations/:quoteId", authenticatePortal, requireStudentRole, async (req, res) => {
   try {
     const accountId = req.portalUser!.accountId;
-    const quoteId   = req.params.quoteId;
+    const quoteId   = req.params.quoteId as string;
 
     const [row] = await db
       .select({
@@ -800,7 +801,7 @@ router.get("/portal/student/consultations/:quoteId", authenticatePortal, require
 router.get("/portal/student/programs/:id", authenticatePortal, requireStudentRole, async (req, res) => {
   try {
     const accountId   = req.portalUser!.accountId;
-    const contractId  = req.params.id;
+    const contractId  = req.params.id as string;
 
     const [contract] = await db
       .select({
@@ -959,7 +960,7 @@ router.get("/portal/documents/:id/view", async (req, res) => {
     const decoded = jwt.default.verify(authHeader.split(" ")[1], process.env.JWT_SECRET!) as any;
     if (!decoded?.accountId) return res.status(401).json({ error: "Unauthorized" });
     const accountId = decoded.accountId as string;
-    const docId = req.params.id;
+    const docId = req.params.id as string;
 
     const [doc] = await db
       .select({ id: documents.id, filePath: documents.filePath, fileType: documents.fileType, documentName: documents.documentName, originalFilename: documents.originalFilename, referenceId: documents.referenceId })
@@ -1010,7 +1011,7 @@ router.get("/portal/documents/:id/download", async (req, res) => {
     const decoded = jwt.default.verify(authHeader.split(" ")[1], process.env.JWT_SECRET!) as any;
     if (!decoded?.accountId) return res.status(401).json({ error: "Unauthorized" });
     const accountId = decoded.accountId as string;
-    const docId = req.params.id;
+    const docId = req.params.id as string;
 
     const [doc] = await db
       .select({ id: documents.id, filePath: documents.filePath, fileType: documents.fileType, documentName: documents.documentName, originalFilename: documents.originalFilename, referenceId: documents.referenceId })
@@ -1105,7 +1106,7 @@ router.get("/portal/agent/services", authenticatePortal, async (req, res) => {
 router.get("/portal/quotes/:id", authenticatePortal, async (req, res) => {
   try {
     const accountId = req.portalUser!.accountId;
-    const quoteId   = req.params.id;
+    const quoteId   = req.params.id as string;
 
     const [quote] = await db
       .select()
@@ -1168,7 +1169,7 @@ router.get("/portal/quotes/:id", authenticatePortal, async (req, res) => {
 router.get("/portal/student/quotes/:id", authenticatePortal, requireStudentRole, async (req, res) => {
   try {
     const accountId = req.portalUser!.accountId;
-    const quoteId   = req.params.id;
+    const quoteId   = req.params.id as string;
 
     const [quote] = await db
       .select({
@@ -1227,7 +1228,7 @@ router.get("/portal/student/quotes/:id", authenticatePortal, requireStudentRole,
 router.get("/portal/partner/bookings/:id", authenticatePortal, requirePartnerRole, async (req, res) => {
   try {
     const accountId = req.portalUser!.accountId;
-    const productId = req.params.id;
+    const productId = req.params.id as string;
 
     const [product] = await db
       .select({
@@ -1438,11 +1439,11 @@ const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
 // ── GET /api/portal/community/:id ──────────────────────────────────────────
 router.get("/portal/community/:id", authenticatePortal, async (req, res) => {
   try {
-    if (!_UUID_RE.test(req.params.id)) return res.status(400).json({ error: "Invalid ID" });
+    if (!_UUID_RE.test(req.params.id as string)) return res.status(400).json({ error: "Invalid ID" });
     const [post] = await staticDb
       .select()
       .from(communityPosts)
-      .where(eq(communityPosts.id, req.params.id))
+      .where(eq(communityPosts.id, req.params.id as string))
       .limit(1);
 
     if (!post) return res.status(404).json({ error: "Post not found" });
@@ -1450,7 +1451,7 @@ router.get("/portal/community/:id", authenticatePortal, async (req, res) => {
     const comments = await staticDb
       .select()
       .from(communityComments)
-      .where(eq(communityComments.postId, req.params.id))
+      .where(eq(communityComments.postId, req.params.id as string))
       .orderBy(communityComments.createdAt);
 
     return res.json({ data: post, comments });
@@ -1464,7 +1465,7 @@ router.get("/portal/community/:id", authenticatePortal, async (req, res) => {
 router.delete("/portal/community/:id", authenticatePortal, async (req, res) => {
   try {
     const accountId = req.portalUser!.accountId;
-    const postId = req.params.id;
+    const postId = req.params.id as string;
     if (!_UUID_RE.test(postId)) return res.status(400).json({ error: "Invalid ID" });
 
     const [post] = await staticDb
@@ -1490,7 +1491,7 @@ router.delete("/portal/community/:id", authenticatePortal, async (req, res) => {
 router.post("/portal/community/:id/comments", authenticatePortal, async (req, res) => {
   try {
     const accountId = req.portalUser!.accountId;
-    const postId = req.params.id;
+    const postId = req.params.id as string;
     if (!_UUID_RE.test(postId)) return res.status(400).json({ error: "Invalid ID" });
     const { content } = req.body;
 
@@ -1553,8 +1554,8 @@ router.get("/portal/student/camp-photos/file/:filename", (req: any, res: any, ne
   const authHeader = req.headers.authorization as string | undefined;
   if (authHeader?.startsWith("Bearer ")) {
     token = authHeader.split(" ")[1];
-  } else if (typeof req.query.token === "string") {
-    token = req.query.token;
+  } else if (typeof req.query.token as string === "string") {
+    token = req.query.token as string;
   }
   if (!token) return res.status(401).json({ error: "Unauthorized" });
   try {
@@ -1565,7 +1566,7 @@ router.get("/portal/student/camp-photos/file/:filename", (req: any, res: any, ne
     return res.status(401).json({ error: "Invalid token" });
   }
 }, (req: any, res: any) => {
-  const filename = path.basename(req.params.filename);
+  const filename = path.basename(req.params.filename as string);
   const filePath = path.join(PHOTO_DIR_PORTAL, filename);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File not found" });
   return res.sendFile(path.resolve(filePath));

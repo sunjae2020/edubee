@@ -77,10 +77,10 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 router.get("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    if (!UUID_RE.test(req.params.id))
+    if (!UUID_RE.test(req.params.id as string))
       return res.status(400).json({ error: "Invalid application ID format" });
     const [application] = await db.select().from(campApplications)
-      .where(eq(campApplications.id, req.params.id)).limit(1);
+      .where(eq(campApplications.id, req.params.id as string)).limit(1);
     if (!application) return res.status(404).json({ error: "Not found" });
 
     // Fetch package group name
@@ -118,7 +118,7 @@ router.get("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
       : [];
 
     const participants = await db.select().from(applicationParticipants)
-      .where(eq(applicationParticipants.campApplicationId, req.params.id));
+      .where(eq(applicationParticipants.campApplicationId, req.params.id as string));
 
     return res.json({
       ...application,
@@ -136,11 +136,11 @@ router.get("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
 // GET /api/camp-applications/:id/pdf — generate and download PDF
 router.get("/camp-applications/:id/pdf", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    if (!UUID_RE.test(req.params.id))
+    if (!UUID_RE.test(req.params.id as string))
       return res.status(400).json({ error: "Invalid application ID format" });
 
     const [app] = await db.select().from(campApplications)
-      .where(eq(campApplications.id, req.params.id)).limit(1);
+      .where(eq(campApplications.id, req.params.id as string)).limit(1);
     if (!app) return res.status(404).json({ error: "Application not found" });
 
     // Resolve program / package names
@@ -156,7 +156,7 @@ router.get("/camp-applications/:id/pdf", authenticate, requireRole(...ADMIN_ROLE
 
     // Fetch participants
     const rawParticipants = await db.select().from(applicationParticipants)
-      .where(eq(applicationParticipants.campApplicationId, req.params.id));
+      .where(eq(applicationParticipants.campApplicationId, req.params.id as string));
 
     const participants: CampAppEmailData["participants"] = rawParticipants.map(p => ({
       participantType:        p.participantType ?? "student",
@@ -185,7 +185,7 @@ router.get("/camp-applications/:id/pdf", authenticate, requireRole(...ADMIN_ROLE
       : undefined;
 
     const data: CampAppEmailData = {
-      applicationNumber:     app.applicationNumber ?? "N/A",
+      applicationNumber:     app.applicationRef ?? "N/A",
       packageGroupId:        app.packageGroupId ?? "",
       packageId:             app.packageId ?? undefined,
       programName:           pgRow?.nameEn ?? undefined,
@@ -196,19 +196,16 @@ router.get("/camp-applications/:id/pdf", authenticate, requireRole(...ADMIN_ROLE
       applicantPhone:        app.applicantPhone     ?? undefined,
       applicantEmail:        app.applicantEmail     ?? undefined,
       preferredStartDate:    app.preferredStartDate ?? undefined,
-      specialRequests:       app.specialRequests    ?? undefined,
+      specialRequests:       app.specialRequirements    ?? undefined,
       emergencyContactName:  app.emergencyContactName  ?? undefined,
       emergencyContactPhone: app.emergencyContactPhone ?? undefined,
       signatureImage:        app.signatureImage   ?? undefined,
       signatureDate:         app.signatureDate    ?? undefined,
-      referralAgentCode:     app.referralAgentCode ?? undefined,
-      referralSource:        app.referralSource   ?? undefined,
-      primaryLanguage:       app.primaryLanguage  ?? undefined,
       participants,
     };
 
     const pdfBuffer = await generateCampApplicationPdf(data);
-    const filename = `camp-application-${app.applicationNumber ?? req.params.id}.pdf`;
+    const filename = `camp-application-${app.applicationRef ?? req.params.id as string}.pdf`;
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
@@ -361,12 +358,12 @@ router.patch("/camp-applications/:id/status", authenticate, requireRole(...ADMIN
       return res.status(400).json({ error: `Invalid status. Allowed: ${VALID_STATUSES.join(", ")}` });
 
     const [application] = await db.select().from(campApplications)
-      .where(eq(campApplications.id, req.params.id)).limit(1);
+      .where(eq(campApplications.id, req.params.id as string)).limit(1);
     if (!application) return res.status(404).json({ error: "Not found" });
 
     await db.update(campApplications)
       .set({ applicationStatus: newStatus, updatedAt: new Date() })
-      .where(eq(campApplications.id, req.params.id));
+      .where(eq(campApplications.id, req.params.id as string));
 
     if (newStatus === "reviewing" && !application.leadId) {
       const leadRef = "LD-" + Date.now().toString(36).toUpperCase().padStart(8, "0");
@@ -422,7 +419,7 @@ router.patch("/camp-applications/:id/status", authenticate, requireRole(...ADMIN
     }
 
     const [refreshed] = await db.select().from(campApplications)
-      .where(eq(campApplications.id, req.params.id)).limit(1);
+      .where(eq(campApplications.id, req.params.id as string)).limit(1);
     return res.json(refreshed);
   } catch (err) {
     console.error("[PATCH /api/camp-applications/:id/status]", err);
@@ -432,8 +429,8 @@ router.patch("/camp-applications/:id/status", authenticate, requireRole(...ADMIN
 
 router.put("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    if (!UUID_RE.test(req.params.id)) {
-      console.warn("[PUT /camp-applications/:id] Invalid UUID:", req.params.id);
+    if (!UUID_RE.test(req.params.id as string)) {
+      console.warn("[PUT /camp-applications/:id] Invalid UUID:", req.params.id as string);
       return res.status(400).json({ error: "Invalid application ID format" });
     }
 
@@ -475,7 +472,7 @@ router.put("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
 
     const [updated] = await db.update(campApplications)
       .set(payload as any)
-      .where(eq(campApplications.id, req.params.id))
+      .where(eq(campApplications.id, req.params.id as string))
       .returning();
 
     if (!updated) return res.status(404).json({ error: "Not found" });
@@ -489,7 +486,7 @@ router.put("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
 router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [application] = await db.select().from(campApplications)
-      .where(eq(campApplications.id, req.params.id)).limit(1);
+      .where(eq(campApplications.id, req.params.id as string)).limit(1);
     if (!application) return res.status(404).json({ error: "Camp application not found" });
 
     // Check for existing quote first → 409 regardless of current status
@@ -508,7 +505,7 @@ router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole
       const emailCheck = await db.execute(sql`
         SELECT id FROM accounts WHERE email = ${applicantEmail} LIMIT 1
       `);
-      const emailRow = ((emailCheck as any).rows ?? (emailCheck as any[]))[0];
+      const emailRow = ((emailCheck as any).rows ?? (emailCheck as unknown as any[]))[0];
       if (emailRow?.id) existingClientAccountId = emailRow.id;
     }
 
@@ -669,11 +666,11 @@ router.post("/camp-applications/:id/convert-to-quote", authenticate, requireRole
 
 router.post("/camp-applications/:id/convert-to-contract", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    if (!UUID_RE.test(req.params.id))
+    if (!UUID_RE.test(req.params.id as string))
       return res.status(400).json({ error: "Invalid application ID format" });
 
     const [application] = await db.select().from(campApplications)
-      .where(eq(campApplications.id, req.params.id)).limit(1);
+      .where(eq(campApplications.id, req.params.id as string)).limit(1);
     if (!application) return res.status(404).json({ error: "Camp application not found" });
 
     if (application.contractId)

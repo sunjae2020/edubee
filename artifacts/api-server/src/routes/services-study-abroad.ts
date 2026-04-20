@@ -180,7 +180,7 @@ router.get(
         .leftJoin(users, eq(studyAbroadMgt.assignedStaffId, users.id))
         .where(
           and(
-            eq(studyAbroadMgt.id, req.params.id),
+            eq(studyAbroadMgt.id, req.params.id as string),
             eq(studyAbroadMgt.programContext, "study_abroad")
           )
         );
@@ -206,7 +206,7 @@ router.patch(
         .from(studyAbroadMgt)
         .where(
           and(
-            eq(studyAbroadMgt.id, req.params.id),
+            eq(studyAbroadMgt.id, req.params.id as string),
             eq(studyAbroadMgt.programContext, "study_abroad")
           )
         );
@@ -272,7 +272,7 @@ router.patch(
         })
         .where(
           and(
-            eq(studyAbroadMgt.id, req.params.id),
+            eq(studyAbroadMgt.id, req.params.id as string),
             eq(studyAbroadMgt.programContext, "study_abroad")
           )
         )
@@ -324,12 +324,12 @@ router.patch(
       const [existing] = await db
         .select({ id: studyAbroadMgt.id, isActive: studyAbroadMgt.isActive })
         .from(studyAbroadMgt)
-        .where(eq(studyAbroadMgt.id, req.params.id));
+        .where(eq(studyAbroadMgt.id, req.params.id as string));
       if (!existing) return res.status(404).json({ error: "Not found" });
       const [updated] = await db
         .update(studyAbroadMgt)
         .set({ isActive: !existing.isActive, updatedAt: new Date() })
-        .where(eq(studyAbroadMgt.id, req.params.id))
+        .where(eq(studyAbroadMgt.id, req.params.id as string))
         .returning();
       return res.json(updated);
     } catch (err) {

@@ -166,7 +166,7 @@ export default function PackageGroupDetail() {
     queryFn: () => axios.get(`${BASE}/api/products?status=active&limit=200`).then(r => { const d = r.data?.data ?? r.data; return Array.isArray(d) ? d : []; }),
     enabled: showPkgAddProduct,
   });
-  const allActiveProducts: any[] = Array.isArray(allActiveProductsData) ? allActiveProductsData : (allActiveProductsData?.data ?? []);
+  const allActiveProducts: any[] = Array.isArray(allActiveProductsData) ? allActiveProductsData : ((allActiveProductsData as any)?.data ?? []);
 
   // Per-package products
   const { data: pkgProductsData, isLoading: pkgProductsLoading } = useQuery({

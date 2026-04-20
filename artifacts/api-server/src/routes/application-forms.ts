@@ -125,7 +125,7 @@ router.post("/application-forms", requireRole(...ADMIN_ROLES), async (req, res) 
 // ── GET /api/application-forms/:id ────────────────────────────────────────
 router.get("/application-forms/:id", requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [form] = await db.select().from(applicationForms).where(eq(applicationForms.id, req.params.id)).limit(1);
+    const [form] = await db.select().from(applicationForms).where(eq(applicationForms.id, req.params.id as string)).limit(1);
     if (!form) return res.status(404).json({ error: "Form not found" });
     return res.json(form);
   } catch (err) {
@@ -153,7 +153,7 @@ router.put("/application-forms/:id", requireRole(...ADMIN_ROLES), async (req, re
         ...(status      !== undefined && { status }),
         modifiedOn: new Date(),
       })
-      .where(eq(applicationForms.id, req.params.id))
+      .where(eq(applicationForms.id, req.params.id as string))
       .returning();
 
     if (!form) return res.status(404).json({ error: "Form not found" });
@@ -169,15 +169,15 @@ router.put("/application-forms/:id", requireRole(...ADMIN_ROLES), async (req, re
 router.delete("/application-forms/:id", requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const partners = await db.select().from(applicationFormPartners)
-      .where(eq(applicationFormPartners.formId, req.params.id));
+      .where(eq(applicationFormPartners.formId, req.params.id as string));
 
     await db.update(applicationFormPartners)
       .set({ isActive: false, modifiedOn: new Date() })
-      .where(eq(applicationFormPartners.formId, req.params.id));
+      .where(eq(applicationFormPartners.formId, req.params.id as string));
 
     await db.update(applicationForms)
       .set({ status: "inactive", modifiedOn: new Date() })
-      .where(eq(applicationForms.id, req.params.id));
+      .where(eq(applicationForms.id, req.params.id as string));
 
     return res.json({ success: true, partnerCount: partners.length });
   } catch (err) {
@@ -190,7 +190,7 @@ router.delete("/application-forms/:id", requireRole(...ADMIN_ROLES), async (req,
 router.post("/application-forms/:id/clone", requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { newName, newSlug, includePartners } = req.body;
-    const [source] = await db.select().from(applicationForms).where(eq(applicationForms.id, req.params.id)).limit(1);
+    const [source] = await db.select().from(applicationForms).where(eq(applicationForms.id, req.params.id as string)).limit(1);
     if (!source) return res.status(404).json({ error: "Source form not found" });
 
     const slug = newSlug ? toSlug(newSlug) : toSlug(newName || `${source.name} Copy`);
@@ -236,7 +236,7 @@ router.post("/application-forms/:id/clone", requireRole(...ADMIN_ROLES), async (
 router.get("/application-forms/:formId/partners", requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const rows = await db.select().from(applicationFormPartners)
-      .where(eq(applicationFormPartners.formId, req.params.formId))
+      .where(eq(applicationFormPartners.formId, req.params.formId as string))
       .orderBy(applicationFormPartners.createdOn);
     return res.json(await enrichPartners(rows));
   } catch (err) {
@@ -253,7 +253,7 @@ router.post("/application-forms/:formId/partners", requireRole(...ADMIN_ROLES), 
       return res.status(400).json({ error: "Partner account and parameter are required" });
     }
 
-    const [form] = await db.select().from(applicationForms).where(eq(applicationForms.id, req.params.formId)).limit(1);
+    const [form] = await db.select().from(applicationForms).where(eq(applicationForms.id, req.params.formId as string)).limit(1);
     if (!form) return res.status(404).json({ error: "Form not found" });
 
     const [acct] = await db.select().from(accounts).where(eq(accounts.id, partnerAccountId)).limit(1);
@@ -269,7 +269,7 @@ router.post("/application-forms/:formId/partners", requireRole(...ADMIN_ROLES), 
     const autoDisplayName = displayName || await buildDisplayName(form, acct, partnerParameter, orgName);
 
     const [partner] = await db.insert(applicationFormPartners).values({
-      formId: req.params.formId,
+      formId: req.params.formId as string,
       partnerAccountId,
       partnerParameter,
       displayName: autoDisplayName,
@@ -302,8 +302,8 @@ router.put("/application-forms/:formId/partners/:id", requireRole(...ADMIN_ROLES
         modifiedOn: new Date(),
       })
       .where(and(
-        eq(applicationFormPartners.id, req.params.id),
-        eq(applicationFormPartners.formId, req.params.formId)
+        eq(applicationFormPartners.id, req.params.id as string),
+        eq(applicationFormPartners.formId, req.params.formId as string)
       ))
       .returning();
 
@@ -320,8 +320,8 @@ router.put("/application-forms/:formId/partners/:id", requireRole(...ADMIN_ROLES
 router.delete("/application-forms/:formId/partners/:id", requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     await db.delete(applicationFormPartners).where(and(
-      eq(applicationFormPartners.id, req.params.id),
-      eq(applicationFormPartners.formId, req.params.formId)
+      eq(applicationFormPartners.id, req.params.id as string),
+      eq(applicationFormPartners.formId, req.params.formId as string)
     ));
     return res.json({ success: true });
   } catch (err) {
@@ -359,7 +359,7 @@ router.get("/partner-accounts", requireRole(...ADMIN_ROLES), async (req, res) =>
 // GET /api/application-forms/:formId/terms  — list all language versions
 router.get("/application-forms/:formId/terms", requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { formId } = req.params;
+    const { formId } = req.params as Record<string, string>;
     const rows = await db
       .select()
       .from(formTermsContent)
@@ -375,7 +375,7 @@ router.get("/application-forms/:formId/terms", requireRole(...ADMIN_ROLES), asyn
 // PUT /api/application-forms/:formId/terms/:lang  — upsert a language version
 router.put("/application-forms/:formId/terms/:lang", requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { formId, lang } = req.params;
+    const { formId, lang } = req.params as Record<string, string>;
     const { content, isDefault } = req.body;
     if (!content) return res.status(400).json({ error: "content is required" });
 
@@ -415,7 +415,7 @@ router.put("/application-forms/:formId/terms/:lang", requireRole(...ADMIN_ROLES)
 // DELETE /api/application-forms/:formId/terms/:lang
 router.delete("/application-forms/:formId/terms/:lang", requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { formId, lang } = req.params;
+    const { formId, lang } = req.params as Record<string, string>;
     await db
       .delete(formTermsContent)
       .where(and(eq(formTermsContent.formId, formId), eq(formTermsContent.language, lang)));

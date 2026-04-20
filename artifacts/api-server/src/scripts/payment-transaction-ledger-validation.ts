@@ -24,7 +24,7 @@ class PaymentLedgerValidator {
     };
 
     const response = await fetch(url, { ...options, headers });
-    const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch(() => ({})) as any;
     return { status: response.status, data };
   }
 
@@ -565,3 +565,4 @@ validator.runValidation().catch((err) => {
   console.error("Validation error:", err);
   process.exit(1);
 });
+export {};

@@ -82,7 +82,7 @@ router.get("/my-accounting/revenue", authenticate, async (req, res) => {
 router.get("/my-accounting/banking", authenticate, async (req, res) => {
   try {
     const uid = req.user!.id;
-    const data = await db.select().from(banking).where(eq(banking.userId, uid));
+    const data = await db.select().from(banking).where(eq((banking as any).userId, uid));
     return res.json({ data });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -102,11 +102,11 @@ router.post("/my-accounting/banking", authenticate, async (req, res) => {
 router.put("/my-accounting/banking/:id", authenticate, async (req, res) => {
   try {
     const uid = req.user!.id;
-    const [rec] = await db.select().from(banking).where(eq(banking.id, req.params.id)).limit(1);
+    const [rec] = await db.select().from(banking).where(eq(banking.id, req.params.id as string)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
-    if (rec.userId !== uid) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
+    if ((rec as any).userId !== uid) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     const [updated] = await db.update(banking).set({ ...req.body, updatedAt: new Date() })
-      .where(eq(banking.id, req.params.id)).returning();
+      .where(eq(banking.id, req.params.id as string)).returning();
     return res.json(updated);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });

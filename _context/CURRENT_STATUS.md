@@ -1,6 +1,19 @@
 # CURRENT_STATUS.md — Edubee CRM 현재 구현 상태
 
-> 생성일: 2026-04-19 | v2.0 검증 기준 (45/57 PASS)
+> 생성일: 2026-04-19 | 최종 업데이트: 2026-04-21 | v2.1 — Production 배포 완료
+
+---
+
+## 0. 프로덕션 배포 현황 (2026-04-21)
+
+| 도메인 | 상태 | 호스팅 |
+|--------|------|--------|
+| `api.edubee.co` | ✅ 운영 중 | Railway |
+| `app.edubee.co` | ✅ 운영 중 | Vercel |
+| `portal.edubee.co` | ✅ 운영 중 | Vercel |
+| `www.edubee.co` | ✅ 운영 중 | Vercel |
+| `camp.edubee.co` | ✅ 운영 중 | Vercel |
+| `edubee.co` (루트) | ⚠️ Vercel 검증 진행 중 | Vercel |
 
 ---
 

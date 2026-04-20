@@ -57,6 +57,8 @@ interface PickupRow {
   driverName?: string | null;
   driverContact?: string | null;
   status?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 function fmtDatetime(d?: string | null): { date: string; time: string } {

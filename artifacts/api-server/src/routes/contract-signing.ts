@@ -20,9 +20,9 @@ function generateToken(): string {
 
 // ── POST /api/contract-signing/:contractId/request ────────────────────────────
 // Admin: create a new signing request and send email(s) to signer(s)
-router.post("/:contractId/request", authenticate, requireRole(ADMIN_ROLES), async (req, res) => {
+router.post("/:contractId/request", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { contractId } = req.params;
+    const { contractId } = req.params as Record<string, string>;
     const { signers, expiryDays = 14, contractData } = req.body as {
       signers: Array<{ role: string; name: string; email: string; required: boolean }>;
       expiryDays?: number;
@@ -126,7 +126,7 @@ router.post("/:contractId/request", authenticate, requireRole(ADMIN_ROLES), asyn
 router.get("/status/:contractId", authenticate, async (req, res) => {
   try {
     const rows = await staticDb.select().from(contractSigningRequests)
-      .where(eq(contractSigningRequests.contractId, req.params.contractId))
+      .where(eq(contractSigningRequests.contractId, req.params.contractId as string))
       .orderBy(contractSigningRequests.createdAt);
     res.json(rows);
   } catch (err) {
@@ -139,7 +139,7 @@ router.get("/status/:contractId", authenticate, async (req, res) => {
 router.get("/public/:token", async (req, res) => {
   try {
     const [row] = await staticDb.select().from(contractSigningRequests)
-      .where(eq(contractSigningRequests.token, req.params.token)).limit(1);
+      .where(eq(contractSigningRequests.token, req.params.token as string)).limit(1);
     if (!row) return res.status(404).json({ error: "Signing request not found" });
 
     if (row.status === "signed")    return res.status(410).json({ error: "already_signed",  message: "This document has already been signed." });
@@ -167,7 +167,7 @@ router.get("/public/:token", async (req, res) => {
 router.post("/public/:token/sign", async (req, res) => {
   try {
     const [row] = await staticDb.select().from(contractSigningRequests)
-      .where(eq(contractSigningRequests.token, req.params.token)).limit(1);
+      .where(eq(contractSigningRequests.token, req.params.token as string)).limit(1);
     if (!row) return res.status(404).json({ error: "Signing request not found" });
     if (row.status !== "pending") return res.status(410).json({ error: "This request is no longer active." });
     if (row.expiresAt && new Date(row.expiresAt) < new Date()) {
@@ -229,7 +229,7 @@ router.post("/public/:token/sign", async (req, res) => {
 router.get("/pdf/:id", authenticate, async (req, res) => {
   try {
     const [row] = await staticDb.select().from(contractSigningRequests)
-      .where(eq(contractSigningRequests.id, req.params.id)).limit(1);
+      .where(eq(contractSigningRequests.id, req.params.id as string)).limit(1);
     if (!row || !row.pdfPath || !fs.existsSync(row.pdfPath)) {
       return res.status(404).json({ error: "PDF not found" });
     }
@@ -243,11 +243,11 @@ router.get("/pdf/:id", authenticate, async (req, res) => {
 });
 
 // ── DELETE /api/contract-signing/:id/cancel ───────────────────────────────────
-router.delete("/:id/cancel", authenticate, requireRole(ADMIN_ROLES), async (req, res) => {
+router.delete("/:id/cancel", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     await staticDb.update(contractSigningRequests)
       .set({ status: "cancelled", updatedAt: new Date() })
-      .where(eq(contractSigningRequests.id, req.params.id));
+      .where(eq(contractSigningRequests.id, req.params.id as string));
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to cancel request" });

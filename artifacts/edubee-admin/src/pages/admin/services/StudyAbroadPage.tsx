@@ -30,6 +30,9 @@ interface StudyAbroadRow {
   status?: string | null;
   staffFirstName?: string | null;
   staffLastName?: string | null;
+  studentSchoolName?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 // ─── Pipeline stages ─────────────────────────────────────────────────────────

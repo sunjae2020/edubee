@@ -11,7 +11,7 @@ const router = Router();
 
 // GET balance summary for a user
 router.get('/ledger/balance/:userId', authenticate, asyncHandler(async (req: any, res: any) => {
-  const { userId } = req.params;
+  const { userId } = req.params as Record<string, string>;
   if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
     if (req.user.id !== userId) {
       return res.status(403).json({ success: false, error: 'Forbidden' });
@@ -23,7 +23,7 @@ router.get('/ledger/balance/:userId', authenticate, asyncHandler(async (req: any
 
 // GET full AR status for a contract
 router.get('/ledger/ar-status/:contractId', authenticate, asyncHandler(async (req: any, res: any) => {
-  const { contractId } = req.params;
+  const { contractId } = req.params as Record<string, string>;
 
   const contractInvoices = await db.select()
     .from(invoices)
@@ -100,7 +100,7 @@ router.get('/ledger/ar-status/:contractId', authenticate, asyncHandler(async (re
 
 // GET ledger entries for an account (paginated)
 router.get('/ledger/account/:userId', authenticate, asyncHandler(async (req: any, res: any) => {
-  const { userId } = req.params;
+  const { userId } = req.params as Record<string, string>;
   if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
     if (req.user.id !== userId) {
       return res.status(403).json({ success: false, error: 'Forbidden' });

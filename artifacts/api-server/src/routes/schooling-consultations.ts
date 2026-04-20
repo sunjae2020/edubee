@@ -16,9 +16,9 @@ function genRef() {
 // ── LIST ─────────────────────────────────────────────────────────────────────
 router.get("/schooling-consultations", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const page   = Math.max(1, parseInt(String(req.query.page || "1")));
-    const search = String(req.query.search || "").trim();
-    const status = String(req.query.status || "").trim();
+    const page   = Math.max(1, parseInt(String(req.query.page as string || "1")));
+    const search = String(req.query.search as string || "").trim();
+    const status = String(req.query.status as string || "").trim();
     const orgId  = (req as any).tenantId as string | undefined;
 
     const conditions: any[] = [];
@@ -75,10 +75,10 @@ router.get("/schooling-consultations", authenticate, requireRole(...ADMIN_ROLES)
 // ── GET ONE (with students) ───────────────────────────────────────────────────
 router.get("/schooling-consultations/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const rows = await db.select().from(schoolingConsultations).where(eq(schoolingConsultations.id, req.params.id));
+    const rows = await db.select().from(schoolingConsultations).where(eq(schoolingConsultations.id, req.params.id as string));
     if (!rows.length) return res.status(404).json({ error: "Not found" });
     const students = await db.select().from(schoolingConsultationStudents)
-      .where(eq(schoolingConsultationStudents.consultationId, req.params.id))
+      .where(eq(schoolingConsultationStudents.consultationId, req.params.id as string))
       .orderBy(schoolingConsultationStudents.createdAt);
     return res.json({ ...rows[0], students });
   } catch (err) {
@@ -198,17 +198,17 @@ router.patch("/schooling-consultations/:id", authenticate, requireRole(...ADMIN_
         privacyConsent:   body.privacyConsent    ?? undefined,
         updatedAt:        new Date(),
       })
-      .where(eq(schoolingConsultations.id, req.params.id))
+      .where(eq(schoolingConsultations.id, req.params.id as string))
       .returning();
 
     if (!updated.length) return res.status(404).json({ error: "Not found" });
 
     if (Array.isArray(students)) {
-      await db.delete(schoolingConsultationStudents).where(eq(schoolingConsultationStudents.consultationId, req.params.id));
+      await db.delete(schoolingConsultationStudents).where(eq(schoolingConsultationStudents.consultationId, req.params.id as string));
       if (students.length > 0) {
         await db.insert(schoolingConsultationStudents).values(
           students.map((s: any) => ({
-            consultationId:    req.params.id,
+            consultationId:    req.params.id as string,
             name:              s.name              || null,
             gender:            s.gender            || null,
             dateOfBirth:       s.dateOfBirth       || null,
@@ -234,7 +234,7 @@ router.patch("/schooling-consultations/:id", authenticate, requireRole(...ADMIN_
       }
     }
 
-    const studentRows = await db.select().from(schoolingConsultationStudents).where(eq(schoolingConsultationStudents.consultationId, req.params.id));
+    const studentRows = await db.select().from(schoolingConsultationStudents).where(eq(schoolingConsultationStudents.consultationId, req.params.id as string));
     return res.json({ ...updated[0], students: studentRows });
   } catch (err) {
     console.error("[PATCH /api/schooling-consultations/:id]", err);
@@ -271,7 +271,7 @@ router.delete("/schooling-consultations/bulk", authenticate, requireRole("super_
 // ── HARD DELETE (single) ─────────────────────────────────────────────────────
 router.delete("/schooling-consultations/:id", authenticate, requireRole("super_admin"), async (req, res) => {
   try {
-    await db.delete(schoolingConsultations).where(eq(schoolingConsultations.id, req.params.id));
+    await db.delete(schoolingConsultations).where(eq(schoolingConsultations.id, req.params.id as string));
     return res.json({ success: true });
   } catch (err) {
     console.error("[DELETE /api/schooling-consultations/:id]", err);

@@ -19,7 +19,7 @@ const SELECT_CLS =
 export default function StaffKpiPage() {
   const { user: currentUser } = useAuth();
   const canApprove = ['admin', 'super_admin'].includes(currentUser?.role ?? '');
-  const canViewTeam = canApprove || currentUser?.role === 'team_manager';
+  const canViewTeam = canApprove || (currentUser?.role as string) === 'team_manager';
 
   // URL 파라미터에서 staffId 읽기 (?staffId=xxx)
   const urlParams = new URLSearchParams(window.location.search);

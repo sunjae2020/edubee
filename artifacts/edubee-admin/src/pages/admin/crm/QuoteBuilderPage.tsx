@@ -57,6 +57,7 @@ interface Quote {
   campApplicationId?: string | null;
   contractId?: string | null;
   contractNumber?: string | null;
+  lead?: { leadRefNumber?: string; firstName?: string; lastName?: string; fullName?: string; status?: string } | null;
 }
 
 interface QuoteProduct {

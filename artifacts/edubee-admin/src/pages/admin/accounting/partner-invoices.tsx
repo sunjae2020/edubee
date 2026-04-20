@@ -49,6 +49,7 @@ interface Invoice {
   totalAmount?: string | null; currency?: string | null;
   originalCurrency?: string | null; originalAmount?: string | null; audEquivalent?: string | null;
   status?: string | null; issuedAt?: string | null; dueDate?: string | null; notes?: string | null;
+  paidAt?: string | null;
 }
 
 export default function PartnerInvoices() {

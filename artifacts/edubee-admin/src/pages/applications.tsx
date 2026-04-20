@@ -42,11 +42,7 @@ export default function Applications() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: appsData, isLoading } = useListApplications({
-    query: {
-      queryKey: ['/api/applications', { search: searchTerm, status: statusFilter === 'all' ? undefined : statusFilter }]
-    }
-  });
+  const { data: appsData, isLoading } = useListApplications();
 
   const createMut = useCreateApplication();
 

@@ -87,7 +87,7 @@ router.get(
         })
         .from(paymentStatements)
         .leftJoin(users, eq(users.id, paymentStatements.issuedBy))
-        .where(eq(paymentStatements.contractId, req.params.contractId))
+        .where(eq(paymentStatements.contractId, req.params.contractId as string))
         .orderBy(desc(paymentStatements.createdOn));
       return res.json({ data: rows });
     } catch (err) {
@@ -107,7 +107,7 @@ router.get(
       const [stmt] = await db
         .select({ statementRef: paymentStatements.statementRef, pdfUrl: paymentStatements.pdfUrl })
         .from(paymentStatements)
-        .where(eq(paymentStatements.id, req.params.id))
+        .where(eq(paymentStatements.id, req.params.id as string))
         .limit(1);
 
       if (!stmt) return res.status(404).json({ error: "Statement not found" });
@@ -141,7 +141,7 @@ router.post(
           sentToEmail: paymentStatements.sentToEmail,
         })
         .from(paymentStatements)
-        .where(eq(paymentStatements.id, req.params.id))
+        .where(eq(paymentStatements.id, req.params.id as string))
         .limit(1);
 
       if (!stmt) return res.status(404).json({ error: "Statement not found" });

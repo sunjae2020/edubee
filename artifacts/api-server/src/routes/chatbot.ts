@@ -296,7 +296,7 @@ router.patch("/chatbot/docs/:id/scope", authenticate, requireRole(...ADMIN_ROLES
     }
     const [updated] = await db.update(chatDocuments)
       .set({ scope, updatedAt: new Date() })
-      .where(eq(chatDocuments.id, req.params.id))
+      .where(eq(chatDocuments.id, req.params.id as string))
       .returning({ id: chatDocuments.id, title: chatDocuments.title, scope: chatDocuments.scope });
     if (!updated) return res.status(404).json({ error: "Document not found" });
 
@@ -313,9 +313,9 @@ router.patch("/chatbot/docs/:id/scope", authenticate, requireRole(...ADMIN_ROLES
 // ─── DELETE /api/chatbot/docs/:id ─────────────────────────────────────────
 router.delete("/chatbot/docs/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    await db.delete(chatDocuments).where(eq(chatDocuments.id, req.params.id));
+    await db.delete(chatDocuments).where(eq(chatDocuments.id, req.params.id as string));
     await ensureKB();
-    await removeDocumentFromKB(req.params.id);
+    await removeDocumentFromKB(req.params.id as string);
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: "Failed to delete document" });
@@ -324,7 +324,7 @@ router.delete("/chatbot/docs/:id", authenticate, requireRole(...ADMIN_ROLES), as
 
 // ─── DELETE /api/chatbot/session/:sessionId ────────────────────────────────
 router.delete("/chatbot/session/:sessionId", authenticate, (req, res) => {
-  sessions.delete(req.params.sessionId);
+  sessions.delete(req.params.sessionId as string);
   res.json({ cleared: true });
 });
 

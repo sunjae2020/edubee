@@ -161,6 +161,7 @@ function AddAccountModal({ contactId, contactName, existingIds, onClose, onSucce
   existingIds: string[];
   onClose: () => void; onSuccess: () => void;
 }) {
+  const contactTypes = useLookup("contact_type");
   const [mode, setMode] = useState<"create" | "link">("create");
   const [accountType, setAccountType] = useState("Student");
   const [accountName, setAccountName] = useState(contactName);

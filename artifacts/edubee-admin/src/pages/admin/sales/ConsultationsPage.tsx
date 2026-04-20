@@ -118,7 +118,7 @@ export default function ConsultationsPage() {
   const rows      = data?.data ?? [];
   const total     = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
-  const sorted    = useSorted(rows, sortState.key, sortState.dir);
+  const sorted    = useSorted(rows, sortState.sortBy, sortState.sortDir);
 
   const saveMutation = useMutation({
     mutationFn: async (payload: typeof form) => {
@@ -308,7 +308,6 @@ export default function ConsultationsPage() {
 
       <TableFooter
         page={page}
-        totalPages={totalPages}
         total={total}
         pageSize={20}
         onPageChange={setPage}

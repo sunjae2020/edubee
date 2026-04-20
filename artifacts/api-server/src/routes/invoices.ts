@@ -80,7 +80,7 @@ router.get(
   async (req, res) => {
     try {
       const [invoice] = await db.select().from(invoices)
-        .where(eq(invoices.id, req.params.id)).limit(1);
+        .where(eq(invoices.id, req.params.id as string)).limit(1);
 
       if (!invoice) {
         return res.status(404).json({ error: "Invoice not found" });
@@ -178,7 +178,7 @@ router.put(
   async (req, res) => {
     try {
       const [existing] = await db.select().from(invoices)
-        .where(eq(invoices.id, req.params.id)).limit(1);
+        .where(eq(invoices.id, req.params.id as string)).limit(1);
 
       if (!existing) {
         return res.status(404).json({ error: "Invoice not found" });
@@ -187,7 +187,7 @@ router.put(
       const updates = { ...req.body, updatedAt: new Date() };
       const [updated] = await db.update(invoices)
         .set(updates)
-        .where(eq(invoices.id, req.params.id))
+        .where(eq(invoices.id, req.params.id as string))
         .returning();
 
       logAudit({ tableName: "invoices", recordId: updated.id, action: "UPDATE", newValues: req.body as Record<string, unknown>, changedFields: Object.keys(req.body), ...auditParamsFromReq(req) }).catch(() => {});
@@ -207,14 +207,14 @@ router.delete(
   async (req, res) => {
     try {
       const [existing] = await db.select().from(invoices)
-        .where(eq(invoices.id, req.params.id)).limit(1);
+        .where(eq(invoices.id, req.params.id as string)).limit(1);
 
       if (!existing) {
         return res.status(404).json({ error: "Invoice not found" });
       }
 
       await db.delete(invoices)
-        .where(eq(invoices.id, req.params.id));
+        .where(eq(invoices.id, req.params.id as string));
 
       logAudit({ tableName: "invoices", recordId: existing.id, action: "DELETE", oldValues: existing as unknown as Record<string, unknown>, ...auditParamsFromReq(req) }).catch(() => {});
       return res.json({ message: "Invoice deleted" });

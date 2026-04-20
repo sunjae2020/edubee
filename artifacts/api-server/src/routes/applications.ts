@@ -59,7 +59,7 @@ router.post("/leads", authenticate, async (req, res) => {
 
 router.get("/leads/:id", authenticate, async (req, res) => {
   try {
-    const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id)).limit(1);
+    const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id as string)).limit(1);
     if (!lead) return res.status(404).json({ error: "Not Found" });
     return res.json(lead);
   } catch (err) {
@@ -70,7 +70,7 @@ router.get("/leads/:id", authenticate, async (req, res) => {
 router.put("/leads/:id", authenticate, async (req, res) => {
   try {
     const [lead] = await db.update(leads).set({ ...req.body, updatedAt: new Date() })
-      .where(eq(leads.id, req.params.id)).returning();
+      .where(eq(leads.id, req.params.id as string)).returning();
     if (!lead) return res.status(404).json({ error: "Not Found" });
     return res.json(lead);
   } catch (err) {
@@ -98,7 +98,7 @@ router.delete("/leads/bulk", authenticate, async (req, res) => {
 
 router.delete("/leads/:id", authenticate, async (req, res) => {
   try {
-    await db.delete(leads).where(eq(leads.id, req.params.id));
+    await db.delete(leads).where(eq(leads.id, req.params.id as string));
     return res.json({ success: true, message: "Lead deleted" });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -109,7 +109,7 @@ router.put("/leads/:id/status", authenticate, async (req, res) => {
   try {
     const { status } = req.body;
     const [lead] = await db.update(leads).set({ status, updatedAt: new Date() })
-      .where(eq(leads.id, req.params.id)).returning();
+      .where(eq(leads.id, req.params.id as string)).returning();
     if (!lead) return res.status(404).json({ error: "Not Found" });
     return res.json(lead);
   } catch (err) {
@@ -119,7 +119,7 @@ router.put("/leads/:id/status", authenticate, async (req, res) => {
 
 router.post("/leads/:id/convert", authenticate, async (req, res) => {
   try {
-    const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id)).limit(1);
+    const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id as string)).limit(1);
     if (!lead) return res.status(404).json({ error: "Lead not found" });
     const applicationNumber = generateApplicationNumber();
     const [app] = await db.insert(applications).values({
@@ -258,18 +258,18 @@ router.post("/applications", authenticate, async (req, res) => {
 
 router.get("/applications/:id", authenticate, async (req, res) => {
   try {
-    const [application] = await db.select().from(applications).where(eq(applications.id, req.params.id)).limit(1);
+    const [application] = await db.select().from(applications).where(eq(applications.id, req.params.id as string)).limit(1);
     if (!application) return res.status(404).json({ error: "Not Found" });
     
     const participants = await db.select().from(applicationParticipants)
-      .where(eq(applicationParticipants.applicationId, req.params.id));
+      .where(eq(applicationParticipants.applicationId, req.params.id as string));
 
     // Always look up linked contract (handles status inconsistency edge cases)
     let contractInfo: { contractId: string; contractNumber: string } | null = null;
     const [linkedContract] = await db
       .select({ id: contracts.id, contractNumber: contracts.contractNumber })
       .from(contracts)
-      .where(eq(contracts.applicationId, req.params.id))
+      .where(eq(contracts.applicationId, req.params.id as string))
       .limit(1);
     if (linkedContract) {
       contractInfo = { contractId: linkedContract.id, contractNumber: linkedContract.contractNumber ?? "" };
@@ -361,7 +361,7 @@ router.patch("/applications/participants/:id", authenticate, async (req, res) =>
     if (whatsapp !== undefined) updates.whatsapp = whatsapp;
     if (lineId !== undefined) updates.lineId = lineId;
     const [updated] = await db.update(applicationParticipants).set(updates)
-      .where(eq(applicationParticipants.id, req.params.id)).returning();
+      .where(eq(applicationParticipants.id, req.params.id as string)).returning();
     if (!updated) return res.status(404).json({ error: "Not Found" });
     if (updated.passportNumber) updated.passportNumber = decryptField(updated.passportNumber);
     return res.json(updated);
@@ -374,7 +374,7 @@ router.patch("/applications/participants/:id", authenticate, async (req, res) =>
 router.put("/applications/:id", authenticate, async (req, res) => {
   try {
     const [application] = await db.update(applications).set({ ...req.body, updatedAt: new Date() })
-      .where(eq(applications.id, req.params.id)).returning();
+      .where(eq(applications.id, req.params.id as string)).returning();
     if (!application) return res.status(404).json({ error: "Not Found" });
     return res.json(application);
   } catch (err) {
@@ -388,7 +388,7 @@ router.put("/applications/:id/status", authenticate, async (req, res) => {
     const updates: Record<string, any> = { status, updatedAt: new Date() };
     if (notes) updates.notes = notes;
     const [application] = await db.update(applications).set(updates)
-      .where(eq(applications.id, req.params.id)).returning();
+      .where(eq(applications.id, req.params.id as string)).returning();
     if (!application) return res.status(404).json({ error: "Not Found" });
     return res.json(application);
   } catch (err) {
@@ -398,10 +398,10 @@ router.put("/applications/:id/status", authenticate, async (req, res) => {
 
 router.post("/applications/:id/convert-contract", authenticate, requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
   try {
-    const [application] = await db.select().from(applications).where(eq(applications.id, req.params.id)).limit(1);
+    const [application] = await db.select().from(applications).where(eq(applications.id, req.params.id as string)).limit(1);
     if (!application) return res.status(404).json({ error: "Not Found" });
 
-    const existingContract = await db.select().from(contracts).where(eq(contracts.applicationId, req.params.id)).limit(1);
+    const existingContract = await db.select().from(contracts).where(eq(contracts.applicationId, req.params.id as string)).limit(1);
     if (existingContract.length > 0) {
       return res.status(409).json({ error: "Conflict", message: "Contract already exists", contractId: existingContract[0].id, contractNumber: existingContract[0].contractNumber });
     }
@@ -415,7 +415,7 @@ router.post("/applications/:id/convert-contract", authenticate, requireRole("sup
     const result = await db.transaction(async (tx) => {
       const [contract] = await tx.insert(contracts).values({
         contractNumber,
-        applicationId: req.params.id,
+        applicationId: req.params.id as string,
         campProviderId: req.user!.id,
         status: "draft",
         currency: "AUD",
@@ -454,7 +454,7 @@ router.post("/applications/:id/convert-contract", authenticate, requireRole("sup
         });
       }
 
-      await tx.update(applications).set({ status: "contracted", updatedAt: new Date() }).where(eq(applications.id, req.params.id));
+      await tx.update(applications).set({ status: "contracted", updatedAt: new Date() }).where(eq(applications.id, req.params.id as string));
 
       console.log("[FIX APPLIED] convert-contract: atomic transaction completed", { contractId: contract.id, contractNumber });
       return { contractId: contract.id, contractNumber };
@@ -477,7 +477,7 @@ router.post("/applications/:id/convert-contract", authenticate, requireRole("sup
 router.patch("/applications/:id", authenticate, async (req, res) => {
   try {
     const [application] = await db.update(applications).set({ ...req.body, updatedAt: new Date() })
-      .where(eq(applications.id, req.params.id)).returning();
+      .where(eq(applications.id, req.params.id as string)).returning();
     if (!application) return res.status(404).json({ error: "Not Found" });
     return res.json(application);
   } catch (err) {
@@ -488,11 +488,11 @@ router.patch("/applications/:id", authenticate, async (req, res) => {
 router.patch("/applications/:id/toggle-active", authenticate, requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
   try {
     const [existing] = await db.select({ id: applications.id, isActive: applications.isActive })
-      .from(applications).where(eq(applications.id, req.params.id)).limit(1);
+      .from(applications).where(eq(applications.id, req.params.id as string)).limit(1);
     if (!existing) return res.status(404).json({ error: "Not Found" });
     const [updated] = await db.update(applications)
       .set({ isActive: !existing.isActive, updatedAt: new Date() })
-      .where(eq(applications.id, req.params.id)).returning({ id: applications.id, isActive: applications.isActive });
+      .where(eq(applications.id, req.params.id as string)).returning({ id: applications.id, isActive: applications.isActive });
     return res.json(updated);
   } catch (err) {
     console.error("[PATCH /api/applications/:id/toggle-active]", err);
@@ -523,7 +523,7 @@ router.delete("/applications/:id", authenticate, requireRole("super_admin", "adm
   try {
     const [application] = await db.update(applications)
       .set({ applicationStatus: "cancelled", updatedAt: new Date() })
-      .where(eq(applications.id, req.params.id)).returning();
+      .where(eq(applications.id, req.params.id as string)).returning();
     if (!application) return res.status(404).json({ error: "Not Found" });
     return res.json({ success: true });
   } catch (err) {
@@ -533,7 +533,7 @@ router.delete("/applications/:id", authenticate, requireRole("super_admin", "adm
 
 router.post("/applications/:id/convert-to-quote", authenticate, requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
   try {
-    const [application] = await db.select().from(applications).where(eq(applications.id, req.params.id)).limit(1);
+    const [application] = await db.select().from(applications).where(eq(applications.id, req.params.id as string)).limit(1);
     if (!application) return res.status(404).json({ error: "Not Found" });
     if (application.quoteId) {
       return res.status(409).json({ error: "Already converted", quoteId: application.quoteId });
@@ -555,7 +555,7 @@ router.post("/applications/:id/convert-to-quote", authenticate, requireRole("sup
         quoteRefNumber,
         leadId:        application.agentId ?? null,
         customerName:  application.applicantName ?? null,
-        originalName:  application.applicantOriginalName ?? null,
+        originalName:  application.originalName ?? null,
         quoteStatus:   "Draft",
         notes:         noteLines,
         createdBy:     req.user!.id,
@@ -565,7 +565,7 @@ router.post("/applications/:id/convert-to-quote", authenticate, requireRole("sup
         applicationStatus: "quoted",
         quoteId: newQuote.id,
         updatedAt: new Date(),
-      }).where(eq(applications.id, req.params.id));
+      }).where(eq(applications.id, req.params.id as string));
 
       // ── Add package products to the quote (if packageId linked) ──────────
       if (application.packageId) {
@@ -723,7 +723,7 @@ router.patch("/interview-schedules/:id", authenticate, async (req, res) => {
     if (candidateNotes !== undefined) updates.candidateNotes = candidateNotes;
     if (timezone !== undefined) updates.timezone = timezone;
 
-    const [updated] = await db.update(interviewSchedules).set(updates).where(eq(interviewSchedules.id, req.params.id)).returning();
+    const [updated] = await db.update(interviewSchedules).set(updates).where(eq(interviewSchedules.id, req.params.id as string)).returning();
     if (!updated) return res.status(404).json({ error: "Not Found" });
     return res.json(updated);
   } catch (err) {

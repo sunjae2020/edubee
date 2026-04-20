@@ -57,7 +57,7 @@ router.post("/product-groups", authenticate, requireRole(...ADMIN_ROLES), async 
 
 router.get("/product-groups/:id", authenticate, async (req, res) => {
   try {
-    const [row] = await db.select().from(productGroups).where(eq(productGroups.id, req.params.id));
+    const [row] = await db.select().from(productGroups).where(eq(productGroups.id, req.params.id as string));
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
   } catch (err) {
@@ -72,7 +72,7 @@ router.put("/product-groups/:id", authenticate, requireRole(...ADMIN_ROLES), asy
     const [row] = await db
       .update(productGroups)
       .set({ name, description, status, modifiedOn: new Date() })
-      .where(eq(productGroups.id, req.params.id))
+      .where(eq(productGroups.id, req.params.id as string))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
@@ -87,7 +87,7 @@ router.delete("/product-groups/:id", authenticate, requireRole(...ADMIN_ROLES), 
     const [row] = await db
       .update(productGroups)
       .set({ status: "Inactive", modifiedOn: new Date() })
-      .where(eq(productGroups.id, req.params.id))
+      .where(eq(productGroups.id, req.params.id as string))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
@@ -163,7 +163,7 @@ router.get("/product-types/:id", authenticate, async (req, res) => {
       })
       .from(productTypes)
       .leftJoin(productGroups, eq(productTypes.productGroupId, productGroups.id))
-      .where(eq(productTypes.id, req.params.id));
+      .where(eq(productTypes.id, req.params.id as string));
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
   } catch (err) {
@@ -178,7 +178,7 @@ router.put("/product-types/:id", authenticate, requireRole(...ADMIN_ROLES), asyn
     const [row] = await db
       .update(productTypes)
       .set({ name, productGroupId, serviceModuleType, description, status, modifiedOn: new Date() })
-      .where(eq(productTypes.id, req.params.id))
+      .where(eq(productTypes.id, req.params.id as string))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
@@ -193,7 +193,7 @@ router.delete("/product-types/:id", authenticate, requireRole(...ADMIN_ROLES), a
     const [row] = await db
       .update(productTypes)
       .set({ status: "Inactive", modifiedOn: new Date() })
-      .where(eq(productTypes.id, req.params.id))
+      .where(eq(productTypes.id, req.params.id as string))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
@@ -276,7 +276,7 @@ router.get("/promotions/:id", authenticate, async (req, res) => {
       .from(promotions)
       .leftJoin(products, eq(promotions.productId, products.id))
       .leftJoin(accounts, eq(promotions.accountId, accounts.id))
-      .where(eq(promotions.id, req.params.id));
+      .where(eq(promotions.id, req.params.id as string));
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
   } catch (err) {
@@ -291,7 +291,7 @@ router.put("/promotions/:id", authenticate, requireRole(...ADMIN_ROLES), async (
     const [row] = await db
       .update(promotions)
       .set({ name, productId, accountId, fromDate, toDate, promotionPrice, status, modifiedOn: new Date() })
-      .where(eq(promotions.id, req.params.id))
+      .where(eq(promotions.id, req.params.id as string))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
@@ -306,7 +306,7 @@ router.delete("/promotions/:id", authenticate, requireRole(...ADMIN_ROLES), asyn
     const [row] = await db
       .update(promotions)
       .set({ status: "Inactive", modifiedOn: new Date() })
-      .where(eq(promotions.id, req.params.id))
+      .where(eq(promotions.id, req.params.id as string))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
@@ -357,7 +357,7 @@ router.post("/commissions", authenticate, requireRole(...ADMIN_ROLES), async (re
 
 router.get("/commissions/:id", authenticate, async (req, res) => {
   try {
-    const [row] = await db.select().from(commissions).where(eq(commissions.id, req.params.id));
+    const [row] = await db.select().from(commissions).where(eq(commissions.id, req.params.id as string));
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
   } catch (err) {
@@ -372,7 +372,7 @@ router.put("/commissions/:id", authenticate, requireRole(...ADMIN_ROLES), async 
     const [row] = await db
       .update(commissions)
       .set({ name, commissionType, rateValue, description, status, modifiedOn: new Date() })
-      .where(eq(commissions.id, req.params.id))
+      .where(eq(commissions.id, req.params.id as string))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);
@@ -387,7 +387,7 @@ router.delete("/commissions/:id", authenticate, requireRole(...ADMIN_ROLES), asy
     const [row] = await db
       .update(commissions)
       .set({ status: "Inactive", modifiedOn: new Date() })
-      .where(eq(commissions.id, req.params.id))
+      .where(eq(commissions.id, req.params.id as string))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json(row);

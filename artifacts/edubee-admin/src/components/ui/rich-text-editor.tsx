@@ -73,7 +73,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 200 }
     const current = editor.getHTML();
     const incoming = value || "";
     if (current !== incoming && incoming !== (current === "<p></p>" ? "" : current)) {
-      editor.commands.setContent(incoming, false);
+      editor.commands.setContent(incoming);
     }
   }, [value, editor]);
 

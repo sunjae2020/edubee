@@ -23,6 +23,8 @@ interface InternshipRow {
   status?: string | null;
   staffFirstName?: string | null;
   staffLastName?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 // ─── Pipeline stages ──────────────────────────────────────────────────────────

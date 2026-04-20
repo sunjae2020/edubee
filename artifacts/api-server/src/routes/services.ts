@@ -75,8 +75,8 @@ router.get("/services/pickup/:id", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
     const uid = req.user!.id;
-    if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "Not Found" });
-    const [rec] = await db.select().from(pickupMgt).where(eq(pickupMgt.id, req.params.id)).limit(1);
+    if (!UUID_RE.test(req.params.id as string)) return res.status(404).json({ error: "Not Found" });
+    const [rec] = await db.select().from(pickupMgt).where(eq(pickupMgt.id, req.params.id as string)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
     // Internal staff: no ownership restriction
     const [enriched] = await enrichWithContractInfo([rec]);
@@ -90,7 +90,7 @@ router.put("/services/pickup/:id", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
     const uid = req.user!.id;
-    const [rec] = await db.select().from(pickupMgt).where(eq(pickupMgt.id, req.params.id)).limit(1);
+    const [rec] = await db.select().from(pickupMgt).where(eq(pickupMgt.id, req.params.id as string)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
     // Internal staff: no ownership restriction
 
@@ -108,7 +108,7 @@ router.put("/services/pickup/:id", authenticate, async (req, res) => {
       if (driverId !== undefined) updates.driverId = driverId;
     }
 
-    const [updated] = await db.update(pickupMgt).set(updates).where(eq(pickupMgt.id, req.params.id)).returning();
+    const [updated] = await db.update(pickupMgt).set(updates).where(eq(pickupMgt.id, req.params.id as string)).returning();
     return res.json(updated);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -135,8 +135,8 @@ router.get("/services/tour/:id", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
     const uid = req.user!.id;
-    if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "Not Found" });
-    const [rec] = await db.select().from(tourMgt).where(eq(tourMgt.id, req.params.id)).limit(1);
+    if (!UUID_RE.test(req.params.id as string)) return res.status(404).json({ error: "Not Found" });
+    const [rec] = await db.select().from(tourMgt).where(eq(tourMgt.id, req.params.id as string)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
     // Internal staff: no ownership restriction
     const [enriched] = await enrichWithContractInfo([rec]);
@@ -150,7 +150,7 @@ router.put("/services/tour/:id", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
     const uid = req.user!.id;
-    const [rec] = await db.select().from(tourMgt).where(eq(tourMgt.id, req.params.id)).limit(1);
+    const [rec] = await db.select().from(tourMgt).where(eq(tourMgt.id, req.params.id as string)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
     // Internal staff: no ownership restriction
 
@@ -170,7 +170,7 @@ router.put("/services/tour/:id", authenticate, async (req, res) => {
       if (tourCompanyId !== undefined) updates.tourCompanyId = tourCompanyId;
     }
 
-    const [updated] = await db.update(tourMgt).set(updates).where(eq(tourMgt.id, req.params.id)).returning();
+    const [updated] = await db.update(tourMgt).set(updates).where(eq(tourMgt.id, req.params.id as string)).returning();
     return res.json(updated);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -242,12 +242,12 @@ router.put("/services/settlement/:id", authenticate, async (req, res) => {
   try {
     const role = req.user!.role;
     const uid = req.user!.id;
-    const [rec] = await db.select().from(settlementMgt).where(eq(settlementMgt.id, req.params.id)).limit(1);
+    const [rec] = await db.select().from(settlementMgt).where(eq(settlementMgt.id, req.params.id as string)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
     if (role.startsWith("partner_") && rec.providerUserId !== uid) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
 
     const [updated] = await db.update(settlementMgt).set({ ...req.body, updatedAt: new Date() })
-      .where(eq(settlementMgt.id, req.params.id)).returning();
+      .where(eq(settlementMgt.id, req.params.id as string)).returning();
     return res.json(updated);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -260,7 +260,7 @@ router.patch("/services/settlement/:id/status", authenticate, async (req, res) =
     const updates: Record<string, any> = { status, updatedAt: new Date() };
     if (settlementDate) updates.settlementDate = settlementDate;
     const [updated] = await db.update(settlementMgt).set(updates)
-      .where(eq(settlementMgt.id, req.params.id)).returning();
+      .where(eq(settlementMgt.id, req.params.id as string)).returning();
     if (!updated) return res.status(404).json({ error: "Not Found" });
     return res.json(updated);
   } catch (err) {
@@ -275,10 +275,10 @@ router.get("/services/settlement/:id", authenticate, async (req, res) => {
     const uid  = req.user!.id;
     // Internal staff only: access granted
 
-    if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "Not Found" });
+    if (!UUID_RE.test(req.params.id as string)) return res.status(404).json({ error: "Not Found" });
 
     const [rec] = await db.select().from(settlementMgt)
-      .where(eq(settlementMgt.id, req.params.id)).limit(1);
+      .where(eq(settlementMgt.id, req.params.id as string)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
     if (role.startsWith("partner_") && rec.providerUserId !== uid)
       return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
@@ -307,7 +307,7 @@ router.patch("/services/settlement/:id/checklist", authenticate, async (req, res
 
     const { key, updates: itemUpdates } = req.body as { key: string; updates: Record<string, any> };
     const [rec] = await db.select({ checklist: settlementMgt.checklist })
-      .from(settlementMgt).where(eq(settlementMgt.id, req.params.id)).limit(1);
+      .from(settlementMgt).where(eq(settlementMgt.id, req.params.id as string)).limit(1);
     if (!rec) return res.status(404).json({ error: "Not Found" });
 
     const items: any[] = (rec.checklist as any[]) ?? [];
@@ -316,7 +316,7 @@ router.patch("/services/settlement/:id/checklist", authenticate, async (req, res
     items[idx] = { ...items[idx], ...itemUpdates };
 
     const [updated] = await db.update(settlementMgt).set({ checklist: items, updatedAt: new Date() })
-      .where(eq(settlementMgt.id, req.params.id)).returning();
+      .where(eq(settlementMgt.id, req.params.id as string)).returning();
     return res.json(updated);
   } catch (err) {
     console.error("Checklist update error:", err);
@@ -355,7 +355,7 @@ router.put("/services/settlement-templates/:id", authenticate, async (req, res) 
     if (!isAdminOrCC(req.user!.role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
     const [updated] = await db.update(settlementChecklistTemplates)
       .set({ ...req.body, updatedAt: new Date() })
-      .where(eq(settlementChecklistTemplates.id, req.params.id)).returning();
+      .where(eq(settlementChecklistTemplates.id, req.params.id as string)).returning();
     if (!updated) return res.status(404).json({ error: "Not Found" });
     return res.json(updated);
   } catch (err) {
@@ -366,7 +366,7 @@ router.put("/services/settlement-templates/:id", authenticate, async (req, res) 
 router.delete("/services/settlement-templates/:id", authenticate, async (req, res) => {
   try {
     if (!isAdminOrCC(req.user!.role)) return res.status(403).json({ success: false, code: "FORBIDDEN", message: "Forbidden" });
-    await db.delete(settlementChecklistTemplates).where(eq(settlementChecklistTemplates.id, req.params.id));
+    await db.delete(settlementChecklistTemplates).where(eq(settlementChecklistTemplates.id, req.params.id as string));
     return res.json({ ok: true });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });

@@ -163,7 +163,7 @@ router.get(
       const [row] = await db
         .select()
         .from(journalEntries)
-        .where(eq(journalEntries.id, req.params.id))
+        .where(eq(journalEntries.id, req.params.id as string))
         .limit(1);
 
       if (!row) return res.status(404).json({ error: "Journal entry not found" });

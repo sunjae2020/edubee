@@ -104,6 +104,7 @@ interface Lead {
   isActive?: boolean | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  quotes?: { id: string; quoteRefNumber: string; quoteStatus: string; createdOn: string }[];
 }
 
 interface StaffOption { id: string; name: string; }

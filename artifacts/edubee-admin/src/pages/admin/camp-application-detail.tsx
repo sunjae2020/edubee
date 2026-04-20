@@ -897,7 +897,7 @@ export default function CampApplicationDetail() {
 
         {/* ── Documents ── */}
         {activeTab === "documents" && (
-          <EntityDocumentsTab entityType="camp_application" entityId={id!} mode="full" />
+          <EntityDocumentsTab entityType="application" entityId={id!} mode="full" />
         )}
 
         {/* ── Notes ── */}

@@ -123,18 +123,18 @@ router.get(
       const [header] = await db
         .select()
         .from(paymentHeaders)
-        .where(eq(paymentHeaders.id, req.params.id));
+        .where(eq(paymentHeaders.id, req.params.id as string));
       if (!header) return res.status(404).json({ error: "Payment not found" });
 
       const lines = await db
         .select()
         .from(paymentLines)
-        .where(eq(paymentLines.paymentHeaderId, req.params.id));
+        .where(eq(paymentLines.paymentHeaderId, req.params.id as string));
 
       const entries = await db
         .select()
         .from(journalEntries)
-        .where(eq(journalEntries.paymentHeaderId, req.params.id));
+        .where(eq(journalEntries.paymentHeaderId, req.params.id as string));
 
       return res.json({ ...header, lines, journalEntries: entries });
     } catch (err) {
@@ -325,7 +325,7 @@ router.patch(
       const [existing] = await db
         .select({ id: paymentHeaders.id, status: paymentHeaders.status })
         .from(paymentHeaders)
-        .where(eq(paymentHeaders.id, req.params.id));
+        .where(eq(paymentHeaders.id, req.params.id as string));
 
       if (!existing) return res.status(404).json({ error: "Payment not found" });
       if (existing.status === "Void") return res.status(400).json({ error: "Payment already voided" });
@@ -333,7 +333,7 @@ router.patch(
       const [updated] = await db
         .update(paymentHeaders)
         .set({ status: "Void", modifiedOn: new Date() })
-        .where(eq(paymentHeaders.id, req.params.id))
+        .where(eq(paymentHeaders.id, req.params.id as string))
         .returning();
 
       // Cascade: also deactivate any linked transaction records
@@ -342,7 +342,7 @@ router.patch(
           .update(transactions)
           .set({ status: "Inactive" })
           .where(and(
-            eq(transactions.paymentInfoId, req.params.id),
+            eq(transactions.paymentInfoId, req.params.id as string),
             eq(transactions.status, "Active"),
           ));
       } catch (cascadeErr) {
@@ -415,7 +415,7 @@ router.get("/accounting/payments-lookup/contracts/:id/products", authenticate, a
              ap_amount, ap_status,
              service_module_type
       FROM contract_products
-      WHERE contract_id = ${req.params.id}::uuid
+      WHERE contract_id = ${req.params.id as string}::uuid
       ORDER BY COALESCE(sort_index, 0), created_at
     `);
     return res.json(r(rows));
@@ -428,7 +428,7 @@ router.get("/accounting/payments-lookup/contracts/:id/products", authenticate, a
 // ─── PAYMENTS BY CONTRACT ─────────────────────────────────────────────────────
 router.get("/accounting/payments/by-contract/:contractId", authenticate, async (req, res) => {
   try {
-    const { contractId } = req.params;
+    const { contractId } = req.params as Record<string, string>;
     const r = (x: any) => x.rows ?? (x as any[]);
     const rows = await db.execute(sql`
       SELECT
@@ -471,7 +471,7 @@ router.get("/accounting/payments/by-contract/:contractId", authenticate, async (
 // ─── LEDGER BY ACCOUNT ────────────────────────────────────────────────────────
 router.get("/accounting/ledger/by-account/:accountId", authenticate, async (req, res) => {
   try {
-    const { accountId } = req.params;
+    const { accountId } = req.params as Record<string, string>;
     const r = (x: any) => x.rows ?? (x as any[]);
     const rows = await db.execute(sql`
       SELECT

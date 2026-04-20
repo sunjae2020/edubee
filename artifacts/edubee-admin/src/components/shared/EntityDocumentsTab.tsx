@@ -21,7 +21,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export type EntityType =
   | "application" | "contract" | "institute_mgt" | "hotel_mgt"
-  | "pickup_mgt" | "tour_mgt" | "user" | "other_services_mgt";
+  | "pickup_mgt" | "tour_mgt" | "user" | "other_services_mgt" | "visa_services_mgt";
 
 // ─── Document category definitions ───────────────────────────────────────────
 export const STUDENT_DOC_CATEGORIES = [
@@ -253,9 +253,9 @@ function UploadModal({ open, onClose, entityType, entityId, activeTab, available
   }
 
   async function handleUpload() {
-    if (!file) return toast({ variant: "destructive", title: "Please select a file" });
-    if (!isExtra && !docCategory) return toast({ variant: "destructive", title: "Please select a category" });
-    if (isExtra && !extraName.trim()) return toast({ variant: "destructive", title: "Please enter a document name" });
+    if (!file) { toast({ variant: "destructive", title: "Please select a file" }); return; }
+    if (!isExtra && !docCategory) { toast({ variant: "destructive", title: "Please select a category" }); return; }
+    if (isExtra && !extraName.trim()) { toast({ variant: "destructive", title: "Please enter a document name" }); return; }
 
     const fd = new FormData();
     fd.append("file", file);

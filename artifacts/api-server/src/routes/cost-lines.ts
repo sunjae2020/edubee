@@ -129,7 +129,7 @@ router.put("/cost-lines/:id", authenticate, requireRole(...STAFF_ROLES), async (
     const existing = await db
       .select({ id: productCostLines.id, contractProductId: productCostLines.contractProductId, status: productCostLines.status })
       .from(productCostLines)
-      .where(eq(productCostLines.id, req.params.id));
+      .where(eq(productCostLines.id, req.params.id as string));
 
     if (!existing.length) return res.status(404).json({ error: "Cost line not found" });
     if (existing[0].status === "paid") {
@@ -151,7 +151,7 @@ router.put("/cost-lines/:id", authenticate, requireRole(...STAFF_ROLES), async (
         status:           status           ?? undefined,
         modifiedOn:       new Date(),
       })
-      .where(eq(productCostLines.id, req.params.id))
+      .where(eq(productCostLines.id, req.params.id as string))
       .returning();
 
     await syncApAmount(existing[0].contractProductId);
@@ -169,14 +169,14 @@ router.delete("/cost-lines/:id", authenticate, requireRole(...ADMIN_ROLES), asyn
     const existing = await db
       .select({ id: productCostLines.id, contractProductId: productCostLines.contractProductId, status: productCostLines.status })
       .from(productCostLines)
-      .where(eq(productCostLines.id, req.params.id));
+      .where(eq(productCostLines.id, req.params.id as string));
 
     if (!existing.length) return res.status(404).json({ error: "Cost line not found" });
     if (existing[0].status === "paid") {
       return res.status(409).json({ error: "Cannot delete a paid cost line. Void the related payment first." });
     }
 
-    await db.delete(productCostLines).where(eq(productCostLines.id, req.params.id));
+    await db.delete(productCostLines).where(eq(productCostLines.id, req.params.id as string));
     await syncApAmount(existing[0].contractProductId);
 
     return res.json({ ok: true });

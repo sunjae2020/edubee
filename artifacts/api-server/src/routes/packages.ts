@@ -145,7 +145,7 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
       .leftJoin(acAccom,   eq(packageGroups.accommodationId,  acAccom.id))
       .leftJoin(acTour,    eq(packageGroups.tourCompanyId,    acTour.id))
       .leftJoin(acPickup,  eq(packageGroups.pickupDriverId,   acPickup.id))
-      .where(eq(packageGroups.id, req.params.id))
+      .where(eq(packageGroups.id, req.params.id as string))
       .limit(1);
     if (!row) return res.status(404).json({ error: "Not Found" });
     return res.json({
@@ -193,14 +193,14 @@ router.put("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES, "cam
     const cleanPayload = Object.fromEntries(allowed.filter(k => (payload as any)[k] !== undefined).map(k => [k, (payload as any)[k]]));
     cleanPayload.updatedAt = new Date();
     const [group] = await db.update(packageGroups).set(cleanPayload as any)
-      .where(eq(packageGroups.id, req.params.id)).returning();
+      .where(eq(packageGroups.id, req.params.id as string)).returning();
     if (!group) return res.status(404).json({ error: "Not Found" });
 
     // Cascade status to all packages in this group when group status changes
     if (cleanPayload.status) {
       await db.update(packages)
         .set({ status: cleanPayload.status as string, updatedAt: new Date() })
-        .where(eq(packages.packageGroupId, req.params.id));
+        .where(eq(packages.packageGroupId, req.params.id as string));
     }
 
     return res.json(group);
@@ -213,7 +213,7 @@ router.put("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES, "cam
 router.delete("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     await db.update(packageGroups).set({ status: "archived", updatedAt: new Date() })
-      .where(eq(packageGroups.id, req.params.id));
+      .where(eq(packageGroups.id, req.params.id as string));
     return res.json({ success: true, message: "Package group archived" });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -223,7 +223,7 @@ router.delete("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES), 
 // Clone package group
 router.post("/package-groups/:id/clone", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const [original] = await db.select().from(packageGroups).where(eq(packageGroups.id, req.params.id)).limit(1);
+    const [original] = await db.select().from(packageGroups).where(eq(packageGroups.id, req.params.id as string)).limit(1);
     if (!original) return res.status(404).json({ error: "Not Found" });
 
     const { id: _id, createdAt: _c, updatedAt: _u, ...fields } = original;
@@ -250,7 +250,7 @@ router.get("/package-groups/:id/images", authenticate, async (req, res) => {
     const images = await db
       .select()
       .from(packageGroupImages)
-      .where(eq(packageGroupImages.packageGroupId, req.params.id))
+      .where(eq(packageGroupImages.packageGroupId, req.params.id as string))
       .orderBy(asc(packageGroupImages.sortOrder), asc(packageGroupImages.createdAt));
     return res.json(images);
   } catch (err) {
@@ -268,7 +268,7 @@ router.post("/package-groups/:id/images", authenticate, requireRole(...ADMIN_ROL
     const existing = await db
       .select({ id: packageGroupImages.id })
       .from(packageGroupImages)
-      .where(eq(packageGroupImages.packageGroupId, req.params.id));
+      .where(eq(packageGroupImages.packageGroupId, req.params.id as string));
 
     if (existing.length >= 5) {
       return res.status(400).json({ error: "Maximum 5 images per package group" });
@@ -278,7 +278,7 @@ router.post("/package-groups/:id/images", authenticate, requireRole(...ADMIN_ROL
     const [image] = await db
       .insert(packageGroupImages)
       .values({
-        packageGroupId: req.params.id,
+        packageGroupId: req.params.id as string,
         imageUrl,
         isPrimary: isFirst,
         sortOrder: existing.length,
@@ -287,7 +287,7 @@ router.post("/package-groups/:id/images", authenticate, requireRole(...ADMIN_ROL
 
     if (isFirst) {
       await db.update(packageGroups).set({ thumbnailUrl: imageUrl, updatedAt: new Date() })
-        .where(eq(packageGroups.id, req.params.id));
+        .where(eq(packageGroups.id, req.params.id as string));
     }
 
     return res.status(201).json(image);
@@ -303,24 +303,24 @@ router.delete("/package-groups/:id/images/:imageId", authenticate, requireRole(.
     const [deleted] = await db
       .delete(packageGroupImages)
       .where(and(
-        eq(packageGroupImages.id, req.params.imageId),
-        eq(packageGroupImages.packageGroupId, req.params.id),
+        eq(packageGroupImages.id, req.params.imageId as string),
+        eq(packageGroupImages.packageGroupId, req.params.id as string),
       ))
       .returning();
 
     if (deleted?.isPrimary) {
       // Promote next image to primary
       const [next] = await db.select().from(packageGroupImages)
-        .where(eq(packageGroupImages.packageGroupId, req.params.id))
+        .where(eq(packageGroupImages.packageGroupId, req.params.id as string))
         .orderBy(asc(packageGroupImages.sortOrder)).limit(1);
 
       if (next) {
         await db.update(packageGroupImages).set({ isPrimary: true }).where(eq(packageGroupImages.id, next.id));
         await db.update(packageGroups).set({ thumbnailUrl: next.imageUrl, updatedAt: new Date() })
-          .where(eq(packageGroups.id, req.params.id));
+          .where(eq(packageGroups.id, req.params.id as string));
       } else {
         await db.update(packageGroups).set({ thumbnailUrl: null, updatedAt: new Date() })
-          .where(eq(packageGroups.id, req.params.id));
+          .where(eq(packageGroups.id, req.params.id as string));
       }
     }
 
@@ -334,7 +334,7 @@ router.delete("/package-groups/:id/images/:imageId", authenticate, requireRole(.
 // PUT /package-groups/:id/images/:imageId/set-primary
 router.put("/package-groups/:id/images/:imageId/set-primary", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const { id: groupId, imageId } = req.params;
+    const { id: groupId, imageId } = req.params as Record<string, string>;
     await db.update(packageGroupImages).set({ isPrimary: false })
       .where(eq(packageGroupImages.packageGroupId, groupId));
 
@@ -376,7 +376,7 @@ router.get("/package-groups/:id/products", authenticate, async (req, res) => {
       })
       .from(packageGroupProducts)
       .innerJoin(products, eq(packageGroupProducts.productId, products.id))
-      .where(eq(packageGroupProducts.packageGroupId, req.params.id))
+      .where(eq(packageGroupProducts.packageGroupId, req.params.id as string))
       .orderBy(asc(products.productType), asc(products.productName));
     return res.json(rows);
   } catch (err) {
@@ -390,7 +390,7 @@ router.post("/package-groups/:id/products", authenticate, requireRole(...ADMIN_R
     const { productId, quantity = 1, unitPrice } = req.body;
     if (!productId) return res.status(400).json({ error: "productId is required" });
     const [link] = await db.insert(packageGroupProducts).values({
-      packageGroupId: req.params.id,
+      packageGroupId: req.params.id as string,
       productId,
       quantity:  quantity  ?? 1,
       unitPrice: unitPrice ?? null,
@@ -413,8 +413,8 @@ router.patch("/package-groups/:id/products/:productId", authenticate, requireRol
     const [updated] = await db.update(packageGroupProducts)
       .set(updates)
       .where(and(
-        eq(packageGroupProducts.packageGroupId, req.params.id),
-        eq(packageGroupProducts.productId, req.params.productId),
+        eq(packageGroupProducts.packageGroupId, req.params.id as string),
+        eq(packageGroupProducts.productId, req.params.productId as string),
       ))
       .returning();
     if (!updated) return res.status(404).json({ error: "Link not found" });
@@ -429,8 +429,8 @@ router.delete("/package-groups/:id/products/:productId", authenticate, requireRo
   try {
     const deleted = await db.delete(packageGroupProducts)
       .where(and(
-        eq(packageGroupProducts.packageGroupId, req.params.id),
-        eq(packageGroupProducts.productId,      req.params.productId),
+        eq(packageGroupProducts.packageGroupId, req.params.id as string),
+        eq(packageGroupProducts.productId,      req.params.productId as string),
       ))
       .returning();
     if (deleted.length === 0) return res.status(404).json({ error: "Link not found" });
@@ -549,7 +549,7 @@ router.get("/packages/:id", authenticate, async (req, res) => {
       .leftJoin(packageGroups, eq(packages.packageGroupId, packageGroups.id))
       .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
       .leftJoin(users, eq(packageGroups.campProviderId, users.id))
-      .where(eq(packages.id, req.params.id))
+      .where(eq(packages.id, req.params.id as string))
       .limit(1);
     if (!row) return res.status(404).json({ error: "Not Found" });
     return res.json(row);
@@ -571,7 +571,7 @@ router.put("/packages/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coor
     if ("adults" in req.body) patch.maxAdults = req.body.adults;
     if ("children" in req.body) patch.maxStudents = req.body.children;
     const [pkg] = await db.update(packages).set(patch)
-      .where(eq(packages.id, req.params.id)).returning();
+      .where(eq(packages.id, req.params.id as string)).returning();
     if (!pkg) return res.status(404).json({ error: "Not Found" });
     return res.json(pkg);
   } catch (err) {
@@ -582,7 +582,7 @@ router.put("/packages/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coor
 router.delete("/packages/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     await db.update(packages).set({ status: "archived", updatedAt: new Date() })
-      .where(eq(packages.id, req.params.id));
+      .where(eq(packages.id, req.params.id as string));
     return res.json({ success: true, message: "Package archived" });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -609,7 +609,7 @@ router.get("/packages/:id/products", authenticate, async (req, res) => {
       })
       .from(packageProducts)
       .innerJoin(products, eq(packageProducts.productId, products.id))
-      .where(eq(packageProducts.packageId, req.params.id))
+      .where(eq(packageProducts.packageId, req.params.id as string))
       .orderBy(asc(packageProducts.isOptional), asc(products.productType), asc(products.productName));
     return res.json(rows);
   } catch (err) {
@@ -623,7 +623,7 @@ router.post("/packages/:id/products", authenticate, requireRole(...ADMIN_ROLES, 
     const { productId, isOptional = false, quantity = 1, unitPrice } = req.body;
     if (!productId) return res.status(400).json({ error: "productId is required" });
     const [link] = await db.insert(packageProducts).values({
-      packageId:  req.params.id,
+      packageId:  req.params.id as string,
       productId,
       isOptional: Boolean(isOptional),
       quantity:   Number(quantity),
@@ -647,8 +647,8 @@ router.patch("/packages/:id/products/:productId", authenticate, requireRole(...A
     const [updated] = await db.update(packageProducts)
       .set(updates)
       .where(and(
-        eq(packageProducts.packageId, req.params.id),
-        eq(packageProducts.productId, req.params.productId),
+        eq(packageProducts.packageId, req.params.id as string),
+        eq(packageProducts.productId, req.params.productId as string),
       ))
       .returning();
     if (!updated) return res.status(404).json({ error: "Link not found" });
@@ -663,8 +663,8 @@ router.delete("/packages/:id/products/:productId", authenticate, requireRole(...
   try {
     const deleted = await db.delete(packageProducts)
       .where(and(
-        eq(packageProducts.packageId,  req.params.id),
-        eq(packageProducts.productId,  req.params.productId),
+        eq(packageProducts.packageId,  req.params.id as string),
+        eq(packageProducts.productId,  req.params.productId as string),
       ))
       .returning();
     if (deleted.length === 0) return res.status(404).json({ error: "Link not found" });
@@ -944,7 +944,7 @@ router.get("/products/:id/linked-groups", authenticate, async (req, res) => {
       })
       .from(packageGroupProducts)
       .innerJoin(packageGroups, eq(packageGroupProducts.packageGroupId, packageGroups.id))
-      .where(eq(packageGroupProducts.productId, req.params.id))
+      .where(eq(packageGroupProducts.productId, req.params.id as string))
       .orderBy(asc(packageGroups.nameEn));
     return res.json(rows);
   } catch (err) {
@@ -974,7 +974,7 @@ router.get("/products/:id/linked-packages", authenticate, async (req, res) => {
       .from(packageProducts)
       .innerJoin(packages, eq(packageProducts.packageId, packages.id))
       .leftJoin(packageGroups, eq(packages.packageGroupId, packageGroups.id))
-      .where(eq(packageProducts.productId, req.params.id))
+      .where(eq(packageProducts.productId, req.params.id as string))
       .orderBy(asc(packageGroups.nameEn), asc(packages.name));
     return res.json(rows);
   } catch (err) {
@@ -985,7 +985,7 @@ router.get("/products/:id/linked-packages", authenticate, async (req, res) => {
 
 router.put("/products/:id/linked-groups", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const productId = req.params.id;
+    const productId = req.params.id as string;
     const { packageGroupIds }: { packageGroupIds: string[] } = req.body;
     if (!Array.isArray(packageGroupIds)) {
       return res.status(400).json({ error: "packageGroupIds must be an array" });
@@ -1040,7 +1040,7 @@ router.get("/products/:id", authenticate, async (req, res) => {
       })
       .from(products)
       .leftJoin(accounts, eq(products.providerId, accounts.id))
-      .where(eq(products.id, req.params.id))
+      .where(eq(products.id, req.params.id as string))
       .limit(1);
     if (!row) return res.status(404).json({ error: "Not Found" });
     return res.json({
@@ -1076,7 +1076,7 @@ router.put("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async (re
     if ("endDate"   in cleaned) cleaned.endDate   = toDate(cleaned.endDate);
 
     const [product] = await db.update(products).set({ ...cleaned, updatedAt: new Date(), modifiedOn: new Date() })
-      .where(eq(products.id, req.params.id)).returning();
+      .where(eq(products.id, req.params.id as string)).returning();
     if (!product) return res.status(404).json({ error: "Not Found" });
     return res.json(product);
   } catch (err) {
@@ -1090,20 +1090,20 @@ router.delete("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async 
     const linkedGroups = await db
       .select({ id: packageGroupProducts.id })
       .from(packageGroupProducts)
-      .where(eq(packageGroupProducts.productId, req.params.id))
+      .where(eq(packageGroupProducts.productId, req.params.id as string))
       .limit(1);
     if (linkedGroups.length > 0) {
       const [{ groupCount }] = await db
         .select({ groupCount: count(packageGroupProducts.id) })
         .from(packageGroupProducts)
-        .where(eq(packageGroupProducts.productId, req.params.id));
+        .where(eq(packageGroupProducts.productId, req.params.id as string));
       return res.status(409).json({
         error: `이 상품은 ${groupCount}개의 Package Group에서 사용 중입니다. 먼저 연결을 해제해주세요.`,
         linkedGroupCount: Number(groupCount),
       });
     }
     await db.update(products).set({ status: "archived", updatedAt: new Date() })
-      .where(eq(products.id, req.params.id));
+      .where(eq(products.id, req.params.id as string));
     return res.json({ success: true, message: "Product archived" });
   } catch (err) {
     console.error("[DELETE /products/:id]", err);
@@ -1275,7 +1275,7 @@ router.put("/enrollment-spots/:id", authenticate, requireRole(...ADMIN_ROLES, "c
       }
     }
     const [spot] = await db.update(enrollmentSpots).set(patch)
-      .where(eq(enrollmentSpots.id, req.params.id)).returning();
+      .where(eq(enrollmentSpots.id, req.params.id as string)).returning();
     if (!spot) return res.status(404).json({ error: "Not Found" });
     return res.json(spot);
   } catch (err) {
@@ -1287,7 +1287,7 @@ router.put("/enrollment-spots/:id", authenticate, requireRole(...ADMIN_ROLES, "c
 router.delete("/enrollment-spots/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
     const [spot] = await db.delete(enrollmentSpots)
-      .where(eq(enrollmentSpots.id, req.params.id)).returning({ id: enrollmentSpots.id });
+      .where(eq(enrollmentSpots.id, req.params.id as string)).returning({ id: enrollmentSpots.id });
     if (!spot) return res.status(404).json({ error: "Not Found" });
     return res.json({ success: true });
   } catch (err) {
@@ -1318,7 +1318,7 @@ router.post("/interview-settings", authenticate, requireRole(...ADMIN_ROLES, "ca
 router.get("/interview-settings/:packageGroupId", authenticate, async (req, res) => {
   try {
     const [row] = await db.select().from(interviewSettings)
-      .where(eq(interviewSettings.packageGroupId, req.params.packageGroupId)).limit(1);
+      .where(eq(interviewSettings.packageGroupId, req.params.packageGroupId as string)).limit(1);
     if (!row) return res.status(404).json({ error: "Not Found" });
     return res.json(row);
   } catch (err) {

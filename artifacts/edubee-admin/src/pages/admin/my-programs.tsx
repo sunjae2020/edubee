@@ -41,7 +41,7 @@ export default function MyPrograms() {
   }, {});
 
   const isParent = false; // parent_client role removed - this page for consultant/cc
-  const isAgent = user?.role === "consultant"; // consultant replaces education_agent
+  const isAgent = (user?.role as string) === "consultant"; // consultant replaces education_agent
 
   return (
     <div className="p-6 space-y-6">

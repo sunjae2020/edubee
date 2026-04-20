@@ -70,7 +70,7 @@ router.get(
   authenticate,
   async (req: Request, res: Response) => {
     try {
-      const { staffId }   = req.params;
+      const { staffId }   = req.params as Record<string, string>;
       const currentUser   = (req as any).user as { id: string; role: string };
       const role          = currentUser?.role ?? "";
 
@@ -119,7 +119,7 @@ router.get(
   requireRole(...ADMIN_ROLES, "camp_coordinator"),
   async (req: Request, res: Response) => {
     try {
-      const { teamId }  = req.params;
+      const { teamId }  = req.params as Record<string, string>;
       const periodType  = (req.query.periodType as string) || "monthly";
       const yearMonth   = req.query.yearMonth as string | undefined;
       const period      = resolvePeriod(periodType, yearMonth);
@@ -183,7 +183,7 @@ router.post(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
-      const { staffId }            = req.params;
+      const { staffId }            = req.params as Record<string, string>;
       const { periodType, yearMonth } = req.body;
       const period = resolvePeriod(periodType || "monthly", yearMonth);
 
@@ -210,7 +210,7 @@ router.post(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
-      const { teamId }             = req.params;
+      const { teamId }             = req.params as Record<string, string>;
       const { periodType, yearMonth } = req.body;
       const period = resolvePeriod(periodType || "monthly", yearMonth);
 
@@ -238,7 +238,7 @@ router.get(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
-      const { staffId, teamId } = req.query;
+      const { staffId, teamId } = req.query as Record<string, string>;
 
       let result;
       if (staffId) {
@@ -349,7 +349,7 @@ router.put(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const {
         targetAmount, incentiveType, incentiveRate, incentiveFixed,
         validFrom, validTo, description, status,
@@ -388,7 +388,7 @@ router.patch(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
-      const { kpiPeriodId } = req.params;
+      const { kpiPeriodId } = req.params as Record<string, string>;
       const { type, approvedBy } = req.body;
       const approverId = approvedBy || (req as any).user?.id;
 
@@ -423,7 +423,7 @@ router.patch(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
-      const { kpiPeriodId } = req.params;
+      const { kpiPeriodId } = req.params as Record<string, string>;
       const { type } = req.body;
 
       const table = type === "team" ? "team_kpi_periods" : "staff_kpi_periods";

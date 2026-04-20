@@ -34,7 +34,7 @@ class FinanceTestRunner {
       headers,
     });
 
-    const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch(() => ({})) as any;
     return { status: response.status, data };
   }
 
@@ -610,3 +610,4 @@ runner.runAllTests().catch((err) => {
   console.error("Test runner error:", err);
   process.exit(1);
 });
+export {};

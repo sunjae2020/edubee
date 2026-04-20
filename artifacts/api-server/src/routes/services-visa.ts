@@ -133,7 +133,7 @@ router.get(
         .leftJoin(contracts, eq(visaServicesMgt.contractId, contracts.id))
         .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(visaServicesMgt.assignedStaffId, users.id))
-        .where(eq(visaServicesMgt.id, req.params.id));
+        .where(eq(visaServicesMgt.id, req.params.id as string));
 
       if (!row) return res.status(404).json({ error: "Visa service record not found" });
 
@@ -204,7 +204,7 @@ router.patch(
       const [existing] = await db
         .select({ id: visaServicesMgt.id })
         .from(visaServicesMgt)
-        .where(eq(visaServicesMgt.id, req.params.id));
+        .where(eq(visaServicesMgt.id, req.params.id as string));
 
       if (!existing) return res.status(404).json({ error: "Visa service record not found" });
 
@@ -235,7 +235,7 @@ router.patch(
           ...(notes           !== undefined && { notes }),
           updatedAt: new Date(),
         })
-        .where(eq(visaServicesMgt.id, req.params.id))
+        .where(eq(visaServicesMgt.id, req.params.id as string))
         .returning();
 
       if (updated) updated.visaNumber = decryptField(updated.visaNumber);
@@ -256,12 +256,12 @@ router.patch(
       const [existing] = await db
         .select({ id: visaServicesMgt.id, isActive: visaServicesMgt.isActive })
         .from(visaServicesMgt)
-        .where(eq(visaServicesMgt.id, req.params.id));
+        .where(eq(visaServicesMgt.id, req.params.id as string));
       if (!existing) return res.status(404).json({ error: "Not found" });
       const [updated] = await db
         .update(visaServicesMgt)
         .set({ isActive: !existing.isActive, updatedAt: new Date() })
-        .where(eq(visaServicesMgt.id, req.params.id))
+        .where(eq(visaServicesMgt.id, req.params.id as string))
         .returning();
       return res.json(updated);
     } catch (err) {

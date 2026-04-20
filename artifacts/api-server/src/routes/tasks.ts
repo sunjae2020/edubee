@@ -136,7 +136,7 @@ router.get("/tasks", authenticate, async (req, res) => {
 // ── GET task detail ──────────────────────────────────────────────────────────
 router.get("/tasks/:id", authenticate, async (req, res) => {
   try {
-    const [task] = await db.select().from(tasks).where(eq(tasks.id, req.params.id)).limit(1);
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, req.params.id as string)).limit(1);
     if (!task) return res.status(404).json({ error: "Not Found" });
 
     const isInternal = true;
@@ -187,7 +187,7 @@ router.put("/tasks/:id", authenticate, requireRole("super_admin", "admin", "camp
   try {
     const [task] = await db.update(tasks)
       .set({ ...req.body, updatedAt: new Date() })
-      .where(eq(tasks.id, req.params.id))
+      .where(eq(tasks.id, req.params.id as string))
       .returning();
     if (!task) return res.status(404).json({ error: "Not Found" });
     return res.json(task);
@@ -205,7 +205,7 @@ router.patch("/tasks/:id/status", authenticate, async (req, res) => {
     if (status === "resolved") updates.resolvedAt = new Date();
 
     const [task] = await db.update(tasks).set(updates)
-      .where(eq(tasks.id, req.params.id)).returning();
+      .where(eq(tasks.id, req.params.id as string)).returning();
     if (!task) return res.status(404).json({ error: "Not Found" });
 
     if (status === "resolved" && task.submittedBy) {
@@ -224,7 +224,7 @@ router.patch("/tasks/:id/soft-delete", authenticate, requireRole(...ADMIN_ROLES)
   try {
     const [task] = await db.update(tasks)
       .set({ isDeleted: true, deletedAt: new Date(), deletedBy: req.user!.id, updatedAt: new Date() })
-      .where(and(eq(tasks.id, req.params.id), eq(tasks.isDeleted, false)))
+      .where(and(eq(tasks.id, req.params.id as string), eq(tasks.isDeleted, false)))
       .returning();
     if (!task) return res.status(404).json({ error: "Not found or already deleted" });
     return res.json({ success: true, task });
@@ -255,7 +255,7 @@ router.patch("/tasks/:id/restore", authenticate, requireRole(...ADMIN_ROLES), as
   try {
     const [task] = await db.update(tasks)
       .set({ isDeleted: false, deletedAt: null, deletedBy: null, updatedAt: new Date() })
-      .where(and(eq(tasks.id, req.params.id), eq(tasks.isDeleted, true)))
+      .where(and(eq(tasks.id, req.params.id as string), eq(tasks.isDeleted, true)))
       .returning();
     if (!task) return res.status(404).json({ error: "Not found or not deleted" });
     return res.json({ success: true, task });
@@ -268,9 +268,9 @@ router.patch("/tasks/:id/restore", authenticate, requireRole(...ADMIN_ROLES), as
 // ── PERMANENT DELETE single (super_admin only) ───────────────────────────────
 router.delete("/tasks/:id", authenticate, requireRole("super_admin"), async (req, res) => {
   try {
-    await db.delete(taskComments).where(eq(taskComments.taskId, req.params.id));
-    await db.delete(taskAttachments).where(eq(taskAttachments.taskId, req.params.id));
-    const [deleted] = await db.delete(tasks).where(eq(tasks.id, req.params.id)).returning({ id: tasks.id });
+    await db.delete(taskComments).where(eq(taskComments.taskId, req.params.id as string));
+    await db.delete(taskAttachments).where(eq(taskAttachments.taskId, req.params.id as string));
+    const [deleted] = await db.delete(tasks).where(eq(tasks.id, req.params.id as string)).returning({ id: tasks.id });
     if (!deleted) return res.status(404).json({ error: "Not Found" });
     return res.json({ success: true, id: deleted.id });
   } catch (err) {
@@ -304,7 +304,7 @@ router.post("/tasks/:id/comments", authenticate, async (req, res) => {
     const [u] = await db.select({ name: users.fullName }).from(users).where(eq(users.id, uid)).limit(1);
 
     const [comment] = await db.insert(taskComments).values({
-      taskId: req.params.id,
+      taskId: req.params.id as string,
       authorId: uid,
       authorName: u?.name ?? "Unknown",
       content,
@@ -312,7 +312,7 @@ router.post("/tasks/:id/comments", authenticate, async (req, res) => {
     }).returning();
 
     if (!comment.isInternal) {
-      const [task] = await db.select().from(tasks).where(eq(tasks.id, req.params.id)).limit(1);
+      const [task] = await db.select().from(tasks).where(eq(tasks.id, req.params.id as string)).limit(1);
       if (task) {
         if (task.submittedBy && task.submittedBy !== uid) {
           await createNotification(task.submittedBy, "task_comment", "New reply on your request",
@@ -327,7 +327,7 @@ router.post("/tasks/:id/comments", authenticate, async (req, res) => {
 
     if (comment) {
       await db.update(tasks).set({ firstResponseAt: new Date(), updatedAt: new Date() })
-        .where(eq(tasks.id, req.params.id));
+        .where(eq(tasks.id, req.params.id as string));
     }
     return res.status(201).json(comment);
   } catch (err) {

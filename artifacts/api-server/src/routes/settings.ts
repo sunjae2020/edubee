@@ -216,8 +216,8 @@ router.put("/branding", authenticate, requireRole(...SUPER_ADMIN), async (req, r
 // ─── GET /settings/organisations — search tenants for package group assignment ─
 router.get("/organisations", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
   try {
-    const q = String(req.query.q ?? "").trim();
-    const limit = Math.min(50, parseInt(String(req.query.limit ?? "20"), 10));
+    const q = String(req.query.q as string ?? "").trim();
+    const limit = Math.min(50, parseInt(String(req.query.limit as string ?? "20"), 10));
     const r = (x: any) => x.rows ?? (x as any[]);
     const rows = await db.execute(sql`
       SELECT id, name, trading_name, subdomain, status, logo_url

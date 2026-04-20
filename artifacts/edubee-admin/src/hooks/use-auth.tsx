@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [setLocation]);
 
   const { data: user, isLoading, refetch } = useGetMe({
-    query: { enabled: !!token, retry: false },
+    query: { queryKey: ['me'], enabled: !!token, retry: false },
   });
 
   const loginMutation = useLogin();

@@ -331,7 +331,7 @@ function CampApplicationDocument({
 export async function fetchTermsForPackageGroup(packageGroupId: string, lang = "en"): Promise<string | null> {
   try {
     // 1. Get organisationId from packageGroups
-    const [pg] = await db.select({ organisationId: packageGroups.organisationId })
+    const [pg] = await db.select({ organisationId: packageGroups.campProviderId })
       .from(packageGroups).where(eq(packageGroups.id, packageGroupId)).limit(1);
     if (!pg?.organisationId) return null;
 
@@ -517,7 +517,7 @@ export async function sendCampApplicationEmails(data: CampAppEmailData): Promise
   // ── Resolve admin email ─────────────────────────────────────────────────────
   let adminEmail: string | null = null;
   try {
-    const [pgRow] = await db.select({ orgId: packageGroups.organisationId })
+    const [pgRow] = await db.select({ orgId: packageGroups.campProviderId })
       .from(packageGroups).where(eq(packageGroups.id, data.packageGroupId));
 
     if (pgRow?.orgId) {

@@ -125,9 +125,9 @@ function NewTaxInvoiceModal({
   const total = parseFloat((commNum + gst).toFixed(2));
 
   async function handleCreate() {
-    if (!selectedCp) return toast({ title: "Select a contract product", variant: "destructive" });
-    if (!selectedAcct) return toast({ title: "Select a school account", variant: "destructive" });
-    if (!commission || isNaN(commNum) || commNum <= 0) return toast({ title: "Enter a valid commission amount", variant: "destructive" });
+    if (!selectedCp) { toast({ title: "Select a contract product", variant: "destructive" }); return; }
+    if (!selectedAcct) { toast({ title: "Select a school account", variant: "destructive" }); return; }
+    if (!commission || isNaN(commNum) || commNum <= 0) { toast({ title: "Enter a valid commission amount", variant: "destructive" }); return; }
 
     setCreating(true);
     try {
@@ -344,7 +344,7 @@ function EmailTaxInvoiceModal({
   }, [row]);
 
   async function handleSend() {
-    if (!email.trim()) return toast({ title: "Enter an email address", variant: "destructive" });
+    if (!email.trim()) { toast({ title: "Enter an email address", variant: "destructive" }); return; }
     setSending(true);
     try {
       const r = await fetch(`${BASE}/api/tax-invoices/${row.id}/send`, {

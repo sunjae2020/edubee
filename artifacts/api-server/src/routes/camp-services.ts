@@ -29,7 +29,7 @@ router.get("/camp-services/institutes/:id", authenticate, requireRole(...ADMIN_R
     const [row] = await db
       .select()
       .from(studyAbroadMgt)
-      .where(and(eq(studyAbroadMgt.id, req.params.id), eq(studyAbroadMgt.programContext, "camp")))
+      .where(and(eq(studyAbroadMgt.id, req.params.id as string), eq(studyAbroadMgt.programContext, "camp")))
       .limit(1);
     if (!row) return res.status(404).json({ error: "Not found" });
 
@@ -90,7 +90,7 @@ router.patch("/camp-services/institutes/:id", authenticate, requireRole(...ADMIN
     const [existing] = await db
       .select({ id: studyAbroadMgt.id })
       .from(studyAbroadMgt)
-      .where(and(eq(studyAbroadMgt.id, req.params.id), eq(studyAbroadMgt.programContext, "camp")))
+      .where(and(eq(studyAbroadMgt.id, req.params.id as string), eq(studyAbroadMgt.programContext, "camp")))
       .limit(1);
     if (!existing) return res.status(404).json({ error: "Not found" });
 
@@ -111,7 +111,7 @@ router.patch("/camp-services/institutes/:id", authenticate, requireRole(...ADMIN
     const [updated] = await db
       .update(studyAbroadMgt)
       .set(patch)
-      .where(and(eq(studyAbroadMgt.id, req.params.id), eq(studyAbroadMgt.programContext, "camp")))
+      .where(and(eq(studyAbroadMgt.id, req.params.id as string), eq(studyAbroadMgt.programContext, "camp")))
       .returning();
     return res.json(updated);
   } catch (err) {
@@ -136,7 +136,7 @@ router.get("/camp-services/tours", authenticate, requireRole(...ADMIN_ROLES), as
 
 router.get("/camp-services/tours/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [row] = await db.select().from(campTourMgt).where(eq(campTourMgt.id, req.params.id)).limit(1);
+    const [row] = await db.select().from(campTourMgt).where(eq(campTourMgt.id, req.params.id as string)).limit(1);
     if (!row) return res.status(404).json({ error: "Not found" });
 
     const [contract] = await db
@@ -187,7 +187,7 @@ router.post("/camp-services/tours", authenticate, requireRole(...ADMIN_ROLES), a
 
 router.patch("/camp-services/tours/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [existing] = await db.select({ id: campTourMgt.id }).from(campTourMgt).where(eq(campTourMgt.id, req.params.id)).limit(1);
+    const [existing] = await db.select({ id: campTourMgt.id }).from(campTourMgt).where(eq(campTourMgt.id, req.params.id as string)).limit(1);
     if (!existing) return res.status(404).json({ error: "Not found" });
 
     const allowedFields = [
@@ -203,7 +203,7 @@ router.patch("/camp-services/tours/:id", authenticate, requireRole(...ADMIN_ROLE
     if (patch.partnerCost !== undefined) patch.partnerCost = String(patch.partnerCost);
     if (patch.retailPrice !== undefined) patch.retailPrice = String(patch.retailPrice);
 
-    const [updated] = await db.update(campTourMgt).set(patch).where(eq(campTourMgt.id, req.params.id)).returning();
+    const [updated] = await db.update(campTourMgt).set(patch).where(eq(campTourMgt.id, req.params.id as string)).returning();
     return res.json(updated);
   } catch (err) {
     console.error("[PATCH /api/camp-services/tours/:id]", err);

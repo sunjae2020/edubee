@@ -16,9 +16,9 @@ function genRef() {
 // ── LIST ─────────────────────────────────────────────────────────────────────
 router.get("/general-consultations", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const page   = Math.max(1, parseInt(String(req.query.page || "1")));
-    const search = String(req.query.search || "").trim();
-    const status = String(req.query.status || "").trim();
+    const page   = Math.max(1, parseInt(String(req.query.page as string || "1")));
+    const search = String(req.query.search as string || "").trim();
+    const status = String(req.query.status as string || "").trim();
     const orgId  = (req as any).tenantId as string | undefined;
 
     const conditions: any[] = [];
@@ -74,7 +74,7 @@ router.get("/general-consultations", authenticate, requireRole(...ADMIN_ROLES), 
 // ── GET ONE ───────────────────────────────────────────────────────────────────
 router.get("/general-consultations/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const rows = await db.select().from(generalConsultations).where(eq(generalConsultations.id, req.params.id));
+    const rows = await db.select().from(generalConsultations).where(eq(generalConsultations.id, req.params.id as string));
     if (!rows.length) return res.status(404).json({ error: "Not found" });
     return res.json(rows[0]);
   } catch (err) {
@@ -170,7 +170,7 @@ router.patch("/general-consultations/:id", authenticate, requireRole(...ADMIN_RO
         marketingConsent: b.marketingConsent ?? undefined,
         updatedAt:        new Date(),
       })
-      .where(eq(generalConsultations.id, req.params.id))
+      .where(eq(generalConsultations.id, req.params.id as string))
       .returning();
 
     if (!updated.length) return res.status(404).json({ error: "Not found" });
@@ -208,7 +208,7 @@ router.delete("/general-consultations/bulk", authenticate, requireRole("super_ad
 // ── HARD DELETE (single) ─────────────────────────────────────────────────────
 router.delete("/general-consultations/:id", authenticate, requireRole("super_admin"), async (req, res) => {
   try {
-    await db.delete(generalConsultations).where(eq(generalConsultations.id, req.params.id));
+    await db.delete(generalConsultations).where(eq(generalConsultations.id, req.params.id as string));
     return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: "Internal server error" });

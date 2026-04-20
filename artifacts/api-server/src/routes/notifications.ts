@@ -39,7 +39,7 @@ router.patch("/notifications/:id/read", authenticate, async (req, res) => {
     const uid = req.user!.id;
     const [updated] = await db.update(notifications)
       .set({ isRead: true })
-      .where(and(eq(notifications.id, req.params.id), eq(notifications.userId, uid)))
+      .where(and(eq(notifications.id, req.params.id as string), eq(notifications.userId, uid)))
       .returning();
     if (!updated) return res.status(404).json({ error: "Not Found" });
     return res.json(updated);

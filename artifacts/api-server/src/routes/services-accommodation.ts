@@ -132,7 +132,7 @@ router.get(
         .leftJoin(contracts, eq(accommodationMgt.contractId, contracts.id))
         .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(accommodationMgt.assignedStaffId, users.id))
-        .where(eq(accommodationMgt.id, req.params.id));
+        .where(eq(accommodationMgt.id, req.params.id as string));
 
       if (!row) return res.status(404).json({ error: "Accommodation record not found" });
       return res.json(row);
@@ -153,7 +153,7 @@ router.patch(
       const [existing] = await db
         .select({ id: accommodationMgt.id })
         .from(accommodationMgt)
-        .where(eq(accommodationMgt.id, req.params.id));
+        .where(eq(accommodationMgt.id, req.params.id as string));
 
       if (!existing) return res.status(404).json({ error: "Accommodation record not found" });
 
@@ -193,7 +193,7 @@ router.patch(
           ...(paymentDate          !== undefined && { paymentDate: paymentDate || null }),
           updatedAt: new Date(),
         })
-        .where(eq(accommodationMgt.id, req.params.id))
+        .where(eq(accommodationMgt.id, req.params.id as string))
         .returning();
 
       return res.json(updated);
@@ -243,7 +243,7 @@ router.post(
       const [existing] = await db
         .select({ id: accommodationMgt.id, welfareCheckDates: accommodationMgt.welfareCheckDates })
         .from(accommodationMgt)
-        .where(eq(accommodationMgt.id, req.params.id));
+        .where(eq(accommodationMgt.id, req.params.id as string));
 
       if (!existing) return res.status(404).json({ error: "Accommodation record not found" });
 
@@ -265,7 +265,7 @@ router.post(
           welfareCheckDates: updated_checks,
           updatedAt: new Date(),
         })
-        .where(eq(accommodationMgt.id, req.params.id))
+        .where(eq(accommodationMgt.id, req.params.id as string))
         .returning({ id: accommodationMgt.id, welfareCheckDates: accommodationMgt.welfareCheckDates });
 
       return res.json(updated);
@@ -285,12 +285,12 @@ router.patch(
       const [existing] = await db
         .select({ id: accommodationMgt.id, isActive: accommodationMgt.isActive })
         .from(accommodationMgt)
-        .where(eq(accommodationMgt.id, req.params.id));
+        .where(eq(accommodationMgt.id, req.params.id as string));
       if (!existing) return res.status(404).json({ error: "Not found" });
       const [updated] = await db
         .update(accommodationMgt)
         .set({ isActive: !existing.isActive, updatedAt: new Date() })
-        .where(eq(accommodationMgt.id, req.params.id))
+        .where(eq(accommodationMgt.id, req.params.id as string))
         .returning();
       return res.json(updated);
     } catch (err) {

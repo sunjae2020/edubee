@@ -157,7 +157,8 @@ router.post("/integrations/test/storage", ...guard, async (_req, res) => {
       return res.status(400).json({ ok: false, error: "Storage credentials (access key, secret key, bucket) are not fully configured" });
 
     // Dynamic import to avoid hard dependency
-    const { S3Client, HeadBucketCommand } = await import("@aws-sdk/client-s3");
+    // @ts-expect-error - optional peer dependency, installed at runtime
+    const { S3Client, HeadBucketCommand } = await import("@aws-sdk/client-s3") as any;
     const client = new S3Client({
       region,
       credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },

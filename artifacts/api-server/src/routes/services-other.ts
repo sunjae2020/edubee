@@ -114,7 +114,7 @@ router.get(
         .leftJoin(contracts, eq(otherServicesMgt.contractId, contracts.id))
         .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(otherServicesMgt.assignedStaffId, users.id))
-        .where(eq(otherServicesMgt.id, req.params.id));
+        .where(eq(otherServicesMgt.id, req.params.id as string));
 
       if (!row) return res.status(404).json({ error: "Other service record not found" });
 
@@ -178,7 +178,7 @@ router.patch(
       const [existing] = await db
         .select({ id: otherServicesMgt.id })
         .from(otherServicesMgt)
-        .where(eq(otherServicesMgt.id, req.params.id));
+        .where(eq(otherServicesMgt.id, req.params.id as string));
 
       if (!existing) return res.status(404).json({ error: "Other service record not found" });
 
@@ -203,7 +203,7 @@ router.patch(
           ...(notes           !== undefined && { notes }),
           updatedAt: new Date(),
         })
-        .where(eq(otherServicesMgt.id, req.params.id))
+        .where(eq(otherServicesMgt.id, req.params.id as string))
         .returning();
 
       return res.json(updated);
@@ -223,12 +223,12 @@ router.patch(
       const [existing] = await db
         .select({ id: otherServicesMgt.id, isActive: otherServicesMgt.isActive })
         .from(otherServicesMgt)
-        .where(eq(otherServicesMgt.id, req.params.id));
+        .where(eq(otherServicesMgt.id, req.params.id as string));
       if (!existing) return res.status(404).json({ error: "Not found" });
       const [updated] = await db
         .update(otherServicesMgt)
         .set({ isActive: !existing.isActive, updatedAt: new Date() })
-        .where(eq(otherServicesMgt.id, req.params.id))
+        .where(eq(otherServicesMgt.id, req.params.id as string))
         .returning();
       return res.json(updated);
     } catch (err) {

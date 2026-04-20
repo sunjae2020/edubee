@@ -36,7 +36,7 @@ router.get("/accounting/coa/:code", authenticate, async (req, res) => {
     const [row] = await db
       .select()
       .from(chartOfAccounts)
-      .where(eq(chartOfAccounts.code, req.params.code));
+      .where(eq(chartOfAccounts.code, req.params.code as string));
 
     if (!row) return res.status(404).json({ error: "Account not found" });
     return res.json(row);
@@ -81,7 +81,7 @@ router.put(
       const [existing] = await db
         .select()
         .from(chartOfAccounts)
-        .where(eq(chartOfAccounts.code, req.params.code));
+        .where(eq(chartOfAccounts.code, req.params.code as string));
 
       if (!existing) return res.status(404).json({ error: "Account not found" });
 
@@ -90,7 +90,7 @@ router.put(
       const [updated] = await db
         .update(chartOfAccounts)
         .set({ name, accountType, description, parentCode, isActive, modifiedOn: new Date() })
-        .where(eq(chartOfAccounts.code, req.params.code))
+        .where(eq(chartOfAccounts.code, req.params.code as string))
         .returning();
 
       return res.json(updated);

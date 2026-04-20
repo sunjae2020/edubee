@@ -47,6 +47,7 @@ interface Rec {
   totalAmount?: string | null; currency?: string | null;
   tourName?: string | null; tourDate?: string | null; meetingPoint?: string | null;
   guideId?: string | null; groupSize?: number | null; specialNotes?: string | null; status?: string | null;
+  createdAt?: string | null; updatedAt?: string | null;
 }
 
 function ContractCard({ rec, onViewContract }: { rec: Rec; onViewContract: () => void }) {

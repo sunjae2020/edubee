@@ -117,7 +117,7 @@ router.post("/privacy-consent", authenticate, async (req, res) => {
 // ── GET /api/privacy-consent/:entityType/:entityId ──────────────────────────
 router.get("/privacy-consent/:entityType/:entityId", authenticate, async (req, res) => {
   try {
-    const { entityType, entityId } = req.params;
+    const { entityType, entityId } = req.params as Record<string, string>;
     if (!["contact", "lead"].includes(entityType)) {
       return res.status(400).json({ error: "entityType must be 'contact' or 'lead'" });
     }
@@ -130,7 +130,7 @@ router.get("/privacy-consent/:entityType/:entityId", authenticate, async (req, r
       return res.json(row);
     } else {
       const [row] = await db
-        .select({ privacyConsent: leads.privacyConsent, marketingConsent: leads.marketingConsent })
+        .select({ privacyConsent: (leads as any).privacyConsent, marketingConsent: (leads as any).marketingConsent })
         .from(leads).where(eq(leads.id, entityId)).limit(1);
       if (!row) return res.status(404).json({ error: "Not found" });
       return res.json(row);

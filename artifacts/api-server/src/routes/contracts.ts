@@ -98,7 +98,7 @@ router.post("/contracts", authenticate, requireRole(...ADMIN_ROLES, "camp_coordi
 
 router.get("/contracts/:id", authenticate, async (req, res) => {
   try {
-    const [contract] = await db.select().from(contracts).where(eq(contracts.id, req.params.id)).limit(1);
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, req.params.id as string)).limit(1);
     if (!contract) return res.status(404).json({ error: "Not Found" });
 
     let application = null;
@@ -127,7 +127,7 @@ router.put("/contracts/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coo
       if (key in req.body) body[key] = req.body[key] === "" ? null : req.body[key];
     }
     const [contract] = await db.update(contracts).set({ ...body, updatedAt: new Date() })
-      .where(eq(contracts.id, req.params.id)).returning();
+      .where(eq(contracts.id, req.params.id as string)).returning();
     if (!contract) return res.status(404).json({ error: "Not Found" });
 
     logAudit({ tableName: "contracts", recordId: contract.id, action: "UPDATE", newValues: body as Record<string, unknown>, changedFields: Object.keys(body), ...auditParamsFromReq(req) }).catch(() => {});
@@ -136,11 +136,11 @@ router.put("/contracts/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coo
     if (body.status === 'cancelled') {
       try {
         const result = await reverseAllPendingForContract(
-          req.params.id,
+          req.params.id as string,
           'Contract cancelled',
           req.user!.id,
         );
-        console.log(`Reversed ${result.reversed} ledger entries for contract ${req.params.id}`);
+        console.log(`Reversed ${result.reversed} ledger entries for contract ${req.params.id as string}`);
       } catch (e: any) {
         console.error('Contract cancellation ledger reversal failed:', e.message);
       }
@@ -155,7 +155,7 @@ router.put("/contracts/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coo
 
 router.get("/contracts/:id/services", authenticate, async (req, res) => {
   try {
-    const cid = req.params.id;
+    const cid = req.params.id as string;
     const [pickupRec] = await db.select().from(pickupMgt).where(eq(pickupMgt.contractId, cid)).limit(1);
     const [tourRec] = await db.select().from(tourMgt).where(eq(tourMgt.contractId, cid)).limit(1);
     const settlements = await db.select().from(settlementMgt).where(eq(settlementMgt.contractId, cid));
@@ -182,7 +182,7 @@ router.get("/contracts/:id/services", authenticate, async (req, res) => {
 
 router.patch("/contracts/:id/services/pickup", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const cid = req.params.id;
+    const cid = req.params.id as string;
     const { pickupType, fromLocation, toLocation, pickupDatetime, vehicleInfo, driverNotes, status } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (pickupType !== undefined) updates.pickupType = pickupType;
@@ -203,7 +203,7 @@ router.patch("/contracts/:id/services/pickup", authenticate, requireRole(...ADMI
 
 router.patch("/contracts/:id/services/tour", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const cid = req.params.id;
+    const cid = req.params.id as string;
     const { tourName, tourDate, startTime, endTime, meetingPoint, highlights, guideInfo, tourNotes, status } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (tourName !== undefined) updates.tourName = tourName;
@@ -226,7 +226,7 @@ router.patch("/contracts/:id/services/tour", authenticate, requireRole(...ADMIN_
 
 router.get("/contracts/:id/accounting", authenticate, async (req, res) => {
   try {
-    const cid = req.params.id;
+    const cid = req.params.id as string;
     const contractInvoices = await db.select().from(invoices).where(eq(invoices.contractId, cid));
     const invoiceIds = contractInvoices.map(i => i.id);
 
@@ -259,12 +259,12 @@ router.patch("/contracts/:id/toggle-active", authenticate, requireRole(...ADMIN_
     const [existing] = await db
       .select({ id: contracts.id, isActive: contracts.isActive })
       .from(contracts)
-      .where(eq(contracts.id, req.params.id));
+      .where(eq(contracts.id, req.params.id as string));
     if (!existing) return res.status(404).json({ error: "Contract not found" });
     const [updated] = await db
       .update(contracts)
       .set({ isActive: !existing.isActive, updatedAt: new Date() })
-      .where(eq(contracts.id, req.params.id))
+      .where(eq(contracts.id, req.params.id as string))
       .returning();
     return res.json(updated);
   } catch (err) {

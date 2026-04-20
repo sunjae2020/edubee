@@ -110,7 +110,7 @@ async function getPermissionsForRole(role: string, group: string): Promise<{ can
  */
 async function verifyDocumentAccess(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const requestingUser = req.user!;
 
     const [doc] = await db
@@ -622,7 +622,7 @@ router.patch("/documents/:id/status", requireRole("super_admin", "admin", "camp_
     const [doc] = await db
       .update(documents)
       .set({ status, rejectionReason: rejectionReason ?? null, reviewedBy: req.user!.id, reviewedAt: new Date(), updatedAt: new Date() })
-      .where(eq(documents.id, req.params.id))
+      .where(eq(documents.id, req.params.id as string))
       .returning();
     if (!doc) return res.status(404).json({ error: "Not Found" });
     return res.json(doc);
@@ -637,7 +637,7 @@ router.delete("/documents/:id", requireRole("super_admin", "admin"), async (req,
     const [doc] = await db
       .update(documents)
       .set({ deletedAt: new Date() })
-      .where(eq(documents.id, req.params.id))
+      .where(eq(documents.id, req.params.id as string))
       .returning();
     if (!doc) return res.status(404).json({ error: "Not Found" });
     return res.json({ success: true });
@@ -688,7 +688,7 @@ router.get("/documents/:id/access-log", requireRole("super_admin", "admin"), asy
     const logs = await db
       .select()
       .from(documentAccessLogs)
-      .where(eq(documentAccessLogs.documentId, req.params.id))
+      .where(eq(documentAccessLogs.documentId, req.params.id as string))
       .orderBy(documentAccessLogs.accessedAt);
     return res.json({ data: logs });
   } catch (err) {

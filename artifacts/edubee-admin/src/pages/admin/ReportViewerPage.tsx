@@ -209,7 +209,7 @@ function AcademicViewer({ section }: { section: Section }) {
         {[
           { label: "Institute", value: (c.instituteName as string) || "—" },
           { label: "Period", value: c.startDate ? `${fmtDate(c.startDate as string)} ~ ${fmtDate(c.endDate as string)}` : "—" },
-          { label: "Hours", value: c.totalHours ? `${c.totalHours} hrs` : "—" },
+          { label: "Hours", value: c.totalHours ? `${c.totalHours as number} hrs` : "—" },
         ].map(({ label, value }) => (
           <div key={label} className="bg-[#FAFAF9] border border-[#E8E6E2] rounded-xl p-3">
             <p className="text-[10px] text-[#57534E] mb-1">{label}</p>
@@ -218,8 +218,7 @@ function AcademicViewer({ section }: { section: Section }) {
         ))}
       </div>
 
-      {/* Progress bar */}
-      {(startLvl || endLvl) && (
+      {!!(startLvl || endLvl) && (
         <div className="mb-4">
           <p className="text-xs font-semibold text-[#1C1917] mb-2">English Level Progress</p>
           <div className="flex items-center gap-3">
@@ -235,7 +234,6 @@ function AcademicViewer({ section }: { section: Section }) {
         </div>
       )}
 
-      {/* Schedule table */}
       {schedule.length > 0 && (
         <div className="mb-4">
           <p className="text-xs font-semibold text-[#1C1917] mb-2">Class Schedule</p>
@@ -266,13 +264,13 @@ function AcademicViewer({ section }: { section: Section }) {
         </div>
       )}
 
-      {c.teacherComments && (
+      {!!c.teacherComments && (
         <div className="bg-(--e-orange-lt) border-l-[3px] border-(--e-orange) pl-3 py-2 rounded-r-lg mb-3">
           <p className="text-xs font-semibold text-(--e-orange) mb-1">Teacher's Comments</p>
           <p className="text-xs text-[#1C1917]">{c.teacherComments as string}</p>
         </div>
       )}
-      {c.progressNotes && (
+      {!!c.progressNotes && (
         <div className="bg-[#FAFAF9] border-l-[3px] border-[#E8E6E2] pl-3 py-2 rounded-r-lg">
           <p className="text-xs font-semibold text-[#57534E] mb-1">Progress Notes</p>
           <p className="text-xs text-[#1C1917]">{c.progressNotes as string}</p>
@@ -302,8 +300,8 @@ function TourViewer({ section }: { section: Section }) {
                 <StatusChip status={(t.status as string) || "pending"} />
               </div>
               <div className="flex gap-4 text-xs text-[#57534E] mb-3">
-                {t.tourDate && <span>Date: {fmtDate(t.tourDate as string)}</span>}
-                {(t.startTime || t.endTime) && <span>Time: {(t.startTime as string) || "—"} ~ {(t.endTime as string) || "—"}</span>}
+                {!!t.tourDate && <span>Date: {fmtDate(t.tourDate as string)}</span>}
+                {!!(t.startTime || t.endTime) && <span>Time: {(t.startTime as string) || "—"} ~ {(t.endTime as string) || "—"}</span>}
               </div>
               <InfoRow label="Meeting Point" value={(t.meetingPoint as string) ?? ""} />
               <InfoRow label="Guide" value={(t.guideInfo as string) ?? ""} />
@@ -317,7 +315,7 @@ function TourViewer({ section }: { section: Section }) {
                   </div>
                 </div>
               )}
-              {t.tourNotes && <p className="mt-3 text-xs text-[#57534E] italic">{t.tourNotes as string}</p>}
+              {!!t.tourNotes && <p className="mt-3 text-xs text-[#57534E] italic">{t.tourNotes as string}</p>}
             </div>
           ))}
         </div>
@@ -356,7 +354,7 @@ function SummaryViewer({ section }: { section: Section }) {
       )}
 
       {/* Recommendations */}
-      {c.recommendations && (
+      {!!c.recommendations && (
         <div className="bg-[#FAFAF9] border-l-[3px] border-[#E8E6E2] pl-4 py-3 rounded-r-lg mb-4">
           <p className="text-xs font-semibold text-[#57534E] mb-1">Recommendations</p>
           <p className="text-sm text-[#1C1917]">{c.recommendations as string}</p>
@@ -364,7 +362,7 @@ function SummaryViewer({ section }: { section: Section }) {
       )}
 
       {/* Closing message */}
-      {c.closingMessage && (
+      {!!c.closingMessage && (
         <p className="text-sm text-[#57534E] text-center italic mt-4">{c.closingMessage as string}</p>
       )}
     </div>
@@ -381,7 +379,7 @@ function CustomViewer({ section, sectionNumber }: { section: Section; sectionNum
   return (
     <div>
       <SectionHeader symbol="custom" number={`0${num}`} title={section.sectionTitle} variant="viewer" className="mb-4" />
-      {contentType === "text" && c.text && <p className="text-sm text-[#1C1917] leading-relaxed">{c.text as string}</p>}
+      {contentType === "text" && !!c.text && <p className="text-sm text-[#1C1917] leading-relaxed">{c.text as string}</p>}
       {contentType === "bullet_list" && items.length > 0 && (
         <ul className="space-y-1.5">
           {items.map((item, i) => (
@@ -410,7 +408,7 @@ function CustomViewer({ section, sectionNumber }: { section: Section; sectionNum
           </table>
         </div>
       )}
-      {contentType === "note" && c.note && (
+      {contentType === "note" && !!c.note && (
         <div className="bg-[#FAFAF9] border-l-[3px] border-[#E8E6E2] pl-4 py-3 rounded-r-lg">
           <p className="text-sm text-[#1C1917]">{c.note as string}</p>
         </div>

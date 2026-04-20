@@ -63,7 +63,7 @@ router.get("/teams", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator
 // ── GET /api/teams/:id ────────────────────────────────────────────────────────
 router.get("/teams/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const [team] = await db.select().from(teams).where(eq(teams.id, id)).limit(1);
     if (!team) return res.status(404).json({ error: "Team not found" });
 
@@ -95,7 +95,7 @@ router.get("/teams/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordin
 // ── GET /api/teams/:id/performance ────────────────────────────────────────────
 router.get("/teams/:id/performance", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const [team] = await db.select().from(teams).where(eq(teams.id, id)).limit(1);
     if (!team) return res.status(404).json({ error: "Team not found" });
 
@@ -152,7 +152,7 @@ router.post("/teams", authenticate, requireRole(...ADMIN_ROLES), async (req, res
 // ── PATCH /api/teams/:id ──────────────────────────────────────────────────────
 router.patch("/teams/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const { name, description, type, color, teamLeadId, status } = req.body;
 
     const updates: Record<string, any> = { updatedAt: new Date() };
@@ -176,7 +176,7 @@ router.patch("/teams/:id", authenticate, requireRole(...ADMIN_ROLES), async (req
 // ── DELETE /api/teams/:id ─────────────────────────────────────────────────────
 router.delete("/teams/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     // Unassign all members first
     await db.update(users).set({ teamId: null } as any).where(eq(users.teamId as any, id));
     await db.delete(teams).where(eq(teams.id, id));
@@ -191,7 +191,7 @@ router.delete("/teams/:id", authenticate, requireRole(...ADMIN_ROLES), async (re
 // Assign / remove members
 router.patch("/teams/:id/members", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const { add = [], remove = [] } = req.body as { add: string[]; remove: string[] };
 
     if (add.length > 0) {

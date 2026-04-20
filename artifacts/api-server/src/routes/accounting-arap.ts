@@ -193,14 +193,14 @@ router.patch(
       const [row] = await db
         .select({ id: contractProducts.id })
         .from(contractProducts)
-        .where(eq(contractProducts.id, req.params.id));
+        .where(eq(contractProducts.id, req.params.id as string));
 
       if (!row) return res.status(404).json({ error: "Contract product not found" });
 
       const [updated] = await db
         .update(contractProducts)
         .set({ arStatus })
-        .where(eq(contractProducts.id, req.params.id))
+        .where(eq(contractProducts.id, req.params.id as string))
         .returning();
 
       return res.json(updated);
@@ -224,14 +224,14 @@ router.patch(
       const [row] = await db
         .select({ id: contractProducts.id })
         .from(contractProducts)
-        .where(eq(contractProducts.id, req.params.id));
+        .where(eq(contractProducts.id, req.params.id as string));
 
       if (!row) return res.status(404).json({ error: "Contract product not found" });
 
       const [updated] = await db
         .update(contractProducts)
         .set({ apStatus })
-        .where(eq(contractProducts.id, req.params.id))
+        .where(eq(contractProducts.id, req.params.id as string))
         .returning();
 
       return res.json(updated);

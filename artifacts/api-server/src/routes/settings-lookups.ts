@@ -134,7 +134,7 @@ router.put("/settings/lookups/:id", requireRole("super_admin", "admin"), async (
     if (label !== undefined) updates.value = label.trim();
     if (status !== undefined) updates.status = status;
 
-    const [row] = await db.update(systemSettings).set(updates).where(eq(systemSettings.id, req.params.id)).returning();
+    const [row] = await db.update(systemSettings).set(updates).where(eq(systemSettings.id, req.params.id as string)).returning();
     if (!row) return res.status(404).json({ error: "Not found" });
 
     res.json({ id: row.id, group: row.groupName?.replace("lookup.", "") ?? "", label: row.value, status: row.status, sortOrder: row.sortOrder });
@@ -147,7 +147,7 @@ router.put("/settings/lookups/:id", requireRole("super_admin", "admin"), async (
 // ── DELETE /api/settings/lookups/:id (soft delete) ───────────────────────────
 router.delete("/settings/lookups/:id", requireRole("super_admin", "admin"), async (req, res) => {
   try {
-    const [row] = await db.update(systemSettings).set({ status: "Deleted", modifiedOn: new Date() }).where(eq(systemSettings.id, req.params.id)).returning();
+    const [row] = await db.update(systemSettings).set({ status: "Deleted", modifiedOn: new Date() }).where(eq(systemSettings.id, req.params.id as string)).returning();
     if (!row) return res.status(404).json({ error: "Not found" });
     res.json({ ok: true });
   } catch (err) {

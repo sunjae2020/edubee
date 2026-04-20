@@ -47,8 +47,8 @@ function authenticateFlexible(req: any, res: any, next: any) {
   const authHeader = req.headers.authorization as string | undefined;
   if (authHeader?.startsWith("Bearer ")) {
     token = authHeader.split(" ")[1];
-  } else if (typeof req.query.token === "string") {
-    token = req.query.token;
+  } else if (typeof req.query.token as string === "string") {
+    token = req.query.token as string;
   }
   if (!token) return res.status(401).json({ error: "Unauthorized" });
   try {
@@ -60,7 +60,7 @@ function authenticateFlexible(req: any, res: any, next: any) {
 }
 
 router.get("/camp-photos/file/:filename", authenticateFlexible, (req, res) => {
-  const filename = path.basename(req.params.filename);
+  const filename = path.basename(req.params.filename as string);
   const filePath = path.join(PHOTO_DIR, filename);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File not found" });
   return res.sendFile(path.resolve(filePath));
@@ -117,7 +117,7 @@ router.put("/camp-photos/folders/:id", authenticate, requireRole(...ADMIN_ROLES)
     const [folder] = await db
       .update(campPhotoFolders)
       .set(updates)
-      .where(eq(campPhotoFolders.id, req.params.id))
+      .where(eq(campPhotoFolders.id, req.params.id as string))
       .returning();
 
     if (!folder) return res.status(404).json({ error: "Folder not found" });
@@ -133,9 +133,9 @@ router.delete("/camp-photos/folders/:id", authenticate, requireRole(...ADMIN_ROL
     const photos = await db
       .select({ objectPath: campPhotos.objectPath })
       .from(campPhotos)
-      .where(eq(campPhotos.folderId, req.params.id));
+      .where(eq(campPhotos.folderId, req.params.id as string));
 
-    await db.delete(campPhotoFolders).where(eq(campPhotoFolders.id, req.params.id));
+    await db.delete(campPhotoFolders).where(eq(campPhotoFolders.id, req.params.id as string));
 
     for (const p of photos) {
       try {
@@ -214,7 +214,7 @@ router.delete("/camp-photos/:id", authenticate, requireRole(...ADMIN_ROLES), asy
   try {
     const [photo] = await db
       .delete(campPhotos)
-      .where(eq(campPhotos.id, req.params.id))
+      .where(eq(campPhotos.id, req.params.id as string))
       .returning();
 
     if (!photo) return res.status(404).json({ error: "Photo not found" });

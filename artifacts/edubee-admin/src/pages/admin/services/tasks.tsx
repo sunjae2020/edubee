@@ -802,7 +802,7 @@ export default function TasksPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-[#57534E] mb-1 block">Type</label>
-                <Select value={createForm.taskType} onValueChange={v => setCreateForm(f => ({ ...f, taskType: v }))}>
+                <Select value={createForm.taskType} onValueChange={v => setCreateForm(f => ({ ...f, taskType: v as TaskTypeTab }))}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TASK_TYPES.map(t => <SelectItem key={t} value={t} className="capitalize">{t === "cs" ? "CS Ticket" : "Internal Task"}</SelectItem>)}

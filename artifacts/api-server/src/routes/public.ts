@@ -575,7 +575,7 @@ router.post("/public/chatbot/message", async (req, res) => {
 // (e.g. when visitor arrives via edubee.co without subdomain auth).
 router.get("/public/form/:slug", async (req, res) => {
   try {
-    const slug = req.params.slug;
+    const slug = req.params.slug as string;
     const SELECT_COLS = "id, name, description, form_type AS \"formType\", status, redirect_url AS \"redirectUrl\"";
 
     // 1️⃣  Try current tenant context (header-based or subdomain-based)
@@ -641,7 +641,7 @@ router.get("/public/inquiry-form/:slug", async (req, res) => {
     const [form] = await db
       .select({ id: applicationForms.id, name: applicationForms.name, description: applicationForms.description, formType: applicationForms.formType, status: applicationForms.status, redirectUrl: applicationForms.redirectUrl })
       .from(applicationForms)
-      .where(and(eq(applicationForms.slug, req.params.slug), eq(applicationForms.formType, "lead_inquiry")))
+      .where(and(eq(applicationForms.slug, req.params.slug as string), eq(applicationForms.formType, "lead_inquiry")))
       .limit(1);
 
     if (!form) return res.status(404).json({ error: "Form not found" });
@@ -657,7 +657,7 @@ router.get("/public/inquiry-form/:slug", async (req, res) => {
 // ── GET /api/public/form/:slug/terms  — fetch terms & conditions for a form ─
 router.get("/public/form/:slug/terms", async (req, res) => {
   try {
-    const { slug } = req.params;
+    const { slug } = req.params as Record<string, string>;
     const lang = (req.query.lang as string) || "en";
 
     const [form] = await db
@@ -748,7 +748,7 @@ router.post("/public/lead-inquiry", async (req, res) => {
 // ── Public: Check subdomain availability ──────────────────────────────────────
 router.get("/public/check-subdomain", async (req, res) => {
   try {
-    const subdomain = String(req.query.subdomain ?? "").toLowerCase().trim();
+    const subdomain = String(req.query.subdomain as string ?? "").toLowerCase().trim();
     if (!subdomain) return res.status(400).json({ available: false, reason: "Subdomain is required" });
     if (!/^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/.test(subdomain))
       return res.json({ available: false, reason: "Only lowercase letters, numbers and hyphens (3–32 chars)" });

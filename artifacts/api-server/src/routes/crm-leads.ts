@@ -143,14 +143,14 @@ router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
       })
       .from(leads)
       .leftJoin(accounts, eq(leads.accountId, accounts.id))
-      .where(eq(leads.id, req.params.id))
+      .where(eq(leads.id, req.params.id as string))
       .limit(1);
 
     if (!rows.length) return res.status(404).json({ error: "Lead not found" });
     const { lead, accountName, accountType } = rows[0];
 
     const activities = await db.select().from(lead_activities)
-      .where(eq(lead_activities.leadId, req.params.id))
+      .where(eq(lead_activities.leadId, req.params.id as string))
       .orderBy(desc(lead_activities.createdOn));
 
     let campApplication: object | null = null;
@@ -162,7 +162,7 @@ router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
         preferredStartDate: campApplications.preferredStartDate,
         applicationStatus: campApplications.applicationStatus,
       }).from(campApplications)
-        .where(eq(campApplications.leadId, req.params.id))
+        .where(eq(campApplications.leadId, req.params.id as string))
         .limit(1);
       campApplication = ca ?? null;
     }
@@ -181,7 +181,7 @@ router.get("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
       quoteRefNumber: quotes.quoteRefNumber,
       quoteStatus:    quotes.quoteStatus,
       createdOn:      quotes.createdOn,
-    }).from(quotes).where(eq(quotes.leadId, req.params.id))
+    }).from(quotes).where(eq(quotes.leadId, req.params.id as string))
       .orderBy(desc(quotes.createdOn));
 
     return res.json({
@@ -246,7 +246,7 @@ router.post("/crm/leads", authenticate, requireRole(...ADMIN_ROLES), async (req,
 
 router.put("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [existing] = await db.select().from(leads).where(eq(leads.id, req.params.id));
+    const [existing] = await db.select().from(leads).where(eq(leads.id, req.params.id as string));
     if (!existing) return res.status(404).json({ error: "Lead not found" });
 
     const { firstName, lastName, englishName, originalName,
@@ -281,7 +281,7 @@ router.put("/crm/leads/:id", authenticate, requireRole(...ADMIN_ROLES), async (r
         status,
         updatedAt: new Date(),
       })
-      .where(eq(leads.id, req.params.id))
+      .where(eq(leads.id, req.params.id as string))
       .returning();
 
     return res.json(updated);
@@ -298,7 +298,7 @@ router.patch("/crm/leads/:id/status", authenticate, requireRole(...ADMIN_ROLES),
 
     const [updated] = await db.update(leads)
       .set({ status, updatedAt: new Date() })
-      .where(eq(leads.id, req.params.id))
+      .where(eq(leads.id, req.params.id as string))
       .returning();
 
     if (!updated) return res.status(404).json({ error: "Lead not found" });
@@ -311,7 +311,7 @@ router.patch("/crm/leads/:id/status", authenticate, requireRole(...ADMIN_ROLES),
 
 router.post("/crm/leads/:id/activities", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id));
+    const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id as string));
     if (!lead) return res.status(404).json({ error: "Lead not found" });
 
     const { channel, scheduledAt, description } = req.body;
@@ -319,7 +319,7 @@ router.post("/crm/leads/:id/activities", authenticate, requireRole(...ADMIN_ROLE
 
     const user = (req as any).user;
     const [activity] = await db.insert(lead_activities).values({
-      leadId:      req.params.id,
+      leadId:      req.params.id as string,
       channel,
       scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
       description,
@@ -335,7 +335,7 @@ router.post("/crm/leads/:id/activities", authenticate, requireRole(...ADMIN_ROLE
 
 router.post("/crm/leads/:id/convert-to-quote", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id));
+    const [lead] = await db.select().from(leads).where(eq(leads.id, req.params.id as string));
     if (!lead) return res.status(404).json({ error: "Lead not found" });
 
     const user = (req as any).user;
@@ -385,12 +385,12 @@ router.patch("/crm/leads/:id/toggle-active", authenticate, requireRole(...ADMIN_
     const [existing] = await db
       .select({ id: leads.id, isActive: leads.isActive })
       .from(leads)
-      .where(eq(leads.id, req.params.id));
+      .where(eq(leads.id, req.params.id as string));
     if (!existing) return res.status(404).json({ error: "Lead not found" });
     const [updated] = await db
       .update(leads)
       .set({ isActive: !existing.isActive, updatedAt: new Date() })
-      .where(eq(leads.id, req.params.id))
+      .where(eq(leads.id, req.params.id as string))
       .returning();
     return res.json(updated);
   } catch (err) {

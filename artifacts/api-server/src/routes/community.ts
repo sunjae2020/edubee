@@ -89,7 +89,7 @@ router.get("/portal/community", authenticatePortal, async (req, res) => {
 // ── GET /api/portal/community/:id ─────────────────────────────────────────
 router.get("/portal/community/:id", authenticatePortal, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     if (!isUUID(id)) return res.status(400).json({ error: "Invalid ID" });
     const { accountId } = req.portalUser!;
 
@@ -166,7 +166,7 @@ router.post("/portal/community", authenticatePortal, async (req, res) => {
 // ── POST /api/portal/community/:id/comments ───────────────────────────────
 router.post("/portal/community/:id/comments", authenticatePortal, async (req, res) => {
   try {
-    const { id: postId } = req.params;
+    const { id: postId } = req.params as Record<string, string>;
     if (!isUUID(postId)) return res.status(400).json({ error: "Invalid ID" });
     const { accountId, portalRole, accountName } = req.portalUser!;
     const { content } = req.body;
@@ -213,7 +213,7 @@ router.post("/portal/community/:id/comments", authenticatePortal, async (req, re
 // ── DELETE /api/portal/community/:id ──────────────────────────────────────
 router.delete("/portal/community/:id", authenticatePortal, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     if (!isUUID(id)) return res.status(400).json({ error: "Invalid ID" });
     const { accountId } = req.portalUser!;
 
@@ -296,7 +296,7 @@ router.post("/community", authenticate, async (req, res) => {
 // ── GET /api/community/:id ────────────────────────────────────────────────
 router.get("/community/:id", authenticate, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     if (!isUUID(id)) return res.status(400).json({ error: "Invalid ID" });
 
     const [post] = await db
@@ -323,7 +323,7 @@ router.get("/community/:id", authenticate, async (req, res) => {
 // ── PUT /api/community/:id ────────────────────────────────────────────────
 router.put("/community/:id", authenticate, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     if (!isUUID(id)) return res.status(400).json({ error: "Invalid ID" });
     const { title, content, type, visibility, audience, isPinned, isResolved } = req.body;
 
@@ -353,7 +353,7 @@ router.put("/community/:id", authenticate, async (req, res) => {
 // ── DELETE /api/community/:id ─────────────────────────────────────────────
 router.delete("/community/:id", authenticate, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     if (!isUUID(id)) return res.status(400).json({ error: "Invalid ID" });
     await db.delete(communityPosts).where(eq(communityPosts.id, id));
     return res.json({ success: true });
@@ -366,7 +366,7 @@ router.delete("/community/:id", authenticate, async (req, res) => {
 // ── POST /api/community/:id/comments ─────────────────────────────────────
 router.post("/community/:id/comments", authenticate, async (req, res) => {
   try {
-    const { id: postId } = req.params;
+    const { id: postId } = req.params as Record<string, string>;
     if (!isUUID(postId)) return res.status(400).json({ error: "Invalid ID" });
     const user = (req as any).user;
     const { content } = req.body;
@@ -401,7 +401,7 @@ router.post("/community/:id/comments", authenticate, async (req, res) => {
 // ── DELETE /api/community/comments/:id ───────────────────────────────────
 router.delete("/community/comments/:id", authenticate, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const [comment] = await db
       .select({ postId: communityComments.postId })
       .from(communityComments)

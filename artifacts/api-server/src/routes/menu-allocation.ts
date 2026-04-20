@@ -74,7 +74,7 @@ router.patch("/menu-allocation/order", requireRole("super_admin", "admin"), asyn
 
 // PATCH /api/menu-allocation/category/:id — 카테고리 이름 변경
 router.patch("/menu-allocation/category/:id", requireRole("super_admin", "admin"), async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params as Record<string, string>;
   const { name } = req.body as { name: string };
 
   if (!name?.trim()) {
@@ -102,7 +102,7 @@ router.patch("/menu-allocation/category/:id", requireRole("super_admin", "admin"
 
 // PATCH /api/menu-allocation/item/:id — 아이템 이름 변경 / visibility 토글
 router.patch("/menu-allocation/item/:id", requireRole("super_admin", "admin"), async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params as Record<string, string>;
   const { name, is_visible } = req.body as { name?: string; is_visible?: boolean };
 
   if (name === undefined && is_visible === undefined) {
@@ -174,7 +174,7 @@ router.post("/menu-allocation/category", requireRole("super_admin", "admin"), as
 
 // DELETE /api/menu-allocation/category/:id — 카테고리 소프트 삭제
 router.delete("/menu-allocation/category/:id", requireRole("super_admin", "admin"), async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params as Record<string, string>;
 
   try {
     await db.execute(sql`

@@ -171,7 +171,7 @@ export const _tenantDbStorage = new AsyncLocalStorage<NodePgDatabase<typeof sche
  */
 export function runWithTenantSchema(
   tenantSlug: string,
-  fn: () => void | Promise<void>,
+  fn: () => unknown | Promise<unknown>,
 ): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const tenantDb = getTenantDb(tenantSlug);

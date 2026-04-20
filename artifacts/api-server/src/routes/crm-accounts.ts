@@ -135,7 +135,7 @@ router.get("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (re
 // GET /crm/accounts/:id
 router.get("/crm/accounts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const [row] = await db.select().from(accounts).where(eq(accounts.id, id));
     if (!row) return res.status(404).json({ error: "Account not found" });
 
@@ -222,7 +222,7 @@ router.post("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (r
 // PUT /crm/accounts/:id
 router.put("/crm/accounts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const body = req.body as Record<string, unknown>;
 
     const [existing] = await db.select().from(accounts).where(eq(accounts.id, id));
@@ -278,7 +278,7 @@ router.put("/crm/accounts/:id", authenticate, requireRole(...ADMIN_ROLES), async
 // DELETE /crm/accounts/:id — soft delete only
 router.delete("/crm/accounts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const [existing] = await db.select().from(accounts).where(eq(accounts.id, id));
     if (!existing) return res.status(404).json({ error: "Account not found" });
 
@@ -293,7 +293,7 @@ router.delete("/crm/accounts/:id", authenticate, requireRole(...ADMIN_ROLES), as
 // GET /crm/accounts/:id/contracts
 router.get("/crm/accounts/:id/contracts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const r = (x: any) => x.rows ?? (x as any[]);
     const rows = await db.execute(sql`
       SELECT
@@ -321,7 +321,7 @@ router.get("/crm/accounts/:id/contracts", authenticate, requireRole(...ADMIN_ROL
 // GET /crm/accounts/:id/leads
 router.get("/crm/accounts/:id/leads", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const r = (x: any) => x.rows ?? (x as any[]);
     const rows = await db.execute(sql`
       SELECT
@@ -364,7 +364,7 @@ router.get("/crm/accounts/:id/portal", authenticate, requireRole("super_admin", 
       portalFailedAttempts:accounts.portalFailedAttempts,
       portalInvitedAt:     accounts.portalInvitedAt,
       portalTempPwExpires: accounts.portalTempPwExpires,
-    }).from(accounts).where(eq(accounts.id, req.params.id));
+    }).from(accounts).where(eq(accounts.id, req.params.id as string));
 
     if (!row) return res.status(404).json({ error: "Account not found" });
 
@@ -384,7 +384,7 @@ router.get("/crm/accounts/:id/portal", authenticate, requireRole("super_admin", 
 // PATCH /crm/accounts/:id/portal — update portal access settings
 router.patch("/crm/accounts/:id/portal", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const { portalAccess, portalRole, portalEmail } = req.body as {
       portalAccess?: boolean; portalRole?: string; portalEmail?: string;
     };
@@ -424,7 +424,7 @@ router.post("/crm/accounts/:id/portal/temp-password", authenticate, requireRole(
       portalTempPwExpires: expires,
       portalMustChangePw:  true,
       modifiedOn:          new Date(),
-    } as any).where(eq(accounts.id, req.params.id));
+    } as any).where(eq(accounts.id, req.params.id as string));
 
     return res.json({
       success: true,
@@ -455,7 +455,7 @@ router.post("/crm/accounts/:id/portal/set-password", authenticate, requireRole("
       portalFailedAttempts: 0,
       portalLockedUntil:   null,
       modifiedOn:          new Date(),
-    } as any).where(eq(accounts.id, req.params.id));
+    } as any).where(eq(accounts.id, req.params.id as string));
 
     return res.json({ success: true, message: "Portal password set successfully." });
   } catch (err) {
@@ -471,7 +471,7 @@ router.post("/crm/accounts/:id/portal/unlock", authenticate, requireRole("super_
       portalFailedAttempts: 0,
       portalLockedUntil:    null,
       modifiedOn:           new Date(),
-    } as any).where(eq(accounts.id, req.params.id));
+    } as any).where(eq(accounts.id, req.params.id as string));
     return res.json({ success: true });
   } catch (err) {
     console.error("[POST /crm/accounts/:id/portal/unlock]", err);
@@ -523,7 +523,7 @@ router.get("/crm/accounts/:id/contacts", authenticate, requireRole(...ADMIN_ROLE
       })
       .from(account_contacts)
       .innerJoin(contacts, eq(account_contacts.contactId, contacts.id))
-      .where(eq(account_contacts.accountId, req.params.id))
+      .where(eq(account_contacts.accountId, req.params.id as string))
       .orderBy(account_contacts.createdOn);
     return res.json(rows);
   } catch (err) {
@@ -542,11 +542,11 @@ router.post("/crm/accounts/:id/contacts", authenticate, requireRole(...ADMIN_ROL
     const [existing] = await db
       .select()
       .from(account_contacts)
-      .where(and(eq(account_contacts.accountId, req.params.id), eq(account_contacts.contactId, contactId)));
+      .where(and(eq(account_contacts.accountId, req.params.id as string), eq(account_contacts.contactId, contactId)));
     if (existing) return res.status(409).json({ error: "Contact already linked" });
 
     const [created] = await db.insert(account_contacts).values({
-      accountId: req.params.id,
+      accountId: req.params.id as string,
       contactId,
       role: role || null,
     }).returning();
@@ -561,7 +561,7 @@ router.post("/crm/accounts/:id/contacts", authenticate, requireRole(...ADMIN_ROL
 router.delete("/crm/accounts/:id/contacts/:linkId", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     await db.delete(account_contacts)
-      .where(and(eq(account_contacts.id, req.params.linkId), eq(account_contacts.accountId, req.params.id)));
+      .where(and(eq(account_contacts.id, req.params.linkId as string), eq(account_contacts.accountId, req.params.id as string)));
     return res.json({ ok: true });
   } catch (err) {
     console.error("[DELETE /crm/accounts/:id/contacts/:linkId]", err);
@@ -578,7 +578,7 @@ router.patch("/crm/accounts/:id/profile-image", authenticate, requireRole(...ADM
     }
     const [updated] = await db.update(accounts)
       .set({ profileImageUrl: dataUrl, modifiedOn: new Date() })
-      .where(eq(accounts.id, req.params.id))
+      .where(eq(accounts.id, req.params.id as string))
       .returning();
 
     if (!updated) return res.status(404).json({ error: "Account not found" });

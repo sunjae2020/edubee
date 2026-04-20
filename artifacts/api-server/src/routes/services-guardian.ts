@@ -163,7 +163,7 @@ router.get(
         .leftJoin(contracts, eq(guardianMgt.contractId, contracts.id))
         .leftJoin(accounts, eq(contracts.accountId, accounts.id))
         .leftJoin(users, eq(guardianMgt.assignedStaffId, users.id))
-        .where(eq(guardianMgt.id, req.params.id));
+        .where(eq(guardianMgt.id, req.params.id as string));
 
       if (!row) return res.status(404).json({ error: "Guardian record not found" });
 
@@ -199,7 +199,7 @@ router.patch(
       const [existing] = await db
         .select({ id: guardianMgt.id })
         .from(guardianMgt)
-        .where(eq(guardianMgt.id, req.params.id));
+        .where(eq(guardianMgt.id, req.params.id as string));
 
       if (!existing) return res.status(404).json({ error: "Guardian record not found" });
 
@@ -230,7 +230,7 @@ router.patch(
           ...(guardianStaffId              !== undefined && { guardianStaffId }),
           updatedAt: new Date(),
         })
-        .where(eq(guardianMgt.id, req.params.id))
+        .where(eq(guardianMgt.id, req.params.id as string))
         .returning();
 
       return res.json(updated);
@@ -251,7 +251,7 @@ router.post(
       const [existing] = await db
         .select({ id: guardianMgt.id, monthlyReports: guardianMgt.monthlyReports })
         .from(guardianMgt)
-        .where(eq(guardianMgt.id, req.params.id));
+        .where(eq(guardianMgt.id, req.params.id as string));
 
       if (!existing) return res.status(404).json({ error: "Guardian record not found" });
 
@@ -275,7 +275,7 @@ router.post(
           monthlyReports: [...existingReports, newReport],
           updatedAt: new Date(),
         })
-        .where(eq(guardianMgt.id, req.params.id))
+        .where(eq(guardianMgt.id, req.params.id as string))
         .returning({ id: guardianMgt.id, monthlyReports: guardianMgt.monthlyReports });
 
       return res.json(updated);
@@ -390,12 +390,12 @@ router.patch(
       const [existing] = await db
         .select({ id: guardianMgt.id, isActive: guardianMgt.isActive })
         .from(guardianMgt)
-        .where(eq(guardianMgt.id, req.params.id));
+        .where(eq(guardianMgt.id, req.params.id as string));
       if (!existing) return res.status(404).json({ error: "Not found" });
       const [updated] = await db
         .update(guardianMgt)
         .set({ isActive: !existing.isActive, updatedAt: new Date() })
-        .where(eq(guardianMgt.id, req.params.id))
+        .where(eq(guardianMgt.id, req.params.id as string))
         .returning();
       return res.json(updated);
     } catch (err) {

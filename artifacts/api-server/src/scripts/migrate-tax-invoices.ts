@@ -39,12 +39,11 @@ async function migrateTaxInvoices() {
           contractId: taxInv.contractId,
           contractProductId: taxInv.contractProductId,
           totalAmount: taxInv.totalAmount,
-          gstAmount: taxInv.gstAmount,
-          taxAmount: taxInv.gstAmount, // Alias for compatibility
+          taxAmount: taxInv.gstAmount,
           status: taxInv.status,
           dueDate: taxInv.dueDate,
           paidAt: taxInv.paidAt,
-          issuedAt: taxInv.invoiceDate,
+          issuedAt: taxInv.invoiceDate ? new Date(taxInv.invoiceDate) : null,
           notes: null,
           // Tax-specific fields
           schoolAccountId: taxInv.schoolAccountId,

@@ -372,3 +372,31 @@ export const generalConsultations = pgTable("general_consultations", {
 
 export type GeneralConsultation           = typeof generalConsultations.$inferSelect;
 export type NewGeneralConsultation        = typeof generalConsultations.$inferInsert;
+
+export const consultations = pgTable("consultations", {
+  id:               uuid("id").primaryKey().defaultRandom(),
+  refNumber:        varchar("ref_number",        { length: 50  }).unique(),
+  clientName:       varchar("client_name",       { length: 200 }),
+  clientEmail:      varchar("client_email",      { length: 255 }),
+  clientPhone:      varchar("client_phone",      { length: 50  }),
+  nationality:      varchar("nationality",       { length: 100 }),
+  consultationType: varchar("consultation_type", { length: 50  }).default("phone"),
+  consultationDate: timestamp("consultation_date"),
+  subject:          text("subject"),
+  status:           varchar("status",            { length: 30  }).default("scheduled"),
+  assignedStaffId:  uuid("assigned_staff_id").references(() => users.id),
+  notes:            text("notes"),
+  outcome:          text("outcome"),
+  followUpDate:     varchar("follow_up_date",    { length: 50  }),
+  followUpAction:   text("follow_up_action"),
+  contactId:        uuid("contact_id").references(() => contacts.id),
+  accountId:        uuid("account_id"),
+  leadId:           uuid("lead_id").references(() => leads.id),
+  isActive:         boolean("is_active").notNull().default(true),
+  organisationId:   uuid("organisation_id").references(() => organisations.id),
+  createdAt:        timestamp("created_at").notNull().defaultNow(),
+  updatedAt:        timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type Consultation    = typeof consultations.$inferSelect;
+export type NewConsultation = typeof consultations.$inferInsert;

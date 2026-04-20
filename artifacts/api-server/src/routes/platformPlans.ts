@@ -32,7 +32,7 @@ router.get("/platform-plans/:id", ...authOnly, async (req, res) => {
     const [plan] = await db
       .select()
       .from(platformPlans)
-      .where(eq(platformPlans.id, req.params.id));
+      .where(eq(platformPlans.id, req.params.id as string));
     if (!plan) return res.status(404).json({ success: false, error: "Plan not found" });
     return res.json({ success: true, data: plan });
   } catch (err) {
@@ -137,7 +137,7 @@ router.put("/platform-plans/:id", ...guard, async (req, res) => {
     const [updated] = await db
       .update(platformPlans)
       .set(set)
-      .where(eq(platformPlans.id, req.params.id))
+      .where(eq(platformPlans.id, req.params.id as string))
       .returning();
 
     if (!updated) return res.status(404).json({ success: false, error: "Plan not found" });
@@ -155,7 +155,7 @@ router.delete("/platform-plans/:id", ...guard, async (req, res) => {
     const [updated] = await db
       .update(platformPlans)
       .set({ isActive: false, modifiedOn: new Date() })
-      .where(eq(platformPlans.id, req.params.id))
+      .where(eq(platformPlans.id, req.params.id as string))
       .returning();
 
     if (!updated) return res.status(404).json({ success: false, error: "Plan not found" });

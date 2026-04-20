@@ -81,10 +81,10 @@ async function getLinkedAccounts(contactId: string) {
 
 router.get("/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [row] = await db.select().from(contacts).where(eq(contacts.id, req.params.id));
+    const [row] = await db.select().from(contacts).where(eq(contacts.id, req.params.id as string));
     if (!row) return res.status(404).json({ error: "Contact not found" });
 
-    const linkedAccounts = await getLinkedAccounts(req.params.id);
+    const linkedAccounts = await getLinkedAccounts(req.params.id as string);
     const linkedAccount  = linkedAccounts[0] ?? null;
 
     return res.json({ ...row, linkedAccount, linkedAccounts });
@@ -98,10 +98,10 @@ router.get("/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async
 router.get("/crm/contacts/:id/accounts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [row] = await db.select({ id: contacts.id }).from(contacts)
-      .where(eq(contacts.id, req.params.id)).limit(1);
+      .where(eq(contacts.id, req.params.id as string)).limit(1);
     if (!row) return res.status(404).json({ error: "Contact not found" });
 
-    const linkedAccounts = await getLinkedAccounts(req.params.id);
+    const linkedAccounts = await getLinkedAccounts(req.params.id as string);
     return res.json({ data: linkedAccounts });
   } catch (err) {
     console.error("[GET /api/crm/contacts/:id/accounts]", err);
@@ -113,7 +113,7 @@ router.get("/crm/contacts/:id/accounts", authenticate, requireRole(...ADMIN_ROLE
 router.post("/crm/contacts/:id/accounts", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [contact] = await db.select().from(contacts)
-      .where(eq(contacts.id, req.params.id)).limit(1);
+      .where(eq(contacts.id, req.params.id as string)).limit(1);
     if (!contact) return res.status(404).json({ error: "Contact not found" });
 
     const { accountType, name, role = "primary" } = req.body;
@@ -132,9 +132,9 @@ router.post("/crm/contacts/:id/accounts", authenticate, requireRole(...ADMIN_ROL
       ownerId,
     };
     if (role === "secondary") {
-      insertValues.secondaryContactId = req.params.id;
+      insertValues.secondaryContactId = req.params.id as string;
     } else {
-      insertValues.primaryContactId = req.params.id;
+      insertValues.primaryContactId = req.params.id as string;
     }
 
     const [created] = await db.insert(accounts).values(insertValues).returning();
@@ -148,7 +148,7 @@ router.post("/crm/contacts/:id/accounts", authenticate, requireRole(...ADMIN_ROL
 // PATCH update basic info of an account linked to this contact
 router.patch("/crm/contacts/:id/accounts/:accountId", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { accountId } = req.params;
+    const { accountId } = req.params as Record<string, string>;
     const { name, accountType, status } = req.body;
 
     const [existing] = await db.select({ id: accounts.id })
@@ -180,8 +180,8 @@ router.post("/crm/contacts/:id/link-account", authenticate, requireRole(...ADMIN
     if (!existing) return res.status(404).json({ error: "Account not found" });
 
     const updates: Record<string, any> = { modifiedOn: new Date() };
-    if (role === "secondary") updates.secondaryContactId = req.params.id;
-    else updates.primaryContactId = req.params.id;
+    if (role === "secondary") updates.secondaryContactId = req.params.id as string;
+    else updates.primaryContactId = req.params.id as string;
 
     const [updated] = await db.update(accounts).set(updates)
       .where(eq(accounts.id, accountId)).returning();
@@ -195,7 +195,7 @@ router.post("/crm/contacts/:id/link-account", authenticate, requireRole(...ADMIN
 // DELETE unlink an account from this contact
 router.delete("/crm/contacts/:id/accounts/:accountId", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { id: contactId, accountId } = req.params;
+    const { id: contactId, accountId } = req.params as Record<string, string>;
 
     const [existing] = await db.select({
       id: accounts.id,
@@ -249,7 +249,7 @@ router.post("/crm/contacts", authenticate, requireRole(...ADMIN_ROLES), async (r
 
 router.put("/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [existing] = await db.select().from(contacts).where(eq(contacts.id, req.params.id));
+    const [existing] = await db.select().from(contacts).where(eq(contacts.id, req.params.id as string));
     if (!existing) return res.status(404).json({ error: "Contact not found" });
 
     const { firstName, lastName, englishName, title, dob, gender, nationality, email, mobile,
@@ -260,7 +260,7 @@ router.put("/crm/contacts/:id", authenticate, requireRole(...ADMIN_ROLES), async
       .set({ firstName, lastName, englishName, title, dob, gender, nationality, email, mobile,
              officeNumber, snsType, snsId, influxChannel, importantDate1, importantDate2,
              originalName, fullName, description, status, accountType, modifiedOn: new Date() })
-      .where(eq(contacts.id, req.params.id))
+      .where(eq(contacts.id, req.params.id as string))
       .returning();
 
     return res.json(updated);
@@ -277,7 +277,7 @@ router.patch("/crm/contacts/:id/status", authenticate, requireRole(...ADMIN_ROLE
 
     const [updated] = await db.update(contacts)
       .set({ status, modifiedOn: new Date() })
-      .where(eq(contacts.id, req.params.id))
+      .where(eq(contacts.id, req.params.id as string))
       .returning();
 
     if (!updated) return res.status(404).json({ error: "Contact not found" });
@@ -297,7 +297,7 @@ router.patch("/crm/contacts/:id/profile-image", authenticate, requireRole(...ADM
     }
     const [updated] = await db.update(contacts)
       .set({ profileImageUrl: dataUrl, modifiedOn: new Date() })
-      .where(eq(contacts.id, req.params.id))
+      .where(eq(contacts.id, req.params.id as string))
       .returning();
 
     if (!updated) return res.status(404).json({ error: "Contact not found" });

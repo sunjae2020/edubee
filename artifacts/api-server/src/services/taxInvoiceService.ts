@@ -9,7 +9,7 @@ import {
   organisations,
 } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { renderTaxInvoicePdf } from "./taxInvoicePdfService.js";
+import { renderTaxInvoicePdf, TaxInvoicePdfData } from "./taxInvoicePdfService.js";
 import { sendMail } from "../mailer.js";
 import path from "path";
 import fs from "fs";
@@ -195,7 +195,7 @@ export async function generateTaxInvoice(
     apPaidDate,
   };
 
-  const pdfBuffer = await renderTaxInvoicePdf(pdfData);
+  const pdfBuffer = await renderTaxInvoicePdf(pdfData as TaxInvoicePdfData);
   const pdfPath   = pdfStoragePath(invoiceRef);
   fs.writeFileSync(pdfPath, pdfBuffer);
 

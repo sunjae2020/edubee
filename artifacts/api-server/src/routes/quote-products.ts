@@ -110,7 +110,7 @@ router.patch("/quote-products/reorder", authenticate, requireRole(...ADMIN_ROLES
 // ─── PATCH /api/quote-products/:id ─────────────────────────────────────────
 router.patch("/quote-products/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [existing] = await db.select().from(quote_products).where(eq(quote_products.id, req.params.id));
+    const [existing] = await db.select().from(quote_products).where(eq(quote_products.id, req.params.id as string));
     if (!existing) return res.status(404).json({ error: "Quote product not found" });
 
     const { price, due_date, quantity, is_initial_payment, name, item_description, sort_index, product_id } = req.body;
@@ -135,7 +135,7 @@ router.patch("/quote-products/:id", authenticate, requireRole(...ADMIN_ROLES), a
     }
 
     const [updated] = await db.update(quote_products).set(updates)
-      .where(eq(quote_products.id, req.params.id)).returning();
+      .where(eq(quote_products.id, req.params.id as string)).returning();
 
     return res.json(updated);
   } catch (err) {
@@ -209,7 +209,7 @@ router.delete("/quote-products/:id", authenticate, requireRole(...ADMIN_ROLES), 
   try {
     await db.update(quote_products)
       .set({ status: "Inactive", modifiedOn: new Date() })
-      .where(eq(quote_products.id, req.params.id));
+      .where(eq(quote_products.id, req.params.id as string));
     return res.json({ success: true });
   } catch (err) {
     console.error("[DELETE /api/quote-products/:id]", err);

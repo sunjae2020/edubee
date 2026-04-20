@@ -215,7 +215,7 @@ export default function PackageDetail() {
         features: rec.features ?? null,
       }).then(r => r.data);
       // 2. Copy all linked products to the new package
-      const prods: any[] = await axios.get(`${BASE}/api/packages/${id}/products`).then(r => r.data);
+      const prods: any = await axios.get(`${BASE}/api/packages/${id}/products`).then(r => r.data);
       await Promise.all(
         (Array.isArray(prods) ? prods : prods?.data ?? []).map((p: any) =>
           axios.post(`${BASE}/api/packages/${newPkg.id}/products`, {
@@ -428,7 +428,7 @@ export default function PackageDetail() {
         <DetailRow label="Package Name">
           <EditableField
             isEditing={isEditing}
-            value={getValue("name", rec.name)}
+            value={getValue("name")}
             onChange={v => setField("name", v)}
             display={<span className="font-medium">{rec.name}</span>}
           />
@@ -441,7 +441,7 @@ export default function PackageDetail() {
         }>
           <EditableField
             isEditing={isEditing}
-            value={String(getValue("adults", rec.adults) ?? "")}
+            value={String(getValue("adults") ?? "")}
             onChange={v => setField("adults", v ? parseInt(v) : null)}
             inputType="number"
             display={
@@ -459,7 +459,7 @@ export default function PackageDetail() {
         }>
           <EditableField
             isEditing={isEditing}
-            value={String(getValue("children", rec.children) ?? "")}
+            value={String(getValue("children") ?? "")}
             onChange={v => setField("children", v ? parseInt(v) : null)}
             inputType="number"
             display={
@@ -540,7 +540,7 @@ export default function PackageDetail() {
               >
                 <EditableField
                   isEditing={isEditing}
-                  value={String(getValue(field, rec[field as keyof typeof rec]) ?? "")}
+                  value={String(getValue(field as keyof typeof rec) ?? "")}
                   onChange={v => setField(field, v)}
                   inputType="number"
                   className={isPrimary && isEditing ? "border-(--e-orange) ring-1 ring-(--e-orange)/30" : ""}
@@ -566,7 +566,7 @@ export default function PackageDetail() {
           : typeof rawFeatures === "string" && rawFeatures
           ? rawFeatures.split(",").map((s: string) => s.trim()).filter(Boolean)
           : [];
-        const editVal = getValue("features", featuresArr);
+        const editVal = getValue("features");
         const editArr: string[] = Array.isArray(editVal)
           ? editVal
           : typeof editVal === "string" && editVal

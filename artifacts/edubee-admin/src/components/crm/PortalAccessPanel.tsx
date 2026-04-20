@@ -138,8 +138,8 @@ export function PortalAccessPanel({ accountId, accountType }: Props) {
   }
 
   async function setDirectPassword() {
-    if (newPw !== confirmPw) return toast({ title: "Passwords do not match", variant: "destructive" });
-    if (newPw.length < 8) return toast({ title: "Password must be at least 8 characters", variant: "destructive" });
+    if (newPw !== confirmPw) { toast({ title: "Passwords do not match", variant: "destructive" }); return; }
+    if (newPw.length < 8) { toast({ title: "Password must be at least 8 characters", variant: "destructive" }); return; }
     setSettingPw(true);
     try {
       const res = await fetch(`${BASE}/api/crm/accounts/${accountId}/portal/set-password`, {

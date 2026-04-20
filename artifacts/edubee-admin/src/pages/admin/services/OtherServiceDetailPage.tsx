@@ -60,6 +60,7 @@ interface OtherServiceRecord {
   notes?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  isActive?: boolean | null;
 }
 
 function fmtDate(d: string | null | undefined): string {

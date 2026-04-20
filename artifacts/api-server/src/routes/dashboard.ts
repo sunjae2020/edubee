@@ -136,7 +136,7 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
       const [myActiveLeads] = await db.select({ count: count() }).from(leads).where(and(eq(leads.agentId, userId), ne(leads.status, "converted")));
       const [myApps] = await db.select({ count: count() }).from(applications).where(eq(applications.agentId, userId));
       const [myPendingApps] = await db.select({ count: count() }).from(applications).where(and(eq(applications.agentId, userId), eq(applications.status, "submitted")));
-      const [myContracts] = await db.select({ count: count() }).from(contracts).where(eq(contracts.agentId, userId));
+      const [myContracts] = await db.select({ count: count() }).from(contracts).where(eq((contracts as any).agentId, userId));
 
       const recentLeads = await db.select({
         id: leads.id,
@@ -204,12 +204,12 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
       let bookings = 0;
       let active = 0;
       if (partnerType === "pickup") {
-        const [b] = await db.select({ count: count() }).from(pickupMgt).where(eq(pickupMgt.partnerId, userId));
-        const [a] = await db.select({ count: count() }).from(pickupMgt).where(and(eq(pickupMgt.partnerId, userId), eq(pickupMgt.status, "confirmed")));
+        const [b] = await db.select({ count: count() }).from(pickupMgt).where(eq((pickupMgt as any).partnerId, userId));
+        const [a] = await db.select({ count: count() }).from(pickupMgt).where(and(eq((pickupMgt as any).partnerId, userId), eq(pickupMgt.status, "confirmed")));
         bookings = Number(b.count); active = Number(a.count);
       } else if (partnerType === "tour") {
-        const [b] = await db.select({ count: count() }).from(tourMgt).where(eq(tourMgt.partnerId, userId));
-        const [a] = await db.select({ count: count() }).from(tourMgt).where(and(eq(tourMgt.partnerId, userId), eq(tourMgt.status, "confirmed")));
+        const [b] = await db.select({ count: count() }).from(tourMgt).where(eq((tourMgt as any).partnerId, userId));
+        const [a] = await db.select({ count: count() }).from(tourMgt).where(and(eq((tourMgt as any).partnerId, userId), eq(tourMgt.status, "confirmed")));
         bookings = Number(b.count); active = Number(a.count);
       }
       return res.json({ role, partnerType, totalBookings: bookings, activeBookings: active, recentApplications: [], recentLeads: [], applicationsByStatus: [] });
@@ -267,7 +267,7 @@ router.get("/notifications/unread-count", authenticate, async (req, res) => {
 
 router.put("/notifications/:id/read", authenticate, async (req, res) => {
   try {
-    await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, req.params.id));
+    await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, req.params.id as string));
     return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });

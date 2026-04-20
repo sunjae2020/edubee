@@ -26,7 +26,7 @@ router.get(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const categories = await db
         .select()
         .from(accountServiceCategories)
@@ -45,7 +45,7 @@ router.post(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const { serviceType, notes } = req.body;
       if (!serviceType) {
         return res.status(400).json({ success: false, message: "serviceType is required" });
@@ -69,7 +69,7 @@ router.delete(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id, serviceType } = req.params;
+      const { id, serviceType } = req.params as Record<string, string>;
       await db
         .delete(accountServiceCategories)
         .where(
@@ -96,7 +96,7 @@ router.get(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const profiles = await db
         .select()
         .from(accountHomestayProfiles)
@@ -120,7 +120,7 @@ router.post(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const [created] = await db
         .insert(accountHomestayProfiles)
         .values({ ...req.body, accountId: id })
@@ -139,7 +139,7 @@ router.put(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { profileId } = req.params;
+      const { profileId } = req.params as Record<string, string>;
       const [updated] = await db
         .update(accountHomestayProfiles)
         .set({ ...req.body, updatedAt: new Date() })
@@ -160,7 +160,7 @@ router.delete(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { profileId } = req.params;
+      const { profileId } = req.params as Record<string, string>;
       await db
         .update(accountHomestayProfiles)
         .set({ isActive: false, updatedAt: new Date() })
@@ -183,7 +183,7 @@ router.get(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const profiles = await db
         .select()
         .from(accountPickupProfiles)
@@ -207,7 +207,7 @@ router.post(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const [created] = await db
         .insert(accountPickupProfiles)
         .values({ ...req.body, accountId: id })
@@ -226,7 +226,7 @@ router.put(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { profileId } = req.params;
+      const { profileId } = req.params as Record<string, string>;
       const [updated] = await db
         .update(accountPickupProfiles)
         .set({ ...req.body, updatedAt: new Date() })
@@ -247,7 +247,7 @@ router.delete(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { profileId } = req.params;
+      const { profileId } = req.params as Record<string, string>;
       await db
         .update(accountPickupProfiles)
         .set({ isActive: false, updatedAt: new Date() })
@@ -270,7 +270,7 @@ router.get(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const [profile] = await db
         .select()
         .from(accountCompanyProfiles)
@@ -289,7 +289,7 @@ router.post(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const [created] = await db
         .insert(accountCompanyProfiles)
         .values({ ...req.body, accountId: id })
@@ -309,7 +309,7 @@ router.put(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { profileId } = req.params;
+      const { profileId } = req.params as Record<string, string>;
       const [updated] = await db
         .update(accountCompanyProfiles)
         .set({ ...req.body, updatedAt: new Date() })
@@ -334,7 +334,7 @@ router.get(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const [profile] = await db
         .select()
         .from(accountSchoolProfiles)
@@ -353,7 +353,7 @@ router.post(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const [created] = await db
         .insert(accountSchoolProfiles)
         .values({ ...req.body, accountId: id })
@@ -373,7 +373,7 @@ router.put(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { profileId } = req.params;
+      const { profileId } = req.params as Record<string, string>;
       const [updated] = await db
         .update(accountSchoolProfiles)
         .set({ ...req.body, updatedAt: new Date() })
@@ -398,7 +398,7 @@ router.get(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const profiles = await db
         .select()
         .from(accountTourProfiles)
@@ -422,7 +422,7 @@ router.post(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const [created] = await db
         .insert(accountTourProfiles)
         .values({ ...req.body, accountId: id })
@@ -441,7 +441,7 @@ router.put(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { profileId } = req.params;
+      const { profileId } = req.params as Record<string, string>;
       const [updated] = await db
         .update(accountTourProfiles)
         .set({ ...req.body, updatedAt: new Date() })
@@ -462,7 +462,7 @@ router.delete(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { profileId } = req.params;
+      const { profileId } = req.params as Record<string, string>;
       await db
         .update(accountTourProfiles)
         .set({ isActive: false, updatedAt: new Date() })
@@ -489,7 +489,7 @@ router.get(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const rows = await db
         .select()
         .from(accountHotelProfiles)
@@ -508,7 +508,7 @@ router.post(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const { amenities, ...rest } = req.body;
       const [created] = await db
         .insert(accountHotelProfiles)
@@ -532,7 +532,7 @@ router.put(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id, profileId } = req.params;
+      const { id, profileId } = req.params as Record<string, string>;
       const { amenities, ...rest } = req.body;
       const [updated] = await db
         .update(accountHotelProfiles)
@@ -563,7 +563,7 @@ router.delete(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id, profileId } = req.params;
+      const { id, profileId } = req.params as Record<string, string>;
       await db
         .update(accountHotelProfiles)
         .set({ isActive: false, updatedAt: new Date() })
@@ -587,7 +587,7 @@ router.get(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
 
       const [
         serviceCategories,

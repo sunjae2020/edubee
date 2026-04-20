@@ -23,7 +23,7 @@ class InvoiceGenerator {
     };
 
     const response = await fetch(url, { ...options, headers });
-    const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch(() => ({})) as any;
     return { status: response.status, data };
   }
 
@@ -273,3 +273,4 @@ generator.run().catch((err) => {
   console.error("Error:", err);
   process.exit(1);
 });
+export {};

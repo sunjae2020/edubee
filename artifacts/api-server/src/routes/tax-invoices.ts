@@ -88,7 +88,7 @@ router.get(
   requireRole(...STAFF),
   async (req, res) => {
     try {
-      const q = String(req.query.q ?? "").trim();
+      const q = String(req.query.q as string ?? "").trim();
       const conds: SQL[] = [];
       if (q) {
         conds.push(
@@ -137,7 +137,7 @@ router.get(
       const rows = await db
         .select()
         .from(taxInvoices)
-        .where(eq(taxInvoices.contractProductId, req.params.cpId))
+        .where(eq(taxInvoices.contractProductId, req.params.cpId as string))
         .orderBy(desc(taxInvoices.createdOn));
       return res.json({ data: rows });
     } catch (err) {
@@ -335,7 +335,7 @@ router.get(
         })
         .from(taxInvoices)
         .leftJoin(accounts, eq(taxInvoices.schoolAccountId, accounts.id))
-        .where(eq(taxInvoices.id, req.params.id))
+        .where(eq(taxInvoices.id, req.params.id as string))
         .limit(1);
 
       if (!row) return res.status(404).json({ error: "Not found" });
@@ -369,7 +369,7 @@ router.get(
       const [inv] = await db
         .select({ pdfUrl: taxInvoices.pdfUrl, invoiceRef: taxInvoices.invoiceRef })
         .from(taxInvoices)
-        .where(eq(taxInvoices.id, req.params.id))
+        .where(eq(taxInvoices.id, req.params.id as string))
         .limit(1);
 
       if (!inv || !inv.pdfUrl || !fs.existsSync(inv.pdfUrl)) {
@@ -403,7 +403,7 @@ router.post(
           sentToEmail: taxInvoices.sentToEmail,
         })
         .from(taxInvoices)
-        .where(eq(taxInvoices.id, req.params.id))
+        .where(eq(taxInvoices.id, req.params.id as string))
         .limit(1);
 
       if (!inv) return res.status(404).json({ error: "Tax invoice not found" });
@@ -443,7 +443,7 @@ router.post(
       const [inv] = await db
         .select({ id: taxInvoices.id, invoiceType: taxInvoices.invoiceType, contractProductId: taxInvoices.contractProductId })
         .from(taxInvoices)
-        .where(eq(taxInvoices.id, req.params.id))
+        .where(eq(taxInvoices.id, req.params.id as string))
         .limit(1);
 
       if (!inv) return res.status(404).json({ error: "Tax invoice not found" });
@@ -483,7 +483,7 @@ router.patch(
       const [updated] = await db
         .update(taxInvoices)
         .set(updatePayload)
-        .where(eq(taxInvoices.id, req.params.id))
+        .where(eq(taxInvoices.id, req.params.id as string))
         .returning();
 
       if (!updated) return res.status(404).json({ error: "Tax invoice not found" });

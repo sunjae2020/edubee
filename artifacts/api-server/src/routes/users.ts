@@ -90,8 +90,8 @@ router.post("/", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => 
 });
 
 const ROLE_HIERARCHY: Record<string, number> = {
-  super_admin: 100, admin: 80, camp_coordinator: 60,
-  finance: 70, admission: 65, team_manager: 60, consultant: 50, camp_coordinator: 40,
+  super_admin: 100, admin: 80,
+  finance: 70, admission: 65, team_manager: 60, camp_coordinator: 60, consultant: 50,
 };
 
 router.get("/switchable", authenticate, async (req, res) => {
@@ -161,7 +161,7 @@ router.get("/:id", authenticate, async (req, res) => {
       teamId: users.teamId,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
-    }).from(users).where(eq(users.id, req.params.id)).limit(1);
+    }).from(users).where(eq(users.id, req.params.id as string)).limit(1);
     
     if (!user) return res.status(404).json({ error: "Not Found" });
     return res.json(user);
@@ -174,7 +174,7 @@ router.get("/:id", authenticate, async (req, res) => {
 router.put("/:id", authenticate, async (req, res) => {
   try {
     const isAdmin = ADMIN_ROLES.includes(req.user!.role);
-    if (!isAdmin && req.user!.id !== req.params.id) {
+    if (!isAdmin && req.user!.id !== req.params.id as string) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
@@ -197,7 +197,7 @@ router.put("/:id", authenticate, async (req, res) => {
       const [current] = await db
         .select({ email: users.email })
         .from(users)
-        .where(eq(users.id, req.params.id))
+        .where(eq(users.id, req.params.id as string))
         .limit(1);
       currentEmail = current?.email;
     }
@@ -222,7 +222,7 @@ router.put("/:id", authenticate, async (req, res) => {
       updates.passwordHash = await bcrypt.hash(password, 12);
     }
 
-    const [user] = await db.update(users).set(updates).where(eq(users.id, req.params.id)).returning();
+    const [user] = await db.update(users).set(updates).where(eq(users.id, req.params.id as string)).returning();
     if (!user) return res.status(404).json({ error: "Not Found" });
     const { passwordHash: _, ...userWithoutPassword } = user;
     return res.json(userWithoutPassword);
@@ -241,7 +241,7 @@ router.put("/:id", authenticate, async (req, res) => {
 router.get("/:id/products", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
     const { status, type } = req.query as Record<string, string>;
-    const conditions = [eq(products.providerAccountId, req.params.id)];
+    const conditions = [eq(products.providerAccountId, req.params.id as string)];
     if (status) conditions.push(eq(products.status, status));
     if (type)   conditions.push(eq(products.productType, type));
 
@@ -265,7 +265,7 @@ router.get("/:id/products", authenticate, requireRole(...ADMIN_ROLES, "camp_coor
 
 router.delete("/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    await db.update(users).set({ status: "inactive", updatedAt: new Date() }).where(eq(users.id, req.params.id));
+    await db.update(users).set({ status: "inactive", updatedAt: new Date() }).where(eq(users.id, req.params.id as string));
     return res.json({ success: true, message: "User deactivated" });
   } catch (err) {
     console.error("Delete user error:", err);
@@ -282,7 +282,7 @@ router.patch("/:id/avatar", authenticate, async (req, res) => {
     }
     const [updated] = await db.update(users)
       .set({ avatarUrl: dataUrl, updatedAt: new Date() })
-      .where(eq(users.id, req.params.id))
+      .where(eq(users.id, req.params.id as string))
       .returning();
 
     if (!updated) return res.status(404).json({ error: "User not found" });

@@ -107,7 +107,7 @@ export default function UserDetail() {
   // KPI 탭 접근 권한: 본인 + 팀장 + 어드민
   const canViewKpi =
     ADMIN_ROLES.includes(currentUser?.role ?? "") ||
-    currentUser?.role === "team_manager" ||
+    (currentUser?.role as string) === "team_manager" ||
     currentUser?.id === id;
 
   const balance = balanceData?.data;

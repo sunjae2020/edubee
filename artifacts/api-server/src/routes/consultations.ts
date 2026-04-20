@@ -16,9 +16,9 @@ function genConsRef() {
 // ── LIST ─────────────────────────────────────────────────────────────────────
 router.get("/consultations", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const page   = Math.max(1, parseInt(String(req.query.page  || "1")));
-    const search = String(req.query.search || "").trim();
-    const status = String(req.query.status || "").trim();
+    const page   = Math.max(1, parseInt(String(req.query.page as string  || "1")));
+    const search = String(req.query.search as string || "").trim();
+    const status = String(req.query.status as string || "").trim();
     const orgId  = (req as any).tenantId as string | undefined;
 
     const conditions: any[] = [];
@@ -84,7 +84,7 @@ router.get("/consultations", authenticate, requireRole(...ADMIN_ROLES), async (r
 // ── GET ONE ──────────────────────────────────────────────────────────────────
 router.get("/consultations/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const rows = await db.select().from(consultations).where(eq(consultations.id, req.params.id));
+    const rows = await db.select().from(consultations).where(eq(consultations.id, req.params.id as string));
     if (!rows.length) return res.status(404).json({ error: "Not found" });
     return res.json(rows[0]);
   } catch (err) {
@@ -163,7 +163,7 @@ router.patch("/consultations/:id", authenticate, requireRole(...ADMIN_ROLES), as
         leadId:           leadId           ?? undefined,
         updatedAt:        new Date(),
       })
-      .where(eq(consultations.id, req.params.id))
+      .where(eq(consultations.id, req.params.id as string))
       .returning();
 
     if (!updated.length) return res.status(404).json({ error: "Not found" });
@@ -203,7 +203,7 @@ router.delete("/consultations/bulk", authenticate, requireRole("super_admin"), a
 // ── HARD DELETE (single) ─────────────────────────────────────────────────────
 router.delete("/consultations/:id", authenticate, requireRole("super_admin"), async (req, res) => {
   try {
-    await db.delete(consultations).where(eq(consultations.id, req.params.id));
+    await db.delete(consultations).where(eq(consultations.id, req.params.id as string));
     return res.json({ success: true });
   } catch (err) {
     console.error("[DELETE /api/consultations/:id]", err);

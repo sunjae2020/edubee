@@ -112,7 +112,7 @@ router.post("/notes", authenticate, async (req, res) => {
 
 router.patch("/notes/:id", authenticate, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const [existing] = await db.select().from(notes).where(eq(notes.id, id)).limit(1);
     if (!existing) return res.status(404).json({ success: false, error: "Not found" });
 
@@ -138,7 +138,7 @@ router.patch("/notes/:id", authenticate, async (req, res) => {
 
 router.delete("/notes/:id", authenticate, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const [existing] = await db.select().from(notes).where(eq(notes.id, id)).limit(1);
     if (!existing) return res.status(404).json({ success: false, error: "Not found" });
 

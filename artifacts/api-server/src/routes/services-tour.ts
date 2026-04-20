@@ -49,7 +49,7 @@ const SELECT_COLS = {
   totalAmount:      contracts.totalAmount,
   currency:         contracts.currency,
   // product
-  productName:      products.name,
+  productName:      products.productName,
 };
 
 // ─── GET /api/services/tour ───────────────────────────────────────────────────
@@ -178,7 +178,7 @@ router.get(
         .from(tourMgt)
         .leftJoin(contracts, eq(tourMgt.contractId, contracts.id))
         .leftJoin(products, eq(tourMgt.productId, products.id))
-        .where(eq(tourMgt.id, req.params.id));
+        .where(eq(tourMgt.id, req.params.id as string));
 
       if (!row) return res.status(404).json({ error: "Tour record not found" });
       // partner_tour check removed - internal staff access only
@@ -203,7 +203,7 @@ router.patch(
       const [existing] = await db
         .select({ id: tourMgt.id, tourCompanyId: tourMgt.tourCompanyId })
         .from(tourMgt)
-        .where(eq(tourMgt.id, req.params.id));
+        .where(eq(tourMgt.id, req.params.id as string));
 
       if (!existing) return res.status(404).json({ error: "Tour record not found" });
       // partner_tour check removed - internal staff access only
@@ -246,7 +246,7 @@ router.patch(
       const [updated] = await db
         .update(tourMgt)
         .set(updates)
-        .where(eq(tourMgt.id, req.params.id))
+        .where(eq(tourMgt.id, req.params.id as string))
         .returning();
 
       return res.json(updated);
@@ -270,7 +270,7 @@ router.put(
       const [existing] = await db
         .select({ id: tourMgt.id, tourCompanyId: tourMgt.tourCompanyId })
         .from(tourMgt)
-        .where(eq(tourMgt.id, req.params.id));
+        .where(eq(tourMgt.id, req.params.id as string));
 
       if (!existing) return res.status(404).json({ error: "Tour record not found" });
       // partner_tour check removed - internal staff access only
@@ -313,7 +313,7 @@ router.put(
       const [updated] = await db
         .update(tourMgt)
         .set(updates)
-        .where(eq(tourMgt.id, req.params.id))
+        .where(eq(tourMgt.id, req.params.id as string))
         .returning();
 
       return res.json(updated);
@@ -332,12 +332,12 @@ router.patch(
       const [existing] = await db
         .select({ id: tourMgt.id, isActive: tourMgt.isActive })
         .from(tourMgt)
-        .where(eq(tourMgt.id, req.params.id));
+        .where(eq(tourMgt.id, req.params.id as string));
       if (!existing) return res.status(404).json({ error: "Not found" });
       const [updated] = await db
         .update(tourMgt)
         .set({ isActive: !existing.isActive, updatedAt: new Date() })
-        .where(eq(tourMgt.id, req.params.id))
+        .where(eq(tourMgt.id, req.params.id as string))
         .returning();
       return res.json(updated);
     } catch (err) {

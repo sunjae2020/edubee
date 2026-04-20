@@ -35,7 +35,6 @@ export default function ApplicationFormEdit() {
     queryKey: ["application-form", params.id],
     queryFn: () => axios.get(`${BASE}/api/application-forms/${params.id}`).then(r => r.data),
     enabled: !isNew,
-    onSuccess: undefined,
   });
 
   const { data: formData } = useQuery({

@@ -115,7 +115,7 @@ router.post("/invoices", authenticate, requireRole(...ADMIN_ROLES), async (req, 
 
 router.get("/invoices/:id", authenticate, async (req, res) => {
   try {
-    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id)).limit(1);
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id as string)).limit(1);
     if (!invoice) return res.status(404).json({ error: "Not Found" });
     return res.json(invoice);
   } catch (err) {
@@ -126,7 +126,7 @@ router.get("/invoices/:id", authenticate, async (req, res) => {
 router.put("/invoices/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const [invoice] = await db.update(invoices).set({ ...req.body, updatedAt: new Date() })
-      .where(eq(invoices.id, req.params.id)).returning();
+      .where(eq(invoices.id, req.params.id as string)).returning();
     if (!invoice) return res.status(404).json({ error: "Not Found" });
     return res.json(invoice);
   } catch (err) {
@@ -137,13 +137,13 @@ router.put("/invoices/:id", authenticate, requireRole(...ADMIN_ROLES), async (re
 // Send Invoice by Email
 router.post("/invoices/:id/send-email", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [inv] = await db.select().from(invoices).where(eq(invoices.id, req.params.id)).limit(1);
+    const [inv] = await db.select().from(invoices).where(eq(invoices.id, req.params.id as string)).limit(1);
     if (!inv) return res.status(404).json({ error: "Invoice not found" });
 
     const toEmail: string | undefined = req.body.email;
     if (!toEmail) return res.status(400).json({ error: "email is required" });
 
-    const invNumber = inv.invoiceNumber ?? req.params.id;
+    const invNumber = inv.invoiceNumber ?? req.params.id as string;
     const amount = inv.totalAmount ? `${inv.currency ?? "AUD"} ${Number(inv.totalAmount).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—";
     const dueDate = inv.dueDate ?? "—";
 
@@ -318,7 +318,7 @@ router.post("/exchange-rates", authenticate, requireRole(...ADMIN_ROLES), async 
 
 router.delete("/exchange-rates/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const deleted = await db.delete(exchangeRates).where(eq(exchangeRates.id, id)).returning();
     if (deleted.length === 0) return res.status(404).json({ error: "Not found" });
     return res.json({ success: true });
@@ -383,7 +383,7 @@ router.get("/receipts", authenticate, async (req, res) => {
 // Get single receipt
 router.get("/receipts/:id", authenticate, async (req, res) => {
   try {
-    const [rcp] = await db.select().from(receipts).where(eq(receipts.id, req.params.id)).limit(1);
+    const [rcp] = await db.select().from(receipts).where(eq(receipts.id, req.params.id as string)).limit(1);
     if (!rcp) return res.status(404).json({ error: "Receipt not found" });
     const inv = rcp.invoiceId
       ? (await db.select({ id: invoices.id, contractId: invoices.contractId, invoiceNumber: invoices.invoiceNumber }).from(invoices).where(eq(invoices.id, rcp.invoiceId)).limit(1))[0]
@@ -399,13 +399,13 @@ router.get("/receipts/:id", authenticate, async (req, res) => {
 // Update receipt status
 router.patch("/receipts/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [existing] = await db.select().from(receipts).where(eq(receipts.id, req.params.id)).limit(1);
+    const [existing] = await db.select().from(receipts).where(eq(receipts.id, req.params.id as string)).limit(1);
     if (!existing) return res.status(404).json({ error: "Receipt not found" });
     const { status, confirmedAt } = req.body;
     const updates: Record<string, any> = {};
     if (status !== undefined) updates.status = status;
     if (confirmedAt !== undefined) updates.confirmedAt = confirmedAt;
-    const [updated] = await db.update(receipts).set(updates).where(eq(receipts.id, req.params.id)).returning();
+    const [updated] = await db.update(receipts).set(updates).where(eq(receipts.id, req.params.id as string)).returning();
     return res.json({ data: updated });
   } catch {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -415,13 +415,13 @@ router.patch("/receipts/:id", authenticate, requireRole(...ADMIN_ROLES), async (
 // Send Receipt by Email
 router.post("/receipts/:id/send-email", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [rcp] = await db.select().from(receipts).where(eq(receipts.id, req.params.id)).limit(1);
+    const [rcp] = await db.select().from(receipts).where(eq(receipts.id, req.params.id as string)).limit(1);
     if (!rcp) return res.status(404).json({ error: "Receipt not found" });
 
     const toEmail: string | undefined = req.body.email;
     if (!toEmail) return res.status(400).json({ error: "email is required" });
 
-    const rcpNumber = rcp.receiptNumber ?? req.params.id;
+    const rcpNumber = rcp.receiptNumber ?? req.params.id as string;
     const sym = (rcp.currency ?? "AUD") === "AUD" ? "A$" : (rcp.currency ?? "");
     const amountStr = rcp.amount ? `${rcp.currency ?? "AUD"} ${Number(rcp.amount).toLocaleString("en-AU", { minimumFractionDigits: 2 })}` : "—";
     const dateStr = rcp.receiptDate ?? "—";
@@ -470,12 +470,7 @@ router.post("/receipts", authenticate, requireRole(...ADMIN_ROLES), async (req, 
       const PLATFORM_ADMIN_ID = process.env.PLATFORM_ADMIN_USER_ID;
       const today = new Date().toISOString().split('T')[0];
 
-      // Step 1: Confirm the transaction credit entry
-      if (receipt.transactionId) {
-        await confirmLedgerEntriesBySource('transaction', receipt.transactionId);
-      }
-
-      // Step 2: Confirm the invoice debit entry
+      // Step 1: Confirm the invoice debit entry
       if (receipt.invoiceId) {
         await confirmLedgerEntriesBySource('invoice', receipt.invoiceId);
       }
@@ -583,7 +578,7 @@ router.get("/bank-accounts", authenticate, async (req, res) => {
 // GET /finance/bank-accounts/:id
 router.get("/bank-accounts/:id", authenticate, async (req, res) => {
   try {
-    const [row] = await db.select().from(banking).where(eq(banking.id, req.params.id));
+    const [row] = await db.select().from(banking).where(eq(banking.id, req.params.id as string));
     if (!row) return res.status(404).json({ error: "Not found" });
     return res.json(row);
   } catch (err) {
@@ -592,7 +587,7 @@ router.get("/bank-accounts/:id", authenticate, async (req, res) => {
 });
 
 // POST /finance/bank-accounts
-router.post("/bank-accounts", authenticate, requireRole(["admin", "superadmin"]), async (req, res) => {
+router.post("/bank-accounts", authenticate, requireRole("admin", "superadmin"), async (req, res) => {
   try {
     const {
       organisationId, accountName, bankName, accountNumber, accountHolder,
@@ -635,7 +630,7 @@ router.post("/bank-accounts", authenticate, requireRole(["admin", "superadmin"])
 });
 
 // PATCH /finance/bank-accounts/:id
-router.patch("/bank-accounts/:id", authenticate, requireRole(["admin", "superadmin"]), async (req, res) => {
+router.patch("/bank-accounts/:id", authenticate, requireRole("admin", "superadmin"), async (req, res) => {
   try {
     const {
       accountName, bankName, accountNumber, accountHolder,
@@ -665,7 +660,7 @@ router.patch("/bank-accounts/:id", authenticate, requireRole(["admin", "superadm
     if (status !== undefined)          updates.status         = status;
     if (notes !== undefined)           updates.notes          = notes;
 
-    const [updated] = await db.update(banking).set(updates).where(eq(banking.id, req.params.id)).returning();
+    const [updated] = await db.update(banking).set(updates).where(eq(banking.id, req.params.id as string)).returning();
     if (!updated) return res.status(404).json({ error: "Not found" });
     return res.json(updated);
   } catch (err) {
@@ -674,12 +669,12 @@ router.patch("/bank-accounts/:id", authenticate, requireRole(["admin", "superadm
 });
 
 // DELETE /finance/bank-accounts/:id  (soft delete)
-router.delete("/bank-accounts/:id", authenticate, requireRole(["admin", "superadmin"]), async (req, res) => {
+router.delete("/bank-accounts/:id", authenticate, requireRole("admin", "superadmin"), async (req, res) => {
   try {
     const [updated] = await db
       .update(banking)
       .set({ status: "inactive", updatedAt: new Date() })
-      .where(eq(banking.id, req.params.id))
+      .where(eq(banking.id, req.params.id as string))
       .returning();
     if (!updated) return res.status(404).json({ error: "Not found" });
     return res.json({ success: true });

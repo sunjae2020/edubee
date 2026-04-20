@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request as ExpressRequest } from "express";
 import { db } from "@workspace/db";
 import { organisations, tenantInvitations, platformPlans, domainConfigs } from "@workspace/db/schema";
 import { eq, and, ne, asc } from "drizzle-orm";
@@ -26,7 +26,7 @@ async function getOrg() {
 
 // req.tenant(X-Organisation-Id 헤더 또는 서브도메인으로 이미 해석됨)를 우선,
 // 없으면 MVP 폴백(첫 번째 Active 조직)
-async function getOrgForReq(req: Request) {
+async function getOrgForReq(req: ExpressRequest) {
   return req.tenant ?? await getOrg();
 }
 
@@ -414,7 +414,7 @@ router.delete("/invitations/:id", ...settingsAccess, async (req, res) => {
       .delete(tenantInvitations)
       .where(
         and(
-          eq(tenantInvitations.id, req.params.id),
+          eq(tenantInvitations.id, req.params.id as string),
           eq(tenantInvitations.organisationId, org.id)
         )
       );
@@ -873,8 +873,8 @@ router.get("/theme", async (req, res) => {
     let org = req.tenant;
 
     // ?subdomain= 쿼리 파라미터 지원 (개발 모드 미리보기용)
-    if (!org && req.query.subdomain) {
-      const sub = String(req.query.subdomain).trim().toLowerCase();
+    if (!org && req.query.subdomain as string) {
+      const sub = String(req.query.subdomain as string).trim().toLowerCase();
       const [found] = await db
         .select()
         .from(organisations)

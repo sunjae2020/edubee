@@ -85,7 +85,7 @@ router.patch("/security-incidents/:id", authenticate, requireRole(...SUPER_ADMIN
     const [updated] = await db
       .update(securityIncidents)
       .set(updates)
-      .where(eq(securityIncidents.id, req.params.id))
+      .where(eq(securityIncidents.id, req.params.id as string))
       .returning();
     if (!updated) return res.status(404).json({ error: "Incident not found" });
     return res.json(updated);

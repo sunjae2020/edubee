@@ -19,11 +19,11 @@ router.get("/admin/all-applications", authenticate, async (req, res) => {
 
   const handler = async () => {
   try {
-    const search   = (req.query.search   as string) || "";
-    const type     = (req.query.type     as string) || "all";
-    const status   = (req.query.status   as string) || "all";
-    const page     = Math.max(1, Number(req.query.page)     || 1);
-    const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize) || 20));
+    const search   = (req.query.search as string   as string) || "";
+    const type     = (req.query.type as string     as string) || "all";
+    const status   = (req.query.status as string   as string) || "all";
+    const page     = Math.max(1, Number(req.query.page as string)     || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize as string) || 20));
     const offset   = (page - 1) * pageSize;
 
     // ── 1. camp_applications (with package group + package name + quote + contract) ──
