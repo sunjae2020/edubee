@@ -23,9 +23,9 @@
 | Phase | 내용 | 상태 |
 |-------|------|------|
 | Phase 1 | 로컬 환경 구성 | ✅ 완료 |
-| Phase 2 | Railway 백엔드 배포 | 🟡 진행 중 |
-| Phase 3 | Vercel 프론트엔드 배포 | 🔲 진행 예정 |
-| Phase 4 | 최종 검증 (Smoke Test) | 🔲 진행 예정 |
+| Phase 2 | Railway 백엔드 배포 | ✅ 완료 |
+| Phase 3 | Vercel 프론트엔드 배포 | ✅ 완료 |
+| Phase 4 | 최종 검증 (Smoke Test) | ✅ 완료 |
 | Phase 5 | DNS 전환 (Cloudflare) | 🔲 진행 예정 |
 
 ---
