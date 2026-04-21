@@ -56,7 +56,10 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.some((o) => origin.startsWith(o))) {
+    if (!origin) { callback(null, true); return; }
+    // Allow any *.edubee.co tenant subdomain + explicitly configured origins
+    const isEdubee = origin === "https://edubee.co" || origin.endsWith(".edubee.co");
+    if (isEdubee || allowedOrigins.some((o) => origin.startsWith(o))) {
       callback(null, true);
     } else {
       callback(new Error(`CORS blocked: ${origin}`));
