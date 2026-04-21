@@ -32,8 +32,8 @@ Sentry.init({
 
 const app: Express = express();
 
-// Cloudflare 및 Replit 리버스 프록시 신뢰 (1홉만 신뢰 — true보다 안전)
-app.set("trust proxy", 1);
+// Cloudflare → GCP LB → Railway 3-hop chain: trust 3 proxies
+app.set("trust proxy", 3);
 
 // ── Helmet 보안 헤더 ─────────────────────────────────────────────────────────
 app.use(helmet({

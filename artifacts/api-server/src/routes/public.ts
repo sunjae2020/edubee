@@ -75,19 +75,6 @@ function formatPrice(amount: string | null, symbol: string, decimalPlaces: numbe
   return `${symbol}${num.toLocaleString("en-US", { minimumFractionDigits: decimalPlaces, maximumFractionDigits: decimalPlaces })}`;
 }
 
-// GET /api/public/debug-host — temp: diagnose subdomain routing
-router.get("/public/debug-host", (req, res) => {
-  res.json({
-    hostname:         req.hostname,
-    host:             req.headers.host,
-    xForwardedHost:   req.headers["x-forwarded-host"],
-    xForwardedFor:    req.headers["x-forwarded-for"],
-    xSubdomain:       req.headers["x-subdomain"],
-    tenantId:         (req as any).tenantId ?? null,
-    tenantSubdomain:  (req as any).tenant?.subdomain ?? null,
-  });
-});
-
 // GET /api/public/packages — no auth
 router.get("/public/packages", async (req, res) => {
   try {

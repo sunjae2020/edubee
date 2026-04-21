@@ -76,12 +76,13 @@ export async function tenantResolver(
     }
 
     // ── 2순위: 서브도메인 자동 감지 ──────────────────────────
-    // Cloudflare Worker가 X-Subdomain 헤더로 서브도메인을 전달 (*.edubee.co 와일드카드 프록시 시)
-    // X-Forwarded-Host 또는 req.hostname에서 직접 추출 (trust proxy 설정 시)
+    // Priority: X-Subdomain header (set by Cloudflare Worker) > X-Forwarded-Host > req.hostname
     const xSubdomain = req.headers["x-subdomain"] as string | undefined;
+    const rawHost = (req.headers["x-forwarded-host"] as string | undefined)?.split(",")[0].trim()
+      ?? req.hostname;
     const subdomain = (xSubdomain && !SYSTEM_SUBDOMAINS.has(xSubdomain))
       ? xSubdomain
-      : extractSubdomain(req.hostname, BASE_DOMAIN);
+      : extractSubdomain(rawHost, BASE_DOMAIN);
 
     if (subdomain && !SYSTEM_SUBDOMAINS.has(subdomain)) {
       const [org] = await staticDb
@@ -101,10 +102,7 @@ export async function tenantResolver(
         return next();
       }
       // 서브도메인이 있지만 매핑된 테넌트가 없으면 404
-      res.status(404).json({
-        message: "Tenant not found",
-        _debug: { subdomain, hostname: req.hostname, xForwardedHost: req.headers["x-forwarded-host"] ?? null },
-      });
+      res.status(404).json({ message: "Tenant not found" });
       return;
     }
 
