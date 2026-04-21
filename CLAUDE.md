@@ -18,6 +18,7 @@
 | 마케팅 웹사이트 | https://www.edubee.co | Vercel (edubee-website) |
 | 캠프 신청 | https://camp.edubee.co | Vercel (edubee-camp) |
 | DB | Supabase (PostgreSQL) | aws-ap-northeast-1 |
+| Supabase 대시보드 | https://supabase.com/dashboard | sunjae@timest.com.au |
 
 ## 로컬 서버 실행 명령어
 - API: `cd ~/Edubee/artifacts/api-server && env $(grep -v '^#' ../../.env | grep -v '^$' | xargs) pnpm run dev`

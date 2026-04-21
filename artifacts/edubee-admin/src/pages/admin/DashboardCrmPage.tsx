@@ -12,16 +12,24 @@ import {
   AlertTriangle, Clock, Activity, BookOpen, CreditCard, Award,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useTenantThemeCtx } from "@/hooks/use-tenant-theme";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+// 실제 계산된 CSS 변수 값 읽기 (Recharts 등 SVG 차트용)
+function getCssVar(name: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
 // ─── Design Tokens ───────────────────────────────────────────────────────────
+// CSS 변수를 우선 사용 — 테넌트 테마가 자동 반영됨
 const T = {
-  orange:      "#F5821F",
-  orangeDark:  "#D96A0A",
-  orangeLight: "#FEF0E3",
+  orange:      "var(--e-orange, #F5821F)",
+  orangeDark:  "var(--e-orange-dk, #D96A0A)",
+  orangeLight: "var(--e-orange-lt, #FEF0E3)",
   card:        "#FFFFFF",
   border:      "#E8E6E2",
   neutral100:  "#F4F3F1",
@@ -258,8 +266,7 @@ interface FinanceData {
   upcomingPayments: Array<{ id: string; description: string; dueDate: string; amount: number; urgency: "high" | "medium" | "low" }>;
 }
 
-// ─── Source colors for pie chart ──────────────────────────────────────────────
-const SOURCE_COLORS = [T.orange, T.orangeDark, T.neutral400, T.border, T.success, T.warning, "#6366F1", "#EC4899"];
+// CHART_COLORS는 DashboardCrmPage() 컴포넌트 내에서 테마 기반으로 생성됨
 
 // ─── MoM badge ───────────────────────────────────────────────────────────────
 function MoMBadge({ pct, thisMonth }: { pct: number; thisMonth: number }) {
@@ -280,6 +287,9 @@ function MoMBadge({ pct, thisMonth }: { pct: number; thisMonth: number }) {
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 function OverviewTab({ data, loading }: { data: OverviewData | undefined; loading: boolean }) {
   const [, navigate] = useLocation();
+  const chartPrimary = getCssVar("--e-orange", "#F5821F");
+  const chartPrimLt  = getCssVar("--e-orange-lt", "#FEF0E3");
+  const CHART_COLORS = [chartPrimary, getCssVar("--e-orange-dk", "#D96A0A"), T.neutral400, T.border, T.success, T.warning, "#6366F1", "#EC4899"];
   if (loading) return <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}</div>;
 
   const kpi = data?.kpi;
@@ -392,7 +402,9 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
               ].map(({ label, path, icon: Icon }) => (
                 <button key={label} onClick={() => navigate(path)}
                   style={{ padding: "10px 8px", border: `1px solid ${T.border}`, borderRadius: 8, background: T.neutral100, fontSize: 12, color: T.neutral600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}
-                  className="hover:border-[#F5821F] hover:text-[#F5821F] hover:bg-[#FEF0E3] transition-colors"
+                  className="transition-colors"
+                  onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = chartPrimary; el.style.color = chartPrimary; el.style.background = chartPrimLt; }}
+                  onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = ""; el.style.color = ""; el.style.background = ""; }}
                 >
                   <Icon className="w-3.5 h-3.5" /> {label}
                 </button>
@@ -648,6 +660,9 @@ function SalesTab({
   salesData: SalesData | undefined; salesLoading: boolean;
   funnelData: { data: FunnelRow[] } | undefined;
 }) {
+  const chartPrimary  = getCssVar("--e-orange", "#F5821F");
+  const CHART_COLORS  = [chartPrimary, getCssVar("--e-orange-dk", "#D96A0A"), T.neutral400, T.border, T.success, T.warning, "#6366F1", "#EC4899"];
+
   if (salesLoading) return <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}</div>;
 
   const pipeline = salesData?.pipeline;
@@ -795,7 +810,7 @@ function SalesTab({
                   <PieChart>
                     <Pie data={sources} dataKey="count" nameKey="source" cx="50%" cy="50%" outerRadius={60} innerRadius={32}>
                       {sources.map((_, i) => (
-                        <Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number, name: string) => [v, name]} />
@@ -805,7 +820,7 @@ function SalesTab({
                   {sources.slice(0, 6).map((s, i) => (
                     <div key={s.source} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 0" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <div style={{ width: 9, height: 9, borderRadius: "50%", background: SOURCE_COLORS[i % SOURCE_COLORS.length], flexShrink: 0 }} />
+                        <div style={{ width: 9, height: 9, borderRadius: "50%", background: CHART_COLORS[i % CHART_COLORS.length], flexShrink: 0 }} />
                         <span style={{ fontSize: 12, color: T.neutral600 }}>{s.source}</span>
                       </div>
                       <span style={{ fontSize: 12, color: T.neutral900, fontWeight: 600 }}>{s.percentage}%</span>
@@ -1183,6 +1198,9 @@ export default function DashboardCrmPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const theme = useTenantThemeCtx();
+  const chartPrimary = theme.primaryColor ?? getCssVar("--e-orange", "#F5821F");
+  const chartPrimLt  = theme.accentColor  ?? getCssVar("--e-orange-lt", "#FEF0E3");
   const [, navigate] = useLocation();
   const search = useSearch();
   const isSA = user?.role === "super_admin";
