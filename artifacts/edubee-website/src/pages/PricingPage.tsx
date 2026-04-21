@@ -9,76 +9,72 @@ const STATIC_PLANS = [
     planName: 'LITE',
     badge: '',
     price: 'Free',
+    priceSub: '',
     isContact: false,
     isFree: true,
-    studentsPerMonth: '30/mo',
-    storage: '5 GB',
+    studentsPerMonth: '50/mo',
+    storage: '10 MB',
     schoolDB: false,
     remote: false,
-    partnerList: false,
+    partnerList: true,
     highlighted: false,
+    comingSoon: false,
     ctaUrl: '/admin/register',
     ctaLabel: 'Get Started Free',
   },
   {
-    planName: 'SOLO',
-    badge: '',
-    price: '$79',
-    isContact: false,
-    isFree: false,
-    studentsPerMonth: '100/mo',
-    storage: '10 GB',
-    schoolDB: false,
-    remote: false,
-    partnerList: true,
-    highlighted: false,
-    ctaUrl: '/admin/register',
-    ctaLabel: 'Get SOLO',
-  },
-  {
-    planName: 'STARTER',
+    planName: 'PLUS',
     badge: 'Most Popular',
-    price: '$199',
+    price: 'Free',
+    priceSub: 'Free during Beta',
     isContact: false,
-    isFree: false,
-    studentsPerMonth: '500/mo',
-    storage: '50 GB',
+    isFree: true,
+    studentsPerMonth: 'Unlimited',
+    storage: '100 MB',
     schoolDB: true,
     remote: false,
     partnerList: true,
     highlighted: true,
+    comingSoon: false,
     ctaUrl: '/admin/register',
-    ctaLabel: 'Get STARTER',
+    ctaLabel: 'Get Started Free',
   },
   {
-    planName: 'GROWTH',
+    planName: 'BUSINESS',
     badge: '',
-    price: '$449',
+    price: '$19.90',
+    priceSub: '',
     isContact: false,
     isFree: false,
-    studentsPerMonth: '2,000/mo',
-    storage: '200 GB',
+    studentsPerMonth: 'Unlimited',
+    storage: '500 MB',
+    schoolDB: true,
+    remote: false,
+    partnerList: true,
+    highlighted: false,
+    comingSoon: true,
+    ctaUrl: '/admin/register',
+    ctaLabel: 'Coming Soon',
+  },
+  {
+    planName: 'ENTERPRISE',
+    badge: '',
+    price: '$39.90',
+    priceSub: '',
+    isContact: false,
+    isFree: false,
+    studentsPerMonth: 'Unlimited',
+    storage: '1 GB',
     schoolDB: true,
     remote: true,
     partnerList: true,
     highlighted: false,
-    ctaUrl: '/admin/register',
-    ctaLabel: 'Get GROWTH',
+    comingSoon: true,
+    ctaUrl: '/support/contact',
+    ctaLabel: 'Coming Soon',
   },
 ]
 
-const ENTERPRISE_FEATURES = [
-  'Commission Auto-Calc',
-  'Visa Management',
-  'Services (Pickup/Homestay/Internship)',
-  'Multi-Branch',
-  'AI Assistant',
-  'Accounting (AR/AP)',
-  'Camp Management',
-  'Finance Module',
-  'REST API / Webhook',
-  'White-label',
-]
 
 type Plan = typeof STATIC_PLANS[0]
 
@@ -86,22 +82,32 @@ function mapApiPlan(p: any): Plan {
   const monthly = parseFloat(p.priceMonthly ?? '0') || 0
   const maxStudents = p.maxStudents ?? 0
   const storageGb = p.storageGb ?? 0
-  const isContact = maxStudents >= 9999
-  const isFree = monthly === 0 && !isContact
+  const unlimited = maxStudents >= 9999
+  const isFree = monthly === 0
+  const storageMb = storageGb * 1024
+  const storageLabel =
+    storageGb >= 9999 ? 'Unlimited'
+    : storageGb >= 1 ? `${storageGb} GB`
+    : `${storageMb} MB`
+  const studentsLabel = unlimited ? 'Unlimited' : `${maxStudents}/mo`
+  const planName = (p.name || p.code || '').toUpperCase()
+  const priceSub = isFree && p.isPopular ? 'Free during Beta' : ''
   return {
-    planName: (p.name || p.code || '').toUpperCase(),
+    planName,
     badge: p.isPopular ? 'Most Popular' : '',
-    price: isFree ? 'Free' : isContact ? '' : `$${monthly % 1 === 0 ? monthly.toFixed(0) : monthly.toFixed(2)}`,
-    isContact,
+    price: isFree ? 'Free' : `$${monthly % 1 === 0 ? monthly.toFixed(0) : monthly.toFixed(2)}`,
+    priceSub,
+    isContact: false,
     isFree,
-    studentsPerMonth: isContact ? 'Unlimited' : `${maxStudents}/mo`,
-    storage: storageGb >= 9999 ? 'Unlimited' : storageGb >= 1000 ? `${(storageGb / 1000).toFixed(0)} TB` : `${storageGb} GB`,
+    studentsPerMonth: studentsLabel,
+    storage: storageLabel,
     schoolDB: !!(p.featureCommission || p.featureServiceModules || p.featureVisa),
     remote: !!(p.featureAiAssistant || p.featureApiAccess || p.featureWhiteLabel),
     partnerList: true,
     highlighted: !!p.isPopular,
-    ctaUrl: isContact ? '/support/contact' : '/admin/register',
-    ctaLabel: isContact ? 'Contact Us' : isFree ? 'Get Started Free' : `Get ${(p.name || p.code || '').toUpperCase()}`,
+    comingSoon: false,
+    ctaUrl: '/admin/register',
+    ctaLabel: isFree ? 'Get Started Free' : `Get ${planName}`,
   }
 }
 
@@ -138,8 +144,13 @@ export default function PricingPage() {
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (d?.success && Array.isArray(d.data) && d.data.length > 0) {
-          const mapped = d.data.map(mapApiPlan).filter((p: Plan) => !p.isContact)
-          setPlans(mapped.slice(0, 4))
+          const activeMapped = d.data.map(mapApiPlan)
+          // Merge: use API data for active plans, static data for coming-soon plans
+          const merged = STATIC_PLANS.map(staticPlan => {
+            const fromApi = activeMapped.find((a: Plan) => a.planName === staticPlan.planName)
+            return fromApi ?? staticPlan
+          })
+          setPlans(merged)
         }
       })
       .catch(() => {})
@@ -197,86 +208,9 @@ export default function PricingPage() {
       <section style={{ background: '#FAF5ED', padding: '0 0 72px' }}>
         <div className="max-w-[1280px] mx-auto px-4 sm:px-8 xl:px-[80px]">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-
-            {/* ── Standard plan cards from API ── */}
             {plans.map((plan) => (
               <PlanCard key={plan.planName} plan={plan} />
             ))}
-
-            {/* ── ENTERPRISE — always shown as 4th card ── */}
-            <div
-              className="flex flex-col relative"
-              style={{
-                background: '#FFFFFF',
-                borderRadius: 21,
-                padding: '32px 24px 28px',
-                boxShadow: '3px 4px 10px rgba(0,0,0,0.08)',
-              }}
-            >
-              {/* Plan name */}
-              <p className="font-bold text-base mb-1 tracking-wide" style={{ color: '#9C6A3A' }}>
-                ENTERPRISE
-              </p>
-
-              {/* Price */}
-              <div className="mb-6 mt-1">
-                <div className="flex items-baseline flex-wrap gap-x-2">
-                  <span className="font-bold text-3xl sm:text-[36px]" style={{ color: '#FF9039', lineHeight: '1' }}>
-                    Contact us
-                  </span>
-                </div>
-                <p className="text-xs mt-1" style={{ color: '#9C6A3A', fontWeight: 300 }}>for pricing</p>
-              </div>
-
-              {/* Divider */}
-              <div className="mb-5 h-px" style={{ background: '#F0E8DC' }} />
-
-              {/* Unlimited stats */}
-              <ul className="space-y-3 flex-1 mb-7">
-                {[
-                  { label: 'Unlimited students' },
-                  { label: 'Unlimited storage' },
-                  { label: 'School Database' },
-                  { label: 'Remote Support' },
-                  { label: 'Partner Supplier List' },
-                ].map((f, i) => (
-                  <li key={i} className="flex items-center gap-2.5 text-sm">
-                    <Check size={15} strokeWidth={2.5} style={{ color: '#FF9039', flexShrink: 0 }} />
-                    <span style={{ color: '#3B1A06', fontWeight: 300 }}>{f.label}</span>
-                  </li>
-                ))}
-                {/* Mini feature tags */}
-                <li className="pt-2">
-                  <div className="flex flex-wrap gap-1.5">
-                    {ENTERPRISE_FEATURES.slice(0, 6).map((feat, i) => (
-                      <span
-                        key={i}
-                        className="px-2.5 py-0.5 rounded-full text-[11px] font-medium"
-                        style={{ background: '#F5EEE6', color: '#7A5535' }}
-                      >
-                        {feat}
-                      </span>
-                    ))}
-                    <span
-                      className="px-2.5 py-0.5 rounded-full text-[11px] font-medium"
-                      style={{ background: '#F5EEE6', color: '#7A5535' }}
-                    >
-                      +{ENTERPRISE_FEATURES.length - 6} more
-                    </span>
-                  </div>
-                </li>
-              </ul>
-
-              {/* CTA */}
-              <a
-                href={link('/support/contact')}
-                className="block w-full text-center py-3 rounded-[28px] font-semibold text-sm transition-all hover:opacity-90"
-                style={{ background: '#FF9039', color: '#fff' }}
-              >
-                Contact Us
-              </a>
-            </div>
-
           </div>
           <p className="text-center text-xs mt-5" style={{ color: '#B09070' }}>
             All prices exclude GST (AUD).
@@ -440,6 +374,7 @@ export default function PricingPage() {
 }
 
 function PlanCard({ plan }: { plan: Plan }) {
+  const dim = plan.comingSoon
   return (
     <div
       className="flex flex-col relative"
@@ -450,6 +385,7 @@ function PlanCard({ plan }: { plan: Plan }) {
         boxShadow: plan.highlighted
           ? '0 8px 32px rgba(255,144,57,0.30)'
           : '3px 4px 10px rgba(0,0,0,0.08)',
+        opacity: dim ? 0.72 : 1,
       }}
     >
       {plan.badge && (
@@ -458,6 +394,14 @@ function PlanCard({ plan }: { plan: Plan }) {
           style={{ background: '#200E00', color: '#FF9039' }}
         >
           {plan.badge}
+        </div>
+      )}
+      {dim && (
+        <div
+          className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold whitespace-nowrap"
+          style={{ background: '#E8E0D8', color: '#7A5535' }}
+        >
+          Coming Soon
         </div>
       )}
 
@@ -469,27 +413,26 @@ function PlanCard({ plan }: { plan: Plan }) {
       </p>
 
       <div className="mb-6 mt-1">
-        {plan.isContact ? (
-          <p className="font-bold text-3xl" style={{ color: plan.highlighted ? '#fff' : '#FF9039' }}>
-            Contact us
-          </p>
-        ) : (
-          <div className="flex items-baseline gap-1">
+        <div className="flex items-baseline gap-1">
+          <span
+            className="font-bold text-4xl sm:text-[42px]"
+            style={{ color: plan.highlighted ? '#fff' : '#3B1A06', lineHeight: '1' }}
+          >
+            {plan.price}
+          </span>
+          {!plan.isFree && (
             <span
-              className="font-bold text-4xl sm:text-[42px]"
-              style={{ color: plan.highlighted ? '#fff' : '#3B1A06', lineHeight: '1' }}
+              className="text-sm ml-1"
+              style={{ color: plan.highlighted ? 'rgba(255,255,255,0.65)' : '#9C6A3A' }}
             >
-              {plan.price}
+              /mo
             </span>
-            {!plan.isFree && (
-              <span
-                className="text-sm ml-1"
-                style={{ color: plan.highlighted ? 'rgba(255,255,255,0.65)' : '#9C6A3A' }}
-              >
-                /mo
-              </span>
-            )}
-          </div>
+          )}
+        </div>
+        {plan.priceSub && (
+          <p className="text-xs mt-1.5 font-semibold" style={{ color: plan.highlighted ? 'rgba(255,255,255,0.8)' : '#E07820' }}>
+            {plan.priceSub}
+          </p>
         )}
       </div>
 
@@ -524,17 +467,26 @@ function PlanCard({ plan }: { plan: Plan }) {
         })}
       </ul>
 
-      <a
-        href={link(plan.ctaUrl)}
-        className="block w-full text-center py-3 rounded-[28px] font-semibold text-sm transition-all hover:opacity-90"
-        style={
-          plan.highlighted
-            ? { background: '#fff', color: '#D76811' }
-            : { background: '#FF9039', color: '#fff' }
-        }
-      >
-        {plan.ctaLabel}
-      </a>
+      {dim ? (
+        <div
+          className="block w-full text-center py-3 rounded-[28px] font-semibold text-sm cursor-not-allowed select-none"
+          style={{ background: '#E8E0D8', color: '#A8977E' }}
+        >
+          Coming Soon
+        </div>
+      ) : (
+        <a
+          href={link(plan.ctaUrl)}
+          className="block w-full text-center py-3 rounded-[28px] font-semibold text-sm transition-all hover:opacity-90"
+          style={
+            plan.highlighted
+              ? { background: '#fff', color: '#D76811' }
+              : { background: '#FF9039', color: '#fff' }
+          }
+        >
+          {plan.ctaLabel}
+        </a>
+      )}
     </div>
   )
 }
