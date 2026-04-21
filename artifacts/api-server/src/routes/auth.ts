@@ -320,7 +320,7 @@ router.post("/logout", authenticate, async (req, res) => {
 // GET /api/auth/me
 router.get("/me", authenticate, async (req, res) => {
   try {
-    const [user] = await db.select().from(users).where(eq(users.id, req.user!.id)).limit(1);
+    const [user] = await staticDb.select().from(users).where(eq(users.id, req.user!.id)).limit(1);
     if (!user) {
       return res.status(404).json({ error: "Not Found" });
     }
@@ -338,7 +338,7 @@ router.get("/check-email", async (req, res) => {
   if (!email) {
     return res.status(400).json({ available: false, message: "Email is required." });
   }
-  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+  const [existing] = await staticDb.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
   if (existing) {
     return res.json({ available: false, message: "This email is already registered." });
   }
