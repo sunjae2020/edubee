@@ -378,20 +378,40 @@ router.put("/superadmin/plans/:id", ...guard, async (req, res) => {
   try {
     const {
       name, priceMonthly, priceAnnually,
-      maxUsers, maxStudents, features, isPopular, status,
+      maxUsers, maxStudents, maxBranches, storageGb,
+      featureCommission, featureVisa, featureServiceModules,
+      featureMultiBranch, featureAiAssistant, featureAccounting,
+      featureAvetmiss, featureCamp, featureFinance,
+      featureApiAccess, featureWhiteLabel,
+      features, isPopular, isActive, status, sortOrder,
     } = req.body;
 
     const [updated] = await staticDb
       .update(platformPlans)
       .set({
-        ...(name          !== undefined && { name }),
-        ...(priceMonthly  !== undefined && { priceMonthly }),
-        ...(priceAnnually !== undefined && { priceAnnually }),
-        ...(maxUsers      !== undefined && { maxUsers }),
-        ...(maxStudents   !== undefined && { maxStudents }),
-        ...(features      !== undefined && { features }),
-        ...(isPopular     !== undefined && { isPopular }),
-        ...(status        !== undefined && { status }),
+        ...(name                  !== undefined && { name }),
+        ...(priceMonthly          !== undefined && { priceMonthly }),
+        ...(priceAnnually         !== undefined && { priceAnnually }),
+        ...(maxUsers              !== undefined && { maxUsers }),
+        ...(maxStudents           !== undefined && { maxStudents }),
+        ...(maxBranches           !== undefined && { maxBranches }),
+        ...(storageGb             !== undefined && { storageGb }),
+        ...(featureCommission     !== undefined && { featureCommission }),
+        ...(featureVisa           !== undefined && { featureVisa }),
+        ...(featureServiceModules !== undefined && { featureServiceModules }),
+        ...(featureMultiBranch    !== undefined && { featureMultiBranch }),
+        ...(featureAiAssistant    !== undefined && { featureAiAssistant }),
+        ...(featureAccounting     !== undefined && { featureAccounting }),
+        ...(featureAvetmiss       !== undefined && { featureAvetmiss }),
+        ...(featureCamp           !== undefined && { featureCamp }),
+        ...(featureFinance        !== undefined && { featureFinance }),
+        ...(featureApiAccess      !== undefined && { featureApiAccess }),
+        ...(featureWhiteLabel     !== undefined && { featureWhiteLabel }),
+        ...(features              !== undefined && { features }),
+        ...(isPopular             !== undefined && { isPopular }),
+        ...(isActive              !== undefined && { isActive }),
+        ...(status                !== undefined && { status }),
+        ...(sortOrder             !== undefined && { sortOrder }),
         modifiedOn: new Date(),
       })
       .where(eq(platformPlans.id, req.params.id as string))
