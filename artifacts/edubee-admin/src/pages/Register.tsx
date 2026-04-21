@@ -492,36 +492,36 @@ export default function Register() {
                         {/* BUSINESS */}
                         <PlanCard
                           plan="BUSINESS" selected={form.plan === "BUSINESS"}
-                          onSelect={() => {}}
-                          badge={{ label: "BUSINESS", bg: "#F4F3F1", text: "#57534E" }}
+                          onSelect={() => set("plan", "BUSINESS")}
+                          badge={{ label: "BUSINESS", bg: "#EFF6FF", text: "#1D4ED8" }}
                           price="$19.90 / month"
-                          features={[
-                            { ok: true,  text: "Unlimited students" },
-                            { ok: true,  text: "500 MB storage" },
-                            { ok: true,  text: "School Database" },
-                            { ok: false, text: "Remote Support" },
-                          ]}
-                          btnLabel="Coming Soon"
-                          disabled
-                        />
-                        {/* ENTERPRISE */}
-                        <PlanCard
-                          plan="ENTERPRISE" selected={form.plan === "ENTERPRISE"}
-                          onSelect={() => {}}
-                          badge={{ label: "ENTERPRISE", bg: "#F4F3F1", text: "#57534E" }}
-                          price="$39.90 / month"
                           features={[
                             { ok: true, text: "Unlimited students" },
                             { ok: true, text: "1 GB storage" },
                             { ok: true, text: "School Database" },
-                            { ok: true, text: "Remote Support" },
+                            { ok: true, text: "AI Assistant" },
                           ]}
-                          btnLabel="Contact Us"
-                          disabled
+                          btnLabel="Select Plan"
+                          disabled={false}
+                        />
+                        {/* ENTERPRISE */}
+                        <PlanCard
+                          plan="ENTERPRISE" selected={form.plan === "ENTERPRISE"}
+                          onSelect={() => set("plan", "ENTERPRISE")}
+                          badge={{ label: "ENTERPRISE", bg: "#FDF4FF", text: "#7E22CE" }}
+                          price="$39.90 / month"
+                          features={[
+                            { ok: true, text: "Unlimited students" },
+                            { ok: true, text: "5 GB storage" },
+                            { ok: true, text: "School Database" },
+                            { ok: true, text: "White Label + API" },
+                          ]}
+                          btnLabel="Select Plan"
+                          disabled={false}
                         />
                       </div>
                       <p className="text-xs text-[#57534E] text-center mt-3">
-                        All prices are in AUD and exclude GST. LITE and PLUS plans available now. BUSINESS and ENTERPRISE coming soon.
+                        All prices are in AUD and exclude GST. 14-day free trial on all plans.
                       </p>
                     </div>
                   )}

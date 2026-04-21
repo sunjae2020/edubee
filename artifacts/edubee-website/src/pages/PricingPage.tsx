@@ -88,7 +88,8 @@ function mapApiPlan(p: any): Plan {
   const storageLabel =
     storageGb >= 9999 ? 'Unlimited'
     : storageGb >= 1 ? `${storageGb} GB`
-    : `${storageMb} MB`
+    : storageMb > 0 ? `${storageMb} MB`
+    : '10 MB'
   const studentsLabel = unlimited ? 'Unlimited' : `${maxStudents}/mo`
   const planName = (p.name || p.code || '').toUpperCase()
   const priceSub = isFree && p.isPopular ? 'Free during Beta' : ''
