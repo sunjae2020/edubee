@@ -41,7 +41,8 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   // View-As impersonation: admins can view-as another user
   // Only super_admin / admin are allowed to impersonate
   const viewAsId = req.headers["x-view-as-user-id"] as string | undefined;
-  if (viewAsId && (decoded.role === "super_admin" || decoded.role === "admin")) {
+  const decodedRoleLower = decoded.role?.toLowerCase();
+  if (viewAsId && (decodedRoleLower === "super_admin" || decodedRoleLower === "admin")) {
     try {
       const [viewAsUser] = await staticDb
         .select({

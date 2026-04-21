@@ -28,10 +28,11 @@ router.get("/leads", authenticate, async (req, res) => {
     const offset = (pageNum - 1) * limitNum;
 
     const conditions: SQL[] = [];
+    const orgId = req.tenant?.id ?? (req.user as any)?.organisationId ?? null;
+    if (orgId) conditions.push(eq(leads.organisationId, orgId));
     if (agentId) conditions.push(eq(leads.agentId, agentId));
     if (status) conditions.push(eq(leads.status, status));
     if (search) conditions.push(or(ilike(leads.fullName, `%${search}%`), ilike(leads.email, `%${search}%`))!);
-    // Internal staff see all leads
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(leads).where(whereClause);

@@ -407,7 +407,7 @@ router.post("/register", async (req, res) => {
       const [newUser] = await tx.insert(users).values({
         email: normalizedEmail,
         passwordHash,
-        role: "Admin",
+        role: "admin",
         fullName: `${user.first_name} ${user.last_name}`,
         firstName: user.first_name,
         lastName: user.last_name,
