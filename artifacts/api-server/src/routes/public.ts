@@ -881,7 +881,7 @@ router.post("/public/onboard", async (req, res) => {
 // ── Public: Platform Plans (no auth required, for marketing site) ─────────────
 router.get("/public/platform-plans", async (_req, res) => {
   try {
-    const plans = await db
+    const plans = await staticDb
       .select()
       .from(platformPlans)
       .where(eq(platformPlans.isActive, true))
