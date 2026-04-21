@@ -16,7 +16,11 @@ router.get("/", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), a
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
 
+    // Scope to current tenant. Super-admin without org context sees all.
+    const orgId = req.tenantId ?? req.user?.organisationId ?? null;
+
     const conditions: SQL[] = [];
+    if (orgId) conditions.push(eq(users.organisationId, orgId));
     if (role) conditions.push(eq(users.role, role));
     if (status) conditions.push(eq(users.status, status));
     if (search) {
@@ -30,8 +34,8 @@ router.get("/", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), a
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const [totalResult] = await db.select({ count: count() }).from(users).where(whereClause);
-    const data = await db.select({
+    const [totalResult] = await staticDb.select({ count: count() }).from(users).where(whereClause);
+    const data = await staticDb.select({
       id: users.id,
       email: users.email,
       role: users.role,
@@ -50,7 +54,7 @@ router.get("/", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), a
       lastLoginAt: users.lastLoginAt,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
-    }).from(users).where(whereClause).limit(limitNum).offset(offset);
+    }).from(users).where(whereClause).orderBy(asc(users.createdAt)).limit(limitNum).offset(offset);
 
     const total = Number(totalResult.count);
     return res.json({
@@ -69,12 +73,14 @@ router.post("/", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => 
     if (!email || !password || !role || !fullName) {
       return res.status(400).json({ error: "Bad Request", message: "Required fields missing" });
     }
+    const orgId = req.tenantId ?? req.user?.organisationId ?? null;
     const passwordHash = await bcrypt.hash(password, 12);
-    const [user] = await db.insert(users).values({
+    const [user] = await staticDb.insert(users).values({
       email: email.toLowerCase(),
       passwordHash,
       role,
       fullName,
+      organisationId: orgId,
       ...rest,
     }).returning();
 
@@ -137,7 +143,7 @@ router.get("/switchable-accounts", authenticate, async (req, res) => {
 
 router.get("/:id", authenticate, async (req, res) => {
   try {
-    const [user] = await db.select({
+    const [user] = await staticDb.select({
       id: users.id,
       email: users.email,
       role: users.role,
@@ -194,7 +200,7 @@ router.put("/:id", authenticate, async (req, res) => {
     // environments share a global unique constraint on email).
     let currentEmail: string | undefined;
     if ("email" in rest) {
-      const [current] = await db
+      const [current] = await staticDb
         .select({ email: users.email })
         .from(users)
         .where(eq(users.id, req.params.id as string))
@@ -222,7 +228,7 @@ router.put("/:id", authenticate, async (req, res) => {
       updates.passwordHash = await bcrypt.hash(password, 12);
     }
 
-    const [user] = await db.update(users).set(updates).where(eq(users.id, req.params.id as string)).returning();
+    const [user] = await staticDb.update(users).set(updates).where(eq(users.id, req.params.id as string)).returning();
     if (!user) return res.status(404).json({ error: "Not Found" });
     const { passwordHash: _, ...userWithoutPassword } = user;
     return res.json(userWithoutPassword);
