@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { staticDb } from "@workspace/db";
 import { organisations } from "@workspace/db/schema";
 import { eq, and, asc } from "drizzle-orm";
+import jwt from "jsonwebtoken";
 
 // UUID 형식 여부 판별 (e.g. "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -104,7 +105,35 @@ export async function tenantResolver(
       return;
     }
 
-    // ── 3순위: 플랫폼 폴백 ─────────────────────────────────────
+    // ── 3순위: JWT organisationId 기반 테넌트 해석 ──────────────
+    // Authorization: Bearer <token> 에서 organisationId 추출
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (JWT_SECRET) {
+        try {
+          const token = authHeader.split(" ")[1];
+          const decoded = jwt.verify(token, JWT_SECRET) as any;
+          const jwtOrgId = decoded?.organisationId as string | undefined;
+          if (jwtOrgId && UUID_RE.test(jwtOrgId)) {
+            const [org] = await staticDb
+              .select()
+              .from(organisations)
+              .where(and(eq(organisations.id, jwtOrgId), eq(organisations.status as any, "Active")))
+              .limit(1);
+            if (org) {
+              req.tenantId = org.id;
+              req.tenant   = org;
+              return next();
+            }
+          }
+        } catch {
+          // 토큰 검증 실패 시 다음 폴백으로 진행
+        }
+      }
+    }
+
+    // ── 4순위: 플랫폼 폴백 ─────────────────────────────────────
     // superadmin, auth, public, settings/theme 라우트는 테넌트 컨텍스트 불필요 → 건너뜀
     // 그 외 경로는 PLATFORM_SUBDOMAIN(기본: myagency)로 자동 해석
     // → www.edubee.co, camp.edubee.co 등 Edubee 자체 서비스에서 myagency 데이터를 표시
@@ -143,7 +172,7 @@ export async function tenantResolver(
       }
     }
 
-    // ── 4순위: 완전 통과 ─────────────────────────────────────
+    // ── 5순위: 완전 통과 ─────────────────────────────────────
     next();
   } catch (err) {
     console.error("[tenantResolver]", err);
