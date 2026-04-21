@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, staticDb } from "@workspace/db";
 import { organisations, platformPlans } from "@workspace/db/schema";
 import { eq, ilike, sql, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
@@ -330,10 +330,10 @@ router.put("/superadmin/tenants/:id", ...guard, async (req, res) => {
 
 router.get("/superadmin/plans", ...guard, async (_req, res) => {
   try {
-    const plans = await db
+    const plans = await staticDb
       .select()
       .from(platformPlans)
-      .orderBy(platformPlans.priceMonthly);
+      .orderBy(platformPlans.sortOrder, platformPlans.priceMonthly);
     return res.json(plans);
   } catch (err) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -344,17 +344,32 @@ router.post("/superadmin/plans", ...guard, async (req, res) => {
   try {
     const {
       name, code, priceMonthly, priceAnnually,
-      maxUsers, maxStudents, features, isPopular,
+      maxUsers, maxStudents, maxBranches, storageGb,
+      featureCommission, featureVisa, featureServiceModules,
+      featureMultiBranch, featureAiAssistant, featureAccounting,
+      featureAvetmiss, featureCamp, featureFinance,
+      featureApiAccess, featureWhiteLabel,
+      features, isPopular, isActive, sortOrder,
     } = req.body;
 
-    const [plan] = await db
+    const [plan] = await staticDb
       .insert(platformPlans)
-      .values({ name, code, priceMonthly, priceAnnually, maxUsers, maxStudents, features, isPopular })
+      .values({
+        name, code, priceMonthly, priceAnnually,
+        maxUsers, maxStudents, maxBranches, storageGb,
+        featureCommission, featureVisa, featureServiceModules,
+        featureMultiBranch, featureAiAssistant, featureAccounting,
+        featureAvetmiss, featureCamp, featureFinance,
+        featureApiAccess, featureWhiteLabel,
+        features, isPopular, isActive: isActive ?? true,
+        sortOrder: sortOrder ?? 99,
+      })
       .returning();
 
     return res.status(201).json(plan);
   } catch (err: any) {
     if (err?.code === "23505") return res.status(409).json({ error: "Plan code already exists" });
+    console.error("POST /superadmin/plans", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -366,7 +381,7 @@ router.put("/superadmin/plans/:id", ...guard, async (req, res) => {
       maxUsers, maxStudents, features, isPopular, status,
     } = req.body;
 
-    const [updated] = await db
+    const [updated] = await staticDb
       .update(platformPlans)
       .set({
         ...(name          !== undefined && { name }),
@@ -437,7 +452,7 @@ router.put("/superadmin/stripe-settings", ...guard, async (req, res) => {
     if (!Array.isArray(plans)) return res.status(400).json({ error: "plans array required" });
 
     for (const p of plans) {
-      await db.update(platformPlans)
+      await staticDb.update(platformPlans)
         .set({
           stripePriceMonthly:  p.stripePriceMonthly  || null,
           stripePriceAnnually: p.stripePriceAnnually || null,
