@@ -101,7 +101,10 @@ export async function tenantResolver(
         return next();
       }
       // 서브도메인이 있지만 매핑된 테넌트가 없으면 404
-      res.status(404).json({ message: "Tenant not found" });
+      res.status(404).json({
+        message: "Tenant not found",
+        _debug: { subdomain, hostname: req.hostname, xForwardedHost: req.headers["x-forwarded-host"] ?? null },
+      });
       return;
     }
 
