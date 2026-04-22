@@ -12,13 +12,13 @@ const buttonVariants = cva(
         default:
           "rounded-lg text-white border-none hover:-translate-y-px hover:shadow-[0_4px_12px_var(--e-orange-shadow-25)] active:opacity-90",
         destructive:
-          "rounded-lg bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA] hover:bg-[#DC2626] hover:text-white",
+          "rounded-lg bg-red-50 text-red-600 border border-[var(--e-border)] hover:bg-red-600 hover:text-white",
         outline:
-          "rounded-lg bg-white text-[#1C1917] border border-[#E8E6E2] hover:border-[#A8A29E] hover:bg-[#FAFAF9]",
+          "rounded-lg bg-[var(--e-bg-surface)] text-[var(--e-text-1)] border border-[var(--e-border)] hover:border-[var(--e-text-3)] hover:bg-[var(--e-bg-muted)]",
         secondary:
           "rounded-lg text-orange-600 border border-orange-200 hover:opacity-90",
         ghost:
-          "rounded-lg bg-transparent text-[#57534E] border border-transparent hover:bg-[#F4F3F1] hover:text-[#1C1917]",
+          "rounded-lg bg-transparent text-[var(--e-text-2)] border border-transparent hover:bg-[var(--e-bg-muted)] hover:text-[var(--e-text-1)]",
         link: "underline-offset-4 hover:underline",
       },
       size: {
