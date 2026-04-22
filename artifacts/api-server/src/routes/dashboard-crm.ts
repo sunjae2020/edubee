@@ -158,7 +158,7 @@ router.get("/dashboard/crm/staff-kpi", authenticate, requireRole(...ADMIN_ROLES)
 });
 
 // ── PATCH /api/dashboard/crm/staff-kpi/approve ───────────────────────────
-router.patch("/dashboard/crm/staff-kpi/approve", authenticate, requireRole("super_admin"), async (req, res) => {
+router.patch("/dashboard/crm/staff-kpi/approve", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
   try {
     const { ids } = req.body as { ids: string[] };
     if (!Array.isArray(ids) || ids.length === 0) {

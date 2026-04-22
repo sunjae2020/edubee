@@ -217,7 +217,7 @@ router.patch("/study-abroad-consultations/bulk/soft-delete", authenticate, requi
 });
 
 // ── HARD DELETE (bulk) ───────────────────────────────────────────────────────
-router.delete("/study-abroad-consultations/bulk", authenticate, requireRole("super_admin"), async (req, res) => {
+router.delete("/study-abroad-consultations/bulk", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
   try {
     const { ids } = req.body as { ids: string[] };
     if (!ids?.length) return res.status(400).json({ error: "No ids provided" });
@@ -229,7 +229,7 @@ router.delete("/study-abroad-consultations/bulk", authenticate, requireRole("sup
 });
 
 // ── HARD DELETE (single) ─────────────────────────────────────────────────────
-router.delete("/study-abroad-consultations/:id", authenticate, requireRole("super_admin"), async (req, res) => {
+router.delete("/study-abroad-consultations/:id", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
   try {
     await db.delete(studyAbroadConsultations).where(eq(studyAbroadConsultations.id, req.params.id as string));
     return res.json({ success: true });

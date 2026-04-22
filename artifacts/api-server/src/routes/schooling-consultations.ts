@@ -256,7 +256,7 @@ router.patch("/schooling-consultations/bulk/soft-delete", authenticate, requireR
 });
 
 // ── HARD DELETE (bulk) ───────────────────────────────────────────────────────
-router.delete("/schooling-consultations/bulk", authenticate, requireRole("super_admin"), async (req, res) => {
+router.delete("/schooling-consultations/bulk", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
   try {
     const { ids } = req.body as { ids: string[] };
     if (!ids?.length) return res.status(400).json({ error: "No ids provided" });
@@ -269,7 +269,7 @@ router.delete("/schooling-consultations/bulk", authenticate, requireRole("super_
 });
 
 // ── HARD DELETE (single) ─────────────────────────────────────────────────────
-router.delete("/schooling-consultations/:id", authenticate, requireRole("super_admin"), async (req, res) => {
+router.delete("/schooling-consultations/:id", authenticate, requireRole("super_admin", "admin"), async (req, res) => {
   try {
     await db.delete(schoolingConsultations).where(eq(schoolingConsultations.id, req.params.id as string));
     return res.json({ success: true });

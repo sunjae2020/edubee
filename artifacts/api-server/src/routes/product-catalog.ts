@@ -399,7 +399,7 @@ router.delete("/commissions/:id", authenticate, requireRole(...ADMIN_ROLES), asy
 
 // ─── DELETE /api/product-groups/bulk  (super_admin 임시/영구 삭제) ────────────
 router.delete("/product-groups/bulk", authenticate, async (req, res) => {
-  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  if (!["super_admin","admin"].includes((req.user as any)?.role)) return res.status(403).json({ error: "Forbidden" });
   try {
     const { ids, soft } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
@@ -417,7 +417,7 @@ router.delete("/product-groups/bulk", authenticate, async (req, res) => {
 
 // ─── DELETE /api/product-types/bulk  (super_admin 임시/영구 삭제) ────────────
 router.delete("/product-types/bulk", authenticate, async (req, res) => {
-  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  if (!["super_admin","admin"].includes((req.user as any)?.role)) return res.status(403).json({ error: "Forbidden" });
   try {
     const { ids, soft } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
@@ -435,7 +435,7 @@ router.delete("/product-types/bulk", authenticate, async (req, res) => {
 
 // ─── DELETE /api/promotions/bulk  (super_admin 임시/영구 삭제) ───────────────
 router.delete("/promotions/bulk", authenticate, async (req, res) => {
-  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  if (!["super_admin","admin"].includes((req.user as any)?.role)) return res.status(403).json({ error: "Forbidden" });
   try {
     const { ids, soft } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
@@ -453,7 +453,7 @@ router.delete("/promotions/bulk", authenticate, async (req, res) => {
 
 // ─── DELETE /api/commissions/bulk  (super_admin 임시/영구 삭제) ──────────────
 router.delete("/commissions/bulk", authenticate, async (req, res) => {
-  if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  if (!["super_admin","admin"].includes((req.user as any)?.role)) return res.status(403).json({ error: "Forbidden" });
   try {
     const { ids, soft } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
