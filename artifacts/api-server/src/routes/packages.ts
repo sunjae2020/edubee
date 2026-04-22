@@ -191,6 +191,20 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
 
 router.put("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
+    // CC: 위임된 패키지 그룹만 수정 가능 (raw pool query - pgBouncer leakage 방지)
+    if (req.user!.role === "camp_coordinator") {
+      const orgId = req.user!.organisationId;
+      if (!orgId) return res.status(403).json({ error: "Forbidden" });
+      const check = await pool.query(
+        `SELECT 1 FROM public.package_group_coordinators
+         WHERE coordinator_org_id = $1 AND package_group_id = $2
+           AND status = 'Active' AND revoked_at IS NULL LIMIT 1`,
+        [orgId, req.params.id]
+      );
+      if ((check.rowCount ?? 0) === 0)
+        return res.status(403).json({ error: "Forbidden: not delegated to this package group" });
+    }
+
     const body = req.body as Record<string, unknown>;
     // Coerce integer fields — they may arrive as strings from form inputs
     const toIntOrNull = (v: unknown) => (v === null || v === "" || v === undefined) ? null : parseInt(String(v), 10);
@@ -580,6 +594,23 @@ router.get("/packages/:id", authenticate, async (req, res) => {
 
 router.put("/packages/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
+    // CC: package가 속한 package_group이 위임된 것인지 확인
+    if (req.user!.role === "camp_coordinator") {
+      const orgId = req.user!.organisationId;
+      if (!orgId) return res.status(403).json({ error: "Forbidden" });
+      const [pkgRow] = await db.select({ packageGroupId: packages.packageGroupId })
+        .from(packages).where(eq(packages.id, req.params.id as string)).limit(1);
+      if (!pkgRow) return res.status(404).json({ error: "Not Found" });
+      const check = await pool.query(
+        `SELECT 1 FROM public.package_group_coordinators
+         WHERE coordinator_org_id = $1 AND package_group_id = $2
+           AND status = 'Active' AND revoked_at IS NULL LIMIT 1`,
+        [orgId, pkgRow.packageGroupId]
+      );
+      if ((check.rowCount ?? 0) === 0)
+        return res.status(403).json({ error: "Forbidden: not delegated to this package group" });
+    }
+
     const allowed = ["name", "status", "maxAdults", "maxStudents", "features",
       "priceAud", "priceUsd", "priceKrw", "priceJpy", "priceThb", "pricePhp", "priceSgd", "priceGbp",
       "agentCommissionType", "agentCommissionRate", "agentCommissionFixed"] as const;

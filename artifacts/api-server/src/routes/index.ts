@@ -80,6 +80,7 @@ import publicConsultationsRouter from "./public-consultations.js";
 import { tenantResolver } from "../middleware/tenantResolver.js";
 import { runWithTenantSchema, tenantSchemaExists, pool } from "@workspace/db";
 import type { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 
 const router: IRouter = Router();
 
@@ -92,8 +93,26 @@ router.use(tenantResolver);
 // tenantResolver 이후 실행. 테넌트의 PostgreSQL schema가 존재하면
 // AsyncLocalStorage context에서 요청을 실행 → 모든 db 쿼리가 tenant schema 사용.
 // schema 미존재 → public schema 사용 (기존 동작 유지)
+//
+// camp_coordinator 예외: 자체 org 스키마는 비어있음 (캠프 데이터 없음).
+// JWT에서 role을 감지해 MASTER_TENANT 스키마로 라우팅.
+const MASTER_TENANT_SCHEMA = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 router.use(async (req: Request, res: Response, next: NextFunction) => {
-  const subdomain = (req as any).tenant?.subdomain as string | undefined;
+  let subdomain = (req as any).tenant?.subdomain as string | undefined;
+
+  // camp_coordinator: JWT role 감지 → MASTER_TENANT 스키마 사용
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ") && process.env.JWT_SECRET) {
+    try {
+      const decoded = jwt.verify(authHeader.split(" ")[1], process.env.JWT_SECRET) as any;
+      if (decoded?.role === "camp_coordinator") {
+        subdomain = MASTER_TENANT_SCHEMA;
+      }
+    } catch {
+      // 토큰 검증 실패 시 기존 subdomain 사용
+    }
+  }
+
   if (!subdomain) return next();
   try {
     const schemaExists = await tenantSchemaExists(subdomain, pool);

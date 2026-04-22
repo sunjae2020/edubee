@@ -110,10 +110,13 @@ const RATES: Record<string, number> = { KRW: 952.38, THB: 22.99, JPY: 102.04, US
 
 export default function PackageGroupDetail() {
   const { id } = useParams<{ id: string }>();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const isDelegated = new URLSearchParams(location.split("?")[1] ?? "").get("delegated") === "1"
+    || user?.role === "camp_coordinator";
   const [activeTab, setActiveTab] = useState("general");
   const [showPkgDialog, setShowPkgDialog] = useState(false);
   const [editingPkg, setEditingPkg] = useState<Pkg | null>(null);
@@ -457,8 +460,8 @@ export default function PackageGroupDetail() {
         title={group.nameEn ?? "Package Group"}
         subtitle={`${group.location ?? ""}${group.countryCode ? ` · ${group.countryCode}` : ""}`}
         badge={<span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[group.status ?? ""] ?? "bg-gray-100 text-gray-600"}`}>{group.status ?? "—"}</span>}
-        backPath="/admin/package-groups"
-        backLabel="Package Groups"
+        backPath={isDelegated ? "/admin/delegated-packages" : "/admin/package-groups"}
+        backLabel={isDelegated ? "Delegated Packages" : "Package Groups"}
         tabs={TABS}
         activeTab={activeTab}
         onTabChange={(t) => { setActiveTab(t); if (isEditing) cancelEdit(); }}
