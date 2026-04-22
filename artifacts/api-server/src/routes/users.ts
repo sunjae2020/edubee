@@ -193,9 +193,10 @@ router.put("/:id", authenticate, async (req, res) => {
     // Strip read-only / auto-managed fields before passing to Drizzle.
     // Timestamp columns must be Date objects — strings from the client cause
     // `value.toISOString is not a function` inside Drizzle's PgTimestamp serialiser.
+    // organisationId is allowed for admins (excluded for self-updates below)
     const READONLY_FIELDS = new Set([
       "id", "createdAt", "updatedAt", "lastLoginAt",
-      "organisationId", "passwordHash",
+      "passwordHash",
     ]);
 
     const { password, passwordHash: _ph, ...rest } = req.body;
@@ -216,6 +217,8 @@ router.put("/:id", authenticate, async (req, res) => {
 
     for (const [key, value] of Object.entries(rest)) {
       if (READONLY_FIELDS.has(key)) continue;
+      // Only admins can move a user to a different org
+      if (key === "organisationId" && !isAdmin) continue;
       // Skip email if it hasn't changed — avoids triggering the global unique
       // constraint when another tenant's user happens to share the same email.
       if (key === "email" && typeof value === "string" && value.toLowerCase() === currentEmail) {
