@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback, createContext, useContext } from "react";
-import axios from "axios";
 
 export interface TenantTheme {
   organisationId: string | null;
@@ -109,11 +108,16 @@ export function useTenantTheme() {
       }
 
       // ② 캐시 즉시 적용 → 깜빡임 방지 (테넌트 컨텍스트 있을 때만)
+      // 캐시의 subdomain이 현재 subdomain과 다르면 오염된 캐시 → 삭제 후 기본 테마 적용
       const cached = readCache(cacheKey);
-      if (cached) {
+      const cachedSubdomainMatches =
+        cached?.subdomain === (previewOrg ?? subdomain ?? null) ||
+        (!subdomain && !previewOrg && !cached?.subdomain);
+      if (cached && cachedSubdomainMatches) {
         setTheme(cached);
         applyThemeToDom(cached);
       } else {
+        if (cached) localStorage.removeItem(cacheKey); // 잘못된 캐시 즉시 제거
         applyThemeToDom(DEFAULT_THEME);
       }
 
@@ -121,12 +125,15 @@ export function useTenantTheme() {
       //    - 서브도메인 접속: Cloudflare Worker가 X-Tenant-Subdomain 헤더를 주입하므로
       //      추가 파라미터 없이도 서버가 올바른 테넌트 테마를 반환
       //    - ?org= 미리보기 모드: subdomain 쿼리 파라미터로 테마 조회
-      //    - 인증된 사용자: axios 인터셉터가 X-Organisation-Id 헤더 자동 추가
+      //    - fetch 사용: axios 인터셉터가 X-Organisation-Id를 자동 추가하면
+      //      tenantResolver가 서브도메인보다 헤더를 우선하여 다른 테넌트 테마를 반환하는 버그 발생
       const themeUrl = previewOrg
         ? `/api/settings/theme?subdomain=${encodeURIComponent(previewOrg)}`
         : `/api/settings/theme`;
 
-      const { data } = await axios.get<TenantTheme>(themeUrl);
+      const resp = await fetch(themeUrl);
+      if (!resp.ok) throw new Error(`theme fetch failed: ${resp.status}`);
+      const data: TenantTheme = await resp.json();
 
       // 변경 있을 때만 DOM 업데이트 (불필요한 reflow 방지)
       const hasChanged = JSON.stringify(data) !== JSON.stringify(cached);
