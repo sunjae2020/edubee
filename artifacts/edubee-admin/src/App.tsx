@@ -21,6 +21,7 @@ import Users from "@/pages/users";
 import Applications from "@/pages/admin/applications";
 import AllApplications from "@/pages/admin/all-applications";
 import CampApplications from "@/pages/admin/camp-applications";
+import DelegatedPackages from "@/pages/admin/delegated-packages";
 import CampApplicationDetail from "@/pages/admin/camp-application-detail";
 import PackageGroups from "@/pages/admin/package-groups";
 import Packages from "@/pages/packages";
@@ -300,6 +301,9 @@ function Router() {
       </Route>
       <Route path="/admin/camp-applications">
         <AdminRoute title="Camp Applications"><CampApplications /></AdminRoute>
+      </Route>
+      <Route path="/admin/delegated-packages">
+        <AdminRoute title="Delegated Packages"><DelegatedPackages /></AdminRoute>
       </Route>
       <Route path="/admin/product-groups/:id">
         <AdminRoute title="Product Group Detail"><ProductGroupDetail /></AdminRoute>

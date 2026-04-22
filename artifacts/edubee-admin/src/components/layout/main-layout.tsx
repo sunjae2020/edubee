@@ -5,7 +5,10 @@ import { AdminChatWidget } from "./AdminChatWidget";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect, useLocation } from "wouter";
 import { useDateFormatLoader } from "@/hooks/use-date-format";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import axios from "axios";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(() =>
@@ -53,6 +56,48 @@ function ImpersonationBanner() {
       >
         ← Back to SuperAdmin
       </button>
+    </div>
+  );
+}
+
+// ── DelegatedAccessBanner ────────────────────────────────────────────────
+// camp_coordinator 가 위임받은 Package Group 페이지를 볼 때 표시
+function DelegatedAccessBanner() {
+  const { user }     = useAuth();
+  const [location]   = useLocation();
+  const isCC         = user?.role === "camp_coordinator";
+
+  // delegated-packages 페이지 또는 ?delegated=1 쿼리가 붙은 package group 상세 페이지
+  const isDelegatedPath = location.startsWith("/admin/delegated-packages");
+  const isDelegatedDetail =
+    location.startsWith("/admin/package-groups/") &&
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("delegated") === "1";
+
+  const { data } = useQuery<{ success: boolean; data: { ownerOrgName: string | null }[] }>({
+    queryKey: ["my-delegated-packages"],
+    queryFn: () => axios.get(`${BASE}/api/my-delegated-packages`).then(r => r.data),
+    enabled: isCC && (isDelegatedPath || isDelegatedDetail),
+    staleTime: 60_000,
+  });
+
+  const ownerName = data?.data?.[0]?.ownerOrgName ?? null;
+
+  if (!isCC || (!isDelegatedPath && !isDelegatedDetail)) return null;
+
+  return (
+    <div
+      className="flex items-center justify-between px-4 py-2 text-sm font-medium"
+      style={{ background: "#F5821F", color: "#fff" }}
+    >
+      <span>
+        ⚠️{" "}
+        <strong>Delegated scope only</strong>
+        {ownerName ? ` · Operating on behalf of ${ownerName}` : ""}
+      </span>
+      <span className="text-xs opacity-80 font-normal">
+        Hard Delete · Finalise 권한 없음
+      </span>
     </div>
   );
 }
@@ -123,6 +168,7 @@ export function MainLayout({ children, title }: { children: React.ReactNode; tit
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header collapsed={sidebarCollapsed} onToggle={toggleCollapsed} title={title} />
         <ImpersonationBanner />
+        <DelegatedAccessBanner />
         <main className="flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-20 lg:p-8 lg:pb-20" style={{ background: "var(--e-bg-page)" }}>
           <div className="mx-auto max-w-7xl">
             {children}

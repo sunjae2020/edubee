@@ -10,6 +10,11 @@ import {
   confirmPayment,
 } from "../services/contractFinanceService.js";
 import { generateReceiptPdf } from "../services/receiptPdfService.js";
+import {
+  resolvePackageGroupIdFromContractId,
+  resolvePackageGroupIdFromFinanceItemId,
+  assertFinanceDelegation,
+} from "../lib/financeDelegationGuard.js";
 
 const router = Router();
 
@@ -34,6 +39,14 @@ router.post(
   requireRole(...EDIT_ACCESS),
   async (req, res) => {
     try {
+      const user = req.user!;
+      if (user.role === "camp_coordinator" && user.organisationId) {
+        const pgId = await resolvePackageGroupIdFromContractId(req.params.id as string);
+        if (pgId) {
+          const ok = await assertFinanceDelegation(res, user.organisationId, user.id, pgId, "edit", req.ip);
+          if (!ok) return;
+        }
+      }
       const result = await financeAutoGenerate(req.params.id as string);
       return res.json(result);
     } catch (err: any) {
@@ -72,6 +85,14 @@ router.post(
   requireRole(...EDIT_ACCESS),
   async (req, res) => {
     try {
+      const user = req.user!;
+      if (user.role === "camp_coordinator" && user.organisationId) {
+        const pgId = await resolvePackageGroupIdFromContractId(req.params.id as string);
+        if (pgId) {
+          const ok = await assertFinanceDelegation(res, user.organisationId, user.id, pgId, "edit", req.ip);
+          if (!ok) return;
+        }
+      }
       const [item] = await db
         .insert(contractFinanceItems)
         .values({
@@ -96,6 +117,14 @@ router.put(
   requireRole(...EDIT_ACCESS),
   async (req, res) => {
     try {
+      const user = req.user!;
+      if (user.role === "camp_coordinator" && user.organisationId) {
+        const pgId = await resolvePackageGroupIdFromFinanceItemId(req.params.itemId as string);
+        if (pgId) {
+          const ok = await assertFinanceDelegation(res, user.organisationId, user.id, pgId, "edit", req.ip);
+          if (!ok) return;
+        }
+      }
       const ALLOWED_FIELDS = [
         "label", "estimatedAmount", "actualAmount", "dueDate",
         "notes", "linkedPartnerId", "linkedAgentId",
@@ -126,9 +155,17 @@ router.put(
 router.delete(
   "/finance/items/:itemId",
   authenticate,
-  requireRole(...FULL_ACCESS),
+  requireRole(...FULL_ACCESS, "camp_coordinator"),
   async (req, res) => {
     try {
+      const user = req.user!;
+      if (user.role === "camp_coordinator" && user.organisationId) {
+        const pgId = await resolvePackageGroupIdFromFinanceItemId(req.params.itemId as string);
+        if (pgId) {
+          const ok = await assertFinanceDelegation(res, user.organisationId, user.id, pgId, "soft_delete", req.ip);
+          if (!ok) return;
+        }
+      }
       const [updated] = await db
         .update(contractFinanceItems)
         .set({ isDeleted: true, updatedAt: new Date() })
@@ -150,6 +187,14 @@ router.post(
   requireRole(...EDIT_ACCESS),
   async (req, res) => {
     try {
+      const user = req.user!;
+      if (user.role === "camp_coordinator" && user.organisationId) {
+        const pgId = await resolvePackageGroupIdFromFinanceItemId(req.params.itemId as string);
+        if (pgId) {
+          const ok = await assertFinanceDelegation(res, user.organisationId, user.id, pgId, "edit", req.ip);
+          if (!ok) return;
+        }
+      }
       const { actualAmount, paidDate, referenceNo, paymentMethod, notes } = req.body;
       if (!actualAmount || !paidDate) {
         return res.status(400).json({ error: "actualAmount and paidDate are required" });

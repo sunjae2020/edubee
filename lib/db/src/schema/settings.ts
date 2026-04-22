@@ -163,6 +163,10 @@ export const tenantAuditLogs = pgTable("tenant_audit_logs", {
   oldValues:      jsonb("old_values"),
   newValues:      jsonb("new_values"),
   ipAddress:      varchar("ip_address",  { length: 50  }),
+  // Delegation 감사 추적 컬럼 (Step 6)
+  actingOrgId:    uuid("acting_org_id").references(() => organisations.id),
+  targetOrgId:    uuid("target_org_id").references(() => organisations.id),
+  viaDelegation:  boolean("via_delegation").notNull().default(false),
   createdOn:      timestamp("created_on").notNull().defaultNow(),
 });
 

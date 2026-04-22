@@ -9,6 +9,10 @@ import { eq, and, gte, lte, inArray, ilike, asc, desc, sql, SQL } from "drizzle-
 import { generateTaxInvoice } from "../services/taxInvoiceService.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import {
+  resolvePackageGroupIdFromContractId,
+  assertFinanceDelegation,
+} from "../lib/financeDelegationGuard.js";
 
 const router = Router();
 const STAFF_ROLES  = ["super_admin", "admin", "finance", "admission", "team_manager", "camp_coordinator"];
@@ -160,6 +164,16 @@ router.post(
         receivedFromId, paidToId,
         lines: lineItems = [],
       } = req.body;
+
+      // camp_coordinator: 위임 재무 권한 체크
+      const user = req.user!;
+      if (user.role === "camp_coordinator" && user.organisationId && contractId) {
+        const pgId = await resolvePackageGroupIdFromContractId(contractId as string);
+        if (pgId) {
+          const ok = await assertFinanceDelegation(res, user.organisationId, user.id, pgId, "edit", req.ip);
+          if (!ok) return;
+        }
+      }
 
       if (!paymentDate || !paymentType) {
         return res.status(400).json({ error: "paymentDate and paymentType are required" });

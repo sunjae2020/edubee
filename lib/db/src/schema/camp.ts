@@ -15,11 +15,13 @@ import { contracts } from "./contracts";
 import { leads } from "./applications";
 import { quotes, accounts, contacts } from "./crm";
 import { products } from "./packages";
+import { organisations } from "./settings";
 
 // ── Camp Package Groups ────────────────────────────────────────────────────
 // Note: heroImageId references future 'files' table — plain uuid
 export const campPackageGroups = pgTable("camp_package_groups", {
   id:                uuid("id").primaryKey().defaultRandom(),
+  organisationId:    uuid("organisation_id").references(() => organisations.id),
   name:              varchar("name", { length: 255 }).notNull(),
   nameI18n:          jsonb("name_i18n"),
   country:           varchar("country", { length: 100 }),
@@ -44,6 +46,7 @@ export const campPackageGroups = pgTable("camp_package_groups", {
 // ── Camp Packages ──────────────────────────────────────────────────────────
 export const campPackages = pgTable("camp_packages", {
   id:                  uuid("id").primaryKey().defaultRandom(),
+  organisationId:      uuid("organisation_id").references(() => organisations.id),
   packageGroupId:      uuid("package_group_id").notNull().references(() => campPackageGroups.id),
   name:                varchar("name", { length: 255 }).notNull(),
   nameI18n:            jsonb("name_i18n"),
@@ -85,6 +88,7 @@ export const campPackageProducts = pgTable("camp_package_products", {
 // Note: agentAccountId references future 'accounts' table — plain uuid
 export const campApplications = pgTable("camp_applications", {
   id:                    uuid("id").primaryKey().defaultRandom(),
+  organisationId:        uuid("organisation_id").references(() => organisations.id),
   applicationRef:        varchar("application_ref", { length: 500 }).unique(),
   packageGroupId:        uuid("package_group_id"),
   packageId:             uuid("package_id"),
@@ -172,3 +176,6 @@ export const campApplicationContacts = pgTable("camp_application_contacts", {
   role:               varchar("role", { length: 20 }).notNull().default("child"),
   createdAt:          timestamp("created_at").notNull().defaultNow(),
 });
+
+// NOTE: packageGroupCoordinators table is defined in packages.ts
+// (references package_groups, not camp_package_groups)

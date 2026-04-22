@@ -91,6 +91,7 @@ const TABS = [
   { key: "spots",        label: "Enrollment Spots" },
   { key: "interview",    label: "Interview" },
   { key: "camp-photos",  label: "Camp Photos" },
+  { key: "coordinator",  label: "Coordinator" },
 ];
 
 interface Pkg {
@@ -315,6 +316,66 @@ export default function PackageGroupDetail() {
     queryFn: () => axios.get(`${BASE}/api/crm/coordinators`).then(r => r.data),
     enabled: isEditing,
     staleTime: 300000,
+  });
+
+  // ── Coordinator Delegation (Cross-Tenant) ──────────────────────────────
+  const [showCoordModal, setShowCoordModal] = useState(false);
+  const [coordSearch, setCoordSearch] = useState("");
+  const [selectedCoordOrgId, setSelectedCoordOrgId] = useState<string | null>(null);
+  const [coordPermissions, setCoordPermissions] = useState({
+    view: true, edit: true, soft_delete: true, manage_finance: false,
+  });
+  const [coordNotes, setCoordNotes] = useState("");
+  const [showRevokeConfirm, setShowRevokeConfirm] = useState<string | null>(null);
+
+  const { data: delegationsResp, refetch: refetchDelegations } = useQuery({
+    queryKey: ["coordinator-delegations", id],
+    queryFn: () => axios.get(`${BASE}/api/package-groups/${id}/coordinators`).then(r => r.data),
+    enabled: activeTab === "coordinator",
+  });
+  const delegations: any[] = delegationsResp?.data ?? [];
+
+  const { data: orgSearchResp } = useQuery({
+    queryKey: ["org-search", coordSearch],
+    queryFn: () => axios.get(`${BASE}/api/organisations/search?q=${encodeURIComponent(coordSearch)}`).then(r => r.data),
+    enabled: showCoordModal,
+    staleTime: 30000,
+  });
+  const orgSearchResults: any[] = orgSearchResp?.data ?? [];
+
+  const COORD_PRESETS = [
+    { label: "운영 전담", perms: { view: true, edit: true, soft_delete: true, manage_finance: false } },
+    { label: "운영 + 재무 읽기", perms: { view: true, edit: true, soft_delete: true, manage_finance: false } },
+    { label: "운영 + 재무 관리", perms: { view: true, edit: true, soft_delete: true, manage_finance: true } },
+  ];
+
+  const assignCoordinator = useMutation({
+    mutationFn: () => axios.post(`${BASE}/api/package-groups/${id}/coordinators`, {
+      coordinatorOrgId: selectedCoordOrgId,
+      permissions: coordPermissions,
+      notes: coordNotes || null,
+    }),
+    onSuccess: () => {
+      refetchDelegations();
+      setShowCoordModal(false);
+      setSelectedCoordOrgId(null);
+      setCoordSearch("");
+      setCoordNotes("");
+      setCoordPermissions({ view: true, edit: true, soft_delete: true, manage_finance: false });
+      toast({ title: "Coordinator assigned", description: "Delegation is pending acceptance." });
+    },
+    onError: (err: any) => toast({ variant: "destructive", title: err?.response?.data?.message ?? "Failed to assign coordinator" }),
+  });
+
+  const revokeCoordinator = useMutation({
+    mutationFn: (coordinatorId: string) =>
+      axios.put(`${BASE}/api/package-groups/${id}/coordinators/${coordinatorId}/revoke`),
+    onSuccess: () => {
+      refetchDelegations();
+      setShowRevokeConfirm(null);
+      toast({ title: "Delegation revoked", description: "30-day grace period started." });
+    },
+    onError: () => toast({ variant: "destructive", title: "Failed to revoke delegation" }),
   });
 
   // Accounts lookup — for partner account linking
@@ -1110,7 +1171,247 @@ export default function PackageGroupDetail() {
             <CampPhotosTab packageGroupId={id} canEdit={canEdit} />
           </DetailSection>
         )}
+
+        {/* ── Coordinator Delegation Tab ───────────────────────────────── */}
+        {activeTab === "coordinator" && (
+          <DetailSection title="Camp Coordinator Delegation">
+            <div className="space-y-4">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  다른 테넌트(유학원)에게 이 Package Group 의 운영권을 위임합니다.
+                </p>
+                {canEdit && (
+                  <Button
+                    size="sm"
+                    onClick={() => setShowCoordModal(true)}
+                    className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Assign Coordinator
+                  </Button>
+                )}
+              </div>
+
+              {/* Delegation List */}
+              {delegations.length === 0 ? (
+                <div className="py-10 text-center text-sm text-muted-foreground border rounded-lg bg-muted/30">
+                  No coordinator delegation assigned yet.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {delegations.map((d: any) => {
+                    const statusColors: Record<string, string> = {
+                      Active: "bg-green-100 text-green-700 border-green-200",
+                      Pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
+                      Revoked: "bg-red-100 text-red-700 border-red-200",
+                      Expired: "bg-gray-100 text-gray-600 border-gray-200",
+                      Rejected: "bg-orange-100 text-orange-700 border-orange-200",
+                    };
+                    return (
+                      <div key={d.id} className="border rounded-lg p-4 space-y-3 bg-card">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium text-sm">{d.coordinatorOrgName ?? "—"}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[d.status] ?? "bg-gray-100 text-gray-600"}`}>
+                                {d.status}
+                              </span>
+                            </div>
+                            {d.coordinatorOrgSubdomain && (
+                              <span className="text-xs text-muted-foreground">{d.coordinatorOrgSubdomain}.edubee.co</span>
+                            )}
+                          </div>
+                          {d.status === "Active" && canEdit && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-200 hover:bg-red-50 shrink-0"
+                              onClick={() => setShowRevokeConfirm(d.id)}
+                            >
+                              Revoke
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Permissions */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {[
+                            { key: "view", label: "View" },
+                            { key: "edit", label: "Edit" },
+                            { key: "soft_delete", label: "Soft Delete" },
+                            { key: "manage_finance", label: "Finance Mgmt" },
+                          ].map(({ key, label }) => (
+                            <div key={key} className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium border
+                              ${(d.permissions as any)?.[key]
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : "bg-gray-50 text-gray-400 border-gray-200"}`}>
+                              <span className="w-3 h-3 text-[10px] leading-3">
+                                {(d.permissions as any)?.[key] ? "✓" : "✗"}
+                              </span>
+                              {label}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Dates */}
+                        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                          <span>Granted: {d.grantedAt ? format(new Date(d.grantedAt), "yyyy-MM-dd") : "—"}</span>
+                          {d.acceptedAt && <span>Accepted: {format(new Date(d.acceptedAt), "yyyy-MM-dd")}</span>}
+                          {d.revokedAt && <span className="text-red-500">Revoked: {format(new Date(d.revokedAt), "yyyy-MM-dd")}</span>}
+                        </div>
+
+                        {d.notes && (
+                          <p className="text-xs text-muted-foreground border-t pt-2">{d.notes}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </DetailSection>
+        )}
       </DetailPageLayout>
+
+      {/* ── Assign Coordinator Modal ─────────────────────────────────────── */}
+      <Dialog open={showCoordModal} onOpenChange={o => { if (!o) { setShowCoordModal(false); setSelectedCoordOrgId(null); setCoordSearch(""); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Assign Camp Coordinator</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-1">
+            {/* Warning */}
+            <div className="flex gap-2 p-3 rounded-lg bg-orange-50 border border-orange-200 text-sm text-orange-800">
+              <span className="shrink-0">⚠️</span>
+              <span>이 조치는 해당 테넌트에게 이 Package Group 의 운영 권한을 부여합니다. 신중히 진행하세요.</span>
+            </div>
+
+            {/* Organisation Search */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Coordinator Organisation</label>
+              <input
+                type="text"
+                placeholder="Search by name, subdomain, or email..."
+                value={coordSearch}
+                onChange={e => { setCoordSearch(e.target.value); setSelectedCoordOrgId(null); }}
+                className="w-full h-9 px-3 text-sm border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F]"
+              />
+              {orgSearchResults.length > 0 && !selectedCoordOrgId && (
+                <div className="border rounded-md divide-y max-h-40 overflow-y-auto bg-background shadow-sm">
+                  {orgSearchResults.map((org: any) => (
+                    <button
+                      key={org.id}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors"
+                      onClick={() => { setSelectedCoordOrgId(org.id); setCoordSearch(org.name); }}
+                    >
+                      <span className="font-medium">{org.name}</span>
+                      {org.subdomain && <span className="text-muted-foreground ml-2 text-xs">{org.subdomain}.edubee.co</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {selectedCoordOrgId && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-50 border border-orange-200 text-sm">
+                  <Building2 className="w-4 h-4 text-[#F5821F]" />
+                  <span className="font-medium">{coordSearch}</span>
+                  <button className="ml-auto text-muted-foreground hover:text-foreground" onClick={() => { setSelectedCoordOrgId(null); setCoordSearch(""); }}>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Permission Presets */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Permission Preset</label>
+              <div className="flex flex-wrap gap-2">
+                {COORD_PRESETS.map(p => (
+                  <button
+                    key={p.label}
+                    onClick={() => setCoordPermissions(p.perms)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors
+                      ${JSON.stringify(coordPermissions) === JSON.stringify(p.perms)
+                        ? "bg-[#F5821F] text-white border-[#F5821F]"
+                        : "bg-background text-muted-foreground border-input hover:border-[#F5821F]"}`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              {/* Permission Checkboxes */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {([
+                  { key: "view", label: "View" },
+                  { key: "edit", label: "Edit" },
+                  { key: "soft_delete", label: "Soft Delete" },
+                  { key: "manage_finance", label: "Finance Mgmt" },
+                ] as { key: keyof typeof coordPermissions; label: string }[]).map(({ key, label }) => (
+                  <label key={key} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={coordPermissions[key]}
+                      onChange={e => setCoordPermissions(p => ({ ...p, [key]: e.target.checked }))}
+                      className="rounded border-input accent-[#F5821F]"
+                      disabled={key === "view"}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notes (optional)</label>
+              <textarea
+                value={coordNotes}
+                onChange={e => setCoordNotes(e.target.value)}
+                placeholder="Delegation notes..."
+                rows={2}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#F5821F] resize-none"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-1 border-t">
+              <Button size="sm" variant="outline" onClick={() => { setShowCoordModal(false); setSelectedCoordOrgId(null); setCoordSearch(""); }}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={!selectedCoordOrgId || assignCoordinator.isPending}
+                onClick={() => assignCoordinator.mutate()}
+                className="bg-[#F5821F] hover:bg-[#d97706] text-white min-w-[120px]"
+              >
+                {assignCoordinator.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Assign Coordinator"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Revoke Confirmation ──────────────────────────────────────────── */}
+      <Dialog open={!!showRevokeConfirm} onOpenChange={o => { if (!o) setShowRevokeConfirm(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Revoke Coordinator Access?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            위임을 철회합니다. Coordinator 는 30일 동안 읽기 전용으로 접근 가능하며 이후 접근이 완전히 차단됩니다.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button size="sm" variant="outline" onClick={() => setShowRevokeConfirm(null)}>Cancel</Button>
+            <Button
+              size="sm"
+              disabled={revokeCoordinator.isPending}
+              onClick={() => showRevokeConfirm && revokeCoordinator.mutate(showRevokeConfirm)}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {revokeCoordinator.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Revoke"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Package Dialog */}
       <Dialog open={showPkgDialog} onOpenChange={o => { if (!o) { setShowPkgDialog(false); setShowPkgAddProduct(false); } }}>

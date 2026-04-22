@@ -17,7 +17,7 @@ import {
   Ticket, FolderOpen, Bot, Tags, Cable, MessageSquare,
   BookOpen, CreditCard, BookMarked, Briefcase, Shield, Wrench, Stamp,
   Tag, Percent, BadgeDollarSign,
-  Palette, Globe, Landmark, Database,
+  Palette, Globe, Landmark, Database, Share2,
   LucideIcon,
 } from "lucide-react";
 import { ReportSymbol } from "@/components/shared/ReportSymbol";
@@ -119,7 +119,8 @@ function buildNav(effectiveRole: string): NavGroup[] {
     nav.push({
       key: "coordinator-programs", label: "Programs", catIcon: Package,
       items: [
-        { icon: Package, label: "Package Groups", href: "/admin/package-groups" },
+        { icon: Package, label: "Package Groups",    href: "/admin/package-groups"    },
+        { icon: Share2,  label: "Delegated Packages", href: "/admin/delegated-packages" },
       ],
     });
   }

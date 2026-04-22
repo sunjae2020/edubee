@@ -62,6 +62,7 @@ export const packageGroups = pgTable("package_groups", {
   departureOt:        text("departure_ot"),
   enrollmentSpots:    integer("enrollment_spots"),
   coordinatorId:      uuid("coordinator_id"),
+  organisationId:     uuid("organisation_id").references(() => organisations.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -280,6 +281,37 @@ export const campPhotos = pgTable("camp_photos", {
 
 export type CampPhotoFolder = typeof campPhotoFolders.$inferSelect;
 export type CampPhoto = typeof campPhotos.$inferSelect;
+
+// ── Package Group Coordinators ─────────────────────────────────────────────
+// Cross-tenant delegation: Owner Tenant 이 다른 테넌트(Coordinator)에게
+// 특정 Package Group 의 운영권을 위임하는 레코드.
+// status: 'Pending' | 'Active' | 'Revoked' | 'Expired'
+export const packageGroupCoordinators = pgTable("package_group_coordinators", {
+  id:               uuid("id").primaryKey().defaultRandom(),
+  packageGroupId:   uuid("package_group_id").notNull()
+                      .references(() => packageGroups.id),
+  ownerOrgId:       uuid("owner_org_id").notNull()
+                      .references(() => organisations.id),
+  coordinatorOrgId: uuid("coordinator_org_id").notNull()
+                      .references(() => organisations.id),
+  permissions:      jsonb("permissions").notNull().$type<{
+    view: boolean;
+    edit: boolean;
+    soft_delete: boolean;
+    manage_finance: boolean;
+  }>(),
+  grantedByUserId:  uuid("granted_by_user_id").notNull(),
+  grantedAt:        timestamp("granted_at").notNull().defaultNow(),
+  acceptedAt:       timestamp("accepted_at"),
+  revokedAt:        timestamp("revoked_at"),
+  revokedByUserId:  uuid("revoked_by_user_id"),
+  status:           varchar("status", { length: 20 }).notNull().default("Pending"),
+  notes:            text("notes"),
+  createdAt:        timestamp("created_at").notNull().defaultNow(),
+  modifiedAt:       timestamp("modified_at").notNull().defaultNow(),
+});
+
+export type PackageGroupCoordinator = typeof packageGroupCoordinators.$inferSelect;
 
 export type InsertPackageGroup = z.infer<typeof insertPackageGroupSchema>;
 export type PackageGroup = typeof packageGroups.$inferSelect;
