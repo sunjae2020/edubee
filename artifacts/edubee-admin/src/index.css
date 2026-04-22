@@ -178,20 +178,20 @@
 }
 
 .dark {
-  /* Dark backgrounds — warm neutrals */
-  --background: 20 14% 5%;          /* #0F0E0D — page bg */
+  /* Dark backgrounds — warm neutrals, 카드-페이지 대비 강화 */
+  --background: 20 10% 7%;          /* #131211 — page bg (약간 밝게) */
   --foreground: 30 50% 93%;         /* #F5F0EB — primary text */
 
-  --card: 20 14% 9%;                /* #1A1917 — cards/modals */
+  --card: 20 12% 12%;               /* #201E1C — cards/modals (page bg 대비 +5%) */
   --card-foreground: 30 50% 93%;
-  --card-border: 20 8% 17%;         /* #2E2B28 */
+  --card-border: 20 8% 22%;         /* #393532 — 경계선 더 선명하게 */
 
-  --popover: 20 14% 9%;
+  --popover: 20 12% 12%;
   --popover-foreground: 30 50% 93%;
-  --popover-border: 20 8% 17%;
+  --popover-border: 20 8% 22%;
 
-  --border: 20 8% 17%;              /* #2E2B28 */
-  --input: 20 8% 14%;               /* #242220 */
+  --border: 20 8% 22%;              /* #393532 */
+  --input: 20 8% 15%;               /* #272422 */
   --ring: 28 91% 54%;               /* Orange stays same */
 
   --sidebar: 20 12% 8%;             /* #161513 — sidebar */
@@ -265,14 +265,14 @@
   --e-danger-bg:  #FEF2F2;
 }
 .dark {
-  --e-bg-page:    #0F0E0D;
-  --e-bg-surface: #1A1917;
-  --e-bg-sidebar: #161513;
-  --e-bg-topbar:  #1A1917;
-  --e-bg-muted:   #242220;
+  --e-bg-page:    #131211;
+  --e-bg-surface: #201E1C;
+  --e-bg-sidebar: #0F0E0D;
+  --e-bg-topbar:  #181614;
+  --e-bg-muted:   #2A2725;
   --e-bg-hover:   rgba(245,130,31,0.12);
-  --e-border:     #2E2B28;
-  --e-border-sub: #242220;
+  --e-border:     #393532;
+  --e-border-sub: #2A2725;
   --e-text-1:     #F5F0EB;
   --e-text-2:     #A8A29E;
   --e-text-3:     #6B6865;

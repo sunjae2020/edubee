@@ -1289,20 +1289,20 @@ export default function DashboardCrmPage() {
   const currentMonthLabel = new Date().toLocaleDateString("en-AU", { month: "short", year: "numeric" });
 
   return (
-    <div style={{ padding: "24px", minHeight: "100vh", background: "#FAFAF9" }}>
+    <div style={{ padding: "24px", minHeight: "100vh", background: "var(--e-bg-page)" }}>
       {/* Page Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: T.neutral900 }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: "var(--e-text-1)" }}>
             Good {getTimeOfDay()}, {user?.fullName?.split(" ")[0] ?? "there"} 👋
           </h1>
-          <p style={{ fontSize: 12, color: T.neutral600, marginTop: 2 }}>
+          <p style={{ fontSize: 12, color: "var(--e-text-2)", marginTop: 2 }}>
             Full platform overview — Edubee Admin
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button onClick={() => navigate("/admin/crm/leads?new=1")}
-            style={{ fontSize: 12, background: T.orange, borderRadius: 7, padding: "5px 14px", color: "#FFFFFF", fontWeight: 600, border: "none", cursor: "pointer" }}>
+            style={{ fontSize: 12, background: "var(--e-orange)", borderRadius: 7, padding: "5px 14px", color: "#FFFFFF", fontWeight: 600, border: "none", cursor: "pointer" }}>
             + New Lead
           </button>
         </div>
@@ -1312,7 +1312,7 @@ export default function DashboardCrmPage() {
       <div style={{ marginBottom: 20 }}>
         <div style={{
           display: "inline-flex", gap: 3,
-          background: T.card, border: `1px solid ${T.border}`, borderRadius: 10, padding: 4,
+          background: "var(--e-bg-surface)", border: `1px solid var(--e-border)`, borderRadius: 10, padding: 4,
         }}>
           {TABS.map(tab => (
             <button
@@ -1321,12 +1321,12 @@ export default function DashboardCrmPage() {
               style={{
                 padding: "7px 18px", borderRadius: 7, fontSize: 13, border: "none", cursor: "pointer",
                 fontWeight: activeTab === tab.id ? 600 : 400,
-                background: activeTab === tab.id ? T.orangeLight : "transparent",
-                color: activeTab === tab.id ? T.orange : T.neutral600,
+                background: activeTab === tab.id ? "var(--e-orange-lt)" : "transparent",
+                color: activeTab === tab.id ? "var(--e-orange)" : "var(--e-text-2)",
                 transition: "all 150ms ease",
               }}
-              onMouseEnter={e => { if (activeTab !== tab.id) { (e.target as HTMLElement).style.background = T.neutral100; (e.target as HTMLElement).style.color = T.neutral900; }}}
-              onMouseLeave={e => { if (activeTab !== tab.id) { (e.target as HTMLElement).style.background = "transparent"; (e.target as HTMLElement).style.color = T.neutral600; }}}
+              onMouseEnter={e => { if (activeTab !== tab.id) { (e.target as HTMLElement).style.background = "var(--e-bg-muted)"; (e.target as HTMLElement).style.color = "var(--e-text-1)"; }}}
+              onMouseLeave={e => { if (activeTab !== tab.id) { (e.target as HTMLElement).style.background = "transparent"; (e.target as HTMLElement).style.color = "var(--e-text-2)"; }}}
             >
               {tab.label}
             </button>
