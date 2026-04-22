@@ -310,14 +310,12 @@ router.get(
         return res.json({ success: true, data: [] });
       }
 
-      // Cross-schema join: public.package_group_coordinators + {tenant}.package_groups + public.organisations
-      // Cannot use staticDb (search_path=public) or db (tenant-schema) alone — need explicit schema prefixes.
-      const result = await pool.query<{
+      // Step 1: Get delegations + owner org info (no package_groups join — schema varies per owner)
+      const delegResult = await pool.query<{
         delegation_id: string; status: string; permissions: any;
         granted_at: string | null; accepted_at: string | null; revoked_at: string | null;
-        package_group_id: string; package_group_name: string | null;
-        location: string | null; country_code: string | null; pg_status: string | null;
-        owner_org_id: string | null; owner_org_name: string | null; owner_org_subdomain: string | null;
+        package_group_id: string; owner_org_id: string | null;
+        owner_org_name: string | null; owner_org_subdomain: string | null;
         owner_logo_url: string | null; owner_favicon_url: string | null;
         owner_primary_color: string | null; owner_secondary_color: string | null; owner_accent_color: string | null;
       }>(
@@ -328,11 +326,7 @@ router.get(
            pgc.granted_at,
            pgc.accepted_at,
            pgc.revoked_at,
-           pg.id               AS package_group_id,
-           pg.name_en          AS package_group_name,
-           pg.location,
-           pg.country_code,
-           pg.status           AS pg_status,
+           pgc.package_group_id,
            pgc.owner_org_id,
            o.name              AS owner_org_name,
            o.subdomain         AS owner_org_subdomain,
@@ -342,8 +336,7 @@ router.get(
            o.secondary_color   AS owner_secondary_color,
            o.accent_color      AS owner_accent_color
          FROM public.package_group_coordinators pgc
-         INNER JOIN ${MASTER_TENANT}.package_groups pg ON pg.id = pgc.package_group_id
-         LEFT  JOIN public.organisations o ON o.id = pgc.owner_org_id
+         LEFT JOIN public.organisations o ON o.id = pgc.owner_org_id
          WHERE pgc.coordinator_org_id = $1
            AND pgc.status = 'Active'
            AND pgc.revoked_at IS NULL
@@ -351,27 +344,54 @@ router.get(
         [userOrgId]
       );
 
-      const rows = result.rows.map(r => ({
-        delegationId:       r.delegation_id,
-        status:             r.status,
-        permissions:        r.permissions,
-        grantedAt:          r.granted_at,
-        acceptedAt:         r.accepted_at,
-        revokedAt:          r.revoked_at,
-        packageGroupId:     r.package_group_id,
-        packageGroupName:   r.package_group_name,
-        location:           r.location,
-        countryCode:        r.country_code,
-        pgStatus:           r.pg_status,
-        ownerOrgId:         r.owner_org_id,
-        ownerOrgName:       r.owner_org_name,
-        ownerOrgSubdomain:  r.owner_org_subdomain,
-        ownerLogoUrl:       r.owner_logo_url,
-        ownerFaviconUrl:    r.owner_favicon_url,
-        ownerPrimaryColor:  r.owner_primary_color,
-        ownerSecondaryColor: r.owner_secondary_color,
-        ownerAccentColor:   r.owner_accent_color,
-      }));
+      if (delegResult.rows.length === 0) {
+        return res.json({ success: true, data: [] });
+      }
+
+      // Step 2: Fetch package_group details from each owner's tenant schema dynamically
+      const bySchema: Record<string, string[]> = {};
+      for (const row of delegResult.rows) {
+        const schema = row.owner_org_subdomain ?? MASTER_TENANT;
+        if (!bySchema[schema]) bySchema[schema] = [];
+        bySchema[schema].push(row.package_group_id);
+      }
+
+      const pgDetails: Record<string, { name_en: string | null; location: string | null; country_code: string | null; status: string | null }> = {};
+      for (const [schema, ids] of Object.entries(bySchema)) {
+        try {
+          const pgResult = await pool.query<{ id: string; name_en: string | null; location: string | null; country_code: string | null; status: string | null }>(
+            `SELECT id, name_en, location, country_code, status FROM "${schema}".package_groups WHERE id = ANY($1::uuid[])`,
+            [ids]
+          );
+          for (const pg of pgResult.rows) pgDetails[pg.id] = pg;
+        } catch { /* schema may not exist */ }
+      }
+
+      // Step 3: Merge delegation rows with package_group details
+      const rows = delegResult.rows.map(r => {
+        const pg = pgDetails[r.package_group_id];
+        return {
+          delegationId:        r.delegation_id,
+          status:              r.status,
+          permissions:         r.permissions,
+          grantedAt:           r.granted_at,
+          acceptedAt:          r.accepted_at,
+          revokedAt:           r.revoked_at,
+          packageGroupId:      r.package_group_id,
+          packageGroupName:    pg?.name_en ?? null,
+          location:            pg?.location ?? null,
+          countryCode:         pg?.country_code ?? null,
+          pgStatus:            pg?.status ?? null,
+          ownerOrgId:          r.owner_org_id,
+          ownerOrgName:        r.owner_org_name,
+          ownerOrgSubdomain:   r.owner_org_subdomain,
+          ownerLogoUrl:        r.owner_logo_url,
+          ownerFaviconUrl:     r.owner_favicon_url,
+          ownerPrimaryColor:   r.owner_primary_color,
+          ownerSecondaryColor: r.owner_secondary_color,
+          ownerAccentColor:    r.owner_accent_color,
+        };
+      });
 
       res.json({ success: true, data: rows });
     } catch (err) {

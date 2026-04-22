@@ -27,38 +27,52 @@ router.get("/package-groups", authenticate, async (req, res) => {
       const orgId = user.organisationId;
       if (!orgId) return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
 
-      // Use raw pool queries with explicit public. prefix to avoid pgBouncer search_path leakage
-      const delegResult = await pool.query<{ package_group_id: string }>(
-        `SELECT package_group_id FROM public.package_group_coordinators
-         WHERE coordinator_org_id = $1 AND status = 'Active' AND revoked_at IS NULL`,
+      // Get delegations with owner org subdomain (schema varies per owner)
+      const delegResult = await pool.query<{ package_group_id: string; owner_subdomain: string | null }>(
+        `SELECT pgc.package_group_id, o.subdomain AS owner_subdomain
+         FROM public.package_group_coordinators pgc
+         LEFT JOIN public.organisations o ON o.id = pgc.owner_org_id
+         WHERE pgc.coordinator_org_id = $1 AND pgc.status = 'Active' AND pgc.revoked_at IS NULL`,
         [orgId]
       );
-      const delegatedIds = delegResult.rows.map(r => r.package_group_id);
-      if (delegatedIds.length === 0) {
+      if (delegResult.rows.length === 0) {
         return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
       }
 
-      const conditions: SQL[] = [inArray(packageGroups.id, delegatedIds)];
-      if (status) conditions.push(ilike(packageGroups.status, status));
-      if (countryCode) conditions.push(eq(packageGroups.countryCode, countryCode));
-      const whereClause = and(...conditions);
+      // Group package_group_ids by owner tenant schema and fetch from each schema
+      const bySchema: Record<string, string[]> = {};
+      for (const row of delegResult.rows) {
+        const schema = row.owner_subdomain ?? MASTER_TENANT;
+        if (!bySchema[schema]) bySchema[schema] = [];
+        bySchema[schema].push(row.package_group_id);
+      }
 
-      // Use runWithTenantSchema with MASTER_TENANT so package data is found in the correct schema
-      const result: { data: any[]; total: number } = await new Promise((resolve, reject) => {
-        runWithTenantSchema(MASTER_TENANT, async () => {
-          const [totalResult] = await db.select({ count: count() }).from(packageGroups).where(whereClause);
-          const rows = await db
-            .select({ group: packageGroups, typeName: productTypes.name })
-            .from(packageGroups)
-            .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
-            .where(whereClause)
-            .limit(limitNum)
-            .offset(offset)
-            .orderBy(asc(packageGroups.sortOrder), desc(packageGroups.createdAt));
-          resolve({ data: rows.map(r => ({ ...r.group, packageCount: 0, typeName: r.typeName ?? null, campProvider: null })), total: Number(totalResult.count) });
-        }).catch(reject);
-      });
-      return res.json({ data: result.data, meta: { total: result.total, page: pageNum, limit: limitNum, totalPages: Math.ceil(result.total / limitNum) } });
+      const allRows: any[] = [];
+      for (const [schema, ids] of Object.entries(bySchema)) {
+        // Validate schema name to prevent SQL injection (subdomain from our own DB)
+        if (!/^[a-zA-Z0-9_]+$/.test(schema)) continue;
+        try {
+          const params: any[] = [ids];
+          const filters: string[] = [];
+          if (status)      { params.push(`%${status}%`);  filters.push(`AND pg.status ILIKE $${params.length}`); }
+          if (countryCode) { params.push(countryCode);     filters.push(`AND pg.country_code = $${params.length}`); }
+          const pgResult = await pool.query(
+            `SELECT pg.*, pt.name AS type_name
+             FROM "${schema}".package_groups pg
+             LEFT JOIN "${schema}".product_types pt ON pt.id = pg.type_id
+             WHERE pg.id = ANY($1::uuid[]) ${filters.join(" ")}
+             ORDER BY pg.sort_order ASC, pg.created_at DESC`,
+            params
+          );
+          for (const pg of pgResult.rows) {
+            allRows.push({ ...pg, packageCount: 0, typeName: pg.type_name ?? null, campProvider: null });
+          }
+        } catch { /* schema may not exist */ }
+      }
+
+      const total = allRows.length;
+      const paginated = allRows.slice(offset, offset + limitNum);
+      return res.json({ data: paginated, meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) } });
     }
 
     // admin / super_admin: query own tenant schema (tenant schema context provides org isolation)
