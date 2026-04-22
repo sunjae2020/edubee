@@ -67,7 +67,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Organisation-Id", "x-view-as-user-id"],
 }));
 
 // ── 전체 API Rate Limit (15분 내 500회) ────────────────────────────────────
