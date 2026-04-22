@@ -18,9 +18,14 @@ interface DelegatedPackage {
   location: string | null;
   countryCode: string | null;
   pgStatus: string | null;
-  ownerOrgId: string;
+  ownerOrgId: string | null;
   ownerOrgName: string | null;
   ownerOrgSubdomain: string | null;
+  ownerLogoUrl: string | null;
+  ownerFaviconUrl: string | null;
+  ownerPrimaryColor: string | null;
+  ownerSecondaryColor: string | null;
+  ownerAccentColor: string | null;
 }
 
 export default function DelegatedPackages() {
@@ -31,29 +36,51 @@ export default function DelegatedPackages() {
 
   const items = data?.data ?? [];
 
+  // Collect unique owner orgs for the banner
+  const ownerOrgs = items.reduce<{ name: string | null; logoUrl: string | null; color: string | null }[]>((acc, item) => {
+    if (!acc.find(o => o.name === item.ownerOrgName)) {
+      acc.push({ name: item.ownerOrgName, logoUrl: item.ownerLogoUrl, color: item.ownerPrimaryColor });
+    }
+    return acc;
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* ── Delegated Access Banner ──────────────────────────────────────── */}
       <div
-        className="flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium"
+        className="flex items-start gap-3 px-4 py-3 rounded-xl border text-sm font-medium"
         style={{
           background: "rgba(245,130,31,0.08)",
           borderColor: "rgba(245,130,31,0.3)",
           color: "#92400e",
         }}
       >
-        <span className="text-base">⚠️</span>
-        <span>
-          <strong>Delegated Packages</strong> — 다른 테넌트로부터 운영권을 위임받은 Package Group 목록입니다.
-          위임 범위 내에서만 접근 가능합니다.
-        </span>
+        <span className="text-base mt-0.5">⚠️</span>
+        <div className="flex-1 min-w-0">
+          <strong>Delegated Access</strong> — These Package Groups have been delegated to your organisation.
+          You can only access resources within the scope of each delegation.
+          {ownerOrgs.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {ownerOrgs.map((org, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  {org.logoUrl ? (
+                    <img src={org.logoUrl} alt={org.name ?? ""} className="h-5 w-auto object-contain rounded" style={{ maxWidth: 80 }} />
+                  ) : (
+                    <Building2 className="w-3.5 h-3.5 shrink-0" />
+                  )}
+                  <span className="text-xs font-semibold">{org.name ?? "—"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div>
         <h1 className="text-xl font-bold" style={{ color: "var(--e-text-1)" }}>Delegated Packages</h1>
         <p className="text-sm mt-1" style={{ color: "var(--e-text-3)" }}>
-          귀사에 위임된 캠프 패키지 그룹을 관리합니다.
+          Package Groups delegated to your organisation for operations management.
         </p>
       </div>
 
@@ -65,9 +92,9 @@ export default function DelegatedPackages() {
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center border rounded-xl bg-muted/20">
           <Package className="w-10 h-10 mb-3 opacity-30" style={{ color: "var(--e-text-3)" }} />
-          <p className="text-sm font-medium" style={{ color: "var(--e-text-2)" }}>위임된 패키지가 없습니다.</p>
+          <p className="text-sm font-medium" style={{ color: "var(--e-text-2)" }}>No delegated packages yet.</p>
           <p className="text-xs mt-1" style={{ color: "var(--e-text-3)" }}>
-            다른 테넌트가 Package Group 운영권을 위임하면 여기에 표시됩니다.
+            When another organisation delegates a Package Group to you, it will appear here.
           </p>
         </div>
       ) : (
@@ -82,6 +109,8 @@ export default function DelegatedPackages() {
 }
 
 function DelegatedPackageCard({ item }: { item: DelegatedPackage }) {
+  const accentColor = item.ownerPrimaryColor ?? "#F5821F";
+
   const permLabels = [
     item.permissions.view        && { label: "View",    color: "bg-blue-50 text-blue-700 border-blue-200" },
     item.permissions.edit        && { label: "Edit",    color: "bg-green-50 text-green-700 border-green-200" },
@@ -94,7 +123,7 @@ function DelegatedPackageCard({ item }: { item: DelegatedPackage }) {
       <div
         className="border rounded-xl p-4 space-y-3 cursor-pointer transition-all duration-150 hover:shadow-md bg-card"
         style={{ borderColor: "var(--e-border)" }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "#F5821F"; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = accentColor; }}
         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "var(--e-border)"; }}
       >
         {/* Title row */}
@@ -116,14 +145,18 @@ function DelegatedPackageCard({ item }: { item: DelegatedPackage }) {
           <ChevronRight className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "var(--e-text-3)" }} />
         </div>
 
-        {/* Owner org */}
+        {/* Owner org with logo */}
         <div
           className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium"
-          style={{ background: "rgba(245,130,31,0.08)", color: "#92400e" }}
+          style={{ background: `${accentColor}14`, color: "#92400e" }}
         >
-          <Building2 className="w-3.5 h-3.5 shrink-0" />
+          {item.ownerLogoUrl ? (
+            <img src={item.ownerLogoUrl} alt={item.ownerOrgName ?? ""} className="h-4 w-auto object-contain rounded shrink-0" style={{ maxWidth: 56 }} />
+          ) : (
+            <Building2 className="w-3.5 h-3.5 shrink-0" />
+          )}
           <span className="truncate">
-            위임: <strong>{item.ownerOrgName ?? item.ownerOrgSubdomain ?? item.ownerOrgId}</strong>
+            Delegated by: <strong>{item.ownerOrgName ?? item.ownerOrgSubdomain ?? item.ownerOrgId}</strong>
           </span>
         </div>
 

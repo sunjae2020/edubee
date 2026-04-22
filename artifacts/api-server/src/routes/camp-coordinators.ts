@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { staticDb } from "@workspace/db";
+import { db, staticDb, pool } from "@workspace/db";
 import { packageGroupCoordinators, packageGroups, organisations, tenantAuditLogs } from "@workspace/db/schema";
+
+const MASTER_TENANT = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -309,34 +310,68 @@ router.get(
         return res.json({ success: true, data: [] });
       }
 
-      const rows = await staticDb
-        .select({
-          delegationId: packageGroupCoordinators.id,
-          status: packageGroupCoordinators.status,
-          permissions: packageGroupCoordinators.permissions,
-          grantedAt: packageGroupCoordinators.grantedAt,
-          acceptedAt: packageGroupCoordinators.acceptedAt,
-          revokedAt: packageGroupCoordinators.revokedAt,
-          packageGroupId: packageGroups.id,
-          packageGroupName: packageGroups.nameEn,
-          location: packageGroups.location,
-          countryCode: packageGroups.countryCode,
-          pgStatus: packageGroups.status,
-          ownerOrgId: packageGroupCoordinators.ownerOrgId,
-          ownerOrgName: organisations.name,
-          ownerOrgSubdomain: organisations.subdomain,
-        })
-        .from(packageGroupCoordinators)
-        .innerJoin(packageGroups, eq(packageGroups.id, packageGroupCoordinators.packageGroupId))
-        .leftJoin(organisations, eq(organisations.id, packageGroupCoordinators.ownerOrgId))
-        .where(
-          and(
-            eq(packageGroupCoordinators.coordinatorOrgId, userOrgId),
-            eq(packageGroupCoordinators.status, "Active"),
-            isNull(packageGroupCoordinators.revokedAt)
-          )
-        )
-        .orderBy(desc(packageGroupCoordinators.grantedAt));
+      // Cross-schema join: public.package_group_coordinators + {tenant}.package_groups + public.organisations
+      // Cannot use staticDb (search_path=public) or db (tenant-schema) alone — need explicit schema prefixes.
+      const result = await pool.query<{
+        delegation_id: string; status: string; permissions: any;
+        granted_at: string | null; accepted_at: string | null; revoked_at: string | null;
+        package_group_id: string; package_group_name: string | null;
+        location: string | null; country_code: string | null; pg_status: string | null;
+        owner_org_id: string | null; owner_org_name: string | null; owner_org_subdomain: string | null;
+        owner_logo_url: string | null; owner_favicon_url: string | null;
+        owner_primary_color: string | null; owner_secondary_color: string | null; owner_accent_color: string | null;
+      }>(
+        `SELECT
+           pgc.id              AS delegation_id,
+           pgc.status,
+           pgc.permissions,
+           pgc.granted_at,
+           pgc.accepted_at,
+           pgc.revoked_at,
+           pg.id               AS package_group_id,
+           pg.name_en          AS package_group_name,
+           pg.location,
+           pg.country_code,
+           pg.status           AS pg_status,
+           pgc.owner_org_id,
+           o.name              AS owner_org_name,
+           o.subdomain         AS owner_org_subdomain,
+           o.logo_url          AS owner_logo_url,
+           o.favicon_url       AS owner_favicon_url,
+           o.primary_color     AS owner_primary_color,
+           o.secondary_color   AS owner_secondary_color,
+           o.accent_color      AS owner_accent_color
+         FROM public.package_group_coordinators pgc
+         INNER JOIN ${MASTER_TENANT}.package_groups pg ON pg.id = pgc.package_group_id
+         LEFT  JOIN public.organisations o ON o.id = pgc.owner_org_id
+         WHERE pgc.coordinator_org_id = $1
+           AND pgc.status = 'Active'
+           AND pgc.revoked_at IS NULL
+         ORDER BY pgc.granted_at DESC`,
+        [userOrgId]
+      );
+
+      const rows = result.rows.map(r => ({
+        delegationId:       r.delegation_id,
+        status:             r.status,
+        permissions:        r.permissions,
+        grantedAt:          r.granted_at,
+        acceptedAt:         r.accepted_at,
+        revokedAt:          r.revoked_at,
+        packageGroupId:     r.package_group_id,
+        packageGroupName:   r.package_group_name,
+        location:           r.location,
+        countryCode:        r.country_code,
+        pgStatus:           r.pg_status,
+        ownerOrgId:         r.owner_org_id,
+        ownerOrgName:       r.owner_org_name,
+        ownerOrgSubdomain:  r.owner_org_subdomain,
+        ownerLogoUrl:       r.owner_logo_url,
+        ownerFaviconUrl:    r.owner_favicon_url,
+        ownerPrimaryColor:  r.owner_primary_color,
+        ownerSecondaryColor: r.owner_secondary_color,
+        ownerAccentColor:   r.owner_accent_color,
+      }));
 
       res.json({ success: true, data: rows });
     } catch (err) {

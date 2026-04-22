@@ -74,29 +74,34 @@ function DelegatedAccessBanner() {
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("delegated") === "1";
 
-  const { data } = useQuery<{ success: boolean; data: { ownerOrgName: string | null }[] }>({
+  const { data } = useQuery<{ success: boolean; data: { ownerOrgName: string | null; ownerLogoUrl: string | null; ownerPrimaryColor: string | null }[] }>({
     queryKey: ["my-delegated-packages"],
     queryFn: () => axios.get(`${BASE}/api/my-delegated-packages`).then(r => r.data),
     enabled: isCC && (isDelegatedPath || isDelegatedDetail),
     staleTime: 60_000,
   });
 
-  const ownerName = data?.data?.[0]?.ownerOrgName ?? null;
+  const owner = data?.data?.[0] ?? null;
+  const bannerBg = owner?.ownerPrimaryColor ?? "#F5821F";
 
   if (!isCC || (!isDelegatedPath && !isDelegatedDetail)) return null;
 
   return (
     <div
       className="flex items-center justify-between px-4 py-2 text-sm font-medium"
-      style={{ background: "#F5821F", color: "#fff" }}
+      style={{ background: bannerBg, color: "#fff" }}
     >
-      <span>
-        ⚠️{" "}
+      <span className="flex items-center gap-2">
+        {owner?.ownerLogoUrl ? (
+          <img src={owner.ownerLogoUrl} alt={owner.ownerOrgName ?? ""} className="h-5 w-auto object-contain rounded" style={{ maxWidth: 64 }} />
+        ) : (
+          <span>⚠️</span>
+        )}
         <strong>Delegated scope only</strong>
-        {ownerName ? ` · Operating on behalf of ${ownerName}` : ""}
+        {owner?.ownerOrgName ? ` · Operating on behalf of ${owner.ownerOrgName}` : ""}
       </span>
       <span className="text-xs opacity-80 font-normal">
-        Hard Delete · Finalise 권한 없음
+        Hard Delete · Finalise not permitted
       </span>
     </div>
   );

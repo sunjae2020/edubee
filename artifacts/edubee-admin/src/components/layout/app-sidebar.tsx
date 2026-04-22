@@ -3,9 +3,13 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs } from "@/hooks/use-view-as";
 import { useFeature } from "@/hooks/useFeature";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
 import { EdubeeLogo } from "@/components/shared/EdubeeLogo";
 import { useTenantThemeCtx } from "@/hooks/use-tenant-theme";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 import {
   ChevronLeft, ChevronRight, ChevronDown,
   LayoutDashboard, Layers, Package, ShoppingBag, ListChecks,
@@ -458,8 +462,27 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
 
   const effectiveRole   = viewAsUser?.role ?? user?.role ?? "consultant";
   const isSA            = effectiveRole === "super_admin";
+  const isCC            = effectiveRole === "camp_coordinator";
   const campFeature     = useFeature("camp_module");
   const accountingFeat  = useFeature("accounting");
+
+  const isDelegatedPath = isCC && (
+    location.startsWith("/admin/delegated-packages") ||
+    (location.startsWith("/admin/package-groups/") && typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("delegated") === "1")
+  );
+
+  const { data: delegationData } = useQuery<{ success: boolean; data: { ownerLogoUrl: string | null; ownerFaviconUrl: string | null; ownerPrimaryColor: string | null; ownerOrgName: string | null }[] }>({
+    queryKey: ["my-delegated-packages"],
+    queryFn: () => axios.get(`${BASE}/api/my-delegated-packages`).then(r => r.data),
+    enabled: isCC,
+    staleTime: 120_000,
+  });
+
+  const ownerBrand = isDelegatedPath ? (delegationData?.data?.[0] ?? null) : null;
+  const displayLogoUrl    = ownerBrand?.ownerLogoUrl    ?? tenantTheme.logoUrl;
+  const displayFaviconUrl = ownerBrand?.ownerFaviconUrl ?? tenantTheme.faviconUrl;
+  const displayName       = ownerBrand?.ownerOrgName    ?? tenantTheme.companyName;
 
   const allGroups  = buildNav(effectiveRole);
   const nav        = allGroups.filter(g => {
@@ -515,8 +538,8 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
         {collapsed ? (
           <div className="flex-1 flex items-center justify-center">
             <Link href="/">
-              {tenantTheme.faviconUrl ? (
-                <img src={tenantTheme.faviconUrl} alt={tenantTheme.companyName} className="h-8 w-8 object-contain rounded" />
+              {displayFaviconUrl ? (
+                <img src={displayFaviconUrl} alt={displayName} className="h-8 w-8 object-contain rounded" />
               ) : (
                 <EdubeeLogo variant="icon" size="sm" />
               )}
@@ -524,8 +547,8 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
           </div>
         ) : (
           <Link href="/" className="flex-1 min-w-0 flex items-center">
-            {tenantTheme.logoUrl ? (
-              <img src={tenantTheme.logoUrl} alt={tenantTheme.companyName} className="h-[39px] w-auto object-contain max-w-[180px]" />
+            {displayLogoUrl ? (
+              <img src={displayLogoUrl} alt={displayName} className="h-[39px] w-auto object-contain max-w-[180px]" />
             ) : (
               <img src={logoImg} alt="Edubee Camp" className="h-[39px] w-auto object-contain" />
             )}
