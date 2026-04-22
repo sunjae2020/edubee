@@ -49,7 +49,7 @@ router.get(
     try {
       const { id } = req.params as { id: string };
 
-      const rows = await db
+      const rows = await staticDb
         .select({
           id: packageGroupCoordinators.id,
           packageGroupId: packageGroupCoordinators.packageGroupId,
@@ -119,7 +119,7 @@ router.post(
       }
 
       // 이미 Active 위임 있는지 확인
-      const [existing] = await db
+      const [existing] = await staticDb
         .select({ id: packageGroupCoordinators.id, status: packageGroupCoordinators.status })
         .from(packageGroupCoordinators)
         .where(
@@ -135,7 +135,7 @@ router.post(
         return res.status(409).json({ success: false, message: "This package group already has an active coordinator" });
       }
 
-      const [created] = await db
+      const [created] = await staticDb
         .insert(packageGroupCoordinators)
         .values({
           packageGroupId: id,
@@ -176,7 +176,7 @@ router.put(
     try {
       const { coordinatorId } = req.params as { id: string; coordinatorId: string };
 
-      const [updated] = await db
+      const [updated] = await staticDb
         .update(packageGroupCoordinators)
         .set({ status: "Active", acceptedAt: new Date(), modifiedAt: new Date() })
         .where(
@@ -220,7 +220,7 @@ router.put(
     try {
       const { coordinatorId } = req.params as { id: string; coordinatorId: string };
 
-      const [updated] = await db
+      const [updated] = await staticDb
         .update(packageGroupCoordinators)
         .set({
           status: "Revoked",
