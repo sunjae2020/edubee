@@ -12,6 +12,10 @@ if (!process.env.DATABASE_URL) {
 }
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Ensure staticDb always uses public schema (pgBouncer transaction mode can leak search_path)
+pool.on("connect", (client: any) => {
+  client.query("SET search_path = public");
+});
 
 // ─── 기본 DB (public schema — 플랫폼 라우트, 마이그레이션 용) ─────────────────
 export const staticDb = drizzle(pool, { schema });

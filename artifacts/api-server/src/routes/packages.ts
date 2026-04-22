@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, staticDb, runWithTenantSchema } from "@workspace/db";
+import { db, staticDb, runWithTenantSchema, pool } from "@workspace/db";
 import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts, packageGroupImages, organisations, applicationGrade, applicationParticipants, packageGroupCoordinators } from "@workspace/db/schema";
 import { eq, and, count, asc, SQL, ilike, desc, sql, or, inArray, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -27,16 +27,13 @@ router.get("/package-groups", authenticate, async (req, res) => {
       const orgId = user.organisationId;
       if (!orgId) return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
 
-      const delegations = await staticDb
-        .select({ packageGroupId: packageGroupCoordinators.packageGroupId })
-        .from(packageGroupCoordinators)
-        .where(and(
-          eq(packageGroupCoordinators.coordinatorOrgId, orgId),
-          eq(packageGroupCoordinators.status, "Active"),
-          isNull(packageGroupCoordinators.revokedAt)
-        ));
-
-      const delegatedIds = delegations.map(d => d.packageGroupId).filter(Boolean) as string[];
+      // Use raw pool queries with explicit public. prefix to avoid pgBouncer search_path leakage
+      const delegResult = await pool.query<{ package_group_id: string }>(
+        `SELECT package_group_id FROM public.package_group_coordinators
+         WHERE coordinator_org_id = $1 AND status = 'Active' AND revoked_at IS NULL`,
+        [orgId]
+      );
+      const delegatedIds = delegResult.rows.map(r => r.package_group_id);
       if (delegatedIds.length === 0) {
         return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
       }
@@ -46,19 +43,22 @@ router.get("/package-groups", authenticate, async (req, res) => {
       if (countryCode) conditions.push(eq(packageGroups.countryCode, countryCode));
       const whereClause = and(...conditions);
 
-      const [totalResult] = await staticDb.select({ count: count() }).from(packageGroups).where(whereClause);
-      const rows = await staticDb
-        .select({ group: packageGroups, typeName: productTypes.name })
-        .from(packageGroups)
-        .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
-        .where(whereClause)
-        .limit(limitNum)
-        .offset(offset)
-        .orderBy(asc(packageGroups.sortOrder), desc(packageGroups.createdAt));
-
-      const data = rows.map(r => ({ ...r.group, packageCount: 0, typeName: r.typeName ?? null, campProvider: null }));
-      const total = Number(totalResult.count);
-      return res.json({ data, meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) } });
+      // Use runWithTenantSchema with MASTER_TENANT so package data is found in the correct schema
+      const result: { data: any[]; total: number } = await new Promise((resolve, reject) => {
+        runWithTenantSchema(MASTER_TENANT, async () => {
+          const [totalResult] = await db.select({ count: count() }).from(packageGroups).where(whereClause);
+          const rows = await db
+            .select({ group: packageGroups, typeName: productTypes.name })
+            .from(packageGroups)
+            .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
+            .where(whereClause)
+            .limit(limitNum)
+            .offset(offset)
+            .orderBy(asc(packageGroups.sortOrder), desc(packageGroups.createdAt));
+          resolve({ data: rows.map(r => ({ ...r.group, packageCount: 0, typeName: r.typeName ?? null, campProvider: null })), total: Number(totalResult.count) });
+        }).catch(reject);
+      });
+      return res.json({ data: result.data, meta: { total: result.total, page: pageNum, limit: limitNum, totalPages: Math.ceil(result.total / limitNum) } });
     }
 
     // admin / super_admin: query own tenant schema (tenant schema context provides org isolation)

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { encryptField, decryptField, maskPassport } from "../lib/crypto.js";
-import { db, staticDb, runWithTenantSchema } from "@workspace/db";
+import { db, staticDb, runWithTenantSchema, pool } from "@workspace/db";
 import { leads, applications, applicationParticipants, contracts, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages, quote_products, packageGroups, packageGroupCoordinators } from "@workspace/db/schema";
 import { packageProducts, products } from "@workspace/db/schema";
 import { eq, and, ilike, or, count, inArray, sql, asc, desc, SQL, isNull } from "drizzle-orm";
@@ -236,15 +236,12 @@ router.get("/applications", authenticate, async (req, res) => {
   if (isCC) {
     const orgId = user.organisationId;
     if (!orgId) return res.json({ data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } });
-    const delegations = await staticDb
-      .select({ pgId: packageGroupCoordinators.packageGroupId })
-      .from(packageGroupCoordinators)
-      .where(and(
-        eq(packageGroupCoordinators.coordinatorOrgId, orgId),
-        eq(packageGroupCoordinators.status, "Active"),
-        isNull(packageGroupCoordinators.revokedAt)
-      ));
-    const delegatedIds = delegations.map(d => d.pgId).filter(Boolean) as string[];
+    const delegResult = await pool.query<{ package_group_id: string }>(
+      `SELECT package_group_id FROM public.package_group_coordinators
+       WHERE coordinator_org_id = $1 AND status = 'Active' AND revoked_at IS NULL`,
+      [orgId]
+    );
+    const delegatedIds = delegResult.rows.map(r => r.package_group_id).filter(Boolean) as string[];
     await runWithTenantSchema(MASTER_TENANT, () => handler(delegatedIds));
   } else {
     await handler();
