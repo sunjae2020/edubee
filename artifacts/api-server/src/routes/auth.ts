@@ -145,11 +145,17 @@ router.post("/login", loginLimiter, async (req, res) => {
       return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
     }
 
-    // Tenant subdomain isolation:
-    // - Platform super admins (no org) must NOT log in on tenant subdomains
-    // - Tenant staff must NOT log in on a different tenant's subdomain
-    const requestingTenantIdForStaff = (req as any).tenantId as string | undefined;
-    if (requestingTenantIdForStaff) {
+    // Tenant subdomain isolation — only enforced when request originates from an actual
+    // tenant subdomain (tsh.edubee.co), NOT when req.tenantId comes from an X-Organisation-Id
+    // header or stale JWT (those fire from app.edubee.co too and would block platform admins).
+    const SYSTEM_SUBS_LOGIN = new Set(["www", "api", "admin", "superadmin", "app", "mail", "static", "cdn", "dev", "staging", "camp", "website", "landing", "blog", "docs"]);
+    const rawLoginHost = (req.headers["x-forwarded-host"] as string | undefined)?.split(",")[0].trim() ?? req.hostname;
+    const loginHostParts = rawLoginHost.split(".");
+    const loginSub = loginHostParts.length >= 3 ? loginHostParts[0].toLowerCase() : null;
+    const loginIsOnTenantSubdomain = !!loginSub && !SYSTEM_SUBS_LOGIN.has(loginSub);
+
+    if (loginIsOnTenantSubdomain) {
+      const requestingTenantIdForStaff = (req as any).tenantId as string | undefined;
       if (!staffUser.organisationId) {
         // Platform-level account (super_admin@edubee.co etc.) — block on tenant subdomains
         return res.status(403).json({
@@ -157,7 +163,7 @@ router.post("/login", loginLimiter, async (req, res) => {
           message: "Platform admin accounts must log in at app.edubee.co",
         });
       }
-      if (staffUser.organisationId !== requestingTenantIdForStaff) {
+      if (requestingTenantIdForStaff && staffUser.organisationId !== requestingTenantIdForStaff) {
         // Wrong tenant — return generic 401 to avoid leaking account existence
         return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
       }
