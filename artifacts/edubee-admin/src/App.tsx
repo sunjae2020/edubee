@@ -4,9 +4,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
-import { ViewAsProvider } from "@/hooks/use-view-as";
+import { ViewAsProvider, useViewAs } from "@/hooks/use-view-as";
 import { DisplayCurrencyProvider } from "@/context/DisplayCurrencyContext";
 import "@/lib/i18n";
+import axios from "axios";
 
 import ApplyPage from "@/pages/public/ApplyPage";
 import LeadInquiryPage from "@/pages/public/LeadInquiryPage";
@@ -683,6 +684,21 @@ function Router() {
   );
 }
 
+// ── View-As axios header sync ─────────────────────────────────────────────
+// When viewing as another user, inject x-view-as-user-id into every API call
+// so the backend authenticate middleware uses that user's role/org context.
+function AxiosViewAsSetup() {
+  const { viewAsUser } = useViewAs();
+  useEffect(() => {
+    if (viewAsUser?._sourceType === "user" && viewAsUser.id) {
+      axios.defaults.headers.common["x-view-as-user-id"] = viewAsUser.id;
+    } else {
+      delete axios.defaults.headers.common["x-view-as-user-id"];
+    }
+  }, [viewAsUser]);
+  return null;
+}
+
 function ImpersonationInit() {
   useEffect(() => {
     // 구형 공유 키 정리 (앱별 전용 키로 마이그레이션)
@@ -711,6 +727,7 @@ function App() {
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <ImpersonationInit />
             <ViewAsProvider>
+              <AxiosViewAsSetup />
               <AuthProvider>
                 <Router />
                 <Toaster />

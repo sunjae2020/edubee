@@ -38,11 +38,11 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     return res.status(401).json({ success: false, code: "INVALID_TOKEN", message: "Invalid or expired token" });
   }
 
-  // View-As impersonation: admins can view-as another user
-  // Only super_admin / admin are allowed to impersonate
+  // View-As impersonation: admins (and consultant→CC) can preview another user's context
   const viewAsId = req.headers["x-view-as-user-id"] as string | undefined;
   const decodedRoleLower = decoded.role?.toLowerCase();
-  if (viewAsId && (decodedRoleLower === "super_admin" || decodedRoleLower === "admin")) {
+  const canViewAs = decodedRoleLower === "super_admin" || decodedRoleLower === "admin" || decodedRoleLower === "consultant";
+  if (viewAsId && canViewAs) {
     try {
       const [viewAsUser] = await staticDb
         .select({
@@ -57,14 +57,19 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
         .limit(1);
 
       if (viewAsUser) {
-        req.user = {
-          id: viewAsUser.id,
-          email: viewAsUser.email ?? "",
-          role: viewAsUser.role ?? "consultant",
-          fullName: viewAsUser.fullName ?? "",
-          organisationId: viewAsUser.organisationId ?? null,
-        };
-        return next();
+        // Consultant can only preview camp_coordinator accounts
+        if (decodedRoleLower === "consultant" && viewAsUser.role !== "camp_coordinator") {
+          // fall through — do not impersonate
+        } else {
+          req.user = {
+            id: viewAsUser.id,
+            email: viewAsUser.email ?? "",
+            role: viewAsUser.role ?? "consultant",
+            fullName: viewAsUser.fullName ?? "",
+            organisationId: viewAsUser.organisationId ?? null,
+          };
+          return next();
+        }
       }
     } catch {
       // If lookup fails, fall through to original user
