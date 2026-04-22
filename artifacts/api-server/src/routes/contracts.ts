@@ -15,6 +15,24 @@ const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
 const MASTER_TENANT = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 
+// CC 위임 검증 헬퍼: contract → application → packageGroupId → delegation 확인
+async function assertCCDelegatedForContract(orgId: string, contractId: string): Promise<string | null> {
+  const [contract] = await db.select({ applicationId: contracts.applicationId })
+    .from(contracts).where(eq(contracts.id, contractId)).limit(1);
+  if (!contract) return "Contract not found";
+  if (!contract.applicationId) return null; // applicationId 없으면 통과 (Owner 작성 계약)
+  const [app] = await db.select({ packageGroupId: applications.packageGroupId })
+    .from(applications).where(eq(applications.id, contract.applicationId)).limit(1);
+  if (!app?.packageGroupId) return null;
+  const check = await pool.query(
+    `SELECT 1 FROM public.package_group_coordinators
+     WHERE coordinator_org_id = $1 AND package_group_id = $2
+       AND status = 'Active' AND revoked_at IS NULL LIMIT 1`,
+    [orgId, app.packageGroupId]
+  );
+  return (check.rowCount ?? 0) > 0 ? null : "Forbidden: not delegated to this package group";
+}
+
 function generateContractNumber() {
   const now = new Date();
   const year = now.getFullYear().toString().slice(-2);
@@ -101,6 +119,26 @@ router.get("/contracts", authenticate, async (req, res) => {
 
 router.post("/contracts", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
+    // CC: applicationId의 packageGroupId가 위임된 것인지 확인
+    if (req.user!.role === "camp_coordinator") {
+      const orgId = req.user!.organisationId;
+      if (!orgId) return res.status(403).json({ error: "Forbidden" });
+      const appId = req.body.applicationId;
+      if (appId) {
+        const [app] = await db.select({ packageGroupId: applications.packageGroupId })
+          .from(applications).where(eq(applications.id, appId)).limit(1);
+        if (app?.packageGroupId) {
+          const check = await pool.query(
+            `SELECT 1 FROM public.package_group_coordinators
+             WHERE coordinator_org_id = $1 AND package_group_id = $2
+               AND status = 'Active' AND revoked_at IS NULL LIMIT 1`,
+            [orgId, app.packageGroupId]
+          );
+          if ((check.rowCount ?? 0) === 0)
+            return res.status(403).json({ error: "Forbidden: not delegated to this package group" });
+        }
+      }
+    }
     const body = req.body;
     body.contractNumber = generateContractNumber();
     const [contract] = await db.insert(contracts).values(body).returning();
@@ -130,6 +168,14 @@ router.get("/contracts/:id", authenticate, async (req, res) => {
 
 router.put("/contracts/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
+    // CC: 위임된 PG 소속 계약만 수정 가능
+    if (req.user!.role === "camp_coordinator") {
+      const orgId = req.user!.organisationId;
+      if (!orgId) return res.status(403).json({ error: "Forbidden" });
+      const err = await assertCCDelegatedForContract(orgId, req.params.id as string);
+      if (err === "Contract not found") return res.status(404).json({ error: "Not Found" });
+      if (err) return res.status(403).json({ error: err });
+    }
     const ALLOWED = [
       "status", "currency", "totalAmount", "paidAmount", "balanceAmount",
       "startDate", "endDate", "signedAt",
@@ -197,6 +243,13 @@ router.get("/contracts/:id/services", authenticate, async (req, res) => {
 
 router.patch("/contracts/:id/services/pickup", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
+    if (req.user!.role === "camp_coordinator") {
+      const orgId = req.user!.organisationId;
+      if (!orgId) return res.status(403).json({ error: "Forbidden" });
+      const err = await assertCCDelegatedForContract(orgId, req.params.id as string);
+      if (err === "Contract not found") return res.status(404).json({ error: "Not Found" });
+      if (err) return res.status(403).json({ error: err });
+    }
     const cid = req.params.id as string;
     const { pickupType, fromLocation, toLocation, pickupDatetime, vehicleInfo, driverNotes, status } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };
@@ -218,6 +271,13 @@ router.patch("/contracts/:id/services/pickup", authenticate, requireRole(...ADMI
 
 router.patch("/contracts/:id/services/tour", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
+    if (req.user!.role === "camp_coordinator") {
+      const orgId = req.user!.organisationId;
+      if (!orgId) return res.status(403).json({ error: "Forbidden" });
+      const err = await assertCCDelegatedForContract(orgId, req.params.id as string);
+      if (err === "Contract not found") return res.status(404).json({ error: "Not Found" });
+      if (err) return res.status(403).json({ error: err });
+    }
     const cid = req.params.id as string;
     const { tourName, tourDate, startTime, endTime, meetingPoint, highlights, guideInfo, tourNotes, status } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };

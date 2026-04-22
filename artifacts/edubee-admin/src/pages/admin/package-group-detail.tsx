@@ -115,8 +115,9 @@ export default function PackageGroupDetail() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const isCC = user?.role === "camp_coordinator";
   const isDelegated = new URLSearchParams(location.split("?")[1] ?? "").get("delegated") === "1"
-    || user?.role === "camp_coordinator";
+    || isCC;
   const [activeTab, setActiveTab] = useState("general");
   const [showPkgDialog, setShowPkgDialog] = useState(false);
   const [editingPkg, setEditingPkg] = useState<Pkg | null>(null);
@@ -1121,13 +1122,15 @@ export default function PackageGroupDetail() {
                               >
                                 <Edit className="w-3.5 h-3.5" />
                               </button>
-                              <button
-                                onClick={() => setDeletingSpotId(s.id)}
-                                className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
-                                title="Delete"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
+                              {!isCC && (
+                                <button
+                                  onClick={() => setDeletingSpotId(s.id)}
+                                  className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
+                                  title="Delete"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         )}
@@ -1224,7 +1227,7 @@ export default function PackageGroupDetail() {
                               <span className="text-xs text-muted-foreground">{d.coordinatorOrgSubdomain}.edubee.co</span>
                             )}
                           </div>
-                          {d.status === "Active" && canEdit && (
+                          {d.status === "Active" && canEdit && !isCC && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -1503,12 +1506,14 @@ export default function PackageGroupDetail() {
                             <td className="px-3 py-2 text-right font-mono">
                               {row.unitPrice ? `${row.currency ?? "AUD"} ${Number(row.unitPrice).toLocaleString()}` : row.cost ? `${row.currency ?? "AUD"} ${Number(row.cost).toLocaleString()}` : "—"}
                             </td>
-                            <td className="px-3 py-2">
-                              <button className="text-muted-foreground hover:text-red-500 transition-colors"
-                                onClick={() => { if (window.confirm("Remove product?")) unlinkPkgProduct.mutate(row.productId); }}>
-                                <X className="w-3 h-3" />
-                              </button>
-                            </td>
+                            {!isCC && (
+                              <td className="px-3 py-2">
+                                <button className="text-muted-foreground hover:text-red-500 transition-colors"
+                                  onClick={() => { if (window.confirm("Remove product?")) unlinkPkgProduct.mutate(row.productId); }}>
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>

@@ -528,6 +528,22 @@ router.delete("/applications/bulk", authenticate, requireRole("super_admin"), as
 
 router.delete("/applications/:id", authenticate, requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
   try {
+    // CC: 위임된 PG 소속 application만 취소 가능 (Soft Delete 전용)
+    if (req.user!.role === "camp_coordinator") {
+      const orgId = req.user!.organisationId;
+      if (!orgId) return res.status(403).json({ error: "Forbidden" });
+      const [app] = await db.select({ packageGroupId: applications.packageGroupId })
+        .from(applications).where(eq(applications.id, req.params.id as string)).limit(1);
+      if (!app) return res.status(404).json({ error: "Not Found" });
+      const check = await pool.query(
+        `SELECT 1 FROM public.package_group_coordinators
+         WHERE coordinator_org_id = $1 AND package_group_id = $2
+           AND status = 'Active' AND revoked_at IS NULL LIMIT 1`,
+        [orgId, app.packageGroupId]
+      );
+      if ((check.rowCount ?? 0) === 0)
+        return res.status(403).json({ error: "Forbidden: not delegated to this package group" });
+    }
     const [application] = await db.update(applications)
       .set({ applicationStatus: "cancelled", updatedAt: new Date() })
       .where(eq(applications.id, req.params.id as string)).returning();

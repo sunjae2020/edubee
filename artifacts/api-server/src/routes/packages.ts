@@ -293,9 +293,25 @@ router.get("/package-groups/:id/images", authenticate, async (req, res) => {
   }
 });
 
+// ── CC 이미지 위임 검증 헬퍼 ──────────────────────────────────────────────────
+async function assertCCImageDelegation(orgId: string | null | undefined, pgId: string): Promise<string | null> {
+  if (!orgId) return "Forbidden";
+  const check = await pool.query(
+    `SELECT 1 FROM public.package_group_coordinators
+     WHERE coordinator_org_id = $1 AND package_group_id = $2
+       AND status = 'Active' AND revoked_at IS NULL LIMIT 1`,
+    [orgId, pgId]
+  );
+  return (check.rowCount ?? 0) > 0 ? null : "Forbidden: not delegated to this package group";
+}
+
 // POST /package-groups/:id/images
 router.post("/package-groups/:id/images", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
+    if (req.user!.role === "camp_coordinator") {
+      const err = await assertCCImageDelegation(req.user!.organisationId, req.params.id as string);
+      if (err) return res.status(403).json({ error: err });
+    }
     const { imageUrl } = req.body as { imageUrl: string };
     if (!imageUrl) return res.status(400).json({ error: "imageUrl is required" });
 
@@ -334,6 +350,10 @@ router.post("/package-groups/:id/images", authenticate, requireRole(...ADMIN_ROL
 // DELETE /package-groups/:id/images/:imageId
 router.delete("/package-groups/:id/images/:imageId", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
+    if (req.user!.role === "camp_coordinator") {
+      const err = await assertCCImageDelegation(req.user!.organisationId, req.params.id as string);
+      if (err) return res.status(403).json({ error: err });
+    }
     const [deleted] = await db
       .delete(packageGroupImages)
       .where(and(
@@ -368,6 +388,10 @@ router.delete("/package-groups/:id/images/:imageId", authenticate, requireRole(.
 // PUT /package-groups/:id/images/:imageId/set-primary
 router.put("/package-groups/:id/images/:imageId/set-primary", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
+    if (req.user!.role === "camp_coordinator") {
+      const err = await assertCCImageDelegation(req.user!.organisationId, req.params.id as string);
+      if (err) return res.status(403).json({ error: err });
+    }
     const { id: groupId, imageId } = req.params as Record<string, string>;
     await db.update(packageGroupImages).set({ isPrimary: false })
       .where(eq(packageGroupImages.packageGroupId, groupId));

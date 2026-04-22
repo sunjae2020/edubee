@@ -4,12 +4,12 @@
  * manage_finance 위임 권한을 검사하는 유틸리티.
  */
 import { Response } from "express";
-import { db } from "@workspace/db";
+import { db, staticDb, pool } from "@workspace/db";
 import {
   contracts, campApplications, contractFinanceItems,
-  packageGroupCoordinators, tenantAuditLogs,
+  tenantAuditLogs,
 } from "@workspace/db/schema";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export async function resolvePackageGroupIdFromContractId(contractId: string): Promise<string | null> {
   const [contract] = await db
@@ -51,21 +51,14 @@ export async function assertFinanceDelegation(
   action: "view" | "edit" | "soft_delete",
   ipAddress?: string,
 ): Promise<boolean> {
-  const [delegation] = await db
-    .select({
-      id: packageGroupCoordinators.id,
-      permissions: packageGroupCoordinators.permissions,
-    })
-    .from(packageGroupCoordinators)
-    .where(
-      and(
-        eq(packageGroupCoordinators.packageGroupId, packageGroupId),
-        eq(packageGroupCoordinators.coordinatorOrgId, userOrgId),
-        eq(packageGroupCoordinators.status, "Active"),
-        isNull(packageGroupCoordinators.revokedAt),
-      )
-    )
-    .limit(1);
+  // public 스키마에서 직접 조회 (pgBouncer search_path leakage 방지)
+  const result = await pool.query<{ id: string; permissions: any }>(
+    `SELECT id, permissions FROM public.package_group_coordinators
+     WHERE package_group_id = $1 AND coordinator_org_id = $2
+       AND status = 'Active' AND revoked_at IS NULL LIMIT 1`,
+    [packageGroupId, userOrgId]
+  );
+  const delegation = result.rows[0] ?? null;
 
   if (!delegation) return true; // Owner Tenant → 기존 체크로 위임
 
@@ -76,7 +69,7 @@ export async function assertFinanceDelegation(
   if (action === "view") return true;
 
   if (!perms.manage_finance) {
-    db.insert(tenantAuditLogs).values({
+    staticDb.insert(tenantAuditLogs).values({
       organisationId: userOrgId,
       userId,
       action: "FORBIDDEN_ATTEMPT",
