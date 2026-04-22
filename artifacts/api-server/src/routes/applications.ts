@@ -1,15 +1,16 @@
 import { Router } from "express";
 import { encryptField, decryptField, maskPassport } from "../lib/crypto.js";
-import { db } from "@workspace/db";
-import { leads, applications, applicationParticipants, contracts, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages, quote_products, packageGroups } from "@workspace/db/schema";
+import { db, staticDb, runWithTenantSchema } from "@workspace/db";
+import { leads, applications, applicationParticipants, contracts, pickupMgt, tourMgt, interviewSchedules, users, settlementMgt, quotes, packages, quote_products, packageGroups, packageGroupCoordinators } from "@workspace/db/schema";
 import { packageProducts, products } from "@workspace/db/schema";
-import { eq, and, ilike, or, count, inArray, sql, asc, desc, SQL, exists } from "drizzle-orm";
+import { eq, and, ilike, or, count, inArray, sql, asc, desc, SQL, isNull } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { financeAutoGenerate } from "../services/contractFinanceService.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
+const MASTER_TENANT = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 
 function generateApplicationNumber() {
   const now = new Date();
@@ -173,6 +174,10 @@ router.get("/applications/stats", authenticate, async (req, res) => {
 
 // Applications
 router.get("/applications", authenticate, async (req, res) => {
+  const user = req.user!;
+  const isCC = user.role === "camp_coordinator";
+
+  const handler = async (delegatedIds?: string[]) => {
   try {
     const { agentId, status, appStatus, applicationType, packageGroupId, search, page = "1", limit = "20", sortBy = "createdAt", sortDir = "desc" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
@@ -191,24 +196,11 @@ router.get("/applications", authenticate, async (req, res) => {
       ilike(applications.applicantEmail, `%${search}%`),
     )!);
 
-    // Camp coordinators only see applications in their assigned package groups
-    if (req.user!.role === "camp_coordinator") {
-      const orgId = req.user!.organisationId ?? req.user!.id;
-      conditions.push(
-        exists(
-          db.select({ _: packageGroups.id })
-            .from(packageGroups)
-            .where(
-              and(
-                eq(applications.packageGroupId, packageGroups.id),
-                or(
-                  eq(packageGroups.coordinatorId, orgId),
-                  eq(packageGroups.campProviderId, orgId)
-                )
-              )
-            )
-        )
-      );
+    if (isCC) {
+      if (!delegatedIds || delegatedIds.length === 0) {
+        return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
+      }
+      conditions.push(inArray(applications.packageGroupId, delegatedIds));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -222,7 +214,6 @@ router.get("/applications", authenticate, async (req, res) => {
       .offset(offset)
       .orderBy(sortDir === "asc" ? asc(applications.createdAt) : desc(applications.createdAt));
 
-    // Enrich with student name (client user's fullName)
     const clientIds = [...new Set(rawData.map(r => r.app.clientId).filter(Boolean))] as string[];
     const userRows = clientIds.length > 0
       ? await db.select({ id: users.id, fullName: users.fullName }).from(users).where(inArray(users.id, clientIds))
@@ -239,6 +230,24 @@ router.get("/applications", authenticate, async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+  };
+
+  if (isCC) {
+    const orgId = user.organisationId;
+    if (!orgId) return res.json({ data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } });
+    const delegations = await staticDb
+      .select({ pgId: packageGroupCoordinators.packageGroupId })
+      .from(packageGroupCoordinators)
+      .where(and(
+        eq(packageGroupCoordinators.coordinatorOrgId, orgId),
+        eq(packageGroupCoordinators.status, "Active"),
+        isNull(packageGroupCoordinators.revokedAt)
+      ));
+    const delegatedIds = delegations.map(d => d.pgId).filter(Boolean) as string[];
+    await runWithTenantSchema(MASTER_TENANT, () => handler(delegatedIds));
+  } else {
+    await handler();
   }
 });
 

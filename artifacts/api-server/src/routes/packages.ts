@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { db, runWithTenantSchema } from "@workspace/db";
-import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts, packageGroupImages, organisations, applicationGrade, applicationParticipants } from "@workspace/db/schema";
-import { eq, and, count, asc, SQL, ilike, desc, sql, or, inArray } from "drizzle-orm";
+import { db, staticDb, runWithTenantSchema } from "@workspace/db";
+import { packageGroups, packages, products, packageGroupProducts, packageProducts, enrollmentSpots, exchangeRates, users, interviewSettings, productTypes, commissions, promotions, taxRates, accounts, packageGroupImages, organisations, applicationGrade, applicationParticipants, packageGroupCoordinators } from "@workspace/db/schema";
+import { eq, and, count, asc, SQL, ilike, desc, sql, or, inArray, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -13,92 +13,112 @@ const MASTER_TENANT = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 
 // Package Groups
 router.get("/package-groups", authenticate, async (req, res) => {
-  const isCC = req.user!.role === "camp_coordinator";
+  const user = req.user!;
+  const isCC = user.role === "camp_coordinator";
 
-  const handler = async () => {
   try {
     const { status, countryCode, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const offset = (pageNum - 1) * limitNum;
 
-    const conditions: SQL[] = [];
-    if (status) conditions.push(ilike(packageGroups.status, status));
-    if (countryCode) conditions.push(eq(packageGroups.countryCode, countryCode));
-
-    // Camp coordinators see package groups where they are the camp provider OR assigned as coordinator.
-    // Priority: org impersonation (req.tenant) → user's own org → user's id
+    // camp_coordinator: only show packages delegated to their org (via package_group_coordinators)
     if (isCC) {
-      const orgId = req.tenant?.id ?? req.user!.organisationId ?? req.user!.id;
-      conditions.push(
-        or(
-          eq(packageGroups.campProviderId, orgId),
-          eq(packageGroups.coordinatorId, orgId)
-        )!
-      );
-    }
+      const orgId = user.organisationId;
+      if (!orgId) return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    const [totalResult] = await db.select({ count: count() }).from(packageGroups).where(whereClause);
+      const delegations = await staticDb
+        .select({ packageGroupId: packageGroupCoordinators.packageGroupId })
+        .from(packageGroupCoordinators)
+        .where(and(
+          eq(packageGroupCoordinators.coordinatorOrgId, orgId),
+          eq(packageGroupCoordinators.status, "Active"),
+          isNull(packageGroupCoordinators.revokedAt)
+        ));
 
-    // JOIN organisation (tenant) info + type info
-    const rows = await db
-      .select({
-        group: packageGroups,
-        orgId: organisations.id,
-        orgName: organisations.name,
-        orgTradingName: organisations.tradingName,
-        orgSubdomain: organisations.subdomain,
-        typeName: productTypes.name,
-      })
-      .from(packageGroups)
-      .leftJoin(organisations, eq(packageGroups.campProviderId, organisations.id))
-      .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
-      .where(whereClause)
-      .limit(limitNum)
-      .offset(offset)
-      .orderBy(asc(packageGroups.sortOrder), desc(packageGroups.createdAt));
-
-    const groupIds = rows.map(r => r.group.id);
-    let pkgCounts: Record<string, number> = {};
-    if (groupIds.length > 0) {
-      const countRows = await db
-        .select({ packageGroupId: packages.packageGroupId, cnt: count() })
-        .from(packages)
-        .where(sql`${packages.packageGroupId} = ANY(ARRAY[${sql.join(groupIds.map(id => sql`${id}::uuid`), sql`, `)}])`)
-        .groupBy(packages.packageGroupId);
-      for (const r of countRows) {
-        if (r.packageGroupId) pkgCounts[r.packageGroupId] = Number(r.cnt);
+      const delegatedIds = delegations.map(d => d.packageGroupId).filter(Boolean) as string[];
+      if (delegatedIds.length === 0) {
+        return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
       }
+
+      const conditions: SQL[] = [inArray(packageGroups.id, delegatedIds)];
+      if (status) conditions.push(ilike(packageGroups.status, status));
+      if (countryCode) conditions.push(eq(packageGroups.countryCode, countryCode));
+      const whereClause = and(...conditions);
+
+      const [totalResult] = await staticDb.select({ count: count() }).from(packageGroups).where(whereClause);
+      const rows = await staticDb
+        .select({ group: packageGroups, typeName: productTypes.name })
+        .from(packageGroups)
+        .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
+        .where(whereClause)
+        .limit(limitNum)
+        .offset(offset)
+        .orderBy(asc(packageGroups.sortOrder), desc(packageGroups.createdAt));
+
+      const data = rows.map(r => ({ ...r.group, packageCount: 0, typeName: r.typeName ?? null, campProvider: null }));
+      const total = Number(totalResult.count);
+      return res.json({ data, meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) } });
     }
 
-    const data = rows.map(r => ({
-      ...r.group,
-      packageCount: pkgCounts[r.group.id] ?? 0,
-      typeName: r.typeName ?? null,
-      campProvider: r.orgId ? {
-        id: r.orgId,
-        name: r.orgName,
-        tradingName: r.orgTradingName,
-        subdomain: r.orgSubdomain,
-      } : null,
-    }));
-    const total = Number(totalResult.count);
-    return res.json({
-      data,
-      meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) },
-    });
+    // admin / super_admin: query own tenant schema (tenant schema context provides org isolation)
+    const handler = async () => {
+    try {
+      const conditions: SQL[] = [];
+      if (status) conditions.push(ilike(packageGroups.status, status));
+      if (countryCode) conditions.push(eq(packageGroups.countryCode, countryCode));
+
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+      const [totalResult] = await db.select({ count: count() }).from(packageGroups).where(whereClause);
+
+      const rows = await db
+        .select({
+          group: packageGroups,
+          orgId: organisations.id,
+          orgName: organisations.name,
+          orgTradingName: organisations.tradingName,
+          orgSubdomain: organisations.subdomain,
+          typeName: productTypes.name,
+        })
+        .from(packageGroups)
+        .leftJoin(organisations, eq(packageGroups.campProviderId, organisations.id))
+        .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
+        .where(whereClause)
+        .limit(limitNum)
+        .offset(offset)
+        .orderBy(asc(packageGroups.sortOrder), desc(packageGroups.createdAt));
+
+      const groupIds = rows.map(r => r.group.id);
+      let pkgCounts: Record<string, number> = {};
+      if (groupIds.length > 0) {
+        const countRows = await db
+          .select({ packageGroupId: packages.packageGroupId, cnt: count() })
+          .from(packages)
+          .where(sql`${packages.packageGroupId} = ANY(ARRAY[${sql.join(groupIds.map(id => sql`${id}::uuid`), sql`, `)}])`)
+          .groupBy(packages.packageGroupId);
+        for (const r of countRows) {
+          if (r.packageGroupId) pkgCounts[r.packageGroupId] = Number(r.cnt);
+        }
+      }
+
+      const data = rows.map(r => ({
+        ...r.group,
+        packageCount: pkgCounts[r.group.id] ?? 0,
+        typeName: r.typeName ?? null,
+        campProvider: r.orgId ? { id: r.orgId, name: r.orgName, tradingName: r.orgTradingName, subdomain: r.orgSubdomain } : null,
+      }));
+      const total = Number(totalResult.count);
+      return res.json({ data, meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) } });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+    };
+
+    await handler();
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Internal Server Error" });
-  }
-  }; // end handler
-
-  // CC users from partner orgs must query master schema (their org has no package data)
-  if (isCC) {
-    await runWithTenantSchema(MASTER_TENANT, handler);
-  } else {
-    await handler();
   }
 });
 

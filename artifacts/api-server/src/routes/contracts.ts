@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, staticDb, runWithTenantSchema } from "@workspace/db";
 import {
   contracts, applications, packageGroups,
   pickupMgt, tourMgt, settlementMgt,
-  invoices, receipts, transactions, users,
+  invoices, receipts, transactions, users, packageGroupCoordinators,
 } from "@workspace/db/schema";
-import { eq, and, ilike, count, inArray, SQL, exists, or } from "drizzle-orm";
+import { eq, and, ilike, count, inArray, SQL, exists, isNull } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { reverseAllPendingForContract } from "../services/ledgerService.js";
@@ -13,6 +13,7 @@ import { logAudit, auditParamsFromReq } from "../lib/auditLogger.js";
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
+const MASTER_TENANT = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 
 function generateContractNumber() {
   const now = new Date();
@@ -23,6 +24,10 @@ function generateContractNumber() {
 }
 
 router.get("/contracts", authenticate, async (req, res) => {
+  const user = req.user!;
+  const isCC = user.role === "camp_coordinator";
+
+  const handler = async (delegatedIds?: string[]) => {
   try {
     const { status, search, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
@@ -33,30 +38,25 @@ router.get("/contracts", authenticate, async (req, res) => {
     if (status) conditions.push(eq(contracts.status, status));
     if (search) conditions.push(ilike(contracts.contractNumber, `%${search}%`));
 
-    // Camp coordinators only see contracts for applications in their assigned package groups
-    if (req.user!.role === "camp_coordinator") {
-      const orgId = req.user!.organisationId ?? req.user!.id;
+    if (isCC) {
+      if (!delegatedIds || delegatedIds.length === 0) {
+        return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
+      }
       conditions.push(
         exists(
           db.select({ _: applications.id })
             .from(applications)
-            .innerJoin(packageGroups, eq(applications.packageGroupId, packageGroups.id))
-            .where(
-              and(
-                eq(contracts.applicationId, applications.id),
-                or(
-                  eq(packageGroups.coordinatorId, orgId),
-                  eq(packageGroups.campProviderId, orgId)
-                )
-              )
-            )
+            .where(and(
+              eq(contracts.applicationId, applications.id),
+              inArray(applications.packageGroupId, delegatedIds)
+            ))
         )
       );
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [totalResult] = await db.select({ count: count() }).from(contracts).where(whereClause);
-    
+
     const rows = await db
       .select({
         id: contracts.id,
@@ -81,6 +81,24 @@ router.get("/contracts", authenticate, async (req, res) => {
   } catch (err) {
     console.error("[GET /contracts]", err);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+  };
+
+  if (isCC) {
+    const orgId = user.organisationId;
+    if (!orgId) return res.json({ data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } });
+    const delegations = await staticDb
+      .select({ pgId: packageGroupCoordinators.packageGroupId })
+      .from(packageGroupCoordinators)
+      .where(and(
+        eq(packageGroupCoordinators.coordinatorOrgId, orgId),
+        eq(packageGroupCoordinators.status, "Active"),
+        isNull(packageGroupCoordinators.revokedAt)
+      ));
+    const delegatedIds = delegations.map(d => d.pgId).filter(Boolean) as string[];
+    await runWithTenantSchema(MASTER_TENANT, () => handler(delegatedIds));
+  } else {
+    await handler();
   }
 });
 
