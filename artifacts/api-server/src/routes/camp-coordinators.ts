@@ -37,6 +37,7 @@ async function logDelegationEvent(params: {
 const router = Router();
 const OWNER_ROLES = ["super_admin", "admin"];
 
+
 // ── GET /package-groups/:id/coordinators ──────────────────────────────────
 // Owner 가 특정 Package Group의 위임 내역을 조회
 router.get(
