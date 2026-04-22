@@ -16,7 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ImageCropDialog } from "@/components/shared/ImageCropDialog";
 import { fileToDataUrl } from "@/lib/imageResize";
-import { TrendingUp, TrendingDown, Minus, Pencil, Plus, Package, BarChart2, ExternalLink, Camera, Loader2, KeyRound, Eye, EyeOff } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Pencil, Plus, Package, BarChart2, Camera, Loader2, KeyRound, Eye, EyeOff } from "lucide-react";
+import StaffKpiPage from "@/pages/kpi/StaffKpiPage";
 import { Input } from "@/components/ui/input";
 import EntityDocumentsTab from "@/components/shared/EntityDocumentsTab";
 import ProductDrawer from "@/components/shared/ProductDrawer";
@@ -231,30 +232,16 @@ export default function UserDetail() {
             {ADMIN_ROLES.includes(currentUser?.role ?? "") && (
               <TabsTrigger value="documents">Documents</TabsTrigger>
             )}
+            {canViewKpi && (
+              <TabsTrigger value="kpi" className="gap-1.5">
+                <BarChart2 className="w-3.5 h-3.5" />
+                Staff KPI
+              </TabsTrigger>
+            )}
             {false && (
               <TabsTrigger value="products">My Products</TabsTrigger>
             )}
           </TabsList>
-
-          {canViewKpi && (
-            <TooltipProvider delayDuration={200}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => window.open(`/admin/kpi/staff?staffId=${id}`, "_blank")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-[#E8E6E2] bg-white hover:bg-(--e-orange-lt) hover:border-(--e-orange) hover:text-(--e-orange) transition-colors text-[#57534E]"
-                  >
-                    <BarChart2 className="w-3.5 h-3.5" />
-                    Staff KPI
-                    <ExternalLink className="w-3 h-3 opacity-50" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs">
-                  {currentUser?.id === id ? "View my KPI" : `View ${userRec?.fullName?.split(" ")[0] ?? "staff"}'s KPI`}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
         </div>
 
         <TabsContent value="account">
@@ -477,6 +464,12 @@ export default function UserDetail() {
               entityId={id!}
               mode="full"
             />
+          </TabsContent>
+        )}
+
+        {canViewKpi && (
+          <TabsContent value="kpi">
+            <StaffKpiPage staffId={id} />
           </TabsContent>
         )}
 

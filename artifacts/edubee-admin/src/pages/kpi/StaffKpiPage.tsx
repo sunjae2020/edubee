@@ -9,6 +9,7 @@ import { useStaffKpi, useKpiApproval } from '@/hooks/useKpi';
 import { BarChart2, ChevronDown, ArrowLeft } from 'lucide-react';
 
 interface StaffItem { id: string; full_name: string; }
+interface Props { staffId?: string; }
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -16,19 +17,20 @@ const SELECT_CLS =
   'text-sm border border-[#E8E6E2] rounded-lg px-3 py-2 bg-white text-[#1C1917] ' +
   'focus:outline-none focus:ring-2 focus:ring-(--e-orange)/40 focus:border-(--e-orange) transition-colors';
 
-export default function StaffKpiPage() {
+export default function StaffKpiPage({ staffId: propStaffId }: Props = {}) {
   const { user: currentUser } = useAuth();
   const canApprove = ['admin', 'super_admin'].includes(currentUser?.role ?? '');
   const canViewTeam = canApprove || (currentUser?.role as string) === 'team_manager';
 
-  // URL 파라미터에서 staffId 읽기 (?staffId=xxx)
+  // prop으로 받은 staffId 우선, 없으면 URL 파라미터 사용 (독립 탭 모드)
   const urlParams = new URLSearchParams(window.location.search);
-  const urlStaffId = urlParams.get('staffId') ?? '';
+  const urlStaffId = propStaffId ?? urlParams.get('staffId') ?? '';
+  // 독립 새 탭 모드: prop 없이 URL에 staffId가 있을 때만 back 버튼 표시
+  const isStandaloneTab = !propStaffId && !!urlParams.get('staffId');
 
   const now = new Date();
   const defaultYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-  // URL에 staffId가 있으면 그걸 초기값으로, 없으면 본인
   const initialStaffId = urlStaffId || (currentUser?.id ?? '');
   const [filter,          setFilter]          = useState<KpiFilter>({ periodType: 'monthly', yearMonth: defaultYM });
   const [selectedStaffId, setSelectedStaffId] = useState<string>(initialStaffId);
@@ -81,7 +83,7 @@ export default function StaffKpiPage() {
     <div className="p-6 space-y-5 max-w-5xl mx-auto">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          {urlStaffId && (
+          {isStandaloneTab && (
             <button
               onClick={() => window.close()}
               className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
