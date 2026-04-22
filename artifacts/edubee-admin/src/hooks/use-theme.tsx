@@ -18,8 +18,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     try {
       const stored = localStorage.getItem("edubee-theme");
+      // 사용자가 명시적으로 설정한 경우만 적용
       if (stored === "dark" || stored === "light") return stored;
     } catch { /* ignore */ }
+    // 저장값 없으면 항상 라이트 모드 (OS 다크모드 무시)
     return "light";
   });
 

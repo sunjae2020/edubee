@@ -256,6 +256,13 @@
   --e-orange-dk:  #D96A0A;
   --e-orange-lt:  #FEF0E3;
   --e-orange-ring: rgba(245,130,31,0.15);
+  /* 상태 색상 */
+  --e-success:    #16A34A;
+  --e-success-bg: #DCFCE7;
+  --e-warning:    #CA8A04;
+  --e-warning-bg: #FEF9C3;
+  --e-danger:     #DC2626;
+  --e-danger-bg:  #FEF2F2;
 }
 .dark {
   --e-bg-page:    #0F0E0D;
@@ -268,11 +275,18 @@
   --e-border-sub: #242220;
   --e-text-1:     #F5F0EB;
   --e-text-2:     #A8A29E;
-  --e-text-3:     #57534E;
+  --e-text-3:     #6B6865;
   --e-orange:     #F5821F;
   --e-orange-dk:  #D96A0A;
   --e-orange-lt:  rgba(245,130,31,0.15);
   --e-orange-ring: rgba(245,130,31,0.20);
+  /* 상태 색상 — 다크에서 더 밝고 가시성 높게 */
+  --e-success:    #4ADE80;
+  --e-success-bg: rgba(22,163,74,0.15);
+  --e-warning:    #FCD34D;
+  --e-warning-bg: rgba(202,138,4,0.15);
+  --e-danger:     #F87171;
+  --e-danger-bg:  rgba(220,38,38,0.15);
 }
 
 @layer base {

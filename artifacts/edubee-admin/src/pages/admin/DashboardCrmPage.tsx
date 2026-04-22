@@ -25,23 +25,23 @@ function getCssVar(name: string, fallback: string): string {
 }
 
 // ─── Design Tokens ───────────────────────────────────────────────────────────
-// CSS 변수를 우선 사용 — 테넌트 테마가 자동 반영됨
+// 모든 값을 CSS 변수로 — 라이트/다크 모드 및 테넌트 브랜딩 자동 반영
 const T = {
   orange:      "var(--e-orange, #F5821F)",
   orangeDark:  "var(--e-orange-dk, #D96A0A)",
   orangeLight: "var(--e-orange-lt, #FEF0E3)",
-  card:        "#FFFFFF",
-  border:      "#E8E6E2",
-  neutral100:  "#F4F3F1",
-  neutral400:  "#A8A29E",
-  neutral600:  "#57534E",
-  neutral900:  "#1C1917",
-  success:     "#16A34A",
-  successBg:   "#DCFCE7",
-  warning:     "#CA8A04",
-  warningBg:   "#FEF9C3",
-  danger:      "#DC2626",
-  dangerBg:    "#FEF2F2",
+  card:        "var(--e-bg-surface, #FFFFFF)",
+  border:      "var(--e-border, #E8E6E2)",
+  neutral100:  "var(--e-bg-muted, #F4F3F1)",
+  neutral400:  "var(--e-text-3, #A8A29E)",
+  neutral600:  "var(--e-text-2, #57534E)",
+  neutral900:  "var(--e-text-1, #1C1917)",
+  success:     "var(--e-success, #16A34A)",
+  successBg:   "var(--e-success-bg, #DCFCE7)",
+  warning:     "var(--e-warning, #CA8A04)",
+  warningBg:   "var(--e-warning-bg, #FEF9C3)",
+  danger:      "var(--e-danger, #DC2626)",
+  dangerBg:    "var(--e-danger-bg, #FEF2F2)",
 };
 
 type TabId = "overview" | "operation" | "sales" | "finance";
