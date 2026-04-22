@@ -379,7 +379,7 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
                 <tr><td colSpan={4} style={{ padding: "24px 10px", textAlign: "center", fontSize: 13, color: T.neutral400 }}>No leads yet</td></tr>
               ) : (data?.recentLeads ?? []).map(lead => (
                 <tr key={lead.id} style={{ borderBottom: `1px solid ${T.neutral100}` }}
-                  className="hover:bg-[#FAFAF9] cursor-pointer"
+                  className="hover:bg-[var(--e-bg-muted)] cursor-pointer"
                   onClick={() => navigate(`/admin/leads/${lead.id}`)}>
                   <td style={{ padding: "10px 10px", fontSize: 13, fontWeight: 500, color: T.neutral900 }}>{lead.name}</td>
                   <td style={{ padding: "10px 10px" }}><StatusBadge status={lead.status ?? "new"} /></td>
@@ -780,7 +780,7 @@ function SalesTab({
                   </thead>
                   <tbody>
                     {quotes.map(q => (
-                      <tr key={q.id} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[#FAFAF9]">
+                      <tr key={q.id} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[var(--e-bg-muted)]">
                         <td style={{ padding: "10px 10px", fontSize: 13, color: T.neutral900, fontWeight: 500 }}>{q.contactName}</td>
                         <td style={{ padding: "10px 10px", fontSize: 13, color: T.orange, fontWeight: 600 }}>{fmtAUD(q.totalAmount)}</td>
                         <td style={{ padding: "10px 10px" }}><StatusBadge status={q.status?.toLowerCase() ?? "draft"} /></td>
@@ -1009,7 +1009,7 @@ function FinanceTab({
                       const critical = row.bucket === "90+";
                       const rowColor = critical ? T.danger : T.neutral900;
                       return (
-                        <tr key={row.bucket} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[#FAFAF9]">
+                        <tr key={row.bucket} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[var(--e-bg-muted)]">
                           <td style={{ padding: "10px 10px", fontWeight: 600, color: rowColor }}>
                             {row.bucket === "current" ? "Current" : `${row.bucket} days`}
                           </td>
@@ -1055,7 +1055,7 @@ function FinanceTab({
                   </thead>
                   <tbody>
                     {fd!.commissions.map(c => (
-                      <tr key={c.id} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[#FAFAF9]">
+                      <tr key={c.id} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[var(--e-bg-muted)]">
                         <td style={{ padding: "10px 10px", fontSize: 13, fontWeight: 500, color: T.neutral900 }}>{c.schoolName}</td>
                         <td style={{ padding: "10px 10px", fontSize: 12, color: T.neutral600 }}>{c.studentName}</td>
                         <td style={{ padding: "10px 10px", fontSize: 13, fontWeight: 600, color: T.orange }}>{fmtAUD(c.expectedAmount)}</td>
@@ -1158,7 +1158,7 @@ function FinanceTab({
                 const tier    = (row.bonus_tier ?? "standard").toLowerCase();
                 const tierCls = TIER_STYLES[tier] ?? TIER_STYLES.standard;
                 return (
-                  <tr key={row.id} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[#FAFAF9]">
+                  <tr key={row.id} style={{ borderBottom: `1px solid ${T.neutral100}` }} className="hover:bg-[var(--e-bg-muted)]">
                     {isSA && <td style={{ padding: "10px 14px" }}>
                       {row.status === "draft" && (
                         <input type="checkbox" className="rounded" checked={selectedIds.has(row.id)} onChange={() => toggleSelect(row.id)} />
