@@ -145,6 +145,24 @@ router.post("/login", loginLimiter, async (req, res) => {
       return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
     }
 
+    // Tenant subdomain isolation:
+    // - Platform super admins (no org) must NOT log in on tenant subdomains
+    // - Tenant staff must NOT log in on a different tenant's subdomain
+    const requestingTenantIdForStaff = (req as any).tenantId as string | undefined;
+    if (requestingTenantIdForStaff) {
+      if (!staffUser.organisationId) {
+        // Platform-level account (super_admin@edubee.co etc.) — block on tenant subdomains
+        return res.status(403).json({
+          error: "Forbidden",
+          message: "Platform admin accounts must log in at app.edubee.co",
+        });
+      }
+      if (staffUser.organisationId !== requestingTenantIdForStaff) {
+        // Wrong tenant — return generic 401 to avoid leaking account existence
+        return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
+      }
+    }
+
     // Success
     await staticDb.update(users).set({ failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() }).where(eq(users.id, staffUser.id));
     await writeAuthLog("staff", staffUser.id, normalizedEmail, "login_success", ip, ua);

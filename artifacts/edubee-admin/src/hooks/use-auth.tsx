@@ -150,7 +150,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("edubee_token", res.accessToken);
     setToken(res.accessToken);
     await refetch();
-    if ((res as any).user?.role === "super_admin" || (res as any).role === "super_admin") {
+
+    // 테넌트 서브도메인에서는 super_admin이라도 /superadmin 으로 이동하지 않음
+    const NON_TENANT_SUBS_LOGIN = new Set(["www", "app", "admin", "api", "mail"]);
+    const loginHostParts = window.location.hostname.split(".");
+    const loginSub = loginHostParts.length >= 3 ? loginHostParts[0].toLowerCase() : null;
+    const isOnTenantSubdomainLogin = !!loginSub && !NON_TENANT_SUBS_LOGIN.has(loginSub);
+
+    const isSuperAdmin = (res as any).user?.role === "super_admin" || (res as any).role === "super_admin";
+    if (!isOnTenantSubdomainLogin && isSuperAdmin) {
       setLocation("/superadmin");
     } else {
       setLocation("/admin/dashboard");
