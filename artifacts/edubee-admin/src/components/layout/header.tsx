@@ -125,7 +125,10 @@ export function Header({ collapsed, onToggle, title }: Props) {
 
   const myRole = user?.role ?? "";
   const myLevel = ROLE_HIERARCHY[myRole] ?? 0;
-  const canSwitch = myLevel >= 60;
+  // Admin + all roles >= 60 can switch to lower roles; Consultant can switch to CC only
+  const canSwitch = myLevel >= 60 || (myRole as string) === "consultant";
+  // Consultant cannot preview portal accounts (only CC user switch)
+  const canSwitchAccounts = myLevel >= 60;
 
   const { data: switchableUsers = [] } = useQuery<SwitchableUser[]>({
     queryKey: ["switchable-users"],
@@ -136,7 +139,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
   const { data: switchableAccounts = [] } = useQuery<SwitchableAccount[]>({
     queryKey: ["switchable-accounts"],
     queryFn: () => axios.get(`${BASE}/api/users/switchable-accounts`).then(r => r.data),
-    enabled: canSwitch,
+    enabled: canSwitchAccounts,
   });
 
   const { data: notifData } = useQuery({
@@ -287,17 +290,19 @@ export function Header({ collapsed, onToggle, title }: Props) {
                         </span>
                       )}
                     </button>
-                    <button
-                      onClick={() => { setViewTab("accounts"); setSelectedRole(null); setSearchQuery(""); }}
-                      className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-medium transition-colors border ${viewTab === "accounts" ? "bg-(--e-orange) text-white border-(--e-orange)" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-(--e-orange) hover:text-(--e-orange)"}`}
-                    >
-                      <Building2 className="w-3 h-3" /> Accounts
-                      {switchableAccounts.length > 0 && (
-                        <span className={`ml-0.5 px-1 py-0 rounded-full text-[9px] font-bold ${viewTab === "accounts" ? "bg-white/30 text-white" : "bg-[#F4F3F1] text-[#78716C]"}`}>
-                          {switchableAccounts.length}
-                        </span>
-                      )}
-                    </button>
+                    {canSwitchAccounts && (
+                      <button
+                        onClick={() => { setViewTab("accounts"); setSelectedRole(null); setSearchQuery(""); }}
+                        className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-medium transition-colors border ${viewTab === "accounts" ? "bg-(--e-orange) text-white border-(--e-orange)" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-(--e-orange) hover:text-(--e-orange)"}`}
+                      >
+                        <Building2 className="w-3 h-3" /> Accounts
+                        {switchableAccounts.length > 0 && (
+                          <span className={`ml-0.5 px-1 py-0 rounded-full text-[9px] font-bold ${viewTab === "accounts" ? "bg-white/30 text-white" : "bg-[#F4F3F1] text-[#78716C]"}`}>
+                            {switchableAccounts.length}
+                          </span>
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   {/* Role filter pills — only on Users tab */}
