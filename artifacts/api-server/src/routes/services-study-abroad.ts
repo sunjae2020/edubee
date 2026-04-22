@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { studyAbroadMgt, contracts, users, accounts } from "@workspace/db/schema";
-import { eq, and, ilike, or, lte, isNotNull, sql, count, asc, desc, SQL } from "drizzle-orm";
+import { eq, and, ilike, or, lte, isNotNull, sql, count, asc, desc, inArray, SQL } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { getCCDelegatedContractIds } from "../lib/ccDelegationFilter.js";
 
 const router = Router();
 const STAFF_ROLES = ["super_admin", "admin", "camp_coordinator"];
@@ -124,6 +125,14 @@ router.get(
       const conds: SQL[] = [
         eq(studyAbroadMgt.programContext, "study_abroad"),
       ];
+
+      // CC: 위임된 PG 소속 contract에 연결된 레코드만
+      if (req.user?.role === "camp_coordinator") {
+        const ccIds = await getCCDelegatedContractIds(req.user.organisationId ?? "");
+        if (ccIds.length === 0) return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
+        conds.push(inArray(studyAbroadMgt.contractId, ccIds));
+      }
+
       if (applicationStage) conds.push(eq(studyAbroadMgt.applicationStage, applicationStage));
       if (status)           conds.push(eq(studyAbroadMgt.status, status));
       if (search) {

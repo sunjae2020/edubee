@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { guardianMgt, contracts, users, invoices, accounts } from "@workspace/db/schema";
-import { eq, and, ilike, or, count, isNotNull, lte, gte, isNull, sql, asc, desc, SQL, max } from "drizzle-orm";
+import { eq, and, ilike, or, count, isNotNull, lte, gte, isNull, sql, asc, desc, inArray, SQL, max } from "drizzle-orm";
+import { getCCDelegatedContractIds } from "../lib/ccDelegationFilter.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -106,6 +107,14 @@ router.get(
       const offset   = (pageNum - 1) * limitNum;
 
       const conds: SQL[] = [];
+
+      // CC: 위임된 PG 소속 contract에 연결된 레코드만
+      if (req.user?.role === "camp_coordinator") {
+        const ccIds = await getCCDelegatedContractIds(req.user.organisationId ?? "");
+        if (ccIds.length === 0) return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
+        conds.push(inArray(guardianMgt.contractId, ccIds));
+      }
+
       if (status) conds.push(eq(guardianMgt.status, status));
       if (search) {
         conds.push(or(

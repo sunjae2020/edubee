@@ -68,9 +68,15 @@ function buildCCNav(): NavGroup[] {
       label: "Operations",
       catIcon: Briefcase,
       items: [
-        { icon: FileCheck, label: "Contracts",        href: "/admin/crm/contracts"      },
-        { icon: Car,       label: "Pickup / Transfer", href: "/admin/services/pickup"   },
-        { icon: Map,       label: "Tour Management",   href: "/admin/services/tour"     },
+        { icon: FileCheck,     label: "Contracts",        href: "/admin/crm/contracts"              },
+        { icon: Car,           label: "Pickup / Transfer", href: "/admin/services/pickup"           },
+        { icon: Building2,     label: "Accommodation",    href: "/admin/services/accommodation"     },
+        { icon: Map,           label: "Tour Management",  href: "/admin/services/tour"              },
+        { icon: GraduationCap, label: "Study Abroad",     href: "/admin/services/study-abroad"      },
+        { icon: Briefcase,     label: "Internship",       href: "/admin/services/internship"        },
+        { icon: Shield,        label: "Guardian",         href: "/admin/services/guardian"          },
+        { icon: Stamp,         label: "Visa Services",    href: "/admin/services/visa"              },
+        { icon: FolderOpen,    label: "Other Services",   href: "/admin/services/other"             },
       ],
     },
     {
