@@ -33,20 +33,75 @@ const ReportNavIcon = ({ size, style }: { size?: number; style?: React.CSSProper
 type NavItem  = { icon: LucideIcon; label: string; href: string };
 type NavGroup = { key: string; label: string; catIcon: LucideIcon; items: NavItem[] };
 
+// ── Camp Coordinator — 캠프 전용 네비게이션 ────────────────────────────────
+// CC는 일반 CRM/상담/서비스와 완전히 분리된 캠프 전용 메뉴만 노출
+
+function buildCCNav(): NavGroup[] {
+  return [
+    {
+      key: "dashboard",
+      label: "Dashboard",
+      catIcon: LayoutDashboard,
+      items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard/crm" }],
+    },
+    {
+      key: "coordinator-programs",
+      label: "Programs",
+      catIcon: Package,
+      items: [
+        { icon: Package, label: "Package Groups",     href: "/admin/package-groups"     },
+        { icon: Share2,  label: "Delegated Packages", href: "/admin/delegated-packages" },
+      ],
+    },
+    {
+      // Enrollment Spots — feature-gated at the filter layer (key: "camp")
+      key: "camp",
+      label: "Camp",
+      catIcon: GraduationCap,
+      items: [
+        { icon: ListChecks,    label: "Enrollment Spots",   href: "/admin/enrollment-spots"      },
+        { icon: ClipboardList, label: "Camp Applications",  href: "/admin/camp-applications"     },
+      ],
+    },
+    {
+      key: "cc-operations",
+      label: "Operations",
+      catIcon: Briefcase,
+      items: [
+        { icon: FileCheck, label: "Contracts",        href: "/admin/crm/contracts"      },
+        { icon: Car,       label: "Pickup / Transfer", href: "/admin/services/pickup"   },
+        { icon: Map,       label: "Tour Management",   href: "/admin/services/tour"     },
+      ],
+    },
+    {
+      key: "finance",
+      label: "Finance",
+      catIcon: Wallet,
+      items: [
+        { icon: Wallet,    label: "My Settlements", href: "/admin/my-accounting/settlements" },
+        { icon: FileText,  label: "My Invoices",    href: "/admin/my-accounting/invoices"    },
+        { icon: BarChart2, label: "My Revenue",     href: "/admin/my-accounting/revenue"     },
+      ],
+    },
+  ];
+}
+
 // ── Build nav ─────────────────────────────────────────────────────────────
 
 function buildNav(effectiveRole: string): NavGroup[] {
   const isSA         = effectiveRole === "super_admin";
   const isAdmin      = isSA || effectiveRole === "admin";
-  const isSAorAD     = isAdmin;
   const isFinance    = effectiveRole === "finance";
   const isAdmission  = effectiveRole === "admission";
   const isTeamMgr    = effectiveRole === "team_manager";
   const isConsultant = effectiveRole === "consultant";
   const isCC         = effectiveRole === "camp_coordinator";
 
-  const isOps     = isAdmin || isAdmission || isTeamMgr || isCC;
-  const isSenior  = isAdmin || isFinance || isAdmission || isTeamMgr;
+  // CC has a fully separate, camp-only nav — early return
+  if (isCC) return buildCCNav();
+
+  const isOps    = isAdmin || isAdmission || isTeamMgr;
+  const isSenior = isAdmin || isFinance || isAdmission || isTeamMgr;
 
   const nav: NavGroup[] = [];
 
@@ -119,16 +174,6 @@ function buildNav(effectiveRole: string): NavGroup[] {
     });
   }
 
-  if (isCC) {
-    nav.push({
-      key: "coordinator-programs", label: "Programs", catIcon: Package,
-      items: [
-        { icon: Package, label: "Package Groups",    href: "/admin/package-groups"    },
-        { icon: Share2,  label: "Delegated Packages", href: "/admin/delegated-packages" },
-      ],
-    });
-  }
-
   const financeItems: NavItem[] = [];
   if (isAdmin || isFinance) {
     financeItems.push(
@@ -143,7 +188,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
       { icon: Landmark,       label: "Bank Accounts",     href: "/admin/accounting/bank-accounts"  },
     );
   }
-  if (isCC || isConsultant) {
+  if (isConsultant) {
     financeItems.push(
       { icon: Wallet,    label: "My Settlements", href: "/admin/my-accounting/settlements" },
       { icon: FileText,  label: "My Invoices",    href: "/admin/my-accounting/invoices"    },
@@ -486,15 +531,15 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
 
   const allGroups  = buildNav(effectiveRole);
   const nav        = allGroups.filter(g => {
-    // 슈퍼어드민은 플랜 제한 없이 모든 메뉴 표시
     if (isSA) return true;
+    // CC: camp group은 항상 표시 (camp_module 게이팅 제외 — 캠프 전용 롤)
+    if (isCC) return true;
     if (g.key === "camp"    && !campFeature.enabled)    return false;
     if (g.key === "finance" && !accountingFeat.enabled) return false;
     return true;
   });
   const lockedGroups = allGroups.filter(g => {
-    // 슈퍼어드민은 잠금 표시 없음
-    if (isSA) return false;
+    if (isSA || isCC) return false;
     if (g.key === "camp"    && !campFeature.enabled)    return true;
     if (g.key === "finance" && !accountingFeat.enabled) return true;
     return false;
