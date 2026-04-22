@@ -4,7 +4,6 @@ import { organisations } from "@workspace/db/schema";
 import { eq, and, asc } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 
-// UUID 형식 여부 판별 (e.g. "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 declare global {
@@ -16,15 +15,9 @@ declare global {
   }
 }
 
-// BASE_DOMAIN — .env의 APP_DOMAIN 없으면 'edubee.co' 기본값
 const BASE_DOMAIN = process.env.APP_DOMAIN ?? "edubee.co";
-
-// PLATFORM_SUBDOMAIN — 공개 랜딩페이지 및 fallback에 사용할 플랫폼 자체 테넌트
-// .env에서 설정하지 않으면 'myagency' 기본값 (Edubee International Pty Ltd)
 const PLATFORM_SUBDOMAIN = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 
-// 테넌트로 처리하지 않을 시스템 서브도메인
-// camp, website 등 Edubee 자체 서비스 서브도메인도 포함
 const SYSTEM_SUBDOMAINS = new Set([
   "www", "api", "admin", "superadmin", "app",
   "mail", "static", "cdn", "dev", "staging",
@@ -32,12 +25,21 @@ const SYSTEM_SUBDOMAINS = new Set([
 ]);
 
 /**
- * 테넌트 식별 미들웨어
+ * 테넌트 식별 미들웨어 — 멀티테넌트 데이터 격리 보장
+ *
+ * ⚠️ 우선순위 설계 원칙:
+ *   서브도메인(tsh.edubee.co)이 있으면 그것이 **절대 기준**입니다.
+ *   X-Organisation-Id 헤더는 서브도메인이 없을 때만 사용합니다.
+ *   이유: 다른 테넌트로 로그인된 슈퍼어드민이 tsh.edubee.co 에 접속할 때
+ *         X-Organisation-Id(자신의 org)가 서브도메인(tsh)을 덮어쓰면
+ *         다른 테넌트의 데이터가 노출되는 중대한 보안 결함이 발생합니다.
+ *
  * 우선순위:
- *   1순위: X-Organisation-Id 헤더 (기존 방식 — Phase 1 호환)
- *   2순위: 서브도메인 자동 감지 (Phase 2 신규)
- *   3순위: MVP 폴백 — superadmin/auth 제외, PLATFORM_SUBDOMAIN(myagency)로 자동 해석
- *   4순위: 완전 통과 (superadmin, auth 등)
+ *   1순위: 서브도메인 자동 감지 (URL / Cloudflare X-Subdomain 헤더)
+ *   2순위: X-Organisation-Id 헤더 (서브도메인 없을 때만 — app.edubee.co 등)
+ *   3순위: JWT organisationId
+ *   4순위: PLATFORM_SUBDOMAIN 폴백
+ *   5순위: 완전 통과 (superadmin, auth, settings/theme 등)
  */
 export async function tenantResolver(
   req: Request,
@@ -45,38 +47,8 @@ export async function tenantResolver(
   next: NextFunction
 ): Promise<void> {
   try {
-    // ── 1순위: 헤더 방식 (기존 Phase 1 호환) ─────────────────
-    const headerOrgId = req.headers["x-organisation-id"] as string | undefined;
-
-    if (headerOrgId) {
-      // X-Organisation-Id 헤더는 UUID(JWT에서) 또는 slug(subdomain) 양쪽 모두 지원.
-      // UUID면 id 컬럼, slug면 subdomain 컬럼으로 조회. staticDb 사용 (항상 public schema).
-      const isUuid = UUID_RE.test(headerOrgId);
-      const [org] = await staticDb
-        .select()
-        .from(organisations)
-        .where(
-          and(
-            isUuid
-              ? eq(organisations.id, headerOrgId)
-              : eq(organisations.subdomain as any, headerOrgId),
-            eq(organisations.status as any, "Active")
-          )
-        )
-        .limit(1);
-
-      if (org) {
-        req.tenantId = org.id;
-        req.tenant   = org;
-        return next();
-      }
-      // 헤더가 있지만 유효하지 않으면 401
-      res.status(401).json({ message: "Invalid organisation" });
-      return;
-    }
-
-    // ── 2순위: 서브도메인 자동 감지 ──────────────────────────
-    // Priority: X-Subdomain header (set by Cloudflare Worker) > X-Forwarded-Host > req.hostname
+    // ── 1순위: 서브도메인 감지 (가장 신뢰할 수 있는 테넌트 식별자) ──
+    // 서브도메인이 있으면 X-Organisation-Id를 완전히 무시합니다.
     const xSubdomain = req.headers["x-subdomain"] as string | undefined;
     const rawHost = (req.headers["x-forwarded-host"] as string | undefined)?.split(",")[0].trim()
       ?? req.hostname;
@@ -101,13 +73,40 @@ export async function tenantResolver(
         req.tenant   = org;
         return next();
       }
-      // 서브도메인이 있지만 매핑된 테넌트가 없으면 404
+      // 서브도메인이 있지만 매핑된 테넌트 없음 → 404
       res.status(404).json({ message: "Tenant not found" });
       return;
     }
 
-    // ── 3순위: JWT organisationId 기반 테넌트 해석 ──────────────
-    // Authorization: Bearer <token> 에서 organisationId 추출
+    // ── 2순위: X-Organisation-Id 헤더 (서브도메인 없을 때만 사용) ──
+    // app.edubee.co 같은 비테넌트 도메인에서 org 식별에 사용
+    const headerOrgId = req.headers["x-organisation-id"] as string | undefined;
+
+    if (headerOrgId) {
+      const isUuid = UUID_RE.test(headerOrgId);
+      const [org] = await staticDb
+        .select()
+        .from(organisations)
+        .where(
+          and(
+            isUuid
+              ? eq(organisations.id, headerOrgId)
+              : eq(organisations.subdomain as any, headerOrgId),
+            eq(organisations.status as any, "Active")
+          )
+        )
+        .limit(1);
+
+      if (org) {
+        req.tenantId = org.id;
+        req.tenant   = org;
+        return next();
+      }
+      res.status(401).json({ message: "Invalid organisation" });
+      return;
+    }
+
+    // ── 3순위: JWT organisationId ───────────────────────────────────
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith("Bearer ")) {
       const JWT_SECRET = process.env.JWT_SECRET;
@@ -129,20 +128,16 @@ export async function tenantResolver(
             }
           }
         } catch {
-          // 토큰 검증 실패 시 다음 폴백으로 진행
+          // 토큰 검증 실패 → 다음 폴백
         }
       }
     }
 
-    // ── 4순위: 플랫폼 폴백 ─────────────────────────────────────
-    // superadmin, auth, public, settings/theme 라우트는 테넌트 컨텍스트 불필요 → 건너뜀
-    // 그 외 경로는 PLATFORM_SUBDOMAIN(기본: myagency)로 자동 해석
-    // → www.edubee.co, camp.edubee.co 등 Edubee 자체 서비스에서 myagency 데이터를 표시
+    // ── 4순위: PLATFORM_SUBDOMAIN 폴백 ─────────────────────────────
     const skipPaths = ["/superadmin", "/auth", "/public", "/settings/theme"];
     const shouldFallback = !skipPaths.some((p) => req.path.startsWith(p));
 
     if (shouldFallback) {
-      // PLATFORM_SUBDOMAIN으로 조직 조회
       const [platformOrg] = await staticDb
         .select()
         .from(organisations)
@@ -158,7 +153,6 @@ export async function tenantResolver(
         req.tenantId = platformOrg.id;
         req.tenant   = platformOrg;
       } else {
-        // PLATFORM_SUBDOMAIN 조직이 없으면 첫 번째 Active 조직으로 폴백 (안전망)
         const [firstOrg] = await staticDb
           .select()
           .from(organisations)
@@ -173,7 +167,7 @@ export async function tenantResolver(
       }
     }
 
-    // ── 5순위: 완전 통과 ─────────────────────────────────────
+    // ── 5순위: 완전 통과 ────────────────────────────────────────────
     next();
   } catch (err) {
     console.error("[tenantResolver]", err);
@@ -181,33 +175,17 @@ export async function tenantResolver(
   }
 }
 
-/**
- * 호스트명에서 서브도메인 추출
- * 예: 'abc.edubee.co' → 'abc'
- *     'localhost'       → null
- *     'edubee.co'      → null (루트 도메인)
- */
 function extractSubdomain(host: string, baseDomain: string): string | null {
-  // localhost, IP 주소 제외
   if (host === "localhost" || /^\d+\.\d+\.\d+\.\d+/.test(host)) {
     return null;
   }
-
-  // 포트 제거 (예: 'abc.edubee.co:3000' → 'abc.edubee.co')
   const cleanHost = host.split(":")[0];
-
-  // baseDomain 이 포함된 경우만 처리
   if (!cleanHost.endsWith(`.${baseDomain}`)) {
     return null;
   }
-
-  // 서브도메인 추출
   const sub = cleanHost.slice(0, cleanHost.length - baseDomain.length - 1);
-
-  // 중첩 서브도메인 제외 (예: 'a.b.edubee.co' → null)
   if (sub.includes(".")) {
     return null;
   }
-
   return sub || null;
 }

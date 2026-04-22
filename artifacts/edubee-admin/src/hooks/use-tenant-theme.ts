@@ -48,7 +48,22 @@ function getSubdomain(): string | null {
 // 키 예시: edubee_theme_ts, edubee_theme_myagency, edubee_theme_default
 // ─────────────────────────────────────────────────────────────────────────────
 function themeCacheKey(sub: string | null, previewOrg: string | null): string {
-  return `edubee_theme_${previewOrg ?? sub ?? "default"}`;
+  // 서브도메인 기준으로 캐시 키 분리 — 테넌트 간 캐시 오염 방지
+  return `edubee_theme_v2_${previewOrg ?? sub ?? "default"}`;
+}
+
+/** 이전 버전(v1) 캐시 전체 삭제 — 키 충돌 방지 */
+function clearLegacyCache(): void {
+  try {
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("edubee_theme_") && !k.startsWith("edubee_theme_v2_")) {
+        toRemove.push(k);
+      }
+    }
+    toRemove.forEach(k => localStorage.removeItem(k));
+  } catch { /* ignore */ }
 }
 
 function readCache(key: string): TenantTheme | null {
@@ -82,6 +97,9 @@ export function useTenantTheme() {
   const [theme, setTheme] = useState<TenantTheme>(DEFAULT_THEME);
   const [isLoading, setIsLoading] = useState(true);
   const inflight = { current: false };
+
+  // 구버전 캐시 키(edubee_theme_*) 제거 — 앱 마운트 시 1회
+  clearLegacyCache();
 
   const loadTheme = useCallback(async () => {
     if (inflight.current) return;

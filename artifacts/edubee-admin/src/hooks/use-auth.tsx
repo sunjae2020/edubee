@@ -36,11 +36,32 @@ axios.interceptors.request.use((config) => {
 
   const token = localStorage.getItem("edubee_token");
   const viewAsId = getViewAsUserId();
-  // Impersonation overrides personal org (super-admin feature)
-  const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
-  // For regular users: read organisationId from JWT
-  const personalOrgId = token ? (parseJwt(token)?.organisationId ?? null) : null;
-  const orgId = impersonateOrgId || personalOrgId;
+
+  // ── 테넌트 org ID 결정 ──────────────────────────────────────────
+  // 서브도메인(tsh.edubee.co)이 있는 경우:
+  //   서버 tenantResolver가 서브도메인을 1순위로 처리하므로
+  //   X-Organisation-Id를 보내지 않습니다.
+  //   (잘못된 org ID 전송 → 다른 테넌트 데이터 노출 방지)
+  //
+  // 서브도메인 없는 경우(app.edubee.co 등):
+  //   impersonation override 또는 JWT의 organisationId 전송
+  const NON_TENANT_SUBS = new Set(["www", "app", "admin", "api", "mail"]);
+  const hostParts = window.location.hostname.split(".");
+  const currentSub = hostParts.length >= 3 ? hostParts[0].toLowerCase() : null;
+  const isOnTenantSubdomain = !!currentSub && !NON_TENANT_SUBS.has(currentSub);
+
+  let orgId: string | null = null;
+  if (!isOnTenantSubdomain) {
+    // 비테넌트 도메인: impersonation 또는 JWT org 사용
+    const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
+    const personalOrgId = token ? (parseJwt(token)?.organisationId ?? null) : null;
+    orgId = impersonateOrgId || personalOrgId;
+  }
+  // 테넌트 서브도메인에서는 impersonation만 허용 (같은 테넌트 내 View-As)
+  if (isOnTenantSubdomain) {
+    const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
+    if (impersonateOrgId) orgId = impersonateOrgId;
+  }
 
   if (token) config.headers["Authorization"] = `Bearer ${token}`;
   if (viewAsId) config.headers["X-View-As-User-Id"] = viewAsId;
