@@ -1,3 +1,9 @@
+> ⚠️ **DEPRECATED** — This file will be removed on **2026-05-06**.
+> See `_workflows/FINANCE_SYSTEM_GUIDE.md` for the current Finance documentation (single source of truth).
+> Content below is kept for reference only — **do NOT use for new work**.
+
+---
+
 # FINANCE_WORKFLOW.md — 재무 처리 워크플로우
 
 > 생성일: 2026-04-19 | 소스: routes/finance.ts, accounting-transactions.ts, contract-finance.ts, taxInvoiceService.ts
