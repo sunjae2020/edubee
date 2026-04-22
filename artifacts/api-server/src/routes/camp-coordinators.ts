@@ -401,4 +401,72 @@ router.get(
   }
 );
 
+// ── GET /debug/cc-delegation (super_admin / admin only) ───────────────────
+// Diagnoses CC delegation state: user org, delegations, package schemas
+router.get(
+  "/debug/cc-delegation",
+  authenticate,
+  requireRole("super_admin", "admin"),
+  async (req, res) => {
+    try {
+      const { userId } = req.query as { userId?: string };
+
+      // 1. Resolve the user being diagnosed
+      let targetUserId = userId ?? req.user!.id;
+      const { staticDb: sDb } = await import("@workspace/db");
+      const { users: usersTable } = await import("@workspace/db/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+      const [targetUser] = await sDb
+        .select({ id: usersTable.id, email: usersTable.email, role: usersTable.role, organisationId: usersTable.organisationId })
+        .from(usersTable)
+        .where(eqFn(usersTable.id, targetUserId))
+        .limit(1);
+
+      if (!targetUser) return res.json({ error: "User not found", userId: targetUserId });
+
+      // 2. Get all delegations for this user's org
+      const orgId = targetUser.organisationId;
+      if (!orgId) return res.json({ user: targetUser, error: "User has no organisationId — delegation lookup impossible" });
+
+      const delegResult = await pool.query(
+        `SELECT pgc.*, o.name AS owner_name, o.subdomain AS owner_subdomain
+         FROM public.package_group_coordinators pgc
+         LEFT JOIN public.organisations o ON o.id = pgc.owner_org_id
+         WHERE pgc.coordinator_org_id = $1
+         ORDER BY pgc.status, pgc.granted_at DESC`,
+        [orgId]
+      );
+
+      // 3. Check package schemas
+      const schemaChecks: Record<string, any> = {};
+      for (const row of delegResult.rows) {
+        const schema = row.owner_subdomain;
+        if (schema && !(schema in schemaChecks)) {
+          try {
+            const pgCheck = await pool.query(
+              `SELECT id, name_en FROM "${schema}".package_groups WHERE id = $1`,
+              [row.package_group_id]
+            );
+            schemaChecks[`${schema}.${row.package_group_id}`] = pgCheck.rows[0] ?? "NOT FOUND";
+          } catch (e: any) {
+            schemaChecks[`${schema}.${row.package_group_id}`] = `SCHEMA ERROR: ${e.message}`;
+          }
+        }
+      }
+
+      return res.json({
+        user: targetUser,
+        orgId,
+        delegations: delegResult.rows,
+        schemaChecks,
+        activeCount: delegResult.rows.filter((r: any) => r.status === "Active" && !r.revoked_at).length,
+        reqUser: req.user,
+      });
+    } catch (err) {
+      console.error("[GET /debug/cc-delegation]", err);
+      return res.status(500).json({ error: String(err) });
+    }
+  }
+);
+
 export default router;

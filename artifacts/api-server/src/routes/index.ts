@@ -94,25 +94,14 @@ router.use(tenantResolver);
 // AsyncLocalStorage context에서 요청을 실행 → 모든 db 쿼리가 tenant schema 사용.
 // schema 미존재 → public schema 사용 (기존 동작 유지)
 //
-// camp_coordinator 예외: 자체 org 스키마는 비어있음 (캠프 데이터 없음).
-// JWT에서 role을 감지해 MASTER_TENANT 스키마로 라우팅.
-const MASTER_TENANT_SCHEMA = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
+// camp_coordinator 예외: 자체 org 스키마는 비어있음 — camp 데이터는 owner(위임한) 테넌트 스키마에 있음.
+// • 직접 로그인(CC JWT): x-view-as가 없으므로 subdomain = tenantResolver가 감지한 subdomain 그대로 사용.
+//   (CC는 owner tenant 서브도메인으로 접근 불가하므로 공용 public 스키마 또는 현재 subdomain 사용)
+// • View-As(admin JWT + x-view-as-user-id): JWT가 admin이므로 subdomain = admin의 tenant subdomain.
+//   Owner tenant 데이터에 정확히 접근됨 — 별도 처리 불필요.
+// 기존 MASTER_TENANT 하드코딩 로직 제거.
 router.use(async (req: Request, res: Response, next: NextFunction) => {
-  let subdomain = (req as any).tenant?.subdomain as string | undefined;
-
-  // camp_coordinator: JWT role 감지 → MASTER_TENANT 스키마 사용
-  const authHeader = req.headers.authorization;
-  if (authHeader?.startsWith("Bearer ") && process.env.JWT_SECRET) {
-    try {
-      const decoded = jwt.verify(authHeader.split(" ")[1], process.env.JWT_SECRET) as any;
-      if (decoded?.role === "camp_coordinator") {
-        subdomain = MASTER_TENANT_SCHEMA;
-      }
-    } catch {
-      // 토큰 검증 실패 시 기존 subdomain 사용
-    }
-  }
-
+  const subdomain = (req as any).tenant?.subdomain as string | undefined;
   if (!subdomain) return next();
   try {
     const schemaExists = await tenantSchemaExists(subdomain, pool);
