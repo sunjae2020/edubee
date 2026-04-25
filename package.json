@@ -18,5 +18,16 @@
     "@rollup/rollup-darwin-arm64": "^4.60.2",
     "lightningcss-darwin-arm64": "^1.32.0",
     "xlsx": "^0.18.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "protobufjs": ">=7.5.5"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "lightningcss",
+      "protobufjs",
+      "@rollup/rollup-darwin-arm64"
+    ]
   }
 }
