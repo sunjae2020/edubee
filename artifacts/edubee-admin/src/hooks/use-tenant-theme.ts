@@ -4,6 +4,7 @@ export interface TenantTheme {
   organisationId: string | null;
   companyName:    string;
   logoUrl:        string | null;
+  logoDarkUrl:    string | null;
   faviconUrl:     string | null;
   primaryColor:   string;
   secondaryColor: string;
@@ -18,6 +19,7 @@ export const DEFAULT_THEME: TenantTheme = {
   organisationId: null,
   companyName:    "Edubee CRM",
   logoUrl:        null,
+  logoDarkUrl:    null,
   faviconUrl:     null,
   primaryColor:   "#F5821F",
   secondaryColor: "#1C1917",

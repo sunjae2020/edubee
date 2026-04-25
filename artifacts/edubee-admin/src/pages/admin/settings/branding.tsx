@@ -186,8 +186,9 @@ export default function Branding() {
       applyThemeToDom({
         organisationId: null,
         companyName:    branding?.companyName ?? "",
-        logoUrl:        variables.logoUrl   ?? branding?.logoUrl   ?? null,
-        faviconUrl:     variables.faviconUrl ?? branding?.faviconUrl ?? null,
+        logoUrl:        variables.logoUrl     ?? branding?.logoUrl     ?? null,
+        logoDarkUrl:    variables.logoDarkUrl ?? branding?.logoDarkUrl ?? null,
+        faviconUrl:     variables.faviconUrl  ?? branding?.faviconUrl  ?? null,
         primaryColor:   variables.primaryColor   ?? branding?.primaryColor   ?? "var(--e-orange)",
         secondaryColor: variables.secondaryColor ?? branding?.secondaryColor ?? "#1C1917",
         accentColor:    variables.accentColor    ?? branding?.accentColor    ?? "var(--e-orange-lt)",
@@ -230,6 +231,11 @@ export default function Branding() {
   const logoMutation = useMutation({
     mutationFn: (file: File) =>
       uploadFile(file, "/api/settings/branding/logo", "logoBase64", "logoUrl", "logoUrl"),
+  });
+
+  const logoDarkMutation = useMutation({
+    mutationFn: (file: File) =>
+      uploadFile(file, "/api/settings/branding/logo-dark", "logoDarkBase64", "logoDarkUrl", "logoDarkUrl"),
   });
 
   const faviconMutation = useMutation({
@@ -276,9 +282,9 @@ export default function Branding() {
 
       {/* Logo & Favicon Upload */}
       <Card title="Logo & Favicon" icon={Palette}>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-3 gap-6">
           <UploadZone
-            label="Logo"
+            label="Logo (Light)"
             hint="PNG, JPG, SVG, WEBP — max 2MB"
             accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
             previewHeight="h-28"
@@ -294,6 +300,39 @@ export default function Branding() {
               colorMutation.mutate({ logoUrl: url });
             }}
           />
+          <div className="space-y-2">
+            <div className="rounded-xl border border-[#E8E6E2] overflow-hidden">
+              <div className="px-3 py-1.5 flex items-center gap-1.5 border-b border-[#E8E6E2]" style={{ background: "#131211" }}>
+                <Moon size={10} style={{ color: "#A8A29E" }} />
+                <span className="text-[10px] font-medium" style={{ color: "#A8A29E" }}>Dark background preview</span>
+              </div>
+              <div className="h-16 flex items-center justify-center" style={{ background: "#0F0E0D" }}>
+                {merged.logoDarkUrl
+                  ? <img src={merged.logoDarkUrl} alt="Dark logo preview" className="max-h-10 max-w-full object-contain" />
+                  : merged.logoUrl
+                    ? <img src={merged.logoUrl} alt="Logo on dark" className="max-h-10 max-w-full object-contain opacity-60" />
+                    : <span className="text-[10px]" style={{ color: "#57534E" }}>No dark logo set</span>
+                }
+              </div>
+            </div>
+            <UploadZone
+              label="Logo (Dark)"
+              hint="PNG, SVG with transparency — max 2MB"
+              accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+              previewHeight="h-0 hidden"
+              value={null}
+              isPending={logoDarkMutation.isPending}
+              onFile={(file) => logoDarkMutation.mutate(file)}
+              onClear={() => {
+                setForm(p => ({ ...p, logoDarkUrl: "" }));
+                colorMutation.mutate({ logoDarkUrl: null });
+              }}
+              onUrl={(url) => {
+                setForm(p => ({ ...p, logoDarkUrl: url }));
+                colorMutation.mutate({ logoDarkUrl: url });
+              }}
+            />
+          </div>
           <UploadZone
             label="Favicon"
             hint="ICO or PNG 32×32px — max 500KB"
@@ -427,8 +466,8 @@ export default function Branding() {
                 <div className="w-36 shrink-0 flex flex-col" style={{ background: "#0F0E0D", borderRight: "1px solid #393532" }}>
                   {/* Logo area */}
                   <div className="h-10 flex items-center px-3" style={{ background: "#181614", borderBottom: "1px solid #393532" }}>
-                    {merged.logoUrl
-                      ? <img src={merged.logoUrl} alt="logo" className="h-5 object-contain" />
+                    {(merged.logoDarkUrl || merged.logoUrl)
+                      ? <img src={merged.logoDarkUrl || merged.logoUrl} alt="logo" className="h-5 object-contain" />
                       : <div className="h-5 w-16 rounded" style={{ background: primary, opacity: 0.85 }} />
                     }
                   </div>

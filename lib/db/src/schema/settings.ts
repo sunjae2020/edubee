@@ -44,6 +44,7 @@ export const organisations = pgTable("organisations", {
 
   // ── New: Branding ─────────────────────────────────────────────────────────
   logoUrl:        text("logo_url"),
+  logoDarkUrl:    text("logo_dark_url"),
   faviconUrl:     text("favicon_url"),
   primaryColor:   varchar("primary_color",   { length: 20  }).default("#F5821F"),
   secondaryColor: varchar("secondary_color", { length: 20  }).default("#1C1917"),

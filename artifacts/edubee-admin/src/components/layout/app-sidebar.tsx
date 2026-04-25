@@ -512,6 +512,17 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
   const { viewAsRole, viewAsUser, isImpersonating } = useViewAs();
   const tenantTheme                  = useTenantThemeCtx();
 
+  const [isDarkMode, setIsDarkMode] = React.useState(() =>
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark")
+  );
+  React.useEffect(() => {
+    const obs = new MutationObserver(() =>
+      setIsDarkMode(document.documentElement.classList.contains("dark"))
+    );
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
   const effectiveRole   = viewAsRole ?? viewAsUser?.role ?? user?.role ?? "consultant";
   const isSA            = effectiveRole === "super_admin";
   const isCC            = effectiveRole === "camp_coordinator";
@@ -532,7 +543,7 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
   });
 
   const ownerBrand = isDelegatedPath ? (delegationData?.data?.[0] ?? null) : null;
-  const displayLogoUrl    = ownerBrand?.ownerLogoUrl    ?? tenantTheme.logoUrl;
+  const displayLogoUrl    = ownerBrand?.ownerLogoUrl    ?? (isDarkMode ? (tenantTheme.logoDarkUrl || tenantTheme.logoUrl) : tenantTheme.logoUrl);
   const displayFaviconUrl = ownerBrand?.ownerFaviconUrl ?? tenantTheme.faviconUrl;
   const displayName       = ownerBrand?.ownerOrgName    ?? tenantTheme.companyName;
 

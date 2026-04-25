@@ -163,6 +163,7 @@ router.get("/branding", ...anyUser, async (req, res) => {
     if (!org) return res.status(404).json({ error: "Organisation not found" });
     return res.json({
       logoUrl:        org.logoUrl,
+      logoDarkUrl:    (org as any).logoDarkUrl ?? null,
       faviconUrl:     org.faviconUrl,
       primaryColor:   org.primaryColor,
       secondaryColor: org.secondaryColor,
@@ -180,12 +181,13 @@ router.put("/branding", ...settingsAccess, async (req, res) => {
     const org = await getOrgForReq(req);
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
-    const { logoUrl, faviconUrl, primaryColor, secondaryColor, accentColor, customCss } = req.body;
+    const { logoUrl, logoDarkUrl, faviconUrl, primaryColor, secondaryColor, accentColor, customCss } = req.body;
 
     const [updated] = await db
       .update(organisations)
       .set({
         ...(logoUrl        !== undefined && { logoUrl }),
+        ...(logoDarkUrl    !== undefined && { logoDarkUrl } as any),
         ...(faviconUrl     !== undefined && { faviconUrl }),
         ...(primaryColor   !== undefined && { primaryColor }),
         ...(secondaryColor !== undefined && { secondaryColor }),
@@ -470,6 +472,50 @@ router.post("/branding/logo", ...settingsAccess, async (req, res) => {
     return res.json({ success: true, logoUrl: logoBase64, message: "로고가 저장됐습니다." });
   } catch (err) {
     console.error("[POST /branding/logo]", err);
+    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /branding/logo-dark : 다크모드 로고 업로드
+// Body: { logoDarkBase64: "data:image/png;base64,..." }
+// ─────────────────────────────────────────────────────────────
+router.post("/branding/logo-dark", ...settingsAccess, async (req, res) => {
+  try {
+    const { logoDarkBase64 } = req.body;
+    const org = await getOrgForReq(req);
+    if (!org) return res.status(404).json({ message: "Organisation not found" });
+
+    if (!logoDarkBase64) {
+      return res.status(400).json({ message: "다크 로고 이미지 데이터가 없습니다." });
+    }
+
+    const base64Regex = /^data:image\/(png|jpeg|jpg|svg\+xml|webp);base64,/;
+    if (!base64Regex.test(logoDarkBase64)) {
+      return res.status(400).json({
+        message: "PNG, JPG, SVG, WEBP 형식의 이미지만 업로드 가능합니다.",
+      });
+    }
+
+    const base64Data     = logoDarkBase64.split(",")[1] ?? "";
+    const estimatedBytes = Math.ceil((base64Data.length * 3) / 4);
+    const MAX_BYTES      = 2 * 1024 * 1024;
+
+    if (estimatedBytes > MAX_BYTES) {
+      return res.status(400).json({
+        message: "로고 파일은 2MB 이하여야 합니다.",
+        estimatedSize: `${(estimatedBytes / 1024).toFixed(0)}KB`,
+      });
+    }
+
+    await db
+      .update(organisations)
+      .set({ logoDarkUrl: logoDarkBase64, modifiedOn: new Date() } as any)
+      .where(eq(organisations.id, org.id));
+
+    return res.json({ success: true, logoDarkUrl: logoDarkBase64, message: "다크 로고가 저장됐습니다." });
+  } catch (err) {
+    console.error("[POST /branding/logo-dark]", err);
     return res.status(500).json({ message: "서버 오류가 발생했습니다." });
   }
 });
@@ -891,6 +937,7 @@ router.get("/theme", async (req, res) => {
       organisationId:  org.id,
       companyName:     org.name,
       logoUrl:         org.logoUrl        ?? null,
+      logoDarkUrl:     (org as any).logoDarkUrl ?? null,
       faviconUrl:      org.faviconUrl     ?? null,
       primaryColor:    org.primaryColor   ?? "#F5821F",
       secondaryColor:  org.secondaryColor ?? "#1C1917",
