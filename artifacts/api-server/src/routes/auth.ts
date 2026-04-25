@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import rateLimit from "express-rate-limit";
 import { authenticate } from "../middleware/authenticate.js";
-import { sendWelcomeEmail, sendPasswordResetEmail } from "../services/emailService.js";
+import { sendWelcomeEmail, sendPasswordResetEmail, sendAccountLockedEmail } from "../services/emailService.js";
 import { provisionTenantSchema } from "../seeds/provision-tenant.js";
 import { onboardTenant } from "../services/onboardingService.js";
 import { runWithTenantSchema } from "@workspace/db/tenant-context";
@@ -139,9 +139,62 @@ router.post("/login", loginLimiter, async (req, res) => {
     const valid = await bcrypt.compare(password, staffUser.passwordHash);
     if (!valid) {
       const attempts = (staffUser.failedLoginAttempts ?? 0) + 1;
-      const lockData = attempts >= MAX_FAILED ? { lockedUntil: new Date(Date.now() + LOCK_MINUTES * 60_000) } : {};
-      await staticDb.update(users).set({ failedLoginAttempts: attempts, ...lockData }).where(eq(users.id, staffUser.id));
+      const justLocked = attempts >= MAX_FAILED;
+      const lockedUntil = justLocked ? new Date(Date.now() + LOCK_MINUTES * 60_000) : undefined;
+      await staticDb.update(users)
+        .set({ failedLoginAttempts: attempts, ...(justLocked ? { lockedUntil } : {}) })
+        .where(eq(users.id, staffUser.id));
       await writeAuthLog("staff", staffUser.id, normalizedEmail, "login_fail", ip, ua);
+
+      if (justLocked) {
+        // Generate a password reset token so the lockout email can serve as an immediate unlock link
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        await staticDb.update(users)
+          .set({ passwordResetToken: resetToken, passwordResetExpires: resetExpires })
+          .where(eq(users.id, staffUser.id));
+
+        // Resolve reset URL (same logic as forgot-password)
+        let baseUrl = process.env.APP_URL ?? "";
+        if (staffUser.organisationId) {
+          try {
+            const [org] = await staticDb
+              .select({ subdomain: organisations.subdomain, name: organisations.name })
+              .from(organisations)
+              .where(eq(organisations.id, staffUser.organisationId))
+              .limit(1);
+            if (org?.subdomain) baseUrl = `https://${org.subdomain}.edubee.co`;
+          } catch {}
+        }
+        if (!baseUrl) {
+          const origin = req.get("origin") ?? req.get("referer") ?? "";
+          try { if (origin) baseUrl = new URL(origin).origin; } catch {}
+        }
+        const resetUrl = `${baseUrl}/admin/reset-password?token=${resetToken}`;
+
+        let orgName = "Edubee CRM";
+        if (staffUser.organisationId) {
+          try {
+            const [org] = await staticDb.select({ name: organisations.name }).from(organisations)
+              .where(eq(organisations.id, staffUser.organisationId)).limit(1);
+            if (org?.name) orgName = org.name;
+          } catch {}
+        }
+
+        sendAccountLockedEmail({
+          toEmail:     normalizedEmail,
+          fullName:    staffUser.fullName ?? normalizedEmail,
+          resetUrl,
+          orgName,
+          lockMinutes: LOCK_MINUTES,
+        }).catch(err => console.error("[AccountLocked] Email send failed:", err));
+
+        return res.status(429).json({
+          error: "Locked",
+          message: `Account locked after too many failed attempts. An unlock link has been sent to your email. The lock will expire in ${LOCK_MINUTES} minutes.`,
+        });
+      }
+
       return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
     }
 

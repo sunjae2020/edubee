@@ -471,6 +471,114 @@ export async function sendPasswordResetEmail(params: {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Account Locked Email (sent when account is locked due to too many failed logins)
+// ─────────────────────────────────────────────────────────────
+export async function sendAccountLockedEmail(params: {
+  toEmail:   string;
+  fullName:  string;
+  resetUrl:  string;
+  orgName:   string;
+  lockMinutes: number;
+}): Promise<{ success: boolean; error?: string }> {
+  if (!EMAIL_ENABLED) {
+    console.log('[EMAIL DISABLED] Skipping account locked email:', params.toEmail);
+    return { success: true };
+  }
+
+  const cfg = await getEmailConfig();
+  if (!cfg) return { success: false, error: 'Resend not configured' };
+
+  const { toEmail, fullName, resetUrl, orgName, lockMinutes } = params;
+
+  try {
+    const { error } = await cfg.resend.emails.send({
+      from:    `${cfg.fromName} <${cfg.fromEmail}>`,
+      to:      toEmail,
+      subject: `[${orgName}] Account locked — Reset your password to unlock`,
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Account Locked</title>
+</head>
+<body style="margin:0;padding:0;background:#FAFAF9;font-family:Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table width="600" cellpadding="0" cellspacing="0"
+               style="background:#FFFFFF;border-radius:12px;border:1px solid #E8E6E2;overflow:hidden;">
+          <tr>
+            <td style="background:#DC2626;padding:32px;text-align:center;">
+              <div style="font-size:36px;margin-bottom:8px;">🔒</div>
+              <div style="font-size:22px;font-weight:700;color:#FFFFFF;">Account Locked</div>
+              <div style="font-size:14px;color:rgba(255,255,255,0.85);margin-top:6px;">${orgName}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 48px;">
+              <h2 style="margin:0 0 12px;font-size:20px;font-weight:600;color:#1C1917;">
+                Your account has been temporarily locked
+              </h2>
+              <p style="margin:0 0 16px;font-size:15px;color:#57534E;line-height:1.7;">
+                Hi <strong style="color:#1C1917;">${fullName}</strong>,<br>
+                Your account (<strong>${toEmail}</strong>) has been locked after too many failed login attempts.
+                It will automatically unlock in <strong>${lockMinutes} minutes</strong>.
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;color:#57534E;line-height:1.7;">
+                To unlock your account immediately and set a new password, click the button below:
+              </p>
+              <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+                <tr>
+                  <td style="border-radius:8px;background:#F5821F;">
+                    <a href="${resetUrl}"
+                       style="display:inline-block;padding:14px 32px;font-size:15px;
+                              font-weight:600;color:#FFFFFF;text-decoration:none;">
+                      Unlock Account &amp; Reset Password →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <div style="background:#FEF2F2;border-radius:8px;padding:16px 20px;border-left:4px solid #DC2626;margin-bottom:24px;">
+                <p style="margin:0;font-size:13px;color:#991B1B;line-height:1.6;">
+                  ⚠️ If you did not attempt to log in, your account may be at risk.<br>
+                  Please reset your password immediately and contact your administrator.
+                </p>
+              </div>
+              <p style="margin:0;font-size:12px;color:#A8A29E;">
+                This reset link expires in 1 hour. If you didn't request this, you can safely ignore this email.<br><br>
+                If the button doesn't work, copy this link:<br>
+                <span style="color:#F5821F;word-break:break-all;">${resetUrl}</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#F4F3F1;padding:20px 48px;border-top:1px solid #E8E6E2;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#A8A29E;">© 2026 Edubee CRM · This is an automated security alert</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+    });
+
+    if (error) {
+      console.error('[RESEND ERROR] Account locked email:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('[EMAIL SENT] Account locked notification:', toEmail);
+    return { success: true };
+  } catch (err) {
+    console.error('[EMAIL EXCEPTION] Account locked:', err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // Camp Onboard Welcome Email (sent when a new camp org signs up)
 // ─────────────────────────────────────────────────────────────
 export async function sendCampOnboardWelcomeEmail(params: {

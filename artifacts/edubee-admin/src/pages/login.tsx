@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, ArrowRight, Loader2, MonitorCheck } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2, MonitorCheck, LockKeyhole } from "lucide-react";
 import { LanguageSwitcher } from "@/components/public/language-switcher";
 import { useTenantThemeCtx } from "@/hooks/use-tenant-theme";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
@@ -25,6 +25,8 @@ export default function Login() {
   const theme = useTenantThemeCtx();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isAccountLocked, setIsAccountLocked] = useState(false);
+  const [lockedMessage, setLockedMessage] = useState("");
   const [, setLocation] = useLocation();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -47,9 +49,17 @@ export default function Login() {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsLoading(true);
+      setIsAccountLocked(false);
       await login(data);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Login failed", description: error.message || "Invalid credentials." });
+      const msg: string = error.message || "";
+      const isLocked = /locked/i.test(msg) || error.status === 429;
+      if (isLocked) {
+        setIsAccountLocked(true);
+        setLockedMessage(msg.replace(/^HTTP \d+ ?:?\s*/i, ""));
+      } else {
+        toast({ variant: "destructive", title: "Login failed", description: msg || "Invalid credentials." });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -146,6 +156,37 @@ export default function Login() {
                   Forgot password?
                 </Link>
               </div>
+
+              {isAccountLocked && (
+                <div style={{
+                  background: "#FEF2F2",
+                  border: "1px solid #FECACA",
+                  borderLeft: "4px solid #DC2626",
+                  borderRadius: "8px",
+                  padding: "16px",
+                }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                    <LockKeyhole style={{ width: "18px", height: "18px", color: "#DC2626", flexShrink: 0, marginTop: "2px" }} />
+                    <div>
+                      <p style={{ margin: "0 0 6px", fontSize: "13px", fontWeight: 600, color: "#991B1B" }}>
+                        계정이 잠겼습니다 (Account Locked)
+                      </p>
+                      <p style={{ margin: "0 0 10px", fontSize: "12px", color: "#7F1D1D", lineHeight: 1.6 }}>
+                        {lockedMessage || "비밀번호 입력 실패 횟수 초과로 계정이 잠겼습니다. 이메일로 잠금 해제 링크를 보내드렸습니다."}
+                      </p>
+                      <Link href="/forgot-password" style={{
+                        display: "inline-block",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        color: "#F5821F",
+                        textDecoration: "none",
+                      }}>
+                        비밀번호 재설정으로 즉시 잠금 해제 →
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <button
                 type="submit"

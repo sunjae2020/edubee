@@ -10,10 +10,11 @@ import { generateCampApplicationPdf, CampAppEmailData, fetchTermsForPackageGroup
 
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"];
+const READ_ROLES = [...ADMIN_ROLES, "consultant", "finance", "admission", "team_manager"];
 const MASTER_TENANT = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
 const VALID_STATUSES = ["submitted", "reviewing", "quoted", "confirmed", "cancelled"] as const;
 
-router.get("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/camp-applications", authenticate, requireRole(...READ_ROLES), async (req, res) => {
   const isCC = (req.user as any)?.role === "camp_coordinator";
 
   const handler = async () => {
@@ -75,7 +76,7 @@ router.get("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), asyn
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-router.get("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/camp-applications/:id", authenticate, requireRole(...READ_ROLES), async (req, res) => {
   try {
     if (!UUID_RE.test(req.params.id as string))
       return res.status(400).json({ error: "Invalid application ID format" });
@@ -134,7 +135,7 @@ router.get("/camp-applications/:id", authenticate, requireRole(...ADMIN_ROLES), 
 });
 
 // GET /api/camp-applications/:id/pdf — generate and download PDF
-router.get("/camp-applications/:id/pdf", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+router.get("/camp-applications/:id/pdf", authenticate, requireRole(...READ_ROLES), async (req, res) => {
   try {
     if (!UUID_RE.test(req.params.id as string))
       return res.status(400).json({ error: "Invalid application ID format" });
