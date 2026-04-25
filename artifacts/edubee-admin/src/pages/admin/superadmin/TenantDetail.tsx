@@ -364,7 +364,7 @@ export default function TenantDetail() {
       toast({ title: "Tenant updated" });
       qc.invalidateQueries({ queryKey: ["tenant", id] });
       qc.invalidateQueries({ queryKey: ["superadmin-tenants"] });
-      // planType 변경 시 테마(features) 재로드 이벤트 발행
+      // Dispatch theme reload event when planType changes
       window.dispatchEvent(new CustomEvent("edubee:plan-changed"));
       setForm(null);
       setDirty(false);
@@ -482,9 +482,9 @@ export default function TenantDetail() {
               sessionStorage.setItem("admin_impersonate_org_id", org.id);
               sessionStorage.setItem("admin_impersonate_org_name", org.name);
               sessionStorage.setItem("edubee_impersonate_return", `/superadmin/tenants/${org.id}`);
-              // React Query 캐시 전체 초기화 → 새 테넌트 데이터로 재fetch
+              // Clear all React Query cache → re-fetch with new tenant data
               qc.clear();
-              // 테마 재로드는 ImpersonationBanner 마운트 시 실행됨 (navigate 이후)
+              // Theme reload runs when ImpersonationBanner mounts (after navigate)
               navigate("/admin/dashboard");
             }}
             className="h-9 px-4 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#E8E6E2] text-[#1C1917] hover:border-(--e-orange) hover:text-(--e-orange) transition-colors"
@@ -681,12 +681,12 @@ export default function TenantDetail() {
                 }
                 <div>
                   <p className="text-sm font-semibold" style={{ color: hasSchema ? "#15803D" : "#C2410C" }}>
-                    {hasSchema ? "격리된 Schema 존재" : "Schema 미생성 (public 공유 중)"}
+                    {hasSchema ? "Isolated Schema Active" : "No Schema (Sharing public)"}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: hasSchema ? "#166534" : "#9A3412" }}>
                     {hasSchema
-                      ? `PostgreSQL schema "${org.subdomain}" — 완전 격리된 전용 DB`
-                      : "아직 전용 schema가 없습니다. 아래 Provision Schema를 클릭하세요."}
+                      ? `PostgreSQL schema "${org.subdomain}" — Fully isolated dedicated DB`
+                      : "No dedicated schema yet. Click Provision Schema below."}
                   </p>
                 </div>
               </div>
@@ -715,7 +715,7 @@ export default function TenantDetail() {
               {hasSchema && (
                 <button
                   onClick={() => {
-                    if (!confirm(`public schema의 "${org.subdomain}" 데이터를 전용 schema로 이전합니다. 계속하시겠습니까?`)) return;
+                    if (!confirm(`Migrate "${org.subdomain}" data from public schema to the dedicated schema. Continue?`)) return;
                     migrate.mutate({ slug: org.subdomain, orgId: org.id });
                   }}
                   disabled={migrate.isPending}
@@ -734,7 +734,7 @@ export default function TenantDetail() {
               {hasSchema && (
                 <button
                   onClick={() => {
-                    if (!confirm("이 테넌트 schema에 마스터 데이터(세금 코드, CoA, 결제 수단 등)를 다시 시드합니다. 계속하시겠습니까?")) return;
+                    if (!confirm("Re-seed master data (tax codes, CoA, payment methods, etc.) into this tenant schema. Continue?")) return;
                     reseed.mutate(org.id);
                   }}
                   disabled={reseed.isPending}
@@ -758,7 +758,7 @@ export default function TenantDetail() {
                   style={{ background: "#F0FDF4", color: "#15803D", border: "1px solid #BBF7D0" }}
                 >
                   <Download size={14} />
-                  DB 백업 다운로드
+                  Download DB Backup
                 </a>
               )}
 
@@ -767,10 +767,10 @@ export default function TenantDetail() {
                 <button
                   onClick={() => {
                     const typed = prompt(
-                      `⚠️ 이 작업은 되돌릴 수 없습니다.\n\n테넌트 "${org.subdomain}"의 모든 운영 데이터가 삭제됩니다.\n(세금 코드 · CoA 등 마스터 데이터는 자동 재시드됩니다)\n\n확인하려면 테넌트 슬러그를 정확히 입력하세요:`
+                      `⚠️ This action is irreversible.\n\nAll operational data for tenant "${org.subdomain}" will be deleted.\n(Master data such as tax codes and CoA will be automatically re-seeded)\n\nTo confirm, enter the tenant slug exactly:`
                     );
                     if (typed !== org.subdomain) {
-                      if (typed !== null) alert("슬러그가 일치하지 않습니다. 취소되었습니다.");
+                      if (typed !== null) alert("Slug does not match. Cancelled.");
                       return;
                     }
                     reset.mutate(org.subdomain);
@@ -790,8 +790,8 @@ export default function TenantDetail() {
 
             {/* Info */}
             <p className="text-xs text-[#A8A29E]">
-              Schema를 프로비저닝하면 이 테넌트만의 전용 PostgreSQL schema가 생성됩니다.
-              이후 데이터는 다른 테넌트와 완전히 분리되며, 백업 다운로드가 가능합니다.
+              Provisioning a schema creates a dedicated PostgreSQL schema for this tenant.
+              Data will be fully isolated from other tenants, and DB backup downloads will be available.
             </p>
           </div>
         </Section>
