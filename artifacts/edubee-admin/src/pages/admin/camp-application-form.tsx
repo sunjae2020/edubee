@@ -7,29 +7,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronDown, ChevronUp, Loader2, Users, GraduationCap, Paperclip, X, FileText, Upload } from "lucide-react";
+import { ChevronLeft, ChevronDown, ChevronUp, Loader2, Users, GraduationCap, Paperclip, X, FileText, Upload, Plus, Trash2 } from "lucide-react";
 import DatePickerInput from "@/components/shared/DatePickerInput";
 import SignaturePad from "@/components/shared/SignaturePad";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // ── Types ───────────────────────────────────────────────────────────────────
-interface AdultParticipant {
+interface Participant {
+  type: "adult" | "child";
+  // Common
   firstName: string;
   lastName: string;
   fullNameNative: string;
+  // Adult-only
   relationship: string;
   phone: string;
   email: string;
   whatsapp: string;
   lineId: string;
   isEmergencyContact: boolean;
-}
-
-interface StudentParticipant {
-  firstName: string;
-  lastName: string;
-  fullNameNative: string;
+  // Child-only
   englishName: string;
   dateOfBirth: string;
   gender: string;
@@ -165,14 +163,11 @@ function DocumentsSection({
   );
 }
 
-const emptyAdult = (): AdultParticipant => ({
-  firstName: "", lastName: "", fullNameNative: "", relationship: "",
-  phone: "", email: "", whatsapp: "", lineId: "", isEmergencyContact: false,
-});
-
-const emptyStudent = (): StudentParticipant => ({
-  firstName: "", lastName: "", fullNameNative: "", englishName: "",
-  dateOfBirth: "", gender: "", nationality: "", passportNumber: "",
+const emptyParticipant = (type: "adult" | "child" = "adult"): Participant => ({
+  type,
+  firstName: "", lastName: "", fullNameNative: "",
+  relationship: "", phone: "", email: "", whatsapp: "", lineId: "", isEmergencyContact: false,
+  englishName: "", dateOfBirth: "", gender: "", nationality: "", passportNumber: "",
   passportExpiry: "", grade: "", schoolName: "", englishLevel: "",
   medicalConditions: "", dietaryRequirements: "", specialNeeds: "",
 });
@@ -212,25 +207,36 @@ const inputCls = "h-9 text-sm border-border focus-visible:ring-(--e-orange)/40 f
 const selectCls = "h-9 w-full rounded-md border border-border px-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-(--e-orange)/40 focus:border-(--e-orange)";
 const textareaCls = "text-sm border-border focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange) resize-none";
 
-// ── Adult Participant Card ───────────────────────────────────────────────────
-function AdultCard({
-  index, data, onChange, isAutoFilled,
-}: { index: number; data: AdultParticipant; onChange: (d: AdultParticipant) => void; isAutoFilled?: boolean }) {
+// ── Unified Participant Card ─────────────────────────────────────────────────
+function ParticipantCard({
+  index, data, onChange, onRemove, isAutoFilled,
+}: {
+  index: number;
+  data: Participant;
+  onChange: (d: Participant) => void;
+  onRemove: () => void;
+  isAutoFilled?: boolean;
+}) {
   const [open, setOpen] = useState(true);
-  const set = (k: keyof AdultParticipant, v: string | boolean) =>
+  const set = <K extends keyof Participant>(k: K, v: Participant[K]) =>
     onChange({ ...data, [k]: v });
+  const thisYear = new Date().getFullYear();
 
   return (
     <div className="rounded-xl border border-border overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-orange-50 hover:bg-orange-100 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-(--e-orange)" />
+      {/* Card Header */}
+      <div className="flex items-center bg-orange-50">
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          className="flex-1 flex items-center gap-2 px-4 py-3 hover:bg-orange-100 transition-colors text-left"
+        >
+          {data.type === "adult"
+            ? <Users className="w-4 h-4 text-(--e-orange)" />
+            : <GraduationCap className="w-4 h-4 text-(--e-orange)" />
+          }
           <span className="text-sm font-semibold text-[#92400E]">
-            Adult {index + 1}
+            Participant {index + 1}
             {data.firstName && ` — ${data.firstName} ${data.lastName}`.trim()}
           </span>
           {isAutoFilled && (
@@ -238,12 +244,50 @@ function AdultCard({
               From Primary Contact
             </span>
           )}
-        </div>
-        {open ? <ChevronUp className="w-4 h-4 text-(--e-orange)" /> : <ChevronDown className="w-4 h-4 text-(--e-orange)" />}
-      </button>
+          {open ? <ChevronUp className="w-4 h-4 text-(--e-orange) ml-auto" /> : <ChevronDown className="w-4 h-4 text-(--e-orange) ml-auto" />}
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="px-3 py-3 text-muted-foreground hover:text-red-500 transition-colors"
+          title="Remove participant"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
 
       {open && (
         <div className="p-4 space-y-4">
+          {/* Type Toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Type</span>
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              <button
+                type="button"
+                onClick={() => set("type", "adult")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                  data.type === "adult"
+                    ? "bg-(--e-orange) text-white"
+                    : "bg-background text-muted-foreground hover:bg-orange-50"
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" /> Adult
+              </button>
+              <button
+                type="button"
+                onClick={() => set("type", "child")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors border-l border-border ${
+                  data.type === "child"
+                    ? "bg-(--e-orange) text-white"
+                    : "bg-background text-muted-foreground hover:bg-orange-50"
+                }`}
+              >
+                <GraduationCap className="w-3.5 h-3.5" /> Child
+              </button>
+            </div>
+          </div>
+
+          {/* Common Name Fields */}
           <div className="grid grid-cols-2 gap-4">
             <Field label="First Name" required>
               <Input className={inputCls} value={data.firstName} onChange={e => set("firstName", e.target.value)} placeholder="e.g. Jane" />
@@ -256,158 +300,116 @@ function AdultCard({
             <Field label="Native Name">
               <Input className={inputCls} value={data.fullNameNative} onChange={e => set("fullNameNative", e.target.value)} placeholder="e.g. 김지수" />
             </Field>
-            <Field label="Relationship to Student">
-              <select className={selectCls} value={data.relationship} onChange={e => set("relationship", e.target.value)}>
-                <option value="">-- Select --</option>
-                <option value="Mother">Mother</option>
-                <option value="Father">Father</option>
-                <option value="Guardian">Guardian</option>
-                <option value="Sibling">Sibling</option>
-                <option value="Relative">Relative</option>
-                <option value="Teacher">Teacher</option>
-                <option value="Other">Other</option>
-              </select>
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Phone">
-              <Input className={inputCls} value={data.phone} onChange={e => set("phone", e.target.value)} placeholder="+82 10-0000-0000" />
-            </Field>
-            <Field label="Email">
-              <Input className={inputCls} type="email" value={data.email} onChange={e => set("email", e.target.value)} placeholder="email@example.com" />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="WhatsApp">
-              <Input className={inputCls} value={data.whatsapp} onChange={e => set("whatsapp", e.target.value)} placeholder="+82 10-0000-0000" />
-            </Field>
-            <Field label="LINE ID">
-              <Input className={inputCls} value={data.lineId} onChange={e => set("lineId", e.target.value)} placeholder="LINE ID" />
-            </Field>
-          </div>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <Checkbox
-              checked={data.isEmergencyContact}
-              onCheckedChange={v => set("isEmergencyContact", !!v)}
-              className="data-[state=checked]:bg-(--e-orange) data-[state=checked]:border-(--e-orange)"
-            />
-            <span className="text-sm text-muted-foreground">Primary Emergency Contact</span>
-          </label>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Student Participant Card ─────────────────────────────────────────────────
-function StudentCard({
-  index, data, onChange,
-}: { index: number; data: StudentParticipant; onChange: (d: StudentParticipant) => void }) {
-  const [open, setOpen] = useState(true);
-  const set = (k: keyof StudentParticipant, v: string) =>
-    onChange({ ...data, [k]: v });
-
-  const thisYear = new Date().getFullYear();
-
-  return (
-    <div className="rounded-xl border border-border overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-orange-50 hover:bg-orange-100 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <GraduationCap className="w-4 h-4 text-(--e-orange)" />
-          <span className="text-sm font-semibold text-[#92400E]">
-            Student {index + 1}
-            {data.firstName && ` — ${data.firstName} ${data.lastName}`.trim()}
-          </span>
-        </div>
-        {open ? <ChevronUp className="w-4 h-4 text-(--e-orange)" /> : <ChevronDown className="w-4 h-4 text-(--e-orange)" />}
-      </button>
-
-      {open && (
-        <div className="p-4 space-y-4">
-          {/* Names */}
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="First Name" required>
-              <Input className={inputCls} value={data.firstName} onChange={e => set("firstName", e.target.value)} placeholder="e.g. Jisu" />
-            </Field>
-            <Field label="Last Name" required>
-              <Input className={inputCls} value={data.lastName} onChange={e => set("lastName", e.target.value)} placeholder="e.g. KIM" />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Native Name">
-              <Input className={inputCls} value={data.fullNameNative} onChange={e => set("fullNameNative", e.target.value)} placeholder="e.g. 김지수" />
-            </Field>
-            <Field label="English Name / Nick">
-              <Input className={inputCls} value={data.englishName} onChange={e => set("englishName", e.target.value)} placeholder="e.g. Jessica" />
-            </Field>
+            {data.type === "child" ? (
+              <Field label="English Name / Nick">
+                <Input className={inputCls} value={data.englishName} onChange={e => set("englishName", e.target.value)} placeholder="e.g. Jessica" />
+              </Field>
+            ) : (
+              <Field label="Relationship to Student">
+                <select className={selectCls} value={data.relationship} onChange={e => set("relationship", e.target.value)}>
+                  <option value="">-- Select --</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Father">Father</option>
+                  <option value="Guardian">Guardian</option>
+                  <option value="Sibling">Sibling</option>
+                  <option value="Relative">Relative</option>
+                  <option value="Teacher">Teacher</option>
+                  <option value="Other">Other</option>
+                </select>
+              </Field>
+            )}
           </div>
 
-          {/* Personal Details */}
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Date of Birth">
-              <DatePickerInput value={data.dateOfBirth} onChange={v => set("dateOfBirth", v)} fromYear={thisYear - 25} toYear={thisYear} />
-            </Field>
-            <Field label="Gender">
-              <select className={selectCls} value={data.gender} onChange={e => set("gender", e.target.value)}>
-                <option value="">-- Select --</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Nationality">
-              <Input className={inputCls} value={data.nationality} onChange={e => set("nationality", e.target.value)} placeholder="e.g. Korean" />
-            </Field>
-            <Field label="English Level">
-              <select className={selectCls} value={data.englishLevel} onChange={e => set("englishLevel", e.target.value)}>
-                <option value="">-- Select --</option>
-                <option value="Beginner">Beginner</option>
-                <option value="Elementary">Elementary</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Upper-Intermediate">Upper-Intermediate</option>
-                <option value="Advanced">Advanced</option>
-              </select>
-            </Field>
-          </div>
+          {/* Adult-specific fields */}
+          {data.type === "adult" && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Phone">
+                  <Input className={inputCls} value={data.phone} onChange={e => set("phone", e.target.value)} placeholder="+82 10-0000-0000" />
+                </Field>
+                <Field label="Email">
+                  <Input className={inputCls} type="email" value={data.email} onChange={e => set("email", e.target.value)} placeholder="email@example.com" />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="WhatsApp">
+                  <Input className={inputCls} value={data.whatsapp} onChange={e => set("whatsapp", e.target.value)} placeholder="+82 10-0000-0000" />
+                </Field>
+                <Field label="LINE ID">
+                  <Input className={inputCls} value={data.lineId} onChange={e => set("lineId", e.target.value)} placeholder="LINE ID" />
+                </Field>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={data.isEmergencyContact}
+                  onCheckedChange={v => set("isEmergencyContact", !!v)}
+                  className="data-[state=checked]:bg-(--e-orange) data-[state=checked]:border-(--e-orange)"
+                />
+                <span className="text-sm text-muted-foreground">Primary Emergency Contact</span>
+              </label>
+            </>
+          )}
 
-          {/* Passport */}
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Passport Number">
-              <Input className={inputCls} value={data.passportNumber} onChange={e => set("passportNumber", e.target.value)} placeholder="Passport No." />
-            </Field>
-            <Field label="Passport Expiry Date">
-              <DatePickerInput value={data.passportExpiry} onChange={v => set("passportExpiry", v)} fromYear={thisYear} toYear={thisYear + 20} />
-            </Field>
-          </div>
-
-          {/* School */}
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="School Name">
-              <Input className={inputCls} value={data.schoolName} onChange={e => set("schoolName", e.target.value)} placeholder="e.g. Seoul Middle School" />
-            </Field>
-            <Field label="Grade / Year">
-              <Input className={inputCls} value={data.grade} onChange={e => set("grade", e.target.value)} placeholder="e.g. Grade 8 / Year 9" />
-            </Field>
-          </div>
-
-          {/* Health */}
-          <div className="grid grid-cols-1 gap-4">
-            <Field label="Medical Conditions / Allergies">
-              <Textarea className={textareaCls} rows={2} value={data.medicalConditions} onChange={e => set("medicalConditions", e.target.value)} placeholder="e.g. Asthma, peanut allergy, EpiPen required..." />
-            </Field>
-            <Field label="Dietary Requirements">
-              <Textarea className={textareaCls} rows={2} value={data.dietaryRequirements} onChange={e => set("dietaryRequirements", e.target.value)} placeholder="e.g. Vegetarian, Halal, Kosher, nut-free..." />
-            </Field>
-            <Field label="Special Needs / Other">
-              <Textarea className={textareaCls} rows={2} value={data.specialNeeds} onChange={e => set("specialNeeds", e.target.value)} placeholder="Any other information..." />
-            </Field>
-          </div>
+          {/* Child-specific fields */}
+          {data.type === "child" && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Date of Birth">
+                  <DatePickerInput value={data.dateOfBirth} onChange={v => set("dateOfBirth", v)} fromYear={thisYear - 25} toYear={thisYear} />
+                </Field>
+                <Field label="Gender">
+                  <select className={selectCls} value={data.gender} onChange={e => set("gender", e.target.value)}>
+                    <option value="">-- Select --</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Nationality">
+                  <Input className={inputCls} value={data.nationality} onChange={e => set("nationality", e.target.value)} placeholder="e.g. Korean" />
+                </Field>
+                <Field label="English Level">
+                  <select className={selectCls} value={data.englishLevel} onChange={e => set("englishLevel", e.target.value)}>
+                    <option value="">-- Select --</option>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Elementary">Elementary</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Upper-Intermediate">Upper-Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Passport Number">
+                  <Input className={inputCls} value={data.passportNumber} onChange={e => set("passportNumber", e.target.value)} placeholder="Passport No." />
+                </Field>
+                <Field label="Passport Expiry Date">
+                  <DatePickerInput value={data.passportExpiry} onChange={v => set("passportExpiry", v)} fromYear={thisYear} toYear={thisYear + 20} />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="School Name">
+                  <Input className={inputCls} value={data.schoolName} onChange={e => set("schoolName", e.target.value)} placeholder="e.g. Seoul Middle School" />
+                </Field>
+                <Field label="Grade / Year">
+                  <Input className={inputCls} value={data.grade} onChange={e => set("grade", e.target.value)} placeholder="e.g. Grade 8 / Year 9" />
+                </Field>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                <Field label="Medical Conditions / Allergies">
+                  <Textarea className={textareaCls} rows={2} value={data.medicalConditions} onChange={e => set("medicalConditions", e.target.value)} placeholder="e.g. Asthma, peanut allergy..." />
+                </Field>
+                <Field label="Dietary Requirements">
+                  <Textarea className={textareaCls} rows={2} value={data.dietaryRequirements} onChange={e => set("dietaryRequirements", e.target.value)} placeholder="e.g. Vegetarian, Halal..." />
+                </Field>
+                <Field label="Special Needs / Other">
+                  <Textarea className={textareaCls} rows={2} value={data.specialNeeds} onChange={e => set("specialNeeds", e.target.value)} placeholder="Any other information..." />
+                </Field>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -433,12 +435,9 @@ export default function AdminCampApplicationForm() {
   const [packageGroupId,  setPackageGroupId]  = useState("");
   const [packageId,       setPackageId]       = useState("");
   const [preferredStart,  setPreferredStart]  = useState("");
-  const [adultCount,      setAdultCount]      = useState(1);
-  const [studentCount,    setStudentCount]    = useState(0);
 
-  // ── Participants
-  const [adults,    setAdults]    = useState<AdultParticipant[]>([]);
-  const [students,  setStudents]  = useState<StudentParticipant[]>([]);
+  // ── Participants (unified)
+  const [participants, setParticipants] = useState<Participant[]>([emptyParticipant("adult")]);
 
   // ── 추가 요구사항
   const [specialReqs,     setSpecialReqs]     = useState("");
@@ -459,44 +458,15 @@ export default function AdminCampApplicationForm() {
   // ── 첨부 문서
   const [stagedFiles,     setStagedFiles]     = useState<StagedFile[]>([]);
 
-  // ── Sync participant arrays with counts
+  // ── Auto-fill Participant 1 (adult) from Primary Contact info
   useEffect(() => {
-    setAdults(prev => {
-      if (adultCount <= 0) return [];
-      if (adultCount > prev.length) {
-        return [...prev, ...Array.from({ length: adultCount - prev.length }, emptyAdult)];
-      }
-      return prev.slice(0, adultCount);
-    });
-  }, [adultCount]);
-
-  // ── Auto-fill Adult 1 from Primary Contact info
-  useEffect(() => {
-    if (adultCount <= 0) return;
-    setAdults(prev => {
-      if (prev.length === 0) return prev;
+    setParticipants(prev => {
+      if (prev.length === 0 || prev[0].type !== "adult") return prev;
       const updated = [...prev];
-      updated[0] = {
-        ...updated[0],
-        firstName: firstName,
-        lastName:  lastName,
-        fullNameNative: originalName,
-        phone:     phone,
-        email:     email,
-      };
+      updated[0] = { ...updated[0], firstName, lastName, fullNameNative: originalName, phone, email };
       return updated;
     });
-  }, [firstName, lastName, originalName, phone, email, adultCount]);
-
-  useEffect(() => {
-    setStudents(prev => {
-      if (studentCount <= 0) return [];
-      if (studentCount > prev.length) {
-        return [...prev, ...Array.from({ length: studentCount - prev.length }, emptyStudent)];
-      }
-      return prev.slice(0, studentCount);
-    });
-  }, [studentCount]);
+  }, [firstName, lastName, originalName, phone, email]);
 
   // ── Package Groups
   const { data: pgResp } = useQuery({
@@ -524,44 +494,39 @@ export default function AdminCampApplicationForm() {
   const submit = useMutation({
     mutationFn: async () => {
       // Build participants array
-      const participantPayload = [
-        // Adults
-        ...adults.map((a, i) => ({
+      const participantPayload = participants.map((p, i) => p.type === "adult" ? ({
           participantType: "adult" as const,
           sequenceOrder: i + 1,
-          fullName: `${a.firstName} ${a.lastName}`.trim(),
-          firstName: a.firstName || undefined,
-          lastName: a.lastName || undefined,
-          fullNameNative: a.fullNameNative || undefined,
-          relationshipToStudent: a.relationship || undefined,
-          phone: a.phone || undefined,
-          email: a.email || undefined,
-          whatsapp: a.whatsapp || undefined,
-          lineId: a.lineId || undefined,
-          isEmergencyContact: a.isEmergencyContact,
-        })),
-        // Students
-        ...students.map((s, i) => ({
+          fullName: `${p.firstName} ${p.lastName}`.trim(),
+          firstName: p.firstName || undefined,
+          lastName: p.lastName || undefined,
+          fullNameNative: p.fullNameNative || undefined,
+          relationshipToStudent: p.relationship || undefined,
+          phone: p.phone || undefined,
+          email: p.email || undefined,
+          whatsapp: p.whatsapp || undefined,
+          lineId: p.lineId || undefined,
+          isEmergencyContact: p.isEmergencyContact,
+        }) : ({
           participantType: "child" as const,
           sequenceOrder: i + 1,
-          fullName: `${s.firstName} ${s.lastName}`.trim(),
-          firstName: s.firstName || undefined,
-          lastName: s.lastName || undefined,
-          fullNameNative: s.fullNameNative || undefined,
-          englishName: s.englishName || undefined,
-          dateOfBirth: s.dateOfBirth || undefined,
-          gender: s.gender || undefined,
-          nationality: s.nationality || undefined,
-          passportNumber: s.passportNumber || undefined,
-          passportExpiry: s.passportExpiry || undefined,
-          grade: s.grade || undefined,
-          schoolName: s.schoolName || undefined,
-          englishLevel: s.englishLevel || undefined,
-          medicalConditions: s.medicalConditions || undefined,
-          dietaryRequirements: s.dietaryRequirements || undefined,
-          specialNeeds: s.specialNeeds || undefined,
-        })),
-      ];
+          fullName: `${p.firstName} ${p.lastName}`.trim(),
+          firstName: p.firstName || undefined,
+          lastName: p.lastName || undefined,
+          fullNameNative: p.fullNameNative || undefined,
+          englishName: p.englishName || undefined,
+          dateOfBirth: p.dateOfBirth || undefined,
+          gender: p.gender || undefined,
+          nationality: p.nationality || undefined,
+          passportNumber: p.passportNumber || undefined,
+          passportExpiry: p.passportExpiry || undefined,
+          grade: p.grade || undefined,
+          schoolName: p.schoolName || undefined,
+          englishLevel: p.englishLevel || undefined,
+          medicalConditions: p.medicalConditions || undefined,
+          dietaryRequirements: p.dietaryRequirements || undefined,
+          specialNeeds: p.specialNeeds || undefined,
+        }));
 
       const appResp = await axios.post(`${BASE}/api/camp-applications`, {
         applicantFirstName:    firstName,
@@ -575,8 +540,8 @@ export default function AdminCampApplicationForm() {
         packageGroupId,
         packageId,
         preferredStartDate:    preferredStart   || undefined,
-        adultCount,
-        studentCount,
+        adultCount:   participants.filter(p => p.type === "adult").length,
+        studentCount: participants.filter(p => p.type === "child").length,
         specialRequirements:   specialReqs  || undefined,
         dietaryRequirements:   dietaryReqs  || undefined,
         medicalConditions:     medicalCond  || undefined,
@@ -635,10 +600,12 @@ export default function AdminCampApplicationForm() {
     submit.mutate();
   };
 
-  const updateAdult = (i: number, d: AdultParticipant) =>
-    setAdults(prev => prev.map((a, idx) => (idx === i ? d : a)));
-  const updateStudent = (i: number, d: StudentParticipant) =>
-    setStudents(prev => prev.map((s, idx) => (idx === i ? d : s)));
+  const updateParticipant = (i: number, d: Participant) =>
+    setParticipants(prev => prev.map((p, idx) => (idx === i ? d : p)));
+  const removeParticipant = (i: number) =>
+    setParticipants(prev => prev.filter((_, idx) => idx !== i));
+  const addParticipant = (type: "adult" | "child") =>
+    setParticipants(prev => [...prev, emptyParticipant(type)]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -732,57 +699,42 @@ export default function AdminCampApplicationForm() {
               </select>
             </Field>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <Field label="Preferred Start Date">
               <DatePickerInput value={preferredStart} onChange={setPreferredStart} fromYear={new Date().getFullYear()} toYear={new Date().getFullYear() + 5} />
-            </Field>
-            <Field label="Adults">
-              <Input
-                type="number" min="0" max="10"
-                value={adultCount}
-                onChange={e => setAdultCount(Math.max(0, Number(e.target.value)))}
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Students">
-              <Input
-                type="number" min="0" max="20"
-                value={studentCount}
-                onChange={e => setStudentCount(Math.max(0, Number(e.target.value)))}
-                className={inputCls}
-              />
             </Field>
           </div>
         </Section>
 
-        {/* ── Dynamic Participants ─────────────────────────────────────────── */}
-        {adults.length > 0 && (
-          <div className="rounded-xl border border-border overflow-hidden">
-            <div className="bg-(--e-orange) text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Adult Participants ({adults.length})
-            </div>
-            <div className="p-4 space-y-3">
-              {adults.map((a, i) => (
-                <AdultCard key={i} index={i} data={a} onChange={d => updateAdult(i, d)} isAutoFilled={i === 0} />
-              ))}
+        {/* ── Participants ─────────────────────────────────────────────────── */}
+        <div className="rounded-xl border border-border overflow-hidden">
+          <div className="bg-(--e-orange) text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Participants ({participants.length})
+          </div>
+          <div className="p-4 space-y-3">
+            {participants.map((p, i) => (
+              <ParticipantCard
+                key={i}
+                index={i}
+                data={p}
+                onChange={d => updateParticipant(i, d)}
+                onRemove={() => removeParticipant(i)}
+                isAutoFilled={i === 0 && p.type === "adult"}
+              />
+            ))}
+            <div className="flex gap-2 pt-1">
+              <Button type="button" variant="outline" size="sm" className="gap-1.5 flex-1"
+                onClick={() => addParticipant("adult")}>
+                <Plus className="w-3.5 h-3.5" /> Add Adult
+              </Button>
+              <Button type="button" variant="outline" size="sm" className="gap-1.5 flex-1"
+                onClick={() => addParticipant("child")}>
+                <Plus className="w-3.5 h-3.5" /> Add Child
+              </Button>
             </div>
           </div>
-        )}
-
-        {students.length > 0 && (
-          <div className="rounded-xl border border-border overflow-hidden">
-            <div className="bg-(--e-orange) text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
-              <GraduationCap className="w-4 h-4" />
-              Student Participants ({students.length})
-            </div>
-            <div className="p-4 space-y-3">
-              {students.map((s, i) => (
-                <StudentCard key={i} index={i} data={s} onChange={d => updateStudent(i, d)} />
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* 추가 요구사항 */}
         <Section title="General Requirements">
