@@ -348,9 +348,9 @@ export default function PackageGroupDetail() {
   const orgSearchResults: any[] = orgSearchResp?.data ?? [];
 
   const COORD_PRESETS = [
-    { label: "운영 전담", perms: { view: true, edit: true, soft_delete: true, manage_finance: false } },
-    { label: "운영 + 재무 읽기", perms: { view: true, edit: true, soft_delete: true, manage_finance: false } },
-    { label: "운영 + 재무 관리", perms: { view: true, edit: true, soft_delete: true, manage_finance: true } },
+    { label: "Operations Only", perms: { view: true, edit: true, soft_delete: true, manage_finance: false } },
+    { label: "Operations + Finance Read", perms: { view: true, edit: true, soft_delete: true, manage_finance: false } },
+    { label: "Operations + Finance Manage", perms: { view: true, edit: true, soft_delete: true, manage_finance: true } },
   ];
 
   const assignCoordinator = useMutation({
