@@ -17,7 +17,7 @@ import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { format } from "date-fns";
 
-const PAGE_SIZE = 12;
+
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 interface PackageGroup {
@@ -125,6 +125,7 @@ export default function PackageGroups() {
   const [statusFilter, setStatusFilter] = useState("active");
   const [typeTab, setTypeTab] = useState("all");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<PackageGroup | null>(null);
   const [form, setForm] = useState<GroupForm>(emptyGroupForm);
@@ -397,7 +398,7 @@ export default function PackageGroups() {
     return matchSearch && matchStatus && matchType;
   });
 
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const getCountryInfo = (code?: string | null) => COUNTRIES.find(c => c.code === code);
 
@@ -569,7 +570,7 @@ export default function PackageGroups() {
         </div>
       )}
 
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={filtered.length} onChange={setPage} />
+      <ListPagination page={page} pageSize={pageSize} total={filtered.length} onChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} label="packages" />
 
       {/* Create/Edit Modal */}
       <Dialog open={showModal} onOpenChange={o => !o && closeModal()}>

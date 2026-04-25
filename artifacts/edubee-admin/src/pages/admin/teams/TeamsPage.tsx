@@ -55,7 +55,6 @@ const EMPTY_FORM = {
   name: "", description: "", type: "agent_team", color: "var(--e-orange)", teamLeadId: "", status: "active",
 };
 
-const PAGE_SIZE = 20;
 
 export default function TeamsPage() {
   const { toast } = useToast();
@@ -69,17 +68,18 @@ export default function TeamsPage() {
   const [typeFilter,  setTypeFilter]  = useState("all");
   const [statusFilter,setStatusFilter]= useState("all");
   const [page,        setPage]        = useState(1);
+  const [pageSize,    setPageSize]    = useState(20);
   const [showCreate,  setShowCreate]  = useState(false);
   const [form,        setForm]        = useState(EMPTY_FORM);
 
-  const queryKey = ["teams", { search, type: typeFilter, status: statusFilter, page, pageSize: PAGE_SIZE }];
+  const queryKey = ["teams", { search, type: typeFilter, status: statusFilter, page, pageSize }];
 
   const { data, isLoading } = useQuery<TeamsResponse>({
     queryKey,
     queryFn: () => {
       const params = new URLSearchParams();
       params.set("page",     String(page));
-      params.set("pageSize", String(PAGE_SIZE));
+      params.set("pageSize", String(pageSize));
       if (search                   ) params.set("search", search);
       if (typeFilter   !== "all"   ) params.set("type",   typeFilter);
       if (statusFilter !== "all"   ) params.set("status", statusFilter);
@@ -322,13 +322,12 @@ export default function TeamsPage() {
       <div className="px-6 py-3 border-t border-[var(--e-border)] bg-[var(--e-bg-page)]">
         <ListPagination
           page={page}
-          pageSize={PAGE_SIZE}
+          pageSize={pageSize}
           total={total}
           onChange={setPage}
+          onPageSizeChange={v => { setPageSize(v); setPage(1); }}
+          label="teams"
         />
-        {totalPages <= 1 && total > 0 && (
-          <p className="text-xs text-muted-foreground">{total.toLocaleString()} team{total !== 1 ? "s" : ""}</p>
-        )}
       </div>
 
       {/* ── Create Dialog ───────────────────────────────────────────────── */}

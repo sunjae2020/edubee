@@ -16,7 +16,6 @@ import { useBulkSelect } from "@/hooks/use-bulk-select";
 import { BulkActionBar } from "@/components/common/BulkActionBar";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const PAGE_SIZE = 10;
 
 const SERVICE_TYPES = [
   { key: "all",           label: "All" },
@@ -80,6 +79,7 @@ export default function Applications() {
   const [serviceType, setServiceType] = useState("all");
   const [appStatus, setAppStatus] = useState("all");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const { data: stats } = useQuery({
     queryKey: ["applications-stats"],
@@ -89,11 +89,11 @@ export default function Applications() {
 
   useEffect(() => { setPage(1); }, [sortBy, sortDir]);
 
-  const queryKey = ["applications", { search, serviceType, appStatus, page, sortBy, sortDir }];
+  const queryKey = ["applications", { search, serviceType, appStatus, page, pageSize, sortBy, sortDir }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
-      const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) params.set("search", search);
       if (serviceType !== "all") params.set("applicationType", serviceType);
       if (appStatus !== "all") params.set("appStatus", appStatus);
@@ -203,7 +203,7 @@ export default function Applications() {
           </thead>
           <tbody className="divide-y divide-border">
             {isLoading ? (
-              [...Array(PAGE_SIZE)].map((_, i) => (
+              [...Array(pageSize)].map((_, i) => (
                 <tr key={i}>{[...Array(isSA ? 7 : 6)].map((_, j) => (
                   <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                 ))}</tr>
@@ -255,7 +255,7 @@ export default function Applications() {
         </table>
       </div>
 
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+      <ListPagination page={page} pageSize={pageSize} total={total} onChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} label="applications" />
     </div>
   );
 }

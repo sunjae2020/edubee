@@ -15,7 +15,6 @@ import { Search, Package as PackageIcon, Globe, CheckCircle2, Clock, ChevronRigh
 import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const PAGE_SIZE = 20;
 
 const COUNTRY_FLAG: Record<string, string> = {
   AU: "🇦🇺", PH: "🇵🇭", SG: "🇸🇬", TH: "🇹🇭", KR: "🇰🇷", JP: "🇯🇵", GB: "🇬🇧", US: "🇺🇸",
@@ -126,6 +125,7 @@ export default function Packages() {
   const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // ── Add dialog state ──────────────────────────────────────────────
   const [showAdd, setShowAdd] = useState(false);
@@ -170,11 +170,11 @@ export default function Packages() {
   const listGroup = groups.find(g => g.id === selectedGroupId);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["packages-list", search, selectedGroupId, statusFilter, page],
+    queryKey: ["packages-list", search, selectedGroupId, statusFilter, page, pageSize],
     queryFn: () => {
       const params = new URLSearchParams({
         page: String(page),
-        limit: String(PAGE_SIZE),
+        limit: String(pageSize),
         ...(search ? { search } : {}),
         ...(selectedGroupId !== "all" ? { packageGroupId: selectedGroupId } : {}),
         ...(statusFilter !== "all" ? { status: statusFilter } : {}),
@@ -482,7 +482,7 @@ export default function Packages() {
           </table>
         </div>
 
-        <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={p => setPage(p)} />
+        <ListPagination page={page} pageSize={pageSize} total={total} onChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} label="packages" />
       </div>
 
       {/* ── Add Package Dialog (expanded) ────────────────────────── */}

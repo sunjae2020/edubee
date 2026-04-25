@@ -1,7 +1,29 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(node -e ' *)",
+      "Bash(git -C /Users/sunkim/Edubee status artifacts/edubee-camp/src/components/public/apply-iframe-modal.tsx)",
+      "Bash(git -C /Users/sunkim/Edubee rm artifacts/edubee-camp/src/components/public/apply-iframe-modal.tsx)",
+      "Bash(git -C /Users/sunkim/Edubee commit -m ' *)",
+      "Bash(git -C /Users/sunkim/Edubee add artifacts/api-server/src/routes/camp-coordinators.ts artifacts/edubee-admin/src/pages/admin/package-group-detail.tsx)",
+      "Bash(psql postgresql://postgres.xtckeuewwmpbbkiahcoa@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres -U postgres.xtckeuewwmpbbkiahcoa -c ' *)",
+      "Bash(node --input-type=module)",
+      "Bash(git -C /Users/sunkim/Edubee add artifacts/edubee-admin/src/pages/admin/application-forms/list.tsx artifacts/edubee-admin/src/components/layout/app-sidebar.tsx)",
+      "Bash(git -C /Users/sunkim/Edubee revert HEAD --no-edit)",
+      "Bash(git -C /Users/sunkim/Edubee add artifacts/edubee-admin/src/pages/admin/application-forms/edit.tsx artifacts/edubee-admin/src/pages/admin/application-forms/list.tsx)",
+      "Bash(git -C /Users/sunkim/Edubee add artifacts/edubee-admin/src/App.tsx artifacts/edubee-admin/src/components/layout/app-sidebar.tsx artifacts/edubee-admin/src/pages/admin/application-forms/list.tsx artifacts/edubee-admin/src/pages/admin/application-forms/edit.tsx artifacts/edubee-admin/src/pages/admin/application-forms/partners.tsx artifacts/edubee-admin/src/pages/admin/application-forms/terms.tsx)",
+      "Bash(git -C /Users/sunkim/Edubee add artifacts/api-server/src/routes/application-forms.ts)",
+      "Bash(git -C /Users/sunkim/Edubee add artifacts/edubee-admin/src/pages/admin/application-forms/edit.tsx artifacts/edubee-admin/src/pages/admin/application-forms/partners.tsx)",
+      "Bash(git -C /Users/sunkim/Edubee add artifacts/edubee-admin/src/pages/public/PublicFormGateway.tsx lib/db/drizzle/0013_fix_form_types.sql)",
+      "Bash(sed -i '' 's/^const PAGE_SIZE = 10;$//' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/product-groups.tsx)",
+      "Bash(sed -i '' 's/const \\\\[page, setPage\\\\]           = useState\\(1\\);/const [page, setPage]           = useState\\(1\\);\\\\n  const [pageSize, setPageSize]   = useState\\(20\\);/' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/product-groups.tsx)",
+      "Bash(sed -i '' 's/sorted\\\\.slice\\(\\(page - 1\\) \\\\* PAGE_SIZE, page \\\\* PAGE_SIZE\\)/sorted.slice\\(\\(page - 1\\) * pageSize, page * pageSize\\)/' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/product-groups.tsx)",
+      "Bash(sed -i '' 's/<ListPagination page={page} pageSize={PAGE_SIZE} total={sorted\\\\.length} onChange={setPage} \\\\/>/<ListPagination page={page} pageSize={pageSize} total={sorted.length} onChange={setPage} onPageSizeChange={v => { setPageSize\\(v\\); setPage\\(1\\); }} label=\"groups\" \\\\/>/' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/product-groups.tsx)",
+      "Bash(sed -i '' 's/^const PAGE_SIZE = 10;$//' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/product-types.tsx)",
+      "Bash(sed -i '' 's/^const PAGE_SIZE = 12;$//' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/package-groups.tsx)",
+      "Bash(sed -i '' 's/filtered\\\\.slice\\(\\(page - 1\\) \\\\* PAGE_SIZE, page \\\\* PAGE_SIZE\\)/filtered.slice\\(\\(page - 1\\) * pageSize, page * pageSize\\)/' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/package-groups.tsx)",
+      "Bash(sed -i '' 's/<ListPagination page={page} pageSize={PAGE_SIZE} total={filtered\\\\.length} onChange={setPage} \\\\/>/<ListPagination page={page} pageSize={pageSize} total={filtered.length} onChange={setPage} onPageSizeChange={v => { setPageSize\\(v\\); setPage\\(1\\); }} label=\"packages\" \\\\/>/' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/package-groups.tsx)"
     ]
   }
 }

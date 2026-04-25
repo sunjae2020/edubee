@@ -19,7 +19,6 @@ import ProductAdvancedSearch, { type ProductSearchFilters } from "@/components/s
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const PAGE_SIZE = 20;
 
 interface Product {
   id: string;
@@ -153,6 +152,7 @@ export default function Products() {
 
   const [filters, setFilters] = useState<ProductSearchFilters>(emptyFilters);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [displayCurrency, setDisplayCurrency] = useState("AUD");
@@ -194,11 +194,11 @@ export default function Products() {
   ).sort().map((v: any) => ({ value: v, label: v }));
 
   // ── Products query ────────────────────────────────────────────────────────
-  const queryKey = ["products", { filters, page }];
+  const queryKey = ["products", { filters, page, pageSize }];
   const { data: resp, isLoading } = useQuery({
     queryKey,
     queryFn: () => {
-      const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (filters.searchText)     params.set("search",          filters.searchText);
       if (filters.searchCategory) params.set("searchCategory",  filters.searchCategory);
       if (filters.productGroup)   params.set("productGroup",    filters.productGroup);
@@ -411,7 +411,7 @@ export default function Products() {
         </table>
       </div>
 
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+      <ListPagination page={page} pageSize={pageSize} total={total} onChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} label="products" />
 
       {/* ProductDrawer */}
       <ProductDrawer

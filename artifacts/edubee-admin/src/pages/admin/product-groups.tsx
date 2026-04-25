@@ -19,7 +19,7 @@ import { useBulkSelect } from "@/hooks/use-bulk-select";
 import { BulkActionBar } from "@/components/common/BulkActionBar";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const PAGE_SIZE = 10;
+
 
 interface ProductGroup {
   id: string;
@@ -48,6 +48,7 @@ export default function ProductGroups() {
   const [search, setSearch]       = useState("");
   const [statusFilter, setStatus] = useState("Active");
   const [page, setPage]           = useState(1);
+  const [pageSize, setPageSize]   = useState(20);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing]     = useState<ProductGroup | null>(null);
   const [form, setForm]           = useState<FormState>(EMPTY_FORM);
@@ -65,7 +66,7 @@ export default function ProductGroups() {
   });
 
   const sorted = useSorted(groups, sortBy, sortDir);
-  const paged  = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paged  = sorted.slice((page - 1) * pageSize, page * pageSize);
 
   const openCreate = () => { setEditing(null); setForm(EMPTY_FORM); setNameError(""); setModalOpen(true); };
   const openEdit   = (g: ProductGroup) => { setEditing(g); setForm({ name: g.name, description: g.description ?? "", status: g.status }); setNameError(""); setModalOpen(true); };
@@ -220,7 +221,7 @@ export default function ProductGroups() {
         </table>
       </div>
 
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={sorted.length} onChange={setPage} />
+      <ListPagination page={page} pageSize={pageSize} total={sorted.length} onChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} label="groups" />
 
       {/* Modal */}
       <Dialog open={modalOpen} onOpenChange={o => { if (!o) closeModal(); }}>

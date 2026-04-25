@@ -1,67 +1,59 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
 interface ListPaginationProps {
   page: number;
   pageSize: number;
   total: number;
   onChange: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
+  label?: string;
 }
 
-export function ListPagination({ page, pageSize, total, onChange }: ListPaginationProps) {
+export function ListPagination({ page, pageSize, total, onChange, onPageSizeChange, label }: ListPaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  if (totalPages <= 1) return null;
-
-  const start = (page - 1) * pageSize + 1;
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, total);
 
-  const pages: (number | "…")[] = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (page > 3) pages.push("…");
-    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
-    if (page < totalPages - 2) pages.push("…");
-    pages.push(totalPages);
-  }
-
   return (
-    <div className="flex items-center justify-between pt-3 border-t border-border">
-      <p className="text-xs text-muted-foreground">
-        {start}–{end} of {total}
-      </p>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onChange(page - 1)}
-          disabled={page === 1}
-          className="w-8 h-8 rounded-lg flex items-center justify-center border border-border text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        {pages.map((p, i) =>
-          p === "…" ? (
-            <span key={`ellipsis-${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-muted-foreground">…</span>
-          ) : (
-            <button
-              key={p}
-              onClick={() => onChange(p as number)}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium transition-colors border ${
-                p === page
-                  ? "bg-(--e-orange) text-white border-(--e-orange)"
-                  : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
+    <div className="flex items-center justify-between py-3 border-t border-[#E8E6E2]">
+      <span className="text-xs text-[#A8A29E]">
+        Showing {start}–{end} of {total}{label ? ` ${label}` : ""}
+      </span>
+      <div className="flex items-center gap-4">
+        {onPageSizeChange && (
+          <div className="flex items-center gap-2 text-xs text-[#A8A29E]">
+            <span>Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={e => onPageSizeChange(Number(e.target.value))}
+              className="h-7 rounded-lg border border-[#E8E6E2] text-xs px-2 pr-6 focus:outline-none focus:border-(--e-orange) bg-white text-[#1C1917] appearance-none cursor-pointer"
+              style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A8A29E' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center" }}
             >
-              {p}
-            </button>
-          )
+              {PAGE_SIZE_OPTIONS.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
         )}
-        <button
-          onClick={() => onChange(page + 1)}
-          disabled={page === totalPages}
-          className="w-8 h-8 rounded-lg flex items-center justify-center border border-border text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onChange(page - 1)}
+            disabled={page === 1}
+            className="w-7 h-7 rounded-lg flex items-center justify-center border border-[#E8E6E2] text-[#A8A29E] hover:bg-[#F4F3F1] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <span className="text-xs px-2 text-[#57534E] tabular-nums">{page} / {totalPages}</span>
+          <button
+            onClick={() => onChange(page + 1)}
+            disabled={page === totalPages}
+            className="w-7 h-7 rounded-lg flex items-center justify-center border border-[#E8E6E2] text-[#A8A29E] hover:bg-[#F4F3F1] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );

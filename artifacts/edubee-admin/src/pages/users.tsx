@@ -47,7 +47,7 @@ export default function Users() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 10;
+  const [pageSize, setPageSize] = useState(20);
   const [form, setForm] = useState(emptyForm);
 
   const currentRole = currentUser?.role ?? "consultant";
@@ -92,7 +92,7 @@ export default function Users() {
     const matchRole = roleFilter === "all" || u.role === roleFilter;
     return matchSearch && matchRole;
   });
-  const pagedUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pagedUsers = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const roleStats = ALL_ROLES.map(role => ({
     role, count: users.filter(u => u.role === role).length,
@@ -215,7 +215,7 @@ export default function Users() {
           </thead>
           <tbody>
             {isLoading ? (
-              [...Array(PAGE_SIZE)].map((_, i) => (
+              [...Array(pageSize)].map((_, i) => (
                 <tr key={i} style={{ borderBottom: "1px solid #F4F3F1" }}>
                   {[...Array(isSA ? 7 : 6)].map((_, j) => (
                     <td key={j} className="px-4 py-3">
@@ -339,7 +339,7 @@ export default function Users() {
         </table>
       </div>
 
-      <ListPagination page={page} pageSize={PAGE_SIZE} total={filtered.length} onChange={setPage} />
+      <ListPagination page={page} pageSize={pageSize} total={filtered.length} onChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} label="users" />
 
       {/* Create Modal */}
       <Dialog open={showModal} onOpenChange={o => !o && closeModal()}>

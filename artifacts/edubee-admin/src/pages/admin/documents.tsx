@@ -76,12 +76,13 @@ export default function DocumentsPage() {
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [logDoc, setLogDoc] = useState<any>(null);
 
   useEffect(() => { setPage(1); }, [sortBy, sortDir]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["all-documents", entityType, categoryGroup, status, search, page, sortBy, sortDir],
+    queryKey: ["all-documents", entityType, categoryGroup, status, search, page, pageSize, sortBy, sortDir],
     queryFn: () =>
       axios.get(`${BASE}/api/documents/all`, {
         params: {
@@ -90,7 +91,7 @@ export default function DocumentsPage() {
           status: status || undefined,
           search: search || undefined,
           page,
-          limit: 50,
+          limit: pageSize,
           sortBy,
           sortDir,
         },
@@ -333,7 +334,7 @@ export default function DocumentsPage() {
       </div>
 
       {/* Pagination */}
-      <ListPagination page={page} pageSize={50} total={total} onChange={setPage} />
+      <ListPagination page={page} pageSize={pageSize} total={total} onChange={setPage} onPageSizeChange={v => { setPageSize(v); setPage(1); }} label="documents" />
 
       {/* Access Log Dialog */}
       <Dialog open={!!logDoc} onOpenChange={v => !v && setLogDoc(null)}>
