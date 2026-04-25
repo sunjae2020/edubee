@@ -155,7 +155,7 @@ export default function ApplicationFormList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Application Forms</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Forms Management</h1>
           <p className="text-sm text-gray-500 mt-0.5">Manage custom application form links for partners</p>
         </div>
         <Button

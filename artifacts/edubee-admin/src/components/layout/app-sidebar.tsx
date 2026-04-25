@@ -138,7 +138,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
     if (isSenior || isOps)
       salesItems.push({ icon: FolderOpen, label: "Documents", href: "/admin/documents" });
     if (isAdmin)
-      salesItems.push({ icon: FileText, label: "Application Forms", href: "/admin/application-forms" });
+      salesItems.push({ icon: FileText, label: "Forms Management", href: "/admin/application-forms" });
     nav.push({ key: "sales", label: "Forms & Applications", catIcon: ClipboardList, items: salesItems });
   }
 

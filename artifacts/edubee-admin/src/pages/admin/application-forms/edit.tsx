@@ -106,7 +106,7 @@ export default function ApplicationFormEdit() {
             className="flex items-center gap-1.5 text-sm text-[#A8A29E] hover:text-[#1C1917] transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            Application Forms
+            Forms Management
           </button>
           <span className="text-[#E8E6E2]">|</span>
           <h1 className="text-sm font-semibold text-[#1C1917]">{isNew ? "New Form" : "Edit Form"}</h1>

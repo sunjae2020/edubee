@@ -272,7 +272,7 @@ export default function ApplicationFormTerms() {
               onClick={() => setLocation("/admin/application-forms")}
               className="text-[#A8A29E] hover:text-(--e-orange) transition-colors"
             >
-              Application Forms
+              Forms Management
             </button>
             <ChevronLeft className="w-3.5 h-3.5 text-[#A8A29E] rotate-180" />
             <button

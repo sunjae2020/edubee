@@ -667,7 +667,7 @@ function Router() {
         <AdminRoute title="Terms & Conditions"><ApplicationFormTerms /></AdminRoute>
       </Route>
       <Route path="/admin/application-forms">
-        <AdminRoute title="Application Forms"><ApplicationFormList /></AdminRoute>
+        <AdminRoute title="Forms Management"><ApplicationFormList /></AdminRoute>
       </Route>
 
       {/* Legacy redirects */}
