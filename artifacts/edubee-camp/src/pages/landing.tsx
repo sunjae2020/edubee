@@ -12,7 +12,7 @@ import { CurrencySelector } from "@/components/public/currency-selector";
 import { ProgramCard } from "@/components/public/program-card";
 import heroBg from "@assets/1_2_1773827220210.jpg";
 import { ProgramDetailDrawer } from "@/components/public/program-detail-drawer";
-import { ApplyIframeModal } from "@/components/public/apply-iframe-modal";
+import { ApplicationModal } from "@/components/public/application-modal";
 import type { PublicProgram } from "@/lib/program-utils";
 import { getLocalizedName } from "@/lib/program-utils";
 import logoImg from "@assets/edubee_logo_800x310b_1773796715563.png";
@@ -722,11 +722,12 @@ export default function Landing() {
         onApply={(p) => openApply(p.id)}
       />
 
-      {/* ── APPLICATION MODAL (iframe → app.edubee.co) ── */}
-      <ApplyIframeModal
+      {/* ── APPLICATION MODAL (public 4-step form) ── */}
+      <ApplicationModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        packageGroupId={modalProgramId}
+        programs={programs}
+        defaultProgramId={modalProgramId}
       />
     </div>
   );
