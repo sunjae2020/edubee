@@ -248,7 +248,7 @@ function NewApplicationDropdown({ navigate }: { navigate: (path: string) => void
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
-export default function AllApplicationsPage() {
+export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "camp" | "service" }) {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const isSA = user?.role === "super_admin";
@@ -256,12 +256,15 @@ export default function AllApplicationsPage() {
   const { toast } = useToast();
   const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
 
-  const [tab,        setTab]        = useState("all");
+  const [tab,        setTab]        = useState(mode === "all" ? "all" : mode);
   const [status,     setStatus]     = useState("all");
   const [search,     setSearch]     = useState("");
   const [searchInput,setSearchInput]= useState("");
   const [page,       setPage]       = useState(1);
   const pageSize = 20;
+
+  const pageTitle = mode === "camp" ? "Camp Applications" : mode === "service" ? "Service Applications" : "All Applications";
+  const pageDesc  = mode === "camp" ? "Manage camp program applications" : mode === "service" ? "Manage service applications" : "Manage all camp and service applications";
 
   const softDelMutation = useMutation({
     mutationFn: (ids: string[]) =>
@@ -326,18 +329,31 @@ export default function AllApplicationsPage() {
       <div className="px-6 pt-6 pb-4 border-b border-[var(--e-border)] bg-[var(--e-bg-page)]">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">All Applications</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Manage all camp and service applications</p>
+            <h1 className="text-2xl font-bold text-gray-900">{pageTitle}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{pageDesc}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5">
               <Download className="w-4 h-4" /> Export
             </Button>
-            <NewApplicationDropdown navigate={navigate} />
+            {mode === "camp" ? (
+              <Button size="sm" className="gap-1.5 bg-(--e-orange) text-white hover:bg-white hover:text-(--e-orange) border border-(--e-orange)"
+                onClick={() => navigate("/admin/camp-applications/new")}>
+                <Plus className="w-4 h-4" /> New Camp Application
+              </Button>
+            ) : mode === "service" ? (
+              <Button size="sm" className="gap-1.5 bg-(--e-orange) text-white hover:bg-white hover:text-(--e-orange) border border-(--e-orange)"
+                onClick={() => navigate("/admin/applications/new")}>
+                <Plus className="w-4 h-4" /> New Service Application
+              </Button>
+            ) : (
+              <NewApplicationDropdown navigate={navigate} />
+            )}
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs — only shown in "all" mode */}
+        {mode === "all" && (
         <div className="flex gap-1 mb-3">
           {TABS.map(t => (
             <button
@@ -353,6 +369,7 @@ export default function AllApplicationsPage() {
             </button>
           ))}
         </div>
+        )}
 
         {/* Search + status filters */}
         <div className="flex items-center gap-3 flex-wrap">

@@ -132,7 +132,8 @@ function buildNav(effectiveRole: string): NavGroup[] {
       { icon: CalendarCheck, label: "Schooling Consultation", href: "/admin/sales/schooling-consultations" },
       { icon: Globe, label: "Study Abroad Consultation", href: "/admin/sales/study-abroad-consultations" },
       { icon: MessageSquare, label: "General Consultation", href: "/admin/sales/general-consultations" },
-      { icon: ClipboardList, label: "All Applications", href: "/admin/all-applications" },
+      { icon: ClipboardList, label: "Camp Application",     href: "/admin/camp-applications-all" },
+      { icon: Globe,         label: "Service Application",  href: "/admin/service-applications" },
     ];
     if (isSenior || isOps)
       salesItems.push({ icon: FolderOpen, label: "Documents", href: "/admin/documents" });
