@@ -24,7 +24,7 @@ export default function ApplicationFormEdit() {
   const [name,        setName]        = useState("");
   const [slug,        setSlug]        = useState("");
   const [slugManual,  setSlugManual]  = useState(false);
-  const [formType,    setFormType]    = useState<"camp_application" | "lead_inquiry">("camp_application");
+  const [formType,    setFormType]    = useState<string>("camp_application");
   const [description, setDescription] = useState("");
   const [visibility,  setVisibility]  = useState<"public" | "private">("private");
   const [redirectUrl, setRedirectUrl] = useState("");
@@ -178,10 +178,14 @@ export default function ApplicationFormEdit() {
                 Form Type <span className="text-red-500">*</span>
               </label>
               <div className="space-y-2">
-                {([
-                  { value: "camp_application", label: "Camp Application", desc: "Collects student and camp program application details" },
-                  { value: "lead_inquiry",     label: "Lead Inquiry",     desc: "Captures general interest and contact details — creates a lead in the CRM" },
-                ] as const).map(opt => (
+                {[
+                  { value: "schooling_consultation",    label: "Schooling Consultation",       desc: "School program inquiry and enrollment consultation" },
+                  { value: "study_abroad_consultation", label: "Study Abroad Consultation",    desc: "Study abroad program consultation and planning" },
+                  { value: "general_consultation",      label: "General Consultation",         desc: "General inquiry and consultation request" },
+                  { value: "camp_application",          label: "Camp Application",             desc: "Collects student and camp program application details" },
+                  { value: "service_application",       label: "Service Application",          desc: "Accommodation, visa, internship and other service requests" },
+                  { value: "lead_inquiry",              label: "Lead Inquiry",                 desc: "Captures general interest and contact details — creates a lead in the CRM" },
+                ].map(opt => (
                   <label key={opt.value} className="flex items-start gap-3 cursor-pointer group">
                     <input
                       type="radio"

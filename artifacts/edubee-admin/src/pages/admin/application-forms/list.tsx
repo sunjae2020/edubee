@@ -180,7 +180,11 @@ export default function ApplicationFormList() {
         </div>
         <select value={formTypeFilter} onChange={e => setFormTypeFilter(e.target.value)} className={selCls}>
           <option value="">All Types</option>
+          <option value="schooling_consultation">Schooling Consultation</option>
+          <option value="study_abroad_consultation">Study Abroad Consultation</option>
+          <option value="general_consultation">General Consultation</option>
           <option value="camp_application">Camp Application</option>
+          <option value="service_application">Service Application</option>
           <option value="lead_inquiry">Lead Inquiry</option>
         </select>
         <select value={visibility} onChange={e => setVisibility(e.target.value)} className={selCls}>
@@ -236,11 +240,22 @@ export default function ApplicationFormList() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {form.formType === "lead_inquiry" ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">Lead Inquiry</span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--e-orange-lt) text-(--e-orange)">Camp App</span>
-                      )}
+                      {(() => {
+                        const TYPE_MAP: Record<string, { label: string; cls: string }> = {
+                          schooling_consultation:    { label: "Schooling",    cls: "bg-purple-50 text-purple-700" },
+                          study_abroad_consultation: { label: "Study Abroad", cls: "bg-indigo-50 text-indigo-700" },
+                          general_consultation:      { label: "General",      cls: "bg-sky-50 text-sky-700" },
+                          camp_application:          { label: "Camp App",     cls: "bg-orange-50 text-orange-600" },
+                          service_application:       { label: "Service App",  cls: "bg-teal-50 text-teal-700" },
+                          lead_inquiry:              { label: "Lead Inquiry",  cls: "bg-blue-50 text-blue-700" },
+                        };
+                        const t = TYPE_MAP[form.formType] ?? { label: form.formType, cls: "bg-gray-50 text-gray-600" };
+                        return (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${t.cls}`}>
+                            {t.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       {form.visibility === "public" ? (
