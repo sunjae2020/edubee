@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Globe, MapPin, Edit, Loader2, Trash2, Package, ImageIcon, CheckCircle2, Clock, X, Search, Building2, UserCheck } from "lucide-react";
+import { Plus, Globe, MapPin, Edit, Loader2, Trash2, Package, ImageIcon, CheckCircle2, Clock, X, Search, Building2, UserCheck, Users } from "lucide-react";
 import { ListToolbar } from "@/components/ui/list-toolbar";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { format } from "date-fns";
@@ -51,6 +51,7 @@ interface PackageGroup {
   endDate?: string | null;
   ownerOrgName?: string | null;
   ownerOrgSubdomain?: string | null;
+  coordinators?: { name: string | null; subdomain: string | null }[];
 }
 
 interface Pkg {
@@ -540,21 +541,27 @@ export default function PackageGroups() {
                     )}
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                       {g.ownerOrgName && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-medium border border-blue-200 truncate max-w-[140px]">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-medium border border-blue-200 truncate max-w-[120px]">
                           <Building2 className="w-2.5 h-2.5 shrink-0" />
                           <span className="truncate">{g.ownerOrgName}</span>
                         </span>
                       )}
+                      {(g.coordinators ?? []).map((c, i) => c.name && (
+                        <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 text-[10px] font-medium border border-green-200 truncate max-w-[120px]" title={`Coordinator: ${c.name}`}>
+                          <Users className="w-2.5 h-2.5 shrink-0" />
+                          <span className="truncate">{c.name}</span>
+                        </span>
+                      ))}
                       {g.sortOrder != null && (
                         <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
                           #{g.sortOrder}
                         </span>
                       )}
                     </div>
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${
                       (g.packageCount ?? 0) > 0
                         ? "bg-(--e-orange-lt) text-(--e-orange)"
                         : "bg-muted text-muted-foreground"

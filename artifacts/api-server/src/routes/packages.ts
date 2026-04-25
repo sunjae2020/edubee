@@ -120,12 +120,37 @@ router.get("/package-groups", authenticate, async (req, res) => {
         }
       }
 
+      // Fetch active coordinator orgs for each package group
+      let coordinatorMap: Record<string, { name: string | null; subdomain: string | null }[]> = {};
+      if (groupIds.length > 0) {
+        const coordOrg = alias(organisations, "coordOrg");
+        const coordRows = await db
+          .select({
+            packageGroupId: packageGroupCoordinators.packageGroupId,
+            coordOrgName: coordOrg.name,
+            coordOrgSubdomain: coordOrg.subdomain,
+          })
+          .from(packageGroupCoordinators)
+          .leftJoin(coordOrg, eq(packageGroupCoordinators.coordinatorOrgId, coordOrg.id))
+          .where(and(
+            sql`${packageGroupCoordinators.packageGroupId} = ANY(ARRAY[${sql.join(groupIds.map(id => sql`${id}::uuid`), sql`, `)}])`,
+            eq(packageGroupCoordinators.status, "Active"),
+            isNull(packageGroupCoordinators.revokedAt),
+          ));
+        for (const r of coordRows) {
+          if (!r.packageGroupId) continue;
+          if (!coordinatorMap[r.packageGroupId]) coordinatorMap[r.packageGroupId] = [];
+          coordinatorMap[r.packageGroupId].push({ name: r.coordOrgName ?? null, subdomain: r.coordOrgSubdomain ?? null });
+        }
+      }
+
       const data = rows.map(r => ({
         ...r.group,
         packageCount: pkgCounts[r.group.id] ?? 0,
         typeName: r.typeName ?? null,
         ownerOrgName: r.ownerOrgName ?? null,
         ownerOrgSubdomain: r.ownerOrgSubdomain ?? null,
+        coordinators: coordinatorMap[r.group.id] ?? [],
         campProvider: r.orgId ? { id: r.orgId, name: r.orgName, tradingName: r.orgTradingName, subdomain: r.orgSubdomain } : null,
       }));
       const total = Number(totalResult.count);
