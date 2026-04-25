@@ -1136,7 +1136,8 @@ export default function PackageGroupDetail() {
                   <Button
                     size="sm"
                     onClick={() => setShowCoordModal(true)}
-                    className="bg-[#F5821F] hover:bg-[#d97706] text-white gap-1.5"
+                    className="text-white gap-1.5"
+                    style={{ background: "var(--e-primary)" }}
                   >
                     <Plus className="w-3.5 h-3.5" /> Assign Coordinator
                   </Button>
@@ -1156,7 +1157,7 @@ export default function PackageGroupDetail() {
                       Pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
                       Revoked: "bg-red-100 text-red-700 border-red-200",
                       Expired: "bg-gray-100 text-gray-600 border-gray-200",
-                      Rejected: "bg-orange-100 text-orange-700 border-orange-200",
+                      Rejected: "bg-amber-100 text-amber-700 border-amber-200",
                     };
                     return (
                       <div key={d.id} className="border rounded-lg p-4 space-y-3 bg-card">
@@ -1232,7 +1233,8 @@ export default function PackageGroupDetail() {
           </DialogHeader>
           <div className="space-y-4 mt-1">
             {/* Warning */}
-            <div className="flex gap-2 p-3 rounded-lg bg-orange-50 border border-orange-200 text-sm text-orange-800">
+            <div className="flex gap-2 p-3 rounded-lg text-sm"
+              style={{ background: "color-mix(in srgb, var(--e-primary) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--e-primary) 25%, transparent)", color: "var(--e-primary)" }}>
               <span className="shrink-0">⚠️</span>
               <span>This action grants the selected agency operational access to this Package Group. Please proceed carefully.</span>
             </div>
@@ -1245,7 +1247,8 @@ export default function PackageGroupDetail() {
                 placeholder="Search by name, subdomain, or email..."
                 value={coordSearch}
                 onChange={e => { setCoordSearch(e.target.value); setSelectedCoordOrgId(null); }}
-                className="w-full h-9 px-3 text-sm border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5821F]"
+                className="w-full h-9 px-3 text-sm border border-input rounded-md focus:outline-none focus:ring-1"
+                style={{ "--tw-ring-color": "var(--e-primary)" } as any}
               />
               {orgSearchResults.length > 0 && !selectedCoordOrgId && (
                 <div className="border rounded-md divide-y max-h-40 overflow-y-auto bg-background shadow-sm">
@@ -1262,8 +1265,9 @@ export default function PackageGroupDetail() {
                 </div>
               )}
               {selectedCoordOrgId && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-50 border border-orange-200 text-sm">
-                  <Building2 className="w-4 h-4 text-[#F5821F]" />
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                  style={{ background: "color-mix(in srgb, var(--e-primary) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--e-primary) 25%, transparent)" }}>
+                  <Building2 className="w-4 h-4" style={{ color: "var(--e-primary)" }} />
                   <span className="font-medium">{coordSearch}</span>
                   <button className="ml-auto text-muted-foreground hover:text-foreground" onClick={() => { setSelectedCoordOrgId(null); setCoordSearch(""); }}>
                     <X className="w-3.5 h-3.5" />
@@ -1276,18 +1280,21 @@ export default function PackageGroupDetail() {
             <div className="space-y-2">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Permission Preset</label>
               <div className="flex flex-wrap gap-2">
-                {COORD_PRESETS.map(p => (
-                  <button
-                    key={p.label}
-                    onClick={() => setCoordPermissions(p.perms)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors
-                      ${JSON.stringify(coordPermissions) === JSON.stringify(p.perms)
-                        ? "bg-[#F5821F] text-white border-[#F5821F]"
-                        : "bg-background text-muted-foreground border-input hover:border-[#F5821F]"}`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
+                {COORD_PRESETS.map(p => {
+                  const active = JSON.stringify(coordPermissions) === JSON.stringify(p.perms);
+                  return (
+                    <button
+                      key={p.label}
+                      onClick={() => setCoordPermissions(p.perms)}
+                      className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                      style={active
+                        ? { background: "var(--e-primary)", color: "#fff", borderColor: "var(--e-primary)" }
+                        : { background: "transparent", color: "var(--e-text-2)", borderColor: "var(--e-border)" }}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
               </div>
               {/* Permission Checkboxes */}
               <div className="grid grid-cols-2 gap-2 pt-1">
@@ -1302,7 +1309,8 @@ export default function PackageGroupDetail() {
                       type="checkbox"
                       checked={coordPermissions[key]}
                       onChange={e => setCoordPermissions(p => ({ ...p, [key]: e.target.checked }))}
-                      className="rounded border-input accent-[#F5821F]"
+                      className="rounded border-input"
+                      style={{ accentColor: "var(--e-primary)" }}
                       disabled={key === "view"}
                     />
                     {label}
@@ -1319,7 +1327,10 @@ export default function PackageGroupDetail() {
                 onChange={e => setCoordNotes(e.target.value)}
                 placeholder="Delegation notes..."
                 rows={2}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#F5821F] resize-none"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none resize-none"
+                style={{ outline: "none" }}
+                onFocus={e => e.target.style.boxShadow = `0 0 0 1px var(--e-primary)`}
+                onBlur={e => e.target.style.boxShadow = "none"}
               />
             </div>
 
@@ -1332,7 +1343,8 @@ export default function PackageGroupDetail() {
                 size="sm"
                 disabled={!selectedCoordOrgId || assignCoordinator.isPending}
                 onClick={() => assignCoordinator.mutate()}
-                className="bg-[#F5821F] hover:bg-[#d97706] text-white min-w-[120px]"
+                className="text-white min-w-[120px]"
+                style={{ background: "var(--e-primary)" }}
               >
                 {assignCoordinator.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Assign Coordinator"}
               </Button>
