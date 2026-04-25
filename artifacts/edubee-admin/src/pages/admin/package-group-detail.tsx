@@ -495,12 +495,7 @@ export default function PackageGroupDetail() {
             <DetailSection title="Basic Info">
               <EditableField label="Name (EN)" isEditing={isEditing} value={group.nameEn}
                 editValue={getValue("nameEn")} onEdit={v => setField("nameEn", v)} />
-              <EditableField label="Name (KO)" isEditing={isEditing} value={group.nameKo}
-                editValue={getValue("nameKo")} onEdit={v => setField("nameKo", v)} />
-              <EditableField label="Name (JA)" isEditing={isEditing} value={group.nameJa}
-                editValue={getValue("nameJa")} onEdit={v => setField("nameJa", v)} />
-              <EditableField label="Name (TH)" isEditing={isEditing} value={group.nameTh}
-                editValue={getValue("nameTh")} onEdit={v => setField("nameTh", v)} />
+
               <EditableField label="Location (City)" isEditing={isEditing} value={group.location}
                 editValue={getValue("location")} onEdit={v => setField("location", v)} />
               <EditableField label="Country Code" isEditing={isEditing} value={group.countryCode}
