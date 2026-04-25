@@ -5,7 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { applyThemeToDom } from "@/hooks/use-tenant-theme";
 import {
   Save, Loader2, Palette, Code2, AlertTriangle,
-  ChevronDown, ChevronUp, Upload, Link,
+  ChevronDown, ChevronUp, Upload, Link, Sun, Moon,
+  LayoutDashboard, Users, FileText, Settings, Bell, Search,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -158,6 +159,7 @@ export default function Branding() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [showCss, setShowCss] = useState(false);
+  const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
 
   const { data: branding, isLoading } = useQuery<any>({
     queryKey: ["settings-branding"],
@@ -320,35 +322,188 @@ export default function Branding() {
           <ColorPicker label="Accent Colour"    value={accent}    onChange={set("accentColor")} />
         </div>
 
-        {/* Live preview */}
-        <div className="rounded-xl border border-[#E8E6E2] p-4 mt-2" style={{ background: accent }}>
-          <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: secondary }}>Live Preview</p>
-          <div className="flex items-center gap-3 flex-wrap">
+        {/* Live preview — Light / Dark tab */}
+        <div className="rounded-xl border border-[#E8E6E2] overflow-hidden mt-2">
+          {/* Tab bar */}
+          <div className="flex items-center gap-1 px-4 pt-3 pb-0 border-b border-[#E8E6E2]" style={{ background: "#F4F3F1" }}>
             <button
-              className="h-9 px-4 rounded-lg text-sm font-semibold text-white"
-              style={{ background: primary }}
+              onClick={() => setPreviewMode("light")}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-t-lg transition-colors border-b-2"
+              style={previewMode === "light"
+                ? { background: "#fff", borderColor: primary, color: primary }
+                : { background: "transparent", borderColor: "transparent", color: "#A8A29E" }}
             >
-              Primary Button
+              <Sun size={12} /> Light View
             </button>
             <button
-              className="h-9 px-4 rounded-lg text-sm font-semibold border-2"
-              style={{ color: primary, borderColor: primary, background: "transparent" }}
+              onClick={() => setPreviewMode("dark")}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-t-lg transition-colors border-b-2"
+              style={previewMode === "dark"
+                ? { background: "#131211", borderColor: primary, color: primary }
+                : { background: "transparent", borderColor: "transparent", color: "#A8A29E" }}
             >
-              Outline Button
+              <Moon size={12} /> Dark View
             </button>
-            <span
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
-              style={{ background: primary, color: "#fff" }}
-            >
-              Active Badge
-            </span>
-            <span
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border"
-              style={{ color: secondary, borderColor: secondary }}
-            >
-              Neutral Badge
-            </span>
           </div>
+
+          {/* ── Light Preview ── */}
+          {previewMode === "light" && (
+            <div className="p-4" style={{ background: accent }}>
+              <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: secondary }}>Light Mode Preview</p>
+              {/* Mini UI shell */}
+              <div className="rounded-xl overflow-hidden border border-[#E8E6E2] flex" style={{ height: 200, background: "#FAFAF9" }}>
+                {/* Sidebar */}
+                <div className="w-36 shrink-0 flex flex-col border-r border-[#E8E6E2]" style={{ background: "#FAFAF9" }}>
+                  {/* Logo area */}
+                  <div className="h-10 flex items-center px-3 border-b border-[#E8E6E2]" style={{ background: "#fff" }}>
+                    {merged.logoUrl
+                      ? <img src={merged.logoUrl} alt="logo" className="h-5 object-contain" />
+                      : <div className="h-5 w-16 rounded" style={{ background: primary, opacity: 0.8 }} />
+                    }
+                  </div>
+                  {/* Nav items */}
+                  <div className="flex-1 px-2 py-2 space-y-0.5">
+                    {[
+                      { icon: LayoutDashboard, label: "Dashboard", active: false },
+                      { icon: Users,           label: "Contacts",  active: true  },
+                      { icon: FileText,        label: "Contracts", active: false },
+                      { icon: Settings,        label: "Settings",  active: false },
+                    ].map(({ icon: Icon, label, active }) => (
+                      <div key={label} className="flex items-center gap-1.5 px-2 h-7 rounded-lg text-[10px] font-medium"
+                        style={{ background: active ? `${primary}18` : "transparent", color: active ? primary : "#78716C" }}>
+                        <Icon size={11} style={{ color: active ? primary : "#A8A29E" }} />
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Content */}
+                <div className="flex-1 flex flex-col">
+                  {/* Topbar */}
+                  <div className="h-10 flex items-center justify-between px-3 border-b border-[#E8E6E2]" style={{ background: "#fff" }}>
+                    <span className="text-xs font-semibold" style={{ color: secondary }}>Contacts</span>
+                    <div className="flex items-center gap-2">
+                      <Bell size={13} color="#A8A29E" />
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{ background: primary }}>A</div>
+                    </div>
+                  </div>
+                  {/* Body */}
+                  <div className="flex-1 p-3 space-y-2">
+                    {/* Search + button row */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-6 rounded-lg border border-[#E8E6E2] flex items-center gap-1.5 px-2" style={{ background: "#fff" }}>
+                        <Search size={10} color="#A8A29E" /><span className="text-[9px] text-[#A8A29E]">Search…</span>
+                      </div>
+                      <div className="h-6 px-2 rounded-lg text-[9px] font-semibold text-white flex items-center" style={{ background: primary }}>+ New</div>
+                    </div>
+                    {/* Table rows */}
+                    {["Kim Sunjae", "Park Jiyeon", "Lee Junho"].map((name, i) => (
+                      <div key={name} className="flex items-center justify-between h-6 px-2 rounded"
+                        style={{ background: i === 0 ? `${primary}10` : "#fff", border: `1px solid #E8E6E2` }}>
+                        <span className="text-[9px] font-medium" style={{ color: secondary }}>{name}</span>
+                        <span className="text-[8px] px-1.5 py-0.5 rounded-full text-white" style={{ background: primary }}>Active</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {/* Colour swatches */}
+              <div className="flex items-center gap-3 mt-3 flex-wrap">
+                <button className="h-8 px-3 rounded-lg text-xs font-semibold text-white" style={{ background: primary }}>Primary Button</button>
+                <button className="h-8 px-3 rounded-lg text-xs font-semibold border-2" style={{ color: primary, borderColor: primary, background: "transparent" }}>Outline Button</button>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: primary, color: "#fff" }}>Active</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border" style={{ color: secondary, borderColor: secondary }}>Neutral</span>
+              </div>
+            </div>
+          )}
+
+          {/* ── Dark Preview ── */}
+          {previewMode === "dark" && (
+            <div className="p-4" style={{ background: "#0F0E0D" }}>
+              <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: primary }}>Dark Mode Preview</p>
+              {/* Mini UI shell */}
+              <div className="rounded-xl overflow-hidden flex" style={{ height: 200, border: "1px solid #393532" }}>
+                {/* Sidebar */}
+                <div className="w-36 shrink-0 flex flex-col" style={{ background: "#0F0E0D", borderRight: "1px solid #393532" }}>
+                  {/* Logo area */}
+                  <div className="h-10 flex items-center px-3" style={{ background: "#181614", borderBottom: "1px solid #393532" }}>
+                    {merged.logoUrl
+                      ? <img src={merged.logoUrl} alt="logo" className="h-5 object-contain" />
+                      : <div className="h-5 w-16 rounded" style={{ background: primary, opacity: 0.85 }} />
+                    }
+                  </div>
+                  {/* Nav items */}
+                  <div className="flex-1 px-2 py-2 space-y-0.5">
+                    {[
+                      { icon: LayoutDashboard, label: "Dashboard", active: false },
+                      { icon: Users,           label: "Contacts",  active: true  },
+                      { icon: FileText,        label: "Contracts", active: false },
+                      { icon: Settings,        label: "Settings",  active: false },
+                    ].map(({ icon: Icon, label, active }) => (
+                      <div key={label} className="flex items-center gap-1.5 px-2 h-7 rounded-lg text-[10px] font-medium"
+                        style={{ background: active ? `${primary}22` : "transparent", color: active ? primary : "#6B6865" }}>
+                        <Icon size={11} style={{ color: active ? primary : "#57534E" }} />
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                  {/* User area */}
+                  <div className="h-10 flex items-center gap-2 px-3" style={{ borderTop: "1px solid #2A2725" }}>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0" style={{ background: primary }}>A</div>
+                    <div>
+                      <div className="text-[9px] font-semibold" style={{ color: "#F5F0EB" }}>Admin</div>
+                      <div className="text-[8px]" style={{ color: "#6B6865" }}>admin@edubee.co</div>
+                    </div>
+                  </div>
+                </div>
+                {/* Content */}
+                <div className="flex-1 flex flex-col" style={{ background: "#131211" }}>
+                  {/* Topbar */}
+                  <div className="h-10 flex items-center justify-between px-3" style={{ background: "#181614", borderBottom: "1px solid #393532" }}>
+                    <span className="text-xs font-semibold" style={{ color: "#F5F0EB" }}>Contacts</span>
+                    <div className="flex items-center gap-2">
+                      <Bell size={13} color="#57534E" />
+                      <div className="h-6 px-2 rounded-lg text-[9px] font-semibold flex items-center gap-1" style={{ background: `${primary}25`, color: primary, border: `1px solid ${primary}40` }}>
+                        <Moon size={9} /> Dark View
+                      </div>
+                    </div>
+                  </div>
+                  {/* Body */}
+                  <div className="flex-1 p-3 space-y-2">
+                    {/* Search + button row */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-6 rounded-lg flex items-center gap-1.5 px-2" style={{ background: "#2A2725", border: "1px solid #393532" }}>
+                        <Search size={10} color="#57534E" /><span className="text-[9px]" style={{ color: "#6B6865" }}>Search…</span>
+                      </div>
+                      <div className="h-6 px-2 rounded-lg text-[9px] font-semibold text-white flex items-center" style={{ background: primary }}>+ New</div>
+                    </div>
+                    {/* Table rows */}
+                    {[
+                      { name: "Kim Sunjae",  active: true  },
+                      { name: "Park Jiyeon", active: false },
+                      { name: "Lee Junho",   active: false },
+                    ].map(({ name, active }, i) => (
+                      <div key={name} className="flex items-center justify-between h-6 px-2 rounded"
+                        style={{ background: i === 0 ? "#2A2725" : "#1C1A18", border: "1px solid #393532" }}>
+                        <span className="text-[9px] font-medium" style={{ color: "#F5F0EB" }}>{name}</span>
+                        <span className="text-[8px] px-1.5 py-0.5 rounded-full"
+                          style={{ background: active ? `${primary}30` : "#2A2725", color: active ? primary : "#6B6865", border: `1px solid ${active ? primary + "50" : "#393532"}` }}>
+                          {active ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {/* Colour swatches on dark */}
+              <div className="flex items-center gap-3 mt-3 flex-wrap">
+                <button className="h-8 px-3 rounded-lg text-xs font-semibold text-white" style={{ background: primary }}>Primary Button</button>
+                <button className="h-8 px-3 rounded-lg text-xs font-semibold border-2" style={{ color: primary, borderColor: primary, background: "transparent" }}>Outline Button</button>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: `${primary}30`, color: primary, border: `1px solid ${primary}50` }}>Active Badge</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold" style={{ color: "#A8A29E", border: "1px solid #393532" }}>Neutral Badge</span>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 
