@@ -1130,7 +1130,7 @@ export default function PackageGroupDetail() {
               {/* Header */}
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  다른 테넌트(유학원)에게 이 Package Group 의 운영권을 위임합니다.
+                  Delegate the management of this Package Group to another agency (tenant).
                 </p>
                 {canEdit && (
                   <Button
@@ -1234,7 +1234,7 @@ export default function PackageGroupDetail() {
             {/* Warning */}
             <div className="flex gap-2 p-3 rounded-lg bg-orange-50 border border-orange-200 text-sm text-orange-800">
               <span className="shrink-0">⚠️</span>
-              <span>이 조치는 해당 테넌트에게 이 Package Group 의 운영 권한을 부여합니다. 신중히 진행하세요.</span>
+              <span>This action grants the selected agency operational access to this Package Group. Please proceed carefully.</span>
             </div>
 
             {/* Organisation Search */}
@@ -1348,7 +1348,7 @@ export default function PackageGroupDetail() {
             <DialogTitle>Revoke Coordinator Access?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            위임을 철회합니다. Coordinator 는 30일 동안 읽기 전용으로 접근 가능하며 이후 접근이 완전히 차단됩니다.
+            This will revoke the coordinator's access. They will retain read-only access for 30 days, after which all access will be fully removed.
           </p>
           <div className="flex justify-end gap-2 pt-2">
             <Button size="sm" variant="outline" onClick={() => setShowRevokeConfirm(null)}>Cancel</Button>
