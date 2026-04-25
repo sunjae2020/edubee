@@ -166,6 +166,42 @@ router.post(
   }
 );
 
+// ── PATCH /package-groups/:id/coordinators/:coordinatorId ────────────────
+// Owner 가 권한/메모 수정
+router.patch(
+  "/package-groups/:id/coordinators/:coordinatorId",
+  authenticate,
+  requireRole(...OWNER_ROLES),
+  async (req, res) => {
+    try {
+      const { coordinatorId } = req.params as { id: string; coordinatorId: string };
+      const { permissions, notes } = req.body as {
+        permissions?: { view: boolean; edit: boolean; soft_delete: boolean; manage_finance: boolean };
+        notes?: string | null;
+      };
+
+      if (!permissions) {
+        return res.status(400).json({ success: false, message: "permissions is required" });
+      }
+
+      const [updated] = await staticDb
+        .update(packageGroupCoordinators)
+        .set({ permissions, notes: notes ?? null, modifiedAt: new Date() })
+        .where(eq(packageGroupCoordinators.id, coordinatorId))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ success: false, message: "Delegation not found" });
+      }
+
+      res.json({ success: true, data: updated });
+    } catch (err) {
+      console.error("[PATCH coordinators/:id]", err);
+      res.status(500).json({ success: false, message: "Failed to update delegation" });
+    }
+  }
+);
+
 // ── PUT /package-groups/:id/coordinators/:coordinatorId/accept ────────────
 // Coordinator 측이 위임을 수락 (status: Pending → Active)
 router.put(

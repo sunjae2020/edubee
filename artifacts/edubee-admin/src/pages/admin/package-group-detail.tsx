@@ -331,6 +331,9 @@ export default function PackageGroupDetail() {
   });
   const [coordNotes, setCoordNotes] = useState("");
   const [showRevokeConfirm, setShowRevokeConfirm] = useState<string | null>(null);
+  const [editingDelegation, setEditingDelegation] = useState<any | null>(null);
+  const [editPermissions, setEditPermissions] = useState({ view: true, edit: true, soft_delete: true, manage_finance: false });
+  const [editNotes, setEditNotes] = useState("");
 
   const { data: delegationsResp, refetch: refetchDelegations } = useQuery({
     queryKey: ["coordinator-delegations", id],
@@ -369,6 +372,19 @@ export default function PackageGroupDetail() {
       toast({ title: "Coordinator assigned", description: "Delegation is pending acceptance." });
     },
     onError: (err: any) => toast({ variant: "destructive", title: err?.response?.data?.message ?? "Failed to assign coordinator" }),
+  });
+
+  const updateCoordinator = useMutation({
+    mutationFn: (delegId: string) => axios.patch(`${BASE}/api/package-groups/${id}/coordinators/${delegId}`, {
+      permissions: editPermissions,
+      notes: editNotes || null,
+    }),
+    onSuccess: () => {
+      refetchDelegations();
+      setEditingDelegation(null);
+      toast({ title: "Delegation updated", description: "Permissions have been updated." });
+    },
+    onError: (err: any) => toast({ variant: "destructive", title: err?.response?.data?.message ?? "Failed to update delegation" }),
   });
 
   const revokeCoordinator = useMutation({
@@ -1173,15 +1189,31 @@ export default function PackageGroupDetail() {
                               <span className="text-xs text-muted-foreground">{d.coordinatorOrgSubdomain}.edubee.co</span>
                             )}
                           </div>
-                          {d.status === "Active" && canEdit && !isCC && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 border-red-200 hover:bg-red-50 shrink-0"
-                              onClick={() => setShowRevokeConfirm(d.id)}
-                            >
-                              Revoke
-                            </Button>
+                          {canEdit && !isCC && (
+                            <div className="flex gap-2 shrink-0">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1"
+                                onClick={() => {
+                                  setEditingDelegation(d);
+                                  setEditPermissions(d.permissions ?? { view: true, edit: true, soft_delete: true, manage_finance: false });
+                                  setEditNotes(d.notes ?? "");
+                                }}
+                              >
+                                <Edit className="w-3 h-3" /> Edit
+                              </Button>
+                              {d.status === "Active" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 border-red-200 hover:bg-red-50"
+                                  onClick={() => setShowRevokeConfirm(d.id)}
+                                >
+                                  Revoke
+                                </Button>
+                              )}
+                            </div>
                           )}
                         </div>
 
@@ -1347,6 +1379,78 @@ export default function PackageGroupDetail() {
                 style={{ background: "var(--e-primary)" }}
               >
                 {assignCoordinator.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Assign Coordinator"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Edit Coordinator Delegation Modal ───────────────────────────── */}
+      <Dialog open={!!editingDelegation} onOpenChange={o => { if (!o) setEditingDelegation(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Coordinator Delegation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-1">
+            {editingDelegation && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                style={{ background: "color-mix(in srgb, var(--e-primary) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--e-primary) 25%, transparent)" }}>
+                <Building2 className="w-4 h-4" style={{ color: "var(--e-primary)" }} />
+                <span className="font-medium">{editingDelegation.coordinatorOrgName}</span>
+                {editingDelegation.coordinatorOrgSubdomain && (
+                  <span className="text-muted-foreground text-xs ml-1">{editingDelegation.coordinatorOrgSubdomain}.edubee.co</span>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Permissions</label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { key: "view", label: "View" },
+                  { key: "edit", label: "Edit" },
+                  { key: "soft_delete", label: "Soft Delete" },
+                  { key: "manage_finance", label: "Finance Mgmt" },
+                ] as { key: keyof typeof editPermissions; label: string }[]).map(({ key, label }) => (
+                  <label key={key} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={editPermissions[key]}
+                      onChange={e => setEditPermissions(p => ({ ...p, [key]: e.target.checked }))}
+                      className="rounded border-input"
+                      style={{ accentColor: "var(--e-primary)" }}
+                      disabled={key === "view"}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notes (optional)</label>
+              <textarea
+                value={editNotes}
+                onChange={e => setEditNotes(e.target.value)}
+                placeholder="Delegation notes..."
+                rows={2}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none resize-none"
+                style={{ outline: "none" }}
+                onFocus={e => e.target.style.boxShadow = `0 0 0 1px var(--e-primary)`}
+                onBlur={e => e.target.style.boxShadow = "none"}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1 border-t">
+              <Button size="sm" variant="outline" onClick={() => setEditingDelegation(null)}>Cancel</Button>
+              <Button
+                size="sm"
+                disabled={updateCoordinator.isPending}
+                onClick={() => updateCoordinator.mutate(editingDelegation.id)}
+                className="text-white min-w-[100px]"
+                style={{ background: "var(--e-primary)" }}
+              >
+                {updateCoordinator.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save Changes"}
               </Button>
             </div>
           </div>
