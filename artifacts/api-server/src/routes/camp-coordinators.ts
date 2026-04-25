@@ -118,21 +118,24 @@ router.post(
         return res.status(400).json({ success: false, message: "Owner and coordinator cannot be the same organisation" });
       }
 
-      // 이미 Active 위임 있는지 확인
+      // 같은 테넌트가 이미 Pending/Active로 등록돼 있는지 확인
       const [existing] = await staticDb
         .select({ id: packageGroupCoordinators.id, status: packageGroupCoordinators.status })
         .from(packageGroupCoordinators)
         .where(
           and(
             eq(packageGroupCoordinators.packageGroupId, id),
-            eq(packageGroupCoordinators.status, "Active"),
+            eq(packageGroupCoordinators.coordinatorOrgId, coordinatorOrgId),
             isNull(packageGroupCoordinators.revokedAt)
           )
         )
         .limit(1);
 
       if (existing) {
-        return res.status(409).json({ success: false, message: "This package group already has an active coordinator" });
+        const msg = existing.status === "Active"
+          ? "This organisation is already an active coordinator for this package group"
+          : "This organisation already has a pending delegation for this package group";
+        return res.status(409).json({ success: false, message: msg });
       }
 
       const [created] = await staticDb
@@ -198,6 +201,40 @@ router.patch(
     } catch (err) {
       console.error("[PATCH coordinators/:id]", err);
       res.status(500).json({ success: false, message: "Failed to update delegation" });
+    }
+  }
+);
+
+// ── DELETE /package-groups/:id/coordinators/:coordinatorId ───────────────
+// Owner 가 잘못 지정된 위임 레코드를 완전 삭제 (Pending/Revoked 상태만 허용)
+router.delete(
+  "/package-groups/:id/coordinators/:coordinatorId",
+  authenticate,
+  requireRole(...OWNER_ROLES),
+  async (req, res) => {
+    try {
+      const { coordinatorId } = req.params as { id: string; coordinatorId: string };
+
+      const [row] = await staticDb
+        .select({ id: packageGroupCoordinators.id, status: packageGroupCoordinators.status, ownerOrgId: packageGroupCoordinators.ownerOrgId, coordinatorOrgId: packageGroupCoordinators.coordinatorOrgId })
+        .from(packageGroupCoordinators)
+        .where(eq(packageGroupCoordinators.id, coordinatorId))
+        .limit(1);
+
+      if (!row) {
+        return res.status(404).json({ success: false, message: "Delegation not found" });
+      }
+
+      if (row.status === "Active") {
+        return res.status(400).json({ success: false, message: "Active delegations cannot be deleted — use Revoke instead" });
+      }
+
+      await staticDb.delete(packageGroupCoordinators).where(eq(packageGroupCoordinators.id, coordinatorId));
+
+      res.json({ success: true, message: "Delegation deleted" });
+    } catch (err) {
+      console.error("[DELETE coordinators/:id]", err);
+      res.status(500).json({ success: false, message: "Failed to delete delegation" });
     }
   }
 );

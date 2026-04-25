@@ -331,6 +331,7 @@ export default function PackageGroupDetail() {
   });
   const [coordNotes, setCoordNotes] = useState("");
   const [showRevokeConfirm, setShowRevokeConfirm] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [editingDelegation, setEditingDelegation] = useState<any | null>(null);
   const [editPermissions, setEditPermissions] = useState({ view: true, edit: true, soft_delete: true, manage_finance: false });
   const [editNotes, setEditNotes] = useState("");
@@ -396,6 +397,17 @@ export default function PackageGroupDetail() {
       toast({ title: "Delegation revoked", description: "30-day grace period started." });
     },
     onError: () => toast({ variant: "destructive", title: "Failed to revoke delegation" }),
+  });
+
+  const deleteCoordinator = useMutation({
+    mutationFn: (coordinatorId: string) =>
+      axios.delete(`${BASE}/api/package-groups/${id}/coordinators/${coordinatorId}`),
+    onSuccess: () => {
+      refetchDelegations();
+      setShowDeleteConfirm(null);
+      toast({ title: "Delegation deleted" });
+    },
+    onError: (err: any) => toast({ variant: "destructive", title: err?.response?.data?.message ?? "Failed to delete delegation" }),
   });
 
   // Accounts lookup — for partner account linking
@@ -1226,7 +1238,7 @@ export default function PackageGroupDetail() {
                               >
                                 <Edit className="w-3 h-3" /> Edit
                               </Button>
-                              {d.status === "Active" && (
+                              {d.status === "Active" ? (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -1234,6 +1246,15 @@ export default function PackageGroupDetail() {
                                   onClick={() => setShowRevokeConfirm(d.id)}
                                 >
                                   Revoke
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 border-red-200 hover:bg-red-50"
+                                  onClick={() => setShowDeleteConfirm(d.id)}
+                                >
+                                  Delete
                                 </Button>
                               )}
                             </div>
@@ -1498,6 +1519,29 @@ export default function PackageGroupDetail() {
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {revokeCoordinator.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Revoke"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete Confirmation ──────────────────────────────────────────── */}
+      <Dialog open={!!showDeleteConfirm} onOpenChange={o => { if (!o) setShowDeleteConfirm(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Delegation?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This will permanently remove this delegation record. This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button size="sm" variant="outline" onClick={() => setShowDeleteConfirm(null)}>Cancel</Button>
+            <Button
+              size="sm"
+              disabled={deleteCoordinator.isPending}
+              onClick={() => showDeleteConfirm && deleteCoordinator.mutate(showDeleteConfirm)}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleteCoordinator.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Delete"}
             </Button>
           </div>
         </DialogContent>
