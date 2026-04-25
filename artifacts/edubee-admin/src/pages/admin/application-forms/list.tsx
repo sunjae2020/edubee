@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -6,32 +6,42 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Plus, Search, Edit2, Users, Copy, Trash2, ExternalLink,
-  FileText, ChevronRight, X, Loader2,
+  Plus, Search, Edit2, Users, Copy, Trash2, X, Loader2,
+  FileText, ChevronRight, CalendarCheck, Globe, MessageSquare,
+  ClipboardList,
 } from "lucide-react";
+
+import SchoolingConsultationsPage from "@/pages/admin/sales/SchoolingConsultationsPage";
+import StudyAbroadConsultationsPage from "@/pages/admin/sales/StudyAbroadConsultationsPage";
+import GeneralConsultationsPage from "@/pages/admin/sales/GeneralConsultationsPage";
+import AllApplications from "@/pages/admin/all-applications";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+// ── Tab config ───────────────────────────────────────────────────────────────
+type TabKey = "schooling" | "study-abroad" | "general" | "camp" | "service" | "templates";
+
+const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
+  { key: "schooling",    label: "Schooling Consultation",       icon: CalendarCheck   },
+  { key: "study-abroad", label: "Study Abroad Consultation",    icon: Globe           },
+  { key: "general",      label: "General Consultation",         icon: MessageSquare   },
+  { key: "camp",         label: "Camp Application",             icon: ClipboardList   },
+  { key: "service",      label: "Service Application",          icon: Globe           },
+  { key: "templates",    label: "Form Templates",               icon: FileText        },
+];
+
+// ── Form Templates (extracted from original list page) ──────────────────────
 interface ApplicationForm {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  formType: string;
-  visibility: string;
-  status: string;
-  sourceFormId: string | null;
-  sourceName: string | null;
-  partnerCount: number;
-  createdOn: string;
+  id: string; name: string; slug: string;
+  description: string | null; formType: string; visibility: string;
+  status: string; sourceFormId: string | null; sourceName: string | null;
+  partnerCount: number; createdOn: string;
 }
 
-// ── Clone Modal ─────────────────────────────────────────────────────────────
 function CloneModal({ form, onClose }: { form: ApplicationForm; onClose: () => void }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [, setLocation] = useLocation();
-
   const [newName, setNewName] = useState(`${form.name} - Copy`);
   const [newSlug, setNewSlug] = useState(`${form.slug}-copy`);
   const [includePartners, setIncludePartners] = useState(false);
@@ -41,8 +51,7 @@ function CloneModal({ form, onClose }: { form: ApplicationForm; onClose: () => v
 
   const clone = useMutation({
     mutationFn: () =>
-      axios.post(`${BASE}/api/application-forms/${form.id}/clone`, { newName, newSlug, includePartners })
-        .then(r => r.data),
+      axios.post(`${BASE}/api/application-forms/${form.id}/clone`, { newName, newSlug, includePartners }).then(r => r.data),
     onSuccess: (data) => {
       toast({ title: "Form Cloned", description: `"${data.name}" created successfully.` });
       qc.invalidateQueries({ queryKey: ["application-forms"] });
@@ -61,44 +70,29 @@ function CloneModal({ form, onClose }: { form: ApplicationForm; onClose: () => v
           <h2 className="text-base font-bold text-[#1C1917]">Clone Form</h2>
           <button onClick={onClose} className="text-[#A8A29E] hover:text-[#1C1917]"><X className="w-5 h-5" /></button>
         </div>
-
         <div className="space-y-1">
           <p className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">Source Form</p>
           <p className="text-sm text-[#1C1917] bg-[#F4F3F1] px-3 py-2 rounded-lg">{form.name}</p>
         </div>
-
         <div className="space-y-1">
           <label className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">New Form Name *</label>
-          <Input
-            value={newName}
-            onChange={e => { setNewName(e.target.value); setNewSlug(toSlug(e.target.value)); }}
-            className="h-9 text-sm border-[#E8E6E2] focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange)"
-          />
+          <Input value={newName} onChange={e => { setNewName(e.target.value); setNewSlug(toSlug(e.target.value)); }}
+            className="h-9 text-sm border-[#E8E6E2] focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange)" />
         </div>
-
         <div className="space-y-1">
           <label className="text-[11px] font-semibold text-[#57534E] uppercase tracking-wide">New Slug *</label>
-          <Input
-            value={newSlug}
-            onChange={e => setNewSlug(toSlug(e.target.value))}
-            className="h-9 text-sm border-[#E8E6E2] focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange)"
-          />
+          <Input value={newSlug} onChange={e => setNewSlug(toSlug(e.target.value))}
+            className="h-9 text-sm border-[#E8E6E2] focus-visible:ring-(--e-orange)/40 focus-visible:border-(--e-orange)" />
         </div>
-
         <label className="flex items-center gap-2.5 cursor-pointer">
           <input type="checkbox" checked={includePartners} onChange={e => setIncludePartners(e.target.checked)}
             className="w-4 h-4 accent-(--e-orange)" />
           <span className="text-sm text-[#57534E]">Include partner links</span>
         </label>
-
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          <Button
-            size="sm"
-            className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white"
-            disabled={!newName || !newSlug || clone.isPending}
-            onClick={() => clone.mutate()}
-          >
+          <Button size="sm" className="bg-(--e-orange) hover:bg-(--e-orange-hover) text-white"
+            disabled={!newName || !newSlug || clone.isPending} onClick={() => clone.mutate()}>
             {clone.isPending && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
             Clone Form
           </Button>
@@ -108,12 +102,10 @@ function CloneModal({ form, onClose }: { form: ApplicationForm; onClose: () => v
   );
 }
 
-// ── Main Page ───────────────────────────────────────────────────────────────
-export default function ApplicationFormList() {
+function FormTemplatesTab() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
-
   const [search, setSearch] = useState("");
   const [formTypeFilter, setFormTypeFilter] = useState("");
   const [visibility, setVisibility] = useState("");
@@ -151,32 +143,18 @@ export default function ApplicationFormList() {
   const selCls = "h-8 rounded-lg border border-[#E8E6E2] px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-(--e-orange)/40 focus:border-(--e-orange)";
 
   return (
-    <div className="p-6 space-y-4">
-      {/* Header */}
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Application Forms</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage custom application form links for partners</p>
-        </div>
-        <Button
-          className="flex items-center gap-1.5"
-          onClick={() => setLocation("/admin/application-forms/new")}
-        >
-          <Plus className="w-4 h-4" />
-          New Form
+        <p className="text-sm text-gray-500">Manage custom form links for partners (Camp Application, Lead Inquiry)</p>
+        <Button className="flex items-center gap-1.5" onClick={() => setLocation("/admin/application-forms/new")}>
+          <Plus className="w-4 h-4" /> New Form
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="Search forms…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-9"
-          />
+          <Input placeholder="Search forms…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <select value={formTypeFilter} onChange={e => setFormTypeFilter(e.target.value)} className={selCls}>
           <option value="">All Types</option>
@@ -195,118 +173,165 @@ export default function ApplicationFormList() {
         </select>
       </div>
 
-      {/* Table */}
-      <div>
-        <div className="bg-white rounded-lg border overflow-hidden">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-40">
-              <Loader2 className="w-6 h-6 animate-spin text-(--e-orange)" />
-            </div>
-          ) : forms.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 gap-3 text-[#A8A29E]">
-              <FileText className="w-8 h-8" />
-              <p className="text-sm">No forms found. Create your first form.</p>
-            </div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Form Name</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Visibility</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Partners</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Source</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-600">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {forms.map((form, i) => (
-                  <tr key={form.id} className={`border-t hover:bg-gray-50 transition-colors ${i === forms.length - 1 ? "border-b-0" : ""}`}>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => setLocation(`/admin/application-forms/${form.id}/partners`)}
-                        className="font-medium text-[#1C1917] hover:text-(--e-orange) transition-colors flex items-center gap-1"
-                      >
-                        {form.name}
-                        <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100" />
+      <div className="bg-white rounded-lg border overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="w-6 h-6 animate-spin text-(--e-orange)" />
+          </div>
+        ) : forms.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-40 gap-3 text-[#A8A29E]">
+            <FileText className="w-8 h-8" />
+            <p className="text-sm">No forms found. Create your first form.</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-gray-50">
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Form Name</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Visibility</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Partners</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Source</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {forms.map((form, i) => (
+                <tr key={form.id} className={`border-t hover:bg-gray-50 transition-colors ${i === forms.length - 1 ? "border-b-0" : ""}`}>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => setLocation(`/admin/application-forms/${form.id}/partners`)}
+                      className="font-medium text-[#1C1917] hover:text-(--e-orange) transition-colors flex items-center gap-1"
+                    >
+                      {form.name}
+                      <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100" />
+                    </button>
+                    {form.slug && <p className="text-[11px] text-[#A8A29E] mt-0.5">/{form.slug}</p>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {form.formType === "lead_inquiry" ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">Lead Inquiry</span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--e-orange-lt) text-(--e-orange)">Camp App</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {form.visibility === "public" ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-50 text-green-700">Public</span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#F4F3F1] text-[#57534E]">Private</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--e-orange-lt) text-(--e-orange)">
+                      <Users className="w-3 h-3" />{form.partnerCount}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-[#57534E] text-xs">{form.sourceName ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    {form.status === "active" ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-50 text-green-700">Active</span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-600">Inactive</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => setLocation(`/admin/application-forms/${form.id}/edit`)}
+                        className="p-1.5 rounded-lg hover:bg-(--e-orange-lt) text-[#57534E] hover:text-(--e-orange) transition-colors" title="Edit">
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
-                      {form.slug && (
-                        <p className="text-[11px] text-[#A8A29E] mt-0.5">/{form.slug}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {form.formType === "lead_inquiry" ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">Lead Inquiry</span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--e-orange-lt) text-(--e-orange)">Camp App</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {form.visibility === "public" ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-50 text-green-700">Public</span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#F4F3F1] text-[#57534E]">Private</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--e-orange-lt) text-(--e-orange)">
-                        <Users className="w-3 h-3" />
-                        {form.partnerCount}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-[#57534E] text-xs">
-                      {form.sourceName ?? "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {form.status === "active" ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-50 text-green-700">Active</span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-600">Inactive</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => setLocation(`/admin/application-forms/${form.id}/edit`)}
-                          className="p-1.5 rounded-lg hover:bg-(--e-orange-lt) text-[#57534E] hover:text-(--e-orange) transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setLocation(`/admin/application-forms/${form.id}/partners`)}
-                          className="p-1.5 rounded-lg hover:bg-(--e-orange-lt) text-[#57534E] hover:text-(--e-orange) transition-colors"
-                          title="Partner Links"
-                        >
-                          <Users className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setCloneTarget(form)}
-                          className="p-1.5 rounded-lg hover:bg-(--e-orange-lt) text-[#57534E] hover:text-(--e-orange) transition-colors"
-                          title="Clone"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => confirmDelete(form)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-[#57534E] hover:text-red-600 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                      <button onClick={() => setLocation(`/admin/application-forms/${form.id}/partners`)}
+                        className="p-1.5 rounded-lg hover:bg-(--e-orange-lt) text-[#57534E] hover:text-(--e-orange) transition-colors" title="Partner Links">
+                        <Users className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => setCloneTarget(form)}
+                        className="p-1.5 rounded-lg hover:bg-(--e-orange-lt) text-[#57534E] hover:text-(--e-orange) transition-colors" title="Clone">
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => confirmDelete(form)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-[#57534E] hover:text-red-600 transition-colors" title="Delete">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
-
       {cloneTarget && <CloneModal form={cloneTarget} onClose={() => setCloneTarget(null)} />}
     </div>
   );
 }
 
+// ── Main Hub Page ────────────────────────────────────────────────────────────
+export default function ApplicationFormList() {
+  // Read tab from URL query param so tabs are bookmarkable
+  const getInitialTab = (): TabKey => {
+    try {
+      const p = new URLSearchParams(window.location.search).get("tab") as TabKey;
+      if (TABS.some(t => t.key === p)) return p;
+    } catch { /* ignore */ }
+    return "schooling";
+  };
+
+  const [activeTab, setActiveTab] = useState<TabKey>(getInitialTab);
+
+  const handleTabChange = (key: TabKey) => {
+    setActiveTab(key);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", key);
+    window.history.replaceState({}, "", url.toString());
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Page header */}
+      <div className="px-6 pt-6 pb-0 shrink-0">
+        <h1 className="text-2xl font-bold text-gray-900">Application Forms</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Manage all consultation and application forms in one place</p>
+      </div>
+
+      {/* Tab bar */}
+      <div className="px-6 mt-4 shrink-0 border-b border-[#E8E6E2] overflow-x-auto">
+        <div className="flex gap-0 min-w-max">
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key)}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                style={{
+                  borderBottomColor: isActive ? "var(--e-orange)" : "transparent",
+                  color: isActive ? "var(--e-orange)" : "var(--e-text-2)",
+                }}
+              >
+                <Icon size={14} strokeWidth={isActive ? 2.2 : 1.8} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tab content */}
+      <div className="flex-1 overflow-auto">
+        {activeTab === "schooling"    && <SchoolingConsultationsPage />}
+        {activeTab === "study-abroad" && <StudyAbroadConsultationsPage />}
+        {activeTab === "general"      && <GeneralConsultationsPage />}
+        {activeTab === "camp"         && <AllApplications mode="camp" />}
+        {activeTab === "service"      && <AllApplications mode="service" />}
+        {activeTab === "templates"    && (
+          <div className="p-6">
+            <FormTemplatesTab />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -129,16 +129,10 @@ function buildNav(effectiveRole: string): NavGroup[] {
 
   {
     const salesItems: NavItem[] = [
-      { icon: CalendarCheck, label: "Schooling Consultation", href: "/admin/sales/schooling-consultations" },
-      { icon: Globe, label: "Study Abroad Consultation", href: "/admin/sales/study-abroad-consultations" },
-      { icon: MessageSquare, label: "General Consultation", href: "/admin/sales/general-consultations" },
-      { icon: ClipboardList, label: "Camp Application",     href: "/admin/camp-applications-all" },
-      { icon: Globe,         label: "Service Application",  href: "/admin/service-applications" },
+      { icon: FileText, label: "Application Forms", href: "/admin/application-forms" },
     ];
     if (isSenior || isOps)
       salesItems.push({ icon: FolderOpen, label: "Documents", href: "/admin/documents" });
-    if (isAdmin)
-      salesItems.push({ icon: FileText, label: "Application Forms", href: "/admin/application-forms" });
     nav.push({ key: "sales", label: "Forms & Applications", catIcon: ClipboardList, items: salesItems });
   }
 
