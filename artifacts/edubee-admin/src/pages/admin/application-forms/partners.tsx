@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const APPLY_BASE = (import.meta.env.VITE_APPLY_BASE_URL as string | undefined) ?? "https://edubee.co/camp";
+const APPLY_BASE = (import.meta.env.VITE_APPLY_BASE_URL as string | undefined) ?? "https://app.edubee.co";
 
 interface PartnerAccount { id: string; name: string; accountType: string; email: string | null; }
 interface ApplicationFormPartner {

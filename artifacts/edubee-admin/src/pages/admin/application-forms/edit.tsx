@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft, Loader2, Copy, Check } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const APPLY_BASE = "https://edubee-crm-20260327.replit.app";
+const APPLY_BASE = (import.meta.env.VITE_APPLY_BASE_URL as string | undefined) ?? "https://app.edubee.co";
 
 function toSlug(v: string) {
   return v.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-");
