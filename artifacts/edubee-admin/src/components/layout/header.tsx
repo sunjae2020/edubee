@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { formatDateTime } from "@/lib/date-format";
 import { useAuth } from "@/hooks/use-auth";
-import { useViewAs, ROLE_HIERARCHY, ROLE_LABELS, ROLE_EMOJIS } from "@/hooks/use-view-as";
+import { useViewAs, ROLE_HIERARCHY, ROLE_LABELS, ROLE_EMOJIS, ROLE_DESCRIPTIONS } from "@/hooks/use-view-as";
 import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -110,7 +110,7 @@ type Props = { collapsed: boolean; onToggle: () => void; title?: string };
 
 export function Header({ collapsed, onToggle, title }: Props) {
   const { user, logout } = useAuth();
-  const { viewAsUser, setViewAs, clearViewAs, isImpersonating } = useViewAs();
+  const { viewAsRole, viewAsUser, setViewAsRole, setViewAs, clearViewAs, isImpersonating } = useViewAs();
   const { theme, toggleTheme } = useTheme();
   const { i18n } = useTranslation();
   const [location, navigate] = useLocation();
@@ -118,23 +118,20 @@ export function Header({ collapsed, onToggle, title }: Props) {
   const [langOpen, setLangOpen] = useState(false);
   const [viewAsOpen, setViewAsOpen] = useState(false);
   const [viewTab, setViewTab] = useState<ViewTab>("users");
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
   const myRole = user?.role ?? "";
   const myLevel = ROLE_HIERARCHY[myRole] ?? 0;
-  // Admin + all roles >= 60 can switch to lower roles; Consultant can switch to CC only
-  const canSwitch = myLevel >= 60 || (myRole as string) === "consultant";
-  // Consultant cannot preview portal accounts (only CC user switch)
+  const canSwitch = myLevel >= 60;
   const canSwitchAccounts = myLevel >= 60;
 
-  const { data: switchableUsers = [] } = useQuery<SwitchableUser[]>({
-    queryKey: ["switchable-users"],
-    queryFn: () => axios.get(`${BASE}/api/users/switchable`).then(r => r.data),
-    enabled: canSwitch,
-  });
+  // Available roles for View-As: only roles strictly below the current user's level
+  const switchableRoles = Object.entries(ROLE_HIERARCHY)
+    .filter(([role, level]) => level < myLevel && ROLE_LABELS[role])
+    .sort(([, a], [, b]) => b - a)
+    .map(([role]) => role);
 
   const { data: switchableAccounts = [] } = useQuery<SwitchableAccount[]>({
     queryKey: ["switchable-accounts"],
@@ -166,17 +163,6 @@ export function Header({ collapsed, onToggle, title }: Props) {
 
   const pageTitle = title ?? PAGE_TITLES[location] ?? "Edubee Camp Admin";
 
-  const availableRoles = Array.from(new Set(switchableUsers.map(u => u.role))).sort(
-    (a, b) => (ROLE_HIERARCHY[b] ?? 0) - (ROLE_HIERARCHY[a] ?? 0)
-  );
-
-  const filteredUsers = switchableUsers.filter(u => {
-    const roleMatch = !selectedRole || u.role === selectedRole;
-    const q = searchQuery.trim().toLowerCase();
-    const nameMatch = !q || u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
-    return roleMatch && nameMatch;
-  });
-
   const filteredAccounts = switchableAccounts.filter(a => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
@@ -189,7 +175,6 @@ export function Header({ collapsed, onToggle, title }: Props) {
 
   function handleClose() {
     setViewAsOpen(false);
-    setSelectedRole(null);
     setSearchQuery("");
   }
 
@@ -209,9 +194,11 @@ export function Header({ collapsed, onToggle, title }: Props) {
   if (!user) return null;
 
   const viewingAsLabel = isImpersonating
-    ? viewAsUser?._sourceType === "account"
+    ? viewAsRole
+      ? `${ROLE_LABELS[viewAsRole] ?? viewAsRole} (Preview)`
+      : viewAsUser?._sourceType === "account"
       ? `Account: ${viewAsUser.fullName.split(" ")[0]}`
-      : `User: ${viewAsUser?.fullName?.split(" ")[0]}`
+      : `Account`
     : ROLE_LABELS[myRole];
 
   return (
@@ -237,7 +224,7 @@ export function Header({ collapsed, onToggle, title }: Props) {
           {canSwitch && (
             <DropdownMenu open={viewAsOpen} onOpenChange={(o) => {
               setViewAsOpen(o);
-              if (!o) { setSelectedRole(null); setSearchQuery(""); }
+              if (!o) { setSearchQuery(""); }
             }}>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -275,24 +262,24 @@ export function Header({ collapsed, onToggle, title }: Props) {
                   </button>
                 </div>
 
-                {/* Tabs */}
+                {/* Tabs: Roles + Accounts */}
                 <div className="border-t border-[#E8E6E2] mx-2" />
                 <div className="px-2 pt-2">
                   <div className="flex gap-1 mb-2">
                     <button
-                      onClick={() => { setViewTab("users"); setSelectedRole(null); setSearchQuery(""); }}
+                      onClick={() => { setViewTab("users"); setSearchQuery(""); }}
                       className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-medium transition-colors border ${viewTab === "users" ? "bg-(--e-orange) text-white border-(--e-orange)" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-(--e-orange) hover:text-(--e-orange)"}`}
                     >
-                      <UserIcon className="w-3 h-3" /> Users
-                      {switchableUsers.length > 0 && (
+                      <Layers className="w-3 h-3" /> Roles
+                      {switchableRoles.length > 0 && (
                         <span className={`ml-0.5 px-1 py-0 rounded-full text-[9px] font-bold ${viewTab === "users" ? "bg-white/30 text-white" : "bg-[#F4F3F1] text-[#78716C]"}`}>
-                          {switchableUsers.length}
+                          {switchableRoles.length}
                         </span>
                       )}
                     </button>
                     {canSwitchAccounts && (
                       <button
-                        onClick={() => { setViewTab("accounts"); setSelectedRole(null); setSearchQuery(""); }}
+                        onClick={() => { setViewTab("accounts"); setSearchQuery(""); }}
                         className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-medium transition-colors border ${viewTab === "accounts" ? "bg-(--e-orange) text-white border-(--e-orange)" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-(--e-orange) hover:text-(--e-orange)"}`}
                       >
                         <Building2 className="w-3 h-3" /> Accounts
@@ -305,75 +292,49 @@ export function Header({ collapsed, onToggle, title }: Props) {
                     )}
                   </div>
 
-                  {/* Role filter pills — only on Users tab */}
-                  {viewTab === "users" && availableRoles.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      <button
-                        onClick={() => { setSelectedRole(null); setSearchQuery(""); setTimeout(() => searchRef.current?.focus(), 50); }}
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${!selectedRole ? "bg-(--e-orange) text-white border-(--e-orange)" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-(--e-orange) hover:text-(--e-orange)"}`}
-                      >
-                        All
-                      </button>
-                      {availableRoles.map(role => (
-                        <button
-                          key={role}
-                          onClick={() => { setSelectedRole(role); setSearchQuery(""); setTimeout(() => searchRef.current?.focus(), 50); }}
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${selectedRole === role ? "bg-(--e-orange) text-white border-(--e-orange)" : "bg-white text-[#78716C] border-[#E8E6E2] hover:border-(--e-orange) hover:text-(--e-orange)"}`}
-                        >
-                          {ROLE_EMOJIS[role]} {ROLE_LABELS[role]}
+                  {/* Search — only shown on Accounts tab */}
+                  {viewTab === "accounts" && (
+                    <div className="relative mb-2">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#A8A29E]" />
+                      <input
+                        ref={searchRef}
+                        type="text"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        onKeyDown={e => e.stopPropagation()}
+                        onClick={e => e.stopPropagation()}
+                        placeholder="Search account name or email…"
+                        className="w-full pl-7 pr-7 py-1.5 text-xs border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] focus:outline-none focus:ring-1 focus:ring-(--e-orange) focus:border-(--e-orange)"
+                      />
+                      {searchQuery && (
+                        <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-[#78716C]">
+                          <X className="w-3 h-3" />
                         </button>
-                      ))}
+                      )}
                     </div>
                   )}
-
-                  {/* Search input */}
-                  <div className="relative mb-2">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#A8A29E]" />
-                    <input
-                      ref={searchRef}
-                      type="text"
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      onKeyDown={e => e.stopPropagation()}
-                      onClick={e => e.stopPropagation()}
-                      placeholder={
-                        viewTab === "users"
-                          ? (selectedRole ? `Search ${ROLE_LABELS[selectedRole]}…` : "Search by name or email…")
-                          : "Search account name or email…"
-                      }
-                      className="w-full pl-7 pr-7 py-1.5 text-xs border border-[#E8E6E2] rounded-lg bg-[#FAFAF9] focus:outline-none focus:ring-1 focus:ring-(--e-orange) focus:border-(--e-orange)"
-                    />
-                    {searchQuery && (
-                      <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-[#78716C]">
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
                 </div>
 
                 {/* List */}
                 <div className="max-h-52 overflow-y-auto px-2 pb-2">
                   {viewTab === "users" ? (
-                    filteredUsers.length === 0 ? (
-                      <div className="text-center py-4 text-[11px] text-[#A8A29E]">No users found</div>
+                    switchableRoles.length === 0 ? (
+                      <div className="text-center py-4 text-[11px] text-[#A8A29E]">No roles available</div>
                     ) : (
-                      filteredUsers.map(u => (
+                      switchableRoles.map(role => (
                         <button
-                          key={u.id}
-                          onClick={() => { setViewAs({ ...u, _sourceType: "user" }); handleClose(); }}
-                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors mb-0.5 ${viewAsUser?.id === u.id && viewAsUser?._sourceType === "user" ? "bg-(--e-orange-lt)" : "hover:bg-[#F4F3F1]"}`}
+                          key={role}
+                          onClick={() => { setViewAsRole(role); handleClose(); }}
+                          className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left transition-colors mb-0.5 ${viewAsRole === role ? "bg-(--e-orange-lt)" : "hover:bg-[#F4F3F1]"}`}
                         >
-                          <div className="w-6 h-6 rounded-full bg-[#F4F3F1] flex items-center justify-center text-[10px] font-bold shrink-0">
-                            {u.fullName.substring(0, 2).toUpperCase()}
+                          <div className="w-7 h-7 rounded-full bg-[#F4F3F1] flex items-center justify-center text-sm shrink-0">
+                            {ROLE_EMOJIS[role]}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="text-xs font-medium truncate">{u.fullName}</div>
-                            <div className="text-[10px] text-[#A8A29E] truncate flex items-center gap-1">
-                              <span>{ROLE_EMOJIS[u.role]}</span>
-                              <span>{ROLE_LABELS[u.role]}</span>
-                            </div>
+                            <div className="text-xs font-medium">{ROLE_LABELS[role]}</div>
+                            <div className="text-[10px] text-[#A8A29E]">{ROLE_DESCRIPTIONS[role]}</div>
                           </div>
-                          {viewAsUser?.id === u.id && viewAsUser?._sourceType === "user" && (
+                          {viewAsRole === role && (
                             <div className="w-1.5 h-1.5 rounded-full bg-(--e-orange) shrink-0" />
                           )}
                         </button>

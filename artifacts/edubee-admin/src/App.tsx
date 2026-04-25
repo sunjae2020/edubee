@@ -688,17 +688,23 @@ function Router() {
 }
 
 // ── View-As axios header sync ─────────────────────────────────────────────
-// When viewing as another user, inject x-view-as-user-id into every API call
-// so the backend authenticate middleware uses that user's role/org context.
+// Role-based view-as: inject x-view-as-role so the backend overrides req.user.role
+// while keeping the same user identity and organisation.
+// Account portal view-as: inject x-view-as-user-id only for tenant-scoped accounts.
 function AxiosViewAsSetup() {
-  const { viewAsUser } = useViewAs();
+  const { viewAsRole, viewAsUser } = useViewAs();
   useEffect(() => {
-    if (viewAsUser?._sourceType === "user" && viewAsUser.id) {
+    if (viewAsRole) {
+      axios.defaults.headers.common["x-view-as-role"] = viewAsRole;
+      delete axios.defaults.headers.common["x-view-as-user-id"];
+    } else if (viewAsUser?._sourceType === "account" && viewAsUser.id) {
       axios.defaults.headers.common["x-view-as-user-id"] = viewAsUser.id;
+      delete axios.defaults.headers.common["x-view-as-role"];
     } else {
+      delete axios.defaults.headers.common["x-view-as-role"];
       delete axios.defaults.headers.common["x-view-as-user-id"];
     }
-  }, [viewAsUser]);
+  }, [viewAsRole, viewAsUser]);
   return null;
 }
 

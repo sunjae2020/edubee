@@ -100,7 +100,7 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
   const subdomain = (req as any).tenant?.subdomain as string | undefined;
   if (!subdomain) return next();
   try {
-    // Detect camp_coordinator (direct login or View-As)
+    // Detect camp_coordinator (direct login or role View-As)
     const JWT_SECRET = process.env.JWT_SECRET;
     const authHeader = req.headers.authorization;
     let ccOrgId: string | null = null;
@@ -108,15 +108,13 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
     if (JWT_SECRET && authHeader?.startsWith("Bearer ")) {
       try {
         const decoded = jwt.verify(authHeader.split(" ")[1], JWT_SECRET) as any;
-        const viewAsId = req.headers["x-view-as-user-id"] as string | undefined;
+        const viewAsRole = req.headers["x-view-as-role"] as string | undefined;
 
-        if (viewAsId && ["super_admin", "admin", "consultant"].includes(decoded.role)) {
-          // View-As mode: check if the target user is a CC
-          const r = await pool.query<{ role: string; organisation_id: string }>(
-            "SELECT role, organisation_id FROM public.users WHERE id = $1 LIMIT 1", [viewAsId]
-          );
-          if (r.rows[0]?.role === "camp_coordinator") ccOrgId = r.rows[0].organisation_id;
-        } else if (decoded.role === "camp_coordinator") {
+        if (decoded.role === "camp_coordinator") {
+          // Direct CC login
+          ccOrgId = decoded.organisationId ?? null;
+        } else if (viewAsRole === "camp_coordinator") {
+          // Role View-As: admin previewing CC perspective — use their own org's CC delegations
           ccOrgId = decoded.organisationId ?? null;
         }
       } catch { /* invalid JWT — let auth middleware handle */ }

@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User, LoginRequest } from "@workspace/api-client-react";
 import { useLogin, useGetMe, useLogout } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
-import { getViewAsUserId } from "./use-view-as";
+import { getViewAsUserId, getViewAsRole } from "./use-view-as";
 import axios from "axios";
 
 // Decode JWT payload (no verification — client-side read only)
@@ -36,6 +36,7 @@ axios.interceptors.request.use((config) => {
 
   const token = localStorage.getItem("edubee_token");
   const viewAsId = getViewAsUserId();
+  const viewAsRole = getViewAsRole();
 
   // ── 테넌트 org ID 결정 ──────────────────────────────────────────
   // 서브도메인(tsh.edubee.co)이 있는 경우:
@@ -64,7 +65,11 @@ axios.interceptors.request.use((config) => {
   }
 
   if (token) config.headers["Authorization"] = `Bearer ${token}`;
-  if (viewAsId) config.headers["X-View-As-User-Id"] = viewAsId;
+  if (viewAsRole) {
+    config.headers["X-View-As-Role"] = viewAsRole;
+  } else if (viewAsId) {
+    config.headers["X-View-As-User-Id"] = viewAsId;
+  }
   if (orgId) config.headers["X-Organisation-Id"] = orgId;
   return config;
 });
@@ -115,15 +120,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const currentToken = localStorage.getItem("edubee_token");
       const viewAsId = getViewAsUserId();
+      const viewAsRole = getViewAsRole();
       const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
       const personalOrgId = currentToken ? (parseJwt(currentToken)?.organisationId ?? null) : null;
       const orgId = impersonateOrgId || personalOrgId;
 
-      if (currentToken || viewAsId || orgId) {
+      if (currentToken || viewAsId || viewAsRole || orgId) {
         init = init || {};
         const headers = new Headers(init.headers as HeadersInit);
         if (currentToken) headers.set("Authorization", `Bearer ${currentToken}`);
-        if (viewAsId) headers.set("X-View-As-User-Id", viewAsId);
+        if (viewAsRole) {
+          headers.set("X-View-As-Role", viewAsRole);
+        } else if (viewAsId) {
+          headers.set("X-View-As-User-Id", viewAsId);
+        }
         if (orgId) headers.set("X-Organisation-Id", orgId);
         init.headers = headers;
       }

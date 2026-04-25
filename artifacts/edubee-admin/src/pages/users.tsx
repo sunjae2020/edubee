@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewAs, ROLE_LABELS, ROLE_EMOJIS, ROLE_HIERARCHY } from "@/hooks/use-view-as";
+
 import { useLocation } from "wouter";
 import { MoreVertical, Trash2, Eye, Loader2, ShieldOff, UserCheck } from "lucide-react";
 import { ListToolbar } from "@/components/ui/list-toolbar";
@@ -39,7 +40,7 @@ const emptyForm = { fullName: "", email: "", password: "", role: "consultant", s
 export default function Users() {
   const qc = useQueryClient();
   const { user: currentUser } = useAuth();
-  const { viewAsUser, setViewAs, clearViewAs, isImpersonating } = useViewAs();
+  const { viewAsRole, setViewAsRole, clearViewAs, isImpersonating } = useViewAs();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
@@ -75,11 +76,8 @@ export default function Users() {
   const closeModal = () => { setShowModal(false); setForm(emptyForm); };
 
   const handleImpersonate = (user: User) => {
-    setViewAs({
-      id: user.id, email: user.email, fullName: user.fullName,
-      role: user.role, avatarUrl: user.avatarUrl,
-    });
-    toast({ title: `Viewing as ${user.fullName}`, description: `Role: ${ROLE_LABELS[user.role] ?? user.role}` });
+    setViewAsRole(user.role);
+    toast({ title: `Previewing as ${ROLE_LABELS[user.role] ?? user.role}`, description: "Same account — role perspective only" });
     setLocation("/admin/dashboard");
   };
 
@@ -130,7 +128,7 @@ export default function Users() {
   return (
     <div className="space-y-5">
       {/* Active impersonation banner */}
-      {isImpersonating && viewAsUser && (
+      {isImpersonating && viewAsRole && (
         <div
           className="rounded-xl border px-4 py-3 flex items-center justify-between gap-3"
           style={{ background: "#FEF3C7", borderColor: "#F59E0B" }}
@@ -138,8 +136,8 @@ export default function Users() {
           <div className="flex items-center gap-2 text-sm">
             <Eye className="w-4 h-4" style={{ color: "#D97706" }} />
             <span className="font-medium" style={{ color: "#92400E" }}>
-              Currently viewing as <strong>{viewAsUser.fullName}</strong>
-              <span className="ml-1.5" style={{ color: "#D97706" }}>({ROLE_LABELS[viewAsUser.role] ?? viewAsUser.role})</span>
+              Previewing as <strong>{ROLE_LABELS[viewAsRole] ?? viewAsRole}</strong>
+              <span className="ml-1.5 text-xs" style={{ color: "#D97706" }}>(same account, role perspective only)</span>
             </span>
           </div>
           <button
@@ -252,7 +250,7 @@ export default function Users() {
                       <div>
                         <div className="font-medium text-sm flex items-center gap-1.5" style={{ color: "#1C1917" }}>
                           {user.fullName}
-                          {viewAsUser?.id === user.id && (
+                          {viewAsRole === user.role && (
                             <span
                               className="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[10px]"
                               style={{ background: "var(--e-orange-lt)", color: "var(--e-orange)" }}

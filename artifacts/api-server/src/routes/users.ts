@@ -100,26 +100,10 @@ const ROLE_HIERARCHY: Record<string, number> = {
   finance: 70, admission: 65, team_manager: 60, camp_coordinator: 60, consultant: 50,
 };
 
-router.get("/switchable", authenticate, async (req, res) => {
-  try {
-    const myRole  = req.user!.role;
-    const myLevel = ROLE_HIERARCHY[myRole] || 0;
-    // Consultant (50) can only switch to Camp Coordinator view; everyone else needs level >= 60
-    if (myLevel < 50) return res.json([]);
-    // Use staticDb to always query public.users (all tenants' users, not just current tenant schema)
-    const allUsers = await staticDb.select({
-      id: users.id, email: users.email, fullName: users.fullName,
-      role: users.role, avatarUrl: users.avatarUrl, status: users.status,
-    }).from(users).where(eq(users.status, "active"));
-    const switchable = myRole === "consultant"
-      // Consultant: camp_coordinator view only
-      ? allUsers.filter(u => u.role === "camp_coordinator" && u.id !== req.user!.id)
-      // Others: all users below their own level
-      : allUsers.filter(u => (ROLE_HIERARCHY[u.role] || 0) < myLevel && u.id !== req.user!.id);
-    return res.json(switchable);
-  } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
+// GET /users/switchable — removed: replaced by role-based View-As (x-view-as-role header)
+// Cross-tenant user listing was a security vulnerability; role switching uses no user lookup.
+router.get("/switchable", authenticate, async (_req, res) => {
+  return res.json([]);
 });
 
 router.get("/switchable-accounts", authenticate, async (req, res) => {
