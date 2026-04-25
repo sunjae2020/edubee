@@ -360,7 +360,7 @@ function FlyoutItem({ item, Icon, isActive, onClose }: {
         className="flex items-center gap-2.5 px-3 h-9 mx-1 rounded-lg text-[12px] cursor-pointer transition-all duration-150 select-none font-medium"
         style={{
           background: isActive ? "var(--e-orange-lt)" : hovered ? "var(--e-orange-lt)" : "transparent",
-          color: isActive ? "var(--e-orange)" : hovered ? "var(--e-orange-dk)" : "var(--e-text-2)",
+          color: isActive ? "var(--e-orange)" : hovered ? "var(--e-text-1)" : "var(--e-text-2)",
           fontWeight: isActive ? 600 : undefined,
         }}
         onMouseEnter={() => setHovered(true)}
@@ -775,7 +775,7 @@ function SidebarNavItem({
           : hovered ? "var(--e-orange-lt)" : "transparent",
         color: isActive
           ? "var(--e-orange)"
-          : hovered ? "var(--e-orange-dk)" : "var(--e-text-2)",
+          : hovered ? "var(--e-text-1)" : "var(--e-text-2)",
       }}
     >
       <Icon

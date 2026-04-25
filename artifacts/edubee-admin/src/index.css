@@ -487,15 +487,13 @@
 .dark table                   { color: var(--e-text-1); }
 .dark th                      { color: var(--e-text-2) !important; border-color: var(--e-border) !important; background-color: var(--e-bg-muted) !important; }
 .dark td                      { color: var(--e-text-1); border-color: var(--e-border) !important; }
-.dark tr:hover td             { background-color: var(--e-bg-muted) !important; }
+.dark tr:hover td             { background-color: var(--e-bg-muted) !important; color: var(--e-text-1) !important; }
 .dark tbody tr:nth-child(even) td { background-color: transparent !important; }
-/* 명시적 stone/gray 색상이 td에 적용된 경우 가시성 강화 */
-.dark td.text-stone-600,
-.dark td.text-stone-700,
-.dark td.text-stone-800       { color: #C8C0B8 !important; }
-.dark td .text-stone-600,
-.dark td .text-stone-700,
-.dark td .text-stone-800      { color: #C8C0B8 !important; }
+
+/* ── 라이트모드 hover — orange-lt bg 위에서 텍스트 어둡게 ─────── */
+tr:hover td                   { color: #1C1917; }
+tr:hover td .text-stone-400,
+tr:hover td .text-stone-500   { color: #57534E !important; }
 
 /* ── Tiptap 에디터 다크 ──────────────────────────────────────── */
 .dark .tiptap blockquote      { background: var(--e-bg-muted); color: var(--e-text-2); }
