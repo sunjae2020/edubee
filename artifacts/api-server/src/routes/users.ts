@@ -278,9 +278,27 @@ router.get("/:id/products", authenticate, requireRole(...ADMIN_ROLES, "camp_coor
   }
 });
 
+// ─── DELETE /api/users/bulk — must be before /:id to avoid "bulk" matching as an id
+router.delete("/bulk", authenticate, async (req, res) => {
+  if (!["super_admin","admin"].includes((req.user as any)?.role)) return res.status(403).json({ error: "Forbidden" });
+  try {
+    const { ids, soft } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
+    if (soft) {
+      await staticDb.update(users).set({ status: "inactive" }).where(inArray(users.id, ids));
+      return res.json({ success: true, updated: ids.length });
+    }
+    await staticDb.delete(users).where(inArray(users.id, ids));
+    return res.json({ success: true, deleted: ids.length });
+  } catch (err) {
+    console.error("[DELETE /api/users/bulk]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.delete("/:id", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    await db.update(users).set({ status: "inactive", updatedAt: new Date() }).where(eq(users.id, req.params.id as string));
+    await staticDb.update(users).set({ status: "inactive", updatedAt: new Date() }).where(eq(users.id, req.params.id as string));
     return res.json({ success: true, message: "User deactivated" });
   } catch (err) {
     console.error("Delete user error:", err);
@@ -295,7 +313,7 @@ router.patch("/:id/avatar", authenticate, async (req, res) => {
     if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) {
       return res.status(400).json({ error: "dataUrl is required and must be a valid image data URL" });
     }
-    const [updated] = await db.update(users)
+    const [updated] = await staticDb.update(users)
       .set({ avatarUrl: dataUrl, updatedAt: new Date() })
       .where(eq(users.id, req.params.id as string))
       .returning();
@@ -305,24 +323,6 @@ router.patch("/:id/avatar", authenticate, async (req, res) => {
   } catch (err) {
     console.error("[PATCH /users/:id/avatar]", err);
     return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-// ─── DELETE /api/users/bulk  (super_admin 임시/영구 삭제) ────────────────────
-router.delete("/bulk", authenticate, async (req, res) => {
-  if (!["super_admin","admin"].includes((req.user as any)?.role)) return res.status(403).json({ error: "Forbidden" });
-  try {
-    const { ids, soft } = req.body;
-    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array required" });
-    if (soft) {
-      await db.update(users).set({ status: "inactive" }).where(inArray(users.id, ids));
-      return res.json({ success: true, updated: ids.length });
-    }
-    await db.delete(users).where(inArray(users.id, ids));
-    return res.json({ success: true, deleted: ids.length });
-  } catch (err) {
-    console.error("[DELETE /api/users/bulk]", err);
-    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

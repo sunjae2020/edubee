@@ -107,12 +107,12 @@ export default function Users() {
   const softDelMutation = useMutation({
     mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/users/bulk`, { data: { ids, soft: true } }).then(r => r.data),
     onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["users"] }); clearSelection(); toast({ title: `${ids.length} moved to trash` }); },
-    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+    onError: () => toast({ title: "Failed to move to trash", variant: "destructive" }),
   });
   const hardDelMutation = useMutation({
     mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/users/bulk`, { data: { ids } }).then(r => r.data),
     onSuccess: (_d: any, ids: string[]) => { qc.invalidateQueries({ queryKey: ["users"] }); clearSelection(); toast({ title: `${ids.length} permanently deleted` }); },
-    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+    onError: () => toast({ title: "Failed to delete permanently", variant: "destructive" }),
   });
   const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
 
